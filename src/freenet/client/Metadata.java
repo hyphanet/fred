@@ -22,6 +22,7 @@ import freenet.keys.FreenetURI;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -30,6 +31,17 @@ import freenet.support.io.BucketTools;
 
 /** Metadata parser/writer class. */
 public class Metadata implements Cloneable {
+    private static volatile boolean logMINOR;
+
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(Logger.MINOR, this);
+            }
+        });
+    }
 
 	static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;
 	static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
@@ -179,7 +191,6 @@ public class Metadata implements Cloneable {
 		documentType = dis.readByte();
 		if((documentType < 0) || (documentType > 5))
 			throw new MetadataParseException("Unsupported document type: "+documentType);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
 		
 		boolean compressed = false;
@@ -321,7 +332,7 @@ public class Metadata implements Cloneable {
 			
 			// Parse the sub-Manifest.
 			
-			Logger.minor(this, "Simple manifest, "+manifestEntryCount+" entries");
+			if(logMINOR)Logger.minor(this, "Simple manifest, "+manifestEntryCount+" entries");
 			
 			for(int i=0;i<manifestEntryCount;i++) {
 				short nameLength = dis.readShort();

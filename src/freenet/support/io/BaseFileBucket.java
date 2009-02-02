@@ -14,10 +14,24 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(Logger.MINOR, this);
+                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+            }
+        });
+    }
 
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
@@ -68,7 +82,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			FileBucketOutputStream os = 
 				new FileBucketOutputStream(tempfile, streamNumber);
 			
-			if(Logger.shouldLog(Logger.DEBUG, this))
+			if(logDEBUG)
 				Logger.debug(this, "Creating "+os, new Exception("debug"));
 			
 			addStream(os);
@@ -131,7 +145,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			File tempfile, long restartCount)
 			throws FileNotFoundException {
 			super(tempfile, false);
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Writing to "+tempfile+" for "+getFile());
 			this.tempfile = tempfile;
 			resetLength();
@@ -187,7 +201,6 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 				file = getFile();
 			}
 			removeStream(this);
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR)
 				Logger.minor(this, "Closing "+BaseFileBucket.this);
 			try {
@@ -257,7 +270,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			FileBucketInputStream is =
 				new FileBucketInputStream(file);
 			addStream(is);
-			if(Logger.shouldLog(Logger.DEBUG, this))
+			if(logDEBUG)
 				Logger.debug(this, "Creating "+is, new Exception("debug"));
 			return is;
 		}
@@ -279,7 +292,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 * called twice. But length must still be valid when calling it.
 	 */
 	protected synchronized void deleteFile() {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Deleting "+getFile()+" for "+this, new Exception("debug"));
 		getFile().delete();
 	}
