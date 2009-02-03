@@ -45,7 +45,7 @@ import freenet.support.io.NativeThread;
 public class ClientRequestScheduler implements RequestScheduler {
 	
 	private final ClientRequestSchedulerCore schedCore;
-	private final ClientRequestSchedulerNonPersistent schedTransient;
+	final ClientRequestSchedulerNonPersistent schedTransient;
 	
 	private static boolean logMINOR;
 	
@@ -1028,6 +1028,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void removeFetchingKey(Key key) {
 		schedCore.removeFetchingKey(key);
 	}
+
+	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
+		schedCore.removeTransientInsertFetching(insert, token);
+	}
 	
 	/**
 	 * Map from SendableGet implementing SupportsBulkCallFailure to BulkCallFailureItem[].
@@ -1084,6 +1088,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public boolean addToFetching(Key key) {
 		return schedCore.addToFetching(key);
+	}
+	
+	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
+		return schedCore.addTransientInsertFetching(insert, token);
 	}
 	
 	public boolean hasFetchingKey(Key key) {

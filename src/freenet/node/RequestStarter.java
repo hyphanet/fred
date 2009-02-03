@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
+import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -185,6 +186,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		if(req.key != null) {
 			if(!sched.addToFetching(req.key))
 				return false;
+		} else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert) {
+			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token))
+				return false;
 		}
 		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.getPriority());
 		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
@@ -230,6 +234,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				Logger.minor(this, "Finished "+req);
 			} finally {
 				if(key != null) sched.removeFetchingKey(key);
+				else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
+					sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
+
 			}
 		}
 		

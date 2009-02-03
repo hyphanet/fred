@@ -20,6 +20,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
+import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
@@ -53,6 +54,30 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 * LOCKING: Always lock this LAST.
 	 */
 	private transient HashSet keysFetching;
+	
+	private class RunningTransientInsert {
+		
+		final SendableInsert insert;
+		final Object token;
+		
+		RunningTransientInsert(SendableInsert i, Object t) {
+			insert = i;
+			token = t;
+		}
+		
+		public int hashCode() {
+			return insert.hashCode() ^ token.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(!(o instanceof RunningTransientInsert)) return false;
+			RunningTransientInsert r = (RunningTransientInsert) o;
+			return r.insert == insert && (r.token == token || r.token.equals(token));
+		}
+		
+	}
+	
+	private transient HashSet<RunningTransientInsert> runningTransientInserts;
 	
 	public final byte[] globalSalt;
 	
@@ -114,10 +139,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		this.sched = sched;
 		this.initTime = System.currentTimeMillis();
 		// We DO NOT want to rerun the query after consuming the initial set...
-		if(!isInsertScheduler)
+		if(!isInsertScheduler) {
 			keysFetching = new HashSet();
-		else
+			runningTransientInserts = null;
+		} else {
 			keysFetching = null;
+			runningTransientInserts = new HashSet<RunningTransientInsert>();
+		}
 		if(isInsertScheduler) {
 		preRegisterMeRunner = new DBJob() {
 
@@ -714,6 +742,36 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		long cooldown = persistentCooldownQueue.size(container);
 		System.out.println("Cooldown queue size: "+cooldown);
 		return ret + cooldown;
+	}
+
+	public boolean hasTransientInsert(SendableInsert insert, Object token) {
+		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
+		synchronized(runningTransientInserts) {
+			return runningTransientInserts.contains(tmp);
+		}
+	}
+
+	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
+		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
+		synchronized(runningTransientInserts) {
+			boolean retval = runningTransientInserts.add(tmp);
+			if(!retval) {
+				Logger.normal(this, "Already in runningTransientInserts: "+insert+" : "+token);
+			} else {
+				if(logMINOR)
+					Logger.minor(this, "Added to runningTransientInserts: "+insert+" : "+token);
+			}
+			return retval;
+		}
+	}
+	
+	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
+		RunningTransientInsert tmp = new RunningTransientInsert(insert, token);
+		if(logMINOR)
+			Logger.minor(this, "Removing from runningTransientInserts: "+insert+" : "+token);
+		synchronized(runningTransientInserts) {
+			runningTransientInserts.remove(tmp);
+		}
 	}
 
 }

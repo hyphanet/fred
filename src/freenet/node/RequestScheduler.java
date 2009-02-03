@@ -79,4 +79,8 @@ public interface RequestScheduler {
 
 	public void start(NodeClientCore core);
 
+	public boolean addTransientInsertFetching(SendableInsert insert, Object token);
+
+	public void removeTransientInsertFetching(SendableInsert insert, Object token);
+
 }
