@@ -59,7 +59,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		return null;
 	}
 
-	private DBJob freeJob = new DBJob() {
+	private final DBJob freeJob = new DBJob() {
 		
 		public void run(ObjectContainer container, ClientContext context) {
 			SegmentedChainBucketSegment segment = null;
