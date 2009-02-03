@@ -4294,7 +4294,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				return false;
 			}
 			turtlingTransfers.put(key, sender);
-			Logger.error(this, "Turtles for "+getPeer()+" : "+turtlingTransfers.size());
+			Logger.normal(this, "Turtles for "+getPeer()+" : "+turtlingTransfers.size());
 			return true;
 		}
 	}
