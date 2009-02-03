@@ -226,6 +226,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					return;
 				}
 				schedCore.innerRegister(req, random, container, null);
+				starter.wakeUp();
 			} else {
 				jobRunner.queue(new DBJob() {
 
@@ -241,6 +242,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		} else {
 			schedTransient.innerRegister(req, random, null, null);
+			starter.wakeUp();
 		}
 	}
 	
