@@ -204,8 +204,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public Key getNodeKey(Object token, ObjectContainer container) {
-		return (Key) token;
+	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
+		return ((MySendableRequestItem) token).key;
 	}
 
 	public boolean isSSK() {
