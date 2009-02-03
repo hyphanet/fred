@@ -94,7 +94,7 @@ public class CHKBlock implements KeyBlock {
             }
             // Otherwise it checks out
         }
-        hashCode = key.hashCode() ^ Fields.hashCode(data) ^ Fields.hashCode(headers) ^ cryptoAlgorithm;
+        hashCode = chk.hashCode() ^ Fields.hashCode(data) ^ Fields.hashCode(headers) ^ cryptoAlgorithm;
     }
 
 	public Key getKey() {
