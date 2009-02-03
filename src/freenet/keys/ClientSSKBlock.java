@@ -26,7 +26,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	/** Has decoded? */
 	private boolean decoded;
 	/** Client-key. This contains the decryption key etc. */
-	private ClientSSK key;
+	private final ClientSSK key;
 
 	/** Compression algorithm from last time tried to decompress. */
 	private short compressionAlgorithm = -1;
