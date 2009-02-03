@@ -16,6 +16,7 @@ import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
@@ -33,6 +34,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NativeThread;
 
 /**
  * Insert *ONE KEY*.
@@ -124,6 +126,19 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
+	protected void onEncode(ClientKey key, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) return;
+			if(resultingURI != null) return;
+			resultingURI = key.getURI();
+		}
+		if(persistent)
+			container.activate(cb, 1);
+		cb.onEncode(key, this, container, context);
+		if(persistent)
+			container.deactivate(cb, 1);
+	}
+	
 	protected ClientKeyBlock encode(ObjectContainer container, ClientContext context, boolean calledByCB) throws InsertException {
 		if(persistent) {
 			container.activate(sourceData, 1);
@@ -415,6 +430,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					} finally {
 						block.copyBucket.free();
 					}
+					final ClientKey key = b.getClientKey();
+					context.jobRunner.queue(new DBJob() {
+
+						public void run(ObjectContainer container, ClientContext context) {
+							container.activate(SingleBlockInserter.this, 1);
+							onEncode(key, container, context);
+							container.deactivate(SingleBlockInserter.this, 1);
+						}
+						
+					}, NativeThread.NORM_PRIORITY+1, false);
 					if(b != null)
 						core.realPut(b, req.cacheLocalRequests);
 					else {
