@@ -662,18 +662,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 		Runnable r = new Runnable() {
 			public void run() {
 				if(logMINOR) Logger.minor(this, "Running "+gets.length+" callbacks off-thread for "+block.getKey());
-				for(int i=0;i<gets.length;i++) {
+				for(SendableGet get : gets) {
 					try {
-						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
-						gets[i].onGotKey(key, block, ClientRequestScheduler.this);
+						if(logMINOR) Logger.minor(this, "Calling callback for "+get+" for "+key);
+						get.onGotKey(key, block, ClientRequestScheduler.this);
 					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key, t);
+						Logger.error(this, "Caught "+t+" running callback "+get+" for "+key, t);
 					}
 				}
 				if(logMINOR) Logger.minor(this, "Finished running callbacks");
 			}
 		};
-		node.getTicker().queueTimedJob(r, 0); // FIXME ideally these would be completed on a single thread; when we have 1.5, use a dedicated non-parallel Executor
+		node.executor.execute(r, "Callbacks for "+name);
 	}
 
 	public boolean anyWantKey(Key key) {
