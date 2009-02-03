@@ -18,7 +18,7 @@ import freenet.support.api.Bucket;
 public class PersistentBlobTempBucket implements Bucket {
 	
 	public final long blockSize;
-	private long size;
+	long size;
 	public final PersistentBlobTempBucketFactory factory;
 	/** The index into the blob file of this specific bucket */
 	final long index;
@@ -29,27 +29,32 @@ public class PersistentBlobTempBucket implements Bucket {
 	private boolean persisted;
 	private final int hashCode;
 	final PersistentBlobTempBucketTag tag;
+	private boolean shadow;
 	
 	public int hashCode() {
 		return hashCode;
 	}
 
-	public PersistentBlobTempBucket(PersistentBlobTempBucketFactory factory2, long blockSize2, long slot, PersistentBlobTempBucketTag tag) {
+	public PersistentBlobTempBucket(PersistentBlobTempBucketFactory factory2, long blockSize2, long slot, PersistentBlobTempBucketTag tag, boolean shadow) {
 		factory = factory2;
 		blockSize = blockSize2;
 		index = slot;
 		hashCode = super.hashCode();
-		if(tag == null) throw new NullPointerException();
+		if(tag == null && !shadow) throw new NullPointerException();
 		this.tag = tag;
+		this.shadow = shadow;
+		this.readOnly = shadow;
 	}
 
 	public Bucket createShadow() throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		return factory.createShadow(this);
 	}
 
 	public void free() {
-		factory.freeBucket(index, this); // will call onFree(): always take the outer lock first.
+		if(shadow)
+			factory.freeShadow(index, this);
+		else
+			factory.freeBucket(index, this); // will call onFree(): always take the outer lock first.
 	}
 	
 	public boolean freed() {
@@ -86,10 +91,12 @@ public class PersistentBlobTempBucket implements Bucket {
 					if(freed) throw new IOException("Bucket freed during read");
 					max = Math.min(blockSize, size);
 				}
+				if(length == 0) return 0;
 				if(bufOffset < 0) return -1; // throw new EOFException() ???
 				if(offset + length >= max)
 					length = (int) Math.min(max - offset, Integer.MAX_VALUE);
 				if(length == 0) return -1;
+				if(length < 0) throw new IllegalStateException("offset="+bufOffset+" length="+length+"buf len = "+buffer.length);
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
 				int read = channel.read(buf, blockSize * index + offset);
 				if(read > 0) offset += read;
@@ -119,6 +126,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	public OutputStream getOutputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		if(readOnly) throw new IOException("Read-only");
+		if(shadow) throw new IOException("Shadow");
 		final FileChannel channel = factory.channel;
 		
 		return new OutputStream() {
@@ -178,6 +186,9 @@ public class PersistentBlobTempBucket implements Bucket {
 	// temporary map, unless we have been freed.
 	
 	public void storeTo(ObjectContainer container) {
+		if(shadow) {
+			throw new UnsupportedOperationException("Can't store a shadow");
+		}
 		boolean p;
 		// Race conditions with storeTo and removeFrom running on different threads
 		// in parallel are possible... that sort of behaviour *should* be very rare,
@@ -192,6 +203,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	}
 	
 	public boolean objectCanNew(ObjectContainer container) {
+		if(shadow) throw new UnsupportedOperationException("Can't store a shadow");
 		synchronized(this) {
 			if(persisted) return true;
 		}
@@ -201,6 +213,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	}
 	
 	public void removeFrom(ObjectContainer container) {
+		if(shadow) throw new UnsupportedOperationException("Can't store a shadow");
 		boolean p;
 		synchronized(this) {
 			p = persisted;

@@ -23,6 +23,7 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.node.Ticker;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 
 /**
  * Simple temporary storage mechanism using a single file (or a small number of 
@@ -54,6 +55,8 @@ public class PersistentBlobTempBucketFactory {
 	/** Recently freed slots, cannot be reused until after commit.
 	 * Similar to notCommittedBlobs. */
 	private transient TreeMap<Long,PersistentBlobTempBucketTag> almostFreeSlots;
+	
+	private transient TreeMap<Long,PersistentBlobTempBucket> shadows;
 	
 	private transient DBJobRunner jobRunner;
 	
@@ -87,6 +90,7 @@ public class PersistentBlobTempBucketFactory {
 		notCommittedBlobs = new TreeMap<Long,PersistentBlobTempBucket>();
 		freeSlots = new TreeMap<Long,PersistentBlobTempBucketTag>();
 		almostFreeSlots = new TreeMap<Long,PersistentBlobTempBucketTag>();
+		shadows = new TreeMap<Long,PersistentBlobTempBucket>();
 		jobRunner = jobRunner2;
 		weakRandomSource = fastWeakRandom;
 		this.ticker = ticker;
@@ -251,7 +255,7 @@ public class PersistentBlobTempBucketFactory {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
 					return null;
 				}
-				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag);
+				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
 				notCommittedBlobs.put(slot, bucket);
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Using slot "+slot+" for "+bucket);
 				return bucket;
@@ -266,7 +270,7 @@ public class PersistentBlobTempBucketFactory {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
 					return null;
 				}
-				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag);
+				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
 				notCommittedBlobs.put(slot, bucket);
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Using slot "+slot+" for "+bucket+" (after waiting)");
 				return bucket;
@@ -283,6 +287,10 @@ public class PersistentBlobTempBucketFactory {
 		if(!bucket.persisted()) {
 			// If it hasn't been written to the database, it doesn't need to be removed, so removeFrom() won't be called.
 			freeSlots.put(index, bucket.tag);
+		}
+		PersistentBlobTempBucket shadow = shadows.get(index);
+		if(shadow != null) {
+			shadow.freed();
 		}
 	}
 
@@ -502,6 +510,26 @@ public class PersistentBlobTempBucketFactory {
 			freeSlots.putAll(almostFreeSlots);
 		}
 		almostFreeSlots.clear();
+	}
+
+	public Bucket createShadow(PersistentBlobTempBucket bucket) {
+		long index = bucket.index;
+		Long i = index;
+		synchronized(this) {
+			if(shadows.containsKey(i)) return null;
+			PersistentBlobTempBucket shadow = new PersistentBlobTempBucket(this, blockSize, index, null, true);
+			shadow.size = bucket.size;
+			shadows.put(i, shadow);
+			return shadow;
+		}
+	}
+
+	public synchronized void freeShadow(long index, PersistentBlobTempBucket bucket) {
+		PersistentBlobTempBucket temp = shadows.remove(index);
+		if(temp != bucket) {
+			Logger.error(this, "Freed wrong shadow: "+temp+" should be "+bucket);
+			shadows.put(index, temp);
+		}
 	}
 
 }
