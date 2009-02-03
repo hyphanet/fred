@@ -204,10 +204,11 @@ public class FailureCodeTracker {
 			ints = map == null ? null : (Integer[]) map.keySet().toArray(new Integer[map.size()]);
 			if(map != null) map.clear();
 		}
-		for(int i=0;i<items.length;i++) {
-			container.delete(items[i]);
-			container.delete(ints[i]);
-		}
+		if(items != null)
+			for(int i=0;i<items.length;i++) {
+				container.delete(items[i]);
+				container.delete(ints[i]);
+			}
 		if(map != null) container.delete(map);
 		container.delete(this);
 	}
