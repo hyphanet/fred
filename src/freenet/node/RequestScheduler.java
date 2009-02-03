@@ -69,7 +69,11 @@ public interface RequestScheduler {
 
 	public void removeRunningRequest(SendableRequest request);
 
-	public abstract boolean isRunningOrQueuedRequest(SendableRequest request);
+	/**
+	 * This only works for persistent requests, because transient requests are not
+	 * selected on a SendableRequest level, they are selected on a {SendableRequest, token} level.
+	 */
+	public abstract boolean isRunningOrQueuedPersistentRequest(SendableRequest request);
 	
 	public boolean hasFetchingKey(Key key);
 
