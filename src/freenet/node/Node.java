@@ -4107,7 +4107,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			Logger.error(this, "Didn't make turtle (peer) for key "+sender.key+" for "+sender);
 			return;
 		}
-		Logger.error(this, "TURTLING: "+sender.key+" for "+sender);
+		Logger.normal(this, "TURTLING: "+sender.key+" for "+sender);
 		// Do not transfer coalesce!!
 		synchronized(transferringRequestSenders) {
 			transferringRequestSenders.remove((NodeCHK)sender.key);
