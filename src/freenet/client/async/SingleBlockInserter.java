@@ -32,6 +32,7 @@ import freenet.node.SendableRequestSender;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.BucketTools;
 
 /**
  * Insert *ONE KEY*.
@@ -488,7 +489,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	private BlockItem getBlockItem(ObjectContainer container, ClientContext context) {
 		try {
-			return new BlockItem(this, sourceData, isMetadata, compressionCodec, sourceLength, uri, hashCode());
+			if(persistent) container.activate(sourceData, 1);
+			Bucket data = sourceData.createShadow();
+			if(data == null) {
+				data = context.tempBucketFactory.makeBucket(sourceData.size());
+				BucketTools.copy(sourceData, data);
+			}
+			if(persistent) container.deactivate(sourceData, 1);
+			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, uri, hashCode());
 		} catch (IOException e) {
 			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 			return null;
@@ -516,7 +524,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		
 		BlockItem(SingleBlockInserter parent, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, int hashCode) throws IOException {
 			this.parent = parent;
-			this.copyBucket = bucket.createShadow();
+			this.copyBucket = bucket;
 			this.isMetadata = meta;
 			this.compressionCodec = codec;
 			this.sourceLength = srclen;
