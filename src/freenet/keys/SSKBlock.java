@@ -13,6 +13,7 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.SHA256;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 
 /**
@@ -51,6 +52,7 @@ public class SSKBlock implements KeyBlock {
 	final DSAPublicKey pubKey;
     final short hashIdentifier;
     final short symCipherIdentifier;
+    final int hashCode;
     
     public static final short DATA_LENGTH = 1024;
     /* Maximum length of compressed payload */
@@ -85,7 +87,7 @@ public class SSKBlock implements KeyBlock {
     
     @Override
 	public int hashCode(){
-    	return super.hashCode();
+    	return hashCode;
     }
     
 	/**
@@ -149,6 +151,7 @@ public class SSKBlock implements KeyBlock {
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: "+HexUtil.bytesToHex(ehDocname)+"\nfrom key:     "+HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
 		SHA256.returnMessageDigest(md);
+		hashCode = Fields.hashCode(data) ^ Fields.hashCode(headers) ^ nodeKey.hashCode() ^ pubKey.hashCode() ^ hashIdentifier;
 	}
 
 	public Key getKey() {
