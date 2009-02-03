@@ -43,6 +43,7 @@ public class NodePinger implements Runnable {
         
         PeerNode[] peers = null;
         synchronized(node.peers) {
+	    if(node.peers.connectedPeers.length == 0) return;
             System.arraycopy(node.peers.connectedPeers, 0, peers, 0, node.peers.connectedPeers.length);
         }
 
