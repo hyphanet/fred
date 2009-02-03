@@ -78,7 +78,7 @@ public class NodeRestartJobsQueue {
 		if(!jobWasActive) container.activate(job, 1);
 		container.activate(dbJobs[priority], 1);
 		container.activate(dbJobsEarly[priority], 1);
-		if(!(dbJobs[priority].remove(job) || dbJobs[priority].remove(job))) {
+		if(!(dbJobs[priority].remove(job) || dbJobsEarly[priority].remove(job))) {
 			int found = 0;
 			for(int i=0;i<dbJobs.length;i++) {
 				container.activate(dbJobs[priority], 1);
