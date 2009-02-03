@@ -73,7 +73,7 @@ public class SegmentedChainBucketSegment {
 			container.activate(bucket, 1); // will cascade
 	}
 
-	public void clear(ObjectContainer container, ClientContext context) {
+	public void clear(ObjectContainer container) {
 		buckets.clear();
 		container.delete(buckets);
 		container.delete(this);

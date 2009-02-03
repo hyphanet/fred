@@ -59,43 +59,52 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		return null;
 	}
 
+	private DBJob freeJob = new DBJob() {
+		
+		public void run(ObjectContainer container, ClientContext context) {
+			SegmentedChainBucketSegment segment = null;
+			synchronized(this) {
+				if(!segments.isEmpty())
+					segment = segments.remove(0);
+			}
+			if(segment != null) {
+				container.activate(segment, 1);
+				if(Logger.shouldLog(Logger.MINOR, SegmentedBucketChainBucket.this)) 
+					Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
+				segment.activateBuckets(container);
+				segment.free();
+				segment.removeFrom(container);
+				synchronized(this) {
+					if(!segments.isEmpty()) {
+						dbJobRunner.queue(freeJob, NativeThread.HIGH_PRIORITY, true);
+						container.store(this);
+						return;
+					}
+				}
+			}
+			container.delete(segments);
+			container.delete(SegmentedBucketChainBucket.this);
+			synchronized(SegmentedBucketChainBucket.this) {
+				if(killMe == null) return;
+			}
+			dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+		}
+		
+	};
+	
 	public void free() {
 		synchronized(this) {
 			freed = true;
+			clearing = false;
 		}
-		// Complete the cleanup before returning.
-		// SegmentedBucketChainBucket can't be stored to disk so we will be run on helper threads generally,
-		// so we will have to wait for a job to complete on the database thread, but that is okay.
-		dbJobRunner.runBlocking(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				SegmentedChainBucketSegment[] segs;
-				synchronized(this) {
-					segs = segments.toArray(new SegmentedChainBucketSegment[segments.size()]);
-					segments.clear();
-				}
-				for(int i=0;i<segs.length;i++) {
-					SegmentedChainBucketSegment segment = segs[i];
-					segs[i] = null;
-					container.activate(segment, 1);
-					if(Logger.shouldLog(Logger.MINOR, SegmentedBucketChainBucket.this)) 
-						Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
-					segment.activateBuckets(container);
-					segment.free();
-					segment.removeFrom(container);
-				}
-				synchronized(SegmentedBucketChainBucket.this) {
-					if(killMe == null) return;
-				}
-				dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
-			}
-			
-		}, NativeThread.HIGH_PRIORITY);
+		
+		// Due to memory issues, we cannot complete the cleanup before returning, especially if we are already on the database thread...
+		dbJobRunner.queue(freeJob, NativeThread.HIGH_PRIORITY, true);
 	}
 
 	public InputStream getInputStream() throws IOException {
 		synchronized(this) {
-			if(freed) throw new IOException("Freed");
+			if(freed || clearing) throw new IOException("Freed");
 		}
 		return new InputStream() {
 
@@ -197,7 +206,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		final SegmentedChainBucketSegment[] segs;
 		synchronized(this) {
 			if(readOnly) throw new IOException("Read-only");
-			if(freed) throw new IOException("Freed");
+			if(freed || clearing) throw new IOException("Freed");
 			size = 0;
 			segs = segments.toArray(new SegmentedChainBucketSegment[segments.size()]);
 			segments.clear();
@@ -414,24 +423,47 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		}
 		return buckets;
 	}
-
-	public synchronized void clear() {
-		dbJobRunner.runBlocking(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				for(SegmentedChainBucketSegment segment : segments) {
-					container.activate(segment, 1);
-					segment.clear(container, context);
-				}
-				container.delete(SegmentedBucketChainBucket.class);
-				synchronized(SegmentedBucketChainBucket.this) {
-					if(killMe == null) return;
-				}
-				dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+	
+	private final DBJob clearJob = new DBJob() {
+		
+		public void run(ObjectContainer container, ClientContext context) {
+			SegmentedChainBucketSegment segment = null;
+			synchronized(this) {
+				if(!segments.isEmpty())
+					segment = segments.remove(0);
 			}
-			
-		}, NativeThread.HIGH_PRIORITY);
-		segments.clear();
+			if(segment != null) {
+				container.activate(segment, 1);
+				if(Logger.shouldLog(Logger.MINOR, SegmentedBucketChainBucket.this)) 
+					Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
+				segment.clear(container);
+				synchronized(this) {
+					if(!segments.isEmpty()) {
+						dbJobRunner.queue(clearJob, NativeThread.HIGH_PRIORITY, true);
+						container.store(segments);
+						container.store(SegmentedBucketChainBucket.this);
+						return;
+					}
+				}
+			}
+			container.delete(segments);
+			container.delete(SegmentedBucketChainBucket.this);
+			synchronized(SegmentedBucketChainBucket.this) {
+				if(killMe == null) return;
+			}
+			dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+		}
+
+	};
+	
+	private boolean clearing;
+	
+	public synchronized void clear() {
+		// Due to memory issues, we cannot complete this before we return
+		synchronized(this) {
+			clearing = true;
+		}
+		dbJobRunner.queue(clearJob, NativeThread.HIGH_PRIORITY-1, true);
 	}
 
 	/**
@@ -452,9 +484,13 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			}
 			if(logMINOR) Logger.minor(this, "Removing segment "+seg);
 			container.activate(seg, 1);
-			seg.activateBuckets(container);
-			seg.free();
-			seg.removeFrom(container);
+			if(clearing) {
+				seg.clear(container);
+			} else {
+				seg.activateBuckets(container);
+				seg.free();
+				seg.removeFrom(container);
+			}
 			if(segments.size() > 0) {
 				container.store(segments);
 				container.store(this);
