@@ -96,7 +96,7 @@ public class PersistentBlobTempBucket implements Bucket {
 				if(offset + length >= max)
 					length = (int) Math.min(max - offset, Integer.MAX_VALUE);
 				if(length == 0) return -1;
-				if(length < 0) throw new IllegalStateException("offset="+bufOffset+" length="+length+"buf len = "+buffer.length);
+				if(length < 0) throw new IllegalStateException("offset="+bufOffset+" length="+length+" buf len = "+buffer.length+" my offset is "+offset+" my size is "+max);
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
 				int read = channel.read(buf, blockSize * index + offset);
 				if(read > 0) offset += read;
