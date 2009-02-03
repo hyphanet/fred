@@ -48,15 +48,15 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * (but not the key itself, implementors must have a separate queue of block 
 	 * numbers and mapping of block numbers to keys).
 	 * @return An object identifying a specific key. null indicates no keys available. */
-	public abstract Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
+	public abstract SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
 	 * they are on a cooldown queue, requests for them are in progress, etc. */
-	public abstract Object[] allKeys(ObjectContainer container);
+	public abstract SendableRequestItem[] allKeys(ObjectContainer container);
 
 	/** All key identifiers currently eligible to be sent. Does not include those 
 	 * currently running, on the cooldown queue etc. */
-	public abstract Object[] sendableKeys(ObjectContainer container);
+	public abstract SendableRequestItem[] sendableKeys(ObjectContainer container);
 
 	/**
 	 * Get or create a SendableRequestSender for this object. This is a non-persistent

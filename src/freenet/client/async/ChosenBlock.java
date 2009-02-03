@@ -6,6 +6,7 @@ import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
+import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 
 /**
@@ -16,7 +17,7 @@ public abstract class ChosenBlock {
 
 	/** The token indicating the key within the request to be fetched/inserted.
 	 * Meaning is entirely defined by the request. */
-	public transient final Object token;
+	public transient final SendableRequestItem token;
 	/** The key to be fetched, null if not a BaseSendableGet */
 	public transient final Key key;
 	/** The client-layer key to be fetched, null if not a SendableGet */
@@ -25,7 +26,7 @@ public abstract class ChosenBlock {
 	public transient final boolean cacheLocalRequests;
 	public transient final boolean ignoreStore;
 	
-	public ChosenBlock(Object token, Key key, ClientKey ckey, boolean localRequestOnly, boolean cacheLocalRequests, boolean ignoreStore, RequestScheduler sched) {
+	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean cacheLocalRequests, boolean ignoreStore, RequestScheduler sched) {
 		this.token = token;
 		this.key = key;
 		this.ckey = ckey;
@@ -60,4 +61,8 @@ public abstract class ChosenBlock {
 	}
 	
 	public abstract SendableRequestSender getSender(ClientContext context);
+	
+	public void onDumped() {
+		token.dump();
+	}
 }

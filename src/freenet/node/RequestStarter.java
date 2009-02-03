@@ -181,14 +181,19 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	private boolean startRequest(ChosenBlock req, boolean logMINOR) {
 		if((!req.isPersistent()) && req.isCancelled()) {
+			req.onDumped();
 			return false;
 		}
 		if(req.key != null) {
-			if(!sched.addToFetching(req.key))
+			if(!sched.addToFetching(req.key)) {
+				req.onDumped();
 				return false;
+			}
 		} else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert) {
-			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token))
+			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token)) {
+				req.onDumped();
 				return false;
+			}
 		}
 		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.getPriority());
 		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);

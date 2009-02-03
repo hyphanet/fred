@@ -7,6 +7,7 @@ import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
+import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.support.Logger;
 
@@ -32,7 +33,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 	/** If a SendableInsert failed, failedPut will be set to the exception generated. Cannot be null if it failed. */
 	private LowLevelPutException failedPut;
 	
-	public PersistentChosenBlock(boolean isInsert, PersistentChosenRequest parent, Object token, Key key, ClientKey ckey, RequestScheduler sched) {
+	public PersistentChosenBlock(boolean isInsert, PersistentChosenRequest parent, SendableRequestItem token, Key key, ClientKey ckey, RequestScheduler sched) {
 		super(token, key, ckey, parent.localRequestOnly, parent.cacheLocalRequests, parent.ignoreStore, sched);
 		this.isInsert = isInsert;
 		this.parent = parent;

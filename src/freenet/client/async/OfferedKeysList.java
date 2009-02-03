@@ -16,6 +16,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
+import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
@@ -71,19 +72,29 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public Object[] allKeys(ObjectContainer container) {
+	public SendableRequestItem[] allKeys(ObjectContainer container) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Object[] sendableKeys(ObjectContainer container) {
+	public SendableRequestItem[] sendableKeys(ObjectContainer container) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
+	private class MySendableRequestItem implements SendableRequestItem {
+		final Key key;
+		MySendableRequestItem(Key key) {
+			this.key = key;
+		}
+		public void dump() {
+			// Ignore, we will be GC'ed
+		}
+	}
+	
 	@Override
-	public synchronized Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
+	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
@@ -91,7 +102,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			if(fetching.hasKey(k)) return null;
 			keys.remove(k);
 			keysList.setSize(0);
-			return k;
+			return new MySendableRequestItem(k);
 		}
 		for(int i=0;i<10;i++) {
 			// Pick a random key
@@ -104,7 +115,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			keysList.setSize(keysList.size()-1);
 			keys.remove(k);
 			assert(keysList.size() == keys.size());
-			return k;
+			return new MySendableRequestItem(k);
 		}
 		return null;
 	}
@@ -160,7 +171,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return new SendableRequestSender() {
 
 			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
-				Key key = (Key) req.token;
+				Key key = ((MySendableRequestItem) req.token).key;
 				// Have to cache it in order to propagate it; FIXME
 				// Don't let a node force us to start a real request for a specific key.
 				// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.

@@ -15,9 +15,11 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.NullSendableRequestItem;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
+import freenet.node.SendableRequestItem;
 import freenet.support.Executor;
 import freenet.support.Logger;
 
@@ -29,7 +31,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	final int maxRetries;
 	private int retryCount;
 	final FetchContext ctx;
-	static final Object[] keys = new Object[] { Integer.valueOf(0) };
+	static final SendableRequestItem[] keys = new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	/** It is essential that we know when the cooldown will end, otherwise we cannot 
 	 * remove the key from the queue if we are killed before that */
 	long cooldownWakeupTime;
@@ -48,17 +50,17 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public Object[] allKeys(ObjectContainer container) {
+	public SendableRequestItem[] allKeys(ObjectContainer container) {
 		return keys;
 	}
 	
 	@Override
-	public Object[] sendableKeys(ObjectContainer container) {
+	public SendableRequestItem[] sendableKeys(ObjectContainer container) {
 		return keys;
 	}
 	
 	@Override
-	public Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
+	public SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
 		if(fetching.hasKey(key.getNodeKey())) return null;

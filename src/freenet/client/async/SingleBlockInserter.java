@@ -23,9 +23,11 @@ import freenet.keys.SSKEncodeException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
+import freenet.node.NullSendableRequestItem;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
+import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -92,30 +94,30 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.activate(uri, 1);
 			container.activate(sourceData, 1);
 		}
+		try {
+			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength);
+		} catch (CHKEncodeException e) {
+			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
+			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+		} catch (MalformedURLException e) {
+			throw new InsertException(InsertException.INVALID_URI, e, null);
+		} catch (IOException e) {
+			Logger.error(SingleBlockInserter.class, "Caught "+e+" encoding data "+sourceData, e);
+			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+		} catch (SSKEncodeException e) {
+			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
+			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+		}
+			
+	}
+	
+	protected static ClientKeyBlock innerEncode(RandomSource random, FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException {
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
-			try {
-				return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength);
-			} catch (CHKEncodeException e) {
-				Logger.error(this, "Caught "+e, e);
-				throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
-			} catch (IOException e) {
-				Logger.error(this, "Caught "+e+" encoding data "+sourceData, e);
-				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-			}
+			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength);
 		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
-			try {
-				InsertableClientSSK ik = InsertableClientSSK.create(uri);
-				return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random);
-			} catch (MalformedURLException e) {
-				throw new InsertException(InsertException.INVALID_URI, e, null);
-			} catch (SSKEncodeException e) {
-				Logger.error(this, "Caught "+e, e);
-				throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
-			} catch (IOException e) {
-				Logger.error(this, "Caught "+e, e);
-				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-			}
+			InsertableClientSSK ik = InsertableClientSSK.create(uri);
+			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random);
 		} else {
 			throw new InsertException(InsertException.INVALID_URI, "Unknown keytype "+uriType, null);
 		}
@@ -395,7 +397,21 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				// Ignore keyNum, key, since we're only sending one block.
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
-					ClientKeyBlock b = (ClientKeyBlock) req.token;
+					BlockItem block = (BlockItem) req.token;
+					ClientKeyBlock b;
+					try {
+						b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength);
+					} catch (CHKEncodeException e) {
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					} catch (SSKEncodeException e) {
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					} catch (MalformedURLException e) {
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					} catch (InsertException e) {
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					} catch (IOException e) {
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					}
 					if(b != null)
 						core.realPut(b, req.cacheLocalRequests);
 					else {
@@ -448,36 +464,107 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public synchronized Object[] sendableKeys(ObjectContainer container) {
+	public synchronized SendableRequestItem[] sendableKeys(ObjectContainer container) {
 		if(finished)
-			return new Object[] {};
+			return new SendableRequestItem[] {};
 		else
-			return new Object[] { Integer.valueOf(0) };
+			return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	}
 
 	@Override
-	public synchronized Object[] allKeys(ObjectContainer container) {
+	public synchronized SendableRequestItem[] allKeys(ObjectContainer container) {
 		return sendableKeys(container);
 	}
 
 	@Override
-	public synchronized Object chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
+	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
 		if(finished) return null;
-		// Ignore KeysFetchingLocally, it's for requests.
-		Object ret = getBlock(container, context, false);
 		if(!persistent) {
-			if(ignored.hasTransientInsert(this, ret))
+			if(ignored.hasTransientInsert(this, new FakeBlockItem()))
 				return null;
 		}
-		return ret;
+		return getBlockItem(container, context);
 	}
 
+	private BlockItem getBlockItem(ObjectContainer container, ClientContext context) {
+		try {
+			return new BlockItem(this, sourceData, isMetadata, compressionCodec, sourceLength, uri, hashCode());
+		} catch (IOException e) {
+			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
+			return null;
+		}
+	}
+	
 	@Override
 	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		ClientKeyBlock encoded = getBlock(container, context, false);
-		if(encoded == null) return null;
-		PersistentChosenBlock block = new PersistentChosenBlock(true, request, encoded, null, null, sched);
+		BlockItem item = getBlockItem(container, context);
+		if(item == null) return null;
+		PersistentChosenBlock block = new PersistentChosenBlock(true, request, item, null, null, sched);
 		return Collections.singletonList(block);
 	}
 
+	private static class BlockItem implements SendableRequestItem {
+		
+		private final Bucket copyBucket;
+		private final boolean isMetadata;
+		private final short compressionCodec;
+		private final int sourceLength;
+		private final FreenetURI uri;
+		private final int hashCode;
+		/** STRICTLY for purposes of equals() !!! */
+		private final SingleBlockInserter parent;
+		
+		BlockItem(SingleBlockInserter parent, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, int hashCode) throws IOException {
+			this.parent = parent;
+			this.copyBucket = bucket.createShadow();
+			this.isMetadata = meta;
+			this.compressionCodec = codec;
+			this.sourceLength = srclen;
+			this.uri = u;
+			this.hashCode = hashCode;
+		}
+		
+		public void dump() {
+			copyBucket.free();
+		}
+		
+		public int hashCode() {
+			return hashCode;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof BlockItem) {
+				if(((BlockItem)o).parent == parent) return true;
+			} else if(o instanceof FakeBlockItem) {
+				if(((FakeBlockItem)o).getParent() == parent) return true;
+			}
+			return false;
+		}
+		
+	}
+	
+	// Used for testing whether a block is already queued.
+	private class FakeBlockItem implements SendableRequestItem {
+		
+		public void dump() {
+			// Do nothing
+		}
+		
+		public SingleBlockInserter getParent() {
+			return SingleBlockInserter.this;
+		}
+
+		public int hashCode() {
+			return SingleBlockInserter.this.hashCode();
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof BlockItem) {
+				if(((BlockItem)o).parent == SingleBlockInserter.this) return true;
+			} else if(o instanceof FakeBlockItem) {
+				if(((FakeBlockItem)o).getParent() == SingleBlockInserter.this) return true;
+			}
+			return false;
+		}
+	}
 }

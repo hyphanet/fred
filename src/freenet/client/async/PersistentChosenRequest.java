@@ -242,10 +242,14 @@ public class PersistentChosenRequest {
 			Logger.minor(this, "Dumping "+this);
 		scheduler.removeRunningRequest(request);
 		boolean wasStarted;
+		PersistentChosenBlock[] blocks;
 		synchronized(this) {
+			blocks = blocksNotStarted.toArray(new PersistentChosenBlock[blocksNotStarted.size()]);
 			blocksNotStarted.clear();
 			wasStarted = !blocksStarted.isEmpty();
 		}
+		for(PersistentChosenBlock block : blocks)
+			block.onDumped();
 		if(!wasStarted) {
 			if(logMINOR) Logger.minor(this, "Finishing immediately in onDumped() as nothing pending: "+this);
 			finish(container, core.sched.clientContext, true, reqAlreadyActive);

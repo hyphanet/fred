@@ -22,6 +22,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.node.SendableRequestItem;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.RandomGrabArray;
@@ -318,7 +319,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context) {
 		if(req == null) return null;
 		if(req.isEmpty(container) || req.isCancelled(container)) return null;
-		Object token = req.chooseKey(this, req.persistent() ? container : null, context);
+		SendableRequestItem token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
 			return null;
 		} else {

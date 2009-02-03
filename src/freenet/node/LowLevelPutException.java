@@ -38,7 +38,7 @@ public class LowLevelPutException extends Exception {
 		
 	}
 	
-	LowLevelPutException(int code, String message, Throwable t) {
+	public LowLevelPutException(int code, String message, Throwable t) {
 		super(message, t);
 		this.code = code;
 	}

@@ -9,6 +9,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 
 /**
@@ -21,7 +22,7 @@ public class TransientChosenBlock extends ChosenBlock {
 	public final SendableRequest request;
 	public final RequestScheduler sched;
 
-	public TransientChosenBlock(SendableRequest req, Object token, Key key, ClientKey ckey, 
+	public TransientChosenBlock(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
 			boolean localRequestOnly, boolean cacheLocalRequests, boolean ignoreStore, RequestScheduler sched) {
 		super(token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, sched);
 		this.request = req;

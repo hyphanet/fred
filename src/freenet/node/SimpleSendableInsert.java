@@ -141,23 +141,31 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
+	private static SendableRequestItem nullItem = new SendableRequestItem() {
+
+		public void dump() {
+			// No problem
+		}
+		
+	};
+	
 	@Override
-	public synchronized Object[] allKeys(ObjectContainer container) {
-		if(finished) return new Object[] {};
-		return new Object[] { 0 };
+	public synchronized SendableRequestItem[] allKeys(ObjectContainer container) {
+		if(finished) return new SendableRequestItem[] {};
+		return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	}
 
 	@Override
-	public synchronized Object[] sendableKeys(ObjectContainer container) {
-		if(finished) return new Object[] {};
-		return new Object[] { 0 };
+	public synchronized SendableRequestItem[] sendableKeys(ObjectContainer container) {
+		if(finished) return new SendableRequestItem[] {};
+		return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	}
 
 	@Override
-	public synchronized Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(finished) return null;
 		else
-			return 0;
+			return NullSendableRequestItem.nullItem;
 	}
 
 	public boolean isSSK() {

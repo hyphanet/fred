@@ -26,6 +26,7 @@ import freenet.node.LowLevelGetException;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
+import freenet.node.SendableRequestItem;
 import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -82,7 +83,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	@Override
-	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+	public SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(cancelled) return null;
 		return getRandomBlockNum(keys, context, container);
 	}
@@ -118,7 +119,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * those on cooldown queues. This is important when unregistering.
 	 */
 	@Override
-	public Object[] allKeys(ObjectContainer container) {
+	public SendableRequestItem[] allKeys(ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -126,22 +127,29 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		// j16sdiz (22-DEC-2008):
 		// ClientRequestSchedular.removePendingKeys() call this to get a list of request to be removed
 		// FIXME ClientRequestSchedular.removePendingKeys() is leaking, what's missing here?
-		return segment.getKeyNumbersAtRetryLevel(retryCount);
+		return convertIntegerToMySendableRequestItems(segment.getKeyNumbersAtRetryLevel(retryCount));
 	}
 	
 	/**
 	 * Just those keys which are eligible to be started now.
 	 */
 	@Override
-	public Object[] sendableKeys(ObjectContainer container) {
+	public SendableRequestItem[] sendableKeys(ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(blockNums, 1);
 		}
 		cleanBlockNums(container);
-		return blockNums.toArray();
+		return convertIntegerToMySendableRequestItems((Integer[])blockNums.toArray());
 	}
 	
+	private SendableRequestItem[] convertIntegerToMySendableRequestItems(Integer[] nums) {
+		SendableRequestItem[] wrapped = new SendableRequestItem[nums.length];
+		for(int i=0;i<nums.length;i++)
+			wrapped[i] = new MySendableRequestItem(nums[i]);
+		return wrapped;
+	}
+
 	private void cleanBlockNums(ObjectContainer container) {
 		synchronized(segment) {
 			int initSize = blockNums.size();
@@ -160,7 +168,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
-	private Object getRandomBlockNum(KeysFetchingLocally keys, ClientContext context, ObjectContainer container) {
+	private SendableRequestItem getRandomBlockNum(KeysFetchingLocally keys, ClientContext context, ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(blockNums, 1);
@@ -194,9 +202,19 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				}
 				if(logMINOR)
 					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
-				return ret;
+				return new MySendableRequestItem(num);
 			}
 			return null;
+		}
+	}
+	
+	private class MySendableRequestItem implements SendableRequestItem {
+		final int x;
+		MySendableRequestItem(int x) {
+			this.x = x;
+		}
+		public void dump() {
+			// Ignore, we will be GC'ed
 		}
 	}
 
@@ -865,7 +883,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			}
 			key = key.cloneKey();
 			Key k = key.getNodeKey();
-			PersistentChosenBlock block = new PersistentChosenBlock(false, request, blockNumber, k, key, sched);
+			PersistentChosenBlock block = new PersistentChosenBlock(false, request, new MySendableRequestItem(blockNumber), k, key, sched);
 			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
 			blocks.add(block);
 		}
