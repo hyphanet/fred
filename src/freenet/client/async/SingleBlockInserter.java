@@ -412,6 +412,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
 					} catch (IOException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					} finally {
+						block.copyBucket.free();
 					}
 					if(b != null)
 						core.realPut(b, req.cacheLocalRequests);
