@@ -123,4 +123,15 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		}
 	}
 
+	public int hashCode() {
+		return super.hashCode() ^ key.hashCode();
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof ClientSSKBlock)) return false;
+		ClientSSKBlock block = (ClientSSKBlock) o;
+		if(!key.equals(block.key)) return false;
+		return super.equals(o);
+	}
+	
 }
