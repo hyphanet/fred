@@ -43,7 +43,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	final int retryCount;
 	final SplitFileFetcherSegment segment;
-	final ClientRequester parent;
 	/**
 	 * The block numbers (as Integer's) of the blocks we are currently trying to fetch.
 	 * Does not include blocks on the cooldown queue, this is simply used to make 
@@ -59,7 +58,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		super(parent);
 		this.segment = segment;
 		this.retryCount = retryCount;
-		this.parent = segment.parent;
 		if(parent == null) throw new NullPointerException();
 		ctx = segment.blockFetchContext;
 		blockNums = new Vector<Integer>();
