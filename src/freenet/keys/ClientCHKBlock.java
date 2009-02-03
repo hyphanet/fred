@@ -239,4 +239,14 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		throw new UnsupportedOperationException("ClientCHKBlock storage in database not supported");
 	}
 
+	public int hashCode() {
+		return key.hashCode;
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof ClientCHKBlock)) return false;
+		ClientCHKBlock block = (ClientCHKBlock) o;
+		if(!key.equals(block.key)) return false;
+		return super.equals(o);
+	}
 }

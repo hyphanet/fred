@@ -4,10 +4,12 @@
 package freenet.keys;
 
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.SHA256;
+import freenet.support.Fields;
 
 /**
  * @author amphibian
@@ -21,6 +23,7 @@ public class CHKBlock implements KeyBlock {
     final byte[] headers;
     final short hashIdentifier;
     final NodeCHK chk;
+    final int hashCode;
     public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
     public static final int TOTAL_HEADERS_LENGTH = 36;
     public static final int DATA_LENGTH = 32768;
@@ -67,6 +70,7 @@ public class CHKBlock implements KeyBlock {
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
         if((key != null) && !verify) {
         	this.chk = key;
+            hashCode = key.hashCode() ^ Fields.hashCode(data) ^ Fields.hashCode(headers) ^ cryptoAlgorithm;
         	return;
         }
         
@@ -90,6 +94,7 @@ public class CHKBlock implements KeyBlock {
             }
             // Otherwise it checks out
         }
+        hashCode = key.hashCode() ^ Fields.hashCode(data) ^ Fields.hashCode(headers) ^ cryptoAlgorithm;
     }
 
 	public Key getKey() {
@@ -114,6 +119,20 @@ public class CHKBlock implements KeyBlock {
 
 	public byte[] getRoutingKey() {
 		return getKey().getRoutingKey();
+	}
+	
+	public int hashCode() {
+		return hashCode;
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof CHKBlock)) return false;
+		CHKBlock block = (CHKBlock) o;
+		if(!chk.equals(block.chk)) return false;
+		if(!Arrays.equals(data, block.data)) return false;
+		if(!Arrays.equals(headers, block.headers)) return false;
+		if(hashIdentifier != block.hashIdentifier) return false;
+		return true;
 	}
 	
 	public boolean objectCanNew(ObjectContainer container) {
