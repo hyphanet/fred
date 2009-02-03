@@ -14,6 +14,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -31,6 +32,7 @@ public class ClientSSK extends ClientKey {
 	public final byte[] cryptoKey;
 	/** Encrypted hashed docname */
 	public final byte[] ehDocname;
+	private final int hashCode;
 	
 	static final int CRYPTO_KEY_LENGTH = 32;
 	public static final int EXTRA_LENGTH = 5;
@@ -48,6 +50,7 @@ public class ClientSSK extends ClientKey {
 		System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
 		ehDocname = new byte[key.ehDocname.length];
 		System.arraycopy(key.ehDocname, 0, ehDocname, 0, key.ehDocname.length);
+		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^ Fields.hashCode(ehDocname) ^ docName.hashCode();
 	}
 	
 	public ClientSSK(String docName, byte[] pubKeyHash, byte[] extras, DSAPublicKey pubKey, byte[] cryptoKey) throws MalformedURLException {
@@ -96,6 +99,7 @@ public class ClientSSK extends ClientKey {
 		}
 		if(ehDocname == null)
 			throw new NullPointerException();
+		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^ Fields.hashCode(ehDocname) ^ docName.hashCode();
 	}
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {
@@ -166,5 +170,20 @@ public class ClientSSK extends ClientKey {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
+	}
+	
+	public int hashCode() {
+		return hashCode;
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof ClientSSK)) return false;
+		ClientSSK key = (ClientSSK) o;
+		if(cryptoAlgorithm != key.cryptoAlgorithm) return false;
+		if(!docName.equals(key.docName)) return false;
+		if(!Arrays.equals(pubKeyHash, key.pubKeyHash)) return false;
+		if(!Arrays.equals(cryptoKey, key.cryptoKey)) return false;
+		if(!Arrays.equals(ehDocname, key.ehDocname)) return false;
+		return true;
 	}
 }
