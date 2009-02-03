@@ -409,7 +409,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
 		return new SendableRequestSender() {
 
-			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
+			public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
@@ -431,6 +431,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						block.copyBucket.free();
 					}
 					final ClientKey key = b.getClientKey();
+					if(block.persistent) {
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
@@ -440,6 +441,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						}
 						
 					}, NativeThread.NORM_PRIORITY+1, false);
+					} else {
+						context.mainExecutor.execute(new Runnable() {
+
+							public void run() {
+								onEncode(key, null, context);
+							}
+							
+						}, "Got URI");
+						
+					}
 					if(b != null)
 						core.realPut(b, req.cacheLocalRequests);
 					else {
@@ -526,7 +537,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				BucketTools.copy(sourceData, data);
 			}
 			if(persistent) container.deactivate(sourceData, 1);
-			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode());
+			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent);
 		} catch (IOException e) {
 			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 			return null;
@@ -543,6 +554,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	private static class BlockItem implements SendableRequestItem {
 		
+		private final boolean persistent;
 		private final Bucket copyBucket;
 		private final boolean isMetadata;
 		private final short compressionCodec;
@@ -552,7 +564,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		/** STRICTLY for purposes of equals() !!! */
 		private final SingleBlockInserter parent;
 		
-		BlockItem(SingleBlockInserter parent, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, int hashCode) throws IOException {
+		BlockItem(SingleBlockInserter parent, Bucket bucket, boolean meta, short codec, int srclen, FreenetURI u, int hashCode, boolean persistent) throws IOException {
 			this.parent = parent;
 			this.copyBucket = bucket;
 			this.isMetadata = meta;
@@ -560,6 +572,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			this.sourceLength = srclen;
 			this.uri = u;
 			this.hashCode = hashCode;
+			this.persistent = persistent;
 		}
 		
 		public void dump() {
