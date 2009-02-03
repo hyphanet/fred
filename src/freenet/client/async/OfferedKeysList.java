@@ -130,7 +130,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public RequestClient getClient() {
+	public RequestClient getClient(ObjectContainer container) {
 		return this;
 	}
 

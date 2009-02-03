@@ -437,7 +437,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				// maybe we should ask people to report that error if seen
 				Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass(container)+" but chosen="+choosenPriorityClass+ ')');
 				// Remove it.
-				SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient());
+				SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient(container));
 				if(clientGrabber != null) {
 					if(chosenTracker.persistent())
 						container.activate(clientGrabber, 1);
@@ -448,7 +448,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						// Okay, it's been removed already. Cool.
 					}
 				} else {
-					Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
+					Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
 				}
 				if(req.persistent())
 					innerRegister(req, random, container, null);
@@ -498,7 +498,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			
 			// Now we have chosen a request.
 			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
-					req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
+					req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
 			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
 			return req;
 			

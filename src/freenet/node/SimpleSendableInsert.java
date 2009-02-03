@@ -105,7 +105,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public RequestClient getClient() {
+	public RequestClient getClient(ObjectContainer container) {
 		return client;
 	}
 

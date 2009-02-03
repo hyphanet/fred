@@ -416,7 +416,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public RequestClient getClient() {
+	public RequestClient getClient(ObjectContainer container) {
+		if(persistent) container.activate(parent, 1);
 		return parent.getClient();
 	}
 

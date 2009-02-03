@@ -72,15 +72,17 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 */
 	public abstract boolean isCancelled(ObjectContainer container);
 	
-	/** Get client context object */
-	public abstract RequestClient getClient();
+	/** Get client context object. This isn't called as frequently as you might expect 
+	 * - once on registration, and then when there is an error. So it doesn't need to be
+	 * stored on the request itself, hence we pass in a container. */
+	public abstract RequestClient getClient(ObjectContainer container);
 	
 	/** Is this request persistent? MUST NOT CHANGE. */
 	public final boolean persistent() {
 		return persistent;
 	}
 	
-	/** Get the ClientRequest */
+	/** Get the ClientRequest. This DOES need to be cached on the request itself. */
 	public abstract ClientRequester getClientRequest();
 	
 	public synchronized RandomGrabArray getParentGrabArray() {

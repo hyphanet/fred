@@ -180,7 +180,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public RequestClient getClient() {
+	public RequestClient getClient(ObjectContainer container) {
+		if(persistent) container.activate(parent, 1);
 		return parent.getClient();
 	}
 
