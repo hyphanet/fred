@@ -100,7 +100,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
 				return null;
 			}
-			ClientKey key = segment.getBlockKey(((Integer)token).intValue(), container);
+			ClientKey key = segment.getBlockKey(((MySendableRequestItem)token).x, container);
 			if(key == null) {
 				if(segment.isFinished(container)) {
 					Logger.error(this, "Segment finished but didn't tell us! "+this);
@@ -284,7 +284,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		for(int i=0;i<items.length;i++) {
 			fetchExceptions[i] = translateException(items[i].e);
 			if(fetchExceptions[i].isFatal()) countFatal++;
-			removeBlockNum(((Integer)items[i].token).intValue(), container, true);
+			removeBlockNum(((MySendableRequestItem)items[i].token).x, container, true);
 		}
 		if(persistent) {
 			container.store(blockNums);
@@ -310,7 +310,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			// Call the fatal callbacks directly.
 			int x = 0;
 			for(int i=0;i<items.length;i++) {
-				int blockNum = (Integer)items[i].token;
+				int blockNum = ((MySendableRequestItem)items[i].token).x;
 				if(fetchExceptions[i].isFatal()) {
 					segment.onFatalFailure(fetchExceptions[i], blockNum, this, container, context);
 				} else {
@@ -322,7 +322,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			fetchExceptions = newFetchExceptions;
 		} else {
 			for(int i=0;i<blockNumbers.length;i++)
-				blockNumbers[i] = (Integer)items[i].token;
+				blockNumbers[i] = ((MySendableRequestItem)items[i].token).x;
 		}
 		segment.onNonFatalFailure(fetchExceptions, blockNumbers, this, container, context);
 
@@ -386,11 +386,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(e.isFatal() && token == null) {
 			segment.fail(e, container, context, false);
 		} else if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, (Integer)token, this, container, context);
+			segment.onFatalFailure(e, ((MySendableRequestItem)token).x, this, container, context);
 		} else {
-			segment.onNonFatalFailure(e, (Integer)token, this, container, context);
+			segment.onNonFatalFailure(e, ((MySendableRequestItem)token).x, this, container, context);
 		}
-		removeBlockNum((Integer)token, container, false);
+		removeBlockNum(((MySendableRequestItem)token).x, container, false);
 		if(persistent) {
 			container.deactivate(segment, 1);
 			container.deactivate(parent, 1);
@@ -406,6 +406,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(blockNums, 1);
 		}
 		Bucket data = extract(block, token, container, context);
+		int blockNum = ((MySendableRequestItem)token).x;
 		if(fromStore) {
 			// Normally when this method is called the block number has already
 			// been removed. However if fromStore=true, it won't have been, so
@@ -415,7 +416,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				for(int i=0;i<blockNums.size();i++) {
 					Integer x = blockNums.get(i);
 					// Compare by value as sometimes we will do new Integer(num) in requeueing after cooldown code.
-					if(x.equals(token)) {
+					if(x.intValue() == blockNum) {
 						blockNums.remove(i);
 						if(persistent) container.delete(x);
 						if(logMINOR) Logger.minor(this, "Removed block "+i+" : "+x);
@@ -428,7 +429,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				container.store(blockNums);
 		}
 		if(!block.isMetadata()) {
-			onSuccess(data, fromStore, (Integer)token, (Integer)token, block, container, context);
+			onSuccess(data, fromStore, blockNum, blockNum, block, container, context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, container, context);
 			data.free();
@@ -758,7 +759,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(this, 1);
 			container.activate(segment, 1);
 		}
-		long ret = segment.getCooldownWakeup(((Integer)token).intValue());
+		long ret = segment.getCooldownWakeup(((MySendableRequestItem)token).x);
 		return ret;
 	}
 
