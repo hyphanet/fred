@@ -942,7 +942,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		synchronized(this) {
 			if(blockNum >= dataBlocks.length) {
 				// Check block.
-				int checkNum = blockNum = dataBlocks.length;
+				int checkNum = blockNum - dataBlocks.length;
 				if(checkFinished[checkNum]) {
 					if(checkFailed[checkNum])
 						Logger.error(this, "Got onFailure() but block has already failed! Check block "+checkNum+" on "+this);
@@ -1091,7 +1091,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		synchronized(this) {
 			if(blockNum >= dataBlocks.length) {
 				// Check block.
-				int checkNum = blockNum = dataBlocks.length;
+				int checkNum = blockNum - dataBlocks.length;
 				if(!checkFinished[checkNum]) {
 					checkFinished[checkNum] = true;
 					checkFailed[checkNum] = false;
