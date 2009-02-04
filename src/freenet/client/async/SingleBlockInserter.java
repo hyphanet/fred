@@ -62,6 +62,26 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	private boolean isSSK;
 	private boolean freeData;
 	
+	/**
+	 * Create a SingleBlockInserter.
+	 * @param parent
+	 * @param data
+	 * @param compressionCodec The compression codec.
+	 * @param uri
+	 * @param ctx
+	 * @param cb
+	 * @param isMetadata
+	 * @param sourceLength The length of the original, uncompressed data.
+	 * @param token
+	 * @param getCHKOnly
+	 * @param addToParent
+	 * @param dontSendEncoded
+	 * @param tokenObject
+	 * @param container
+	 * @param context
+	 * @param persistent
+	 * @param freeData
+	 */
 	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData) {
 		super(persistent);
 		assert(persistent == parent.persistent());
