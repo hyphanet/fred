@@ -1306,7 +1306,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		synchronized(this) {
 			blockNumbers = blocks.toArray(new Integer[blocks.size()]);
 		}
-		ArrayList<PersistentChosenBlock> blocks = new ArrayList<PersistentChosenBlock>();
+		ArrayList<PersistentChosenBlock> ret = new ArrayList<PersistentChosenBlock>();
 		Arrays.sort(blockNumbers);
 		int prevBlockNumber = -1;
 		for(int i=0;i<blockNumbers.length;i++) {
@@ -1323,15 +1323,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				return null;
 			}
-			PersistentChosenBlock block = new PersistentChosenBlock(false, request, item, null, null, sched);
+			PersistentChosenBlock block = new PersistentChosenBlock(true, request, item, null, null, sched);
 			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
-			blocks.add(block);
+			ret.add(block);
 		}
 		blocks.trimToSize();
 		if(persistent) {
 			container.deactivate(blocks, 1);
 		}
-		return blocks;
+		if(logMINOR) Logger.minor(this, "Returning "+blocks.size()+" blocks");
+		return ret;
 	}
 
 	@Override
