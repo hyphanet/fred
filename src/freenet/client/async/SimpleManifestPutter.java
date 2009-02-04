@@ -657,8 +657,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// TODO: try both ? - maybe not worth it
 				archiveType = ARCHIVE_TYPE.getDefault();
 				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
-					createTarBucket(bucket, outputBucket) :
-					createZipBucket(bucket, outputBucket));
+					createTarBucket(bucket, outputBucket, container) :
+					createZipBucket(bucket, outputBucket, container));
 				bucket.free();
 				if(persistent()) bucket.removeFrom(container);
 				
@@ -710,7 +710,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
-	private String createTarBucket(Bucket inputBucket, Bucket outputBucket) throws IOException {
+	private String createTarBucket(Bucket inputBucket, Bucket outputBucket, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
 		
 		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
@@ -721,6 +721,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		for(PutHandler ph : elementsToPutInArchive) {
 			if(logMINOR)
 				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
+			if(persistent()) {
+				container.activate(ph, 1);
+				container.activate(ph.data, 1);
+			}
 			ze = new TarEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
@@ -752,7 +756,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
 	
-	private String createZipBucket(Bucket inputBucket, Bucket outputBucket) throws IOException {
+	private String createZipBucket(Bucket inputBucket, Bucket outputBucket, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
 		
 		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
@@ -761,6 +765,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		for(Iterator i = elementsToPutInArchive.iterator(); i.hasNext();) {
 			PutHandler ph = (PutHandler) i.next();
+			if(persistent()) {
+				container.activate(ph, 1);
+				container.activate(ph.data, 1);
+			}
 			ze = new ZipEntry(ph.targetInArchive);
 			ze.setTime(0);
 			zos.putNextEntry(ze);
