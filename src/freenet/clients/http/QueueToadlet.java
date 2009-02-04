@@ -1462,6 +1462,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI(container);
+			if(req.isPersistentForever() && uri != null)
+				container.activate(uri, 5);
+			if(uri == null) {
+				Logger.error(this, "No URI for supposedly finished request "+req);
+				return;
+			}
 			long size = ((ClientPutDir)req).getTotalDataSize();
 			int files = ((ClientPutDir)req).getNumberOfFiles();
 			String name = uri.getPreferredFilename();
