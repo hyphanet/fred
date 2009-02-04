@@ -631,7 +631,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if (finished)
 				return;
 			finished = true;
-			toThrow = InsertException.construct(errors);
+			if(blocksSucceeded < blocksCompleted)
+				toThrow = InsertException.construct(errors);
 		}
 		if(persistent) {
 			container.store(this);
