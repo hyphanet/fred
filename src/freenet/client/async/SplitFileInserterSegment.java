@@ -969,6 +969,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						checkFinished[checkNum] = true;
 						checkFailed[checkNum] = true;
 						blocksCompleted++;
+						blocks.remove(blockNum);
 						if(checkBlocks[checkNum] != null) {
 							if(persistent) container.activate(checkBlocks[checkNum], 1);
 							checkBlocks[checkNum].free();
@@ -988,6 +989,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					checkFailed[checkNum] = false; // Treating as succeeded
 					blocksCompleted++;
 					blocksSucceeded++;
+					blocks.remove(blockNum);
 					if(checkBlocks[checkNum] != null) {
 						if(persistent) container.activate(checkBlocks[checkNum], 1);
 						checkBlocks[checkNum].free();
@@ -1025,6 +1027,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						dataFinished[blockNum] = true;
 						dataFailed[blockNum] = true;
 						blocksCompleted++;
+						blocks.remove(blockNum);
 						if(dataBlocks[blockNum] != null) {
 							if(persistent) container.activate(dataBlocks[blockNum], 1);
 							dataBlocks[blockNum].free();
@@ -1044,6 +1047,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					dataFailed[blockNum] = false; // Treating as succeeded
 					blocksCompleted++;
 					blocksSucceeded++;
+					blocks.remove(blockNum);
 					if(dataBlocks[blockNum] != null && encoded) {
 						if(persistent) container.activate(dataBlocks[blockNum], 1);
 						dataBlocks[blockNum].free();
@@ -1093,6 +1097,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					checkFailed[checkNum] = false;
 					blocksCompleted++;
 					blocksSucceeded++;
+					blocks.remove(blockNum);
 				} else {
 					if(checkFailed[checkNum])
 						Logger.error(this, "Got onSuccess() but block has already failed! Check block "+checkNum+" on "+this);
@@ -1115,6 +1120,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					dataFailed[blockNum] = false;
 					blocksCompleted++;
 					blocksSucceeded++;
+					blocks.remove(blockNum);
 				} else {
 					if(dataFailed[blockNum])
 						Logger.error(this, "Got onSuccess() but block has already failed! Data block "+blockNum+" on "+this);
