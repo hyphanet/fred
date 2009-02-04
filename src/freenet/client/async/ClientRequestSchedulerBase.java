@@ -109,8 +109,13 @@ abstract class ClientRequestSchedulerBase {
 	
 	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
 		if(clientRequest != null || persistent()) { // Client request null is only legal for transient requests
-			if(persistent()) container.activate(clientRequest, 1); 
+			boolean deactivate = false;
+			if(persistent()) {
+				deactivate = container.ext().isActive(clientRequest);
+				if(deactivate) container.activate(clientRequest, 1);
+			}
 			clientRequest.addToRequests(req, container);
+			if(deactivate) container.deactivate(clientRequest, 1);
 		}
 	}
 	
