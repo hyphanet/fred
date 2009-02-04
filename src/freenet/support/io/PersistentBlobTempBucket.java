@@ -69,12 +69,21 @@ public class PersistentBlobTempBucket implements Bucket {
 		return persisted;
 	}
 	
+	private int inputStreams;
+	
 	public InputStream getInputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		final FileChannel channel = factory.channel;
 		return new InputStream() {
 
 			private int offset;
+			private boolean closed;
+			
+			{
+				synchronized(PersistentBlobTempBucket.this) {
+					inputStreams++;
+				}
+			}
 			
 			@Override
 			public int read() throws IOException {
@@ -113,6 +122,9 @@ public class PersistentBlobTempBucket implements Bucket {
 			}
 			
 			public void close() {
+				synchronized(PersistentBlobTempBucket.this) {
+					inputStreams--;
+				}
 				// Do nothing.
 			}
 			
@@ -210,6 +222,14 @@ public class PersistentBlobTempBucket implements Bucket {
 		Logger.error(this, "objectOnNew() called but we haven't been stored yet! for "+this+" for "+factory+" index "+index, new Exception("error"));
 		return true;
 		
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		if(inputStreams > 0) {
+			Logger.error(this, "Deactivating when have active input streams!", new Exception("error"));
+			return false;
+		}
+		return true;
 	}
 	
 	public void removeFrom(ObjectContainer container) {
