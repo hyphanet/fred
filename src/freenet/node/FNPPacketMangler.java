@@ -579,7 +579,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// Phase 3
 			processJFKMessage3(payload, 4, null, replyTo, false, true, setupType, negType);
 		} else {
-			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder)");
+			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder) from "+replyTo);
 		}
 	}
 
@@ -626,7 +626,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// Phase 4
 			processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, negType);
 		} else {
-			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder)");
+			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the initiator) from "+replyTo);
 		}
 	}
 
