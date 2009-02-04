@@ -527,16 +527,27 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	private BlockItem getBlockItem(ObjectContainer container, ClientContext context) {
 		try {
-			if(persistent) container.activate(sourceData, 1);
+			boolean deactivateBucket = false;
+			if(persistent) {
+				container.activate(uri, 1);
+				deactivateBucket = !container.ext().isActive(sourceData);
+				if(deactivateBucket)
+					container.activate(sourceData, 1);
+			}
 			Bucket data = sourceData.createShadow();
 			FreenetURI u = uri;
-			if(u.getKeyType().equals("CHK")) u = FreenetURI.EMPTY_CHK_URI;
+			if(u.getKeyType().equals("CHK") && !persistent) u = FreenetURI.EMPTY_CHK_URI;
 			else u = u.clone();
 			if(data == null) {
 				data = context.tempBucketFactory.makeBucket(sourceData.size());
 				BucketTools.copy(sourceData, data);
 			}
-			if(persistent) container.deactivate(sourceData, 1);
+			if(persistent) {
+				if(deactivateBucket)
+					container.deactivate(sourceData, 1);
+				if(uri != FreenetURI.EMPTY_CHK_URI)
+					container.deactivate(uri, 1);
+			}
 			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent);
 		} catch (IOException e) {
 			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
