@@ -18,6 +18,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
+import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -75,9 +76,9 @@ public class SplitFileInserter implements ClientPutState {
 		fs.put("SegmentSize", segmentSize);
 		fs.put("CheckSegmentSize", checkSegmentSize);
 		SimpleFieldSet segs = new SimpleFieldSet(false);
-		for(int i=0;i<segments.length;i++) {
-			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
-		}
+//		for(int i=0;i<segments.length;i++) {
+//			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
+//		}
 		segs.put("Count", segments.length);
 		fs.put("Segments", segs);
 		return fs;
@@ -283,7 +284,7 @@ public class SplitFileInserter implements ClientPutState {
 		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
 	
-	public void start(ObjectContainer container, ClientContext context) throws InsertException {
+	public void start(ObjectContainer container, final ClientContext context) throws InsertException {
 		for(int i=0;i<segments.length;i++) {
 			if(persistent) {
 				container.activate(segments[i], 1);
@@ -291,7 +292,26 @@ public class SplitFileInserter implements ClientPutState {
 			segJob.schedule(container, context, NativeThread.NORM_PRIORITY-1, persistent);
 				container.deactivate(segments[i], 1);
 			} else {
-				segments[i].start(container, context);
+				if(!getCHKOnly)
+					segments[i].start(container, context);
+				else {
+					final SplitFileInserterSegment seg = segments[i];
+					context.mainExecutor.execute(new PrioRunnable() {
+
+						public int getPriority() {
+							return NativeThread.NORM_PRIORITY;
+						}
+
+						public void run() {
+							try {
+								seg.start(null, context);
+							} catch (InsertException e) {
+								fail(e, null, context);
+							}
+						}
+						
+					}, "Schedule segment (get chk only)");
+				}
 			}
 		}
 		if(persistent)
