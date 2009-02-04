@@ -375,6 +375,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(persistent) {
 			container.activate(parent, 1);
 			container.activate(parent.parent, 1);
+			container.activate(blocks, 2);
 		}
 		if (logMINOR) {
 			if(parent == null) throw new NullPointerException();
@@ -439,8 +440,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		synchronized (this) {
 			fetchable = (blocksCompleted > dataBlocks.length);
 		}
-		if(persistent)
+		if(persistent) {
 			container.store(this);
+			container.store(blocks);
+		}
 		if (fetchable)
 			parent.segmentFetchable(this, container);
 		if (fin)
@@ -502,6 +505,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(persistent) {
 			container.activate(parent, 1);
 			container.activate(parent.parent, 1);
+			container.activate(blocks, 2);
 		}
 		boolean fin;
 		synchronized(this) {
@@ -548,7 +552,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				for(int i=0;i<checkBlocks.length;i++)
 					blocks.add(dataBlocks.length + i);
 			}
-			schedule(container, context);
+			if(persistent) container.store(blocks);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught " + t + " while encoding " + this, t);
 			InsertException ex = new InsertException(
@@ -563,8 +567,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			encoded = true;
 		}
 		
-		if(persistent)
+		if(persistent) {
 			container.store(this);
+			container.activate(parent, 1);
+		}
 
 		// Tell parent only after have started the inserts.
 		// Because of the counting.
@@ -586,6 +592,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.store(this);
 			container.deactivate(parent, 1);
 		}
+		
+		schedule(container, context);
 	}
 
 	/**
@@ -791,7 +799,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	Bucket getBucket(int blockNum) {
-		if(blockNum > dataBlocks.length)
+		if(blockNum >= dataBlocks.length)
 			return checkBlocks[blockNum - dataBlocks.length];
 		else
 			return dataBlocks[blockNum];
@@ -932,7 +940,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		int completed;
 		int succeeded;
 		synchronized(this) {
-			if(blockNum > dataBlocks.length) {
+			if(blockNum >= dataBlocks.length) {
 				// Check block.
 				int checkNum = blockNum = dataBlocks.length;
 				if(checkFinished[checkNum]) {
@@ -1077,7 +1085,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		int completed;
 		int succeeded;
 		synchronized(this) {
-			if(blockNum > dataBlocks.length) {
+			if(blockNum >= dataBlocks.length) {
 				// Check block.
 				int checkNum = blockNum = dataBlocks.length;
 				if(!checkFinished[checkNum]) {
