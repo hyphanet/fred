@@ -808,6 +808,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	
 	private BlockItem getBlockItem(ObjectContainer container, ClientContext context, int blockNum) throws IOException {
 		Bucket sourceData = getBucket(blockNum);
+		if(sourceData == null) {
+			Logger.error(this, "Selected block "+blockNum+" but is null - already finished?? on "+this);
+			return null;
+		}
 		boolean deactivateBucket = false;
 		if(persistent) {
 			deactivateBucket = !container.ext().isActive(sourceData);
