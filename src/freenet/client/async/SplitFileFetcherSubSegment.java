@@ -119,7 +119,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * those on cooldown queues. This is important when unregistering.
 	 */
 	@Override
-	public SendableRequestItem[] allKeys(ObjectContainer container) {
+	public SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -134,7 +134,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * Just those keys which are eligible to be started now.
 	 */
 	@Override
-	public SendableRequestItem[] sendableKeys(ObjectContainer container) {
+	public SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(blockNums, 1);

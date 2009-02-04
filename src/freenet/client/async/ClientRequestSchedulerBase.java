@@ -406,7 +406,7 @@ abstract class ClientRequestSchedulerBase {
 		return sb.toString();
 	}
 
-	public synchronized long countQueuedRequests(ObjectContainer container) {
+	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
 		long total = 0;
 		for(int i=0;i<priorities.length;i++) {
 			SortedVectorByNumber prio = priorities[i];
@@ -442,8 +442,8 @@ abstract class ClientRequestSchedulerBase {
 								SendableRequest req = (SendableRequest) rga.get(m, container);
 								if(req == null) continue;
 								container.activate(req, 1);
-								sendable += req.sendableKeys(container).length;
-								all += req.allKeys(container).length;
+								sendable += req.sendableKeys(container, context).length;
+								all += req.allKeys(container, context).length;
 								container.deactivate(req, 1);
 							}
 							System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));

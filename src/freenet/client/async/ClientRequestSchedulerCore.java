@@ -738,8 +738,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		startRegisterMeRunner(runner);
 	}
 	
-	public synchronized long countQueuedRequests(ObjectContainer container) {
-		long ret = super.countQueuedRequests(container);
+	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
+		long ret = super.countQueuedRequests(container, context);
 		long cooldown = persistentCooldownQueue.size(container);
 		System.out.println("Cooldown queue size: "+cooldown);
 		return ret + cooldown;

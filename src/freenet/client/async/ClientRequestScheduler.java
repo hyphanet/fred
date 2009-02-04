@@ -1020,7 +1020,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public long countTransientQueuedRequests() {
-		return schedTransient.countQueuedRequests(null);
+		return schedTransient.countQueuedRequests(null, clientContext);
 	}
 
 	public KeysFetchingLocally fetchingKeys() {
@@ -1105,7 +1105,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public long countPersistentQueuedRequests(ObjectContainer container) {
-		return schedCore.countQueuedRequests(container);
+		return schedCore.countQueuedRequests(container, clientContext);
 	}
 
 	public boolean isQueueAlmostEmpty() {
