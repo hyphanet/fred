@@ -1355,6 +1355,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public synchronized boolean isEmpty(ObjectContainer container) {
-		return (finished || blocks.isEmpty());
+		if(persistent) container.activate(blocks, 2);
+		boolean ret = (finished || blocks.isEmpty());
+		if(persistent) container.deactivate(blocks, 1);
+		return ret;
 	}
 }
