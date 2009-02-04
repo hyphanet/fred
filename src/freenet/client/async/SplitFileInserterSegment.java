@@ -1215,7 +1215,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	@Override
 	public short getPriorityClass(ObjectContainer container) {
-		container.activate(parent, 1);
+		if(persistent) container.activate(parent, 1);
 		return putter.getPriorityClass();
 	}
 
