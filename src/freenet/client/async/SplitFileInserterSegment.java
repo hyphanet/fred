@@ -1072,13 +1072,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.deactivate(putter, 1);
 		}
 		if(succeeded == dataBlocks.length) {
-			container.activate(parent, 1);
+			if(persistent) container.activate(parent, 1);
 			parent.segmentFetchable(this, container);
-			container.deactivate(parent, 1);
+			if(persistent) container.deactivate(parent, 1);
 		} else if(completed == dataBlocks.length + checkBlocks.length) {
-			container.activate(parent, 1);
+			if(persistent) container.activate(parent, 1);
 			finish(container, context, parent);
-			container.deactivate(parent, 1);
+			if(persistent) container.deactivate(parent, 1);
 		}
 	}
 
@@ -1143,18 +1143,18 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			succeeded = blocksSucceeded;
 		}
 		if(persistent) {
-			container.activate(putter, 1);
+			if(persistent) container.activate(putter, 1);
 			putter.completedBlock(false, container, context);
-			container.deactivate(putter, 1);
+			if(persistent) container.deactivate(putter, 1);
 		}
 		if(succeeded == dataBlocks.length) {
-			container.activate(parent, 1);
+			if(persistent) container.activate(parent, 1);
 			parent.segmentFetchable(this, container);
-			container.deactivate(parent, 1);
+			if(persistent) container.deactivate(parent, 1);
 		} else if(completed == dataBlocks.length + checkBlocks.length) {
-			container.activate(parent, 1);
+			if(persistent) container.activate(parent, 1);
 			finish(container, context, parent);
-			container.deactivate(parent, 1);
+			if(persistent) container.deactivate(parent, 1);
 		}
 	}
 
