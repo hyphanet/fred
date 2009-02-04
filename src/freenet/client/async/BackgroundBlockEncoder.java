@@ -18,25 +18,23 @@ import freenet.support.io.NativeThread;
 public class BackgroundBlockEncoder implements PrioRunnable {
 
 	// Minimize memory usage at the cost of having to encode from the end
-	private final ArrayList<SoftReference<SingleBlockInserter>> queue;
+	private final ArrayList<SoftReference<Encodeable>> queue;
 	private ClientContext context;
 	
 	public BackgroundBlockEncoder() {
-		queue = new ArrayList<SoftReference<SingleBlockInserter>>();
+		queue = new ArrayList<SoftReference<Encodeable>>();
 	}
 	
 	public void setContext(ClientContext context) {
 		this.context = context;
 	}
 	
-	public void queue(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
-		if(sbi.isCancelled(container)) return;
-		if(sbi.resultingURI != null) return;
+	public void queue(Encodeable sbi, ObjectContainer container, ClientContext context) {
 		if(sbi.persistent()) {
 			queuePersistent(sbi, container, context);
 			runPersistentQueue(context);
 		} else {
-			SoftReference<SingleBlockInserter> ref = new SoftReference<SingleBlockInserter>(sbi);
+			SoftReference<Encodeable> ref = new SoftReference<Encodeable>(sbi);
 			synchronized(this) {
 				queue.add(ref);
 				Logger.minor(this, "Queueing encode of "+sbi);
@@ -54,7 +52,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 				if(inserter.resultingURI != null) continue;
 				if(inserter.persistent()) continue;
 				Logger.minor(this, "Queueing encode of "+inserter);
-				SoftReference<SingleBlockInserter> ref = new SoftReference<SingleBlockInserter>(inserter);
+				SoftReference<Encodeable> ref = new SoftReference<Encodeable>(inserter);
 				queue.add(ref);
 			}
 			notifyAll();
@@ -77,7 +75,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		context.jobRunner.queue(runner, NativeThread.LOW_PRIORITY, true);
 	}
 
-	private void queuePersistent(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
+	private void queuePersistent(Encodeable sbi, ObjectContainer container, ClientContext context) {
 		BackgroundBlockEncoderTag tag = new BackgroundBlockEncoderTag(sbi, sbi.getPriorityClass(container), context);
 		container.store(tag);
 	}
@@ -85,7 +83,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
-			SingleBlockInserter sbi = null;
+			Encodeable sbi = null;
 			synchronized(this) {
 				while(queue.isEmpty()) {
 					try {
@@ -95,14 +93,12 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 					}
 				}
 				while(!queue.isEmpty()) {
-					SoftReference<SingleBlockInserter> ref = queue.remove(queue.size()-1);
+					SoftReference<Encodeable> ref = queue.remove(queue.size()-1);
 					sbi = ref.get();
 					if(sbi != null) break;
 				}
 			}
 			Logger.minor(this, "Encoding "+sbi);
-			if(sbi.isCancelled(null)) continue;
-			if(sbi.resultingURI != null) continue;
 			sbi.tryEncode(null, context);
 		}
 	}
@@ -125,11 +121,9 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			for(int x = 0; x < JOBS_PER_SLOT && results.hasNext(); x++) {
 				BackgroundBlockEncoderTag tag = (BackgroundBlockEncoderTag) results.next();
 				try {
-					SingleBlockInserter sbi = tag.inserter;
+					Encodeable sbi = tag.inserter;
+					if(sbi == null) continue;
 					container.activate(sbi, 1);
-					if(sbi == null) continue; // deleted
-					if(sbi.isCancelled(container)) continue;
-					if(sbi.resultingURI != null) continue;
 					sbi.tryEncode(container, context);
 					container.deactivate(sbi, 1);
 				} catch (Throwable t) {
@@ -145,14 +139,14 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 }
 
 class BackgroundBlockEncoderTag {
-	final SingleBlockInserter inserter;
+	final Encodeable inserter;
 	final long nodeDBHandle;
 	/** For implementing FIFO ordering */
 	final long addedTime;
 	/** For implementing priority ordering */
 	final short priority;
 	
-	BackgroundBlockEncoderTag(SingleBlockInserter inserter, short prio, ClientContext context) {
+	BackgroundBlockEncoderTag(Encodeable inserter, short prio, ClientContext context) {
 		this.inserter = inserter;
 		this.nodeDBHandle = context.nodeDBHandle;
 		this.addedTime = System.currentTimeMillis();

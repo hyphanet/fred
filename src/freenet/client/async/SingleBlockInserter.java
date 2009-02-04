@@ -39,7 +39,7 @@ import freenet.support.io.NativeThread;
 /**
  * Insert *ONE KEY*.
  */
-public class SingleBlockInserter extends SendableInsert implements ClientPutState {
+public class SingleBlockInserter extends SendableInsert implements ClientPutState, Encodeable {
 
 	private static boolean logMINOR;
 	final Bucket sourceData;
@@ -511,6 +511,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	/** Attempt to encode the block, if necessary */
 	public void tryEncode(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(resultingURI != null) return;
+			if(finished) return;
+		}
 		try {
 			encode(container, context, false);
 		} catch (InsertException e) {
