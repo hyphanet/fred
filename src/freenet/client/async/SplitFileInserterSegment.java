@@ -973,7 +973,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						if(checkBlocks[checkNum] != null) {
 							if(persistent) container.activate(checkBlocks[checkNum], 1);
 							checkBlocks[checkNum].free();
-							checkBlocks[checkNum].removeFrom(container);
+							if(persistent) checkBlocks[checkNum].removeFrom(container);
 							checkBlocks[checkNum] = null;
 						} else {
 							Logger.error(this, "Check block "+checkNum+" failed on "+this+" but bucket is already nulled out!");
@@ -993,7 +993,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(checkBlocks[checkNum] != null) {
 						if(persistent) container.activate(checkBlocks[checkNum], 1);
 						checkBlocks[checkNum].free();
-						checkBlocks[checkNum].removeFrom(container);
+						if(persistent) checkBlocks[checkNum].removeFrom(container);
 						checkBlocks[checkNum] = null;
 					} else {
 						Logger.error(this, "Check block "+checkNum+" succeeded (sort of) on "+this+" but bucket is already nulled out!");
@@ -1031,7 +1031,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						if(dataBlocks[blockNum] != null) {
 							if(persistent) container.activate(dataBlocks[blockNum], 1);
 							dataBlocks[blockNum].free();
-							dataBlocks[blockNum].removeFrom(container);
+							if(persistent) dataBlocks[blockNum].removeFrom(container);
 							dataBlocks[blockNum] = null;
 						} else {
 							Logger.error(this, "Data block "+blockNum+" failed on "+this+" but bucket is already nulled out!");
@@ -1051,7 +1051,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(dataBlocks[blockNum] != null && encoded) {
 						if(persistent) container.activate(dataBlocks[blockNum], 1);
 						dataBlocks[blockNum].free();
-						dataBlocks[blockNum].removeFrom(container);
+						if(persistent) dataBlocks[blockNum].removeFrom(container);
 						dataBlocks[blockNum] = null;
 					} else {
 						Logger.error(this, "Data block "+blockNum+" succeeded (sort of) on "+this+" but bucket is already nulled out!");
@@ -1108,7 +1108,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				if(checkBlocks[checkNum] != null) {
 					if(persistent) container.activate(checkBlocks[checkNum], 1);
 					checkBlocks[checkNum].free();
-					checkBlocks[checkNum].removeFrom(container);
+					if(persistent) checkBlocks[checkNum].removeFrom(container);
 					checkBlocks[checkNum] = null;
 				} else {
 					Logger.error(this, "Check block "+checkNum+" succeeded on "+this+" but bucket is already nulled out!");
@@ -1131,7 +1131,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				if(encoded && dataBlocks[blockNum] != null) {
 					if(persistent) container.activate(dataBlocks[blockNum], 1);
 					dataBlocks[blockNum].free();
-					dataBlocks[blockNum].removeFrom(container);
+					if(persistent) dataBlocks[blockNum].removeFrom(container);
 					dataBlocks[blockNum] = null;
 				} else if(dataBlocks[blockNum] == null) {
 					Logger.error(this, "Data block "+blockNum+" succeeded on "+this+" but bucket is already nulled out!");
