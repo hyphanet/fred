@@ -108,8 +108,10 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
-		if(clientRequest != null || persistent()) // Client request null is only legal for transient requests
+		if(clientRequest != null || persistent()) { // Client request null is only legal for transient requests
+			if(persistent()) container.activate(clientRequest, 1); 
 			clientRequest.addToRequests(req, container);
+		}
 	}
 	
 	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
