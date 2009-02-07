@@ -992,7 +992,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			if(tryTurtle) return;
 			tryTurtle = true;
 		}
-		node.makeTurtle(this);
+		node.makeTurtle(RequestSender.this);
 	}
 
 	/**
