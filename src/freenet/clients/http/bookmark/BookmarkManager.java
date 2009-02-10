@@ -85,7 +85,7 @@ public class BookmarkManager {
 	}
 
 	public void reAddDefaultBookmarks() {
-		BookmarkCategory bc = new BookmarkCategory("Default bookmarks - " + new Date());
+		BookmarkCategory bc = new BookmarkCategory(l10n("defaultBookmarks") + " - " + new Date());
 		addBookmark("/", bc);
 		_innerReadBookmarks("/", bc, DEFAULT_BOOKMARKS);
 	}
