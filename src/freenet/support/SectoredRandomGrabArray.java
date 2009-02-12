@@ -136,8 +136,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						Logger.minor(this, "Removing only grab array (0) : "+rga);
 					grabArrays = new RemoveRandomWithObject[0];
 					grabClients = new Object[0];
-					if(persistent)
+					if(persistent) {
 						container.store(this);
+						rga.removeFrom(container);
+					}
 				}
 				if(logMINOR)
 					Logger.minor(this, "Returning (one item only) "+item+" for "+rga);
@@ -174,16 +176,21 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					if(firstRGA.isEmpty() && rga.isEmpty()) {
 						grabArrays = new RemoveRandomWithObject[0];
 						grabClients = new Object[0];
-						if(persistent)
+						if(persistent) {
 							container.store(this);
+							firstRGA.removeFrom(container);
+							rga.removeFrom(container);
+						}
 					} else if(firstRGA.isEmpty()) {
 						if(persistent) {
 							container.activate(firstRGA, 1);
 						}
 						grabArrays = new RemoveRandomWithObject[] { rga };
 						grabClients = new Object[] { grabClients[x] };
-						if(persistent)
+						if(persistent) {
 							container.store(this);
+							firstRGA.removeFrom(container);
+						}
 					}
 					if(persistent) {
 						container.deactivate(rga, 1);
@@ -217,8 +224,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 				removeElement(x);
-				if(persistent)
+				if(persistent) {
 					container.store(this);
+					rga.removeFrom(container);
+				}
 			}
 			if(item == null) {
 				if(!rga.isEmpty()) {
@@ -270,6 +279,18 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 
 	public int size() {
 		return grabArrays.length;
+	}
+	
+	public void removeFrom(ObjectContainer container) {
+		if(grabArrays != null && grabArrays.length != 0) {
+			for(RemoveRandomWithObject rr : grabArrays) {
+				if(rr != null) {
+					Logger.error(this, "NOT EMPTY REMOVING "+this+" : "+rr);
+					return;
+				}
+			}
+		}
+		container.delete(this);
 	}
 
 }

@@ -478,4 +478,20 @@ public class RandomGrabArray {
 			container.deactivate(blocks[blockNo], 1);
 		return item;
 	}
+	
+
+	public void removeFrom(ObjectContainer container) {
+		if(blocks != null) {
+			for(Block block : blocks) {
+				for(RandomGrabArrayItem item : block.reqs) {
+					if(item != null) {
+						Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this);
+						return;
+					}
+				}
+				container.delete(block);
+			}
+		}
+		container.delete(this);
+	}
 }

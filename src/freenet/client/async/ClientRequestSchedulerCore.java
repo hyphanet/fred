@@ -447,6 +447,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container, context);
 			if(chosenTracker.isEmpty()) {
 				trackerParent.remove(chosenTracker.getNumber(), container);
+				if(chosenTracker.persistent())
+					chosenTracker.removeFrom(container);
 				if(trackerParent.isEmpty()) {
 					if(logMINOR) Logger.minor(this, "Should remove priority");
 				}

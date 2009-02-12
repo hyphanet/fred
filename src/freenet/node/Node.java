@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
@@ -30,6 +31,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectServer;
+import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
 import com.db4o.config.QueryEvaluationMode;
 import com.db4o.diagnostic.ClassHasNoFields;
@@ -893,6 +895,25 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		db = Db4o.openFile(dbConfig, new File(nodeDir, "node.db4o").toString());
 		
 		System.err.println("Opened database");
+		
+		// DUMP DATABASE CONTENTS
+		System.err.println("DUMPING DATABASE CONTENTS:");
+		ObjectSet<Object> contents = db.queryByExample(new Object());
+		Map<String,Integer> map = new HashMap<String, Integer>();
+		for(Object o : contents) {
+			String name = o.getClass().getName();
+			if((map.get(name)) != null) {
+				map.put(name, map.get(name)+1);
+			} else {
+				map.put(name, 1);
+			}
+		}
+		int total = 0;
+		for(Map.Entry<String,Integer> entry : map.entrySet()) {
+			System.err.println(entry.getKey()+" : "+entry.getValue());
+			total += entry.getValue();
+		}
+		System.err.println("END DATABASE DUMP: "+total+" objects");
 
 		// Boot ID
 		bootID = random.nextLong();
