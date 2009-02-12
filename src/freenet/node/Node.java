@@ -866,6 +866,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 * has already been created. Yes, this has happened, yes, it sucks.
 		 * Add our own hook to rollback and close... */
 		dbConfig.automaticShutDown(false);
+		/* Block size 8 should have minimal impact since pointers are this
+		 * long, and allows databases of up to 16GB. 
+		 * FIXME make configurable by user. */
+		dbConfig.blockSize(8);
 		dbConfig.diagnostic().addListener(new DiagnosticListener() {
 			
 			public void onDiagnostic(Diagnostic arg0) {
