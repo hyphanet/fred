@@ -741,6 +741,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 			int size = 0;
 			PersistentChosenRequest prev = null;
 			for(PersistentChosenRequest old : starterQueue) {
+				if(old.request == req) {
+					// Wait for a reselect. Otherwise we can starve other
+					// requests. Note that this happens with persistent SBI's:
+					// they are added at the new retry count before being
+					// removed at the old retry count.
+					if(logMINOR) Logger.minor(this, "Already on starter queue: "+old+" for "+req);
+					return;
+				}
 				if(prev == old)
 					Logger.error(this, "ON STARTER QUEUE TWICE: "+prev+" for "+prev.request);
 				if(prev != null && prev.request == old.request)
