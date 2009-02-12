@@ -1140,5 +1140,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		Logger.error(this, "Not storing ClientRequestScheduler in database", new Exception("error"));
 		return false;
 	}
+
+	public void wakeStarter() {
+		starter.wakeUp();
+	}
 	
 }

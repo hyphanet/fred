@@ -213,6 +213,15 @@ public class PersistentChosenRequest {
 			}
 		}
 		scheduler.removeRunningRequest(request);
+		if(request instanceof SendableInsert) {
+			// More blocks may have been added, because splitfile inserts
+			// do not separate retries into separate SendableInsert's.
+			if(!container.ext().isActive(request))
+				container.activate(request, 1);
+			if(!request.isEmpty(container)) {
+				request.getScheduler(context).wakeStarter();
+			}
+		}
 		if(!alreadyActive)
 			container.deactivate(request, 1);
 	}
