@@ -129,12 +129,6 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		if(elements != null && elements.length > 100) {
 			System.err.println("Infinite recursion in progress...");
 		}
-		synchronized(this) {
-			_activationCount++;
-			if(_activationCount > 10) {
-				Logger.error(this, "Activated 10 times!!: "+super.toString());
-			}
-		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
 		if(bucket == this) {
