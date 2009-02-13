@@ -4,10 +4,8 @@
 package freenet.node;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
-import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -18,8 +16,8 @@ import freenet.l10n.L10n;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.FileLoggerHook;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
@@ -71,7 +69,6 @@ public class PacketSender implements Runnable, Ticker {
 	volatile int lastTimeInSeconds;
 	private Vector<ResendPacketItem> rpiTemp;
 	private int[] rpiIntTemp;
-	private boolean started = false;
 
 	private final static class Job {
 		final String name;
@@ -170,7 +167,6 @@ public class PacketSender implements Runnable, Ticker {
 			t1.setDaemon(true);
 			t1.start();
 		}
-		started = true;
 		myThread.start();
 	}
 
