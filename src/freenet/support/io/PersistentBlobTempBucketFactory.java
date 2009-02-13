@@ -374,7 +374,7 @@ public class PersistentBlobTempBucketFactory {
 				return;
 			}
 			size -= size % blockSize;
-			long blocks = (size / blockSize) - 1;
+			long blocks = size / blockSize;
 			if(blocks <= 32) {
 				if(logMINOR) Logger.minor(this, "Not shrinking, blob file not larger than a megabyte");
 				lastCheckedEnd = now;
