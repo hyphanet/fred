@@ -19,14 +19,8 @@ public class LRUQueue {
      */
     private final DoublyLinkedListImpl list = new DoublyLinkedListImpl();
     private final Hashtable hash = new Hashtable();
-    private final int sizeLimit;
     
     public LRUQueue() {
-    	sizeLimit = -1;
-    }
-    
-    public LRUQueue(int mySizeLimit) {
-    	sizeLimit = mySizeLimit;
     }
     
     /**
@@ -40,9 +34,6 @@ public class LRUQueue {
         if (insert == null) {
             insert = new QItem(obj);
             hash.put(obj,insert);
-            
-            if(sizeLimit!=-1 && list.size() > sizeLimit)
-            	pop();
         } else {
             list.remove(insert);
         }
@@ -58,9 +49,6 @@ public class LRUQueue {
         if (insert == null) {
             insert = new QItem(obj);
             hash.put(obj,insert);
-            if(sizeLimit!=-1 && list.size() > sizeLimit) {
-            	hash.remove(((QItem)list.shift()).obj);
-            }
         } else {
             list.remove(insert);
         }
