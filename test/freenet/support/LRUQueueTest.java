@@ -16,6 +16,7 @@
 package freenet.support;
 
 import java.util.Enumeration;
+
 import junit.framework.TestCase;
 
 /**
@@ -103,6 +104,13 @@ public class LRUQueueTest extends TestCase {
 			fail("Expected Exception Error Not Thrown!"); }
 		catch (NullPointerException anException) {
 			assertNotNull(anException);	}
+
+		try {
+			methodLRUQueue.pushLeast(null);
+			fail("Expected Exception Error Not Thrown!");
+		} catch (NullPointerException anException) {
+			assertNotNull(anException);
+		}
 	}
 	
 	/**
