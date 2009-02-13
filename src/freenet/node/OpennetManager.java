@@ -54,10 +54,10 @@ public class OpennetManager {
 	
 	/** Our peers. PeerNode's are promoted when they successfully fetch a key. Normally we take
 	 * the bottom peer, but if that isn't eligible to be dropped, we iterate up the list. */
-	private final LRUQueue peersLRU;
+	private final LRUQueue<PeerNode> peersLRU;
 	/** Old peers. Opennet peers which we dropped but would still like to talk to
 	 * if we have no other option. */
-	private final LRUQueue oldPeers;
+	private final LRUQueue<PeerNode> oldPeers;
 	/** Maximum number of old peers */
 	static final int MAX_OLD_PEERS = 25;
 	/** Time at which last dropped a peer */
@@ -127,8 +127,8 @@ public class OpennetManager {
 				crypto.initCrypto();
 			}
 		}
-		peersLRU = new LRUQueue();
-		oldPeers = new LRUQueue();
+		peersLRU = new LRUQueue<PeerNode>();
+		oldPeers = new LRUQueue<PeerNode>();
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
 		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
@@ -426,8 +426,8 @@ public class OpennetManager {
 	 */
 	synchronized public int getSize() {
 		int x = 0;
-		for(Enumeration e = peersLRU.elements();e.hasMoreElements();) {
-			PeerNode pn = (PeerNode) e.nextElement();
+		for (Enumeration<PeerNode> e = peersLRU.elements(); e.hasMoreElements();) {
+			PeerNode pn = e.nextElement();
 			if(!(pn.isConnected() && pn.isUnroutableOlderVersion())) x++;
 		}
 		return x;
@@ -439,7 +439,7 @@ public class OpennetManager {
 			return null;
 		} else {
 			// Do we want it?
-			OpennetPeerNode[] peers = (OpennetPeerNode[]) peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
+			OpennetPeerNode[] peers = peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
@@ -506,11 +506,11 @@ public class OpennetManager {
 	}
 	
 	synchronized PeerNode[] getOldPeers() {
-		return (PeerNode[]) oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
+		return oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
 	}
 	
 	synchronized PeerNode[] getUnsortedOldPeers() {
-		return (PeerNode[]) oldPeers.toArray(new PeerNode[oldPeers.size()]);
+		return oldPeers.toArray(new PeerNode[oldPeers.size()]);
 	}
 	
 	/**
