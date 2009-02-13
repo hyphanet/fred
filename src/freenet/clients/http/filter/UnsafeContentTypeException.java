@@ -14,6 +14,7 @@ import freenet.support.HTMLNode;
  * Base class for UnknownContentTypeException and KnownUnsafeContentTypeException.
  */
 public abstract class UnsafeContentTypeException extends IOException {
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Get the contents of the error page.

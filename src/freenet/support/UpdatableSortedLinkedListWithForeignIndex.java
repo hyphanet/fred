@@ -1,7 +1,6 @@
 package freenet.support;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 /**
  * UpdatableSortedLinkedList plus a hashtable. Each item has

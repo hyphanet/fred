@@ -8,7 +8,6 @@ import java.util.Map;
 import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
-import freenet.support.Logger;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in

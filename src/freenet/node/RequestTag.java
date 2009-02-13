@@ -2,12 +2,12 @@ package freenet.node;
 
 import java.lang.ref.WeakReference;
 
-import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 
 /**
  * Tag for a request.
+ * 
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class RequestTag extends UIDTag {

@@ -75,9 +75,8 @@ public class PNGFilter implements ContentDataFilter {
 		this.checkCRCs = checkCRCs;
 	}
 
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset,
-		HashMap otherParams, FilterCallback cb) throws DataFilterException,
-		IOException {
+	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb) throws DataFilterException, IOException {
 		Bucket output = readFilter(data, bf, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, null);
 		if(output != null)
 			return output;
@@ -96,9 +95,9 @@ public class PNGFilter implements ContentDataFilter {
 		return filtered;
 	}
 
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset,
-		HashMap otherParams, FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs, OutputStream output) throws DataFilterException,
-		IOException {
+	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs, OutputStream output)
+	        throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		InputStream is = null;
@@ -289,9 +288,8 @@ public class PNGFilter implements ContentDataFilter {
 		return L10n.getString("PNGFilter." + key);
 	}
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset,
-		HashMap otherParams, FilterCallback cb) throws DataFilterException,
-		IOException {
+	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb) throws DataFilterException, IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}
