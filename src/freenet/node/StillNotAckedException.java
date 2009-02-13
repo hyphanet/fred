@@ -11,6 +11,7 @@ package freenet.node;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class StillNotAckedException extends Exception {
+	private static final long serialVersionUID = 1L;
 
 	public StillNotAckedException(PacketTracker tracker) {
 		this.tracker = tracker;
