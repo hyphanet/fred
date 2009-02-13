@@ -11,7 +11,7 @@ import freenet.l10n.L10n;
 // just needs somebody to go over the standard carefully and eliminate everything that isn't sufficiently specific (e.g. matching a '-' on its own).
 // Mostly from http://www.w3.org/TR/REC-CSS2/grammar.html
 
-@SuppressWarnings("fallthrough")
+@SuppressWarnings({ "fallthrough", "unused" })
 %%
 
 %{
