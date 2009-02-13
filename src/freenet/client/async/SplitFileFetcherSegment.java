@@ -311,7 +311,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				startedDecode = true;
 				finishing = true;
 			} else {
-				// Avoid hanging when we have one n-1 check blocks, we succeed on the last data block,
+				// Avoid hanging when we have n-1 check blocks, we succeed on the last data block,
 				// we don't have the other data blocks, and we have nothing else fetching.
 				allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 			}
