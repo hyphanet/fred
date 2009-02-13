@@ -3,6 +3,11 @@ package freenet.support;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+/**
+ * LRU Queue
+ * 
+ * push()'ing an existing object move it to tail, no duplicated object are ever added.
+ */
 public class LRUQueue {
 
     /*
