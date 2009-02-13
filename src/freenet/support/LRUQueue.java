@@ -34,7 +34,7 @@ public class LRUQueue<T> {
 		if (obj == null)
 			throw new NullPointerException();
 
-		QItem<T> insert = (QItem<T>) hash.get(obj);
+		QItem<T> insert = hash.get(obj);
         if (insert == null) {
 			insert = new QItem<T>(obj);
             hash.put(obj,insert);
@@ -52,7 +52,7 @@ public class LRUQueue<T> {
 		if (obj == null)
 			throw new NullPointerException();
 
-		QItem<T> insert = (QItem<T>) hash.get(obj);
+		QItem<T> insert = hash.get(obj);
         if (insert == null) {
 			insert = new QItem<T>(obj);
             hash.put(obj,insert);
@@ -68,7 +68,7 @@ public class LRUQueue<T> {
      */
 	public final synchronized T pop() {
         if ( list.size() > 0 ) {
-			return (T) ((QItem<T>) hash.remove(((QItem<T>) list.pop()).obj)).obj;
+			return (hash.remove(((QItem<T>) list.pop()).obj)).obj;
         } else {
             return null;
         }
@@ -105,6 +105,7 @@ public class LRUQueue<T> {
     }
 
 	private class ItemEnumeration implements Enumeration<T> {
+
 		private Enumeration<QItem<T>> source = list.reverseElements();
        
         public boolean hasMoreElements() {
@@ -112,7 +113,7 @@ public class LRUQueue<T> {
         }
 
 		public T nextElement() {
-			return ((QItem<T>) source.nextElement()).obj;
+			return source.nextElement().obj;
         }
     }
 
@@ -146,11 +147,12 @@ public class LRUQueue<T> {
 	 * recently used object is in <tt>[0]</tt>, the <strong>most</strong>
 	 * recently used object is in <tt>[array.length-1]</tt>.
 	 */
+
 	public synchronized Object[] toArrayOrdered() {
 		Object[] array = new Object[list.size()];
 		int x = 0;
-		for (Enumeration<T> e = list.reverseElements(); e.hasMoreElements();) {
-			array[x++] = ((QItem<?>) e.nextElement()).obj;
+		for (Enumeration<QItem<T>> e = list.reverseElements(); e.hasMoreElements();) {
+			array[x++] = e.nextElement().obj;
 		}
 		return array;
 	}
@@ -164,14 +166,15 @@ public class LRUQueue<T> {
 	 *            The array to fill in. If it is too small a new array of the
 	 *            same type will be allocated.
 	 */
+
 	public synchronized <E> E[] toArrayOrdered(E[] array) {
 		array = toArray(array);
 		int listSize = list.size();
 		if(array.length != listSize)
 			throw new IllegalStateException("array.length="+array.length+" but list.size="+listSize);
 		int x = 0;
-		for (Enumeration<T> e = list.reverseElements(); e.hasMoreElements();) {
-			array[x++] = (E) ((QItem<T>) e.nextElement()).obj;
+		for (Enumeration<QItem<T>> e = list.reverseElements(); e.hasMoreElements();) {
+			array[x++] = (E) e.nextElement().obj;
 		}
 		return array;
 	}
