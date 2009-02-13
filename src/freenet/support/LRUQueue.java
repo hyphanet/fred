@@ -1,7 +1,8 @@
 package freenet.support;
 
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * LRU Queue
@@ -18,7 +19,7 @@ public class LRUQueue<T> {
      * overall improvement.
      */
     private final DoublyLinkedListImpl list = new DoublyLinkedListImpl();
-	private final Hashtable<T, QItem<T>> hash = new Hashtable<T, QItem<T>>();
+	private final Map<T, QItem<T>> hash = new HashMap<T, QItem<T>>();
     
     public LRUQueue() {
     }
