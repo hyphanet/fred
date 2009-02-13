@@ -73,6 +73,9 @@ public class LRUQueue<T> {
     }
     
     public final synchronized boolean remove(Object obj) {
+		if (obj == null)
+			throw new NullPointerException();
+
 		QItem<T> i = hash.remove(obj);
 	if(i != null) {
 	    list.remove(i);
