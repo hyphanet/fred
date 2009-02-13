@@ -231,7 +231,8 @@ class SingleFileInserter implements ClientPutState {
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
 		if(noMetadata && archiveType == null) {
 			if(fitsInOneBlockAsIs) {
-				data = fixNotPersistent(data, context);
+				if(persistent && (data instanceof NotPersistentBucket))
+					data = fixNotPersistent(data, context);
 				// Just insert it
 				ClientPutState bi =
 					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context, freeData);
