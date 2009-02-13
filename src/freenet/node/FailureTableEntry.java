@@ -121,7 +121,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		int nulls = 0;
 		int ret = -1;
 		for(int i=0;i<requestorNodes.length;i++) {
-			PeerNode got = requestorNodes[i] == null ? null : (PeerNode) requestorNodes[i].get();
+			PeerNode got = requestorNodes[i] == null ? null : requestorNodes[i].get();
 			// No longer subscribed if they have rebooted, or expired
 			if(got == requestor) {
 				// Update existing entry
@@ -204,7 +204,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		int nulls = 0;
 		int ret = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
-			PeerNode got = requestedNodes[i] == null ? null : (PeerNode) requestedNodes[i].get();
+			PeerNode got = requestedNodes[i] == null ? null : requestedNodes[i].get();
 			if(got == requestedFrom) {
 				// Update existing entry
 				includedAlready = true;
