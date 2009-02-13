@@ -57,9 +57,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketHandler;
-import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -110,8 +108,8 @@ import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
@@ -740,7 +738,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			this.fastWeakRandom = weakRandom;
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
-		recentlyCompletedIDs = new LRUQueue();
+		recentlyCompletedIDs = new LRUQueue<Long>();
 		this.config = config;
 		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
 		lm = new LocationManager(random, this);
@@ -3146,7 +3144,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return sb.toString();
 	}
 
-	final LRUQueue recentlyCompletedIDs;
+	final LRUQueue<Long> recentlyCompletedIDs;
 
 	static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
 	/** Length of signature parameters R and S */
@@ -3993,7 +3991,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Logger.normal(this, "TURTLING: "+sender.key+" for "+sender);
 		// Do not transfer coalesce!!
 		synchronized(transferringRequestSenders) {
-			transferringRequestSenders.remove((NodeCHK)sender.key);
+			transferringRequestSenders.remove(sender.key);
 		}
 		turtleCount++;
 		
