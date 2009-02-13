@@ -24,7 +24,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	public static final HashSet<String> allowedProtocols;
 	
 	static {
-		allowedProtocols = new HashSet();
+		allowedProtocols = new HashSet<String>();
 		allowedProtocols.add("http");
 		allowedProtocols.add("https");
 		allowedProtocols.add("ftp");

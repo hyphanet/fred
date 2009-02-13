@@ -24,7 +24,7 @@ import freenet.support.io.Closer;
  */
 public class ContentFilter {
 
-	static final Hashtable mimeTypesByName = new Hashtable();
+	static final Hashtable<String, MIMEType> mimeTypesByName = new Hashtable<String, MIMEType>();
 	
 	static {
 		init();
@@ -106,7 +106,7 @@ public class ContentFilter {
 	}
 
 	public static MIMEType getMIMEType(String mimeType) {
-		return (MIMEType) mimeTypesByName.get(mimeType);
+		return mimeTypesByName.get(mimeType);
 	}
 
 	public static class FilterOutput {
@@ -142,7 +142,7 @@ public class ContentFilter {
 		String type = typeName;
 		String options = "";
 		String charset = null;
-		HashMap otherParams = null;
+		HashMap<String, String> otherParams = null;
 		
 		// First parse the MIME type
 		
@@ -165,7 +165,8 @@ public class ContentFilter {
 				if(before.equals("charset")) {
 					charset = after;
 				} else {
-					if(otherParams == null) otherParams = new HashMap();
+					if (otherParams == null)
+						otherParams = new HashMap<String, String>();
 					otherParams.put(before, after);
 				}
 			}
