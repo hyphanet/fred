@@ -8,7 +8,7 @@ import java.util.Hashtable;
  * 
  * push()'ing an existing object move it to tail, no duplicated object are ever added.
  */
-public class LRUQueue {
+public class LRUQueue<T> {
 
     /*
      * I've just converted this to using the DLList and Hashtable
@@ -18,7 +18,7 @@ public class LRUQueue {
      * overall improvement.
      */
     private final DoublyLinkedListImpl list = new DoublyLinkedListImpl();
-    private final Hashtable hash = new Hashtable();
+	private final Hashtable<T, QItem<T>> hash = new Hashtable<T, QItem<T>>();
     
     public LRUQueue() {
     }
@@ -29,10 +29,10 @@ public class LRUQueue {
      *       recently used position, but doesn't add
      *       a duplicate entry in the queue.
      */
-    public final synchronized void push(Object obj) {
-        QItem insert = (QItem)hash.get(obj);        
+	public final synchronized void push(T obj) {
+		QItem<T> insert = (QItem<T>) hash.get(obj);
         if (insert == null) {
-            insert = new QItem(obj);
+			insert = new QItem<T>(obj);
             hash.put(obj,insert);
         } else {
             list.remove(insert);
@@ -44,10 +44,10 @@ public class LRUQueue {
     /**
      * push to bottom (least recently used position)
      */
-	public synchronized void pushLeast(Object obj) {
-        QItem insert = (QItem)hash.get(obj);        
+	public synchronized void pushLeast(T obj) {
+		QItem<T> insert = (QItem<T>) hash.get(obj);
         if (insert == null) {
-            insert = new QItem(obj);
+			insert = new QItem<T>(obj);
             hash.put(obj,insert);
         } else {
             list.remove(insert);
@@ -59,9 +59,9 @@ public class LRUQueue {
     /**
      *  @return Least recently pushed Object.
      */
-    public final synchronized Object pop() {
+	public final synchronized T pop() {
         if ( list.size() > 0 ) {
-            return ((QItem)hash.remove(((QItem)list.pop()).obj)).obj;
+			return (T) ((QItem<T>) hash.remove(((QItem<T>) list.pop()).obj)).obj;
         } else {
             return null;
         }
@@ -72,7 +72,7 @@ public class LRUQueue {
     }
     
     public final synchronized boolean remove(Object obj) {
-	QItem i = (QItem)(hash.remove(obj));
+		QItem<T> i = hash.remove(obj);
 	if(i != null) {
 	    list.remove(i);
 	    return true;
@@ -90,26 +90,26 @@ public class LRUQueue {
         return hash.containsKey(obj);
     }
     
-    public Enumeration elements() {
+	public Enumeration<T> elements() {
         return new ItemEnumeration();
     }
 
-    private class ItemEnumeration implements Enumeration {
-        private Enumeration source = list.reverseElements();
+	private class ItemEnumeration implements Enumeration<T> {
+		private Enumeration<QItem<T>> source = list.reverseElements();
        
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
-        public Object nextElement() {
-            return ((QItem) source.nextElement()).obj;
+		public T nextElement() {
+			return ((QItem<T>) source.nextElement()).obj;
         }
     }
 
-    private static class QItem extends DoublyLinkedListImpl.Item {
-        public Object obj;
+	private static class QItem<T> extends DoublyLinkedListImpl.Item {
+		public T obj;
 
-        public QItem(Object obj) {
+        public QItem(T obj) {
             this.obj = obj;
         }
     }
@@ -127,7 +127,7 @@ public class LRUQueue {
      * order.
 	 * @param array The array to fill in. If it is too small a new array of the same type will be allocated.
      */
-	public synchronized Object[] toArray(Object[] array) {
+	public synchronized <E> E[] toArray(E[] array) {
 		return hash.keySet().toArray(array);
 	}
 	
@@ -139,8 +139,8 @@ public class LRUQueue {
 	public synchronized Object[] toArrayOrdered() {
 		Object[] array = new Object[list.size()];
 		int x = 0;
-		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
-			array[x++] = ((QItem)e.nextElement()).obj;
+		for (Enumeration<T> e = list.reverseElements(); e.hasMoreElements();) {
+			array[x++] = ((QItem<?>) e.nextElement()).obj;
 		}
 		return array;
 	}
@@ -154,14 +154,14 @@ public class LRUQueue {
 	 *            The array to fill in. If it is too small a new array of the
 	 *            same type will be allocated.
 	 */
-	public synchronized Object[] toArrayOrdered(Object[] array) {
+	public synchronized <E> E[] toArrayOrdered(E[] array) {
 		array = toArray(array);
 		int listSize = list.size();
 		if(array.length != listSize)
 			throw new IllegalStateException("array.length="+array.length+" but list.size="+listSize);
 		int x = 0;
-		for(Enumeration e = list.reverseElements();e.hasMoreElements();) {
-			array[x++] = ((QItem)e.nextElement()).obj;
+		for (Enumeration<T> e = list.reverseElements(); e.hasMoreElements();) {
+			array[x++] = (E) ((QItem<T>) e.nextElement()).obj;
 		}
 		return array;
 	}
