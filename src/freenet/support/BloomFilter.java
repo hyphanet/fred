@@ -129,7 +129,7 @@ public abstract class BloomFilter {
 				filter.put(forkedFilter.filter);
 
 				filter.position(0);
-				forkedFilter.finalize();
+				forkedFilter.close();
 				forkedFilter = null;
 			} finally {
 				forkedLock.unlock();
@@ -144,7 +144,7 @@ public abstract class BloomFilter {
 		try {
 			if (forkedFilter == null)
 				return;
-			forkedFilter.finalize();
+			forkedFilter.close();
 			forkedFilter = null;
 		} finally {
 			lock.writeLock().unlock();
@@ -189,15 +189,17 @@ public abstract class BloomFilter {
 			((MappedByteBuffer) filter).force();
 		}
 	}
-
-	@Override
-	protected void finalize() {
+	
+	public void close() {
 		if (filter != null) {
 			force();
 		}
-		// don't trust findbug, this is not a error
-		// sometimes, we call finalize() manually and this serve as a flag 
 		filter = null;
 		forkedFilter = null;
+	}
+
+	@Override
+	protected void finalize() {
+		close();
 	}
 }
