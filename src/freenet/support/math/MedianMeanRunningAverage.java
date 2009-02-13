@@ -9,7 +9,8 @@ import java.util.ArrayList;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class MedianMeanRunningAverage implements RunningAverage {
-	
+	private static final long serialVersionUID = 1L;
+
 	final ArrayList<Double> reports;
 	final TrivialRunningAverage mean;
 
