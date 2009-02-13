@@ -25,7 +25,9 @@ public class MedianMeanRunningAverage implements RunningAverage {
 	}
 
 	public Object clone() {
-		return new MedianMeanRunningAverage(this);
+		synchronized (this) {
+			return new MedianMeanRunningAverage(this);
+		}
 	}
 
 	public synchronized long countReports() {
