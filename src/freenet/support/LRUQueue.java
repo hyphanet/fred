@@ -31,6 +31,9 @@ public class LRUQueue<T> {
      *       a duplicate entry in the queue.
      */
 	public final synchronized void push(T obj) {
+		if (obj == null)
+			throw new NullPointerException();
+
 		QItem<T> insert = (QItem<T>) hash.get(obj);
         if (insert == null) {
 			insert = new QItem<T>(obj);
@@ -46,6 +49,9 @@ public class LRUQueue<T> {
      * push to bottom (least recently used position)
      */
 	public synchronized void pushLeast(T obj) {
+		if (obj == null)
+			throw new NullPointerException();
+
 		QItem<T> insert = (QItem<T>) hash.get(obj);
         if (insert == null) {
 			insert = new QItem<T>(obj);
