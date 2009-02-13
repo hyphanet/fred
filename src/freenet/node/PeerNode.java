@@ -62,8 +62,8 @@ import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
@@ -4071,7 +4071,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public short getUptime() {
-		return (short)(((int)uptime) & 0xFF);
+		return (short) (uptime & 0xFF);
 	}
 	
 	public void incrementNumberOfSelections(long time) {
