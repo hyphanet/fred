@@ -175,6 +175,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 	/**
 	 * @deprecated {@link DataInputStream#readLine()} is deprecated, so why not?
 	 */
+	@Deprecated
 	public String readLine() throws IOException {
 		// hmmmm bad
 		return new DataInputStream(this).readLine();

@@ -39,6 +39,7 @@ public class RedirectPluginHTTPException extends PluginHTTPException {
 	 * @deprecated use {@link #RedirectPluginHTTPException(String, String)}
 	 *             instead
 	 */
+	@Deprecated
 	public RedirectPluginHTTPException(String message, String location, String newLocation) {
 		super(message, location);
 		this.newLocation = newLocation;

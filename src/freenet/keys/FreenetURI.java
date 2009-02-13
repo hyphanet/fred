@@ -551,6 +551,7 @@ public class FreenetURI implements Cloneable {
     /**
      * @deprecated Use {@link #toASCIIString()} instead
      */
+	@Deprecated
     public String toACIIString() {
         return toASCIIString();
     }
