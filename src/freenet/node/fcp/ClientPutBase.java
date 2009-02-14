@@ -314,10 +314,15 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	private void trySendProgressMessage(final FCPMessage msg, final int verbosity, FCPConnectionOutputHandler handler, ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_FOREVER) {
 			if(container != null) {
+				FCPMessage oldProgress = null;
 				synchronized(this) {
-					if(persistenceType != PERSIST_CONNECTION)
+					if(persistenceType != PERSIST_CONNECTION) {
+						oldProgress = progressMessage;
 						progressMessage = msg;
+					}
 				}
+				if(oldProgress != null)
+					oldProgress.removeFrom(container);
 				container.store(this);
 			} else {
 				final FCPConnectionOutputHandler h = handler;
