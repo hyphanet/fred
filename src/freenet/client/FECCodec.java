@@ -47,13 +47,13 @@ public abstract class FECCodec {
 	 * Get a codec where we know both the number of data blocks and the number
 	 * of check blocks, and the codec type. Normally for decoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks, Executor executor) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks) {
 		if(Logger.shouldLog(Logger.MINOR, FECCodec.class))
 			Logger.minor(FECCodec.class, "getCodec: splitfileType="+splitfileType+" dataBlocks="+dataBlocks+" checkBlocks="+checkBlocks);
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
-			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
+			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
 		else
 			return null;
 	}
@@ -62,12 +62,12 @@ public abstract class FECCodec {
 	 * Get a codec where we know only the number of data blocks and the codec
 	 * type. Normally for encoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks, Executor executor) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
 			int checkBlocks = standardOnionCheckBlocks(dataBlocks);
-			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
+			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
 		}
 		else
 			return null;

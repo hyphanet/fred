@@ -287,7 +287,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			Logger.normal(this, "Not encoded because no check blocks");
 			encoded = false;
 			FECCodec splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
-					dataBlockCount, context.mainExecutor);
+					dataBlockCount);
 			int checkBlocksCount =splitfileAlgo.countCheckBlocks();
 			this.checkURIs = new ClientCHK[checkBlocksCount];
 			this.checkBlocks = new Bucket[checkBlocksCount];
@@ -405,7 +405,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				Logger.minor(this, "Segment " + segNo + " of " + parent + " ("
 						+ parent.dataLength + ") is not encoded");
 			splitfileAlgo = FECCodec.getCodec(this.splitfileAlgo,
-					dataBlocks.length, checkBlocks.length, context.mainExecutor);
+					dataBlocks.length, checkBlocks.length);
 				if (logMINOR)
 					Logger.minor(this, "Encoding segment " + segNo + " of "
 							+ parent + " (" + parent.dataLength + ") persistent="+persistent);

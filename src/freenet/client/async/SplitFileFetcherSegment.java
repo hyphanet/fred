@@ -437,7 +437,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 			if(codec == null)
-				codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
+				codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 			FECJob job = new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, true, parent.getPriorityClass(), persistent);
 			codec.addToQueue(job, 
 					queue, container);
@@ -459,7 +459,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(context, 1);
 		}
 		if(codec == null)
-			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
+			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
 		// Because we use SplitfileBlock, we DON'T have to copy here.
 		// See FECCallback comments for explanation.
 		try {

@@ -47,7 +47,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks, Executor executor) {
+	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
 		StandardOnionFECCodec codec = (StandardOnionFECCodec) recentlyUsedCodecs.get(key);
 		if(codec != null) {
