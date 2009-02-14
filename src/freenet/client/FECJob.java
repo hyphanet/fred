@@ -91,9 +91,9 @@ public class FECJob {
 		this.persistent = persistent;
 	}
 
-	public FECCodec getCodec(Executor executor) {
+	public FECCodec getCodec() {
 		if(codec == null) {
-			codec = FECCodec.getCodec(fecAlgo, dataBlocks.length, executor);
+			codec = FECCodec.getCodec(fecAlgo, dataBlocks.length);
 		}
 		return codec;
 	}
