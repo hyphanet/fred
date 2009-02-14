@@ -115,7 +115,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				}
 				continue;
 			}
-			sched.moveKeysFromCooldownQueue();
+			if(!isInsert)
+				sched.moveKeysFromCooldownQueue();
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) {
 				req = sched.grabRequest();
