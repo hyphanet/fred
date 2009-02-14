@@ -438,6 +438,12 @@ public class PersistentBlobTempBucketFactory {
 			// Must be 10% free at end
 			newBlocks = (long) ((lastBlock + 32) * 1.1);
 			newBlocks = Math.max(newBlocks, 32);
+			if(newBlocks >= blocks) {
+				if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from "+blocks+" to "+newBlocks);
+				lastCheckedEnd = now;
+				queueMaybeShrink();
+				return;
+			}
 			System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
 			for(long l = newBlocks; l <= blocks; l++) {
 				freeSlots.remove(l);
