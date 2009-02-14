@@ -373,4 +373,6 @@ public abstract class FECCodec {
 	public void objectCanDeactivate(ObjectContainer container) {
 		Logger.minor(this, "Deactivating "+this, new Exception("debug"));
 	}
+
+	public abstract short getAlgorithm();
 }

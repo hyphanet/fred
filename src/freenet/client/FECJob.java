@@ -5,6 +5,7 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -16,7 +17,8 @@ import freenet.support.api.BucketFactory;
  */
 public class FECJob {
 	
-	private final FECCodec codec;
+	private transient FECCodec codec;
+	private short fecAlgo;
 	final Bucket[] dataBlocks, checkBlocks;
 	final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
 	final BucketFactory bucketFactory;
@@ -38,6 +40,7 @@ public class FECJob {
 	
 	public FECJob(FECCodec codec, FECQueue queue, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus,  int blockLength, BucketFactory bucketFactory, FECCallback callback, boolean isADecodingJob, short priority, boolean persistent) {
 		this.codec = codec;
+		this.fecAlgo = codec.getAlgorithm();
 		this.queue = queue;
 		this.priority = priority;
 		this.addedTime = System.currentTimeMillis();
@@ -88,7 +91,10 @@ public class FECJob {
 		this.persistent = persistent;
 	}
 
-	public FECCodec getCodec() {
+	public FECCodec getCodec(Executor executor) {
+		if(codec == null) {
+			codec = FECCodec.getCodec(fecAlgo, dataBlocks.length, executor);
+		}
 		return codec;
 	}
 	

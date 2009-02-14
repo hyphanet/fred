@@ -116,4 +116,9 @@ public class StandardOnionFECCodec extends FECCodec {
 	public String toString() {
 		return super.toString()+":n="+n+",k="+k;
 	}
+
+	@Override
+	public short getAlgorithm() {
+		return Metadata.SPLITFILE_ONION_STANDARD;
+	}
 }
