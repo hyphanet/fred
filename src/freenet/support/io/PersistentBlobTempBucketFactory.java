@@ -176,9 +176,11 @@ public class PersistentBlobTempBucketFactory {
 				Logger.error(this, "Tags in database: "+inDB+" but size of file allows: "+ptr);
 				// Recover: exhaustive index search. This can cause very long pauses, but should only happen if there is a bug.
 				for(long l = 0; l < ptr; l++) {
-					if(freeSlots.containsKey(l)) continue;
-					if(notCommittedBlobs.containsKey(l)) continue;
-					if(almostFreeSlots.containsKey(l)) continue;
+					synchronized(this) {
+						if(freeSlots.containsKey(l)) continue;
+						if(notCommittedBlobs.containsKey(l)) continue;
+						if(almostFreeSlots.containsKey(l)) continue;
+					}
 					query = container.query();
 					query.constrain(PersistentBlobTempBucketTag.class);
 					query.descend("index").constrain(l);
@@ -187,7 +189,9 @@ public class PersistentBlobTempBucketFactory {
 					Logger.error(this, "FOUND EMPTY SLOT: "+l+" when scanning the blob file because tags in database < length of file");
 					PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, l);
 					container.store(tag);
-					freeSlots.put(ptr, tag);
+					synchronized(this) {
+						freeSlots.put(ptr, tag);
+					}
 					added++;
 					if(added > MAX_FREE) return;
 				}
