@@ -163,6 +163,8 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	@Override
 	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		if(keys.hasTransientInsert(this, NullSendableRequestItem.nullItem))
+			return null;
 		if(finished) return null;
 		else
 			return NullSendableRequestItem.nullItem;
