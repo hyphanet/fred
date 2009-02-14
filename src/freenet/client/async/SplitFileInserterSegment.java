@@ -470,7 +470,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		for(int i=0;i<dataBlocks.length;i++) {
 			if(dataURIs[i] == null && dataBlocks[i] != null) {
 				try {
+					boolean deactivate = false;
+					if(persistent) {
+						deactivate = !container.ext().isActive(dataBlocks[i]);
+						if(deactivate) container.activate(dataBlocks[i], 1);
+					}
 					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i]).getClientKey();
+					if(deactivate) container.deactivate(dataBlocks[i], 1);
 					onEncode(i, key, container, context);
 				} catch (CHKEncodeException e) {
 					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);						
@@ -485,7 +491,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			for(int i=0;i<checkBlocks.length;i++) {
 				if(checkURIs[i] == null && checkBlocks[i] != null) {
 					try {
+						boolean deactivate = false;
+						if(persistent) {
+							deactivate = !container.ext().isActive(checkBlocks[i]);
+							if(deactivate) container.activate(checkBlocks[i], 1);
+						}
 						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i]).getClientKey();
+						if(deactivate) container.deactivate(checkBlocks[i], 1);
 						onEncode(i, key, container, context);
 					} catch (CHKEncodeException e) {
 						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);						
@@ -1228,7 +1240,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	@Override
 	public short getPriorityClass(ObjectContainer container) {
-		if(persistent) container.activate(parent, 1);
+		if(persistent) container.activate(putter, 1);
 		return putter.getPriorityClass();
 	}
 
