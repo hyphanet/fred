@@ -18,7 +18,7 @@ import freenet.support.api.BucketFactory;
 public class FECJob {
 	
 	private transient FECCodec codec;
-	private short fecAlgo;
+	private final short fecAlgo;
 	final Bucket[] dataBlocks, checkBlocks;
 	final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
 	final BucketFactory bucketFactory;
@@ -77,6 +77,7 @@ public class FECJob {
 	public FECJob(FECCodec codec, FECQueue queue, Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, FECCallback callback, boolean isADecodingJob, short priority, boolean persistent) {
 		this.hashCode = super.hashCode();
 		this.codec = codec;
+		this.fecAlgo = codec.getAlgorithm();
 		this.queue = queue;
 		this.priority = priority;
 		this.addedTime = System.currentTimeMillis();
@@ -93,7 +94,9 @@ public class FECJob {
 
 	public FECCodec getCodec() {
 		if(codec == null) {
-			codec = FECCodec.getCodec(fecAlgo, dataBlocks.length);
+			codec = FECCodec.getCodec(fecAlgo, dataBlocks.length, checkBlocks.length);
+			if(codec == null)
+				Logger.error(this, "No codec found for algo "+fecAlgo+" data blocks length "+dataBlocks.length+" check blocks length "+checkBlocks.length);
 		}
 		return codec;
 	}
