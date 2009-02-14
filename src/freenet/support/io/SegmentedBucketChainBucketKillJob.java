@@ -29,6 +29,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 			context.jobRunner.queue(this, NativeThread.NORM_PRIORITY, true);
 		} else {
 			context.jobRunner.removeRestartJob(this, RESTART_PRIO, container);
+			container.delete(this);
 		}
 	}
 	
