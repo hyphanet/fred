@@ -174,10 +174,10 @@ public class FECQueue implements OOMHook {
 					// Encode it
 					try {
 						if (job.isADecodingJob)
-							job.codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength,
+							job.getCodec().realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength,
 							        job.bucketFactory);
 						else {
-							job.codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
+							job.getCodec().realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
 							// Update SplitFileBlocks from buckets if necessary
 							if ((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
 								for (int i = 0; i < job.dataBlocks.length; i++)

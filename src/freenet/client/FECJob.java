@@ -16,7 +16,7 @@ import freenet.support.api.BucketFactory;
  */
 public class FECJob {
 	
-	final FECCodec codec;
+	private final FECCodec codec;
 	final Bucket[] dataBlocks, checkBlocks;
 	final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
 	final BucketFactory bucketFactory;
@@ -88,6 +88,10 @@ public class FECJob {
 		this.persistent = persistent;
 	}
 
+	public FECCodec getCodec() {
+		return codec;
+	}
+	
 	public void activateForExecution(ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Activating FECJob...");
