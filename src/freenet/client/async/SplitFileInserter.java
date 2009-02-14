@@ -286,33 +286,11 @@ public class SplitFileInserter implements ClientPutState {
 	
 	public void start(ObjectContainer container, final ClientContext context) throws InsertException {
 		for(int i=0;i<segments.length;i++) {
-			if(persistent) {
+			if(persistent)
 				container.activate(segments[i], 1);
-			SplitFileInserterSegmentRegisterJob segJob = new SplitFileInserterSegmentRegisterJob(segments[i], NativeThread.NORM_PRIORITY-1);
-			segJob.schedule(container, context, NativeThread.NORM_PRIORITY-1, persistent);
+			segments[i].start(container, context);
+			if(persistent)
 				container.deactivate(segments[i], 1);
-			} else {
-				if(!getCHKOnly)
-					segments[i].start(container, context);
-				else {
-					final SplitFileInserterSegment seg = segments[i];
-					context.mainExecutor.execute(new PrioRunnable() {
-
-						public int getPriority() {
-							return NativeThread.NORM_PRIORITY;
-						}
-
-						public void run() {
-							try {
-								seg.start(null, context);
-							} catch (InsertException e) {
-								fail(e, null, context);
-							}
-						}
-						
-					}, "Schedule segment (get chk only)");
-				}
-			}
 		}
 		if(persistent)
 			container.activate(parent, 1);
