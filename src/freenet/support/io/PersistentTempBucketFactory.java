@@ -134,7 +134,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		Bucket rawBucket = null;
 		if(size == BLOB_SIZE) {
 			// No need for a DelayedFreeBucket, we handle this internally (and more efficiently) for blobs.
-			return blobFactory.makeBucket();
+			rawBucket = blobFactory.makeBucket();
+			if(rawBucket != null) return rawBucket;
 		}
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
