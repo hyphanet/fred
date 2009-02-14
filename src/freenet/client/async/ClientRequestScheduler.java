@@ -570,7 +570,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	/* If new stuff is added, maybeFillStarterQueue will be called anyway,
+	 * so it is safe to not run the queue filler regularly. */
+	private long lastFilledStarterQueueEmpty = -1;
+	
 	public void queueFillRequestStarterQueue() {
+		if(lastFilledStarterQueueEmpty > 0 &&
+				System.currentTimeMillis() - lastFilledStarterQueueEmpty < 60*1000)
+			return;
 		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
 			return;
 		jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
@@ -664,7 +671,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-			fuzz = 0;	
+			fuzz = 0;
+		boolean added = false;
 		synchronized(starterQueue) {
 			if(logMINOR && (!isSSKScheduler) && (!isInsertScheduler)) {
 				Logger.minor(this, "Scheduling CHK fetches...");
@@ -715,7 +723,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		while(true) {
 			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
-			if(request == null) return;
+			if(request == null) {
+				synchronized(ClientRequestScheduler.this) {
+					if(!added) 
+						lastFilledStarterQueueEmpty = System.currentTimeMillis();
+				}
+				return;
+			}
+			added = true;
 			boolean full = addToStarterQueue(request, container);
 			container.deactivate(request, 1);
 			starter.wakeUp();
