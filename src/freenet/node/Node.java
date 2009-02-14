@@ -3980,6 +3980,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			return;
 		}
 		PeerNode from = sender.transferringFrom();
+		if(from == null) {
+			// Race condition, it has finished, avoid NPE
+			return;
+		}
 		if(!from.registerTurtleTransfer(sender)) {
 			// Too many turtles running, or already a turtle for this key.
 			// Abort it.
