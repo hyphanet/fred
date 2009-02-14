@@ -483,6 +483,7 @@ public class RandomGrabArray {
 	public void removeFrom(ObjectContainer container) {
 		if(blocks != null) {
 			for(Block block : blocks) {
+				container.activate(block, 1);
 				for(RandomGrabArrayItem item : block.reqs) {
 					if(item != null) {
 						Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this);
