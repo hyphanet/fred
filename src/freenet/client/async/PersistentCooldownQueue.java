@@ -84,7 +84,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		return found;
 	}
 
-	public Key[] removeKeyBefore(final long now, ObjectContainer container, int maxCount) {
+	public Object removeKeyBefore(final long now, long dontCareAfterMillis, ObjectContainer container, int maxCount) {
 		// Will be called repeatedly until no more keys are returned, so it doesn't
 		// matter very much if they're not in order.
 		
@@ -124,7 +124,19 @@ public class PersistentCooldownQueue implements CooldownQueue {
 				container.delete(i);
 				v.add(i.key);
 			}
-			return (Key[]) v.toArray(new Key[v.size()]);
+			if(!v.isEmpty()) {
+				return (Key[]) v.toArray(new Key[v.size()]);
+			} else {
+				query = container.query();
+				query.descend("time").orderAscending().constrain(new Long(now + dontCareAfterMillis)).smaller().
+					and(query.descend("parent").constrain(this).identity());
+				results = query.execute();
+				if(results.hasNext()) {
+					return ((PersistentCooldownQueueItem) results.next()).time;
+				} else {
+					return null;
+				}
+			}
 		} else {
 			long tEnd = System.currentTimeMillis();
 			if(tEnd - tStart > 1000)

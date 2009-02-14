@@ -17,9 +17,13 @@ public interface CooldownQueue {
 
 	/**
 	 * Remove a key whose cooldown time has passed.
-	 * @return Either an array of Key's or null if no keys have passed their cooldown time.
+	 * @param dontCareAfter If the next item to come out of the cooldown
+	 * queue is more than this many millis after now, return null.
+	 * @return Either an array of Key's or a Long indicating the time at
+	 * which the next key will be removed from the cooldown, or null if 
+	 * no keys have passed their cooldown time.
 	 */
-	public abstract Key[] removeKeyBefore(long now, ObjectContainer container, int maxKeys);
+	public abstract Object removeKeyBefore(long now, long dontCareAfter, ObjectContainer container, int maxKeys);
 
 	/**
 	 * @return True if the key was found.

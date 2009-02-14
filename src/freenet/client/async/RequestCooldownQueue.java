@@ -117,7 +117,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#removeKeyBefore(long)
 	 */
-	public synchronized Key[] removeKeyBefore(long now, ObjectContainer container, int maxKeys) {
+	public synchronized Object removeKeyBefore(long now, long dontCareAfterMillis, ObjectContainer container, int maxKeys) {
 		ArrayList v = new ArrayList();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean foundIT = false;
@@ -133,7 +133,10 @@ public class RequestCooldownQueue implements CooldownQueue {
 		while(true) {
 			if(startPtr == endPtr) {
 				if(logMINOR) Logger.minor(this, "No keys queued");
-				return (Key[]) v.toArray(new Key[v.size()]);
+				if(!v.isEmpty())
+					return (Key[]) v.toArray(new Key[v.size()]);
+				else
+					return null;
 			}
 			long time = times[startPtr];
 			Key key = keys[startPtr];
@@ -148,7 +151,12 @@ public class RequestCooldownQueue implements CooldownQueue {
 			} else {
 				if(time > now) {
 					if(logMINOR) Logger.minor(this, "First key is later at time "+time);
-					return (Key[]) v.toArray(new Key[v.size()]);
+					if(!v.isEmpty())
+						return (Key[]) v.toArray(new Key[v.size()]);
+					else if(time < (now + dontCareAfterMillis)) 
+						return Long.valueOf(time);
+					else
+						return null;
 				}
 				times[startPtr] = 0;
 				keys[startPtr] = null;
@@ -158,8 +166,11 @@ public class RequestCooldownQueue implements CooldownQueue {
 			}
 			if(logMINOR) Logger.minor(this, "Returning key "+key);
 			v.add(key);
-			if(v.size() == maxKeys)
-				return (Key[]) v.toArray(new Key[v.size()]);
+			if(v.size() == maxKeys) {
+				if(!v.isEmpty())
+					return (Key[]) v.toArray(new Key[v.size()]);
+				else return null;
+			}
 		}
 	}
 	

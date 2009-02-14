@@ -509,6 +509,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * the above limit. So we have a higher limit before we complain that 
 	 * something odd is happening.. (e.g. leaking PersistentChosenRequest's). */
 	static final int WARNING_STARTER_QUEUE_SIZE = 800;
+	private static final long WAIT_AFTER_NOTHING_TO_START = 60*1000;
 	
 	private transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
 	
@@ -570,13 +571,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	/* If new stuff is added, maybeFillStarterQueue will be called anyway,
-	 * so it is safe to not run the queue filler regularly. */
-	private long lastFilledStarterQueueEmpty = -1;
+	private long nextQueueFillRequestStarterQueue = -1;
 	
 	public void queueFillRequestStarterQueue() {
-		if(lastFilledStarterQueueEmpty > 0 &&
-				System.currentTimeMillis() - lastFilledStarterQueueEmpty < 60*1000)
+		if(nextQueueFillRequestStarterQueue > 0 &&
+				System.currentTimeMillis() < nextQueueFillRequestStarterQueue)
 			return;
 		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
 			return;
@@ -667,12 +666,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+		boolean wakeUp = false;
+		long noLaterThan = Long.MAX_VALUE;
+		noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
+		noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
+		if(noLaterThan != Long.MAX_VALUE)
+			wakeUp = true;
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;
 		boolean added = false;
+		boolean finished = false;
 		synchronized(starterQueue) {
 			if(logMINOR && (!isSSKScheduler) && (!isInsertScheduler)) {
 				Logger.minor(this, "Scheduling CHK fetches...");
@@ -711,11 +717,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(length >= MAX_STARTER_QUEUE_SIZE) {
 				if(length >= WARNING_STARTER_QUEUE_SIZE)
 					Logger.error(this, "Queue already full: "+length);
-				return;
+				finished = true;
 			}
 			if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
-				return;
+				finished = true;
 			}
+		}
+		if(finished) {
+			if(wakeUp) starter.wakeUp();
+			return;
 		}
 		
 		if((!isSSKScheduler) && (!isInsertScheduler)) {
@@ -725,9 +735,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
 			if(request == null) {
 				synchronized(ClientRequestScheduler.this) {
-					if(!added) 
-						lastFilledStarterQueueEmpty = System.currentTimeMillis();
+					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
+					if(!added) {
+						if(noLaterThan != Long.MAX_VALUE)
+							nextQueueFillRequestStarterQueue = Math.min(System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START, noLaterThan + 1);
+						else
+							nextQueueFillRequestStarterQueue = System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
+					}
 				}
+				if(wakeUp) starter.wakeUp();
 				return;
 			}
 			added = true;
@@ -975,22 +991,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
 	}
 
-	private final DBJob moveFromCooldownJob = new DBJob() {
-		
-		public void run(ObjectContainer container, ClientContext context) {
-			if(moveKeysFromCooldownQueue(persistentCooldownQueue, true, container) ||
-					moveKeysFromCooldownQueue(transientCooldownQueue, false, container))
-				starter.wakeUp();
-		}
-		
-	};
-	
-	public void moveKeysFromCooldownQueue() {
-		jobRunner.queue(moveFromCooldownJob, NativeThread.NORM_PRIORITY, true);
-	}
-	
-	private boolean moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
-		if(queue == null) return false;
+	private long moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
+		if(queue == null) return Long.MAX_VALUE;
 		long now = System.currentTimeMillis();
 		/*
 		 * Only go around once. We will be called again. If there are keys to move, then RequestStarter will not
@@ -1010,8 +1012,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		 * nodes with little RAM it would be bad...
 		 */
 		final int MAX_KEYS = 20;
-		Key[] keys = queue.removeKeyBefore(now, container, MAX_KEYS);
-		if(keys == null) return false;
+		Object ret = queue.removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS);
+		if(ret == null) return Long.MAX_VALUE;
+		if(ret instanceof Long) {
+			return (Long) ret;
+		}
+		Key[] keys = (Key[]) ret;
 		for(int j=0;j<keys.length;j++) {
 			Key key = keys[j];
 			if(persistent)
@@ -1039,7 +1045,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.deactivate(key, 5);
 		}
-		return true;
+		return Long.MAX_VALUE;
 	}
 
 	public long countTransientQueuedRequests() {

@@ -34,12 +34,6 @@ public interface RequestScheduler {
 	 */
 	long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container);
 
-	/**
-	 * Remove keys from the cooldown queue who have now served their time and can be requested 
-	 * again.
-	 */
-	public void moveKeysFromCooldownQueue();
-	
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
 	public static final long COOLDOWN_PERIOD = 30*60*1000;
