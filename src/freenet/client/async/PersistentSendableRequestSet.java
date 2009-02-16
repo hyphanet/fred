@@ -29,7 +29,9 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 		int idx = find(req);
 		if(idx == -1) {
 			list.add(req);
-			container.store(list);
+			container.store(req);
+			/** Store to depth 1, otherwise it will update to depth 3 */
+			container.ext().store(list, 1);
 			return true;
 		} else return false;
 	}
