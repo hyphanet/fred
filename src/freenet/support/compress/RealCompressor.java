@@ -9,8 +9,10 @@ import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.NativeThread;
 import java.util.LinkedList;
+import java.util.concurrent.Semaphore;
 
 import com.db4o.ObjectContainer;
 
@@ -19,6 +21,7 @@ public class RealCompressor implements PrioRunnable {
 	private final Executor exec;
 	private ClientContext context;
 	private static final LinkedList<CompressJob> _awaitingJobs = new LinkedList<CompressJob>();
+	public static final Semaphore compressorSemaphore = new Semaphore(getMaxRunningCompressionThreads());
 	
 	public RealCompressor(Executor e) {
 		this.exec = e;
@@ -51,7 +54,7 @@ public class RealCompressor implements PrioRunnable {
 						continue;
 					}
 				}
-				Compressor.COMPRESSOR_TYPE.compressorSemaphore.acquire(); 
+				compressorSemaphore.acquire(); 
 			} catch(InterruptedException e) {
 				Logger.error(this, "caught: "+e.getMessage(), e);
 				continue;
@@ -82,7 +85,7 @@ public class RealCompressor implements PrioRunnable {
 					} catch(Throwable t) {
 						Logger.error(this, "Caught " + t + " in " + this, t);
 					} finally {
-						Compressor.COMPRESSOR_TYPE.compressorSemaphore.release();
+						compressorSemaphore.release();
 					}
 				}
 
@@ -98,4 +101,27 @@ public class RealCompressor implements PrioRunnable {
 		return false;
 	}
 	
+	private static int getMaxRunningCompressionThreads() {
+		int maxRunningThreads = 1;
+		
+		String osName = System.getProperty("os.name");
+		if(osName.indexOf("Windows") == -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode()))
+			// OS/X niceness is really weak, so we don't want any more background CPU load than necessary
+			// Also, on non-Windows, we need the native threads library to be working.
+			maxRunningThreads = 1;
+		else {
+			// Most other OSs will have reasonable niceness, so go by RAM.
+			Runtime r = Runtime.getRuntime();
+			int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
+			long maxMemory = r.maxMemory();
+			if(maxMemory < 128 * 1024 * 1024)
+				max = 1;
+			else
+				// one compressor thread per (128MB of ram + available core)
+				max = Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128 * 1024 * 1024))));
+			maxRunningThreads = max;
+		}
+		Logger.minor(RealCompressor.class, "Maximum Compressor threads: " + maxRunningThreads);
+		return maxRunningThreads;
+	}
 }
