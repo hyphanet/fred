@@ -451,7 +451,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		else
 			schedule(container, context);
 		if (finished) {
-			parent.segmentFinished(this, container, context);
+			finish(container, context, parent);
 		}
 		if(job != null) {
 			splitfileAlgo.addToQueue(job, context.fecQueue, container);
@@ -628,6 +628,20 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.store(this);
 		}
 		parent.segmentFinished(this, container, context);
+		for(int i=0;i<dataBlocks.length;i++) {
+			if(dataBlocks[i] == null) continue;
+			container.activate(dataBlocks[i], 1);
+			dataBlocks[i].free();
+			dataBlocks[i].removeFrom(container);
+			dataBlocks[i] = null;
+		}
+		for(int i=0;i<checkBlocks.length;i++) {
+			if(checkBlocks[i] == null) continue;
+			container.activate(checkBlocks[i], 1);
+			checkBlocks[i].free();
+			checkBlocks[i].removeFrom(container);
+			checkBlocks[i] = null;
+		}
 	}
 
 	/**
@@ -651,6 +665,20 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.deactivate(errors, 5);
 		}
 		parent.segmentFinished(this, container, context);
+		for(int i=0;i<dataBlocks.length;i++) {
+			if(dataBlocks[i] == null) continue;
+			container.activate(dataBlocks[i], 1);
+			dataBlocks[i].free();
+			dataBlocks[i].removeFrom(container);
+			dataBlocks[i] = null;
+		}
+		for(int i=0;i<checkBlocks.length;i++) {
+			if(checkBlocks[i] == null) continue;
+			container.activate(checkBlocks[i], 1);
+			checkBlocks[i].free();
+			checkBlocks[i].removeFrom(container);
+			checkBlocks[i] = null;
+		}
 	}
 
 	private void onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
@@ -748,6 +776,20 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(parent, 1);
 		}
 		parent.segmentFinished(this, container, context);
+		for(int i=0;i<dataBlocks.length;i++) {
+			if(dataBlocks[i] == null) continue;
+			container.activate(dataBlocks[i], 1);
+			dataBlocks[i].free();
+			dataBlocks[i].removeFrom(container);
+			dataBlocks[i] = null;
+		}
+		for(int i=0;i<checkBlocks.length;i++) {
+			if(checkBlocks[i] == null) continue;
+			container.activate(checkBlocks[i], 1);
+			checkBlocks[i].free();
+			checkBlocks[i].removeFrom(container);
+			checkBlocks[i] = null;
+		}
 	}
 
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
