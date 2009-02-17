@@ -281,6 +281,8 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			@Override
 			public void close() throws IOException {
 				if(closed) return;
+				if(Logger.shouldLog(Logger.MINOR, this)) 
+					Logger.minor(this, "Closing "+this+" for "+SegmentedBucketChainBucket.this);
 				cur.close();
 				closed = true;
 				cur = null;
@@ -299,6 +301,13 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 						container.ext().store(segments, 1);
 						container.ext().store(SegmentedBucketChainBucket.this, 1);
 						container.deactivate(oldSeg, 1);
+						// If there is only one segment, we didn't add a killMe.
+						// Add one now.
+						synchronized(SegmentedBucketChainBucket.this) {
+							if(killMe != null) return;
+							killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
+						}
+						killMe.scheduleRestart(container, context);
 					}
 					
 				}, NativeThread.HIGH_PRIORITY);
