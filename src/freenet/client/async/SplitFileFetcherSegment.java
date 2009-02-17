@@ -538,7 +538,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(persistent) container.store(this);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
-			encoderFinished(container, context);
+			if(persistent)
+				encoderFinished(container, context);
 			return;
 		}
 
@@ -548,7 +549,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.deactivate(parent, 1);
 				container.deactivate(context, 1);
 			}
-			encoderFinished(container, context);
+			if(persistent)
+				encoderFinished(container, context);
 			return;
 		}
 		
@@ -590,7 +592,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			encoderFinished(container, context);
+			if(persistent)
+				encoderFinished(container, context);
 		}
 	}
 
@@ -707,7 +710,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.deactivate(parentFetcher, 1);
 		}
 		} finally {
-		encoderFinished(container, context);
+			if(persistent)
+				encoderFinished(container, context);
 		}
 	}
 
@@ -1541,6 +1545,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "removing "+this);
 		if(decodedData != null)
 			freeDecodedData(container);
 		removeSubSegments(container, context);
@@ -1578,7 +1583,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 	public void fetcherFinished(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			fetcherFinished = true;
-			if(!encoderFinished) return;
+			if(!encoderFinished) {
+				container.store(this);
+				if(logMINOR) Logger.minor(this, "Fetcher finished but encoder not finished on "+this);
+				return;
+			}
 		}
 		removeFrom(container, context);
 	}
@@ -1586,7 +1595,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private void encoderFinished(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			encoderFinished = true;
-			if(!fetcherFinished) return;
+			if(!fetcherFinished) {
+				container.store(this);
+				if(logMINOR) Logger.minor(this, "Encoder finished but fetcher not finished on "+this);
+				return;
+			}
 		}
 		removeFrom(container, context);
 	}
