@@ -21,5 +21,7 @@ public interface ArchiveExtractCallback {
 	
 	/** Failed for some other reason */
 	public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context);
+
+	public void removeFrom(ObjectContainer container);
 	
 }

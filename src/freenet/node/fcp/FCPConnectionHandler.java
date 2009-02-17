@@ -608,9 +608,9 @@ public class FCPConnectionHandler implements Closeable {
 			req = requestsByIdentifier.remove(identifier);
 		}
 		if(req != null) {
-			req.requestWasRemoved(null);
 			if(kill)
 				req.cancel(null, server.core.clientContext);
+			req.requestWasRemoved(null);
 		}
 		return req;
 	}

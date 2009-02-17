@@ -31,13 +31,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	final int maxRetries;
 	private int retryCount;
 	final FetchContext ctx;
+	protected boolean deleteFetchContext;
 	static final SendableRequestItem[] keys = new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	/** It is essential that we know when the cooldown will end, otherwise we cannot 
 	 * remove the key from the queue if we are killed before that */
 	long cooldownWakeupTime;
 
-	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
+	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, boolean deleteFetchContext) {
 		super(parent);
+		this.deleteFetchContext = deleteFetchContext;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Creating BaseSingleFileFetcher for "+key);
 		retryCount = 0;
@@ -339,7 +341,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		super.removeFrom(container, context);
-		// ctx is passed in, not our responsibility
+		if(deleteFetchContext) ctx.removeFrom(container);
 		key.removeFrom(container);
 	}
 	

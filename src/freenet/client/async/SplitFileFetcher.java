@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -37,6 +38,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	final FetchContext fetchContext;
 	final FetchContext blockFetchContext;
+	final boolean deleteFetchContext;
 	final ArchiveContext archiveContext;
 	final List decompressors;
 	final ClientMetadata clientMetadata;
@@ -112,9 +114,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	private transient SplitFileFetcherKeyListener tempListener;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
-			FetchContext newCtx, List decompressors2, ClientMetadata clientMetadata, 
+			FetchContext newCtx, boolean deleteFetchContext, List decompressors2, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
+		this.deleteFetchContext = deleteFetchContext;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Persistence = "+persistent+" from "+parent2, new Exception("debug"));
 		this.hashCode = super.hashCode();
@@ -124,11 +127,11 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(newCtx == null)
 			throw new NullPointerException();
 		this.archiveContext = actx;
-		this.decompressors = decompressors2;
+		this.decompressors = persistent ? new ArrayList(decompressors2) : decompressors2;
 		if(decompressors.size() > 1) {
 			Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
 		}
-		this.clientMetadata = clientMetadata;
+		this.clientMetadata = clientMetadata == null ? new ClientMetadata() : (ClientMetadata) clientMetadata.clone(); // copy it as in SingleFileFetcher
 		this.cb = rcb;
 		this.recursionLevel = recursionLevel + 1;
 		this.parent = parent2;
@@ -143,6 +146,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent) {
 			// Clear them here so they don't get deleted and we don't need to clone them.
 			metadata.clearSplitfileKeys();
+			container.store(metadata);
 		}
 		for(int i=0;i<splitfileDataBlocks.length;i++)
 			if(splitfileDataBlocks[i] == null) throw new MetadataParseException("Null: data block "+i+" of "+splitfileDataBlocks.length);
@@ -651,7 +655,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.activate(blockFetchContext, 1);
 		blockFetchContext.removeFrom(container);
+		if(deleteFetchContext)
+			fetchContext.removeFrom(container);
+		container.activate(clientMetadata, 1);
+		clientMetadata.removeFrom(container);
+		container.delete(decompressors);
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment segment = segments[i];
 			segments[i] = null;

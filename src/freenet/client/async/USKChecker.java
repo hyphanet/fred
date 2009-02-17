@@ -21,7 +21,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	private int dnfs;
 
 	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
-		super(key, maxRetries, ctx, parent);
+		super(key, maxRetries, ctx, parent, false);
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "Created USKChecker for "+key);
 		this.cb = cb;

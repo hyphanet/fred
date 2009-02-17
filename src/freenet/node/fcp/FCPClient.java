@@ -193,11 +193,11 @@ public class FCPClient {
 			}
 			clientRequestsByIdentifier.remove(identifier);
 		}
-        req.requestWasRemoved(container);
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
 			req.cancel(container, context);
 		}
+        req.requestWasRemoved(container);
 		if(completionCallback != null)
 			completionCallback.onRemove(req, container);
 		return true;

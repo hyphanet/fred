@@ -147,6 +147,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 								tag.callback.notInArchive(container, context);
 							else
 								tag.callback.gotBucket(data, container, context);
+							tag.callback.removeFrom(container);
 							container.deactivate(tag.callback, 1);
 							container.delete(tag);
 						}
@@ -160,6 +161,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 						public void run(ObjectContainer container, ClientContext context) {
 							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
+							tag.callback.removeFrom(container);
 							container.delete(tag);
 						}
 						
@@ -172,6 +174,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 						public void run(ObjectContainer container, ClientContext context) {
 							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
+							tag.callback.removeFrom(container);
 							container.delete(tag);
 						}
 						
@@ -217,6 +220,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
 			// Must not be called.
 			throw new UnsupportedOperationException();
+		}
+
+		public void removeFrom(ObjectContainer container) {
+			container.delete(this);
 		}
 		
 	}

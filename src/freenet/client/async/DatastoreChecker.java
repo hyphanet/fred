@@ -395,6 +395,7 @@ public class DatastoreChecker implements PrioRunnable {
 						// Completed and deleted already.
 						if(Logger.shouldLog(Logger.MINOR, this)) 
 							Logger.minor(this, "Already deleted from database");
+						container.delete(it);
 						return;
 					}
 					container.activate(get, 1);

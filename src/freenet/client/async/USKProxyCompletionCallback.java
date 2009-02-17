@@ -29,6 +29,12 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		}
 		context.uskManager.update(usk, usk.suggestedEdition, context);
 		cb.onSuccess(result, state, container, context);
+		if(!persistent) removeFrom(container);
+	}
+
+	private void removeFrom(ObjectContainer container) {
+		usk.removeFrom(container);
+		container.delete(this);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
@@ -42,6 +48,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 			e = new FetchException(e, uri);
 		}
 		cb.onFailure(e, state, container, context);
+		if(!persistent) removeFrom(container);
 	}
 
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {

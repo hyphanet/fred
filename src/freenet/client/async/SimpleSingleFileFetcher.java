@@ -26,8 +26,8 @@ import freenet.support.api.Bucket;
 public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
 	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, 
-			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l, ObjectContainer container, ClientContext context) {
-		super(key, maxRetries, ctx, parent);
+			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l, ObjectContainer container, ClientContext context, boolean deleteFetchContext) {
+		super(key, maxRetries, ctx, parent, deleteFetchContext);
 		this.rcb = rcb;
 		this.token = l;
 		if(!dontAdd) {
