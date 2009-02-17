@@ -403,6 +403,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(!wereAnyValid) {
 						Logger.normal(this, "No requests valid: "+getters);
 					}
+				} else {
+					Logger.normal(this, "No valid requests passed in: "+getters);
 				}
 				if(reg != null)
 					container.delete(reg);
