@@ -489,9 +489,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
+			FCPMessage oldProgress = progressPending;
 			progressPending = msg;
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.store(this);
+				if(oldProgress != null) oldProgress.removeFrom(container);
+			}
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
@@ -619,6 +622,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(allDataPending != null) {
 				container.activate(allDataPending, 5);
 				allDataPending.removeFrom(container);
+			}
+			if(progressPending != null) {
+				container.activate(progressPending, 5);
+				progressPending.removeFrom(container);
 			}
 		}
 		super.requestWasRemoved(container);
