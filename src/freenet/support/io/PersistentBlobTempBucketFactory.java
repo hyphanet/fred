@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -41,6 +42,7 @@ public class PersistentBlobTempBucketFactory {
 	public final long blockSize;
 	private File storageFile;
 	private transient RandomAccessFile raf;
+	private transient LinkedList<DBJob> freeJobs;
 	/** We use NIO for the equivalent of pwrite/pread. This is parallelized on unix
 	 * but sadly not on Windows. */
 	transient FileChannel channel;
@@ -93,7 +95,69 @@ public class PersistentBlobTempBucketFactory {
 		shadows = new TreeMap<Long,PersistentBlobTempBucket>();
 		jobRunner = jobRunner2;
 		weakRandomSource = fastWeakRandom;
+		freeJobs = new LinkedList<DBJob>();
 		this.ticker = ticker;
+		
+		// Diagnostics
+		
+		long size;
+		try {
+			size = channel.size();
+		} catch (IOException e1) {
+			Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+			return;
+		}
+		size -= size % blockSize;
+		long blocks = size / blockSize;
+		long ptr = blocks - 1;
+
+		long used = 0;
+		long rangeStart = Long.MIN_VALUE;
+		PersistentBlobTempBucketTag firstInRange = null;
+		for(long l = 0; l < ptr; l++) {
+			synchronized(this) {
+				if(freeSlots.containsKey(l)) continue;
+				if(notCommittedBlobs.containsKey(l)) continue;
+				if(almostFreeSlots.containsKey(l)) continue;
+			}
+			Query query = container.query();
+			query.constrain(PersistentBlobTempBucketTag.class);
+			query.descend("index").constrain(l);
+			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
+			if(tags.hasNext()) {
+				PersistentBlobTempBucketTag tag = tags.next();
+				if(!tag.isFree)
+					used++;
+				if(tag.bucket == null && !tag.isFree)
+					Logger.error(this, "No bucket but flagged as not free: index "+l+" "+tag.bucket);
+				if(tag.bucket != null && tag.isFree)
+					Logger.error(this, "Has bucket but flagged as free: index "+l+" "+tag.bucket);
+				if(!tag.isFree) {
+					if(rangeStart == Long.MIN_VALUE) {
+						rangeStart = l;
+						firstInRange = tag;
+					}
+				} else {
+					if(rangeStart != Long.MIN_VALUE) {
+						System.out.println("Range: "+rangeStart+" to "+(l-1)+" first is "+firstInRange);
+						rangeStart = Long.MIN_VALUE;
+						firstInRange = null;
+					}
+				}
+				continue;
+			}
+			Logger.error(this, "FOUND EMPTY SLOT: "+l+" when scanning the blob file because tags in database < length of file");
+			PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, l);
+			container.store(tag);
+			synchronized(this) {
+				freeSlots.put(ptr, tag);
+			}
+		}
+		if(rangeStart != Long.MIN_VALUE) {
+			System.out.println("Range: "+rangeStart+" to "+(ptr-1));
+		}
+		System.err.println("Persistent blobs: Blocks: "+blocks+" used "+used);
+
 	}
 
 	public String getName() {
@@ -105,6 +169,7 @@ public class PersistentBlobTempBucketFactory {
 	private final DBJob slotFinder = new DBJob() {
 		
 		public void run(ObjectContainer container, ClientContext context) {
+			while(true) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				if(freeSlots.size() > MAX_FREE) return;
@@ -197,6 +262,18 @@ public class PersistentBlobTempBucketFactory {
 				}
 			}
 			
+			DBJob freeJob = null;
+			synchronized(this) {
+				if(!freeJobs.isEmpty())
+					freeJob = freeJobs.removeFirst();
+			}
+			if(freeJob != null) {
+				container.activate(freeJob, 1);
+				System.err.println("Freeing some space by running "+freeJob);
+				freeJob.run(container, context);
+				continue;
+			}
+			
 			// Lets extend the file.
 			// FIXME if physical security is LOW, just set the length, possibly
 			// padding will nonrandom nulls on unix.
@@ -242,6 +319,8 @@ public class PersistentBlobTempBucketFactory {
 					freeSlots.put(ptr, tag);
 				}
 			}
+			return;
+		}
 		}
 		
 	};
@@ -509,10 +588,11 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public synchronized void postCommit() {
-		int sz = freeSlots.size() + almostFreeSlots.size();
+		int freeNow = freeSlots.size();
+		int sz = freeNow + almostFreeSlots.size();
 		if(sz > MAX_FREE) {
 			Iterator<Map.Entry<Long,PersistentBlobTempBucketTag>> it = almostFreeSlots.entrySet().iterator();
-			for(int i=sz;i<MAX_FREE && it.hasNext();i++) {
+			for(int i=freeNow;i<MAX_FREE && it.hasNext();i++) {
 				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
 				freeSlots.put(entry.getKey(), entry.getValue());
 			}
@@ -539,6 +619,12 @@ public class PersistentBlobTempBucketFactory {
 		if(temp != bucket) {
 			Logger.error(this, "Freed wrong shadow: "+temp+" should be "+bucket);
 			shadows.put(index, temp);
+		}
+	}
+
+	public void addBlobFreeCallback(DBJob job) {
+		synchronized(this) {
+			freeJobs.add(job);
 		}
 	}
 

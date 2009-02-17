@@ -8,12 +8,14 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 
+import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
@@ -243,5 +245,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			// Lots of buckets freed, commit now to reduce memory footprint.
 			db.commit();
 		}
+	}
+
+	public void addBlobFreeCallback(DBJob job) {
+		blobFactory.addBlobFreeCallback(job);
 	}
 }

@@ -22,6 +22,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
+import freenet.support.io.PersistentTempBucketFactory;
 
 /**
  * Object passed in to client-layer operations, containing references to essential but transient objects
@@ -41,7 +42,7 @@ public class ClientContext {
 	public transient final BackgroundBlockEncoder backgroundBlockEncoder;
 	public transient final RandomSource random;
 	public transient final ArchiveManager archiveManager;
-	public transient final BucketFactory persistentBucketFactory;
+	public transient final PersistentTempBucketFactory persistentBucketFactory;
 	public transient final BucketFactory tempBucketFactory;
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
@@ -54,7 +55,7 @@ public class ClientContext {
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
-			BucketFactory ptbf, BucketFactory tbf, HealingQueue hq,
+			PersistentTempBucketFactory ptbf, BucketFactory tbf, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom, 
 			Random fastWeakRandom, Ticker ticker, 
 			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc) {

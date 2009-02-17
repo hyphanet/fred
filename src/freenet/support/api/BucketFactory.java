@@ -5,6 +5,8 @@ package freenet.support.api;
 
 import java.io.IOException;
 
+import freenet.support.io.SegmentedBucketChainBucketKillJob;
+
 
 public interface BucketFactory {
 	/**

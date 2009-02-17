@@ -25,6 +25,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 			// More work needs to be done.
 			// We will have already been removed, so re-add, in case we crash soon.
 			scheduleRestart(container, context);
+			context.persistentBucketFactory.addBlobFreeCallback(this);
 			// But try to sort it out now ...
 			context.jobRunner.queue(this, NativeThread.NORM_PRIORITY, true);
 		} else {
