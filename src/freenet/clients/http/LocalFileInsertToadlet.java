@@ -66,15 +66,20 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 		currentPath = new File(path).getCanonicalFile();
 		
-		if(!core.allowUploadFrom(currentPath)) {
-			sendErrorPage(toadletContext, 403, "Forbidden", l10n("dirAccessDenied"));
-			return;
-		}
 		
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
 		HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+
+		if(!core.allowUploadFrom(currentPath)) {
+			HTMLNode infoboxE = contentNode.addChild(pageMaker.getInfobox("infobox-error",  "Forbidden"));
+			HTMLNode infoboxEContent = pageMaker.getContentNode(infoboxE);
+			infoboxEContent.addChild("#", l10n("dirAccessDenied"));
+
+			currentPath = new File(System.getProperty("user.home")); // FIXME what if user.home is denied as well?
+		}
+
 		if(toadletContext.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		
