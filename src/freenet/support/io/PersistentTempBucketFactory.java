@@ -250,4 +250,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public void addBlobFreeCallback(DBJob job) {
 		blobFactory.addBlobFreeCallback(job);
 	}
+
+	public void removeBlobFreeCallback(DBJob job) {
+		blobFactory.removeBlobFreeCallback(job);
+	}
 }

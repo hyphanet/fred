@@ -42,7 +42,7 @@ public class PersistentBlobTempBucketFactory {
 	public final long blockSize;
 	private File storageFile;
 	private transient RandomAccessFile raf;
-	private transient LinkedList<DBJob> freeJobs;
+	private transient HashSet<DBJob> freeJobs;
 	/** We use NIO for the equivalent of pwrite/pread. This is parallelized on unix
 	 * but sadly not on Windows. */
 	transient FileChannel channel;
@@ -95,7 +95,7 @@ public class PersistentBlobTempBucketFactory {
 		shadows = new TreeMap<Long,PersistentBlobTempBucket>();
 		jobRunner = jobRunner2;
 		weakRandomSource = fastWeakRandom;
-		freeJobs = new LinkedList<DBJob>();
+		freeJobs = new HashSet<DBJob>();
 		this.ticker = ticker;
 		
 		// Diagnostics
@@ -169,6 +169,8 @@ public class PersistentBlobTempBucketFactory {
 	private final DBJob slotFinder = new DBJob() {
 		
 		public void run(ObjectContainer container, ClientContext context) {
+			int added = 0;
+			
 			while(true) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			synchronized(PersistentBlobTempBucketFactory.this) {
@@ -185,8 +187,6 @@ public class PersistentBlobTempBucketFactory {
 			long blocks = size / blockSize;
 			long ptr = blocks - 1;
 
-			int added = 0;
-			
 			for(long l = 0; l < blockSize + 16383; l += 16384) {
 			Query query = container.query();
 			query.constrain(PersistentBlobTempBucketTag.class);
@@ -264,12 +264,15 @@ public class PersistentBlobTempBucketFactory {
 			
 			DBJob freeJob = null;
 			synchronized(this) {
-				if(!freeJobs.isEmpty())
-					freeJob = freeJobs.removeFirst();
+				if(!freeJobs.isEmpty()) {
+					freeJob = freeJobs.iterator().next();
+					freeJobs.remove(freeJob);
+				}
 			}
 			if(freeJob != null) {
 				container.activate(freeJob, 1);
 				System.err.println("Freeing some space by running "+freeJob);
+				Logger.minor(this, "Freeing some space by running "+freeJob);
 				freeJob.run(container, context);
 				continue;
 			}
@@ -625,6 +628,12 @@ public class PersistentBlobTempBucketFactory {
 	public void addBlobFreeCallback(DBJob job) {
 		synchronized(this) {
 			freeJobs.add(job);
+		}
+	}
+
+	public void removeBlobFreeCallback(DBJob job) {
+		synchronized(this) {
+			freeJobs.remove(job);
 		}
 	}
 

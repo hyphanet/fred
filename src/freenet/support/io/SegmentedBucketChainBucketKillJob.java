@@ -31,6 +31,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 		} else {
 			context.jobRunner.removeRestartJob(this, RESTART_PRIO, container);
 			container.delete(this);
+			context.persistentBucketFactory.removeBlobFreeCallback(this);
 		}
 	}
 	
