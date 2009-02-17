@@ -925,7 +925,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			updateShortToString();
 		}
 		if(logMINOR) {
-			Logger.minor(this, "3: detectedPeer = " + localDetectedPeer + " (" + localDetectedPeer.getAddress(false) + ')');
+			if(localDetectedPeer != null)
+				Logger.minor(this, "3: detectedPeer = " + localDetectedPeer + " (" + localDetectedPeer.getAddress(false) + ')');
 			Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: " + handshakeIPsToString());
 		}
 	}
