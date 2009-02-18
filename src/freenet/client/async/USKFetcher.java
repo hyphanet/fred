@@ -612,4 +612,9 @@ public class USKFetcher implements ClientGetState {
 		throw new UnsupportedOperationException();
 	}
 	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing USKFetcher in database", new Exception("error"));
+		return false;
+	}
+
 }
