@@ -231,7 +231,7 @@ public class ClientGetter extends BaseClientGetter {
 
 	public void cancel(ObjectContainer container, ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Cancelling "+this);
+		if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientGetState s;
 		synchronized(this) {
 			super.cancel();

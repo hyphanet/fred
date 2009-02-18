@@ -105,6 +105,7 @@ class SingleFileInserter implements ClientPutState {
 		this.targetFilename = targetFilename;
 		this.persistent = parent.persistent();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent);
 	}
 	
 	public void start(SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws InsertException {
