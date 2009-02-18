@@ -987,6 +987,10 @@ public class Metadata implements Cloneable {
 			container.activate(resolvedURI, 5);
 			resolvedURI.removeFrom(container);
 		}
+		if(simpleRedirectKey != null) {
+			container.activate(simpleRedirectKey, 5);
+			simpleRedirectKey.removeFrom(container);
+		}
 		if(splitfileDataKeys != null) {
 			for(ClientCHK key : splitfileDataKeys)
 				if(key != null) {
