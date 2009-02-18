@@ -230,4 +230,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 			return context.getChkFetchScheduler();
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+
 }

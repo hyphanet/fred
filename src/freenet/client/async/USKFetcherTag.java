@@ -82,6 +82,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			// The actual USK fetch is non-persistent, only the tags survive a restart.
 			return false;
 		}
+
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
 		
 	};
 	

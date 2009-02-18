@@ -73,6 +73,10 @@ public abstract class ClientRequest {
 				public boolean persistent() {
 					return false;
 				}
+
+				public void removeFrom(ObjectContainer container) {
+					throw new UnsupportedOperationException();
+				}
 				
 			};
 			this.client = null;
@@ -106,6 +110,10 @@ public abstract class ClientRequest {
 
 				public boolean persistent() {
 					return false;
+				}
+
+				public void removeFrom(ObjectContainer container) {
+					throw new UnsupportedOperationException();
 				}
 				
 			};

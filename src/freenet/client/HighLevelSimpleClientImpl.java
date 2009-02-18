@@ -273,4 +273,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return false;
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+
 }

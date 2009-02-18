@@ -4083,6 +4083,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		public boolean persistent() {
 			return false;
 		}
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
 	};
 	
 	public void onTooLowMTU(int minAdvertisedMTU, int minAcceptableMTU) {

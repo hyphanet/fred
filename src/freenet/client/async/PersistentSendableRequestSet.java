@@ -56,4 +56,9 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 		return true;
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		container.delete(list);
+		container.delete(this);
+	}
+
 }

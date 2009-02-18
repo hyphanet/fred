@@ -504,5 +504,9 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		Logger.error(this, "Not storing NodeUpdater in database", new Exception("error"));
 		return false;
 	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
 	
 }

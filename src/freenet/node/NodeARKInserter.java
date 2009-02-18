@@ -266,4 +266,8 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 		return false;
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+
 }

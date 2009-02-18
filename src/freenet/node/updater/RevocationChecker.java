@@ -260,4 +260,8 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 		return false;
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+
 }

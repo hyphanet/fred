@@ -30,4 +30,8 @@ public class TransientSendableRequestSet implements SendableRequestSet {
 		return set.remove(req);
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+
 }

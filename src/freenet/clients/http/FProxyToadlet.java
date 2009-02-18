@@ -10,6 +10,8 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -444,6 +446,9 @@ public final class FProxyToadlet extends Toadlet {
 			FetchResult result = fetch(key, maxSize, new RequestClient() {
 				public boolean persistent() {
 					return false;
+				}
+				public void removeFrom(ObjectContainer container) {
+					throw new UnsupportedOperationException();
 				} }); 
 			
 			// Now, is it safe?

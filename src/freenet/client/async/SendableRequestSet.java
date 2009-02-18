@@ -12,4 +12,6 @@ public interface SendableRequestSet {
 	
 	public boolean removeRequest(SendableRequest req, ObjectContainer container);
 
+	public void removeFrom(ObjectContainer container);
+
 }

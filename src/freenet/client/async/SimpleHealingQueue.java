@@ -28,6 +28,9 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		super(prio, new RequestClient() {
 			public boolean persistent() {
 				return false;
+			}
+			public void removeFrom(ObjectContainer container) {
+				throw new UnsupportedOperationException();
 			} });
 		this.ctx = context;
 		this.runningInserters = new HashMap();

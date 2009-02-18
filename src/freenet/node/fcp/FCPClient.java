@@ -57,6 +57,12 @@ public class FCPClient {
 			public boolean persistent() {
 				return forever;
 			}
+			public void removeFrom(ObjectContainer container) {
+				if(forever)
+					container.delete(this);
+				else
+					throw new UnsupportedOperationException();
+			}
 		};
 		completionCallback = cb;
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {

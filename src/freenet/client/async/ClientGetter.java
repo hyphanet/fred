@@ -408,4 +408,11 @@ public class ClientGetter extends BaseClientGetter {
 	public ClientCallback getClientCallback() {
 		return clientCallback;
 	}
+	
+	public void removeFrom(ObjectContainer container) {
+		uri.removeFrom(container);
+		ctx.removeFrom(container);
+		actx.removeFrom(container);
+		super.removeFrom(container);
+	}
 }

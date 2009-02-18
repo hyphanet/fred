@@ -329,4 +329,8 @@ public class USKManager implements RequestClient {
 	public boolean persistent() {
 		return false;
 	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
 }

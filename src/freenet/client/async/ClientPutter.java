@@ -328,4 +328,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		// Ignore, at the moment
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		cm.removeFrom(container);
+		ctx.removeFrom(container);
+		targetURI.removeFrom(container);
+		if(uri != null)
+			uri.removeFrom(container);
+		super.removeFrom(container);
+	}
 }
