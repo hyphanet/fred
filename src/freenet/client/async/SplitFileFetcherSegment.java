@@ -1280,10 +1280,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public synchronized int getBlockNumber(Key key, ObjectContainer container) {
 		for(int i=0;i<dataKeys.length;i++) {
-			ClientKey k = dataKeys[i];
+			ClientCHK k = dataKeys[i];
 			if(k == null) continue;
 			if(persistent)
 				container.activate(k, 5);
+			if(k.getRoutingKey() == null)
+				throw new NullPointerException("Routing key is null yet key exists for data block "+i+" of "+this);
 			if(k.getNodeKey().equals(key)) return i;
 			else {
 				if(persistent)
@@ -1291,10 +1293,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		}
 		for(int i=0;i<checkKeys.length;i++) {
-			ClientKey k = checkKeys[i];
+			ClientCHK k = checkKeys[i];
 			if(k == null) continue;
 			if(persistent)
 				container.activate(k, 5);
+			if(k.getRoutingKey() == null)
+				throw new NullPointerException("Routing key is null yet key exists for check block "+i+" of "+this);
 			if(k.getNodeKey().equals(key)) return dataKeys.length+i;
 			else {
 				if(persistent)
