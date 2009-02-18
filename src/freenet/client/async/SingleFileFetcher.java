@@ -1169,7 +1169,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		removeMetadata(container);
 		removeArchiveMetadata(container);
 		container.delete(decompressors);
-		container.delete(this);
 		super.removeFrom(container, context);
 	}
 	
