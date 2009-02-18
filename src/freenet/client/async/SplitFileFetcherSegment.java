@@ -419,7 +419,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					count++;
 			}
 			if(count < dataBuckets.length) {
-				Logger.error(this, "Attempting to decode but only "+count+" of "+dataBuckets.length+" blocks available!");
+				Logger.error(this, "Attempting to decode but only "+count+" of "+dataBuckets.length+" blocks available!", new Exception("error"));
 			}
 			if(persistent)
 				container.activate(parent, 1);
