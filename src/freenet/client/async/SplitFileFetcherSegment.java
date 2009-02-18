@@ -348,6 +348,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		boolean dontNotify = (result & ON_SUCCESS_DONT_NOTIFY) == ON_SUCCESS_DONT_NOTIFY;
 		boolean allFailed = (result & ON_SUCCESS_ALL_FAILED) == ON_SUCCESS_ALL_FAILED;
 		boolean decodeNow = (result & ON_SUCCESS_DECODE_NOW) == ON_SUCCESS_DECODE_NOW;
+		if(logMINOR) Logger.minor(this, "finishOnSuccess: result = "+result+" dontNotify="+dontNotify+" allFailed="+allFailed+" decodeNow="+decodeNow);
 		if(persistent) {
 			container.store(this);
 			container.activate(parent, 1);
