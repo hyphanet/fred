@@ -120,7 +120,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		this.deleteFetchContext = deleteFetchContext;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Persistence = "+persistent+" from "+parent2, new Exception("debug"));
-		this.hashCode = super.hashCode();
+		int hash = super.hashCode();
+		if(hash == 0) hash = 1;
+		this.hashCode = hash;
 		this.finished = false;
 		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
@@ -671,4 +673,21 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		container.delete(this);
 	}
 
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(hashCode == 0) {
+			Logger.error(this, "Trying to update with hash 0 => already deleted!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(hashCode == 0) {
+			Logger.error(this, "Trying to write with hash 0 => already deleted!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+	
+	
 }
