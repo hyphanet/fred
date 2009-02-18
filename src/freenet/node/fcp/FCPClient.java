@@ -441,6 +441,7 @@ public class FCPClient {
 		container.activate(runningPersistentRequests, 1);
 		container.activate(completedUnackedRequests, 1);
 		container.activate(clientRequestsByIdentifier, 1);
+		container.activate(lowLevelClient, 1);
 		((Db4oList)runningPersistentRequests).activationDepth(1);
 		((Db4oList)completedUnackedRequests).activationDepth(1);
 		((Db4oMap)clientRequestsByIdentifier).activationDepth(1);
