@@ -48,7 +48,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 			e = new FetchException(e, uri);
 		}
 		cb.onFailure(e, state, container, context);
-		if(!persistent) removeFrom(container);
+		if(persistent) removeFrom(container);
 	}
 
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
