@@ -357,7 +357,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			parentFetcher.removeMyPendingKeys(this, container, context);
 			if(persistent)
 				container.deactivate(parentFetcher, 1);
-			removeSubSegments(container, context);
+			removeSubSegments(container, context, false);
 			decode(container, context);
 		} else if(allFailed) {
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, true);
@@ -1017,7 +1017,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkKeys[i] = null;
 			}
 		}
-		removeSubSegments(container, context);
+		removeSubSegments(container, context, false);
 		if(persistent) {
 			container.store(this);
 			container.activate(parentFetcher, 1);
@@ -1126,7 +1126,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return true;
 	}
 
-	private void removeSubSegments(ObjectContainer container, ClientContext context) {
+	private void removeSubSegments(ObjectContainer container, ClientContext context, boolean finishing) {
 		if(persistent)
 			container.activate(subSegments, 1);
 		SplitFileFetcherSubSegment[] deadSegs;
@@ -1144,7 +1144,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.deactivate(deadSegs[i], 1);
 		}
-		if(persistent) {
+		if(persistent && !finishing) {
 			container.store(this);
 			container.store(subSegments);
 		}
@@ -1548,7 +1548,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(logMINOR) Logger.minor(this, "removing "+this);
 		if(decodedData != null)
 			freeDecodedData(container);
-		removeSubSegments(container, context);
+		removeSubSegments(container, context, true);
+		container.delete(subSegments);
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] != null) dataKeys[i].removeFrom(container);
 			dataKeys[i] = null;
