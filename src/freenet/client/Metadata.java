@@ -1002,11 +1002,13 @@ public class Metadata implements Cloneable {
 				}
 		}
 		if(manifestEntries != null) {
+			container.activate(manifestEntries, 1);
 			for(Object m : manifestEntries.values()) {
 				Metadata meta = (Metadata) m;
 				container.activate(meta, 1);
 				meta.removeFrom(container);
 			}
+			container.delete(manifestEntries);
 		}
 		if(clientMetadata != null) {
 			container.activate(clientMetadata, 1);
