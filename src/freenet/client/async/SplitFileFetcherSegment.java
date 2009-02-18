@@ -260,6 +260,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent) {
 				data.storeTo(container);
 				container.store(dataBuckets[blockNo]);
+				container.store(this); // We could return -1, so we need to store(this) here
 			}
 		} else if(blockNo < checkKeys.length + dataKeys.length) {
 			int checkNo = blockNo - dataKeys.length;
@@ -281,6 +282,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent) {
 				data.storeTo(container);
 				container.store(checkBuckets[checkNo]);
+				container.store(this); // We could return -1, so we need to store(this) here
 			}
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
