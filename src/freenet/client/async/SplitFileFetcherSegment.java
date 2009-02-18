@@ -697,9 +697,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 					checkKeys[i].removeFrom(container);
 				checkKeys[i] = null;
 			}
-		}
-		if(persistent) {
-			container.store(this);
+			if(persistent && !fetcherFinished) {
+				container.store(this);
+			}
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
 		if(isCollectingBinaryBlob(parent)) {
