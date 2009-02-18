@@ -209,7 +209,10 @@ public class FailureCodeTracker {
 				container.delete(items[i]);
 				container.delete(ints[i]);
 			}
-		if(map != null) container.delete(map);
+		if(map != null) {
+			container.activate(map, 5);
+			container.delete(map);
+		}
 		container.delete(this);
 	}
 	
