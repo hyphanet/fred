@@ -178,7 +178,6 @@ public abstract class ClientRequester {
 
 
 	public void removeFrom(ObjectContainer container) {
-		client.removeFrom(container);
 		container.activate(requests, 1);
 		requests.removeFrom(container);
 		container.delete(this);
