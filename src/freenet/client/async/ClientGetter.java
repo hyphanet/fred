@@ -84,7 +84,7 @@ public class ClientGetter extends BaseClientGetter {
 
 	public boolean start(boolean restart, FreenetURI overrideURI, ObjectContainer container, ClientContext context) throws FetchException {
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Starting "+this);
+			Logger.minor(this, "Starting "+this+" persistent="+persistent());
 		try {
 			// FIXME synchronization is probably unnecessary.
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
