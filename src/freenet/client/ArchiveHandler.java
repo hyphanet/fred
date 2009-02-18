@@ -90,7 +90,7 @@ public interface ArchiveHandler {
 	 * @param container
 	 * @param context
 	 */
-	public abstract void extractPersistentOffThread(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context);
+	public abstract void extractPersistentOffThread(Bucket bucket, boolean freeBucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context);
 	
 	public abstract void activateForExecution(ObjectContainer container);
 

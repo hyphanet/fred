@@ -97,10 +97,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	 * @param container
 	 * @param context
 	 */
-	public void extractPersistentOffThread(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, final ClientContext context) {
+	public void extractPersistentOffThread(Bucket bucket, boolean freeBucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, final ClientContext context) {
 		assert(element != null); // no callback would be called...
 		final ArchiveManager manager = context.archiveManager;
-		final ArchiveExtractTag tag = new ArchiveExtractTag(this, bucket, actx, element, callback, context.nodeDBHandle);
+		final ArchiveExtractTag tag = new ArchiveExtractTag(this, bucket, freeBucket, actx, element, callback, context.nodeDBHandle);
 		container.store(tag);
 		runPersistentOffThread(tag, context, manager, context.persistentBucketFactory);
 	}
@@ -148,6 +148,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 							else
 								tag.callback.gotBucket(data, container, context);
 							tag.callback.removeFrom(container);
+							if(tag.freeBucket) {
+								tag.data.free();
+								tag.data.removeFrom(container);
+							}
 							container.deactivate(tag.callback, 1);
 							container.delete(tag);
 						}
@@ -162,6 +166,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
 							tag.callback.removeFrom(container);
+							if(tag.freeBucket) {
+								tag.data.free();
+								tag.data.removeFrom(container);
+							}
 							container.delete(tag);
 						}
 						
@@ -175,6 +183,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
 							tag.callback.removeFrom(container);
+							if(tag.freeBucket) {
+								tag.data.free();
+								tag.data.removeFrom(container);
+							}
 							container.delete(tag);
 						}
 						
@@ -251,14 +263,16 @@ class ArchiveExtractTag {
 	
 	final ArchiveHandlerImpl handler;
 	final Bucket data;
+	final boolean freeBucket;
 	final ArchiveContext actx;
 	final String element;
 	final ArchiveExtractCallback callback;
 	final long nodeDBHandle;
 	
-	ArchiveExtractTag(ArchiveHandlerImpl handler, Bucket data, ArchiveContext actx, String element, ArchiveExtractCallback callback, long nodeDBHandle) {
+	ArchiveExtractTag(ArchiveHandlerImpl handler, Bucket data, boolean freeBucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, long nodeDBHandle) {
 		this.handler = handler;
 		this.data = data;
+		this.freeBucket = freeBucket;
 		this.actx = actx;
 		this.element = element;
 		this.callback = callback;
