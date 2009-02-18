@@ -29,7 +29,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		}
 		context.uskManager.update(usk, usk.suggestedEdition, context);
 		cb.onSuccess(result, state, container, context);
-		if(!persistent) removeFrom(container);
+		if(persistent) removeFrom(container);
 	}
 
 	private void removeFrom(ObjectContainer container) {
