@@ -46,7 +46,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private transient Random weakPRNG;
 	
 	/** Buckets to free */
-	private ArrayList<DelayedFreeBucket> bucketsToFree;
+	private final ArrayList<DelayedFreeBucket> bucketsToFree;
 	
 	private final long nodeDBHandle;
 	
