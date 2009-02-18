@@ -98,6 +98,8 @@ public class PersistentBlobTempBucketFactory {
 		freeJobs = new HashSet<DBJob>();
 		this.ticker = ticker;
 		
+		maybeShrink(container);
+		
 		// Diagnostics
 		
 		long size;
@@ -157,7 +159,6 @@ public class PersistentBlobTempBucketFactory {
 			System.out.println("Range: "+rangeStart+" to "+(ptr-1));
 		}
 		System.err.println("Persistent blobs: Blocks: "+blocks+" used "+used);
-
 	}
 
 	public String getName() {
