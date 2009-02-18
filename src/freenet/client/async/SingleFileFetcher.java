@@ -352,10 +352,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						Metadata newMeta = metadata.grabDocument(name);
 						metadata.removeFrom(container);
 						metadata = newMeta;
+						FreenetURI oldThisKey = thisKey;
 						thisKey = thisKey.pushMetaString(name);
 						container.store(this);
 						container.store(metaStrings);
 						container.store(thisKey);
+						oldThisKey.removeFrom(container);
 					}
 					if(metadata == null)
 						throw new FetchException(FetchException.NOT_IN_ARCHIVE, "can't find "+name);
