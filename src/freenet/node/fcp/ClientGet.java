@@ -413,6 +413,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				}
 				returnBucket = new FileBucket(targetFile, false, true, false, false, false);
 			}
+			if(persistenceType == PERSIST_FOREVER && progressPending != null)
+				progressPending.removeFrom(container);
 			progressPending = null;
 			this.foundDataLength = returnBucket.size();
 			if(!binaryBlob)
