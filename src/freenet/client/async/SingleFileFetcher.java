@@ -1154,7 +1154,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
-		super.removeFrom(container, context);
 		uri.removeFrom(container);
 		if(thisKey != null)
 			thisKey.removeFrom(container);
@@ -1171,6 +1170,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		removeArchiveMetadata(container);
 		container.delete(decompressors);
 		container.delete(this);
+		super.removeFrom(container, context);
 	}
 	
 	private void removeMetadata(ObjectContainer container) {
