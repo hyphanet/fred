@@ -911,6 +911,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			} else {
 				map.put(name, 1);
 			}
+			// Activated to depth 1
+			try {
+				Logger.minor(this, "DATABASE: "+o);
+			} catch (Throwable t) {
+				Logger.minor(this, "CAUGHT "+t);
+			}
 		}
 		int total = 0;
 		for(Map.Entry<String,Integer> entry : map.entrySet()) {
