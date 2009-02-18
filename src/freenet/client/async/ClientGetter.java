@@ -410,8 +410,11 @@ public class ClientGetter extends BaseClientGetter {
 	}
 	
 	public void removeFrom(ObjectContainer container) {
+		container.activate(uri, 5);
 		uri.removeFrom(container);
+		container.activate(ctx, 1);
 		ctx.removeFrom(container);
+		container.activate(actx, 5);
 		actx.removeFrom(container);
 		super.removeFrom(container);
 	}
