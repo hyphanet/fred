@@ -566,12 +566,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		trySendDataFoundOrGetFailed(null, container);
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(client, 1);
-			container.store(this);
 		}
-		finish(container);
 		freeData(container);
+		finish(container);
 		if(client != null)
 			client.notifyFailure(this, container);
+		if(persistenceType == PERSIST_FOREVER)
+			container.store(this);
 	}
 
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
@@ -730,6 +731,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			data.free();
 			if(persistenceType == PERSIST_FOREVER)
 				data.removeFrom(container);
+			if(persistenceType == PERSIST_FOREVER)
+				container.store(this);
 		}
 	}
 
