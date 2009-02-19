@@ -38,8 +38,10 @@ public abstract class ClientRequester {
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 	}
 
-	synchronized void cancel() {
+	synchronized boolean cancel() {
+		boolean ret = !cancelled;
 		cancelled = true;
+		return ret;
 	}
 	
 	public abstract void cancel(ObjectContainer container, ClientContext context);

@@ -234,7 +234,10 @@ public class ClientGetter extends BaseClientGetter {
 		if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientGetState s;
 		synchronized(this) {
-			super.cancel();
+			if(super.cancel()) {
+				if(logMINOR) Logger.minor(this, "Already cancelled "+this);
+				return;
+			}
 			s = currentState;
 		}
 		if(persistent())
