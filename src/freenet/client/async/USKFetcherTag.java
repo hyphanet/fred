@@ -89,8 +89,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		
 	};
 	
-	public void start(USKManager manager, ClientContext context) {
+	public void start(USKManager manager, ClientContext context, ObjectContainer container) {
 		USK usk = origUSK;
+		if(persistent)
+			container.activate(origUSK, 5);
 		if(usk.suggestedEdition < edition)
 			usk = usk.copy(edition);
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, client), keepLastData);
@@ -123,7 +125,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) {
-		start(context.uskManager, context);
+		start(context.uskManager, context, container);
 	}
 
 	public void onCancelled(ObjectContainer container, ClientContext context) {
@@ -136,7 +138,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onCancelled(container, context);
-					container.store(this);
+					removeFrom(container, context);
 					container.deactivate(callback, 1);
 				}
 				
@@ -156,8 +158,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onFailure(container, context);
-					container.store(this);
 					container.deactivate(callback, 1);
+					removeFrom(container, context);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -188,8 +190,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onFoundEdition(l, key, container, context, metadata, codec, data);
-					container.store(this);
 					container.deactivate(callback, 1);
+					removeFrom(container, context);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -198,16 +200,18 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		}
 	}
 
-	public void removeFromDatabase(ObjectContainer container) {
-		container.delete(this);
-	}
-
 	public final boolean isFinished() {
 		return finished;
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.activate(origUSK, 5);
+		origUSK.removeFrom(container);
 		container.delete(this);
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		return false;
 	}
 	
 }

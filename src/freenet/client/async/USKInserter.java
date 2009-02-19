@@ -104,7 +104,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			}
 			if(!alreadyInserted) {
 				if(parent.persistent())
-					fetcher.removeFromDatabase(container);
+					fetcher.removeFrom(container, context);
 				fetcher = null;
 			}
 		}
@@ -231,7 +231,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	public synchronized void onCancelled(ObjectContainer container, ClientContext context) {
 		if(fetcher != null) {
 			if(parent.persistent())
-				fetcher.removeFromDatabase(container);
+				fetcher.removeFrom(container, context);
 			fetcher = null;
 		}
 		if(finished) return;

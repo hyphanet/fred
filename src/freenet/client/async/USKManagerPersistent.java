@@ -20,7 +20,7 @@ public class USKManagerPersistent {
 			}
 		});
 		while(set.hasNext())
-			set.next().start(manager, context);
+			set.next().start(manager, context, container);
 	}
 
 }
