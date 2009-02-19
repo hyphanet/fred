@@ -33,6 +33,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	private void removeFrom(ObjectContainer container) {
+		container.activate(usk, 5);
 		usk.removeFrom(container);
 		container.delete(this);
 	}
