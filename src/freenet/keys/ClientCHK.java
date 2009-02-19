@@ -212,4 +212,8 @@ public class ClientCHK extends ClientKey {
 		if(!Arrays.equals(cryptoKey, key.cryptoKey)) return false;
 		return true;
 	}
+
+	public byte[] getRoutingKey() {
+		return routingKey;
+	}
 }
