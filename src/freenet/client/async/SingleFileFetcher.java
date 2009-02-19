@@ -1118,24 +1118,36 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, persistent ? key : key.cloneKey(), metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, false, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, container, context);
 					sf.schedule(container, context);
+					if(persistent) removeFrom(container);
 				} else {
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, container, context);
+					if(persistent) removeFrom(container);
 				}
 			} catch (FetchException e) {
 				cb.onFailure(e, null, container, context);
+				if(persistent) removeFrom(container);
 			}
+		}
+		
+		private void removeFrom(ObjectContainer container) {
+			container.delete(metaStrings);
+			container.delete(this);
+			container.activate(usk, 5);
+			usk.removeFrom(container);
 		}
 
 		public void onFailure(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(this, 2);
 			cb.onFailure(new FetchException(FetchException.DATA_NOT_FOUND, "No USK found"), null, container, context);
+			if(persistent) removeFrom(container);
 		}
 
 		public void onCancelled(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(this, 2);
 			cb.onFailure(new FetchException(FetchException.CANCELLED, (String)null), null, container, context);
+			if(persistent) removeFrom(container);
 		}
 
 		public short getPollingPriorityNormal() {
