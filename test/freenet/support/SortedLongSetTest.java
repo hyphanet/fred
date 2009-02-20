@@ -161,25 +161,25 @@ public class SortedLongSetTest extends TestCase {
 	public void testGrownAndScale() {
 		SortedLongSet set = new SortedLongSet();
 
-		for (int i = 1; i < 512; i++) {
-			set.add((long) i);
-			set.add((long) -i);
+		for (long i = 1; i < 512; i++) {
+			set.add(i);
+			set.add(-i);
 		}
 
-		for (int i = 1; i < 512; i++) {
-			assertTrue(set.contains((long) i));
-			assertTrue(set.contains((long) -i));
+		for (long i = 1; i < 512; i++) {
+			assertTrue(set.contains(i));
+			assertTrue(set.contains(-i));
 		}
 
 		// remove and shink
-		for (int i = 1; i < 512; i++) {
+		for (long i = 1; i < 512; i++) {
 			set.remove(i);
 			
-			assertFalse(set.contains((long) i));
-			assertTrue(set.contains((long) -i));
+			assertFalse(set.contains(i));
+			assertTrue(set.contains(-i));
 
 			set.remove(-i);
-			assertFalse(set.contains((long) -i));
+			assertFalse(set.contains(-i));
 		}
 	}
 }
