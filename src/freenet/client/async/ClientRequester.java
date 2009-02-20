@@ -39,7 +39,7 @@ public abstract class ClientRequester {
 	}
 
 	synchronized boolean cancel() {
-		boolean ret = !cancelled;
+		boolean ret = cancelled;
 		cancelled = true;
 		return ret;
 	}
