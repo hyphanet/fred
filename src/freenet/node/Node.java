@@ -838,6 +838,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("bucket").indexed(true);
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("factory").indexed(true);
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("isFree").indexed(true);
+		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
 		/*
 		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
 		 * internally through the TMap translator.
@@ -913,7 +914,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 			// Activated to depth 1
 			try {
-				Logger.minor(this, "DATABASE: "+o);
+				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+db.ext().getID(o));
 			} catch (Throwable t) {
 				Logger.minor(this, "CAUGHT "+t);
 			}
