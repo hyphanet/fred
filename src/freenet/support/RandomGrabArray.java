@@ -23,12 +23,18 @@ public class RandomGrabArray {
 	private final static int MIN_SIZE = 32;
 	private final static int BLOCK_SIZE = 1024;
 	private final boolean persistent;
+	private final int hashCode;
 
 	public RandomGrabArray(boolean persistent, ObjectContainer container) {
 		this.blocks = new Block[] { new Block() };
 		blocks[0].reqs = new RandomGrabArrayItem[MIN_SIZE];
 		this.persistent = persistent;
 		index = 0;
+		this.hashCode = super.hashCode();
+	}
+	
+	public int hashCode() {
+		return hashCode;
 	}
 	
 	public void add(RandomGrabArrayItem req, ObjectContainer container) {
@@ -350,6 +356,14 @@ public class RandomGrabArray {
 		}
 	}
 
+	/**
+	 * FIXME: This does not remove from higher level structures! This will only
+	 * be removed from the SectoredRGA the next time the request selection loop
+	 * runs - and if there are higher priority requests, and hard priorities are 
+	 * enabled, it may not reach this.
+	 * @param it
+	 * @param container
+	 */
 	public void remove(RandomGrabArrayItem it, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing "+it+" from "+this);
