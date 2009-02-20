@@ -66,8 +66,6 @@ public class AddRef {
 				if((fcpm == null) || !(fcpm instanceof NodeHelloMessage)){
 					System.err.println("Not a valid FRED node!");
 					System.exit(1);
-				}else{
-					fcpm = (NodeHelloMessage) fcpm;
 				}
 			} catch(MessageInvalidException me){
 				me.printStackTrace();
