@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.support.Logger;
@@ -395,5 +397,13 @@ public class FetchException extends Exception {
 
 	public void setNotFinalizedSize() {
 		this.finalizedSizeAndMimeType = false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(errorCodes != null)
+			errorCodes.removeFrom(container);
+		if(newURI != null)
+			newURI.removeFrom(container);
+		container.delete(this);
 	}
 }
