@@ -388,6 +388,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 			fail("PromiscuousItemException");
 		} catch (PromiscuousItemException pie) {
 		}
+
 		try {
 			// item in other list
 			list2.insertPrev(l2, array[3]);
@@ -400,15 +401,20 @@ public class DoublyLinkedListImplTest extends TestCase {
 			fail("PromiscuousItemException");
 		} catch (PromiscuousItemException pie) {
 		}
+
+		T l3 = new T(9999);
+		list2.push(l3);
 		try {
 			// VirginItemException
-			list2.insertPrev(l2.getPrev(), new T(8888));
-			fail("PromiscuousItemException");
+			l3.setPrev(null); // corrupt it
+			list2.insertPrev(l3, new T(8888));
+			fail("VirginItemException");
 		} catch (VirginItemException vie) {
 		}
 		try {
 			// VirginItemException
-			list2.insertNext(l2.getNext(), new T(8888));
+			l2.setNext(null); // corrupt it
+			list2.insertNext(l2, new T(8888));
 			fail("VirginItemException");
 		} catch (VirginItemException vie) {
 		}
