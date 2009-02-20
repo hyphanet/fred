@@ -172,10 +172,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return isFinished(container) || finishing;
 	}
 	
-	/** Throw a FetchException, if we have one. Else do nothing. */
-	public synchronized void throwError() throws FetchException {
-		if(failureException != null)
+	/** Throw a FetchException, if we have one. Else do nothing. 
+	 * @param container */
+	public synchronized void throwError(ObjectContainer container) throws FetchException {
+		if(failureException != null) {
+			if(persistent) container.activate(failureException, 5);
 			throw failureException;
+		}
 	}
 	
 	/** Decoded length? 
@@ -251,8 +254,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				return -1;
 			}
 			dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
-			if(persistent)
+			if(persistent) {
+				container.activate(dataKeys[blockNo], 5);
 				dataKeys[blockNo].removeFrom(container);
+			}
 			dataKeys[blockNo] = null;
 			if(persistent)
 				container.activate(dataBuckets[blockNo], 1);
@@ -273,8 +278,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				return -1;
 			}
 			checkRetries[checkNo] = 0; // Prevent healing of successfully fetched block.
-			if(persistent)
+			if(persistent) {
+				container.activate(checkKeys[checkNo], 5);
 				checkKeys[checkNo].removeFrom(container);
+			}
 			checkKeys[checkNo] = null;
 			if(persistent)
 				container.activate(checkBuckets[checkNo], 1);
@@ -1285,7 +1292,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.activate(k, 5);
 			if(k.getRoutingKey() == null)
-				throw new NullPointerException("Routing key is null yet key exists for data block "+i+" of "+this);
+				throw new NullPointerException("Routing key is null yet key exists for data block "+i+" of "+this+(persistent?(" stored="+container.ext().isStored(k)+" active="+container.ext().isActive(k)) : ""));
 			if(k.getNodeKey().equals(key)) return i;
 			else {
 				if(persistent)
@@ -1585,6 +1592,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		container.activate(errors, 1);
 		errors.removeFrom(container);
+		if(failureException != null) {
+			container.activate(failureException, 5);
+			failureException.removeFrom(container);
+		}
 		container.delete(this);
 	}
 
@@ -1592,9 +1603,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		synchronized(this) {
 			fetcherFinished = true;
 			if(!encoderFinished) {
-				container.store(this);
-				if(logMINOR) Logger.minor(this, "Fetcher finished but encoder not finished on "+this);
-				return;
+				if(!startedDecode) {
+					encoderFinished = true;
+					container.store(this);
+				} else {
+					container.store(this);
+					if(logMINOR) Logger.minor(this, "Fetcher finished but encoder not finished on "+this);
+					return;
+				}
 			}
 		}
 		removeFrom(container, context);

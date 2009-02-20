@@ -357,7 +357,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(!s.succeeded()) {
 				throw new IllegalStateException("Not all finished");
 			}
-			s.throwError();
+			s.throwError(container);
 			// If still here, it succeeded
 			long sz = s.decodedLength(container);
 			finalLength += sz;
