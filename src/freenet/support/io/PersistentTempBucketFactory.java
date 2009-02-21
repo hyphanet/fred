@@ -134,15 +134,19 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket rawBucket = null;
+		boolean mustWrap = true;
 		if(size == BLOB_SIZE) {
 			// No need for a DelayedFreeBucket, we handle this internally (and more efficiently) for blobs.
+			mustWrap = false;
 			rawBucket = blobFactory.makeBucket();
-			if(rawBucket != null) return rawBucket;
 		}
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
-		Bucket maybeEncryptedBucket = (encrypt ? new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG) : rawBucket);
-		return new DelayedFreeBucket(this, maybeEncryptedBucket);
+		if(encrypt)
+			rawBucket = new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG);
+		if(mustWrap)
+			rawBucket = new DelayedFreeBucket(this, rawBucket);
+		return rawBucket;
 	}
 
 	/**
