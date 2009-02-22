@@ -150,24 +150,24 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertTrue("isEmpty()", list.isEmpty());
 	}
 
-	public void testClone() {
-		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
-		for (int i = 0; i < 3; i++) {
-			list.unshift(new T(i));
-		}
-
-		DoublyLinkedList<T> listClone = list.clone();
-
-		for (int i = 2; i >= 0; i--) {
-			T t = (T) list.shift();
-			t.assertV(i);
-			t.assertIsNotClone();
-
-			T tc = (T) listClone.shift();
-			tc.assertV(i);
-			tc.assertIsClone();
-		}
-	}
+	//	public void testClone() {
+	//		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
+	//		for (int i = 0; i < 3; i++) {
+	//			list.unshift(new T(i));
+	//		}
+	//
+	//		DoublyLinkedList<T> listClone = list.clone();
+	//
+	//		for (int i = 2; i >= 0; i--) {
+	//			T t = (T) list.shift();
+	//			t.assertV(i);
+	//			t.assertIsNotClone();
+	//
+	//			T tc = (T) listClone.shift();
+	//			tc.assertV(i);
+	//			tc.assertIsClone();
+	//		}
+	//	}
 
 	public void testShiftN() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
