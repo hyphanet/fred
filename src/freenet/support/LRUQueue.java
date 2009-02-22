@@ -18,7 +18,7 @@ public class LRUQueue<T> {
      * push is by far the most done operation, this should be an
      * overall improvement.
      */
-    private final DoublyLinkedListImpl list = new DoublyLinkedListImpl();
+	private final DoublyLinkedListImpl<QItem<T>> list = new DoublyLinkedListImpl<QItem<T>>();
 	private final Map<T, QItem<T>> hash = new HashMap<T, QItem<T>>();
     
     public LRUQueue() {
@@ -68,7 +68,7 @@ public class LRUQueue<T> {
      */
 	public final synchronized T pop() {
         if ( list.size() > 0 ) {
-			return (hash.remove(((QItem<T>) list.pop()).obj)).obj;
+			return hash.remove(list.pop().obj).obj;
         } else {
             return null;
         }
@@ -117,7 +117,7 @@ public class LRUQueue<T> {
         }
     }
 
-	private static class QItem<T> extends DoublyLinkedListImpl.Item {
+	private static class QItem<T> extends DoublyLinkedListImpl.Item<QItem<T>> {
 		public T obj;
 
         public QItem(T obj) {
