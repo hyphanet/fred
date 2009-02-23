@@ -551,15 +551,26 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
 
-	private boolean resolve(MetadataUnresolvedException e) throws InsertException, IOException {
+	/**
+	 * Start inserts for unresolved (too big) Metadata's.
+	 * @param e
+	 * @return
+	 * @throws InsertException
+	 * @throws IOException
+	 */
+	private void resolve(MetadataUnresolvedException e) throws InsertException, IOException {
 		Metadata[] metas = e.mustResolve;
-		boolean mustWait = false;
 		for(int i=0;i<metas.length;i++) {
 			Metadata m = metas[i];
-			if(!m.isResolved())
-				mustWait = true;
 			synchronized(this) {
-				if(metadataPuttersByMetadata.containsKey(m)) continue;
+				if(metadataPuttersByMetadata.containsKey(m)) {
+					if(logMINOR) Logger.minor(this, "Already started insert for "+m+" in resolve() for "+metas.length+" Metadata's");
+					continue;
+				}
+			}
+			if(m.isResolved()) {
+				Logger.error(this, "Already resolved: "+m+" in resolve() - race condition???");
+				continue;
 			}
 			try {
 				Bucket b = m.toBucket(ctx.bf);
@@ -576,7 +587,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				resolve(e1);
 			}
 		}
-		return mustWait;
 	}
 
 	private void namesToByteArrays(HashMap putHandlersByName, HashMap namesToByteArrays) {
