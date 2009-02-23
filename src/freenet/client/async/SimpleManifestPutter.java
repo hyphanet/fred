@@ -414,7 +414,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
+					// Start the insert for the sub-Metadata.
+					// Eventually it will generate a URI and call onEncode(), which will call back here.
 					resolve(e);
+					return;
 				} catch (IOException e1) {
 					fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
 					return;
