@@ -836,6 +836,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			finished = true;
 			Logger.error(this, "Insert segment failed: "+e+" for "+this, e);
 			this.toThrow = e;
+			if(persistent) container.store(this);
 		}
 		cancelInner(container, context);
 	}
@@ -974,8 +975,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			fail(new InsertException(InsertException.INTERNAL_ERROR, "Collision on a CHK", null), container, context);
 			return;
 		case LowLevelPutException.INTERNAL_ERROR:
-			errors.inc(InsertException.INTERNAL_ERROR);
-			break;
+			Logger.error(this, "Internal error: "+e, e);
+			fail(new InsertException(InsertException.INTERNAL_ERROR, e.toString(), null), container, context);
+			return;
 		case LowLevelPutException.REJECTED_OVERLOAD:
 			errors.inc(InsertException.REJECTED_OVERLOAD);
 			break;
@@ -987,7 +989,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			break;
 		default:
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
-			errors.inc(InsertException.INTERNAL_ERROR);
+			fail(new InsertException(InsertException.INTERNAL_ERROR, e.toString(), null), container, context);
+			return;
 		}
 		if(persistent)
 			container.store(errors);
