@@ -442,8 +442,6 @@ public class BucketTools {
 	public static Bucket pad(Bucket oldBucket, int blockLength, BucketFactory bf, int length) throws IOException {
 		byte[] hash = BucketTools.hash(oldBucket);
 		Bucket b = bf.makeBucket(blockLength);
-		if(b == null) // YES THIS HAS HAPPENED! FIXME
-			throw new NullPointerException("Bucket of length "+blockLength+" returned from "+bf+" is null!");
 		MersenneTwister mt = new MersenneTwister(hash);
 		OutputStream os = b.getOutputStream();
 		try {
