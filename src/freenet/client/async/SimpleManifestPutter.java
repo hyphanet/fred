@@ -1187,7 +1187,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
-	private boolean checkFetchable(PutHandler handler) {
+	private synchronized boolean checkFetchable(PutHandler handler) {
 		putHandlersWaitingForFetchable.remove(handler);
 		if(fetchable) return false;
 		if(!putHandlersWaitingForFetchable.isEmpty()) return false;
