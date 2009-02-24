@@ -76,7 +76,7 @@ public class Message {
             mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()));
         } catch (IOException e1) {
         	if(logDEBUG)
-        		Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
+        		Logger.debug(Message.class,"Failed to read message type: "+e1, e1);
             return null;
         }
         if (mspec == null) {
@@ -226,7 +226,7 @@ public class Message {
 //		Logger.logMinor("<<<<< Send message : " + this);
 
     	if(logDEBUG)
-    		Logger.minor(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
+    		Logger.debug(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
@@ -255,7 +255,7 @@ public class Message {
 		
 		byte[] buf = baos.toByteArray();
     	if(logDEBUG)
-    		Logger.minor(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
+    		Logger.debug(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
 		return buf;
 	}
 
