@@ -1139,7 +1139,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		else if(treatAsSuccess)
 			putter.completedBlock(false, container, context);
 		if(persistent) container.deactivate(putter, 1);
-		if(succeeded == dataBlocks.length) {
+		if(treatAsSuccess && succeeded == dataBlocks.length) {
 			if(persistent) container.activate(parent, 1);
 			parent.segmentFetchable(this, container);
 			if(persistent) container.deactivate(parent, 1);
