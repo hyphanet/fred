@@ -1200,6 +1200,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						Logger.error(this, "Got onSuccess() but block has already succeeded: Data block "+blockNum+" on "+this);
 					return;
 				}
+				// Data blocks may not be freed until after we have encoded the check blocks.
 				if(encoded && dataBlocks[blockNum] != null) {
 					if(persistent) container.activate(dataBlocks[blockNum], 1);
 					dataBlocks[blockNum].free();
