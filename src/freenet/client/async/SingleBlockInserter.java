@@ -20,6 +20,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.KeyEncodeException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
@@ -119,7 +120,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		try {
 			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength);
-		} catch (CHKEncodeException e) {
+		} catch (KeyEncodeException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
 			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		} catch (MalformedURLException e) {
@@ -127,9 +128,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		} catch (IOException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e+" encoding data "+sourceData, e);
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-		} catch (SSKEncodeException e) {
-			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
-			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		}
 			
 	}
