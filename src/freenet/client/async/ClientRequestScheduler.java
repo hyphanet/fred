@@ -675,8 +675,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		long noLaterThan = Long.MAX_VALUE;
 		noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
 		noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
-		if(noLaterThan != Long.MAX_VALUE)
-			wakeUp = true;
+		// If anything has been re-added, the request starter will have been woken up.
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
