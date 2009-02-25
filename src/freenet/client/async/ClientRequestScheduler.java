@@ -736,10 +736,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				synchronized(ClientRequestScheduler.this) {
 					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
 					if(!added) {
-						if(noLaterThan != Long.MAX_VALUE)
-							nextQueueFillRequestStarterQueue = Math.min(System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START, noLaterThan + 1);
-						else
-							nextQueueFillRequestStarterQueue = System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
+						nextQueueFillRequestStarterQueue = 
+							System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
+						if(nextQueueFillRequestStarterQueue > noLaterThan)
+							nextQueueFillRequestStarterQueue = noLaterThan + 1;
 					}
 				}
 				if(addedMore) starter.wakeUp();
