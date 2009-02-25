@@ -733,6 +733,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if((!isSSKScheduler) && (!isInsertScheduler)) {
 			Logger.minor(this, "Scheduling CHK fetches...");
 		}
+		boolean addedMore = false;
 		while(true) {
 			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
 			if(request == null) {
@@ -745,16 +746,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 							nextQueueFillRequestStarterQueue = System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
 					}
 				}
-				if(added) starter.wakeUp();
+				if(addedMore) starter.wakeUp();
 				return;
 			}
 			boolean full = addToStarterQueue(request, container);
 			container.deactivate(request, 1);
-			boolean wasAdded = added;
 			if(!added) starter.wakeUp();
+			else addedMore = true;
 			added = true;
 			if(full) {
-				if(wasAdded) starter.wakeUp();
+				if(addedMore) starter.wakeUp();
 				return;
 			}
 		}
