@@ -672,8 +672,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
-		noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
-		noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
+		if(!isInsertScheduler) {
+			noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
+			noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
+		}
 		// If anything has been re-added, the request starter will have been woken up.
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
