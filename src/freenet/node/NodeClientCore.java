@@ -1196,6 +1196,10 @@ public class NodeClientCore implements Persistable {
 		}
 		return false;
 	}
+	
+	public File[] getAllowedUploadDirs() {
+		return uploadAllowedDirs;
+	}
 
 	public SimpleFieldSet persistThrottlesToFieldSet() {
 		return requestStarters.persistToFieldSet();
