@@ -580,8 +580,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private long nextQueueFillRequestStarterQueue = -1;
 	
 	public void queueFillRequestStarterQueue() {
-		if(nextQueueFillRequestStarterQueue > 0 &&
-				System.currentTimeMillis() < nextQueueFillRequestStarterQueue)
+		if(System.currentTimeMillis() < nextQueueFillRequestStarterQueue)
 			return;
 		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
 			return;
