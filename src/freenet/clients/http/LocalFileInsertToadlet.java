@@ -55,6 +55,8 @@ public class LocalFileInsertToadlet extends Toadlet {
 		if(furi != null)
 			extra = "&key="+furi.toASCIIString();
 		
+		File thisPath;
+		
 		String path = request.getParam("path");
 		if (path.length() == 0) {
 			if (currentPath == null) {
@@ -64,7 +66,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			return;
 		}
 
-		currentPath = new File(path).getCanonicalFile();
+		thisPath = new File(path).getCanonicalFile();
 		
 		
 		PageMaker pageMaker = toadletContext.getPageMaker();
@@ -72,12 +74,21 @@ public class LocalFileInsertToadlet extends Toadlet {
 		HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
-		if(!core.allowUploadFrom(currentPath)) {
+		if(!core.allowUploadFrom(thisPath)) {
 			HTMLNode infoboxE = contentNode.addChild(pageMaker.getInfobox("infobox-error",  "Forbidden"));
 			HTMLNode infoboxEContent = pageMaker.getContentNode(infoboxE);
 			infoboxEContent.addChild("#", l10n("dirAccessDenied"));
 
-			currentPath = new File(System.getProperty("user.home")); // FIXME what if user.home is denied as well?
+			thisPath = currentPath;
+			if(!core.allowUploadFrom(thisPath)) {
+				File[] allowedDirs = core.getAllowedUploadDirs();
+				if(allowedDirs.length == 0) {
+					sendErrorPage(toadletContext, 403, "Forbidden", l10n("dirAccessDenied"));
+					return;
+				} else {
+					thisPath = allowedDirs[core.node.fastWeakRandom.nextInt(allowedDirs.length)];
+				}
+			}
 		}
 
 		if(toadletContext.isAllowedFullAccess())
@@ -88,6 +99,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 		HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
 
 		if (currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
+			// Known safe at this point
+			currentPath = thisPath;
+
 			File[] files = currentPath.listFiles();
 			Arrays.sort(files, new Comparator<File>() {
 				public int compare(File firstFile, File secondFile) {
