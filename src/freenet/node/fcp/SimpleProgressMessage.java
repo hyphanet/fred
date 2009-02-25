@@ -74,6 +74,7 @@ public class SimpleProgressMessage extends FCPMessage {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(event, 1);
 		event.removeFrom(container);
 		container.delete(this);
 	}
