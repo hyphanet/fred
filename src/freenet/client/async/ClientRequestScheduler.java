@@ -996,6 +996,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
 	}
 
+	/**
+	 * Restore keys from the given cooldown queue. Find any keys that are due to be
+	 * restored, restore all requests both persistent and non-persistent for those keys.
+	 * @param queue
+	 * @param persistent
+	 * @param container
+	 * @return Long.MAX_VALUE if nothing is queued in the next WAIT_AFTER_NOTHING_TO_START
+	 * millis, the time at which the next key is due to be restored if there are keys queued
+	 * to be restarted in the near future.
+	 */
 	private long moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
 		if(queue == null) return Long.MAX_VALUE;
 		long now = System.currentTimeMillis();
