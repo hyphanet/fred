@@ -681,7 +681,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;
 		boolean added = false;
-		boolean finished = false;
 		synchronized(starterQueue) {
 			if(logMINOR && (!isSSKScheduler) && (!isInsertScheduler)) {
 				Logger.minor(this, "Scheduling CHK fetches...");
@@ -720,14 +719,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(length >= MAX_STARTER_QUEUE_SIZE) {
 				if(length >= WARNING_STARTER_QUEUE_SIZE)
 					Logger.error(this, "Queue already full: "+length);
-				finished = true;
+				return;
 			}
 			if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
-				finished = true;
+				return;
 			}
-		}
-		if(finished) {
-			return;
 		}
 		
 		if((!isSSKScheduler) && (!isInsertScheduler)) {
