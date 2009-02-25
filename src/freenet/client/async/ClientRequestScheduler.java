@@ -573,6 +573,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	/** Don't fill the starter queue until this point. Used to implement a 60 second
+	 * cooldown after failing to fill the queue: if there was nothing queued, and since
+	 * we know if more requests are started they will be added to the queue, this is
+	 * an acceptable optimisation to reduce the database load from the idle schedulers... */
 	private long nextQueueFillRequestStarterQueue = -1;
 	
 	public void queueFillRequestStarterQueue() {
