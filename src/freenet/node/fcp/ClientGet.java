@@ -413,8 +413,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				}
 				returnBucket = new FileBucket(targetFile, false, true, false, false, false);
 			}
-			if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			if(persistenceType == PERSIST_FOREVER && progressPending != null) {
+				container.activate(progressPending, 1);
 				progressPending.removeFrom(container);
+			}
 			progressPending = null;
 			this.foundDataLength = returnBucket.size();
 			if(!binaryBlob)
@@ -495,7 +497,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			progressPending = msg;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.store(this);
-				if(oldProgress != null) oldProgress.removeFrom(container);
+				if(oldProgress != null) {
+					container.activate(oldProgress, 1);
+					oldProgress.removeFrom(container);
+				}
 			}
 		}
 		if(persistenceType == PERSIST_FOREVER)
