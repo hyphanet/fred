@@ -212,8 +212,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 				pfm.removeFrom(container);
 			if(uri != null)
 				uri.removeFrom(container);
-			if(progress != null)
+			if(progress != null) {
+				container.activate(progress, 1);
 				progress.removeFrom(container);
+			}
 			publicURI.removeFrom(container);
 		}
 	}
@@ -321,8 +323,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 						progressMessage = msg;
 					}
 				}
-				if(oldProgress != null)
+				if(oldProgress != null) {
+					container.activate(oldProgress, 1);
 					oldProgress.removeFrom(container);
+				}
 				container.store(this);
 			} else {
 				final FCPConnectionOutputHandler h = handler;
@@ -518,8 +522,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			this.progressMessage = null;
 			started = false;
 		}
-		pfm.removeFrom(container);
-		progress.removeFrom(container);
+		if(pfm != null) {
+			container.activate(pfm, 1);
+			pfm.removeFrom(container);
+		}
+		if(progress != null) {
+			container.activate(progress, 1);
+			progress.removeFrom(container);
+		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
 	}
