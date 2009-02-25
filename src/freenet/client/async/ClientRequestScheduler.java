@@ -671,7 +671,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-		boolean wakeUp = false;
 		long noLaterThan = Long.MAX_VALUE;
 		noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
 		noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
@@ -728,7 +727,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		if(finished) {
-			if(wakeUp) starter.wakeUp();
 			return;
 		}
 		
@@ -747,14 +745,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 							nextQueueFillRequestStarterQueue = System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
 					}
 				}
-				if(wakeUp) starter.wakeUp();
+				if(added) starter.wakeUp();
 				return;
 			}
-			added = true;
 			boolean full = addToStarterQueue(request, container);
 			container.deactivate(request, 1);
-			starter.wakeUp();
-			if(full) return;
+			boolean wasAdded = added;
+			if(!added) starter.wakeUp();
+			added = true;
+			if(full) {
+				if(wasAdded) starter.wakeUp();
+				return;
+			}
 		}
 	}
 	
