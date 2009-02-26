@@ -315,6 +315,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					}); // will result in this function being called again
 					return;
 				}
+				metadataBucket.free();
 				continue;
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
