@@ -148,7 +148,24 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			}
 			if(allMetadatas) {
+				// Will resolve etc.
 				gotAllMetadata();
+			} else {
+				// Resolve now to speed up the insert.
+				try {
+					byte[] buf = m.writeToByteArray();
+					if(buf.length > Metadata.MAX_SIZE_IN_MANIFEST)
+						throw new MetadataUnresolvedException(new Metadata[] { m }, "Too big");
+				} catch (MetadataUnresolvedException e) {
+					try {
+						resolve(e);
+					} catch (IOException e1) {
+						fail(new InsertException(InsertException.BUCKET_ERROR, e1, null));
+						return;
+					} catch (InsertException e1) {
+						fail(e1);
+					}
+				}
 			}
 		}
 
@@ -561,7 +578,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	/**
-	 * Start inserts for unresolved (too big) Metadata's.
+	 * Start inserts for unresolved (too big) Metadata's. Eventually these will call back with an onEncode(),
+	 * meaning they have the CHK, and we can progress to resolveAndStartBase(). 
 	 * @param e
 	 * @return
 	 * @throws InsertException

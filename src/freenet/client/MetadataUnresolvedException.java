@@ -8,7 +8,7 @@ public class MetadataUnresolvedException extends Exception {
 
 	public final Metadata[] mustResolve;
 	
-	MetadataUnresolvedException(Metadata[] mustResolve, String message) {
+	public MetadataUnresolvedException(Metadata[] mustResolve, String message) {
 		super(message);
 		this.mustResolve = mustResolve;
 	}
