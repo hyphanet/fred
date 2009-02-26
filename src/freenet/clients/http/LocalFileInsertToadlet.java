@@ -71,10 +71,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 		
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
-		HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
-		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
-
 		if(!core.allowUploadFrom(thisPath)) {
+			HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()), toadletContext);
+			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			HTMLNode infoboxE = contentNode.addChild(pageMaker.getInfobox("infobox-error",  "Forbidden"));
 			HTMLNode infoboxEContent = pageMaker.getContentNode(infoboxE);
 			infoboxEContent.addChild("#", l10n("dirAccessDenied"));
@@ -90,18 +89,24 @@ public class LocalFileInsertToadlet extends Toadlet {
 				}
 			}
 		}
-
-		if(toadletContext.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
 		
-		HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
-		infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));
-		HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
+		HTMLNode pageNode;
 
 		if (currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
 			// Known safe at this point
 			currentPath = thisPath;
 
+			pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
+			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+			if(toadletContext.isAllowedFullAccess())
+				contentNode.addChild(core.alerts.createSummary());
+			
+			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
+			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));
+			HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
+
+
+			
 			File[] files = currentPath.listFiles();
 			Arrays.sort(files, new Comparator<File>() {
 				public int compare(File firstFile, File secondFile) {
@@ -173,6 +178,15 @@ public class LocalFileInsertToadlet extends Toadlet {
 				}
 			}
 		} else {
+			pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
+			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+			if(toadletContext.isAllowedFullAccess())
+				contentNode.addChild(core.alerts.createSummary());
+			
+			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
+			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));
+			HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
+
 			listingDiv.addChild("#", l10n("dirCannotBeRead", "path", currentPath.getAbsolutePath()));
 			HTMLNode ulNode = listingDiv.addChild("ul");
 			ulNode.addChild("li", l10n("checkPathExist"));
