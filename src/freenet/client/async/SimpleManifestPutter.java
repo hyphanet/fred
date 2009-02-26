@@ -136,11 +136,20 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				return;
 			}
 			metadata = m;
+			
+			boolean allMetadatas = false;
+			
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
-				if(!putHandlersWaitingForMetadata.isEmpty()) return;
+				allMetadatas = putHandlersWaitingForMetadata.isEmpty();
+				if(!allMetadatas) {
+					if(logMINOR)
+						Logger.minor(this, "Still waiting for metadata: "+putHandlersWaitingForMetadata.size());
+				}
 			}
-			gotAllMetadata();
+			if(allMetadatas) {
+				gotAllMetadata();
+			}
 		}
 
 		@Override
