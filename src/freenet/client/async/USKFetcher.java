@@ -122,7 +122,7 @@ public class USKFetcher implements ClientGetState {
 			this.number = i;
 			this.succeeded = false;
 			this.dnf = false;
-			this.checker = new USKChecker(this, origUSK.getSSK(i), ctx.maxNonSplitfileRetries, ctx, parent);
+			this.checker = new USKChecker(this, origUSK.getSSK(i), ctx.maxUSKRetries, ctx, parent);
 		}
 		public void onDNF() {
 			checker = null;

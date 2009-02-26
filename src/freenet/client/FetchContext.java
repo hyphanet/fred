@@ -36,6 +36,7 @@ public class FetchContext implements Cloneable {
 	public int maxSplitfileBlockRetries;
 	public int maxNonSplitfileRetries;
 	public final RandomSource random;
+	public int maxUSKRetries;
 	public boolean allowSplitfiles;
 	public boolean followRedirects;
 	public boolean localRequestOnly;
@@ -60,7 +61,7 @@ public class FetchContext implements Cloneable {
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
 			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
-			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
+			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
@@ -84,6 +85,7 @@ public class FetchContext implements Cloneable {
 		this.maxSplitfileThreads = maxSplitfileThreads;
 		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
 		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
+		this.maxUSKRetries = maxUSKRetries;
 		this.allowSplitfiles = allowSplitfiles;
 		this.followRedirects = followRedirects;
 		this.localRequestOnly = localRequestOnly;
@@ -108,6 +110,7 @@ public class FetchContext implements Cloneable {
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
 		this.blocks = ctx.blocks;
 		this.allowedMIMETypes = ctx.allowedMIMETypes;
+		this.maxUSKRetries = ctx.maxUSKRetries;
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;

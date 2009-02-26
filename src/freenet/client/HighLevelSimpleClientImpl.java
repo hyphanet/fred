@@ -64,6 +64,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int SPLITFILE_BLOCK_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
 	/** Number of retries allowed on non-splitfile fetches. */
 	static final int NON_SPLITFILE_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
+	static final int USK_RETRIES = RequestScheduler.COOLDOWN_RETRIES - 1;
 	/** Whether to fetch splitfiles. Don't turn this off! */
 	static final boolean FETCH_SPLITFILES = true;
 	/** Whether to follow redirects etc. If false, we only fetch a plain block of data. 
@@ -208,7 +209,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return 			
 			new FetchContext(maxLength, maxTempLength, curMaxMetadataLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES, 
-				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
+				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, 
