@@ -75,7 +75,7 @@ public class Metadata implements Cloneable {
 	/** Keys stored in full (otherwise assumed to be CHKs) */
 	boolean fullKeys;
 	static final short FLAGS_SPLITFILE = 1;
-	static final short FLAGS_DBR = 2;
+	static final short FLAGS_DBR = 2;	// not supported
 	static final short FLAGS_NO_MIME = 4;
 	static final short FLAGS_COMPRESSED_MIME = 8;
 	static final short FLAGS_EXTRA_METADATA = 16;
