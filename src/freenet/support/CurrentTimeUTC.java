@@ -20,38 +20,32 @@ import java.util.TimeZone;
 public class CurrentTimeUTC {
 
 	private static final GregorianCalendar mCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
-	
+
 	public static Date get() {
-		synchronized(mCalendar) {
-			mCalendar.clear();
-			return mCalendar.getTime();
-		}
+		return new Date();
 	}
-	
+
 	public static long getInMillis() {
-		synchronized(mCalendar) {
-			mCalendar.clear();
-			return mCalendar.getTimeInMillis();
-		}
+		return System.currentTimeMillis();
 	}
-	
+
 	public static int getYear() {
 		synchronized(mCalendar) {
-			mCalendar.clear();
+			mCalendar.setTimeInMillis(System.currentTimeMillis());
 			return mCalendar.get(Calendar.YEAR);
 		}
 	}
-	
+
 	public static int getMonth() {
 		synchronized(mCalendar) {
-			mCalendar.clear();
+			mCalendar.setTimeInMillis(System.currentTimeMillis());
 			return mCalendar.get(Calendar.MONTH);
 		}
 	}
-	
+
 	public static int getDayOfMonth() {
 		synchronized(mCalendar) {
-			mCalendar.clear();
+			mCalendar.setTimeInMillis(System.currentTimeMillis());
 			return mCalendar.get(Calendar.DAY_OF_MONTH);
 		}
 	}
