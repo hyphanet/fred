@@ -160,8 +160,10 @@ public class PNGFilter implements ContentDataFilter {
 					if((val >= 65 && val <= 99) || (val >= 97 && val <= 122)) {
 						chunkTypeBytes[i] = lengthBytes[i];
 						sb.append(val);
-					} else
-						throw new IOException("The name of the chunk is invalid!");
+					} else { 
+						String chunkName = HexUtil.bytesToHex(lengthBytes, 0, 4);
+						throwError("Unknown Chunk"  , "The name of the chunk is invalid! (" + chunkName+")");
+					}
 				}
 				chunkTypeString = sb.toString();
 				if(logMINOR)
@@ -204,30 +206,30 @@ public class PNGFilter implements ContentDataFilter {
 				
 				if(!skip && "IHDR".equals(chunkTypeString)) {
 					if(hasSeenIHDR)
-						throw new IOException("Two IHDR chunks detected!!");
+						throwError("Duplicate IHDR", "Two IHDR chunks detected!!");
 					hasSeenIHDR = true;
 					validChunkType = true;
 				}
 
 				if(!hasSeenIHDR)
-					throw new IOException("No IHDR chunk!");
+					throwError("No IHDR chunk!", "No IHDR chunk!");
 
 				if(!skip && "IEND".equals(chunkTypeString)) {
-					if(hasSeenIEND)
-						throw new IOException("Two IEND chunks detected!!");
+					if(hasSeenIEND)	// XXX impossible code path: it should have throwed as "IEND not last chunk" 
+						throwError("Two IEND chunks detected!!", "Two IEND chunks detected!!");
 					hasSeenIEND = true;
 					validChunkType = true;
 				}
 				
 				if(!skip && "PLTE".equalsIgnoreCase(chunkTypeString)) {
 					if(hasSeenIDAT)
-						throw new IOException("PLTE must be before IDAT");
+						throwError("PLTE must be before IDAT", "PLTE must be before IDAT");
 					validChunkType = true;
 				}
 				
 				if(!skip && "IDAT".equalsIgnoreCase(chunkTypeString)) {
 					if(hasSeenIDAT && !"IDAT".equalsIgnoreCase(lastChunkType))
-						throw new IOException("Multiple IDAT chunks must be consecutive!");
+						throwError("Multiple IDAT chunks must be consecutive!", "Multiple IDAT chunks must be consecutive!");
 					hasSeenIDAT = true;
 					validChunkType = true;
 				}
@@ -241,7 +243,7 @@ public class PNGFilter implements ContentDataFilter {
 				
 				if(dis.available() < 1) {
 					if(!(hasSeenIEND && hasSeenIHDR))
-						throw new IOException("Missing IEND or IHDR!");
+						throwError("Missing IEND or IHDR!", "Missing IEND or IHDR!");
 					finished = true;
 				}
 
@@ -273,7 +275,7 @@ public class PNGFilter implements ContentDataFilter {
 				lastChunkType = chunkTypeString;
 			}
 			if(hasSeenIEND && dis.available() > 0 && output == null)
-				throw new IOException("IEND not last chunk");
+				throwError("IEND not last chunk", "IEND not last chunk");
 			
 			dis.close();
 		} finally {
@@ -312,5 +314,19 @@ public class PNGFilter implements ContentDataFilter {
 		} finally {
 			data.free();
 		}
+	}
+
+	private void throwError(String shortReason, String reason) throws DataFilterException {
+		// Throw an exception
+		String message = "Invalid PNG";
+		if(reason != null) 
+			message += ' ' + reason;
+		if(shortReason != null)
+			message += " - " + shortReason;
+		DataFilterException e = new DataFilterException(shortReason, shortReason,
+				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
+		if(Logger.shouldLog(Logger.NORMAL, this))
+			Logger.normal(this, "Throwing "+e, e);
+		throw e;
 	}
 }
