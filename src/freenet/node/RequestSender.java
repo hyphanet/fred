@@ -824,7 +824,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			else {
                 				Logger.error(this, "TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
                 				if(!turtleBackedOff)
-                					next.transferFailed("Turtled transfer");
+                					next.transferFailed("TurtledTransfer");
                 				node.nodeStats.turtleSucceeded();
                 			}
                         	next.successNotOverload();
