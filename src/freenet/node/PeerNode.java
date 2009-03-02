@@ -2846,6 +2846,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload(String reason) {
+		assert reason.indexOf(" ") == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Local rejected overload (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
@@ -2907,6 +2908,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Back off this node for a while.
 	 */
 	public void transferFailed(String reason) {
+		assert reason.indexOf(" ") == -1;
 		pRejected.report(1.0);
 		if(logMINOR)
 			Logger.minor(this, "Transfer failed (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
