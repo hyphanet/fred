@@ -123,6 +123,7 @@ public class PNGFilterTest extends TestCase {
 
 	protected Bucket resourceToBucket(String filename) throws IOException {
 		InputStream is = getClass().getResourceAsStream(filename);
+		if (is == null) throw new FileNotFoundException();
 		ArrayBucket ab = new ArrayBucket();
 		BucketTools.copyFrom(ab, is, Long.MAX_VALUE);
 		return ab;
