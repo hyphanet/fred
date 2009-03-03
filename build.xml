@@ -146,6 +146,9 @@
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
 		</javac>
+		<copy todir="${build-test}/freenet/clients/http/filter/png">
+			<fileset dir="${test}/freenet/clients/http/filter/png"/>
+		</copy>
 	</target>
 
 	<target name="unit" depends="unit-build" if="junit.present" unless="skip_tests">
