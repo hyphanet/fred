@@ -330,6 +330,16 @@ public class HTTPRequestImpl implements HTTPRequest {
 			return defaultValue;
 		}
 	}
+	
+	public boolean getBooleanParam(String name, boolean defaultValue)
+	{
+		if(!this.isPartSet(name)) {
+			return defaultValue;
+		}
+		
+		
+		return false;
+	}
 
 	// TODO: add similar methods for long, boolean etc.
 
@@ -588,7 +598,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
 		} finally {
 			Closer.close(dis);
-			Closer.close(is);
+			Closer.close(is); /* FIXME: Why are we doing this? dis.close() should close the InputStream. */
 		}
 		
 		return new byte[0];
