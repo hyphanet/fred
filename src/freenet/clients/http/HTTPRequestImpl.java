@@ -330,16 +330,6 @@ public class HTTPRequestImpl implements HTTPRequest {
 			return defaultValue;
 		}
 	}
-	
-	public boolean getBooleanParam(String name, boolean defaultValue)
-	{
-		if(!this.isPartSet(name)) {
-			return defaultValue;
-		}
-		
-		
-		return false;
-	}
 
 	// TODO: add similar methods for long, boolean etc.
 
