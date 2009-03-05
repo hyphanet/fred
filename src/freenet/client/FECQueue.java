@@ -17,7 +17,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.node.PrioRunnable;
-import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
