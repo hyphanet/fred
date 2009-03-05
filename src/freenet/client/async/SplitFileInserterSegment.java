@@ -1408,7 +1408,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(persistent) {
 			container.deactivate(blocks, 1);
 		}
-		if(logMINOR) Logger.minor(this, "Returning "+blocks.size()+" blocks");
+		if(logMINOR) Logger.minor(this, "Returning "+ret.size()+" blocks");
 		return ret;
 	}
 
