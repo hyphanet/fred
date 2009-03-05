@@ -137,8 +137,8 @@ public class PersistentBlobTempBucket implements Bucket {
 
 	public OutputStream getOutputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
-		if(readOnly) throw new IOException("Read-only");
 		if(shadow) throw new IOException("Shadow");
+		if(readOnly) throw new IOException("Read-only");
 		final FileChannel channel = factory.channel;
 		
 		return new OutputStream() {
