@@ -379,11 +379,16 @@ public class FCPClient {
 	}
 
 	public void removeFromDatabase(ObjectContainer container) {
+		container.activate(runningPersistentRequests, 2);
 		container.delete(runningPersistentRequests);
+		container.activate(completedUnackedRequests, 2);
 		container.delete(completedUnackedRequests);
+		container.activate(clientRequestsByIdentifier, 2);
 		container.delete(clientRequestsByIdentifier);
+		container.activate(toStart, 2);
 		container.delete(toStart);
-		container.delete(lowLevelClient);
+		container.activate(lowLevelClient, 2);
+		lowLevelClient.removeFrom(container);
 		container.delete(this);
 	}
 
