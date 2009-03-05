@@ -323,9 +323,7 @@ public class FECQueue implements OOMHook {
 				if(!addedAny) {
 					if(logMINOR)
 						Logger.minor(this, "No more jobs to add");
-					synchronized(FECQueue.this) {
-						FECQueue.this.notifyAll();
-					}
+					// Don't notify, let it sleep until more jobs are added.
 					return;
 				} else {
 					int maxRunningThreads = getMaxRunningFECThreads();
