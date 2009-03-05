@@ -294,11 +294,13 @@ public class FECQueue implements OOMHook {
 							if(logMINOR) Logger.minor(this, "Maybe adding "+job);
 							synchronized(FECQueue.this) {
 								if(job.running) {
+									j--;
 									if(logMINOR) Logger.minor(this, "Not adding, already running: "+job);
 									continue;
 								}
 								if(persistentQueueCache[prio].contains(job)) {
 									j--;
+									if(logMINOR) Logger.minor(this, "Not adding as on persistent queue cache for "+prio+" : "+job);
 									continue;
 								}
 								boolean added = false;
@@ -308,11 +310,13 @@ public class FECQueue implements OOMHook {
 										it.previous();
 										it.add(job);
 										added = true;
-										addedAny = true;
+										if(logMINOR) Logger.minor(this, "Adding "+job+" before "+it);
 										break;
 									}
 								}
 								if(!added) persistentQueueCache[prio].addLast(job);
+								if(logMINOR) Logger.minor(this, "Added "+job);
+								addedAny = true;
 							}
 						}
 					}
@@ -320,6 +324,9 @@ public class FECQueue implements OOMHook {
 				if(!addedAny) {
 					if(logMINOR)
 						Logger.minor(this, "No more jobs to add");
+					synchronized(FECQueue.this) {
+						FECQueue.this.notifyAll();
+					}
 					return;
 				} else {
 					int maxRunningThreads = getMaxRunningFECThreads();
@@ -337,6 +344,7 @@ public class FECQueue implements OOMHook {
 								runningFECThreads++;
 							}
 						}
+						FECQueue.this.notifyAll();
 					}
 				}
 			}
