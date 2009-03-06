@@ -5,6 +5,7 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -217,5 +218,14 @@ public class FECJob {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * @param container
+	 * @param context
+	 * @return True unless we were unable to remove the job because it has already started.
+	 */
+	public boolean cancel(ObjectContainer container, ClientContext context) {
+		return queue.cancel(this, container, context);
 	}
 }

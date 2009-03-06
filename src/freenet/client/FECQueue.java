@@ -415,4 +415,25 @@ public class FECQueue implements OOMHook {
 	public void objectOnDeactivate(ObjectContainer container) {
 		Logger.error(this, "Attempting to deactivate FECQueue!", new Exception("debug"));
 	}
+
+	/**
+	 * @param job
+	 * @param container
+	 * @param context
+	 * @return True unless we were unable to remove the job because it has already started.
+	 */
+	public boolean cancel(FECJob job, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			for(int i=0;i<priorities;i++) {
+				transientQueue[i].remove(job);
+				persistentQueueCache[i].remove(job);
+			}
+		}
+		synchronized(job) {
+			if(job.running) return false;
+		}
+		if(job.persistent)
+			container.delete(job);
+		return true;
+	}
 }
