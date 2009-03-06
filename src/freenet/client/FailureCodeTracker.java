@@ -219,4 +219,10 @@ public class FailureCodeTracker {
 	public void objectOnActivate(ObjectContainer container) {
 		if(map != null) container.activate(map, 5);
 	}
+	
+	public FailureCodeTracker clone() {
+		FailureCodeTracker tracker = new FailureCodeTracker(insert);
+		tracker.merge(this);
+		return tracker;
+	}
 }
