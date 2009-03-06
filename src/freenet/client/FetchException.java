@@ -241,6 +241,23 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
+	public FetchException(FetchException e) {
+		super(e.getMessage());
+		initCause(e);
+		this.mode = e.mode;
+		this.newURI = e.newURI.clone();
+		this.errorCodes = e.errorCodes.clone();
+		this.expectedMimeType = e.expectedMimeType;
+		this.expectedSize = e.expectedSize;
+		this.extraMessage = e.extraMessage;
+		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+		// TODO Auto-generated constructor stub
+	}
+
 	public static String getShortMessage(int mode) {
 		String ret = L10n.getString("FetchException.shortError."+mode);
 		if(ret == null)
@@ -405,5 +422,9 @@ public class FetchException extends Exception {
 		if(newURI != null)
 			newURI.removeFrom(container);
 		container.delete(this);
+	}
+	
+	public FetchException clone() {
+		return new FetchException(this);
 	}
 }
