@@ -43,9 +43,9 @@ public class ClientMetadata implements Cloneable {
 	}
 	
 	@Override
-	public Object clone() {
+	public ClientMetadata clone() {
 		try {
-			return super.clone();
+			return (ClientMetadata) super.clone();
 		} catch (CloneNotSupportedException e) {
 			throw new Error(e);
 		}
