@@ -3,6 +3,7 @@ package freenet.clients.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
@@ -40,6 +41,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 public final class FProxyToadlet extends Toadlet {
 	
@@ -134,6 +136,7 @@ public final class FProxyToadlet extends Toadlet {
 		}
 
 		Bucket toFree = null;
+		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
 				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null);
@@ -208,8 +211,31 @@ public final class FProxyToadlet extends Toadlet {
 				context.writeData(data);
 			} else {
 				// Send the data, intact
-				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
-				context.writeData(data);
+				MultiValueTable<String, String> hdr = context.getHeaders();
+				String rangeStr = hdr.get("range");
+				// was a range request
+				if (rangeStr != null) {
+					
+					long range[] = parseRange(rangeStr);
+					if (range[1] == -1 || range[1] >= data.size()) {
+						range[1] = data.size() - 1;
+					}
+					tmpRange = bucketFactory.makeBucket(range[1] - range[0]);
+					InputStream is = data.getInputStream();
+					OutputStream os = tmpRange.getOutputStream();
+					if (range[0] > 0)
+						is.skip(range[0]);
+					FileUtil.copy(is, os, range[1] - range[0] + 1);
+					os.close();
+					is.close();
+					MultiValueTable<String, String> retHdr = new MultiValueTable<String, String>();
+					retHdr.put("Content-Range", "bytes " + range[0] + "-" + range[1] + "/" + data.size());
+					context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
+					context.writeData(tmpRange);
+				} else {
+					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
+					context.writeData(data);
+				}
 			}
 		} catch (URISyntaxException use1) {
 			/* shouldn't happen */
@@ -264,8 +290,11 @@ public final class FProxyToadlet extends Toadlet {
 			byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
 			context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
 			context.writeData(pageBytes);
+		} catch (HTTPRangeException e) {
+			ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
 		} finally {
 			if(toFree != null) toFree.free();
+			if(tmpRange != null) tmpRange.free();
 		}
 	}
 	
@@ -410,6 +439,19 @@ public final class FProxyToadlet extends Toadlet {
 			maxSize = MAX_LENGTH;
 		else 
 			maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
+		
+		//first check of httprange before get
+		// only valid number format is checked here
+		String rangeStr = ctx.getHeaders().get("range");
+		if (rangeStr != null) {
+			try {
+				parseRange(rangeStr);
+			} catch (HTTPRangeException e) {
+				Logger.normal(this, "Invalid Range Header: "+rangeStr, e);
+				ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
+				return;
+			}
+		}
 		
 		FreenetURI key;
 		try {
@@ -758,6 +800,35 @@ public final class FProxyToadlet extends Toadlet {
 			return s + '.' + ext;
 		}
 		return s + '.' + ext;
+	}
+	
+	private static long[] parseRange(String hdrrange) throws HTTPRangeException {
+		
+		long result[] = new long[2];
+		try {
+			String[] units = hdrrange.split("=", 2);
+			// FIXME are MBytes and co valid? if so, we need to adjust the values and
+			// return always bytes
+			if (!"bytes".equals(units[0])) {
+				throw new HTTPRangeException("Unknown unit, only 'bytes' supportet yet");
+			}
+			String[] range = units[1].split("-", 2);
+			result[0] = Long.parseLong(range[0]);
+			if (result[0] < 0)
+				throw new HTTPRangeException("Negative 'from' value");
+			if (range[1].trim().length() > 0) {
+				result[1] = Long.parseLong(range[1]);
+				if (result[1] <= result[0])
+					throw new HTTPRangeException("'from' value must be less then 'to' value");
+			} else {
+				result[1] = -1;
+			}
+		} catch (NumberFormatException nfe) {
+			throw new HTTPRangeException(nfe);
+		} catch (IndexOutOfBoundsException ioobe) {
+			throw new HTTPRangeException(ioobe);
+		}
+		return result;
 	}
 	
 }
