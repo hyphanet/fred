@@ -177,7 +177,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 	public synchronized void throwError(ObjectContainer container) throws FetchException {
 		if(failureException != null) {
 			if(persistent) container.activate(failureException, 5);
-			throw failureException;
+			if(persistent)
+				throw failureException.clone(); // We will remove, caller is responsible for clone
+			else
+				throw failureException;
 		}
 	}
 	
@@ -983,7 +986,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			subSegments.add(sub);
 		}
 		if(persistent)
-			container.store(subSegments);
+			container.ext().store(subSegments, 1);
 		return sub;
 	}
 
