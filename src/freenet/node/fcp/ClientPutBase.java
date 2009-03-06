@@ -169,9 +169,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		synchronized(this) {
-			if((generatedURI != null) && !uri.equals(generatedURI))
-				Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
-			generatedURI = uri;
+			if(generatedURI != null) {
+				if(!uri.equals(generatedURI))
+					Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
+				else
+					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "onGeneratedURI() twice with same value: "+generatedURI+" -> "+uri);
+			} else {
+				generatedURI = uri;
+			}
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
@@ -208,16 +213,22 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 				progress = progressMessage;
 				progressMessage = null;
 			}
-			if(pfm != null)
+			if(pfm != null) {
+				container.activate(pfm, 5);
 				pfm.removeFrom(container);
-			if(uri != null)
+			}
+			if(uri != null) {
+				container.activate(uri, 5);
 				uri.removeFrom(container);
+			}
 			if(progress != null) {
 				container.activate(progress, 1);
 				progress.removeFrom(container);
 			}
+			container.activate(publicURI, 5);
 			publicURI.removeFrom(container);
 		}
+		super.requestWasRemoved(container);
 	}
 
 	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
