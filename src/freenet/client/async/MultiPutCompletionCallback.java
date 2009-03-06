@@ -49,36 +49,45 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		onBlockSetFinished(state, container, context);
 		onFetchable(state, container);
+		boolean complete = true;
 		synchronized(this) {
-			if(finished) return;
+			if(finished) {
+				Logger.error(this, "Already finished but got onSuccess() for "+state+" on "+this);
+				return;
+			}
 			waitingFor.remove(state);
 			if(!(waitingFor.isEmpty() && started)) {
 				if(persistent) {
 					container.store(waitingFor);
 				}
-				return;
+				complete = false;
 			}
 		}
+		if(persistent) state.removeFrom(container, context);
+		if(complete) {
 		Logger.minor(this, "Completing...");
 		complete(null, container, context);
+		}
 	}
 
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		boolean complete = true;
 		synchronized(this) {
-			if(finished) return;
+			if(finished) {
+				Logger.error(this, "Already finished but got onFailure() for "+state+" on "+this);
+				return;
+			}
 			waitingFor.remove(state);
 			waitingForBlockSet.remove(state);
 			waitingForFetchable.remove(state);
 			if(!(waitingFor.isEmpty() && started)) {
-				if(persistent) {
-					container.store(waitingFor);
-					container.store(waitingForBlockSet);
-					container.store(waitingForFetchable);
+				if(this.e != null) {
+					if(persistent) this.e.removeFrom(container);
 				}
 				this.e = e;
 				if(persistent)
 					container.store(this);
-				return;
+				complete = false;
 			}
 		}
 		if(persistent) {
@@ -86,6 +95,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			container.store(waitingForBlockSet);
 			container.store(waitingForFetchable);
 		}
+		if(persistent) state.removeFrom(container, context);
+		if(complete)
 		complete(e, container, context);
 	}
 
@@ -97,7 +108,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				if(!(e.getMode() == InsertException.CANCELLED)) // Cancelled is okay, ignore it, we cancel after failure sometimes.
 					Logger.error(this, "Completing with "+e+" but already set "+this.e);
 			}
-			if(e == null) e = this.e;
+			if(e == null) {
+				e = this.e;
+				if(persistent) {
+					container.activate(e, 10);
+					e = e.clone(); // Since we will remove it, we can't pass it on
+				}
+			}
 		}
 		if(persistent) {
 			container.store(this);
@@ -243,6 +260,28 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		if(persistent)
 			container.activate(cb, 1);
 		cb.onFetchable(this, container);
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.activate(waitingFor, 2);
+		container.activate(waitingForBlockSet, 2);
+		container.activate(waitingForFetchable, 2);
+		// Should have been cleared by now
+		if(!waitingFor.isEmpty())
+			Logger.error(this, "waitingFor not empty in removeFrom() on "+this+" : "+waitingFor);
+		if(!waitingForBlockSet.isEmpty())
+			Logger.error(this, "waitingForBlockSet not empty in removeFrom() on "+this+" : "+waitingFor);
+		if(!waitingForFetchable.isEmpty())
+			Logger.error(this, "waitingForFetchable not empty in removeFrom() on "+this+" : "+waitingFor);
+		container.delete(waitingFor);
+		container.delete(waitingForBlockSet);
+		container.delete(waitingForFetchable);
+		// cb is at a higher level, we don't remove that, it removes itself
+		// generator is just a reference to one of the waitingFor's
+		// parent removes itself
+		e.removeFrom(container);
+		// whoever set the token is responsible for removing it
+		container.delete(this);
 	}
 
 }
