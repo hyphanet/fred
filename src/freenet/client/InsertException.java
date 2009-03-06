@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.support.Logger;
@@ -70,6 +72,17 @@ public class InsertException extends Exception {
 		this.mode = mode;
 		this.errorCodes = null;
 		this.uri = null;
+	}
+
+	public InsertException(InsertException e) {
+		super(e.getMessage());
+		extra = e.extra;
+		mode = e.mode;
+		errorCodes = e.errorCodes.clone();
+		if(e.uri == null)
+			uri = null;
+		else
+			uri = e.uri.clone();
 	}
 
 	/** Caller supplied a URI we cannot use */
@@ -152,5 +165,15 @@ public class InsertException extends Exception {
 		else
 			mode = TOO_MANY_RETRIES_IN_BLOCKS;
 		return new InsertException(mode, errors, null);
+	}
+	
+	public InsertException clone() {
+		return new InsertException(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		errorCodes.removeFrom(container);
+		uri.removeFrom(container);
+		container.delete(this);
 	}
 }
