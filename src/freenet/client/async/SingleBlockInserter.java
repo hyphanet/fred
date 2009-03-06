@@ -43,7 +43,7 @@ import freenet.support.io.NativeThread;
 public class SingleBlockInserter extends SendableInsert implements ClientPutState, Encodeable {
 
 	private static boolean logMINOR;
-	final Bucket sourceData;
+	Bucket sourceData;
 	final short compressionCodec;
 	final FreenetURI uri; // uses essentially no RAM in the common case of a CHK because we use FreenetURI.EMPTY_CHK_URI
 	FreenetURI resultingURI;
@@ -97,7 +97,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.freeData = freeData;
 		errors = new FailureCodeTracker(true);
 		this.cb = cb;
-		this.uri = uri;
+		this.uri = persistent ? uri.clone() : uri;
 		this.compressionCodec = compressionCodec;
 		this.sourceData = data;
 		if(sourceData == null) throw new NullPointerException();
@@ -150,8 +150,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(resultingURI != null) return;
 			resultingURI = key.getURI();
 		}
-		if(persistent)
+		if(persistent) {
+			container.store(this);
 			container.activate(cb, 1);
+		}
 		cb.onEncode(key, this, container, context);
 		if(persistent)
 			container.deactivate(cb, 1);
@@ -239,7 +241,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(logMINOR) Logger.minor(this, "Failed: "+e);
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
-			fail(InsertException.construct(errors), container, context);
+			fail(InsertException.construct(persistent ? errors.clone() : errors), container, context);
 			if(persistent)
 				container.deactivate(ctx, 1);
 			return;
@@ -272,6 +274,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(freeData) {
 			sourceData.free();
 			if(persistent) sourceData.removeFrom(container);
+			sourceData = null;
+			if(persistent)
+				container.store(this);
 		}
 	}
 
@@ -339,14 +344,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		synchronized(this) {
 			if(resultingURI != null) {
 				if(persistent) container.activate(resultingURI, 5);
-				return resultingURI;
+				return persistent ? resultingURI.clone() : resultingURI;
 			}
 		}
 		getBlock(container, context, true);
 		synchronized(this) {
 			// FIXME not really necessary? resultingURI is never dropped, only set.
 			if(persistent) container.activate(resultingURI, 5);
-			return resultingURI;
+			return persistent ? resultingURI.clone() : resultingURI;
 		}
 	}
 
@@ -379,6 +384,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(freeData) {
 			sourceData.free();
 			if(persistent) sourceData.removeFrom(container);
+			sourceData = null;
+			if(persistent)
+				container.store(this);
 		}
 		parent.completedBlock(false, container, context);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
@@ -407,6 +415,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(freeData) {
 			sourceData.free();
 			if(persistent) sourceData.removeFrom(container);
+			sourceData = null;
+			if(persistent)
+				container.store(this);
 		}
 		super.unregister(container, context);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
@@ -650,5 +661,25 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 			return false;
 		}
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		// FIXME remove sourceData ???
+		container.activate(uri, 5);
+		if(uri != FreenetURI.EMPTY_CHK_URI)
+			uri.removeFrom(container);
+		if(resultingURI != null) {
+			container.activate(resultingURI, 5);
+			resultingURI.removeFrom(container);
+		}
+		// cb, parent are responsible for removing themselves
+		// ctx is passed in and unmodified - usually the ClientPutter removes it
+		container.activate(errors, 5);
+		errors.removeFrom(container);
+		if(freeData && sourceData != null && container.ext().isStored(sourceData)) {
+			Logger.error(this, "Data not removed!");
+			sourceData.removeFrom(container);
+		}
+		container.delete(this);
 	}
 }
