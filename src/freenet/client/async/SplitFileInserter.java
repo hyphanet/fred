@@ -373,9 +373,11 @@ public class SplitFileInserter implements ClientPutState {
 					container.activate(segments[i], 1);
 				ClientCHK[] data = segments[i].getDataCHKs();
 				System.arraycopy(data, 0, dataURIs, dpos, data.length);
+				if(persistent) segments[i].clearDataCHKs();
 				dpos += data.length;
 				ClientCHK[] check = segments[i].getCheckCHKs();
 				System.arraycopy(check, 0, checkURIs, cpos, check.length);
+				if(persistent) segments[i].clearCheckCHKs();
 				cpos += check.length;
 				if(persistent && segments[i] != dontDeactivateSegment)
 					container.deactivate(segments[i], 1);
@@ -395,7 +397,7 @@ public class SplitFileInserter implements ClientPutState {
 			
 			if(!missingURIs) {
 				// Create Metadata
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, persistent ? cm.clone() : cm, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
 			}
 			haveSentMetadata = true;
 		}
@@ -581,6 +583,20 @@ public class SplitFileInserter implements ClientPutState {
 			if(persistent)
 				container.deactivate(segments[i], 1);
 		}
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		// parent can remove itself
+		// ctx will be removed by parent
+		// cb will remove itself
+		container.activate(cm, 5);
+		cm.removeFrom(container);
+		// token setter can remove token
+		for(SplitFileInserterSegment segment : segments) {
+			container.activate(segment, 1);
+			segment.removeFrom(container, context);
+		}
+		container.delete(this);
 	}
 
 }

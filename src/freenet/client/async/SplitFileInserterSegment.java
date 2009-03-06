@@ -97,6 +97,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	
 	private final boolean persistent;
 	
+	private FECJob encodeJob;
+	
 
 	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
 			short splitfileAlgo, int checkBlockCount, Bucket[] origDataBlocks,
@@ -417,7 +419,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							for(int i=0;i<dataBlocks.length;i++)
 								container.activate(dataBlocks[i], 5);
 						}
-						job = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
+						job = encodeJob = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
 					}
 				}				
 				fin = false;
@@ -522,6 +524,26 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		boolean fin;
 		synchronized(this) {
 			fin = finished;
+			encodeJob = null;
+		}
+		if(removeOnEncode) {
+			if(logMINOR) Logger.minor(this, "Removing on encode: "+this);
+			for(int i=0;i<dataBuckets.length;i++) {
+				if(dataBuckets[i] == null) continue;
+				dataBuckets[i].free();
+				if(persistent)
+					dataBuckets[i].removeFrom(container);
+				dataBuckets[i] = null;
+			}
+			for(int i=0;i<checkBuckets.length;i++) {
+				if(checkBuckets[i] == null) continue;
+				checkBuckets[i].free();
+				if(persistent)
+					checkBuckets[i].removeFrom(container);
+				checkBuckets[i] = null;
+			}
+			removeFrom(container, context);
+			return;
 		}
 		if(fin) {
 			Logger.error(this, "Encoded segment even though segment finished! Freeing buckets...");
@@ -752,6 +774,20 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return dataURIs;
 	}
 
+	public void clearCheckCHKs() {
+		for(int i=0;i<checkURIs.length;i++)
+			checkURIs[i] = null;
+	}
+	
+	public void clearDataCHKs() {
+		for(int i=0;i<dataURIs.length;i++)
+			dataURIs[i] = null;
+	}
+	
+	/** Get the InsertException for this segment.
+	 * NOTE: This will be deleted when the segment is deleted! Do not store it or pass 
+	 * it on!
+	 */
 	InsertException getException() {
 		synchronized (this) {
 			return toThrow;
@@ -1436,5 +1472,63 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		boolean ret = (finished || blocks.isEmpty());
 		if(persistent) container.deactivate(blocks, 1);
 		return ret;
+	}
+
+	private boolean removeOnEncode;
+	
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(encodeJob != null) {
+			if(!encodeJob.cancel(container, context)) {
+				synchronized(this) {
+					removeOnEncode = true;
+					if(logMINOR) Logger.minor(this, "Will remove after encode finished: "+this);
+					container.store(this);
+					return;
+				}
+			}
+			encodeJob = null;
+		}
+		// parent, putter can deal with themselves
+		for(int i=0;i<dataBlocks.length;i++) {
+			if(dataBlocks[i] == null) continue;
+			container.activate(dataBlocks[i], 1);
+			dataBlocks[i].free();
+			dataBlocks[i].removeFrom(container);
+			dataBlocks[i] = null;
+		}
+		for(int i=0;i<checkBlocks.length;i++) {
+			if(checkBlocks[i] == null) continue;
+			container.activate(checkBlocks[i], 1);
+			checkBlocks[i].free();
+			checkBlocks[i].removeFrom(container);
+			checkBlocks[i] = null;
+		}
+		for(ClientCHK chk : dataURIs) {
+			if(chk != null) {
+				container.activate(chk, 5);
+				chk.removeFrom(container);
+			}
+		}
+		for(ClientCHK chk : checkURIs) {
+			if(chk != null) {
+				container.activate(chk, 5);
+				chk.removeFrom(container);
+			}
+		}
+		container.activate(blocks, 5);
+		for(Integer i : blocks) {
+			container.activate(i, 1);
+			container.delete(i);
+		}
+		container.delete(blocks);
+		if(toThrow != null) {
+			container.activate(toThrow, 5);
+			toThrow.removeFrom(container);
+		}
+		if(errors != null) {
+			container.activate(errors, 1);
+			errors.removeFrom(container);
+		}
+		container.delete(this);
 	}
 }
