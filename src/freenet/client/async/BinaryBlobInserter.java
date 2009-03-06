@@ -213,5 +213,10 @@ public class BinaryBlobInserter implements ClientPutState {
 		else
 			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, container, context);
 	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		// FIXME: Persistent blob inserts are not supported.
+		throw new UnsupportedOperationException();
+	}
 	
 }

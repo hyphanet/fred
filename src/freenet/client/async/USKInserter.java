@@ -161,10 +161,14 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
 			context.uskManager.update(pubUSK, edition, context);
 		}
+		if(persistent) state.removeFrom(container, context);
 		// FINISHED!!!! Yay!!!
 	}
 
-	public synchronized void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		ClientPutState oldSBI;
+		synchronized(this) {
+		oldSBI = sbi;
 		sbi = null;
 		if(e.getMode() == InsertException.COLLISION) {
 			// Try the next slot
@@ -175,6 +179,14 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				scheduleInsert(container, context);
 		} else {
 			cb.onFailure(e, state, container, context);
+		}
+		}
+		if(state != null && persistent) {
+			state.removeFrom(container, context);
+		}
+		if(oldSBI != null && oldSBI != state) {
+			container.activate(oldSBI, 1);
+			oldSBI.removeFrom(container, context);
 		}
 	}
 
@@ -208,13 +220,18 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		if(fetcher != null)
-			fetcher.cancel(container, context);
-		if(sbi != null)
-			sbi.cancel(container, context);
+		USKFetcherTag tag;
+		synchronized(this) {
+			tag = fetcher;
+			fetcher = null;
+		}
+		if(tag != null)
+			tag.cancel(container, context);
+		if(sbi != null) {
+			sbi.cancel(container, context); // will call onFailure, which will removeFrom()
+		}
 		synchronized(this) {
 			finished = true;
-			fetcher = null;
 		}
 		if(freeData) {
 			data.free();
@@ -275,6 +292,32 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public short getPollingPriorityProgress() {
 		return parent.getPriorityClass();
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		// parent will remove self
+		if(freeData && data != null && container.ext().isStored(data)) {
+			try {
+				data.free();
+			} catch (Throwable t) {
+				Logger.error(this, "Already freed? Caught in removeFrom on "+this+" : "+data+" : "+t, t);
+			}
+			data.removeFrom(container);
+		}
+		// ctx is passed in, cb will deal with
+		// cb will remove self
+		// tokenObject will be removed by creator
+		privUSK.removeFrom(container);
+		pubUSK.removeFrom(container);
+		if(fetcher != null) {
+			Logger.error(this, "Fetcher tag still present: "+fetcher+" in removeFrom() for "+this);
+			fetcher.removeFrom(container, context);
+		}
+		if(sbi != null) {
+			Logger.error(this, "sbi still present: "+sbi+" in removeFrom() for "+this);
+			sbi.removeFrom(container, context);
+		}
+		container.delete(this);
 	}
 
 }

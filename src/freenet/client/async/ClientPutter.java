@@ -191,11 +191,17 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(client, 1);
+		ClientPutState oldState;
 		synchronized(this) {
 			finished = true;
+			oldState = currentState;
 			currentState = null;
 			oldProgress = null;
 		}
+		if(oldState != null && persistent())
+			oldState.removeFrom(container, context);
+		if(state != null && state != oldState && persistent())
+			state.removeFrom(container, context);
 		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
 			Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
 					", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
@@ -209,11 +215,17 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(client, 1);
+		ClientPutState oldState;
 		synchronized(this) {
 			finished = true;
+			oldState = currentState;
 			currentState = null;
 			oldProgress = null;
 		}
+		if(oldState != null && persistent())
+			oldState.removeFrom(container, context);
+		if(state != null && state != oldState && persistent())
+			state.removeFrom(container, context);
 		if(persistent())
 			container.store(this);
 		client.onFailure(e, this, container);
@@ -230,6 +242,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(persistent())
 			container.activate(client, 1);
 		synchronized(this) {
+			if(this.uri != null) {
+				Logger.error(this, "onEncode() called twice? Already have a uri: "+uri+" for "+this);
+				if(persistent())
+					this.uri.removeFrom(container);
+			}
 			this.uri = key.getURI();
 			if(targetFilename != null)
 				uri = uri.pushMetaString(targetFilename);
@@ -271,6 +288,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(newState == null) throw new NullPointerException();
 		
+		// onTransition is *not* responsible for removing the old state, the caller is.
 		synchronized (this) {
 			if (currentState == oldState) {
 				currentState = newState;
