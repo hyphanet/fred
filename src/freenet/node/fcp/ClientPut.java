@@ -526,4 +526,13 @@ public class ClientPut extends ClientPutBase {
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}
+	
+	@Override
+	public void requestWasRemoved(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(putter, 1);
+			putter.removeFrom(container);
+		}
+		super.requestWasRemoved(container);
+	}
 }
