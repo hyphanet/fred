@@ -44,7 +44,7 @@ class SingleFileInserter implements ClientPutState {
 
 	private static boolean logMINOR;
 	final BaseClientPutter parent;
-	final InsertBlock block;
+	InsertBlock block;
 	final InsertContext ctx;
 	final boolean metadata;
 	final PutCompletionCallback cb;
@@ -244,9 +244,12 @@ class SingleFileInserter implements ClientPutState {
 				cb.onBlockSetFinished(this, container, context);
 				started = true;
 				if(persistent) {
-					container.store(this);
 					if(!parentWasActive)
 						container.deactivate(parent, 1);
+					block.nullData();
+					block.removeFrom(container);
+					block = null;
+					removeFrom(container, context);
 				}
 				return;
 			}
@@ -283,7 +286,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
-				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context, true);
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, persistent ? block.desiredURI.clone() : block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context, true);
 				if(logMINOR)
 					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
 				mcb.addURIGenerator(metaPutter, container);
@@ -299,9 +302,12 @@ class SingleFileInserter implements ClientPutState {
 			}
 			started = true;
 			if(persistent) {
-				container.store(this);
 				if(!parentWasActive)
 					container.deactivate(parent, 1);
+				block.nullData();
+				block.removeFrom(container);
+				block = null;
+				removeFrom(container, context);
 			}
 			return;
 		}
@@ -321,6 +327,9 @@ class SingleFileInserter implements ClientPutState {
 				container.store(sfi);
 				container.deactivate(sfi, 1);
 			}
+			block.nullData();
+			block = null;
+			removeFrom(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context);
@@ -336,10 +345,11 @@ class SingleFileInserter implements ClientPutState {
 				container.store(sfi);
 				container.deactivate(sfi, 1);
 			}
+			started = true;
+			if(persistent)
+				container.store(this);
 		}
-		started = true;
 		if(persistent) {
-			container.store(this);
 			if(!parentWasActive)
 				container.deactivate(parent, 1);
 		}
@@ -438,7 +448,7 @@ class SingleFileInserter implements ClientPutState {
 						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
 			if(encodeCHK) {
 				ClientKey key = sbi.getBlock(container, context, true).getClientKey();
-				cb.onEncode(key, this, container, context);
+				//cb.onEncode(key, this, container, context); - will be called by getBlock()
 			}
 			return sbi;
 		}
@@ -549,6 +559,7 @@ class SingleFileInserter implements ClientPutState {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
 			boolean lateStart = false;
+			ClientPutState toRemove = null;
 			synchronized(this) {
 				if(finished){
 					if(freeData) {
@@ -566,9 +577,13 @@ class SingleFileInserter implements ClientPutState {
 					} else {
 						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
 					}
+					sfi = null;
+					toRemove = state;
 				} else if(state == metadataPutter) {
 					if(logMINOR) Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
 					metaInsertSuccess = true;
+					metadataPutter = null;
+					toRemove = state;
 				} else {
 					Logger.error(this, "Unknown: "+state+" for "+this, new Exception("debug"));
 				}
@@ -577,6 +592,8 @@ class SingleFileInserter implements ClientPutState {
 					finished = true;
 				}
 			}
+			if(toRemove != null)
+				toRemove.removeFrom(container, context);
 			if(persistent)
 				container.store(this);
 			if(lateStart)
@@ -594,13 +611,27 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) {
 				container.activate(block, 1);
 			}
+			boolean toFail = true;
+			boolean toRemove = false;
 			synchronized(this) {
+				if(state == sfi) {
+					toRemove = true;
+					sfi = null;
+				} else if(state == metadataPutter) {
+					toRemove = true;
+					metadataPutter = null;
+				} else {
+					Logger.error(this, "onFailure() on unknown state "+state+" on "+this);
+				}
 				if(finished){
 					if(freeData)
 						block.free(container);
-					return;
+					toFail = false; // Already failed
 				}
 			}
+			if(toRemove)
+				state.removeFrom(container, context);
+			if(toFail)
 			fail(e, container, context);
 		}
 
@@ -895,6 +926,12 @@ class SingleFileInserter implements ClientPutState {
 			// Chain to containing class, since we use its members extensively.
 			container.activate(SingleFileInserter.this, 1);
 		}
+
+		public void removeFrom(ObjectContainer container, ClientContext context) {
+			container.delete(this);
+			// Remove parent as well, since we always transition from parent to SH i.e. it will not get a removeFrom().
+			SingleFileInserter.this.removeFrom(container, context);
+		}
 		
 	}
 
@@ -939,5 +976,17 @@ class SingleFileInserter implements ClientPutState {
 	
 	boolean started() {
 		return started;
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		// parent removes self
+		// token is passed in, creator of token is responsible for removing it
+		if(block != null) {
+			container.activate(block, 1);
+			block.removeFrom(container);
+		}
+		// ctx is passed in, creator is responsible for removing it
+		// cb removes itself
+		container.delete(this);
 	}
 }
