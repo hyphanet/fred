@@ -22,6 +22,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	Bucket bucket;
 	boolean freed;
 	boolean removed;
+	boolean reallyRemoved;
 	
 	public boolean toFree() {
 		return freed;
@@ -148,6 +149,11 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 
 	public void realRemoveFrom(ObjectContainer container) {
+		synchronized(this) {
+			if(reallyRemoved)
+				Logger.error(this, "Calling realRemoveFrom() twice on "+this);
+			reallyRemoved = true;
+		}
 		bucket.removeFrom(container);
 		container.delete(this);
 	}
@@ -155,4 +161,21 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 //	public void objectOnDeactivate(ObjectContainer container) {
 //		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating "+super.toString()+" : "+bucket, new Exception("debug"));
 //	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(reallyRemoved) {
+			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(reallyRemoved) {
+			Logger.error(this, "objectCanUpdate() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
+			return false;
+		}
+		return true;
+	}
+
 }
