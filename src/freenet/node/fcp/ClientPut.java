@@ -533,6 +533,18 @@ public class ClientPut extends ClientPutBase {
 			container.activate(putter, 1);
 			putter.removeFrom(container);
 			putter = null;
+			if(origFilename != null) {
+				container.activate(origFilename, 5);
+				container.delete(origFilename);
+			}
+			if(clientMetadata != null) {
+				container.activate(clientMetadata, 5);
+				clientMetadata.removeFrom(container);
+			}
+			if(targetURI != null && targetURI != FreenetURI.EMPTY_CHK_URI) {
+				container.activate(targetURI, 5);
+				targetURI.removeFrom(container);
+			}
 		}
 		super.requestWasRemoved(container);
 	}
