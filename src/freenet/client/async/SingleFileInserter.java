@@ -455,6 +455,7 @@ class SingleFileInserter implements ClientPutState {
 						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
 			// pass uri to SBI
 			block.nullURI();
+			if(persistent) container.store(block);
 			return sbi;
 		}
 		
