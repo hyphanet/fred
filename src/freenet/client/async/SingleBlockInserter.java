@@ -211,7 +211,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			fail(new InsertException(InsertException.COLLISION), container, context);
 			break;
 		case LowLevelPutException.INTERNAL_ERROR:
-			errors.inc(InsertException.INTERNAL_ERROR);
+			fail(new InsertException(InsertException.INTERNAL_ERROR), container, context);
 			break;
 		case LowLevelPutException.REJECTED_OVERLOAD:
 			errors.inc(InsertException.REJECTED_OVERLOAD);
@@ -378,7 +378,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			finished = true;
 		}
 		if(persistent) {
-			container.activate(cb, 1);
 			container.store(this);
 			container.activate(sourceData, 1);
 		}
@@ -390,8 +389,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.store(this);
 		}
 		parent.completedBlock(false, container, context);
-		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
 		unregister(container, context);
+		if(persistent)
+			container.activate(cb, 1);
+		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
 		cb.onSuccess(this, container, context);
 		if(persistent)
 			container.deactivate(cb, 1);
