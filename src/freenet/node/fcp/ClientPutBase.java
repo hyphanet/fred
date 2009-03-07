@@ -147,7 +147,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			if(generatedURI == null)
 				Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
 		}
-		freeData(container);
+		// Could restart, and is on the putter, don't free data until we remove the putter
+		//freeData(container);
 		finish(container);
 		trySendFinalMessage(null, container);
 		if(client != null)
@@ -160,7 +161,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
-		freeData(container);
+		// Could restart, and is on the putter, don't free data until we remove the putter
+		//freeData(container);
 		finish(container);
 		trySendFinalMessage(null, container);
 		if(client != null)
