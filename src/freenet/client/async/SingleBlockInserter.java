@@ -97,7 +97,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.freeData = freeData;
 		errors = new FailureCodeTracker(true);
 		this.cb = cb;
-		this.uri = persistent ? uri.clone() : uri;
+		this.uri = uri;
 		this.compressionCodec = compressionCodec;
 		this.sourceData = data;
 		if(sourceData == null) throw new NullPointerException();

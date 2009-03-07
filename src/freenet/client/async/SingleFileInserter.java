@@ -448,7 +448,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 		} else {
 			SingleBlockInserter sbi = 
-				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
+				new SingleBlockInserter(parent, data, compressionCodec, persistent ? uri.clone() : uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
 			return sbi;
 		}
