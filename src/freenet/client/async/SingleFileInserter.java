@@ -240,6 +240,8 @@ class SingleFileInserter implements ClientPutState {
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi, container);
+				if(earlyEncode && bi instanceof SingleBlockInserter && block.desiredURI.isCHK())
+					((SingleBlockInserter)bi).getBlock(container, context, true);
 				bi.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
 				started = true;
@@ -292,6 +294,8 @@ class SingleFileInserter implements ClientPutState {
 				mcb.addURIGenerator(metaPutter, container);
 				mcb.add(dataPutter, container);
 				cb.onTransition(this, mcb, container);
+				if(earlyEncode && metaPutter instanceof SingleBlockInserter && block.desiredURI.isCHK())
+					((SingleBlockInserter)metaPutter).getBlock(container, context, true);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
 				mcb.arm(container, context);
 				dataPutter.schedule(container, context);
