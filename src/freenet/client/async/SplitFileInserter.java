@@ -589,8 +589,7 @@ public class SplitFileInserter implements ClientPutState {
 		// parent can remove itself
 		// ctx will be removed by parent
 		// cb will remove itself
-		container.activate(cm, 5);
-		cm.removeFrom(container);
+		// cm will be removed by parent
 		// token setter can remove token
 		for(SplitFileInserterSegment segment : segments) {
 			container.activate(segment, 1);
