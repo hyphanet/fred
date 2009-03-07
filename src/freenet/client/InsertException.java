@@ -172,8 +172,14 @@ public class InsertException extends Exception {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		errorCodes.removeFrom(container);
-		uri.removeFrom(container);
+		if(errorCodes != null) {
+			container.activate(errorCodes, 1);
+			errorCodes.removeFrom(container);
+		}
+		if(uri != null) {
+			container.activate(uri, 5);
+			uri.removeFrom(container);
+		}
 		container.delete(this);
 	}
 }
