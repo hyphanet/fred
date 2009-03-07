@@ -196,6 +196,7 @@ class SingleFileInserter implements ClientPutState {
 		int blockSize;
 		int oneBlockCompressedSize;
 		
+		boolean isCHK = false;
 		String type = block.desiredURI.getKeyType();
 		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
@@ -203,6 +204,7 @@ class SingleFileInserter implements ClientPutState {
 		} else if(type.equals("CHK")) {
 			blockSize = CHKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
+			isCHK = true;
 		} else {
 			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
 		}
@@ -236,11 +238,11 @@ class SingleFileInserter implements ClientPutState {
 					data = fixNotPersistent(data, context);
 				// Just insert it
 				ClientPutState bi =
-					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, container, context, freeData);
+					createInserter(parent, data, codecNumber, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, container, context, freeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi, container);
-				if(earlyEncode && bi instanceof SingleBlockInserter && block.desiredURI.isCHK())
+				if(earlyEncode && bi instanceof SingleBlockInserter && isCHK)
 					((SingleBlockInserter)bi).getBlock(container, context, true);
 				bi.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
@@ -288,13 +290,13 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
-				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, persistent ? block.desiredURI.clone() : block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, container, context, true);
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, container, context, true);
 				if(logMINOR)
 					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
 				mcb.addURIGenerator(metaPutter, container);
 				mcb.add(dataPutter, container);
 				cb.onTransition(this, mcb, container);
-				if(earlyEncode && metaPutter instanceof SingleBlockInserter && block.desiredURI.isCHK())
+				if(earlyEncode && metaPutter instanceof SingleBlockInserter && isCHK)
 					((SingleBlockInserter)metaPutter).getBlock(container, context, true);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
 				mcb.arm(container, context);
@@ -433,10 +435,11 @@ class SingleFileInserter implements ClientPutState {
 		return meta;
 	}
 
-	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
+	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
 			boolean addToParent, ObjectContainer container, ClientContext context, boolean freeData) throws InsertException {
 		
+		FreenetURI uri = block.desiredURI;
 		uri.checkInsertURI(); // will throw an exception if needed
 		
 		if(uri.getKeyType().equals("USK")) {
@@ -448,8 +451,10 @@ class SingleFileInserter implements ClientPutState {
 			}
 		} else {
 			SingleBlockInserter sbi = 
-				new SingleBlockInserter(parent, data, compressionCodec, persistent ? uri.clone() : uri, ctx, cb, isMetadata, sourceLength, token, 
+				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
+			// pass uri to SBI
+			block.nullURI();
 			return sbi;
 		}
 		

@@ -67,10 +67,15 @@ public class InsertBlock {
 	}
 
 	/** Null out the data so it doesn't get removed in removeFrom().
-	 * Call this when the data becomes somebody else's problem. You should clone()
-	 * the desiredURI and clientMetadata, since these are always removed. */
+	 * Call this when the data becomes somebody else's problem. */
 	public void nullData() {
 		data = null;
+	}
+
+	/** Null out the URI so it doesn't get removed in removeFrom().
+	 * Call this when the URI becomes somebody else's problem. */
+	public void nullURI() {
+		this.desiredURI = null;
 	}
 	
 }
