@@ -686,6 +686,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.store(this);
 			container.deactivate(errors, 5);
 		}
+		unregister(container, context);
 		parent.segmentFinished(this, container, context);
 		for(int i=0;i<dataBlocks.length;i++) {
 			if(dataBlocks[i] == null) continue;
