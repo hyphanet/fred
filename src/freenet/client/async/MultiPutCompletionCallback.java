@@ -49,6 +49,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		onBlockSetFinished(state, container, context);
 		onFetchable(state, container);
+		if(persistent)
+			container.activate(waitingFor, 2);
 		boolean complete = true;
 		synchronized(this) {
 			if(finished) {
@@ -72,6 +74,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				}
 				complete = false;
 			}
+			if(state == generator)
+				generator = null;
 		}
 		if(persistent) state.removeFrom(container, context);
 		if(complete) {
@@ -99,6 +103,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 					container.store(this);
 				complete = false;
 			}
+			if(state == generator)
+				generator = null;
 		}
 		if(persistent) {
 			container.store(waitingFor);
@@ -235,6 +241,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(waitingForBlockSet, 2);
 		synchronized(this) {
 			this.waitingForBlockSet.remove(state);
 			if(persistent)
@@ -260,6 +268,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
+		if(persistent)
+			container.activate(waitingForFetchable, 2);
 		synchronized(this) {
 			this.waitingForFetchable.remove(state);
 			if(persistent)
