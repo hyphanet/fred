@@ -334,7 +334,6 @@ class SingleFileInserter implements ClientPutState {
 				container.deactivate(sfi, 1);
 			}
 			block.nullData();
-			block = null;
 			removeFrom(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
