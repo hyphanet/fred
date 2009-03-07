@@ -24,7 +24,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	final FilenameGenerator generator;
 	private static boolean logDebug = true;
 	private boolean readOnly;
-	private final boolean deleteOnFinalize;
+	private final boolean deleteOnFree;
 	/**
 	 * Constructor for the TempFileBucket object
 	 *
@@ -32,11 +32,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	 */
 	public TempFileBucket(
 		long id,
-		FilenameGenerator generator, boolean deleteOnFinalize) {
+		FilenameGenerator generator, boolean deleteOnFree) {
 		super(generator.getFilename(id));
 		this.filenameID = id;
 		this.generator = generator;
-		this.deleteOnFinalize = deleteOnFinalize;
+		this.deleteOnFree = deleteOnFree;
 		synchronized(this) {
 			logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		}
@@ -55,7 +55,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	protected boolean deleteOnFinalize() {
 		// Make sure finalize wacks temp file 
 		// if it is not explictly freed.
-		return deleteOnFinalize;
+		return deleteOnFree; // not if shadow
 	}
 	
 	@Override
@@ -73,7 +73,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	protected boolean deleteOnFree() {
-		return true;
+		return deleteOnFree;
 	}
 
 	@Override
