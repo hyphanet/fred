@@ -97,8 +97,8 @@ public class USKManager implements RequestClient {
 		return f;
 	}
 	
-	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context) {
-		return getFetcher(usk, backgroundFetchContext, true, client.persistent(), cb, container, context);
+	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
+		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, container, context);
 	}
 
 	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context) {

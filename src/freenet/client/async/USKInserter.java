@@ -54,6 +54,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	/** After attempting inserts on this many slots, go back to the Fetcher */
 	private static final long MAX_TRIED_SLOTS = 10;
 	private boolean freeData;
+	final int hashCode;
 	
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Caller calls schedule()
@@ -78,7 +79,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
-			fetcher = context.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient(), container, context);
+			fetcher = context.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
 		}
 		fetcher.schedule(container, context);
 	}
@@ -102,17 +103,19 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					Logger.error(this, "Could not decode: "+e, e);
 				}
 			}
-			if(!alreadyInserted) {
-				if(parent.persistent())
-					fetcher.removeFrom(container, context);
+			if(parent.persistent()) {
+				fetcher.removeFrom(container, context);
+				fetcher.ctx.removeFrom(container);
 				fetcher = null;
 			}
 		}
 		if(alreadyInserted) {
 			// Success!
-			cb.onEncode(pubUSK.copy(edition), this, container, context);
 			parent.addMustSucceedBlocks(1, container);
 			parent.completedBlock(true, container, context);
+			if(persistent)
+				container.activate(cb, 1);
+			cb.onEncode(pubUSK.copy(edition), this, container, context);
 			cb.onSuccess(this, container, context);
 			if(freeData) {
 				data.free();
@@ -148,7 +151,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	public synchronized void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-		cb.onEncode(pubUSK.copy(edition), this, container, context);
+		USK newEdition = pubUSK.copy(edition);
+		cb.onEncode(newEdition, this, container, context);
 		cb.onSuccess(this, container, context);
 		finished = true;
 		sbi = null;
@@ -190,9 +194,14 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 	}
 
+	public int hashCode() {
+		return hashCode;
+	}
+	
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
 			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData, boolean persistent) throws MalformedURLException {
+		this.hashCode = super.hashCode();
 		this.tokenObject = tokenObject;
 		this.persistent = persistent;
 		this.parent = parent;
@@ -209,7 +218,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
 		}
-		privUSK = InsertableUSK.createInsertable(uri);
+		privUSK = InsertableUSK.createInsertable(uri, persistent);
 		pubUSK = privUSK.getUSK();
 		edition = pubUSK.suggestedEdition;
 		this.freeData = freeData;
@@ -247,8 +256,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public synchronized void onCancelled(ObjectContainer container, ClientContext context) {
 		if(fetcher != null) {
-			if(parent.persistent())
+			if(parent.persistent()) {
+				fetcher.ctx.removeFrom(container);
 				fetcher.removeFrom(container, context);
+			}
 			fetcher = null;
 		}
 		if(finished) return;
@@ -295,6 +306,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this);
 		// parent will remove self
 		if(freeData && data != null && container.ext().isStored(data)) {
 			try {
@@ -310,7 +323,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		privUSK.removeFrom(container);
 		pubUSK.removeFrom(container);
 		if(fetcher != null) {
-			Logger.error(this, "Fetcher tag still present: "+fetcher+" in removeFrom() for "+this);
+			Logger.error(this, "Fetcher tag still present: "+fetcher+" in removeFrom() for "+this, new Exception("debug"));
+			fetcher.ctx.removeFrom(container);
 			fetcher.removeFrom(container, context);
 		}
 		if(sbi != null) {
@@ -320,4 +334,14 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		container.delete(this);
 	}
 
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+		return true;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+		return true;
+	}
+	
 }
