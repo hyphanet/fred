@@ -56,9 +56,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				return;
 			}
 			waitingFor.remove(state);
+			if(waitingForBlockSet.contains(state)) {
+				waitingForBlockSet.remove(state);
+				if(persistent && !waitingFor.isEmpty())
+					container.ext().store(waitingForBlockSet, 1);
+			}
+			if(waitingForFetchable.contains(state)) {
+				waitingForFetchable.remove(state);
+				if(persistent && !waitingFor.isEmpty())
+					container.ext().store(waitingForFetchable, 1);
+			}
 			if(!(waitingFor.isEmpty() && started)) {
 				if(persistent) {
-					container.store(waitingFor);
+					container.ext().store(waitingFor, 1);
 				}
 				complete = false;
 			}
@@ -110,7 +120,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			}
 			if(e == null) {
 				e = this.e;
-				if(persistent) {
+				if(persistent && e != null) {
 					container.activate(e, 10);
 					e = e.clone(); // Since we will remove it, we can't pass it on
 				}
@@ -279,7 +289,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		// cb is at a higher level, we don't remove that, it removes itself
 		// generator is just a reference to one of the waitingFor's
 		// parent removes itself
-		e.removeFrom(container);
+		if(e != null) {
+			container.activate(e, 5);
+			e.removeFrom(container);
+		}
 		// whoever set the token is responsible for removing it
 		container.delete(this);
 	}
