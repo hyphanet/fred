@@ -270,6 +270,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.failedBlock(container, context);
 		if(persistent)
 			container.activate(cb, 1);
+		unregister(container, context);
 		cb.onFailure(e, this, container, context);
 		if(freeData) {
 			sourceData.free();
@@ -390,6 +391,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		parent.completedBlock(false, container, context);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
+		unregister(container, context);
 		cb.onSuccess(this, container, context);
 		if(persistent)
 			container.deactivate(cb, 1);
@@ -664,6 +666,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 		// FIXME remove sourceData ???
 		container.activate(uri, 5);
 		if(uri != FreenetURI.EMPTY_CHK_URI)
@@ -682,4 +685,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		container.delete(this);
 	}
+	
+//	public boolean objectCanNew(ObjectContainer container) {
+//		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+//		return true;
+//	}
+//	
+//	public boolean objectCanUpdate(ObjectContainer container) {
+//		Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+//		return true;
+//	}
+//	
 }
