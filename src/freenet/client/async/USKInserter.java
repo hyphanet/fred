@@ -75,11 +75,13 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	 * including author errors and so on.
 	 */
 	private void scheduleFetcher(ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(pubUSK, 5);
 		synchronized(this) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
-			fetcher = context.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
+			fetcher = context.uskManager.getFetcherForInsertDontSchedule(persistent ? pubUSK.clone() : pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
 		}
 		fetcher.schedule(container, context);
 	}
@@ -107,14 +109,17 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				fetcher.removeFrom(container, context);
 				fetcher.ctx.removeFrom(container);
 				fetcher = null;
+				container.store(this);
 			}
 		}
 		if(alreadyInserted) {
 			// Success!
 			parent.addMustSucceedBlocks(1, container);
 			parent.completedBlock(true, container, context);
-			if(persistent)
+			if(persistent) {
 				container.activate(cb, 1);
+				container.activate(pubUSK, 5);
+			}
 			cb.onEncode(pubUSK.copy(edition), this, container, context);
 			cb.onSuccess(this, container, context);
 			if(freeData) {
@@ -128,6 +133,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	private void scheduleInsert(ObjectContainer container, ClientContext context) {
 		long edNo = Math.max(edition, context.uskManager.lookup(pubUSK)+1);
+		if(persistent) {
+			container.activate(privUSK, 5);
+			container.activate(pubUSK, 5);
+		}
 		synchronized(this) {
 			if(finished) return;
 			edition = edNo;
@@ -148,14 +157,20 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				data.removeFrom(container);
 			}
 		}
+		if(persistent) container.store(this);
 	}
 
 	public synchronized void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent) container.activate(pubUSK, 5);
 		USK newEdition = pubUSK.copy(edition);
-		cb.onEncode(newEdition, this, container, context);
-		cb.onSuccess(this, container, context);
 		finished = true;
 		sbi = null;
+		if(persistent) {
+			container.activate(cb, 1);
+			container.store(this);
+		}
+		cb.onEncode(newEdition, this, container, context);
+		cb.onSuccess(this, container, context);
 		FreenetURI targetURI = pubUSK.getSSK(edition).getURI();
 		FreenetURI realURI = ((SingleBlockInserter)state).getURI(container, context);
 		if(!targetURI.equals(realURI))
@@ -177,11 +192,15 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(e.getMode() == InsertException.COLLISION) {
 			// Try the next slot
 			edition++;
-			if(consecutiveCollisions++ > MAX_TRIED_SLOTS)
+			consecutiveCollisions++;
+			if(persistent) container.store(this);
+			if(consecutiveCollisions > MAX_TRIED_SLOTS)
 				scheduleFetcher(container, context);
 			else
 				scheduleInsert(container, context);
 		} else {
+			if(persistent)
+				container.activate(cb, 1);
 			cb.onFailure(e, state, container, context);
 		}
 		}
@@ -320,15 +339,19 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// ctx is passed in, cb will deal with
 		// cb will remove self
 		// tokenObject will be removed by creator
+		container.activate(privUSK, 5);
 		privUSK.removeFrom(container);
+		container.activate(pubUSK, 5);
 		pubUSK.removeFrom(container);
 		if(fetcher != null) {
 			Logger.error(this, "Fetcher tag still present: "+fetcher+" in removeFrom() for "+this, new Exception("debug"));
+			container.activate(fetcher.ctx, 2);
 			fetcher.ctx.removeFrom(container);
 			fetcher.removeFrom(container, context);
 		}
 		if(sbi != null) {
 			Logger.error(this, "sbi still present: "+sbi+" in removeFrom() for "+this);
+			container.activate(sbi, 1);
 			sbi.removeFrom(container, context);
 		}
 		container.delete(this);
