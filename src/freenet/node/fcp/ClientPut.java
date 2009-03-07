@@ -40,7 +40,7 @@ import com.db4o.ObjectContainer;
 
 public class ClientPut extends ClientPutBase {
 
-	final ClientPutter putter;
+	ClientPutter putter;
 	private final short uploadFrom;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
 	private final File origFilename;
@@ -532,6 +532,7 @@ public class ClientPut extends ClientPutBase {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(putter, 1);
 			putter.removeFrom(container);
+			putter = null;
 		}
 		super.requestWasRemoved(container);
 	}

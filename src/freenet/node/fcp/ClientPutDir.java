@@ -388,6 +388,7 @@ public class ClientPutDir extends ClientPutBase {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(putter, 1);
 			putter.removeFrom(container);
+			putter = null;
 		}
 		super.requestWasRemoved(container);
 	}
