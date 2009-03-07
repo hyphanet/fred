@@ -592,7 +592,7 @@ class SingleFileInserter implements ClientPutState {
 					finished = true;
 				}
 			}
-			if(toRemove != null)
+			if(toRemove != null && persistent)
 				toRemove.removeFrom(container, context);
 			if(persistent)
 				container.store(this);
@@ -629,7 +629,7 @@ class SingleFileInserter implements ClientPutState {
 					toFail = false; // Already failed
 				}
 			}
-			if(toRemove)
+			if(toRemove && persistent)
 				state.removeFrom(container, context);
 			if(toFail)
 			fail(e, container, context);
