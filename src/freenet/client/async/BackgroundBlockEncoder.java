@@ -71,7 +71,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			runPersistentQueue(context);
 	}
 	
-	private void runPersistentQueue(ClientContext context) {
+	public void runPersistentQueue(ClientContext context) {
 		context.jobRunner.queue(runner, NativeThread.LOW_PRIORITY, true);
 	}
 
