@@ -236,7 +236,7 @@ class SingleFileInserter implements ClientPutState {
 					data = fixNotPersistent(data, context);
 				// Just insert it
 				ClientPutState bi =
-					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context, freeData);
+					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, container, context, freeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi, container);
@@ -286,7 +286,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
-				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, persistent ? block.desiredURI.clone() : block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context, true);
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, persistent ? block.desiredURI.clone() : block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, container, context, true);
 				if(logMINOR)
 					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
 				mcb.addURIGenerator(metaPutter, container);
@@ -431,7 +431,7 @@ class SingleFileInserter implements ClientPutState {
 
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
-			boolean addToParent, boolean encodeCHK, ObjectContainer container, ClientContext context, boolean freeData) throws InsertException {
+			boolean addToParent, ObjectContainer container, ClientContext context, boolean freeData) throws InsertException {
 		
 		uri.checkInsertURI(); // will throw an exception if needed
 		
@@ -446,10 +446,6 @@ class SingleFileInserter implements ClientPutState {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
-			if(encodeCHK) {
-				ClientKey key = sbi.getBlock(container, context, true).getClientKey();
-				//cb.onEncode(key, this, container, context); - will be called by getBlock()
-			}
 			return sbi;
 		}
 		
@@ -770,8 +766,12 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) // FIXME debug-point
 				if(logMINOR) Logger.minor(this, "onEncode() for "+this+" : "+state+" : "+key);
 			synchronized(this) {
-				if(state != metadataPutter) return;
+				if(state != metadataPutter) {
+					if(logMINOR) Logger.minor(this, "ignored onEncode() for "+this+" : "+state);
+					return;
+				}
 			}
+			if(persistent) container.activate(cb, 1);
 			cb.onEncode(key, this, container, context);
 		}
 
