@@ -102,7 +102,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(!cancel) {
 					if(!binaryBlob)
 						currentState =
-							new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, 
+							new SingleFileInserter(this, this, new InsertBlock(data, persistent() ? cm.clone() : cm, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
 									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode);
 					else
 						currentState =
