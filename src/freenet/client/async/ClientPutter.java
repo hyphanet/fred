@@ -263,6 +263,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		ClientPutState oldState = null;
 		synchronized(this) {
 			if(cancelled) return;
+			if(finished) return;
 			super.cancel();
 			oldState = currentState;
 		}
