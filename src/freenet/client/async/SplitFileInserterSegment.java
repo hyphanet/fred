@@ -500,7 +500,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}
 						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i]).getClientKey();
 						if(deactivate) container.deactivate(checkBlocks[i], 1);
-						onEncode(i, key, container, context);
+						onEncode(i+dataBlocks.length, key, container, context);
 					} catch (CHKEncodeException e) {
 						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);						
 					} catch (IOException e) {
