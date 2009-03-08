@@ -132,6 +132,8 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 					container.delete(tag);
 				}
 			}
+			if(results.hasNext())
+				runPersistentQueue(context);
 		}
 		
 	};
