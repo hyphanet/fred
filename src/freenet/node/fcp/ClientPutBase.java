@@ -139,6 +139,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			succeeded = true;
 			finished = true;
 		}
+		// Could restart, and is on the putter, don't free data until we remove the putter
+		//freeData();
 		freeData();
 		finish();
 		trySendFinalMessage(null);
@@ -153,7 +155,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
-		freeData();
+		// Could restart, and is on the putter, don't free data until we remove the putter
+		//freeData();
 		finish();
 		trySendFinalMessage(null);
 		client.notifyFailure(this);
