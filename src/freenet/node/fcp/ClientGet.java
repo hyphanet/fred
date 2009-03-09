@@ -313,7 +313,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 
 		if(finished && succeeded)
-			allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
+			allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime, this.foundDataMimeType);
 	}
 
 	@Override
@@ -384,12 +384,17 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				return; // We might be called twice; ignore it if so.
 			}
 			started = true;
+			if(!binaryBlob)
+				this.foundDataMimeType = result.getMimeType();
+			else
+				this.foundDataMimeType = BinaryBlob.MIME_TYPE;
+
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 				// Send all the data at once
 				// FIXME there should be other options
 				// FIXME: CompletionTime is set on finish() : we need to give it current time here
 				// but it means we won't always return the same value to clients... Does it matter ?
-				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, System.currentTimeMillis());
+				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, System.currentTimeMillis(), this.foundDataMimeType);
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
@@ -407,10 +412,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			progressPending = null;
 			this.foundDataLength = returnBucket.size();
-			if(!binaryBlob)
-				this.foundDataMimeType = result.getMimeType();
-			else
-				this.foundDataMimeType = BinaryBlob.MIME_TYPE;
 			this.succeeded = true;
 			finished = true;
 		}
