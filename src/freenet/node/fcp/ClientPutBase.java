@@ -141,7 +141,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData();
-		freeData();
 		finish();
 		trySendFinalMessage(null);
 		client.notifySuccess(this);
