@@ -7,7 +7,7 @@ import freenet.client.FetchException;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  *
  */
-class KeyListenerConstructionException extends Exception {
+public class KeyListenerConstructionException extends Exception {
 
 	KeyListenerConstructionException(FetchException e) {
 		super(e);
