@@ -467,6 +467,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
+							if(!container.ext().isStored(SingleBlockInserter.this)) return;
 							container.activate(SingleBlockInserter.this, 1);
 							onEncode(key, container, context);
 							container.deactivate(SingleBlockInserter.this, 1);
