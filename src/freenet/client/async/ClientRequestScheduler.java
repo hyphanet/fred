@@ -1188,5 +1188,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void wakeStarter() {
 		starter.wakeUp();
 	}
+
+	public boolean cacheInserts() {
+		return this.node.clientCore.cacheInserts();
+	}
 	
 }
