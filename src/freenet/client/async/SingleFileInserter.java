@@ -780,7 +780,6 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
-			finished = true;
 			// Store before calling callback as callback may call us.
 			if(persistent)
 				container.store(this);
