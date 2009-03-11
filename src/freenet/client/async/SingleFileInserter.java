@@ -151,6 +151,10 @@ class SingleFileInserter implements ClientPutState {
 			Logger.error(this, "Already started, not starting again", new Exception("error"));
 			return;
 		}
+		if(cancelled) {
+			Logger.error(this, "Already cancelled, not starting");
+			return;
+		}
 		try {
 			onCompressedInner(output, container, context);
 		} catch (InsertException e) {
