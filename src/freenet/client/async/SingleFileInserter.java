@@ -639,7 +639,7 @@ class SingleFileInserter implements ClientPutState {
 						if(persistent) container.store(this);
 					}
 				} else {
-					Logger.error(this, "onFailure() on unknown state "+state+" on "+this);
+					Logger.error(this, "onFailure() on unknown state "+state+" on "+this, new Exception("debug"));
 				}
 				if(finished){
 					toFail = false; // Already failed
@@ -958,6 +958,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void removeFrom(ObjectContainer container, ClientContext context) {
+			if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 			container.delete(this);
 			// Remove parent as well, since we always transition from parent to SH i.e. it will not get a removeFrom().
 			SingleFileInserter.this.removeFrom(container, context);
@@ -1016,6 +1017,7 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
 		// parent removes self
 		// token is passed in, creator of token is responsible for removing it
 		if(block != null) {
