@@ -618,15 +618,26 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) {
 				container.activate(block, 1);
 			}
+			ClientPutState killMe = null;
 			boolean toFail = true;
 			boolean toRemove = false;
 			synchronized(this) {
 				if(state == sfi) {
 					toRemove = true;
 					sfi = null;
+					if(metadataPutter != null) {
+						toFail = false;
+						killMe = metadataPutter;
+						if(persistent) container.store(this);
+					}
 				} else if(state == metadataPutter) {
 					toRemove = true;
 					metadataPutter = null;
+					if(sfi != null) {
+						toFail = false;
+						killMe = sfi;
+						if(persistent) container.store(this);
+					}
 				} else {
 					Logger.error(this, "onFailure() on unknown state "+state+" on "+this);
 				}
@@ -636,6 +647,11 @@ class SingleFileInserter implements ClientPutState {
 			}
 			if(toRemove && persistent)
 				state.removeFrom(container, context);
+			if(killMe != null) {
+				if(logMINOR) Logger.minor(this, "onFailure: killing "+killMe);
+				killMe.cancel(container, context);
+				// Should call back here and finish it
+			}
 			if(toFail)
 			fail(e, container, context);
 		}
