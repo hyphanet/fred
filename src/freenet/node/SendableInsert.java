@@ -42,5 +42,7 @@ public abstract class SendableInsert extends SendableRequest {
 		else
 			return context.getChkInsertScheduler();
 	}
+
+	public abstract boolean cacheInserts(ObjectContainer container);
 	
 }

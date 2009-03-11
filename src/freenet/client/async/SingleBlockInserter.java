@@ -686,6 +686,20 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		container.delete(this);
 	}
+
+	@Override
+	public boolean cacheInserts(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(ctx);
+			if(deactivate)
+				container.activate(ctx, 1);
+		}
+		boolean retval = ctx.cacheLocalRequests;
+		if(deactivate)
+			container.deactivate(ctx, 1);
+		return retval;
+	}
 	
 //	public boolean objectCanNew(ObjectContainer container) {
 //		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));

@@ -62,8 +62,9 @@ public class PersistentChosenRequest {
 			cacheLocalRequests = ctx.cacheLocalRequests;
 			ignoreStore = ctx.ignoreStore;
 		} else {
+			SendableInsert sg = (SendableInsert) req;
 			localRequestOnly = false;
-			cacheLocalRequests = false;
+			cacheLocalRequests = sg.cacheInserts(container);
 			ignoreStore = false;
 		}
 		blocksNotStarted = new ArrayList<PersistentChosenBlock>();

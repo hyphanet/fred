@@ -179,4 +179,9 @@ public class SimpleSendableInsert extends SendableInsert {
 		// Transient-only so no makeBlocks().
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public boolean cacheInserts(ObjectContainer container) {
+		return scheduler.cacheInserts();
+	}
 }

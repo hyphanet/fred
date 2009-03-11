@@ -1189,6 +1189,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
 		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents);
 	}
+	
+	public boolean cacheInserts() {
+		return !Node.DONT_CACHE_LOCAL_REQUESTS;
+	}
 
 	public FCPServer getFCPServer() {
 		return fcpServer;

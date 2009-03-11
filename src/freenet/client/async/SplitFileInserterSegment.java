@@ -1538,4 +1538,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 		container.delete(this);
 	}
+	
+	@Override
+	public boolean cacheInserts(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(blockInsertContext);
+			if(deactivate)
+				container.activate(blockInsertContext, 1);
+		}
+		boolean retval = blockInsertContext.cacheLocalRequests;
+		if(deactivate)
+			container.deactivate(blockInsertContext, 1);
+		return retval;
+	}
+	
 }
