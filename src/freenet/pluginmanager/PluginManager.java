@@ -547,9 +547,9 @@ public class PluginManager {
 		synchronized(toadletList) {
 			handler = toadletList.get(plugin);
 		}
-		/*if (handler == null)
-		return null;
-		 */
+		if (handler == null)
+			throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
+		
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		ClassLoader pluginClassLoader = handler.getClass().getClassLoader();
 		Thread.currentThread().setContextClassLoader(pluginClassLoader);
@@ -559,7 +559,7 @@ public class PluginManager {
 		} finally {
 			Thread.currentThread().setContextClassLoader(oldClassLoader);
 		}
-		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
+		throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
 	}
 
 	public void killPlugin(String name, int maxWaitTime) {
