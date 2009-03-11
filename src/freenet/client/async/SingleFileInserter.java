@@ -567,11 +567,6 @@ class SingleFileInserter implements ClientPutState {
 			ClientPutState toRemove = null;
 			synchronized(this) {
 				if(finished){
-					if(freeData) {
-						block.free(container);
-						if(persistent)
-							container.store(this);
-					}
 					return;
 				}
 				if(state == sfi) {
@@ -595,6 +590,13 @@ class SingleFileInserter implements ClientPutState {
 				if(splitInsertSuccess && metaInsertSuccess) {
 					if(logMINOR) Logger.minor(this, "Both succeeded for "+this);
 					finished = true;
+					if(freeData) {
+						block.free(container);
+						if(persistent)
+							container.store(this);
+					} else {
+						block.nullData();
+					}
 				}
 			}
 			if(toRemove != null && persistent)
@@ -629,8 +631,6 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "onFailure() on unknown state "+state+" on "+this);
 				}
 				if(finished){
-					if(freeData)
-						block.free(container);
 					toFail = false; // Already failed
 				}
 			}
@@ -742,9 +742,12 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(block, 2);
 			synchronized(this) {
 				if(finished){
+					return;
+				} else {
 					if(freeData)
 						block.free(container);
-					return;
+					else
+						block.nullData();
 				}
 				finished = true;
 				oldSFI = sfi;
@@ -809,6 +812,8 @@ class SingleFileInserter implements ClientPutState {
 				if(persistent)
 					container.activate(block, 2);
 				block.free(container);
+			} else {
+				block.nullData();
 			}
 		}
 
