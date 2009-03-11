@@ -198,8 +198,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			currentState = null;
 			oldProgress = null;
 		}
-		if(oldState != null && persistent())
+		if(oldState != null && persistent()) {
+			container.activate(oldState, 1);
 			oldState.removeFrom(container, context);
+		}
 		if(state != null && state != oldState && persistent())
 			state.removeFrom(container, context);
 		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
@@ -213,6 +215,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
 		if(persistent())
 			container.activate(client, 1);
 		ClientPutState oldState;
@@ -222,8 +225,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			currentState = null;
 			oldProgress = null;
 		}
-		if(oldState != null && persistent())
+		if(oldState != null && persistent()) {
+			container.activate(oldState, 1);
 			oldState.removeFrom(container, context);
+		}
 		if(state != null && state != oldState && persistent())
 			state.removeFrom(container, context);
 		if(persistent())
