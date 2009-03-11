@@ -554,6 +554,11 @@ public class SplitFileInserter implements ClientPutState {
 				container.activate(segments[i], 1);
 			segments[i].cancel(container, context);
 		}
+		// The segments will call segmentFinished, but it will ignore them because finished=true.
+		// Hence we need to call the callback here, since the caller expects us to.
+		if(persistent)
+			container.activate(cb, 1);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
@@ -598,4 +603,18 @@ public class SplitFileInserter implements ClientPutState {
 		container.delete(this);
 	}
 
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+		return true;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(finished)
+			Logger.error(this, "objectCanNew but finished on "+this, new Exception("error"));
+		else if(logMINOR)
+			Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+		return true;
+	}
+	
 }
