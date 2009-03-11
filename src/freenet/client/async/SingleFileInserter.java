@@ -975,8 +975,11 @@ class SingleFileInserter implements ClientPutState {
 			if(cancelled) return;
 			cancelled = true;
 		}
-		if(freeData)
+		if(freeData) {
+			if(persistent)
+				container.activate(block, 1);
 			block.free(container);
+		}
 		if(persistent)
 			container.store(this);
 		if(persistent)
