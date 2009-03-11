@@ -484,6 +484,15 @@ class SingleFileInserter implements ClientPutState {
 		boolean metaInsertStarted;
 		boolean metaFetchable;
 		final boolean persistent;
+		
+		// A persistent hashCode is helpful in debugging, and also means we can put
+		// these objects into sets etc when we need to.
+		
+		private final int hashCode;
+		
+		public int hashCode() {
+			return hashCode;
+		}
 
 		/**
 		 * Create a SplitHandler from a stored progress SimpleFieldSet.
@@ -547,6 +556,7 @@ class SingleFileInserter implements ClientPutState {
 		public SplitHandler() {
 			// Default constructor
 			this.persistent = SingleFileInserter.this.persistent;
+			this.hashCode = super.hashCode();
 		}
 
 		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
