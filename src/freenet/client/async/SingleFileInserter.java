@@ -781,9 +781,10 @@ class SingleFileInserter implements ClientPutState {
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
 			finished = true;
-			cb.onFailure(e, this, container, context);
+			// Store before calling callback as callback may call us.
 			if(persistent)
 				container.store(this);
+			cb.onFailure(e, this, container, context);
 		}
 
 		public BaseClientPutter getParent() {
