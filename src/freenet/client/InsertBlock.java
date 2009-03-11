@@ -37,6 +37,7 @@ public class InsertBlock {
 		synchronized (this) {
 			if(isFreed) return;
 			isFreed = true;
+			if(data == null) return;
 		}
 		data.free();
 		if(container != null) {
