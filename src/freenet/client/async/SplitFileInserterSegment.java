@@ -1003,6 +1003,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		BlockItem block = (BlockItem) keyNum;
+		synchronized(this) {
+			if(finished) return;
+		}
 		// First report the error.
 		if(persistent)
 			container.activate(errors, 5);
@@ -1194,6 +1197,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		int completed;
 		int succeeded;
 		synchronized(this) {
+			if(finished) {
+				return;
+			}
 			if(blockNum >= dataBlocks.length) {
 				// Check block.
 				int checkNum = blockNum - dataBlocks.length;
