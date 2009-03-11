@@ -1368,6 +1368,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
+							if(!container.ext().isStored(SplitFileInserterSegment.this)) return;
 							container.activate(SplitFileInserterSegment.this, 1);
 							onEncode(num, key, container, context);
 							container.deactivate(SplitFileInserterSegment.this, 1);
