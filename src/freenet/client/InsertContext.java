@@ -58,6 +58,7 @@ public class InsertContext {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(eventProducer, 1);
 		eventProducer.removeFrom(container);
 		container.delete(this);
 	}
