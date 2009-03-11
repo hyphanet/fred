@@ -949,7 +949,10 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		cancelled = true;
+		synchronized(this) {
+			if(cancelled) return;
+			cancelled = true;
+		}
 		if(freeData)
 			block.free(container);
 		if(persistent)
