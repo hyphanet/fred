@@ -957,6 +957,10 @@ class SingleFileInserter implements ClientPutState {
 			block.free(container);
 		if(persistent)
 			container.store(this);
+		if(persistent)
+			container.activate(cb, 1);
+		// Must call onFailure so get removeFrom()'ed
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
