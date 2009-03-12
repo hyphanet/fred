@@ -413,24 +413,10 @@ public class ClientPutDir extends ClientPutBase {
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
 	
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		/** FIXME: EVIL BAD VOODOO! POSSIBLE DB4O BUG!
-		 * Without this line, manifestElements is stored correctly, is never updated,
-		 * yet returns 0 elements in freeData() and thus leaks the ManifestElement and
-		 * the bucket inside it. AFAICS this is a db4o bug, as objectCanUpdate() is 
-		 * never called for the HashMap. Also it goes away when you attach a debugger.
-		 * :< */
-		container.activate(manifestElements, 2);
 		super.onSuccess(state, container);
 	}
 	
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		/** FIXME: EVIL BAD VOODOO! POSSIBLE DB4O BUG!
-		 * Without this line, manifestElements is stored correctly, is never updated,
-		 * yet returns 0 elements in freeData() and thus leaks the ManifestElement and
-		 * the bucket inside it. AFAICS this is a db4o bug, as objectCanUpdate() is 
-		 * never called for the HashMap. Also it goes away when you attach a debugger.
-		 * :< */
-		container.activate(manifestElements, 2);
 		super.onFailure(e, state, container);
 	}
 
