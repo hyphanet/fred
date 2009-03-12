@@ -528,10 +528,10 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	@Override
-	public void requestWasRemoved(ObjectContainer container) {
+	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(putter, 1);
-			putter.removeFrom(container);
+			putter.removeFrom(container, context);
 			putter = null;
 			if(origFilename != null) {
 				container.activate(origFilename, 5);
@@ -543,6 +543,6 @@ public class ClientPut extends ClientPutBase {
 				targetURI.removeFrom(container);
 			}
 		}
-		super.requestWasRemoved(container);
+		super.requestWasRemoved(container, context);
 	}
 }

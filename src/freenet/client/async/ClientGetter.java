@@ -412,13 +412,13 @@ public class ClientGetter extends BaseClientGetter {
 		return clientCallback;
 	}
 	
-	public void removeFrom(ObjectContainer container) {
+	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(uri, 5);
 		uri.removeFrom(container);
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
 		container.activate(actx, 5);
 		actx.removeFrom(container);
-		super.removeFrom(container);
+		super.removeFrom(container, context);
 	}
 }

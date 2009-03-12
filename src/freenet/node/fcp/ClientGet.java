@@ -593,7 +593,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	@Override
-	public void requestWasRemoved(ObjectContainer container) {
+	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
 		// if request is still running, send a GetFailed with code=cancelled
 		if( !finished ) {
 			synchronized(this) {
@@ -618,7 +618,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				container.delete(fctx.allowedMIMETypes);
 			}
 			fctx.removeFrom(container);
-			getter.removeFrom(container);
+			getter.removeFrom(container, context);
 			if(targetFile != null)
 				container.delete(targetFile);
 			if(tempFile != null)
@@ -640,7 +640,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				progressPending.removeFrom(container);
 			}
 		}
-		super.requestWasRemoved(container);
+		super.requestWasRemoved(container, context);
 	}
 
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {

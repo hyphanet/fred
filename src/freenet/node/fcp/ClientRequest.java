@@ -435,7 +435,7 @@ public abstract class ClientRequest {
 	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
 	 * If the request is in the database, delete it.
 	 */
-	public void requestWasRemoved(ObjectContainer container) {
+	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
 		if(persistenceType != PERSIST_FOREVER) return;
 		if(uri != null) uri.removeFrom(container);
 		container.delete(this);

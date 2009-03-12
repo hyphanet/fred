@@ -186,7 +186,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 	@Override
-	public void requestWasRemoved(ObjectContainer container) {
+	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
 		// if request is still running, send a PutFailed with code=cancelled
 		if( !finished ) {
 			synchronized(this) {
@@ -230,7 +230,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			container.activate(publicURI, 5);
 			publicURI.removeFrom(container);
 		}
-		super.requestWasRemoved(container);
+		super.requestWasRemoved(container, context);
 	}
 
 	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
