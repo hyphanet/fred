@@ -70,6 +70,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			
 			public void run(ObjectContainer container, ClientContext context) {
 				SegmentedChainBucketSegment segment = null;
+				if(container.ext().isStored(SegmentedBucketChainBucket.this)) {
+					Logger.error(this, "Bucket not stored in freeJob, already deleted???");
+					container.delete(this);
+					return;
+				}
 				synchronized(this) {
 					if(!segments.isEmpty())
 						segment = segments.remove(0);
@@ -92,6 +97,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				}
 				container.delete(segments);
 				container.delete(SegmentedBucketChainBucket.this);
+				container.delete(this);
 				synchronized(SegmentedBucketChainBucket.this) {
 					if(killMe == null) return;
 				}
@@ -446,6 +452,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		DBJob clearJob = new DBJob() {
 			
 			public void run(ObjectContainer container, ClientContext context) {
+				if(container.ext().isStored(SegmentedBucketChainBucket.this)) {
+					Logger.error(this, "Bucket not stored in clearJob, already deleted???");
+					container.delete(this);
+					return;
+				}
 				SegmentedChainBucketSegment segment = null;
 				synchronized(this) {
 					if(!segments.isEmpty())
@@ -468,6 +479,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				}
 				container.delete(segments);
 				container.delete(SegmentedBucketChainBucket.this);
+				container.delete(this);
 				synchronized(SegmentedBucketChainBucket.this) {
 					if(killMe == null) return;
 				}
