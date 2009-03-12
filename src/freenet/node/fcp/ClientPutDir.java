@@ -17,6 +17,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertException;
+import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
@@ -33,7 +34,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPutDir extends ClientPutBase {
 
-	private final HashMap<String, Object> manifestElements;
+	private HashMap<String, Object> manifestElements;
 	private SimpleManifestPutter putter;
 	private final String defaultName;
 	private final long totalSize;
@@ -48,7 +49,29 @@ public class ClientPutDir extends ClientPutBase {
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.wasDiskPut = wasDiskPut;
+		
+		// objectOnNew is called once, objectOnUpdate is never called, yet manifestElements get blanked anyway!
+		
+//		this.manifestElements = new HashMap<String, Object>() {
+//			public boolean objectCanUpdate(ObjectContainer container) {
+//				if(logMINOR)
+//					Logger.minor(this, "objectCanUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this), new Exception("debug"));
+//				return true;
+//			}
+//			
+//			public boolean objectCanNew(ObjectContainer container) {
+//				if(logMINOR)
+//					Logger.minor(this, "objectCanNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this+" active="+container.ext().isActive(this)), new Exception("debug"));
+//				return true;
+//			}
+//			
+//		};
+//		this.manifestElements.putAll(manifestElements);
+		
 		this.manifestElements = manifestElements;
+		
+//		this.manifestElements = new HashMap<String, Object>();
+//		this.manifestElements.putAll(manifestElements);
 		this.defaultName = message.defaultName;
 		makePutter();
 		if(putter != null) {
@@ -247,13 +270,21 @@ public class ClientPutDir extends ClientPutBase {
 	
 	@SuppressWarnings("unchecked")
 	protected void freeData(ObjectContainer container) {
+		if(logMINOR) Logger.minor(this, "freeData() on "+this+" persistence type = "+persistenceType);
+		synchronized(this) {
+			if(manifestElements == null) return;
+		}
+		if(logMINOR) Logger.minor(this, "freeData() more on "+this+" persistence type = "+persistenceType);
 		freeData(manifestElements, container);
+		manifestElements = null;
+		container.store(this);
 	}
 	
 	@SuppressWarnings("unchecked")
 	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER)
-			container.activate(manifestElements, 1);
+			container.activate(manifestElements, 2);
+		if(logMINOR) Logger.minor(this, "freeData() inner on "+this+" persistence type = "+persistenceType+" size = "+manifestElements.size());
 		Iterator i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
@@ -262,8 +293,10 @@ public class ClientPutDir extends ClientPutBase {
 			else {
 				ManifestElement e = (ManifestElement) o;
 				e.freeData(container, persistenceType == PERSIST_FOREVER);
+				if(logMINOR) Logger.minor(this, "Freeing "+e);
 			}
 		}
+		container.delete(manifestElements);
 	}
 
 	@Override
@@ -378,6 +411,28 @@ public class ClientPutDir extends ClientPutBase {
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
+	
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+		/** FIXME: EVIL BAD VOODOO! POSSIBLE DB4O BUG!
+		 * Without this line, manifestElements is stored correctly, is never updated,
+		 * yet returns 0 elements in freeData() and thus leaks the ManifestElement and
+		 * the bucket inside it. AFAICS this is a db4o bug, as objectCanUpdate() is 
+		 * never called for the HashMap. Also it goes away when you attach a debugger.
+		 * :< */
+		container.activate(manifestElements, 2);
+		super.onSuccess(state, container);
+	}
+	
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+		/** FIXME: EVIL BAD VOODOO! POSSIBLE DB4O BUG!
+		 * Without this line, manifestElements is stored correctly, is never updated,
+		 * yet returns 0 elements in freeData() and thus leaks the ManifestElement and
+		 * the bucket inside it. AFAICS this is a db4o bug, as objectCanUpdate() is 
+		 * never called for the HashMap. Also it goes away when you attach a debugger.
+		 * :< */
+		container.activate(manifestElements, 2);
+		super.onFailure(e, state, container);
+	}
 
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
