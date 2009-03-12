@@ -307,6 +307,10 @@ abstract class ClientRequestSchedulerBase {
 			for(KeyListener listener : keyListeners) {
 				if(!listener.probablyWantKey(key, saltedKey)) continue;
 				if(matches == null) matches = new ArrayList<KeyListener> ();
+				if(matches.contains(listener)) {
+					Logger.error(this, "In matches twice, presumably in keyListeners twice?: "+listener);
+					continue;
+				}
 				matches.add(listener);
 			}
 		}
