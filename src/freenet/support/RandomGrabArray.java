@@ -426,7 +426,7 @@ public class RandomGrabArray {
 		if(it.getParentGrabArray() == this)
 			it.setParentGrabArray(null, container);
 		else
-			Logger.error(this, "Removing item "+it+" from "+this+" but RGA is "+it.getParentGrabArray());
+			Logger.error(this, "Removing item "+it+" from "+this+" but RGA is "+it.getParentGrabArray(), new Exception("debug"));
 		if(!matched) return;
 		if(persistent) {
 			container.store(this);
