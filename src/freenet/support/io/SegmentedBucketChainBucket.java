@@ -84,6 +84,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					synchronized(this) {
 						if(!segments.isEmpty()) {
 							dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY, true);
+							dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY, container, false);
 							container.store(this);
 							return;
 						}
@@ -100,7 +101,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			
 		};
 		
-		dbJobRunner.queue(freeJob, NativeThread.HIGH_PRIORITY, true);
+		dbJobRunner.runBlocking(freeJob, NativeThread.HIGH_PRIORITY);
 	}
 
 	public InputStream getInputStream() throws IOException {
@@ -457,7 +458,8 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					segment.clear(container);
 					synchronized(this) {
 						if(!segments.isEmpty()) {
-							dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY, true);
+							dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY-1, true);
+							dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY-1, container, false);
 							container.store(segments);
 							container.store(SegmentedBucketChainBucket.this);
 							return;
@@ -474,7 +476,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			}
 
 		};
-		dbJobRunner.queue(clearJob, NativeThread.HIGH_PRIORITY-1, true);
+		dbJobRunner.runBlocking(clearJob, NativeThread.HIGH_PRIORITY-1);
 	}
 
 	/**
