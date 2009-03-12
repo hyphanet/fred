@@ -74,6 +74,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		
 		private SingleFileInserter origSFI;
+		private ClientPutState currentState;
 		private ClientMetadata cm;
 		private Metadata metadata;
 		private String targetInArchive;
@@ -89,12 +90,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.error(this, "metdata=" + metadata + " on start(), should be impossible", new Exception("debug"));
 				return;
 			}
-			if(persistent)
-				container.activate(origSFI, 1);
-			origSFI.start(null, container, context);
+			SingleFileInserter sfi;
+			synchronized(this) {
+				sfi = origSFI;
+				currentState = sfi;
+				origSFI = null;
+			}
+			if(persistent) {
+				container.activate(sfi, 1);
+				container.store(this);
+			}
+			sfi.start(null, container, context);
 			if(persistent())
-				container.deactivate(origSFI, 1);
-			origSFI = null;
+				container.deactivate(sfi, 1);
 			if(persistent)
 				container.store(this);
 		}
@@ -121,7 +129,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(runningPutHandlers, 2);
 			}
 			SimpleManifestPutter.this.onFetchable(this, container);
+			ClientPutState oldState;
+			boolean insertedAllFiles = true;
+			synchronized(this) {
+				oldState = currentState;
+				currentState = null;
+			}
 			synchronized(SimpleManifestPutter.this) {
+				if(persistent) container.store(this);
 				runningPutHandlers.remove(this);
 				if(persistent)
 					container.store(runningPutHandlers);
@@ -139,10 +154,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 //								container.deactivate(o, 1);
 //						}
 					}
-					return;
+					insertedAllFiles = false;
 				}
 			}
-			insertedAllFiles(container);
+			if(oldState != null && oldState != state && persistent) {
+				container.activate(oldState, 1);
+				oldState.removeFrom(container, context);
+			} else if(state != null && persistent) {
+				state.removeFrom(container, context);
+			}
+			if(insertedAllFiles)
+				insertedAllFiles(container);
 			if(persistent) {
 				container.deactivate(runningPutHandlers, 1);
 				container.deactivate(SimpleManifestPutter.this, 1);
@@ -150,6 +172,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+			ClientPutState oldState;
+			synchronized(this) {
+				oldState = currentState;
+				currentState = null;
+			}
+			if(oldState != null && oldState != state && persistent) {
+				container.activate(oldState, 1);
+				oldState.removeFrom(container, context);
+			} else if(state != null && persistent) {
+				state.removeFrom(container, context);
+			}
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
 			if(persistent)
@@ -177,7 +210,25 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 
-		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {}
+		/**
+		 * The caller of onTransition removes the old state, so we don't have to.
+		 * However, in onSuccess or onFailure, we need to remove the new state, even if
+		 * what is passed in is different (in which case we remove that too).
+		 */
+		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+			if(newState == null) throw new NullPointerException();
+			
+			// onTransition is *not* responsible for removing the old state, the caller is.
+			synchronized (this) {
+				if (currentState == oldState) {
+					currentState = newState;
+					if(persistent())
+						container.store(this);
+					return;
+				}
+			}
+			Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
+		}
 
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
