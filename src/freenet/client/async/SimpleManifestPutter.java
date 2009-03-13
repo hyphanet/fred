@@ -1206,33 +1206,33 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent()) {
 			container.activate(metadataPuttersByMetadata, 2);
 		}
+		boolean fin = false;
 		synchronized(this) {
 			metadataPuttersByMetadata.remove(state.getToken());
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
-				return;
-			}
+			} else {
 			Logger.minor(this, "Inserted manifest successfully on "+this);
 			insertedManifest = true;
 			if(finished) {
 				if(logMINOR) Logger.minor(this, "Already finished");
 				if(persistent())
 					container.store(this);
-				return;
-			}
-			if(!insertedAllFiles) {
+			} else if(!insertedAllFiles) {
 				if(logMINOR) Logger.minor(this, "Not inserted all files");
 				if(persistent())
 					container.store(this);
-				return;
-			}
+			} else {
 			finished = true;
+			}
+			}
 		}
 		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
 			container.store(this);
 			container.deactivate(metadataPuttersByMetadata, 1);
 		}
+		if(fin)
 		complete(container, context);
 	}
 	
