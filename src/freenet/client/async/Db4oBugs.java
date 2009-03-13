@@ -10,6 +10,7 @@ public class Db4oBugs {
 	public static<T extends Object> ObjectSet<T> query(ObjectContainer container, Class<T> clazz) {
 		// db4o 7.4.84.12673 throws a RuntimeException: Not supported
 		// when we use this documented API to query all elements of a class. Isn't that great? :(
+		// FIXME file a bug with db4o
 //		ObjectSet<HasKeyListener> results =
 //			container.query(HasKeyListener.class);
 		Query query = container.query();
