@@ -245,8 +245,8 @@ public class FetchException extends Exception {
 		super(e.getMessage());
 		initCause(e);
 		this.mode = e.mode;
-		this.newURI = e.newURI.clone();
-		this.errorCodes = e.errorCodes.clone();
+		this.newURI = e.newURI == null ? null : e.newURI.clone();
+		this.errorCodes = e.errorCodes == null ? null : e.errorCodes.clone();
 		this.expectedMimeType = e.expectedMimeType;
 		this.expectedSize = e.expectedSize;
 		this.extraMessage = e.extraMessage;
@@ -255,7 +255,6 @@ public class FetchException extends Exception {
 			Logger.error(this, "Internal error: "+this);
 		else if(Logger.shouldLog(Logger.MINOR, this)) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
-		// TODO Auto-generated constructor stub
 	}
 
 	public static String getShortMessage(int mode) {
