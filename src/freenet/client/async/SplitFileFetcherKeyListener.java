@@ -199,6 +199,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			}
 			if(match) {
 				if(persistent) {
+					if(!container.ext().isStored(fetcher)) {
+						Logger.error(this, "Fetcher not in database! for "+this);
+						return false;
+					}
 					if(container.ext().isActive(fetcher))
 						Logger.error(this, "ALREADY ACTIVATED: "+fetcher);
 					container.activate(fetcher, 1);
