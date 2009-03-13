@@ -1484,5 +1484,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		Logger.error(this, "Not storing NodeClientCore in database", new Exception("error"));
 		return false;
 	}
+
+	public synchronized void killDatabase() {
+		killedDatabase = true;
+	}
 	
 }

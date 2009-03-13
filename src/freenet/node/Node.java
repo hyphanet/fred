@@ -884,6 +884,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 		});
 		
+		shutdownHook.addEarlyJob(new Thread() {
+			
+			public void run() {
+				System.err.println("Stopping database jobs...");
+				clientCore.killDatabase();
+			}
+			
+		});
+		
 		shutdownHook.addLateJob(new Thread() {
 
 			public void run() {
