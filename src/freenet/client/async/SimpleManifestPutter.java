@@ -1232,6 +1232,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
 			container.deactivate(metadataPuttersByMetadata, 1);
+			state.removeFrom(container, context);
 		}
 		if(fin)
 			complete(container, context);
