@@ -509,7 +509,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		super(prioClass, clientContext);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
-		this.targetURI = target;
+		if(client.persistent())
+			this.targetURI = target.clone();
+		else
+			this.targetURI = target;
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;
@@ -803,7 +806,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// Can we just insert it, and not bother with a redirect to it?
 				// Thereby exploiting implicit manifest support, which will pick up on .metadata??
 				// We ought to be able to !!
-				block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), targetURI);
+				block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent() ? targetURI.clone() : targetURI);
 				isMetadata = false;
 				insertAsArchiveManifest = true;
 			} catch (IOException e) {
@@ -813,7 +816,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				return;
 			}
 		} else
-			block = new InsertBlock(bucket, null, targetURI);
+			block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
 		SingleFileInserter metadataInserter;
 		try {
 			metadataInserter = 
