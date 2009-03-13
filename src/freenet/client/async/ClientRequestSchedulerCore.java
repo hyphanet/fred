@@ -231,27 +231,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		};
 		registerMeRunner = new RegisterMeRunner();
 		}
-		loadKeyListeners(container, context);
 	}
 	
-	private void loadKeyListeners(final ObjectContainer container, ClientContext context) {
-		ObjectSet<HasKeyListener> results = Db4oBugs.query(container, HasKeyListener.class);
-		for(HasKeyListener l : results) {
-			container.activate(l, 1);
-			try {
-				if(l.isCancelled(container)) continue;
-				KeyListener listener = l.makeKeyListener(container, context);
-				if(listener != null)
-					addPendingKeys(listener);
-			} catch (KeyListenerConstructionException e) {
-				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
-				e.printStackTrace();
-				Logger.error(this, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
-			}
-			container.deactivate(l, 1);
-		}
-	}
-
 	private transient DBJob preRegisterMeRunner;
 	
 	void start(DBJobRunner runner) {
