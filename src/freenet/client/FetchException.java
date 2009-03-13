@@ -243,10 +243,13 @@ public class FetchException extends Exception {
 	// FIXME many of these are not used any more
 	
 	/** Too many levels of recursion into archives */
+	@Deprecated // not used
 	public static final int TOO_DEEP_ARCHIVE_RECURSION = 1;
 	/** Don't know what to do with splitfile */
+	@Deprecated // not used
 	public static final int UNKNOWN_SPLITFILE_METADATA = 2;
 	/** Too many redirects */
+	@Deprecated // not used
 	public static final int TOO_MANY_REDIRECTS = 16;
 	/** Don't know what to do with metadata */
 	public static final int UNKNOWN_METADATA = 3;
@@ -257,10 +260,12 @@ public class FetchException extends Exception {
 	/** Failed to decode a block */
 	public static final int BLOCK_DECODE_ERROR = 6;
 	/** Too many split metadata levels */
+	@Deprecated // not used
 	public static final int TOO_MANY_METADATA_LEVELS = 7;
 	/** Too many archive restarts */
 	public static final int TOO_MANY_ARCHIVE_RESTARTS = 8;
 	/** Too deep recursion */
+	// FIXME some TOO_MUCH_RECURSION may be TOO_DEEP_ARCHIVE_RECURSION 
 	public static final int TOO_MUCH_RECURSION = 9;
 	/** Tried to access an archive file but not in an archive */
 	public static final int NOT_IN_ARCHIVE = 10;
@@ -308,6 +313,7 @@ public class FetchException extends Exception {
 		return isFatal(mode);
 	}
 
+	@SuppressWarnings("deprecation")
 	public static boolean isFatal(int mode) {
 		switch(mode) {
 		// Problems with the data as inserted, or the URI given. No point retrying.
