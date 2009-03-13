@@ -1192,7 +1192,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
-		super.cancel();
+		synchronized(this) {
+			if(super.cancel()) return;
+			if(finished) return;
+		}
 		if(persistent())
 			container.store(this);
 		fail(new InsertException(InsertException.CANCELLED), container, context);
