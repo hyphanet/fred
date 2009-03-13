@@ -1207,8 +1207,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.activate(metadataPuttersByMetadata, 2);
 		}
 		boolean fin = false;
+		ClientPutState oldState;
 		synchronized(this) {
-			metadataPuttersByMetadata.remove(state.getToken());
+			oldState = metadataPuttersByMetadata.remove(state.getToken());
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
 			} else {
@@ -1233,6 +1234,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.store(metadataPuttersByMetadata);
 			container.deactivate(metadataPuttersByMetadata, 1);
 			state.removeFrom(container, context);
+			if(oldState != state) {
+				container.activate(oldState, 1);
+				oldState.removeFrom(container, context);
+			}
 		}
 		if(fin)
 			complete(container, context);
