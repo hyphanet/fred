@@ -1212,21 +1212,21 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
 			} else {
-			Logger.minor(this, "Inserted manifest successfully on "+this);
-			insertedManifest = true;
-			if(finished) {
-				if(logMINOR) Logger.minor(this, "Already finished");
-				if(persistent())
-					container.store(this);
-			} else if(!insertedAllFiles) {
-				if(logMINOR) Logger.minor(this, "Not inserted all files");
-				if(persistent())
-					container.store(this);
-			} else {
-			finished = true;
-			if(persistent()) container.store(this);
-			fin = true;
-			}
+				Logger.minor(this, "Inserted manifest successfully on "+this);
+				insertedManifest = true;
+				if(finished) {
+					if(logMINOR) Logger.minor(this, "Already finished");
+					if(persistent())
+						container.store(this);
+				} else if(!insertedAllFiles) {
+					if(logMINOR) Logger.minor(this, "Not inserted all files");
+					if(persistent())
+						container.store(this);
+				} else {
+					finished = true;
+					if(persistent()) container.store(this);
+					fin = true;
+				}
 			}
 		}
 		if(persistent()) {
@@ -1234,7 +1234,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.deactivate(metadataPuttersByMetadata, 1);
 		}
 		if(fin)
-		complete(container, context);
+			complete(container, context);
 	}
 	
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
