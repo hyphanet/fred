@@ -87,6 +87,8 @@ public class ManifestElement {
 				data.removeFrom(container);
 			data = null;
 		}
+		if(persistForever)
+			container.delete(this);
 	}
 
 	public String getName() {
