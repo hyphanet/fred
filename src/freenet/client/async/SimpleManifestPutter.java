@@ -437,7 +437,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		public void clearMetadata(ObjectContainer container) {
 			metadata = null;
-			container.store(this);
+			if(persistent) container.store(this);
 		}
 		
 		public void removeFrom(ObjectContainer container, ClientContext context) {
