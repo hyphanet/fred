@@ -57,7 +57,7 @@ public class WatchGlobal extends FCPMessage {
 				container.deactivate(client, 1);
 			}
 			
-		}, NativeThread.NORM_PRIORITY, false);
+		}, NativeThread.HIGH_PRIORITY, false);
 		
 	}
 
