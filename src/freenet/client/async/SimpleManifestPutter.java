@@ -1224,12 +1224,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.store(this);
 			} else {
 			finished = true;
+			if(persistent()) container.store(this);
+			fin = true;
 			}
 			}
 		}
 		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
-			container.store(this);
 			container.deactivate(metadataPuttersByMetadata, 1);
 		}
 		if(fin)
