@@ -37,10 +37,8 @@ public class FCPClient {
 		this.currentConnection = handler;
 		final boolean forever = (persistenceType == ClientRequest.PERSIST_FOREVER);
 		if(forever) {
-			runningPersistentRequests = container.ext().collections().newLinkedList();
-			((Db4oList)runningPersistentRequests).activationDepth(1);
-			completedUnackedRequests = container.ext().collections().newLinkedList();
-			((Db4oList)completedUnackedRequests).activationDepth(1);
+			runningPersistentRequests = new Vector();
+			completedUnackedRequests = new Vector();
 			clientRequestsByIdentifier = container.ext().collections().newHashMap(10);
 			((Db4oMap)clientRequestsByIdentifier).activationDepth(1);
 		} else {
@@ -124,6 +122,11 @@ public class FCPClient {
 		synchronized(this) {
 			if(runningPersistentRequests.remove(get)) {
 				completedUnackedRequests.add(get);
+				if(container != null) {
+					container.store(get);
+					container.ext().store(runningPersistentRequests, 1);
+					container.ext().store(completedUnackedRequests, 1);
+				}
 			}	
 		}
 	}
@@ -176,9 +179,18 @@ public class FCPClient {
 				throw new IdentifierCollisionException();
 			if(cg.hasFinished()) {
 				completedUnackedRequests.add(cg);
+				if(container != null) {
+					container.store(cg);
+					container.ext().store(completedUnackedRequests, 1);
+				}
 			} else {
 				runningPersistentRequests.add(cg);
 				if(startLater) toStart.add(cg);
+				if(container != null) {
+					container.store(cg);
+					container.ext().store(runningPersistentRequests, 1);
+					if(startLater) container.ext().store(toStart, 1);
+				}
 			}
 			clientRequestsByIdentifier.put(ident, cg);
 		}
@@ -191,13 +203,20 @@ public class FCPClient {
 		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
 		synchronized(this) {
 			req = clientRequestsByIdentifier.get(identifier);
+			boolean removedFromRunning;
 			if(req == null)
 				return false;
-			else if(!(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req))) {
+			else if(!((removedFromRunning = runningPersistentRequests.remove(req)) || completedUnackedRequests.remove(req))) {
 				Logger.error(this, "Removing "+identifier+": in clientRequestsByIdentifier but not in running/completed maps!");
+				
 				return false;
 			}
 			clientRequestsByIdentifier.remove(identifier);
+			if(container != null) {
+				if(removedFromRunning) container.ext().store(runningPersistentRequests, 1);
+				else container.ext().store(completedUnackedRequests, 1);
+				container.ext().store(clientRequestsByIdentifier);
+			}
 		}
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
@@ -230,8 +249,14 @@ public class FCPClient {
 			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
 				ClientRequest req = i.next();
+				if(container != null) container.activate(req, 1);
 				if(req.isPersistentForever() || !onlyForever)
 					v.add(req);
+			}
+			if(container != null) {
+				for(ClientRequest req : completedUnackedRequests) {
+					container.activate(req, 1);
+				}
 			}
 			v.addAll(completedUnackedRequests);
 		}
@@ -328,23 +353,19 @@ public class FCPClient {
 	/**
 	 * Start all delayed-start requests.
 	 */
-	public void finishStart(DBJobRunner runner) {
+	public void finishStart(ObjectContainer container, ClientContext context) {
 		ClientRequest[] reqs;
 		synchronized(this) {
 			reqs = (ClientRequest[]) toStart.toArray(new ClientRequest[toStart.size()]);
 			toStart.clear();
+			container.store(toStart);
 		}
 		for(int i=0;i<reqs.length;i++) {
+			System.err.println("Starting migrated request "+i+" of "+reqs.length);
 			final ClientRequest req = reqs[i];
-			runner.queue(new DBJob() {
-
-				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(req, 1);
-					req.start(container, context);
-					container.deactivate(req, 1);
-				}
-				
-			}, NativeThread.HIGH_PRIORITY + reqs[i].getPriority(), false);
+			container.activate(req, 1);
+			req.start(container, context);
+			container.deactivate(req, 1);
 		}
 	}
 	
@@ -433,10 +454,13 @@ public class FCPClient {
 			ClientRequest req = (ClientRequest) completedUnackedRequests.get(i);
 			if(!(req instanceof ClientGet)) continue;
 			ClientGet getter = (ClientGet) req;
+			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				container.activate(getter, 1);
 			if(getter.getURI(container).equals(key)) {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.activate(getter, 1);
 				return getter;
+			} else {
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.deactivate(getter, 1);
 			}
 		}
 		return null;
@@ -447,8 +471,6 @@ public class FCPClient {
 		container.activate(completedUnackedRequests, 1);
 		container.activate(clientRequestsByIdentifier, 1);
 		container.activate(lowLevelClient, 1);
-		((Db4oList)runningPersistentRequests).activationDepth(1);
-		((Db4oList)completedUnackedRequests).activationDepth(1);
 		((Db4oMap)clientRequestsByIdentifier).activationDepth(1);
 	}
 
