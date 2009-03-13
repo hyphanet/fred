@@ -35,7 +35,16 @@ public class PrioritizedSerialExecutor implements Executor {
 
 		public void run() {
 			long lastDumped = System.currentTimeMillis();
-			current = Thread.currentThread();
+			synchronized(jobs) {
+				if(current != null) {
+					if(current.isAlive()) {
+						Logger.error(this, "Already running a thread for "+this+" !!", new Exception("error"));
+						return;
+					}
+				}
+				current = Thread.currentThread();
+			}
+			try {
 			while(true) {
 				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				Runnable job = null;
@@ -92,6 +101,12 @@ public class PrioritizedSerialExecutor implements Executor {
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 					Logger.error(this, "While running "+job+" on "+this);
+				}
+			}
+			} finally {
+				synchronized(jobs) {
+					current = null;
+					running = false;
 				}
 			}
 		}
@@ -152,9 +167,15 @@ public class PrioritizedSerialExecutor implements Executor {
 	}
 	
 	private void reallyStart(boolean logMINOR) {
-		running=true;
-		if(logMINOR) Logger.minor(this, "Starting thread... "+name+" : "+runner);
-		realExecutor.execute(runner, name);
+		synchronized(jobs) {
+			if(running) {
+				Logger.error(this, "Not reallyStart()ing: ALREADY RUNNING", new Exception("error"));
+				return;
+			}
+			running=true;
+			if(logMINOR) Logger.minor(this, "Starting thread... "+name+" : "+runner, new Exception("debug"));
+			realExecutor.execute(runner, name);
+		}
 	}
 	
 	public void execute(Runnable job, String jobName) {
