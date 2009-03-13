@@ -206,12 +206,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			ctx.removeFrom(container);
 			PutFailedMessage pfm;
 			FreenetURI uri;
+			FreenetURI pubURI;
 			FCPMessage progress;
 			synchronized(this) {
 				pfm = putFailedMessage;
 				putFailedMessage = null;
 				uri = generatedURI;
 				generatedURI = null;
+				pubURI = publicURI;
 				progress = progressMessage;
 				progressMessage = null;
 			}
@@ -227,8 +229,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 				container.activate(progress, 1);
 				progress.removeFrom(container);
 			}
-			container.activate(publicURI, 5);
-			publicURI.removeFrom(container);
+			if(pubURI != null) {
+				container.activate(pubURI, 5);
+				pubURI.removeFrom(container);
+			}
 		}
 		super.requestWasRemoved(container, context);
 	}
