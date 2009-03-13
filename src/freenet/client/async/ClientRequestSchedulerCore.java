@@ -235,8 +235,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 	
 	private void loadKeyListeners(final ObjectContainer container, ClientContext context) {
-		ObjectSet<HasKeyListener> results =
-			container.query(HasKeyListener.class);
+		ObjectSet<HasKeyListener> results = Db4oBugs.query(container, HasKeyListener.class);
 		for(HasKeyListener l : results) {
 			container.activate(l, 1);
 			try {

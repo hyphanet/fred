@@ -142,7 +142,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
 		ObjectSet<HasKeyListener> results =
-			container.query(HasKeyListener.class);
+			Db4oBugs.query(container, HasKeyListener.class);
 		for(HasKeyListener l : results) {
 			container.activate(l, 1);
 			try {
