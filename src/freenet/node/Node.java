@@ -2549,8 +2549,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				throw new IllegalStateException("Unknown key type: "+key.getClass());
 			if(chk != null) {
 				// Probably somebody waiting for it. Trip it.
-				if(clientCore != null && clientCore.requestStarters != null)
-					clientCore.requestStarters.chkFetchScheduler.tripPendingKey(chk);
+				if(clientCore != null && clientCore.requestStarters != null) {
+					if(chk instanceof CHKBlock)
+						clientCore.requestStarters.chkFetchScheduler.tripPendingKey(chk);
+					else
+						clientCore.requestStarters.sskFetchScheduler.tripPendingKey(chk);
+				}
 				failureTable.onFound(chk);
 				return chk;
 			}
