@@ -301,6 +301,9 @@ abstract class ClientRequestSchedulerBase {
 	private long persistentNegatives;
 	
 	public boolean tripPendingKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+		if((key instanceof NodeSSK) != isSSKScheduler) {
+			Logger.error(this, "Key "+key+" on scheduler ssk="+isSSKScheduler, new Exception("debug"));
+		}
 		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
 		ArrayList<KeyListener> matches = null;
 		synchronized(this) {
