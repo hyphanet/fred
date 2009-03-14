@@ -378,6 +378,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			if(failed) {
 				Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
+				if(persistenceType == PERSIST_FOREVER) {
+					if(container.ext().getID(returnBucket) == container.ext().getID(data))
+						Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" but UID(data)="+container.ext().getID(data)+" for "+data);
+				}
 				// Caller guarantees that data == returnBucket
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
 				return;
