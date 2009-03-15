@@ -15,15 +15,19 @@ import freenet.support.api.Bucket;
  */
 public class PluginTalker {
 
-	Node node;
-	private PluginReplySender replysender;
+	protected Node node;
+	protected PluginReplySender replysender;
 
-	private int access;
+	protected int access;
 
-	FredPluginFCP plugin;
+	protected FredPluginFCP plugin;
+	protected String pluginName;
+	protected String connectionIdentifier;
 
-	PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String identifier2) throws PluginNotFoundException {
+	public PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String identifier2) throws PluginNotFoundException {
 		node = node2;
+		pluginName = pluginname2;
+		connectionIdentifier = identifier2;
 		plugin = findPlugin(pluginname2);
 		access = FredPluginFCP.ACCESS_DIRECT;
 		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, identifier2);
@@ -31,12 +35,14 @@ public class PluginTalker {
 
 	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String identifier2, boolean access2) throws PluginNotFoundException {
 		node = node2;
+		pluginName = pluginname2;
+		connectionIdentifier = identifier2;
 		plugin = findPlugin(pluginname2);
 		access = access2 ? FredPluginFCP.ACCESS_FCP_FULL : FredPluginFCP.ACCESS_FCP_RESTRICTED;
 		replysender = new PluginReplySenderFCP(handler, pluginname2, identifier2);
 	}
 	
-	private FredPluginFCP findPlugin(String pluginname2) throws PluginNotFoundException {
+	protected FredPluginFCP findPlugin(String pluginname2) throws PluginNotFoundException {
 
 		Logger.normal(this, "Searching fcp plugin: " + pluginname2);
 		FredPluginFCP plug = node.pluginManager.getFCPPlugin(pluginname2);
