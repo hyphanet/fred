@@ -29,10 +29,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Executor;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 
 /**
  * Replacement for {@link ServerSocket} that can handle multiple bind addresses
@@ -75,6 +77,8 @@ public class NetworkInterface implements Closeable {
 
 	/** The number of running acceptors. */
 	private int runningAcceptors = 0;
+	
+	private volatile boolean shutdown = false;
 	
 	private final Executor executor;
 
@@ -200,7 +204,11 @@ public class NetworkInterface implements Closeable {
 	 */
 	public Socket accept() {
 		synchronized (syncObject) {
-			while (acceptedSockets.size() == 0) {
+			while (acceptedSockets.size() == 0 ) {
+				if (shutdown)
+					return null;
+				if (WrapperManager.hasShutdownHookBeenTriggered())
+					return null;
 				if (acceptors.size() == 0) {
 					return null;
 				}
@@ -225,12 +233,16 @@ public class NetworkInterface implements Closeable {
 	 */
 	public void close() throws IOException {
 		IOException exception = null;
+		shutdown = true;
 		for (Acceptor acceptor : acceptors) {
 			try {
 				acceptor.close();
 			} catch (IOException ioe1) {
 				exception = ioe1;
 			}
+		}
+		synchronized (syncObject) {
+			syncObject.notifyAll();
 		}
 		if (exception != null) {
 			throw exception;
