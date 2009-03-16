@@ -338,7 +338,7 @@ class SingleFileInserter implements ClientPutState {
 				container.deactivate(sfi, 1);
 			}
 			block.nullData();
-			removeFrom(container, context);
+			if(persistent) removeFrom(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context);
