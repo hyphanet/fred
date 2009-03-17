@@ -199,12 +199,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) return;
+		}
 		if(persistent)
 			container.activate(errors, 1);
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED), container, context);
 			return;
 		}
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "onFailure() on "+e+" for "+this);
 		
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
