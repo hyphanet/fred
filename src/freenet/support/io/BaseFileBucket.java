@@ -35,15 +35,16 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	public BaseFileBucket(File file) {
 		if(file == null) throw new NullPointerException();
 		this.length = file.length();
-		if(deleteOnExit()) {
-			try {
-				file.deleteOnExit();
-			} catch (NullPointerException e) {
-				if(WrapperManager.hasShutdownHookBeenTriggered()) {
-					Logger.normal(this, "NullPointerException setting deleteOnExit while shutting down - buggy JVM code: "+e, e);
-				} else {
-					Logger.error(this, "Caught "+e+" doing deleteOnExit() for "+file+" - JVM bug ????");
-				}
+	}
+	
+	protected void setDeleteOnExit(File file) {
+		try {
+			file.deleteOnExit();
+		} catch (NullPointerException e) {
+			if(WrapperManager.hasShutdownHookBeenTriggered()) {
+				Logger.normal(this, "NullPointerException setting deleteOnExit while shutting down - buggy JVM code: "+e, e);
+			} else {
+				Logger.error(this, "Caught "+e+" doing deleteOnExit() for "+file+" - JVM bug ????");
 			}
 		}
 	}

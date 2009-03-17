@@ -49,6 +49,8 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 					this,
 					"Initializing TempFileBucket(" + getFile());
 		}
+		if(deleteOnFree)
+			setDeleteOnExit(getFile());
 	}
 
 	@Override
@@ -91,7 +93,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	protected boolean deleteOnExit() {
-		return true;
+		return deleteOnFree;
 	}
 
 	public void storeTo(ObjectContainer container) {
@@ -109,6 +111,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	public Bucket createShadow() throws IOException {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
+		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;
 	}
 }

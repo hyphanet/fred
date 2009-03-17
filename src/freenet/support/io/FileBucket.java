@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /**
@@ -55,6 +56,8 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		this.deleteOnFinalize = deleteOnFinalize;
 		this.deleteOnFree = deleteOnFree;
 		this.deleteOnExit = deleteOnExit;
+		if(deleteOnExit)
+			setDeleteOnExit(file);
 		// Useful for finding temp file leaks.
 		// System.err.println("-- FileBucket.ctr(0) -- " +
 		// file.getAbsolutePath());
@@ -112,6 +115,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		Logger.minor(this, "Removing "+this);
 		container.activate(file, 5);
 		container.delete(file);
 		container.delete(this);
@@ -120,7 +124,19 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(file, 5);
 	}
-
+	
+	public void objectOnNew(ObjectContainer container) {
+		Logger.minor(this, "Storing "+this, new Exception("debug"));
+	}
+	
+	public void objectOnUpdate(ObjectContainer container) {
+		Logger.minor(this, "Updating "+this, new Exception("debug"));
+	}
+	
+	public void objectOnDelete(ObjectContainer container) {
+		Logger.minor(this, "Deleting "+this, new Exception("debug"));
+	}
+	
 	public Bucket createShadow() throws IOException {
 		String fnam = new String(file.getPath());
 		File newFile = new File(fnam);
