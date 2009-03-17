@@ -311,7 +311,7 @@ public class ClientGetter extends BaseClientGetter {
 
 	@Override
 	public String toString() {
-		return super.toString()+ ':' +uri;
+		return super.toString();
 	}
 	
 	// FIXME not persisting binary blob stuff - any stream won't survive shutdown...
