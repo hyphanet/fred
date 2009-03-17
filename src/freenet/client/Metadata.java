@@ -1006,7 +1006,7 @@ public class Metadata implements Cloneable {
 				}
 		}
 		if(manifestEntries != null) {
-			container.activate(manifestEntries, 1);
+			container.activate(manifestEntries, 2);
 			for(Object m : manifestEntries.values()) {
 				Metadata meta = (Metadata) m;
 				container.activate(meta, 1);
