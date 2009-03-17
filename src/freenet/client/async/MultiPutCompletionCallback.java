@@ -96,7 +96,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			waitingForFetchable.remove(state);
 			if(!(waitingFor.isEmpty() && started)) {
 				if(this.e != null) {
-					if(persistent) this.e.removeFrom(container);
+					if(persistent) {
+						container.activate(this.e, 10);
+						this.e.removeFrom(container);
+					}
 				}
 				this.e = e;
 				if(persistent)
@@ -120,9 +123,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
-			if(e != null && this.e != null && this.e != e) {
-				if(!(e.getMode() == InsertException.CANCELLED)) // Cancelled is okay, ignore it, we cancel after failure sometimes.
-					Logger.error(this, "Completing with "+e+" but already set "+this.e);
+			if(e != null && this.e != null && this.e != e && persistent) {
+				container.activate(this.e, 10);
+				this.e.removeFrom(container);
 			}
 			if(e == null) {
 				e = this.e;
