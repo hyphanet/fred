@@ -218,10 +218,33 @@ public class FCPClient {
 		}
 		synchronized(this) {
 			req = clientRequestsByIdentifier.get(identifier);
-			boolean removedFromRunning;
-			if(req == null)
-				return false;
-			else if(!((removedFromRunning = runningPersistentRequests.remove(req)) || completedUnackedRequests.remove(req))) {
+			boolean removedFromRunning = false;
+			if(req == null) {
+				for(ClientRequest r : completedUnackedRequests) {
+					container.activate(r, 1);
+					if(r.getIdentifier().equals(identifier)) {
+						req = r;
+						completedUnackedRequests.remove(r);
+						Logger.error(this, "Found completed unacked request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
+						break;
+					}
+					container.deactivate(r, 1);
+				}
+				if(req == null) {
+					for(ClientRequest r : runningPersistentRequests) {
+						container.activate(r, 1);
+						if(r.getIdentifier().equals(identifier)) {
+							req = r;
+							runningPersistentRequests.remove(r);
+							removedFromRunning = true;
+							Logger.error(this, "Found running request "+r+" for identifier "+r.getIdentifier()+" but not in clientRequestsByIdentifier!!");
+							break;
+						}
+						container.deactivate(r, 1);
+					}
+				}
+				if(req == null) return false;
+			} else if(!((removedFromRunning = runningPersistentRequests.remove(req)) || completedUnackedRequests.remove(req))) {
 				Logger.error(this, "Removing "+identifier+": in clientRequestsByIdentifier but not in running/completed maps!");
 				
 				return false;
