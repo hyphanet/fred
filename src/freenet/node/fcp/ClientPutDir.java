@@ -288,12 +288,14 @@ public class ClientPutDir extends ClientPutBase {
 		Iterator i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(o, 1);
 			if(o instanceof HashMap)
 				freeData((HashMap<String, Object>) o, container);
 			else {
 				ManifestElement e = (ManifestElement) o;
-				e.freeData(container, persistenceType == PERSIST_FOREVER);
 				if(logMINOR) Logger.minor(this, "Freeing "+e);
+				e.freeData(container, persistenceType == PERSIST_FOREVER);
 			}
 		}
 		container.delete(manifestElements);
