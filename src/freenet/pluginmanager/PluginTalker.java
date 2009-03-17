@@ -10,7 +10,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 /**
- * @author saces
+ * @author saces, xor
  * 
  */
 public class PluginTalker {
@@ -65,5 +65,36 @@ public class PluginTalker {
 			}
 		}, "FCPPlugin talk runner for " + this);
 
+	}
+
+	public static class Result {
+		public SimpleFieldSet params;
+		public Bucket data;
+		
+		public Result(SimpleFieldSet myParams, Bucket myData) {
+			params = myParams;
+			data = myData;
+		}
+	}
+
+	/**
+	 * Sends a FCP message and blocks execution until the answer was received and then returns the answer.
+	 * This can be used to simplify code which uses FCP very much, especially UI code which needs the result of FCP calls directly.
+	 * 
+	 * When using sendBlocking(), please make sure that you only ever call it for FCP functions which only send() a single result!
+	 * Results which are sent by the plugin after the first result are dispatched to the asynchronous onReply() function of your
+	 * FredPluginTalker, however this behavior is deprecated and not guranteed to work.
+	 */
+	public Result sendBlocking(final SimpleFieldSet plugparams, final Bucket data2) {
+		final PluginReplySenderBlocking replySender = new PluginReplySenderBlocking(pluginName, connectionIdentifier);
+		
+		node.executor.execute(new Runnable() {
+
+			public void run() {
+				plugin.handle(replySender, plugparams, data2, access);
+			}
+		}, "PluginTalkerBlocking " + connectionIdentifier);
+		
+		return replySender.getResult();
 	}
 }
