@@ -83,6 +83,8 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public boolean start(boolean restart, FreenetURI overrideURI, ObjectContainer container, ClientContext context) throws FetchException {
+		if(persistent())
+			container.activate(uri, 5);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this+" persistent="+persistent());
 		try {
@@ -137,6 +139,8 @@ public class ClientGetter extends BaseClientGetter {
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
+		if(persistent())
+			container.activate(uri, 5);
 		if(!closeBinaryBlobStream(container, context)) return;
 		synchronized(this) {
 			finished = true;
@@ -191,6 +195,8 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
 		}
+		if(persistent())
+			container.activate(uri, 5);
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
