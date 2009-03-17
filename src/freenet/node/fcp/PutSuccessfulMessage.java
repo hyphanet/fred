@@ -31,7 +31,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 		if(global) fs.putSingle("Global", "true");
 		// This is useful for simple clients.
 		if(uri != null)
-			fs.putSingle("URI", uri.toString());
+			fs.putSingle("URI", uri.toString(false, false));
 		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
 		return fs;
