@@ -82,6 +82,8 @@ public class ManifestElement {
 
 	public void freeData(ObjectContainer container, boolean persistForever) {
 		if(data != null) {
+			if(persistForever)
+				container.activate(data, 1);
 			data.free();
 			if(persistForever)
 				data.removeFrom(container);
