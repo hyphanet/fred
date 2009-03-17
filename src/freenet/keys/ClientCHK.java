@@ -216,4 +216,12 @@ public class ClientCHK extends ClientKey {
 	public byte[] getRoutingKey() {
 		return routingKey;
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(routingKey == null)
+			throw new NullPointerException("Storing a ClientCHK with no routingKey!: stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this));
+		if(cryptoKey == null)
+			throw new NullPointerException("Storing a ClientCHK with no cryptoKey!");
+		return true;
+	}
 }
