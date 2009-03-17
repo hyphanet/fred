@@ -52,23 +52,38 @@ public class ClientPutDir extends ClientPutBase {
 		
 		// objectOnNew is called once, objectOnUpdate is never called, yet manifestElements get blanked anyway!
 		
-//		this.manifestElements = new HashMap<String, Object>() {
-//			public boolean objectCanUpdate(ObjectContainer container) {
-//				if(logMINOR)
-//					Logger.minor(this, "objectCanUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this), new Exception("debug"));
-//				return true;
-//			}
-//			
-//			public boolean objectCanNew(ObjectContainer container) {
-//				if(logMINOR)
-//					Logger.minor(this, "objectCanNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this+" active="+container.ext().isActive(this)), new Exception("debug"));
-//				return true;
-//			}
-//			
-//		};
-//		this.manifestElements.putAll(manifestElements);
+		this.manifestElements = new HashMap<String, Object>() {
+			public boolean objectCanUpdate(ObjectContainer container) {
+				if(logMINOR)
+					Logger.minor(this, "objectCanUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+				return true;
+			}
+			
+			public boolean objectCanNew(ObjectContainer container) {
+				if(logMINOR)
+					Logger.minor(this, "objectCanNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+				return true;
+			}
+			
+			public void objectOnUpdate(ObjectContainer container) {
+				if(logMINOR)
+					Logger.minor(this, "objectOnUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+			}
+			
+			public void objectOnNew(ObjectContainer container) {
+				if(logMINOR)
+					Logger.minor(this, "objectOnNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+			}
+			
+			public void objectOnActivate(ObjectContainer container) {
+				if(logMINOR)
+					Logger.minor(this, "objectOnActivate() on HashMap for ClientPutDir stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+			}
+			
+		};
+		this.manifestElements.putAll(manifestElements);
 		
-		this.manifestElements = manifestElements;
+//		this.manifestElements = manifestElements;
 		
 //		this.manifestElements = new HashMap<String, Object>();
 //		this.manifestElements.putAll(manifestElements);
@@ -275,24 +290,22 @@ public class ClientPutDir extends ClientPutBase {
 			if(manifestElements == null) return;
 		}
 		if(logMINOR) Logger.minor(this, "freeData() more on "+this+" persistence type = "+persistenceType);
+		// We have to commit everything, so activating everything here doesn't cost us much memory...?
+		if(persistenceType == PERSIST_FOREVER) container.activate(manifestElements, Integer.MAX_VALUE);
 		freeData(manifestElements, container);
 		manifestElements = null;
-		container.store(this);
+		if(persistenceType == PERSIST_FOREVER) container.store(this);
 	}
 	
 	@SuppressWarnings("unchecked")
 	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
-			container.activate(manifestElements, 2);
 		if(logMINOR) Logger.minor(this, "freeData() inner on "+this+" persistence type = "+persistenceType+" size = "+manifestElements.size());
 		Iterator i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
-			if(persistenceType == PERSIST_FOREVER)
-				container.activate(o, 1);
-			if(o instanceof HashMap)
+			if(o instanceof HashMap) {
 				freeData((HashMap<String, Object>) o, container);
-			else {
+			} else {
 				ManifestElement e = (ManifestElement) o;
 				if(logMINOR) Logger.minor(this, "Freeing "+e);
 				e.freeData(container, persistenceType == PERSIST_FOREVER);
@@ -428,6 +441,7 @@ public class ClientPutDir extends ClientPutBase {
 	
 	@Override
 	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(putter, 1);
 			putter.removeFrom(container, context);
