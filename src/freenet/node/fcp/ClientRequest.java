@@ -52,9 +52,17 @@ public abstract class ClientRequest {
 	/** Timestamp : completion time */
 	protected long completionTime;
 	protected final RequestClient lowLevelClient;
+	private final int hashCode; // for debugging it is good to have a persistent id
+	
+	public int hashCode() {
+		return hashCode;
+	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+		int hash = super.hashCode();
+		if(hash == 0) hash = 1;
+		hashCode = hash;
 		this.uri = uri2;
 		this.identifier = identifier2;
 		if(global)
@@ -92,6 +100,9 @@ public abstract class ClientRequest {
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+		int hash = super.hashCode();
+		if(hash == 0) hash = 1;
+		hashCode = hash;
 		this.uri = uri2;
 		this.identifier = identifier2;
 		if(global)
@@ -129,12 +140,17 @@ public abstract class ClientRequest {
 		if(lowLevelClient == null)
 			throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
 		}
+		if(lowLevelClient.persistent() != (persistenceType == PERSIST_FOREVER))
+			throw new IllegalStateException("Low level client.persistent="+lowLevelClient.persistent()+" but persistence type = "+persistenceType);
 		if(client != null)
 			assert(client.persistenceType == persistenceType);
 		this.startupTime = System.currentTimeMillis();
 	}
 
 	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+		int hash = super.hashCode();
+		if(hash == 0) hash = 1;
+		hashCode = hash;
 		priorityClass = Short.parseShort(fs.get("PriorityClass"));
 		uri = new FreenetURI(fs.get("URI"));
 		identifier = fs.get("Identifier");
@@ -441,18 +457,30 @@ public abstract class ClientRequest {
 		container.delete(this);
 	}
 
-	public boolean objectCanNew(ObjectContainer container) {
-		
-		if(persistenceType != PERSIST_FOREVER) {
-			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
-			return false;
-		}
-		return true;
-	}
-
 	protected boolean isGlobalQueue() {
 		if(client == null) return false;
 		return client.isGlobalQueue;
 	}
+
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(hashCode == 0) {
+			Logger.error(this, "Trying to update with hash 0 => already deleted!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(persistenceType != PERSIST_FOREVER) {
+			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
+			return false;
+		}
+		if(hashCode == 0) {
+			Logger.error(this, "Trying to write with hash 0 => already deleted!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+	
 	
 }
