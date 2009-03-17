@@ -77,13 +77,7 @@ public class PluginTalkerBlocking extends PluginTalker {
 		node.executor.execute(new Runnable() {
 
 			public void run() {
-
-				try {
 					plugin.handle(replySender, plugparams, data2, access);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught error while executing FCP plugin handler", t);
-				}
-
 			}
 		}, "PluginTalkerBlocking " + connectionIdentifier);
 		

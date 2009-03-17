@@ -61,13 +61,7 @@ public class PluginTalker {
 		node.executor.execute(new Runnable() {
 
 			public void run() {
-
-				try {
 					plugin.handle(replysender, plugparams, data2, access);
-				} catch (Throwable t) {
-					Logger.error(this, "Cought error while execute fcp plugin handler" + t.getMessage(), t);
-				}
-
 			}
 		}, "FCPPlugin talk runner for " + this);
 
