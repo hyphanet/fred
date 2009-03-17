@@ -61,7 +61,7 @@ public class PluginTalker {
 		node.executor.execute(new Runnable() {
 
 			public void run() {
-					plugin.handle(replysender, plugparams, data2, access);
+				plugin.handle(replysender, plugparams, data2, access);
 			}
 		}, "FCPPlugin talk runner for " + this);
 

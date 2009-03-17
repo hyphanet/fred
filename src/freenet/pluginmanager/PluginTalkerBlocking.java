@@ -77,7 +77,7 @@ public class PluginTalkerBlocking extends PluginTalker {
 		node.executor.execute(new Runnable() {
 
 			public void run() {
-					plugin.handle(replySender, plugparams, data2, access);
+				plugin.handle(replySender, plugparams, data2, access);
 			}
 		}, "PluginTalkerBlocking " + connectionIdentifier);
 		
