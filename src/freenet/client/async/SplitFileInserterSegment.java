@@ -419,7 +419,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							for(int i=0;i<dataBlocks.length;i++)
 								container.activate(dataBlocks[i], 5);
 						}
-						job = encodeJob = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
+						job = encodeJob = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, persistent ? blockInsertContext.persistentBucketFactory : context.tempBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
 					}
 				}				
 				fin = false;
