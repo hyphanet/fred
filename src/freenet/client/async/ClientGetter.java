@@ -418,6 +418,7 @@ public class ClientGetter extends BaseClientGetter {
 		return clientCallback;
 	}
 	
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(uri, 5);
 		uri.removeFrom(container);
