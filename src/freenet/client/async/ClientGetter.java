@@ -426,6 +426,10 @@ public class ClientGetter extends BaseClientGetter {
 		ctx.removeFrom(container);
 		container.activate(actx, 5);
 		actx.removeFrom(container);
+		if(returnBucket != null) {
+			container.activate(returnBucket, 1);
+			returnBucket.removeFrom(container);
+		}
 		super.removeFrom(container, context);
 	}
 }

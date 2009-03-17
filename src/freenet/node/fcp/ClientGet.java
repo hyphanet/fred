@@ -436,8 +436,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			trySendAllDataMessage(adm, null, container);
 		if(!dontFree) {
 			data.free();
-			if(persistenceType == PERSIST_FOREVER)
-				data.removeFrom(container);
 		}
 		if(persistenceType == PERSIST_FOREVER) {
 			returnBucket.storeTo(container);
