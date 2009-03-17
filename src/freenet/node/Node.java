@@ -914,7 +914,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = db.queryByExample(new Object());
 		Map<String,Integer> map = new HashMap<String, Integer>();
-		for(Object o : contents) {
+		Iterator i = contents.iterator();
+		while(i.hasNext()) {
+			Object o = i.next();
 			String name = o.getClass().getName();
 			if((map.get(name)) != null) {
 				map.put(name, map.get(name)+1);
@@ -925,7 +927,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			try {
 				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+db.ext().getID(o));
 			} catch (Throwable t) {
-				Logger.minor(this, "CAUGHT "+t);
+				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
 			}
 		}
 		int total = 0;
