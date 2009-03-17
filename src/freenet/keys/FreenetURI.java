@@ -83,6 +83,7 @@ public class FreenetURI implements Cloneable {
 	private final long suggestedEdition; // for USKs
 	private boolean hasHashCode;
 	private int hashCode;
+	private final int uniqueHashCode;
 	static final String[] VALID_KEY_TYPES =
 		new String[]{"CHK", "SSK", "KSK", "USK"};
 
@@ -157,6 +158,7 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public FreenetURI(FreenetURI uri) {
+		this.uniqueHashCode = super.hashCode();
 		keyType = uri.keyType;
 		docName = uri.docName;
 		if(uri.metaStr != null) {
@@ -179,6 +181,7 @@ public class FreenetURI implements Cloneable {
 		} else
 			extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
+		Logger.minor(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
 	}
 
 	public FreenetURI(String keyType, String docName) {
@@ -215,6 +218,7 @@ public class FreenetURI implements Cloneable {
 		String[] metaStr,
 		byte[] routingKey,
 		byte[] cryptoKey, byte[] extra2) {
+		this.uniqueHashCode = super.hashCode();
 		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
@@ -222,6 +226,8 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = -1;
+		Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
+		toString();
 	}
 
 	public FreenetURI(
@@ -231,6 +237,7 @@ public class FreenetURI implements Cloneable {
 		byte[] routingKey,
 		byte[] cryptoKey, byte[] extra2,
 		long suggestedEdition) {
+		this.uniqueHashCode = super.hashCode();
 		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
@@ -238,12 +245,14 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = suggestedEdition;
+		Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
 	}
 
 	// Strip http:// and freenet: prefix
 	protected final static Pattern URI_PREFIX = Pattern.compile("^(http://[^/]+/+)?(freenet:)?");
 	
 	public FreenetURI(String URI) throws MalformedURLException {
+		this.uniqueHashCode = super.hashCode();
 		if(URI == null)
 			throw new MalformedURLException("No URI specified");
 		
@@ -376,10 +385,12 @@ public class FreenetURI implements Cloneable {
 		} catch(IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
+		Logger.minor(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
 	}
 
 	/** USK constructor from components. */
 	public FreenetURI(byte[] pubKeyHash, byte[] cryptoKey, byte[] extra, String siteName, long suggestedEdition2) {
+		this.uniqueHashCode = super.hashCode();
 		this.keyType = "USK";
 		this.routingKey = pubKeyHash;
 		this.cryptoKey = cryptoKey;
@@ -387,6 +398,7 @@ public class FreenetURI implements Cloneable {
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
 		metaStr = null;
+		Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
 
 	public void decompose() {
@@ -543,12 +555,12 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
-	protected transient String toStringCache;
+	protected String toStringCache;
 
 	@Override
 	public String toString() {
 		if (toStringCache == null)
-			toStringCache = toString(false, false);
+			toStringCache = toString(false, false) + "#"+super.toString()+"#"+uniqueHashCode;
 		return toStringCache;
 	}
 
