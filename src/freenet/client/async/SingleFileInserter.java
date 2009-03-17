@@ -978,6 +978,20 @@ class SingleFileInserter implements ClientPutState {
 			SingleFileInserter.this.removeFrom(container, context);
 		}
 		
+		public boolean objectCanUpdate(ObjectContainer container) {
+			if(logMINOR)
+				Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+			return true;
+		}
+		
+		public boolean objectCanNew(ObjectContainer container) {
+			if(finished)
+				Logger.error(this, "objectCanNew but finished on "+this, new Exception("error"));
+			else if(logMINOR)
+				Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+			return true;
+		}
+		
 	}
 
 	public BaseClientPutter getParent() {
@@ -1045,4 +1059,17 @@ class SingleFileInserter implements ClientPutState {
 		// cb removes itself
 		container.delete(this);
 	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+		return true;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+		return true;
+	}
+	
 }
