@@ -268,17 +268,18 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.fatallyFailedBlock(container, context);
 		else
 			parent.failedBlock(container, context);
-		if(persistent)
-			container.activate(cb, 1);
 		unregister(container, context);
-		cb.onFailure(e, this, container, context);
 		if(freeData) {
+			if(persistent) container.activate(sourceData, 1);
 			sourceData.free();
 			if(persistent) sourceData.removeFrom(container);
 			sourceData = null;
 			if(persistent)
 				container.store(this);
 		}
+		if(persistent)
+			container.activate(cb, 1);
+		cb.onFailure(e, this, container, context);
 	}
 
 	public ClientKeyBlock getBlock(ObjectContainer container, ClientContext context, boolean calledByCB) {
@@ -564,6 +565,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	private BlockItem getBlockItem(ObjectContainer container, ClientContext context) {
 		try {
+			synchronized(this) {
+				if(finished) return null;
+			}
+			if(persistent) {
+				if(sourceData == null) {
+					Logger.error(this, "getBlockItem(): sourceData = null but active = "+container.ext().isActive(this));
+					return null;
+				}
+			}
 			boolean deactivateBucket = false;
 			if(persistent) {
 				container.activate(uri, 1);
@@ -683,6 +693,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		errors.removeFrom(container);
 		if(freeData && sourceData != null && container.ext().isStored(sourceData)) {
 			Logger.error(this, "Data not removed!");
+			container.activate(sourceData, 1);
 			sourceData.removeFrom(container);
 		}
 		container.delete(this);
