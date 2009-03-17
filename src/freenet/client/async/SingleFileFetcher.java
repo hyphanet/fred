@@ -1115,7 +1115,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {
-					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, persistent ? key : key.cloneKey(), metaStrings, key.getURI().addMetaStrings(metaStrings),
+					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, false, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, container, context);
 					sf.schedule(container, context);
 					if(persistent) removeFrom(container);
