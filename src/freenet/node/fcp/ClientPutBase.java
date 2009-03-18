@@ -394,6 +394,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			msg = progressMessage;
 			fin = finished;
 		}
+		if(persistenceType == PERSIST_FOREVER && msg != null)
+			container.activate(msg, 5);
 		if(generated)
 			trySendGeneratedURIMessage(handler, container);
 		if(msg != null)
