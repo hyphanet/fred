@@ -96,7 +96,7 @@ public class ClientPutDir extends ClientPutBase {
 		
 		// objectOnNew is called once, objectOnUpdate is never called, yet manifestElements get blanked anyway!
 		
-		this.manifestElements = new MyHashMap();
+		this.manifestElements = new HashMap<String,Object>();
 		this.manifestElements.putAll(manifestElements);
 		
 //		this.manifestElements = manifestElements;
@@ -312,7 +312,10 @@ public class ClientPutDir extends ClientPutBase {
 		}
 		if(logMINOR) Logger.minor(this, "freeData() more on "+this+" persistence type = "+persistenceType);
 		// We have to commit everything, so activating everything here doesn't cost us much memory...?
-		if(persistenceType == PERSIST_FOREVER) container.activate(manifestElements, Integer.MAX_VALUE);
+		if(persistenceType == PERSIST_FOREVER) {
+			container.deactivate(manifestElements, 1); // Must deactivate before activating: If it has been activated to depth 1 (empty map) at some point it will fail to activate to depth 2 (with contents). See http://tracker.db4o.com/browse/COR-1582
+			container.activate(manifestElements, Integer.MAX_VALUE);
+		}
 		freeData(manifestElements, container);
 		manifestElements = null;
 		if(persistenceType == PERSIST_FOREVER) container.store(this);
@@ -468,25 +471,5 @@ public class ClientPutDir extends ClientPutBase {
 			putter = null;
 		}
 		super.requestWasRemoved(container, context);
-	}
-	
-	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
-		// FIXME get rid when sure evilbug has gone away
-		container.activate(manifestElements, 2);
-		super.receive(ce, container, context);
-	}
-	
-	public void storeTo(ObjectContainer container) {
-		/** 
-		 * After days debugging ... it turns out that db4o has severe problems if you
-		 * store() an object containing a HashMap without store()ing the HashMap itself
-		 * first!
-		 */
-		boolean isStored = container.ext().isStored(this);
-		if(!isStored) {
-			if(logMINOR) Logger.minor(this, "Manifest elements: "+manifestElements.size()+" : "+manifestElements);
-			container.store(manifestElements);
-		}
-		super.storeTo(container);
 	}
 }
