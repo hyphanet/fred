@@ -31,4 +31,9 @@ public class Db4oBugs {
 	 * into e.g. ClientPutDir.receive() (or wait for freeData(), which is where it 
 	 * matters). Even when it is activated, it is empty. */
 
+	/* We are using an oldish version of db4o 7.4 in ext #26 because the newer versions,
+	 * e.g. in ext-27pre2, have *really* horrible bugs - all sorts of wierd things 
+	 * happen with them, the FEC object duplication bug happens with File's as well, 
+	 * there seem to be random object disappearances, there are many many horrible 
+	 * things... */
 }
