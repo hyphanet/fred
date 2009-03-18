@@ -4,14 +4,14 @@
 
 package freenet.support;
 
-import freenet.node.ExtVersion;
 import junit.framework.TestCase;
+
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 /**
  * Test case for {@link freenet.support.Fields} class.
  * 
- *  @author stuart martin &lt;wavey@freenetproject.org&gt;
+ * @author stuart martin &lt;wavey@freenetproject.org&gt;
  */
 public class FieldsTest extends TestCase {
 

@@ -33,6 +33,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
@@ -47,7 +48,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final ClientRequestSchedulerCore schedCore;
 	final ClientRequestSchedulerNonPersistent schedTransient;
 	
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
 		final ClientRequestScheduler cs;
@@ -137,7 +148,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else
 			transientCooldownQueue = null;
 		jobRunner = clientContext.jobRunner;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
@@ -259,7 +269,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @throws FetchException 
 	 */
 	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, boolean onDatabaseThread, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "register("+persistent+","+hasListener+","+getters);
 		if(isInsertScheduler) {

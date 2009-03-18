@@ -22,6 +22,7 @@ public class PooledExecutor implements Executor {
 	/** Threads waiting for a job */
 	@SuppressWarnings("unchecked")
 	private final ArrayList<MyThread>[] waitingThreads = new ArrayList[runningThreads.length];
+	private volatile int waitingThreadsCount;
 	long[] threadCounter = new long[runningThreads.length];
 	private long jobCount;
 	private long jobMisses;
@@ -39,6 +40,7 @@ public class PooledExecutor implements Executor {
 			waitingThreads[i] = new ArrayList<MyThread>();
 			threadCounter[i] = 0;
 		}
+		waitingThreadsCount = 0;
 	}
 	/** Maximum time a thread will wait for a job */
 	static final int TIMEOUT = 5 * 60 * 1000;
@@ -131,6 +133,10 @@ public class PooledExecutor implements Executor {
 		return result;
 	}
 
+	public int getWaitingThreadsCount() {
+		return waitingThreadsCount;
+	}
+
 	class MyThread extends NativeThread {
 
 		final String defaultName;
@@ -160,6 +166,7 @@ public class PooledExecutor implements Executor {
 				if(job == null) {
 					synchronized(PooledExecutor.this) {
 						waitingThreads[nativePriority - 1].add(this);
+						waitingThreadsCount++;
 					}
 					synchronized(this) {
 						if(nextJob == null) {
@@ -177,6 +184,7 @@ public class PooledExecutor implements Executor {
 					}
 					synchronized(PooledExecutor.this) {
 						waitingThreads[nativePriority - 1].remove(this);
+						waitingThreadsCount--;
 						if(!alive) {
 							runningThreads[nativePriority - 1].remove(this);
 							if(logMINOR)

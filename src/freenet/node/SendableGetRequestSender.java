@@ -3,10 +3,23 @@ package freenet.node;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.keys.ClientKey;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 public class SendableGetRequestSender implements SendableRequestSender {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	/** Do the request, blocking. Called by RequestStarter. 
 	 * Also responsible for deleting it.
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
@@ -18,8 +31,7 @@ public class SendableGetRequestSender implements SendableRequestSender {
 			Logger.error(SendableGet.class, "Key is null in send(): keyNum = "+keyNum+" for "+req);
 			return false;
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(Logger.shouldLog(Logger.MINOR, SendableGet.class))
+		if(logMINOR)
 			Logger.minor(SendableGet.class, "Sending get for key "+keyNum+" : "+key);
 		if(req.isCancelled()) {
 			if(logMINOR) Logger.minor(SendableGet.class, "Cancelled: "+req);

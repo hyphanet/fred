@@ -637,16 +637,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			synchronized(this) {
 				if(myThread == null) return;
 			}
-			try {
-				Socket conn = networkInterface.accept();
-				if(Logger.shouldLog(Logger.MINOR, this))
-					Logger.minor(this, "Accepted connection");
-				SocketHandler sh = new SocketHandler(conn);
-				sh.start();
-			} catch (SocketTimeoutException e) {
-				// Go around again, this introduced to avoid blocking forever when told to quit
-				/* FIXME: WTF? Why does networkInterface.accept() not support being interrupted ? */
-			} 
+			Socket conn = networkInterface.accept();
+            if(conn == null)
+                continue; // timeout
+            if(Logger.shouldLog(Logger.MINOR, this))
+                Logger.minor(this, "Accepted connection");
+            SocketHandler sh = new SocketHandler(conn);
+            sh.start();
 		}
 	}
 	

@@ -27,6 +27,7 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	public DetailedThreshold[] detailedThresholds = new DetailedThreshold[0];
+	private LogThresholdCallback[] thresholdsCallbacks = new LogThresholdCallback[0];
 
 	/**
 	 * Log a message
@@ -109,6 +110,7 @@ public abstract class LoggerHook extends Logger {
 	@Override
 	public void setThreshold(int thresh) {
 		this.threshold = thresh;
+		notifyLogThresholdCallbacks();
 	}
 
 	@Override
@@ -145,6 +147,7 @@ public abstract class LoggerHook extends Logger {
 		stuff.toArray(newThresholds);
 		synchronized(this) {
 			detailedThresholds = newThresholds;
+			notifyLogThresholdCallbacks();
 		}
 	}
 
@@ -231,6 +234,21 @@ public abstract class LoggerHook extends Logger {
 		return instanceShouldLog(prio, o == null ? null : o.getClass());
 	}
 
+	@Override
+	public synchronized final void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc) {
+		LogThresholdCallback[] newLTC = new LogThresholdCallback[thresholdsCallbacks.length+1];
+		newLTC[0] = ltc;
+		System.arraycopy(thresholdsCallbacks, 0, newLTC, 1, thresholdsCallbacks.length);
+		thresholdsCallbacks = newLTC;
+
+		// Call the new callback to avoid code duplication
+		ltc.shouldUpdate();
+	}
+
+	private synchronized final void notifyLogThresholdCallbacks() {
+		for(LogThresholdCallback ltc : thresholdsCallbacks)
+			ltc.shouldUpdate();
+	}
 
 	public abstract long minFlags(); // ignore unless all these bits set
 

@@ -101,4 +101,9 @@ public class RetrievalException extends Exception {
 	public String getMessage() {
 		return toString();
 	}
+
+    @Override
+    public final synchronized Throwable fillInStackTrace() {
+        return null;
+    }
 }

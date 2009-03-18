@@ -68,5 +68,7 @@ public class VoidLogger extends Logger
 	@Override
 	public void setDetailedThresholds(String details) {
 	}
-	
+
+	@Override
+	public final void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc) {}
 }

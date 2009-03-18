@@ -6,15 +6,28 @@ package freenet.node;
 import java.util.Arrays;
 
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * Track average round-trip time for each peer node, get a geometric mean.
  */
 public class NodePinger implements Runnable {
+    private static volatile boolean logMINOR;
 
-	private double meanPing = 0;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(Logger.MINOR, this);
+            }
+        });
+    }
+
+	private final Node node;
+	private volatile double meanPing = 0;
 	
-	static final double CRAZY_MAX_PING_TIME = 365.25*24*60*60*1000;
+	public static final double CRAZY_MAX_PING_TIME = 365.25*24*60*60*1000;
 	
 	NodePinger(Node n) {
 		this.node = n;
@@ -24,34 +37,35 @@ public class NodePinger implements Runnable {
 		run();
 	}
 	
-	final Node node;
-	
 	public void run() {
-	    //freenet.support.OSThread.RealOSThread.logPID(this);
-		try {
-			recalculateMean(node.peers.connectedPeers);
-		} finally {
-			node.ps.queueTimedJob(this, 200);
-		}
+        // Requeue *before* so that it's accurate in any case
+        node.ps.queueTimedJob(this, 200);
+        
+        PeerNode[] peers = null;
+        synchronized(node.peers) {
+	    if((node.peers.connectedPeers == null) || (node.peers.connectedPeers.length == 0)) return;
+	    peers = new PeerNode[node.peers.connectedPeers.length];
+            System.arraycopy(node.peers.connectedPeers, 0, peers, 0, node.peers.connectedPeers.length);
+        }
+
+        // Now we don't have to care about synchronization anymore
+        recalculateMean(peers);
 	}
 
 	/** Recalculate the mean ping time */
-	void recalculateMean(PeerNode[] peers) {
+	private void recalculateMean(PeerNode[] peers) {
 		if(peers.length == 0) return;
 		meanPing = calculateMedianPing(peers);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Median ping: "+meanPing);
 	}
 	
-	double calculateMedianPing(PeerNode[] peers) {
-		
+	private double calculateMedianPing(PeerNode[] peers) {
 		double[] allPeers = new double[peers.length];
-		
-		for(int i=0;i<peers.length;i++) {
-			PeerNode peer = peers[i];
-			double pingTime = peer.averagePingTime();
-			allPeers[i] = pingTime;
-		}
+        for(int i = 0; i < peers.length; i++) {
+            PeerNode peer = peers[i];
+            allPeers[i] = peer.averagePingTime();
+        }
 		
 		Arrays.sort(allPeers);
 		return allPeers[peers.length / 2];

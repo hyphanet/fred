@@ -200,7 +200,7 @@ public class LRUHashtableTest extends TestCase {
 	 * LRUHashtable.
 	 */
 	public void testPopValueFromEmpty() {
-		LRUHashtable methodLRUht = new LRUHashtable();
+		LRUHashtable<?, ?> methodLRUht = new LRUHashtable<Object, Object>();
 		assertNull(methodLRUht.popValue());
 	}
 
@@ -342,7 +342,7 @@ public class LRUHashtableTest extends TestCase {
 		//pushing objects
 		for (int i=0; i<sampleObjects.length; i++)
 			methodLRUht.push(sampleObjects[i][0],sampleObjects[i][1]);
-		Enumeration methodEnumeration = methodLRUht.keys();
+		Enumeration<Object> methodEnumeration = methodLRUht.keys();
 		int j=0;
 		while(methodEnumeration.hasMoreElements()) {			
 			assertEquals(methodEnumeration.nextElement(),sampleObjects[j][0]);

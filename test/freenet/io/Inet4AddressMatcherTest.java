@@ -16,10 +16,7 @@
 
 package freenet.io;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
-
-import freenet.io.Inet4AddressMatcher;
 
 import junit.framework.TestCase;
 
@@ -31,44 +28,44 @@ public class Inet4AddressMatcherTest extends TestCase {
 
 	public void test() throws Exception {
 		Inet4AddressMatcher matcher = new Inet4AddressMatcher("192.168.1.2");
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("192.168.1.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.168.1.2")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("127.0.0.1")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("0.0.0.0")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("192.168.1.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.168.1.2")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("127.0.0.1")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("0.0.0.0")));
 		
 		matcher = new Inet4AddressMatcher("192.168.1.2/8");
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.168.1.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.168.1.2")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.168.2.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.16.81.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.255.255.255")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("172.16.1.1")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("127.0.0.1")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("0.0.0.0")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.0.0.0")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.168.1.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.168.1.2")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.168.2.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.16.81.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.255.255.255")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("172.16.1.1")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("127.0.0.1")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("0.0.0.0")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.0.0.0")));
 
 		/* some fancy matching */
 		matcher = new Inet4AddressMatcher("192.168.1.1/255.0.255.0");
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.168.1.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.16.1.1")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("192.168.2.1")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("192.16.2.1")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("127.0.0.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.168.1.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.16.1.1")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("192.168.2.1")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("192.16.2.1")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("127.0.0.1")));
 		
 		matcher = new Inet4AddressMatcher("127.0.0.1/8");
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("127.0.0.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("127.23.42.64")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("127.0.0.0")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("127.255.255.255")));
-		assertEquals(false, matcher.matches((Inet4Address) InetAddress.getByName("28.0.0.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("127.0.0.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("127.23.42.64")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("127.0.0.0")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("127.255.255.255")));
+		assertEquals(false, matcher.matches(InetAddress.getByName("28.0.0.1")));
 
 		matcher = new Inet4AddressMatcher("0.0.0.0/0");
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("127.0.0.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.168.1.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("192.168.2.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("172.16.42.23")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("10.0.0.1")));
-		assertEquals(true, matcher.matches((Inet4Address) InetAddress.getByName("224.0.0.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("127.0.0.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.168.1.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("192.168.2.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("172.16.42.23")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("10.0.0.1")));
+		assertEquals(true, matcher.matches(InetAddress.getByName("224.0.0.1")));
 	}
 
 }

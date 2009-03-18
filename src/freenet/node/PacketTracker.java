@@ -18,6 +18,7 @@ import freenet.support.IndexableUpdatableSortedLinkedListItem;
 import freenet.support.LimitedRangeIntByteArrayMap;
 import freenet.support.LimitedRangeIntByteArrayMapElement;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.ReceivedPacketNumbers;
 import freenet.support.TimeUtil;
 import freenet.support.UpdatableSortedLinkedListItem;
@@ -34,7 +35,16 @@ import freenet.support.DoublyLinkedList.Item;
  */
 public class PacketTracker {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+
 	/** Parent PeerNode */
 	public final PeerNode pn;
 	/** Are we the secondary key? */
@@ -101,7 +111,6 @@ public class PacketTracker {
 		isDeprecated = false;
 		nextPacketNumber = pn.node.random.nextInt(100 * 1000);
 		createdTime = System.currentTimeMillis();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	/**
@@ -113,7 +122,6 @@ public class PacketTracker {
 	 * packet number. However, old resend requests etc may still be sent.
 	 */
 	public void deprecated() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Deprecated: "+this);
 		isDeprecated = true;
 		sentPacketsContents.interrupt();
@@ -361,7 +369,6 @@ public class PacketTracker {
 	 */
 	public synchronized void receivedPacket(int seqNumber) {
 		timeLastDecodedPacket = System.currentTimeMillis();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Received packet " + seqNumber + " from " + pn.shortToString());
 		if(seqNumber == -1)
@@ -548,7 +555,6 @@ public class PacketTracker {
 	 * @param realSeqNo
 	 */
 	public void acknowledgedPacket(int realSeqNo) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		AsyncMessageCallback[] callbacks;
 		if(logMINOR)
 			Logger.minor(this, "Acknowledged packet: " + realSeqNo);

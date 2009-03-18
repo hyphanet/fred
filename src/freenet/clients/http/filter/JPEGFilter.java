@@ -61,9 +61,8 @@ public class JPEGFilter implements ContentDataFilter {
 		(byte)'J', (byte)'F', (byte)'X', (byte)'X', 0
 	};
 	
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset,
-			HashMap otherParams, FilterCallback cb) 
-	throws DataFilterException, IOException {
+	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb) throws DataFilterException, IOException {
 		Bucket output = readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, null);
 		if(output != null)
 			return output;
@@ -82,9 +81,9 @@ public class JPEGFilter implements ContentDataFilter {
 		return filtered;
 	}
 	
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset,
-			HashMap otherParams, FilterCallback cb, boolean deleteComments, boolean deleteExif, OutputStream output) 
-	throws DataFilterException, IOException {
+	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb, boolean deleteComments, boolean deleteExif, OutputStream output)
+	        throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long length = data.size();
 		if(length < 6) {
@@ -439,9 +438,8 @@ public class JPEGFilter implements ContentDataFilter {
 		throw e;
 	}
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset,
-			HashMap otherParams, FilterCallback cb) throws DataFilterException,
-			IOException {
+	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb) throws DataFilterException, IOException {
 		return null;
 	}
 

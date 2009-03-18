@@ -12,7 +12,7 @@ public class LRUHashtable<K, V> {
      * push is by far the most done operation, this should be an
      * overall improvement.
      */
-    private final DoublyLinkedListImpl<V> list = new DoublyLinkedListImpl<V>();
+	private final DoublyLinkedListImpl<QItem<K, V>> list = new DoublyLinkedListImpl<QItem<K, V>>();
     private final Hashtable<K, QItem<K, V>> hash = new Hashtable<K, QItem<K, V>>();
     
     /**
@@ -41,7 +41,7 @@ public class LRUHashtable<K, V> {
      */
     public final synchronized Object popKey() {
         if ( list.size() > 0 ) {
-            return (	hash.remove(((QItem) list.pop()).obj)).obj;
+			return hash.remove(list.pop().obj).obj;
         } else {
             return null;
         }
@@ -52,7 +52,7 @@ public class LRUHashtable<K, V> {
      */
     public final synchronized Object popValue() {
         if ( list.size() > 0 ) {
-            return (	hash.remove(((QItem) list.pop()).obj)).value;
+			return hash.remove(list.pop().obj).value;
         } else {
             return null;
         }
@@ -60,22 +60,7 @@ public class LRUHashtable<K, V> {
     
 	public final synchronized Object peekValue() {
         if ( list.size() > 0 ) {
-        	if(hash == null) throw new NullPointerException();
-        	QItem<K,V> tail = (QItem<K,V>) list.tail();
-        	Object object = tail.obj;
-        	QItem<K,V> i = (QItem<K,V>) hash.get(object);
-        	if(i == null) {
-        		String obToString = "(toString() threw)";
-        		try {
-        			obToString = object.toString();
-        		} catch (Throwable t) {
-        			// Ignore
-        		}
-        		Logger.error(this, "Lookup failed in LRUHashtable for "+obToString+" in LRUHashtable - maybe an object was deactivated or its hash code changed some other way????");
-        		return null;
-        	}
-        	return i.value;
-            //return ((QItem)hash.get(((QItem)list.tail()).obj)).value;
+			return hash.get(list.tail().obj).value;
         } else {
             return null;
         }
@@ -114,39 +99,39 @@ public class LRUHashtable<K, V> {
     	return q.value;
     }
     
-    public Enumeration keys() {
+	public Enumeration<K> keys() {
         return new ItemEnumeration();
     }
     
-    public Enumeration values() {
+	public Enumeration<V> values() {
     	return new ValuesEnumeration();
     }
 
-    private class ItemEnumeration implements Enumeration {
-        private Enumeration source = list.reverseElements();
+	private class ItemEnumeration implements Enumeration<K> {
+		private Enumeration<QItem<K, V>> source = list.reverseElements();
        
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
-        public Object nextElement() {
-            return ((QItem) source.nextElement()).obj;
+		public K nextElement() {
+			return source.nextElement().obj;
         }
     }
 
-    private class ValuesEnumeration implements Enumeration {
-        private Enumeration source = list.reverseElements();
+	private class ValuesEnumeration implements Enumeration<V> {
+		private Enumeration<QItem<K, V>> source = list.reverseElements();
        
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
-        public Object nextElement() {
-            return ((QItem) source.nextElement()).value;
+		public V nextElement() {
+			return source.nextElement().value;
         }
     }
 
-    public static class QItem<K, V> extends DoublyLinkedListImpl.Item<V> {
+	public static class QItem<K, V> extends DoublyLinkedListImpl.Item<QItem<K, V>> {
         public K obj;
         public V value;
 

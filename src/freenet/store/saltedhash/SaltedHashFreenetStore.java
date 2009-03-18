@@ -108,7 +108,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
 		
-		hdPadding = (int) ((headerBlockLength + dataBlockLength) % 512 == 0 ? 0
+		hdPadding = ((headerBlockLength + dataBlockLength) % 512 == 0 ? 0
 		        : 512 - (headerBlockLength + dataBlockLength) % 512);
 
 		this.random = random;

@@ -259,4 +259,10 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	public int getWaitingThreadsCount() {
+		synchronized(jobs) {
+			return (waiting ? 1 : 0);
+		}
+	}
+
 }

@@ -10,4 +10,9 @@ package freenet.io.comm;
  */
 public class DisconnectedException extends Exception {
 	private static final long serialVersionUID = -1;
+
+    @Override
+    public final synchronized Throwable fillInStackTrace() {
+        return null;
+    }
 }

@@ -13,6 +13,7 @@ import freenet.l10n.L10n;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
@@ -67,7 +68,17 @@ public class NodeStats implements Persistable {
 	
 	final RandomSource hardRandom;
 	
-	private boolean logMINOR;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 	
 	/** first time bwlimitDelay was over PeerManagerUserAlert threshold */
 	private long firstBwlimitDelayTimeThresholdBreak ;
@@ -192,7 +203,6 @@ public class NodeStats implements Persistable {
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 	
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		this.peers = node.peers;
 		this.hardRandom = node.random;
@@ -204,6 +214,8 @@ public class NodeStats implements Persistable {
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
+		this.activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
+		this.waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		throttledPacketSendAverage =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
 		nodePinger = new NodePinger(node);
@@ -425,6 +437,10 @@ public class NodeStats implements Persistable {
 					long end = System.currentTimeMillis();
 					if(logMINOR)
 						Logger.minor(this, "Throttle check took "+TimeUtil.formatTime(end-now,2,true));
+
+					// Doesn't belong here... but anyway, should do the job.
+					activeThreadsByPriorities = node.executor.runningThreads();
+					waitingThreadsByPriorities = node.executor.waitingThreads();
 				}
 			}
 	};
@@ -436,7 +452,6 @@ public class NodeStats implements Persistable {
 	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
@@ -923,7 +938,7 @@ public class NodeStats implements Persistable {
 			} else {
 				nodeAveragePingAlertRelevant = false;
 			}
-			if(logMINOR && Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+ ')');
+			if(logDEBUG) Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+ ')');
 			nextPeerManagerUserAlertStatsUpdateTime = now + peerManagerUserAlertStatsUpdateInterval;
 		}
 	}
@@ -1014,13 +1029,7 @@ public class NodeStats implements Persistable {
 	}
 
 	public int getActiveThreadCount() {
-		int waitingThreads = 0;
-		waitingThreadsByPriorities = node.executor.waitingThreads();
-		activeThreadsByPriorities = node.executor.runningThreads();
-		for(int i=0; i<waitingThreadsByPriorities.length; i++)
-			waitingThreads += waitingThreadsByPriorities[i];
-		
-		return rootThreadGroup.activeCount() - waitingThreads;
+		return rootThreadGroup.activeCount() - node.executor.getWaitingThreadsCount();
 	}
 	
 	public int[] getActiveThreadsByPriority() {
@@ -1366,7 +1375,7 @@ public class NodeStats implements Persistable {
 	}
 	
 	public synchronized void insertSentBytes(boolean ssk, int x) {
-		if(Logger.shouldLog(Logger.DEBUG, this)) 
+		if(logDEBUG) 
 			Logger.debug(this, "insertSentBytes("+ssk+", "+x+")");
 		if(ssk)
 			sskInsertSentBytes += x;

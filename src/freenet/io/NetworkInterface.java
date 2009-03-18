@@ -32,6 +32,7 @@ import java.util.StringTokenizer;
 import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * Replacement for {@link ServerSocket} that can handle multiple bind addresses
@@ -42,6 +43,16 @@ import freenet.support.Logger;
  */
 public class NetworkInterface implements Closeable {
     
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
         public static final String DEFAULT_BIND_TO = "127.0.0.1,0:0:0:0:0:0:0:1";
         
 	/** Object for synchronisation purpose. */
@@ -184,22 +195,21 @@ public class NetworkInterface implements Closeable {
 	 * {@link SocketTimeoutException}. If no timeout has been set this method
 	 * will wait until a connection has been established.
 	 * 
-	 * @return The socket that is connected to the client
-	 * @throws SocketTimeoutException
-	 *             if the timeout has expired waiting for a connection
+	 * @return The socket that is connected to the client or null
+     * if the timeout has expired waiting for a connection
 	 */
-	public Socket accept() throws SocketTimeoutException {
+	public Socket accept() {
 		synchronized (syncObject) {
 			while (acceptedSockets.size() == 0) {
 				if (acceptors.size() == 0) {
-					throw new SocketTimeoutException();
+					return null;
 				}
 				try {
 					syncObject.wait(timeout);
 				} catch (InterruptedException ie1) {
 				}
 				if ((timeout > 0) && (acceptedSockets.size() == 0)) {
-					throw new SocketTimeoutException();
+					return null;
 				}
 			}
 			return acceptedSockets.remove(0);
@@ -297,7 +307,6 @@ public class NetworkInterface implements Closeable {
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			while (!closed) {
-				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {
 					Socket clientSocket = serverSocket.accept();
 					InetAddress clientAddress = clientSocket.getInetAddress();

@@ -25,6 +25,8 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	 * @param utf If true, read as UTF-8, if false, read as ISO-8859-1.
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
+		if(maxLength < 1)
+			return null;
 		if(maxLength <= bufferSize)
 			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
 
@@ -57,7 +59,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				if(ctr >= maxLength)
 					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 			}
-			if((buf.length != maxLength) && (buf.length - ctr < bufferSize)) {
+			if((buf.length < maxLength) && (buf.length - ctr < bufferSize)) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
 				System.arraycopy(buf, 0, newBuf, 0, ctr);
 				buf = newBuf;

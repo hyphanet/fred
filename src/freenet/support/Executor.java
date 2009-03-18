@@ -16,4 +16,7 @@ public interface Executor {
 	public int[] waitingThreads();
 	/** Count the number of threads running at each priority level */
 	public int[] runningThreads();
+
+	/** Fast method returning how many threads are waiting */
+	public int getWaitingThreadsCount();
 }

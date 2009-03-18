@@ -133,7 +133,7 @@ public class ClientCHK extends ClientKey {
 	public byte[] getExtra() {
 		byte[] extra = new byte[EXTRA_LENGTH];
 		extra[0] = (byte) (cryptoAlgorithm >> 8);
-		extra[1] = (byte) cryptoAlgorithm;
+		extra[1] = cryptoAlgorithm;
 		extra[2] = (byte) (controlDocument ? 2 : 0);
 		extra[3] = (byte) (compressionAlgorithm >> 8);
 		extra[4] = (byte) compressionAlgorithm;

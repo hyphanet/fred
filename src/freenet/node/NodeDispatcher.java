@@ -19,6 +19,7 @@ import freenet.keys.Key;
 import freenet.keys.NodeSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.ShortBuffer;
 
 /**
@@ -38,7 +39,18 @@ import freenet.support.ShortBuffer;
  */
 public class NodeDispatcher implements Dispatcher, Runnable {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+
 	final Node node;
 	private NodeStats nodeStats;
 	private NodeDispatcherCallback callback;
@@ -49,7 +61,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	NodeDispatcher(Node node) {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		node.getTicker().queueTimedJob(this, STALE_CONTEXT_CHECK);
 	}
 
@@ -74,7 +85,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 	
 	public boolean handleMessage(Message m) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		PeerNode source = (PeerNode)m.getSource();
 		if(source == null) {
 			// Node has been disconnected and garbage collected already! Ouch.
@@ -178,7 +188,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		
 		if(!source.isRoutable()) return false;
-		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Not routable");
+		if(logDEBUG) Logger.debug(this, "Not routable");
 
 		if(spec == DMT.FNPNetworkID) {
 			source.handleFNPNetworkID(m);

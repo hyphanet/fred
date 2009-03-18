@@ -24,9 +24,6 @@ import freenet.support.api.StringCallback;
  * @author toad
  */
 public class NodeCryptoConfig {
-
-	private final boolean isOpennet;
-	
 	/** Port number. -1 = choose a random available port number at activation time. */
 	private int portNumber;
 	
@@ -59,8 +56,6 @@ public class NodeCryptoConfig {
 	private boolean paddDataPackets;
 	
 	NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
-		this.isOpennet = isOpennet;
-		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
 			@Override
 			public Integer get() {

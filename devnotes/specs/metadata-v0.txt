@@ -11,6 +11,7 @@ a nonredundant splitfile. It allows for splitfiles of any conceivable
 size, metadata of any conceivable size, ZIP manifests and ordinary
 manifests. Limits will be imposed at the client level. Comments?
 
+All numbers are in java big-endian.
 
 8 bytes - magic number for freenet metadata
 Wasted bytes, just being paranoid.
@@ -19,77 +20,72 @@ Wasted bytes, just being paranoid.
 0 for now.
 
 1 byte - document type
-0 = simple redirect (including splitfiles)
-1 = multi-level metadata (fetch this key, then use it as metadata)
-2 = ordinary manifest
-3 = ZIP manifest
-4 = reserved for use in ZIP manifests, see below
-5+ = available
+ 0  = SIMPLE_REDIRECT            - simple redirect (including splitfiles)
+ 1  = MULTI_LEVEL_METADATA       - multi-level metadata (fetch this key, then use it as metadata)
+ 2  = SIMPLE_MANIFEST            - ordinary manifest
+ 3  = ARCHIVE_MANIFEST           - ZIP/TAR manifest
+ 4  = ARCHIVE_INTERNAL_REDIRECT  - reserved for use in ZIP/TAR manifests, see below
 
-If multi-level metadata:
+If documentType == MULTI_LEVEL_METADATA:
  1 byte - number of levels (must decrease by 1 on each level!)
  1 byte - document type of final metadata
  8 bytes - length of final data
 
-For a simple redirect, multi-level metadata, or a ZIP manifest:
+If documentType == SIMPLE_REDIRECT or SIMPLE_MANIFEST or ARCHIVE_MANIFEST or ARCHIVE_INTERNAL_REDIRECT
+ 2 bytes - flags
+  bit 0 = FLAGS_SPLITFILE          - splitfile
+  bit 1 = FLAGS_DBR                - DBR (splitfile + DBR *is* valid, not supported)
+  bit 2 = FLAGS_NO_MIME            - no MIME type
+  bit 3 = FLAGS_COMPRESSED_MIME    - compressed MIME type
+  bit 4 = FLAGS_EXTRA_METADATA     - has extra metadata fields (ignored)
+  bit 5 = FLAGS_FULL_KEYS          - redirects as full keys (invalid if splitfile)
+  bit 6 = FLAGS_SPLIT_USE_LENGTHS  - reserved/unused
+  bit 7 = FLAGS_COMPRESSED         - compressed splitfile
 
-2 bytes - flags
-bit 0 = splitfile
-bit 1 = DBR (splitfile + DBR *is* valid)
-bit 2 = no MIME type
-bit 3 = compressed MIME type
-bit 4 = has extra metadata fields
-bit 5 = redirects as full keys (invalid if splitfile)
-bit 6 = unused
-bit 7 = compressed splitfile (might work with normal redirects but there
-is no point as single blocks are transparently gzipped anyway)
+If documentType == ARCHIVE_MANIFEST:
+  2 bytes - ARCHIVE_TYPE
+   0 = ZIP ("application/zip", "application/x-zip") /* eventually get rid of ZIP support at some point */
+   1 = TAR ("application/x-tar")
 
-If a ZIP manifest:
-2 bytes - archive ID (initially 0 = ZIP. We may in future support 1 =
-tar, with the compressed splitfile bit set, and then a codec specified
-below, for tar.gz, tar.bz2 etc)
+If flags |= FLAGS_SPLITFILE:
+  8 bytes - real content length (compressed size, signed number)
 
-If a splitfile:
-8 bytes - real content length (uncompressed)
-Note no 2GB limit. :)
+If flags |= FLAGS_COMPRESSED:
+  2 bytes - COMPRESSOR_TYPE
+   0 = GZIP
+   1 = BZIP2
+   2 = LZMA
+  8 bytes - decompressed content length (signed number)
 
-If compressed:
-2 bytes - codec ID
-Initially we only support gzip (0).
-8 bytes - decompressed content length
+If _NOT_ flags |= FLAGS_NO_MIME:
+ If flags |= FLAGS_COMPRESSED_MIME:
+  2 bytes - compressedMIMEValue (base MIME type IDs)
+	See DefaultMIMETypes.java for the look up table
 
-If has a MIME type:
-If raw:
-1 byte - length (N)
-N bytes - string
+  If compressedMIMEValue & 0x7fff == 0x7fff:
+	2 bytes - compressedMIMEParams
+ else 
+  1 byte  - length (N)
+  N bytes - MIME Type (UTF-8 String)
 
-If compressed:
-2 bytes - base MIME type ID; index into lookup table; last bit is not
- part of the lookup index, and defines whether parameters are necessary.
-2 bytes - if parameters are expected, parameters ID (mostly charset= for
- text/ types; other types may define other parameters)
+If flags |= DBR: (not supported yet)
+ 4 bytes - period, in seconds
+ 4 bytes - offset, in seconds
 
-
-If DBR:
-4 bytes - period, in seconds
-4 bytes - offset, in seconds
-
-If has extra metadata fields:
-2 bytes - number of extra metadata fields
-
-For each:
-2 bytes - metadata field type
-1 byte - length
-N bytes - metadata field specific information
+If flags |= FLAGS_EXTRA_METADATA: (ignored)
+ 2 bytes - number of extra metadata fields
+  For each extra metadata field:
+   2 bytes - metadata field type
+   1 byte  - length
+   N bytes - metadata field specific information
 
 
-For a simple redirect:
-
-If bit 5 is set above:
-1 byte - length of binary key
-N bytes - binary key (this is just a compressed FreenetURI)
-Else:
-<fixed number yet to be determined> bytes - raw binary form of a CHK
+If (!(flags |= FLAGS_SPLITFILE) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST)):
+ If FLAGS_FULL_KEYS 
+  1 byte  - length of binary key
+  N bytes - binary key (this is just a compressed FreenetURI, see FreenetURI.java)
+ Else 
+  5+32+32 bytes - raw binary form of a CHK
 
 For a splitfile redirect:
 2 bytes - algorithm ID

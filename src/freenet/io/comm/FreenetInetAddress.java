@@ -369,6 +369,13 @@ public class FreenetInetAddress {
 		}
 	}
 
+	/**
+	 * Get a new <code>FreenetInetAddress</code> with host name removed.
+	 * 
+	 * @return a new <code>FreenetInetAddress</code> with host name removed; or {@code null} if no
+	 *         known ip address is associated with this object. You may want to do a
+	 *         <code>getAddress(true)</code> before calling this.
+	 */
 	public FreenetInetAddress dropHostname() {
 		if(_address == null) {
 			Logger.error(this, "Can't dropHostname() if no address!");

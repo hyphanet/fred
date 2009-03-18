@@ -113,4 +113,9 @@ public class SerialExecutor implements Executor {
 		return retval;
 	}
 
+	public int getWaitingThreadsCount() {
+		synchronized(jobs) {
+			return (waiting ? 1 : 0);
+		}
+	}
 }

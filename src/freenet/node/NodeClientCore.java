@@ -490,11 +490,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		toadletContainer = toadlets;
 		toadletContainer.setCore(this);
 		toadletContainer.setBucketFactory(tempBucketFactory);
-		if(toadletContainer.isEnabled()) {
-			toadletContainer.createFproxy();
-			toadletContainer.removeStartupToadlet();
-		}
-
 		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
 		OOMHandler.addOOMHook(this);
 	}
@@ -1295,6 +1290,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				return true;
 		}
 		return false;
+	}
+	
+	public File[] getAllowedUploadDirs() {
+		return uploadAllowedDirs;
 	}
 
 	public SimpleFieldSet persistThrottlesToFieldSet() {

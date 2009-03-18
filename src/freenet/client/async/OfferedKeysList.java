@@ -20,6 +20,7 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * All the keys at a given priority which we have received key offers from other nodes for.
@@ -39,7 +40,17 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	private final HashSet<Key> keys;
 	private final Vector<Key> keysList; // O(1) remove random element the way we use it, see chooseKey().
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 	private final RandomSource random;
 	private final short priorityClass;
 	private final NodeClientCore core;
@@ -53,13 +64,11 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		this.priorityClass = priorityClass;
 		this.core = core;
 		this.isSSK = isSSK;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	/** Called when a key is found, when it no longer belongs to this list etc. */
 	public synchronized void remove(Key key) {
 		assert(keysList.size() == keys.size());
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(keys.remove(key)) {
 			keysList.remove(key);
 			if(logMINOR) Logger.minor(this, "Found "+key+" , removing it "+" for "+this+" size now "+keysList.size());

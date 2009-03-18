@@ -567,6 +567,7 @@ public class FreenetURI implements Cloneable {
     /**
      * @deprecated Use {@link #toASCIIString()} instead
      */
+	@Deprecated
     public String toACIIString() {
         return toASCIIString();
     }
@@ -909,5 +910,17 @@ public class FreenetURI implements Cloneable {
 		long edition = Long.valueOf(docName.substring(offset + 1, docName.length()));
 
 		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
+	}
+	
+	public long getEdition() {
+		if(keyType.equalsIgnoreCase("USK"))
+			return suggestedEdition;
+		else if(keyType.equalsIgnoreCase("SSK")) {
+			if (!docName.matches(".*\\-[0-9]+")) /* Taken from uskForSSK, also modify there if necessary */
+				throw new IllegalStateException();
+			
+			return Long.valueOf(docName.substring(docName.lastIndexOf('-') + 1, docName.length()));
+		} else
+			throw new IllegalStateException();
 	}
 }

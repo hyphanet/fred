@@ -205,9 +205,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 			
-			Option sizeOption = config.get("node").getOption("outputBandwidthLimit");
+			@SuppressWarnings("unchecked")
+			Option<Integer> sizeOption = (Option<Integer>) config.get("node").getOption("outputBandwidthLimit");
 			if(!sizeOption.isDefault()) {
-				int current = (Integer)sizeOption.getValue();
+				int current = sizeOption.getValue();
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
 			}
 
@@ -245,9 +246,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
-			Option sizeOption = config.get("node").getOption("storeSize");
+			@SuppressWarnings("unchecked")
+			Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
 			if(!sizeOption.isDefault()) {
-				long current = (Long)sizeOption.getValue();
+				long current = sizeOption.getValue();
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
 			}
 			result.addChild("option", "value", "512M", "512MiB");

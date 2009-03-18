@@ -11,63 +11,59 @@ import java.util.NoSuchElementException;
  * TODO: there are still some unimplemented methods
  *       -- it remains to be seen if they are needed at all
  */
-public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
+public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> implements DoublyLinkedList<T> {
 
     protected int size;
-    protected DoublyLinkedListImpl.Item<T> _headptr, _tailptr;
+	protected T _firstItem, _lastItem;
 
-	@Override
-    public final DoublyLinkedListImpl<T> clone() {
-        return new DoublyLinkedListImpl<T>(this);
-    }
+	//@Override
+	//public final DoublyLinkedListImpl<T> clone() {
+	//    return new DoublyLinkedListImpl<T>(this);
+	//}
     
     /**
      * A new list with no items.
      */
     public DoublyLinkedListImpl() {
-        _headptr = new Item<T>();
-        _tailptr = new Item<T>();
-        _headptr.setParent(this);
-        _tailptr.setParent(this);
         clear();
     }
 
-    protected DoublyLinkedListImpl(DoublyLinkedListImpl.Item<T> _h, DoublyLinkedListImpl.Item<T> _t, int size) {
-        _headptr  = _h;
-        _tailptr  = _t;
-        _headptr.setParent(this);
-        _tailptr.setParent(this);
+	protected DoublyLinkedListImpl(T _h, T _t, int size) {
+		_firstItem = _h;
+		_lastItem = _t;
         
-        DoublyLinkedList.Item i = _headptr;
+        T i = _firstItem;
         while (i != null ) {
         	i.setParent(this);
-        	i = i.getNext();
+			i = i.getNext();
         }
         
         this.size = size;
     }
 
-
-    /**
-     * @param impl
-     */
-    protected DoublyLinkedListImpl(DoublyLinkedListImpl impl) {
-        this();
-        Enumeration<DoublyLinkedListImpl.Item<T>> e = impl.forwardElements();
-        boolean checked = false;
-        for(;e.hasMoreElements();) {
-            DoublyLinkedListImpl.Item<T> oi = e.nextElement();
-            DoublyLinkedList.Item<T> i = oi.clone();
-            if(!checked) {
-                checked = true;
-                if(!i.getClass().getName().equals(oi.getClass().getName())) {
-                    System.err.println("Clone constructor failed for "+oi+": "+i);
-                    new Exception("error").printStackTrace();
-                }
-            }
-            this.push(i);
-        }
-    }
+	//	/**
+	//	 * 
+	//	 * XXX: FIXME this doesn't really work. it use .clone() method
+	//	 * 
+	//	 * @param impl
+	//	 */
+	//    protected DoublyLinkedListImpl(DoublyLinkedListImpl<T> impl) {
+	//        this();
+	//        Enumeration<T> e = impl.forwardElements();
+	//        boolean checked = false;
+	//        for(;e.hasMoreElements();) {
+	//			DoublyLinkedListImpl.Item oi = (DoublyLinkedListImpl.Item) e.nextElement();
+	//			T i = (T) oi.clone();
+	//            if(!checked) {
+	//                checked = true;
+	//                if(!i.getClass().getName().equals(oi.getClass().getName())) {
+	//                    System.err.println("Clone constructor failed for "+oi+": "+i);
+	//                    new Exception("error").printStackTrace();
+	//                }
+	//            }
+	//            this.push(i);
+	//        }
+	//    }
 
     //=== DoublyLinkedList implementation ======================================
 
@@ -78,19 +74,22 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     	// Help to detect removal after clear().
     	// The check in remove() is enough, strictly,
     	// as long as people don't add elements afterwards.
-    	DoublyLinkedList.Item<T> pos = _headptr.next;
-    	DoublyLinkedList.Item<T> opos = _headptr;
+		if (_firstItem == null)
+			return;
+
+		T pos = _firstItem;
+		T opos;
+
     	while(true) {
-    		if(pos == _tailptr) break;
     		if(pos == null) break;
     		pos.setParent(null);
     		pos.setPrev(null);
     		opos = pos;
-    		pos = pos.getNext();
+			pos = pos.getNext();
     		opos.setNext(null);
     	}
-        _headptr.next = _tailptr;
-        _tailptr.prev = _headptr;
+
+		_firstItem = _lastItem = null;
         size = 0;
     }
 
@@ -98,6 +97,7 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
      * {@inheritDoc}
      */
     public final int size() {
+		assert size != 0 || (_firstItem == null && _lastItem == null);
         return size;
     }
 
@@ -105,6 +105,7 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
      * {@inheritDoc}
      */
     public final boolean isEmpty() {
+		assert size != 0 || (_firstItem == null && _lastItem == null);
         return size == 0;
     }
 
@@ -116,7 +117,7 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
         return forwardElements();
     }
 
-    public boolean contains(DoublyLinkedList.Item<T> item) {
+	public boolean contains(T item) {
     	for(T i : this) {
     		if(i == item)
     			return true;
@@ -127,15 +128,15 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     /**
      * {@inheritDoc}
      */
-    public final DoublyLinkedList.Item<T> head() {
-        return size == 0 ? null : _headptr.next;
+	public final T head() {
+		return size == 0 ? null : _firstItem;
     }
 
     /**
      * {@inheritDoc}
      */
-    public final DoublyLinkedList.Item<T> tail() {
-        return size == 0 ? null : _tailptr.prev;
+	public final T tail() {
+		return size == 0 ? null : _lastItem;
     }
 
 
@@ -143,41 +144,39 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     /**
      * {@inheritDoc}
      */
-    public final void unshift(DoublyLinkedList.Item<T> i) {
-        insertNext(_headptr, i);
+	public final void unshift(T i) {
+		insertNext(null, i);
     }
     
     /**
      * {@inheritDoc}
      */
-    public final DoublyLinkedList.Item<T> shift() {
-        return size == 0 ? null : remove(_headptr.next);
+	public final T shift() {
+		return size == 0 ? null : remove(_firstItem);
     }
     /**
      * {@inheritDoc}
      */
     public DoublyLinkedList<T> shift(int n) {
-
         if (n > size) n = size;
         if (n < 1) return new DoublyLinkedListImpl<T>();
 
-        DoublyLinkedList.Item<T> i = _headptr;
-        for (int m=0; m<n; ++m)
-            i = i.getNext();
+		T i = _firstItem;
+		for (int m = 0; m < n - 1; ++m)
+			i = i.getNext();
 
-        DoublyLinkedList.Item<T> j = i.getNext();
-        Item<T> newheadptr = new Item<T>();
-        Item<T> newtailptr = new Item<T>();
+		T newTailItem = i;
+		T newFirstItem = newTailItem.getNext();
+		newTailItem.setNext(null);
 
-        j.setPrev(newheadptr);
-        newheadptr.setNext(j);
+		DoublyLinkedList<T> newlist = new DoublyLinkedListImpl<T>(_firstItem, newTailItem, n);
 
-        i.setNext(newtailptr);
-        newtailptr.setPrev(i);
-
-        DoublyLinkedList<T> newlist = new DoublyLinkedListImpl<T>(_headptr, newtailptr, n);
-        _headptr = newheadptr;
-        _headptr.setParent(this);
+		if (newFirstItem != null) {
+			newFirstItem.setPrev(null);
+			_firstItem = newFirstItem;
+		} else {
+			_firstItem = _lastItem = null;
+		}
         size -= n;
         
         return newlist;
@@ -188,41 +187,39 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     /**
      * {@inheritDoc}
      */
-    public final void push(DoublyLinkedList.Item<T> i) {
-        insertPrev(_tailptr, i);
+	public final void push(T i) {
+		insertPrev(null, i);
     }
     
     /**
      * {@inheritDoc}
      */
-    public final DoublyLinkedList.Item<T> pop() {
-        return size == 0 ? null : remove(_tailptr.prev);
+	public final T pop() {
+		return size == 0 ? null : remove(_lastItem);
     }
+
     /**
      * {@inheritDoc}
      */
     public DoublyLinkedList<T> pop(int n) {
-
         if (n > size) n = size;
         if (n < 1) return new DoublyLinkedListImpl<T>();
 
-        DoublyLinkedList.Item<T> i = _tailptr;
-        for (int m=0; m<n; ++m)
-            i = i.getPrev();
+		T i = _lastItem;
+		for (int m = 0; m < n - 1; ++m)
+			i = i.getPrev();
 
-        DoublyLinkedList.Item<T> j = i.getPrev();
-        DoublyLinkedListImpl.Item<T> newtailptr = new Item<T>();
-        DoublyLinkedListImpl.Item<T> newheadptr = new Item<T>();
+		T newFirstItem = i;
+		T newLastItem = newFirstItem.getPrev();
+		newFirstItem.setPrev(null);
 
-        j.setNext(newtailptr);
-        newtailptr.setPrev(j);
-        newtailptr.setParent(this);
+		DoublyLinkedList<T> newlist = new DoublyLinkedListImpl<T>(newFirstItem, _lastItem, n);
 
-        i.setPrev(newheadptr);
-        newheadptr.setNext(i);
-
-        DoublyLinkedList<T> newlist = new DoublyLinkedListImpl<T>(newheadptr, _tailptr, n);
-        _tailptr = newtailptr;
+		if (newLastItem != null) {
+			newLastItem.setNext(null);
+			_lastItem = newLastItem;
+		} else
+			_firstItem = _lastItem = null;
         size -= n;
         
         return newlist;
@@ -233,30 +230,30 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     /**
      * {@inheritDoc}
      */
-    public final boolean hasNext(DoublyLinkedList.Item<T> i) {
-        DoublyLinkedList.Item<T> next = i.getNext();
-        return (next != null) && (next != _tailptr);
+	public final boolean hasNext(T i) {
+		T next = i.getNext();
+		return next != null;
     }
     /**
      * {@inheritDoc}
      */
-    public final boolean hasPrev(DoublyLinkedList.Item<T> i) {
-        DoublyLinkedList.Item<T> prev = i.getPrev();
-        return (prev != null) && (prev != _headptr);
+	public final boolean hasPrev(T i) {
+		T prev = i.getPrev();
+		return prev != null;
     }
     /**
      * {@inheritDoc}
      */
-    public final DoublyLinkedList.Item<T> next(DoublyLinkedList.Item<T> i) {
-        DoublyLinkedList.Item<T> next = i.getNext();
-        return next == _tailptr ? null : next;
+	public final T next(T i) {
+		T next = i.getNext();
+		return next;
     }
     /**
      * {@inheritDoc}
      */
-    public final DoublyLinkedList.Item<T> prev(DoublyLinkedList.Item<T> i) {
-        DoublyLinkedList.Item<T> prev = i.getPrev();
-        return prev == _headptr ? null : prev;
+	public final T prev(T i) {
+		T prev = i.getPrev();
+		return prev;
     }
 
 
@@ -265,22 +262,34 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     /**
      * {@inheritDoc}
      */
-    public DoublyLinkedList.Item<T> remove(DoublyLinkedList.Item<T> i) {
+	public T remove(T i) {
     	if (i.getParent() == null || isEmpty())
 			return null; // not in list
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
-        DoublyLinkedList.Item<T> next = i.getNext(), prev = i.getPrev();
-        if ((next == null) && (prev == null)) return null;  // not in the list
-        if ((next == null) || (prev == null))
-        	throw new NullPointerException("next="+next+", prev="+prev); // partially in the list?!
-        if((next.getPrev() != i) || (prev.getNext() != i)) {
-        	String msg = "Illegal ERROR: i="+i+", next="+next+", next.prev="+next.getPrev()+", prev="+prev+", prev.next="+prev.getNext();
-        	Logger.error(this, msg);
-        	throw new IllegalStateException(msg);
+
+		T next = i.getNext();
+		T prev = i.getPrev();
+
+		if ((next == null) && (prev == null)) // only item in list
+			assert size == 1;
+
+		if (next == null) { // last item
+			assert _lastItem == i;
+			_lastItem = prev;
+		} else {
+			assert next.getPrev() == i;
+			next.setPrev(prev);
+		}
+
+		if (prev == null) { // first item
+			assert _firstItem == i;
+			_firstItem = next;
+		} else {
+			assert prev.getNext() == i;
+			prev.setNext(next);
         }
-        prev.setNext(next);
-        next.setPrev(prev);
+
         i.setNext(null);
         i.setPrev(null);
         --size;
@@ -291,45 +300,87 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     /**
      * {@inheritDoc}
      */
-    public void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j) {
-    	if (i.getParent() == null)
-    		throw new PromiscuousItemException(i, i.getParent()); // different trace to make easier debugging
-    	if (i.getParent() != this)
-    		throw new PromiscuousItemException(i, i.getParent());
+	public void insertPrev(T i, T j) {
     	if (j.getParent() != null)
     		throw new PromiscuousItemException(j, j.getParent());
         if ((j.getNext() != null) || (j.getPrev() != null))
             throw new PromiscuousItemException(j);
-        DoublyLinkedList.Item<T> prev = i.getPrev();
-        if (prev == null)
-            throw new VirginItemException(i);
-        prev.setNext(j);
-        j.setPrev(prev);
-        i.setPrev(j);
-        j.setNext(i);
-        j.setParent(this);
-        ++size;
+
+		if (i == null) {
+			// insert as tail
+			j.setPrev(_lastItem);
+			j.setNext(null);
+			j.setParent(this);
+			if (_lastItem != null) {
+				_lastItem.setNext(j);
+				_lastItem = j;
+			} else {
+				_firstItem = _lastItem = j;
+			}
+
+			++size;
+		} else {
+			// insert in middle
+			if (i.getParent() == null)
+				throw new PromiscuousItemException(i, i.getParent()); // different trace to make easier debugging
+			if (i.getParent() != this)
+				throw new PromiscuousItemException(i, i.getParent());
+			T prev = i.getPrev();
+			if (prev == null) {
+				if (i != _firstItem)
+					throw new VirginItemException(i);
+				_firstItem = j;
+			} else
+				prev.setNext(j);
+			j.setPrev(prev);
+			i.setPrev(j);
+			j.setNext(i);
+			j.setParent(this);
+
+			++size;
+		}
     }
 
     /**
      * {@inheritDoc}
      */
-    public void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j) {
-    	if (i.getParent() != this)
-    		throw new PromiscuousItemException(i, i.getParent());
+	public void insertNext(T i, T j) {
     	if (j.getParent() != null)
     		throw new PromiscuousItemException(j, i.getParent());
         if ((j.getNext() != null) || (j.getPrev() != null))
             throw new PromiscuousItemException(j);
-        DoublyLinkedList.Item next = i.getNext();
-        if (next == null)
-            throw new VirginItemException(i);
-        next.setPrev(j);
-        j.setNext(next);
-        i.setNext(j);
-        j.setPrev(i);
-        j.setParent(this);
-        ++size;
+
+		if (i == null) {
+			// insert as head
+			j.setPrev(null);
+			j.setNext(_firstItem);
+			j.setParent(this);
+
+			if (_firstItem != null) {
+				_firstItem.setPrev(j);
+				_firstItem = j;
+			} else {
+				_firstItem = _lastItem = j;
+			}
+
+			++size;
+		} else {
+			if (i.getParent() != this)
+				throw new PromiscuousItemException(i, i.getParent());
+			T next = i.getNext();
+			if (next == null) {
+				if (i != _lastItem)
+					throw new VirginItemException(i);
+				_lastItem = j;
+			} else
+				next.setPrev(j);
+			j.setNext(next);
+			i.setNext(j);
+			j.setPrev(i);
+			j.setParent(this);
+
+			++size;
+		}
     }
 
     //=== Walkable implementation ==============================================
@@ -348,83 +399,84 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
         return new ReverseWalker();
     }
 
-    private class ForwardWalker<T extends DoublyLinkedListImpl.Item<T>> implements Enumeration<DoublyLinkedList.Item<T>> {
-        protected DoublyLinkedList.Item<T> next;
+	private class ForwardWalker implements Enumeration<T> {
+		protected T next;
         protected ForwardWalker() {
-            next = _headptr.getNext();
-        }
-        protected ForwardWalker(DoublyLinkedList.Item<T> startAt,
-                                boolean inclusive) {
-            next = (inclusive ? startAt : startAt.getNext());
+			next = _firstItem;
         }
         public final boolean hasMoreElements() {
-            return next != _tailptr;
+			return next != null;
         }
-        public DoublyLinkedList.Item<T> nextElement() {
-            if (next == _tailptr)
+
+		public T nextElement() {
+			if (next == null)
                 throw new NoSuchElementException();
-            DoublyLinkedList.Item<T> result = next;
+			T result = next;
             next = next.getNext();
-            return result;
+			return result;
         }
     }
 
-    private class ReverseWalker<T extends DoublyLinkedList.Item<T>> implements Enumeration<DoublyLinkedList.Item<T>> {
-        protected DoublyLinkedList.Item<T> next;
+	private class ReverseWalker implements Enumeration<T> {
+		protected T next;
         protected ReverseWalker() {
-            next = _tailptr.getPrev();
-        }
-        protected ReverseWalker(DoublyLinkedList.Item<T> startAt,
-                                boolean inclusive) {
-            next = (inclusive ? startAt : startAt.getPrev());
+			next = _lastItem;
         }
         public final boolean hasMoreElements() {
-            return next != _headptr;
+			return next != null;
         }
-        public DoublyLinkedList.Item<T> nextElement() {
-            if (next == _headptr)
+
+		public T nextElement() {
+			if (next == null)
                 throw new NoSuchElementException();
-            DoublyLinkedList.Item<T> result = next;
+			T result = next;
 	    if(next == null) throw new IllegalStateException("next==null");
             next = next.getPrev();
-            return result;
+			return result;
         }
     }
 
 
     //=== list element ====================================================
 
-    public static class Item<T> implements DoublyLinkedList.Item<T> {
-        private DoublyLinkedList.Item<T> prev;
-        private DoublyLinkedList.Item<T> next;
-        private DoublyLinkedList list;
-		@Override
-        public DoublyLinkedList.Item<T> clone() {
-            if(getClass() != Item.class)
-                throw new RuntimeException("Must implement clone() for "+getClass());
-            return new Item<T>();
-        }
-        public final DoublyLinkedList.Item getNext() {
+	public static class Item<T extends DoublyLinkedListImpl.Item<?>> implements DoublyLinkedList.Item<T> {
+		private T prev;
+		private T next;
+		private DoublyLinkedList<? super T> list;
+
+		//		@Override
+		//		public T clone() {
+		//            if(getClass() != Item.class)
+		//                throw new RuntimeException("Must implement clone() for "+getClass());
+		//			return (T) new Item<T>();
+		//        }
+
+		public final T getNext() {
             return next;
         }
-        public final DoublyLinkedList.Item setNext(DoublyLinkedList.Item<T> i) {
-            DoublyLinkedList.Item<T> old = next;
-            next = i;
+
+		public final T setNext(DoublyLinkedList.Item<?> i) {
+			T old = next;
+			next = (T) i;
             return old;
         }
-        public final DoublyLinkedList.Item getPrev() {
+
+		public final T getPrev() {
             return prev;
         }
-        public final DoublyLinkedList.Item setPrev(DoublyLinkedList.Item<T> i) {
-            DoublyLinkedList.Item<T> old = prev;
-            prev = i;
+
+		public final T setPrev(DoublyLinkedList.Item<?> i) {
+			T old = prev;
+			prev = (T) i;
             return old;
         }
-		public DoublyLinkedList getParent() {
+
+		public DoublyLinkedList<? super T> getParent() {
 			return list;
 		}
-		public DoublyLinkedList setParent(DoublyLinkedList<T> l) {
-			DoublyLinkedList old = list;
+
+		public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
+			DoublyLinkedList<? super T> old = list;
 			list = l;
 			return old;
 		}

@@ -32,6 +32,7 @@ import java.util.List;
 import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Serializer;
 import freenet.support.ShortBuffer;
 
@@ -43,6 +44,17 @@ import freenet.support.ShortBuffer;
 public class Message {
 
     public static final String VERSION = "$Id: Message.java,v 1.11 2005/09/15 18:16:04 amphibian Exp $";
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 
 	private final MessageType _spec;
 	private final WeakReference<? extends PeerContext> _sourceRef;
@@ -59,13 +71,12 @@ public class Message {
 	
 	private static Message decodeMessage(ByteBufferInputStream bb, PeerContext peer, int recvByteCount,
 	        boolean mayHaveSubMessages, boolean inSubMessage) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, Message.class);
 		MessageType mspec;
         try {
             mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()));
         } catch (IOException e1) {
-        	if(Logger.shouldLog(Logger.DEBUG, Message.class))
-        		Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
+        	if(logDEBUG)
+        		Logger.debug(Message.class,"Failed to read message type: "+e1, e1);
             return null;
         }
         if (mspec == null) {
@@ -214,8 +225,8 @@ public class Message {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
-    	if(Logger.shouldLog(Logger.DEBUG, Message.class))
-    		Logger.minor(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
+    	if(logDEBUG)
+    		Logger.debug(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
@@ -243,8 +254,8 @@ public class Message {
 		}
 		
 		byte[] buf = baos.toByteArray();
-    	if(Logger.shouldLog(Logger.DEBUG, Message.class))
-    		Logger.minor(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
+    	if(logDEBUG)
+    		Logger.debug(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
 		return buf;
 	}
 

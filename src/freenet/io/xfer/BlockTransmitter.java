@@ -37,7 +37,6 @@ import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
-import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author ian

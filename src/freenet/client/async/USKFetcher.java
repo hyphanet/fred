@@ -18,6 +18,7 @@ import freenet.keys.KeyDecodeException;
 import freenet.keys.USK;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
@@ -64,8 +65,17 @@ import freenet.support.io.BucketTools;
  * - Passive requests (when we have passive requests).
  */
 public class USKFetcher implements ClientGetState {
+    private static volatile boolean logMINOR;
 
-	private static boolean logMINOR;
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(Logger.MINOR, this);
+            }
+        });
+    }
 	
 	/** USK manager */
 	private final USKManager uskManager;
@@ -232,11 +242,9 @@ public class USKFetcher implements ClientGetState {
 		this.ctx = ctx;
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	void onDNF(USKAttempt att, ClientContext context) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "DNF: "+att);
 		boolean finished = false;
 		long curLatest = uskManager.lookup(origUSK);
@@ -313,7 +321,6 @@ public class USKFetcher implements ClientGetState {
 	}
 
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block, final ClientContext context) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		LinkedList<USKAttempt> l = null;
 		final long lastEd = uskManager.lookup(origUSK);
 		long curLatest;

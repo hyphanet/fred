@@ -444,6 +444,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(persistent) container.store(this);
 					return;
 				}
+				metadataBucket.free();
 				continue;
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");

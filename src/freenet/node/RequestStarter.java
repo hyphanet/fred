@@ -15,6 +15,7 @@ import freenet.support.RandomGrabArrayItem;
 import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.TokenBucket;
 import freenet.support.math.RunningAverage;
+import freenet.support.LogThresholdCallback;
 
 /**
  * Starts requests.
@@ -23,6 +24,15 @@ import freenet.support.math.RunningAverage;
  * clients on the same priority level.
  */
 public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionList {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	/*
 	 * Priority classes
@@ -115,7 +125,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				}
 				continue;
 			}
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) {
 				req = sched.grabRequest();
 			}
@@ -234,7 +243,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				else
 					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");
 			}
-			if(Logger.shouldLog(Logger.MINOR, this)) 
+			if(logMINOR) 
 				Logger.minor(this, "Finished "+req);
 			} finally {
 				if(key != null) sched.removeFetchingKey(key);
