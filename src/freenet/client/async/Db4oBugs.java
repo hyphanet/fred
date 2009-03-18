@@ -17,20 +17,25 @@ public class Db4oBugs {
 		query.constrain(HasKeyListener.class);
 		return query.execute();
 	}
-	
-	/* This one needs to be worked around in the code:
-	 * Storing an object containing a HashMap without storing the HashMap first results
-	 * in the HashMap being stored empty. After restart, loading it gives an empty
-	 * HashMap. This causes all manner of problems! Look at SVN r26092: manifestElements
-	 * (a HashMap, in this case a derivative of HashMap for debugging purposes, which
-	 * is part of ClientPutDir, and can contain other HashMap's) becomes empty on shutdown,
-	 * even though it was full in objectCanNew(), objectOnNew(), and 
-	 * objectCanUpdate/objectOnUpdate (which don't get called since changing the store 
-	 * depth in FCPClient). To reproduce simply start the node, start an insert for a
-	 * small directory, shutdown the node after a few seconds, start it back up. Hook
-	 * into e.g. ClientPutDir.receive() (or wait for freeData(), which is where it 
-	 * matters). Even when it is activated, it is empty. */
 
+	/* http://tracker.db4o.com/browse/COR-1436
+	 * ArrayList's etc must be stored with:
+	 * 
+	 * container.ext().store(list, 2)
+	 * 
+	 * Otherwise everything contained in the arraylist is updated to depth 3, which
+	 * is not usually what we want, and can be catastrophic due to storing deactivated
+	 * objects and/or using up lots of memory. */
+	
+	/* http://tracker.db4o.com/browse/COR-1582
+	 * Never activate a HashMap to depth 1. This will not only result in its being 
+	 * empty, but activating it to depth 2 and thus loading its elements will not be 
+	 * possible unless you deactivate it first. Combined with the previous bug this
+	 * can cause *really* annoying bugs: maps apparently spontaneously clearing 
+	 * themselves, actual cause was it was accidentally activated to depth 1, and then
+	 * was accidentally stored by e.g. being moved from one ArrayList to another with
+	 * the previous bug. */
+	
 	/* We are using an oldish version of db4o 7.4 in ext #26 because the newer versions,
 	 * e.g. in ext-27pre2, have *really* horrible bugs - all sorts of wierd things 
 	 * happen with them, the FEC object duplication bug happens with File's as well, 
