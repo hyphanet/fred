@@ -310,8 +310,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler, ObjectContainer container) {
 		FCPMessage msg;
-		if(persistenceType == PERSIST_FOREVER)
+		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(client, 1);
+			container.activate(generatedURI, 5);
+		}
 		synchronized(this) {
 			msg = new URIGeneratedMessage(generatedURI, identifier, isGlobalQueue());
 		}
@@ -377,9 +379,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(persistenceType == PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
 			return;
-		}
-		if(persistenceType == PERSIST_FOREVER) {
-			container.activate(this, 2);
 		}
 		if(includePersistentRequest) {
 			FCPMessage msg = persistentTagMessage(container);
