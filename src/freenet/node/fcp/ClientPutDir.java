@@ -24,6 +24,7 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -39,8 +40,50 @@ public class ClientPutDir extends ClientPutBase {
 	private final String defaultName;
 	private final long totalSize;
 	private final int numberOfFiles;
-	private static boolean logMINOR;
 	private final boolean wasDiskPut;
+	
+	@SuppressWarnings("serial")
+	static class MyHashMap extends HashMap<String, Object> {
+		public boolean objectCanUpdate(ObjectContainer container) {
+			if(logMINOR)
+				Logger.minor(this, "objectCanUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+			return true;
+		}
+		
+		public boolean objectCanNew(ObjectContainer container) {
+			if(logMINOR)
+				Logger.minor(this, "objectCanNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+			return true;
+		}
+		
+		public void objectOnUpdate(ObjectContainer container) {
+			if(logMINOR)
+				Logger.minor(this, "objectOnUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+		}
+		
+		public void objectOnNew(ObjectContainer container) {
+			if(logMINOR)
+				Logger.minor(this, "objectOnNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+		}
+		
+		public void objectOnActivate(ObjectContainer container) {
+			if(logMINOR)
+				Logger.minor(this, "objectOnActivate() on HashMap for ClientPutDir stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
+		}
+		
+	}
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
 			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException {
@@ -52,35 +95,7 @@ public class ClientPutDir extends ClientPutBase {
 		
 		// objectOnNew is called once, objectOnUpdate is never called, yet manifestElements get blanked anyway!
 		
-		this.manifestElements = new HashMap<String, Object>() {
-			public boolean objectCanUpdate(ObjectContainer container) {
-				if(logMINOR)
-					Logger.minor(this, "objectCanUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-				return true;
-			}
-			
-			public boolean objectCanNew(ObjectContainer container) {
-				if(logMINOR)
-					Logger.minor(this, "objectCanNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-				return true;
-			}
-			
-			public void objectOnUpdate(ObjectContainer container) {
-				if(logMINOR)
-					Logger.minor(this, "objectOnUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-			}
-			
-			public void objectOnNew(ObjectContainer container) {
-				if(logMINOR)
-					Logger.minor(this, "objectOnNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-			}
-			
-			public void objectOnActivate(ObjectContainer container) {
-				if(logMINOR)
-					Logger.minor(this, "objectOnActivate() on HashMap for ClientPutDir stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-			}
-			
-		};
+		this.manifestElements = new MyHashMap();
 		this.manifestElements.putAll(manifestElements);
 		
 //		this.manifestElements = manifestElements;
@@ -287,7 +302,12 @@ public class ClientPutDir extends ClientPutBase {
 	protected void freeData(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "freeData() on "+this+" persistence type = "+persistenceType);
 		synchronized(this) {
-			if(manifestElements == null) return;
+			if(manifestElements == null) {
+				if(logMINOR)
+					Logger.minor(this, "manifestElements = "+manifestElements +
+							(persistenceType != PERSIST_FOREVER ? "" : (" dir.active="+container.ext().isActive(this))), new Exception("error"));
+				return;
+			}
 		}
 		if(logMINOR) Logger.minor(this, "freeData() more on "+this+" persistence type = "+persistenceType);
 		// We have to commit everything, so activating everything here doesn't cost us much memory...?
@@ -441,7 +461,6 @@ public class ClientPutDir extends ClientPutBase {
 	
 	@Override
 	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(putter, 1);
 			putter.removeFrom(container, context);
