@@ -121,8 +121,10 @@ public class FCPClient {
 				completedUnackedRequests.add(get);
 				if(container != null) {
 					container.store(get);
-					container.store(runningPersistentRequests);
-					container.store(completedUnackedRequests);
+					// http://tracker.db4o.com/browse/COR-1436
+					// If we don't specify depth, we end up updating everything, resulting in Bad Things (especially on ClientPutDir.manifestElements!)
+					container.ext().store(runningPersistentRequests, 2);
+					container.ext().store(completedUnackedRequests, 2);
 				}
 			}	
 		}
