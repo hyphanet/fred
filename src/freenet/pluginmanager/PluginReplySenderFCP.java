@@ -22,9 +22,11 @@ public class PluginReplySenderFCP extends PluginReplySender {
 	}
 
 	@Override
-	public void send(SimpleFieldSet params, Bucket bucket) {
+	public void send(SimpleFieldSet params, Bucket bucket) throws PluginNotFoundException {
+		// like in linux everthing is a file, in Plugintalker everything is a plugin. So it throws PluginNotFoundException
+		// instead fcp connection errors 
+		if (handler.isClosed()) throw new PluginNotFoundException("FCP connection closed");
 		FCPPluginReply reply = new FCPPluginReply(pluginname, identifier, params, bucket);
 		handler.outputHandler.queue(reply);
 	}
-
 }
