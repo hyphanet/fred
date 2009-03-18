@@ -26,7 +26,7 @@ public class SimpleProgressMessage extends FCPMessage {
 		fs.put("Required", event.minSuccessfulBlocks);
 		fs.put("Failed", event.failedBlocks);
 		fs.put("FatallyFailed", event.fatallyFailedBlocks);
-		fs.put("Succeeded",event.fetchedBlocks);
+		fs.put("Succeeded",event.succeedBlocks);
 		fs.put("FinalizedTotal", event.finalizedTotal);
 		fs.putSingle("Identifier", ident);
 		if(global) fs.putSingle("Global", "true");
@@ -44,7 +44,7 @@ public class SimpleProgressMessage extends FCPMessage {
 	}
 
 	public double getFraction() {
-		return (double) event.fetchedBlocks / (double) event.totalBlocks;
+		return (double) event.succeedBlocks / (double) event.totalBlocks;
 	}
 	
 	public double getMinBlocks() {
@@ -56,7 +56,7 @@ public class SimpleProgressMessage extends FCPMessage {
 	}
 	
 	public double getFetchedBlocks(){
-		return event.fetchedBlocks;
+		return event.succeedBlocks;
 	}
 	
 	public double getFailedBlocks(){
