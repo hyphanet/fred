@@ -17,5 +17,18 @@ public class Db4oBugs {
 		query.constrain(HasKeyListener.class);
 		return query.execute();
 	}
+	
+	/* This one needs to be worked around in the code:
+	 * Storing an object containing a HashMap without storing the HashMap first results
+	 * in the HashMap being stored empty. After restart, loading it gives an empty
+	 * HashMap. This causes all manner of problems! Look at SVN r26092: manifestElements
+	 * (a HashMap, in this case a derivative of HashMap for debugging purposes, which
+	 * is part of ClientPutDir, and can contain other HashMap's) becomes empty on shutdown,
+	 * even though it was full in objectCanNew(), objectOnNew(), and 
+	 * objectCanUpdate/objectOnUpdate (which don't get called since changing the store 
+	 * depth in FCPClient). To reproduce simply start the node, start an insert for a
+	 * small directory, shutdown the node after a few seconds, start it back up. Hook
+	 * into e.g. ClientPutDir.receive() (or wait for freeData(), which is where it 
+	 * matters). Even when it is activated, it is empty. */
 
 }
