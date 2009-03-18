@@ -493,6 +493,10 @@ public abstract class ClientRequest {
 		}
 		return true;
 	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(this);
+	}
 	
 	
 }

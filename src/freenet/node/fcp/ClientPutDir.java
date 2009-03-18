@@ -23,6 +23,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
+import freenet.client.events.ClientEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -467,5 +468,25 @@ public class ClientPutDir extends ClientPutBase {
 			putter = null;
 		}
 		super.requestWasRemoved(container, context);
+	}
+	
+	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
+		// FIXME get rid when sure evilbug has gone away
+		container.activate(manifestElements, 2);
+		super.receive(ce, container, context);
+	}
+	
+	public void storeTo(ObjectContainer container) {
+		/** 
+		 * After days debugging ... it turns out that db4o has severe problems if you
+		 * store() an object containing a HashMap without store()ing the HashMap itself
+		 * first!
+		 */
+		boolean isStored = container.ext().isStored(this);
+		if(!isStored) {
+			if(logMINOR) Logger.minor(this, "Manifest elements: "+manifestElements.size()+" : "+manifestElements);
+			container.store(manifestElements);
+		}
+		super.storeTo(container);
 	}
 }

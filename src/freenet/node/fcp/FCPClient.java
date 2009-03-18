@@ -196,8 +196,8 @@ public class FCPClient {
 				runningPersistentRequests.add(cg);
 				if(startLater) toStart.add(cg);
 				if(container != null) {
-					container.store(cg);
-					container.store(runningPersistentRequests);
+					cg.storeTo(container);
+					container.ext().store(runningPersistentRequests, 2);
 					if(startLater) container.store(toStart);
 				}
 			}
@@ -218,6 +218,8 @@ public class FCPClient {
 		}
 		synchronized(this) {
 			req = clientRequestsByIdentifier.get(identifier);
+//			if(container != null && req != null)
+//				container.activate(req, 1);
 			boolean removedFromRunning = false;
 			if(req == null) {
 				for(ClientRequest r : completedUnackedRequests) {
