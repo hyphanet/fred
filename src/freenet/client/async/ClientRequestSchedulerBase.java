@@ -23,6 +23,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
@@ -37,6 +38,18 @@ import freenet.support.SortedVectorByNumber;
  */
 abstract class ClientRequestSchedulerBase {
 	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	/** Minimum number of retries at which we start to hold it against a request.
 	 * See the comments on fixRetryCount; we don't want many untried requests to prevent
 	 * us from trying requests which have only been tried once (e.g. USK checkers), from 
@@ -44,8 +57,6 @@ abstract class ClientRequestSchedulerBase {
 	 * the request has been tried many times already). */
 	private static final int MIN_RETRY_COUNT = 3;
 
-	private static boolean logMINOR;
-	
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
 	
@@ -69,7 +80,6 @@ abstract class ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		keyListeners = new HashSet<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 	}
 	
 	/**

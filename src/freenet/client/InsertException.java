@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 public class InsertException extends Exception {
@@ -25,11 +26,23 @@ public class InsertException extends Exception {
 		return mode;
 	}
 	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	public InsertException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
 		extra = msg;
 		mode = m;
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
 		this.uri = expectedURI;
@@ -39,7 +52,7 @@ public class InsertException extends Exception {
 		super(getMessage(m));
 		extra = null;
 		mode = m;
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		errorCodes = null;
 		this.uri = expectedURI;
@@ -48,7 +61,7 @@ public class InsertException extends Exception {
 	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
 		extra = e.getMessage();
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
@@ -60,7 +73,7 @@ public class InsertException extends Exception {
 		super(getMessage(mode));
 		extra = null;
 		this.mode = mode;
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;

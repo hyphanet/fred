@@ -8,6 +8,7 @@ import freenet.client.async.ClientRequester;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -58,6 +59,18 @@ public abstract class ClientRequest {
 		return hashCode;
 	}
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
 		int hash = super.hashCode();
@@ -211,7 +224,6 @@ public abstract class ClientRequest {
 	}
 
 	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server, ObjectContainer container, ClientContext context) throws IOException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequest.class);
 		Runtime rt = Runtime.getRuntime();
 		if(logMINOR)
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use before loading request");
@@ -409,7 +421,7 @@ public abstract class ClientRequest {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.store(this);
 			container.commit(); // commit before we send the message
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+			if(logMINOR) Logger.minor(this, "COMMITTED");
 		}
 
 		// this could become too complex with more parameters, but for now its ok

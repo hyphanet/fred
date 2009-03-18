@@ -23,6 +23,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.node.SendableRequestItem;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.RandomGrabArray;
@@ -39,11 +40,22 @@ import freenet.support.io.NativeThread;
  */
 class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements KeysFetchingLocally {
 	
-	private static boolean logMINOR;
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
 	final PersistentCooldownQueue persistentCooldownQueue;
 	private transient long initTime;
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	/**
 	 * All Key's we are currently fetching. 
@@ -114,7 +126,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			selectorContainer.store(core);
 			System.err.println("Created new core...");
 		}
-		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
 		core.onStarted(selectorContainer, cooldownTime, sched, context);
 		return core;
 	}

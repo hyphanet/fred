@@ -10,6 +10,7 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.keys.FreenetURI;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -19,6 +20,18 @@ import freenet.support.io.NativeThread;
 
 class ArchiveHandlerImpl implements ArchiveHandler {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	private final FreenetURI key;
 	private boolean forceRefetchArchive;
 	ARCHIVE_TYPE archiveType;
@@ -45,7 +58,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		Bucket data;
 		
 		// Fetch from cache
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
@@ -108,14 +121,13 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	private static void runPersistentOffThread(final ArchiveExtractTag tag, final ClientContext context, final ArchiveManager manager, final BucketFactory bf) {
 		final ProxyCallback proxyCallback = new ProxyCallback();
 		
-		if(Logger.shouldLog(Logger.MINOR, ArchiveHandlerImpl.class))
+		if(logMINOR)
 			Logger.minor(ArchiveHandlerImpl.class, "Scheduling off-thread extraction: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback, new Exception("debug"));
 		
 		context.mainExecutor.execute(new Runnable() {
 
 			public void run() {
 				try {
-					final boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 					if(logMINOR)
 						Logger.minor(this, "Extracting off-thread: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
 					tag.handler.extractToCache(tag.data, tag.actx, tag.element, proxyCallback, manager, null, context);
