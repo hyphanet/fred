@@ -155,6 +155,12 @@ class SingleFileInserter implements ClientPutState {
 			Logger.error(this, "Already cancelled, not starting");
 			return;
 		}
+		if(persistent) container.activate(block, 1);
+		if(freeData && output.bestCodec != null) {
+			block.getData().free();
+			if(persistent) block.getData().removeFrom(container);
+			block.nullData();
+		}
 		try {
 			onCompressedInner(output, container, context);
 		} catch (InsertException e) {
