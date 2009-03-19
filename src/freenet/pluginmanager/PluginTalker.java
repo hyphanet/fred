@@ -59,7 +59,7 @@ public class PluginTalker {
 				try {
 					plugin.handle(replysender, plugparams, data2, access);
 				} catch (Throwable t) {
-					Logger.error(this, "Cought error while execute fcp plugin handler" + t.getMessage(), t);
+					Logger.error(this, "Cought error while execute fcp plugin handler: " + t.getMessage(), t);
 				}
 
 			}
