@@ -22,24 +22,21 @@ public class PluginTalker {
 
 	protected FredPluginFCP plugin;
 	protected String pluginName;
-	protected String connectionIdentifier;
 
-	public PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String identifier2) throws PluginNotFoundException {
+	public PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String connectionIdentifier) throws PluginNotFoundException {
 		node = node2;
 		pluginName = pluginname2;
-		connectionIdentifier = identifier2;
 		plugin = findPlugin(pluginname2);
 		access = FredPluginFCP.ACCESS_DIRECT;
-		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, identifier2);
+		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, connectionIdentifier);
 	}
 
-	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String identifier2, boolean access2) throws PluginNotFoundException {
+	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String connectionIdentifier, boolean access2) throws PluginNotFoundException {
 		node = node2;
 		pluginName = pluginname2;
-		connectionIdentifier = identifier2;
 		plugin = findPlugin(pluginname2);
 		access = access2 ? FredPluginFCP.ACCESS_FCP_FULL : FredPluginFCP.ACCESS_FCP_RESTRICTED;
-		replysender = new PluginReplySenderFCP(handler, pluginname2, identifier2);
+		replysender = new PluginReplySenderFCP(handler, pluginname2, connectionIdentifier);
 	}
 	
 	protected FredPluginFCP findPlugin(String pluginname2) throws PluginNotFoundException {
@@ -67,34 +64,4 @@ public class PluginTalker {
 
 	}
 
-	public static class Result {
-		public SimpleFieldSet params;
-		public Bucket data;
-		
-		public Result(SimpleFieldSet myParams, Bucket myData) {
-			params = myParams;
-			data = myData;
-		}
-	}
-
-	/**
-	 * Sends a FCP message and blocks execution until the answer was received and then returns the answer.
-	 * This can be used to simplify code which uses FCP very much, especially UI code which needs the result of FCP calls directly.
-	 * 
-	 * When using sendBlocking(), please make sure that you only ever call it for FCP functions which only send() a single result!
-	 * Results which are sent by the plugin after the first result are dispatched to the asynchronous onReply() function of your
-	 * FredPluginTalker, however this behavior is deprecated and not guranteed to work.
-	 */
-	public Result sendBlocking(final SimpleFieldSet plugparams, final Bucket data2) {
-		final PluginReplySenderBlocking replySender = new PluginReplySenderBlocking(pluginName, connectionIdentifier);
-		
-		node.executor.execute(new Runnable() {
-
-			public void run() {
-				plugin.handle(replySender, plugparams, data2, access);
-			}
-		}, "PluginTalkerBlocking " + connectionIdentifier);
-		
-		return replySender.getResult();
-	}
 }
