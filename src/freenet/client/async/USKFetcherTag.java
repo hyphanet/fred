@@ -36,8 +36,9 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	private short pollingPriorityNormal;
 	private short pollingPriorityProgress;
 	private boolean finished;
+	private final boolean ownFetchContext;
 	
-	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token) {
+	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext) {
 		this.nodeDBHandle = nodeDBHandle;
 		this.callback = callback;
 		this.origUSK = origUSK;
@@ -46,6 +47,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		this.ctx = ctx;
 		this.keepLastData = keepLastData;
 		this.token = token;
+		this.ownFetchContext = hasOwnFetchContext;
 		pollingPriorityNormal = callback.getPollingPriorityNormal();
 		pollingPriorityProgress = callback.getPollingPriorityProgress();
 		priority = pollingPriorityNormal;
@@ -65,8 +67,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	 * @return
 	 */
 	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, 
-			ObjectContainer container, FetchContext ctx, boolean keepLast, int token) {
-		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, container, ctx, keepLast, token);
+			ObjectContainer container, FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext) {
+		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, container, ctx, keepLast, token, hasOwnFetchContext);
 		if(persistent) container.store(tag);
 		return tag;
 	}
@@ -207,6 +209,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(origUSK, 5);
 		origUSK.removeFrom(container);
+		if(ownFetchContext) {
+			container.activate(ctx, 1);
+			ctx.removeFrom(container);
+		}
 		container.delete(this);
 	}
 	

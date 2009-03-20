@@ -78,8 +78,8 @@ public class USKManager implements RequestClient {
 	}
 
 	public USKFetcherTag getFetcher(USK usk, FetchContext ctx, boolean keepLast, boolean persistent, 
-			USKFetcherCallback callback, ObjectContainer container, ClientContext context) {
-		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0);
+			USKFetcherCallback callback, boolean ownFetchContext, ObjectContainer container, ClientContext context) {
+		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0, ownFetchContext);
 	}
 
 	synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
@@ -98,7 +98,7 @@ public class USKManager implements RequestClient {
 	}
 	
 	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
-		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, container, context);
+		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, true, container, context);
 	}
 
 	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context) {
