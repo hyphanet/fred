@@ -207,6 +207,7 @@ class SingleFileInserter implements ClientPutState {
 		int oneBlockCompressedSize;
 		
 		boolean isCHK = false;
+		if(persistent) container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType();
 		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
