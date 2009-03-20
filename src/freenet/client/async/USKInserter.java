@@ -83,6 +83,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(finished) return;
 			fetcher = context.uskManager.getFetcherForInsertDontSchedule(persistent ? pubUSK.clone() : pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
 		}
+		if(persistent) {
+			container.store(fetcher);
+			container.store(this);
+		}
 		fetcher.schedule(container, context);
 	}
 
@@ -94,6 +98,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if((lastContentWasMetadata == isMetadata) && hisData != null
 					&& (codec == compressionCodec)) {
 				try {
+					if(persistent) container.activate(data, 1);
 					byte[] myData = BucketTools.toByteArray(data);
 					if(Arrays.equals(myData, hisData)) {
 						// Success
