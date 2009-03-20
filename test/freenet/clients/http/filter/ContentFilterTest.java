@@ -88,9 +88,9 @@ public class ContentFilterTest extends TestCase {
 		// bug #2297
 		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(GenericReadFilterCallback.magicHTTPEscapeString));
 		// bug #2921
-		assertFalse(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("CHECKED_HTTP"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("CHECKED_HTTP"));
 		assertFalse(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("http"));
-		assertFalse(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("CHECKED_HTTP"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("CHECKED_HTTP"));
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
 	}
 		
