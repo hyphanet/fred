@@ -31,14 +31,27 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
-	// Only implements PutCompletionCallback for the final metadata insert
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
+	// Only implements PutCompletionCallback for the final metadata insert
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 		
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) {
@@ -140,7 +153,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Completed "+this);
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
@@ -234,7 +246,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			} else if(state != null && persistent) {
 				state.removeFrom(container, context);
 			}
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
@@ -282,7 +293,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state+" persistent="+persistent,
 					new Exception("debug"));
 			if(metadata != null) {
@@ -476,7 +486,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	}
 
-	static boolean logMINOR;
 	private HashMap<String,Object> putHandlersByName;
 	private HashSet<PutHandler> runningPutHandlers;
 	private HashSet<PutHandler> putHandlersWaitingForMetadata;
@@ -509,7 +518,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			HashMap manifestElements, short prioClass, FreenetURI target, 
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) {
 		super(prioClass, clientContext);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
 		if(client.persistent())
 			this.targetURI = target.clone();
@@ -537,7 +545,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if (logMINOR)
 			Logger.minor(this, "Starting " + this+" persistence="+persistent());
 		PutHandler[] running;
@@ -1153,7 +1160,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * @param putHandlersByName
 	 */
 	private void removePutHandlersByName(ObjectContainer container, ClientContext context, HashMap<String, Object> putHandlersByName) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "removePutHandlersByName on "+this+" : map size = "+putHandlersByName.size());
 		for(Map.Entry<String, Object> entry : putHandlersByName.entrySet()) {
 			String key = entry.getKey();
@@ -1215,7 +1221,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(persistent()) {
 			container.activate(metadataPuttersByMetadata, 2);
 		}
@@ -1257,7 +1262,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		fail(e, container, context);
 	}
 	
