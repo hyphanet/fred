@@ -437,7 +437,10 @@ U\+{H}{1,6}-{H}{1,6} {
 }
 {IDENT}"(" {
 	String s = yytext();
-	if(s.startsWith("url")) throwError(l10n("invalidURLContents"));
+	if(s.toLowerCase().startsWith("url")) throwError(l10n("invalidURLContents"));
+	if(!s.toLowerCase().startsWith("rgb") &&
+	 		!s.toLowerCase().startsWith("not")	// hack for css3 support
+		) throwError(l10n("invalidURLContents"));
 	w.write(s);
 	if(debug) log("Matched function start: "+s);
 }
