@@ -990,6 +990,28 @@ public class PeerManager {
 
 		PeerNode best = closestNotBackedOff;
 
+		/**
+		 * Various things are "advisory" i.e. they are taken into account but do not cause a request not to be routed at all:
+		 * - Backoff: A node is backed off for a period after it rejects a request; 
+		 * this is randomised and increases exponentially if no requests are accepted; 
+		 * a longer period is imposed for timeouts after a request has been accepted 
+		 * and transfer failures.
+		 * - Recent failures: After various kinds of failures we impose a timeout, 
+		 * until when we will try to avoid sending the same key to that node. This is 
+		 * part of per-node failure tables.
+		 * Combining these:
+		 * - If there are nodes which are both not backed off and not timed out, we 
+		 * route to whichever of those nodes is closest to the target location. If we 
+		 * are still here, all nodes are either backed off or timed out.
+		 * - If there are nodes which are timed out but not backed off, choose the node
+		 * whose timeout expires soonest. Hence if a single key is requested 
+		 * continually, we round-robin between nodes. If we still don't have a winner,
+		 * we know all nodes are backed off.
+		 * - If there are nodes which are backed off but not timed out, choose the node
+		 * which is closest to the target but is not backed off. If we still don't have
+		 * a winner, all nodes are backed off AND timed out.
+		 * - Choose the backed off node whose timeout expires soonest.
+		 */
 		if(best == null) {
 			if(leastRecentlyTimedOut != null) {
 				// FIXME downgrade to DEBUG

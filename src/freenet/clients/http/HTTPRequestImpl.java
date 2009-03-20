@@ -588,7 +588,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
 		} finally {
 			Closer.close(dis);
-			Closer.close(is);
+			Closer.close(is); /* FIXME: Why are we doing this? dis.close() should close the InputStream. */
 		}
 		
 		return new byte[0];

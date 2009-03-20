@@ -110,9 +110,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				generator = null;
 		}
 		if(persistent) {
-			container.store(waitingFor);
-			container.store(waitingForBlockSet);
-			container.store(waitingForFetchable);
+			container.ext().store(waitingFor, 2);
+			container.ext().store(waitingForBlockSet, 2);
+			container.ext().store(waitingForFetchable, 2);
 		}
 		if(persistent) state.removeFrom(container, context);
 		if(complete)
@@ -216,19 +216,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingFor.get(i) == oldState) {
 				waitingFor.set(i, newState);
-				container.store(waitingFor);
+				container.ext().store(waitingFor, 2);
 			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingForBlockSet.get(i) == oldState) {
 				waitingForBlockSet.set(i, newState);
-				container.store(waitingFor);
+				container.ext().store(waitingFor, 2);
 			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingForFetchable.get(i) == oldState) {
 				waitingForFetchable.set(i, newState);
-				container.store(waitingFor);
+				container.ext().store(waitingFor, 2);
 			}
 		}
 	}
@@ -249,7 +249,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			this.waitingForBlockSet.remove(state);
 			if(persistent)
-				container.store(waitingForBlockSet);
+				container.ext().store(waitingForBlockSet, 2);
 			if(!started) return;
 			if(!waitingForBlockSet.isEmpty()) return;
 		}
@@ -276,7 +276,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			this.waitingForFetchable.remove(state);
 			if(persistent)
-				container.store(waitingForFetchable);
+				container.ext().store(waitingForFetchable, 2);
 			if(!started) return;
 			if(!waitingForFetchable.isEmpty()) return;
 		}

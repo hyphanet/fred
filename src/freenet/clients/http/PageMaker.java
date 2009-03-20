@@ -119,6 +119,8 @@ public final class PageMaker {
 			navigationLinkCallbacks.put(name, cb);
 	}
 	
+	/* FIXME: Implement a proper way for chosing what the menu looks like upon handleHTTPGet/Post */
+	@Deprecated
 	public void removeNavigationLink(String name) {
 		navigationLinkTexts.remove(name);
 		navigationLinkTextsNonFull.remove(name);

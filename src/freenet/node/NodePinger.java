@@ -38,9 +38,7 @@ public class NodePinger implements Runnable {
 	}
 	
 	public void run() {
-        // Requeue *before* so that it's accurate in any case
-        node.ps.queueTimedJob(this, 200);
-        
+        try {
         PeerNode[] peers = null;
         synchronized(node.peers) {
 	    if((node.peers.connectedPeers == null) || (node.peers.connectedPeers.length == 0)) return;
@@ -50,6 +48,10 @@ public class NodePinger implements Runnable {
 
         // Now we don't have to care about synchronization anymore
         recalculateMean(peers);
+        } finally {
+        	// Requeue after to avoid exacerbating overload
+        	node.ps.queueTimedJob(this, 200);
+        }
 	}
 
 	/** Recalculate the mean ping time */

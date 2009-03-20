@@ -20,14 +20,16 @@ public class AllDataMessage extends DataCarryingMessage {
 	final boolean global;
 	final String identifier;
 	final long startupTime, completionTime;
+	final String mimeType;
 	
-	public AllDataMessage(Bucket bucket, String identifier, boolean global, long startupTime, long completionTime) {
+	public AllDataMessage(Bucket bucket, String identifier, boolean global, long startupTime, long completionTime, String mimeType) {
 		this.bucket = bucket;
 		this.dataLength = bucket.size();
 		this.identifier = identifier;
 		this.global = global;
 		this.startupTime = startupTime;
 		this.completionTime = completionTime;
+		this.mimeType = mimeType;
 	}
 
 	@Override
@@ -43,6 +45,7 @@ public class AllDataMessage extends DataCarryingMessage {
 		if(global) fs.putSingle("Global", "true");
 		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
+		if(mimeType!=null) fs.putSingle("Metadata.ContentType", mimeType);
 		return fs;
 	}
 

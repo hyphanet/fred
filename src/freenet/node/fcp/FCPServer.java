@@ -177,6 +177,8 @@ public class FCPServer implements Runnable {
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}
+			if (WrapperManager.hasShutdownHookBeenTriggered())
+				return;
 			try{
 				Thread.sleep(2000);
 			}catch (InterruptedException e) {}
@@ -186,7 +188,7 @@ public class FCPServer implements Runnable {
 	private void realRun() throws IOException {
 		if(!node.isHasStarted()) return;
 		// Accept a connection
-		Socket s = networkInterface.accept();
+		Socket s = networkInterface.accept();		
 		FCPConnectionHandler ch = new FCPConnectionHandler(s, this);
 		ch.start();
 	}
