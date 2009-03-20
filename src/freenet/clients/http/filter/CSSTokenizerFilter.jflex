@@ -438,7 +438,7 @@ U\+{H}{1,6}-{H}{1,6} {
 {IDENT}"(" {
 	String s = yytext();
 	if(s.toLowerCase().startsWith("url")) throwError(l10n("invalidURLContents"));
-	if(!s.toLowerCase().startsWith("rgb")) throwError(l10n("invalidURLContents"));
+	if(!s.toLowerCase().startsWith("rgb") && !s.toLowerCase().startsWith("attr")) throwError(l10n("invalidURLContents"));
 	w.write(s);
 	if(debug) log("Matched function start: "+s);
 }
