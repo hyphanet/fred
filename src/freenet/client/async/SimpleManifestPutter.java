@@ -858,12 +858,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		TarEntry ze;
 
 		for(PutHandler ph : elementsToPutInArchive) {
-			if(logMINOR)
-				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
 			if(persistent()) {
 				container.activate(ph, 1);
 				container.activate(ph.data, 1);
 			}
+			if(logMINOR)
+				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
 			ze = new TarEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
