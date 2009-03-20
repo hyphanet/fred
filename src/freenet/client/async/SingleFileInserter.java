@@ -156,9 +156,11 @@ class SingleFileInserter implements ClientPutState {
 			return;
 		}
 		if(persistent) container.activate(block, 1);
-		if(freeData && output.bestCodec != null) {
-			block.getData().free();
-			if(persistent) block.getData().removeFrom(container);
+		if(output.bestCodec != null) {
+			if(freeData) {
+				block.getData().free();
+				block.getData().removeFrom(container);
+			}
 			block.nullData();
 		}
 		try {
