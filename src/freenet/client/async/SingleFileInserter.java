@@ -195,10 +195,10 @@ class SingleFileInserter implements ClientPutState {
 		Bucket data = bestCompressedData;
 		COMPRESSOR_TYPE bestCodec = output.bestCodec;
 		
-		boolean shouldFreeData = false;
+		boolean shouldFreeData = freeData;
 		if(bestCodec != null) {
 			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have gained"+ (100-(bestCompressedDataSize*100/origSize)) +"% ! ("+origSize+'/'+bestCompressedDataSize+')');
-			shouldFreeData = true;
+			shouldFreeData = true; // must be freed regardless of whether the original data was to be freed
 		} else {
 			data = block.getData();
 		}
