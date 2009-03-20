@@ -74,8 +74,6 @@ public class CSSParserTest extends TestCase {
 	}
 
 	private String filter(String css) throws IOException {
-		System.err.println( css );
-		System.err.println( );
 		StringWriter w = new StringWriter();
 		CSSParser p = new CSSParser(new StringReader(css), w, false, null);
 		p.parse();
