@@ -1052,6 +1052,7 @@ public class NodeStats implements Persistable {
 		synchronized(this) {
 			fs.put("startupTime", node.startupTime);
 			nodeUptimeSeconds = (now - node.startupTime) / 1000;
+			if (nodeUptimeSeconds == 0) nodeUptimeSeconds = 1;	// prevent division by zero
 			fs.put("uptimeSeconds", nodeUptimeSeconds);
 		}
 		fs.put("averagePingTime", getNodeAveragePingTime());
@@ -1117,7 +1118,7 @@ public class NodeStats implements Persistable {
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayloadOutput = node.getTotalPayloadSent();
 		long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
-		int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
+		int total_payload_output_percent = (total[0]==0)?-1:(int) (100 * totalPayloadOutput / total[0]);
 		fs.put("totalOutputBytes", total[0]);
 		fs.put("totalOutputRate", total_output_rate);
 		fs.put("totalPayloadOutputBytes", totalPayloadOutput);
@@ -1128,8 +1129,8 @@ public class NodeStats implements Persistable {
 
 		long[] rate = getNodeIOStats();
 		long deltaMS = (rate[5] - rate[2]);
-		double recent_output_rate = 1000.0 * (rate[3] - rate[0]) / deltaMS;
-		double recent_input_rate = 1000.0 * (rate[4] - rate[1]) / deltaMS;
+		double recent_output_rate = deltaMS==0?0:(1000.0 * (rate[3] - rate[0]) / deltaMS);
+		double recent_input_rate = deltaMS==0?0:(1000.0 * (rate[4] - rate[1]) / deltaMS);
 		fs.put("recentOutputRate", recent_output_rate);
 		fs.put("recentInputRate", recent_input_rate);
 
