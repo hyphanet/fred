@@ -100,11 +100,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(currentState != null) return false;
 				cancel = this.cancelled;
 				if(!cancel) {
-					if(!binaryBlob)
+					if(!binaryBlob) {
+						ClientMetadata meta = cm;
+						if(meta != null) meta = persistent() ? meta.clone() : meta; 
 						currentState =
-							new SingleFileInserter(this, this, new InsertBlock(data, persistent() ? cm.clone() : cm, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
+							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
 									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode);
-					else
+					} else
 						currentState =
 							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
 				}
@@ -359,8 +361,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
 		container.activate(targetURI, 5);
-		if(targetURI != FreenetURI.EMPTY_CHK_URI)
-			targetURI.removeFrom(container);
+		targetURI.removeFrom(container);
 		if(uri != null) {
 			container.activate(uri, 5);
 			uri.removeFrom(container);

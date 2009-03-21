@@ -886,6 +886,13 @@ public class FreenetURI implements Cloneable {
 		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
 		container.delete(this);
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(this == FreenetURI.EMPTY_CHK_URI) {
+			throw new RuntimeException("Storing static CHK@ to database - can't remove it!");
+		}
+		return true;
+	}
 
 	public boolean isUSK() {
 		return "USK".equals(keyType);

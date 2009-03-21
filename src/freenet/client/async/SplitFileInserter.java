@@ -397,7 +397,9 @@ public class SplitFileInserter implements ClientPutState {
 			
 			if(!missingURIs) {
 				// Create Metadata
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, persistent ? cm.clone() : cm, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
+				ClientMetadata meta = cm;
+				if(persistent) meta = meta == null ? null : meta.clone();
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, meta, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
 			}
 			haveSentMetadata = true;
 		}

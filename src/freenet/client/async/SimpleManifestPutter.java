@@ -60,7 +60,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.cm = cm;
 			this.data = data;
 			InsertBlock block = 
-				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
+				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
 				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, true, null, earlyEncode);
 			metadata = null;
@@ -402,7 +402,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 		@Override
 		public void notifyClients(ObjectContainer container, ClientContext context) {
-			// FIXME generate per-filename events???
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
+			SimpleManifestPutter.this.notifyClients(container, context);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -469,8 +473,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			if(oldState != null) {
 				Logger.error(this, "currentState is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this);
-				currentState.cancel(container, context);
-				currentState.removeFrom(container, context);
+				oldState.cancel(container, context);
+				oldState.removeFrom(container, context);
 			}
 			if(cm != null) {
 				cm.removeFrom(container);
@@ -815,6 +819,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// Can we just insert it, and not bother with a redirect to it?
 				// Thereby exploiting implicit manifest support, which will pick up on .metadata??
 				// We ought to be able to !!
+				if(persistent()) container.activate(targetURI, 5);
 				block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), persistent() ? targetURI.clone() : targetURI);
 				isMetadata = false;
 				insertAsArchiveManifest = true;
@@ -969,7 +974,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			try {
 				Bucket b = m.toBucket(context.getBucketFactory(persistent()));
 				
-				InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
+				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 				SingleFileInserter metadataInserter = 
 					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
@@ -1227,7 +1232,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		boolean fin = false;
 		ClientPutState oldState;
 		synchronized(this) {
-			oldState = metadataPuttersByMetadata.remove(state.getToken());
+			Metadata token = (Metadata) state.getToken();
+			container.activate(token, 1);
+			oldState = metadataPuttersByMetadata.remove(token);
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
 			} else {
@@ -1517,10 +1524,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Logger.error(this, "Put handlers list still present in removeFrom() on "+this);
 			removePutHandlers(container, context);
 		}
-		if(finalURI != FreenetURI.EMPTY_CHK_URI)
-			finalURI.removeFrom(container);
-		if(targetURI != FreenetURI.EMPTY_CHK_URI)
-			targetURI.removeFrom(container);
+		finalURI.removeFrom(container);
+		targetURI.removeFrom(container);
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
 		container.activate(metadataPuttersByMetadata, 2);

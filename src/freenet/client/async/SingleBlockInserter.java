@@ -597,8 +597,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(persistent) {
 				if(deactivateBucket)
 					container.deactivate(sourceData, 1);
-				if(uri != FreenetURI.EMPTY_CHK_URI)
-					container.deactivate(uri, 1);
+				container.deactivate(uri, 1);
 			}
 			return new BlockItem(this, data, isMetadata, compressionCodec, sourceLength, u, hashCode(), persistent);
 		} catch (IOException e) {
@@ -686,8 +685,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 		// FIXME remove sourceData ???
 		container.activate(uri, 5);
-		if(uri != FreenetURI.EMPTY_CHK_URI)
-			uri.removeFrom(container);
+		uri.removeFrom(container);
 		if(resultingURI != null) {
 			container.activate(resultingURI, 5);
 			resultingURI.removeFrom(container);

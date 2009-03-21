@@ -538,7 +538,7 @@ public class ClientPut extends ClientPutBase {
 				container.delete(origFilename);
 			}
 			// clientMetadata will be deleted by putter
-			if(targetURI != null && targetURI != FreenetURI.EMPTY_CHK_URI) {
+			if(targetURI != null) {
 				container.activate(targetURI, 5);
 				targetURI.removeFrom(container);
 			}
