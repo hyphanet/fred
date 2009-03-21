@@ -196,7 +196,7 @@ class SingleFileInserter implements ClientPutState {
 			shouldFreeData = true; // must be freed regardless of whether the original data was to be freed
 			if(freeData) {
 				block.getData().free();
-				block.getData().removeFrom(container);
+				if(persistent) block.getData().removeFrom(container);
 			}
 			block.nullData();
 		} else {
