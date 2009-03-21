@@ -1233,7 +1233,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		ClientPutState oldState;
 		synchronized(this) {
 			Metadata token = (Metadata) state.getToken();
-			container.activate(token, 1);
+			if(persistent()) container.activate(token, 1);
 			oldState = metadataPuttersByMetadata.remove(token);
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
