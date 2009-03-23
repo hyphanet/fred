@@ -900,6 +900,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			raf.writeInt(0);
 			raf.writeLong(0);
 
+			raf.getFD().sync();
 			raf.close();
 
 			FileUtil.renameTo(tempConfig, configFile);
