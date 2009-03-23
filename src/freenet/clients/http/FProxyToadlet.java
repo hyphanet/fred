@@ -648,7 +648,7 @@ public final class FProxyToadlet extends Toadlet {
 		if(requestedMimeType != null) {
 			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
 		}
-		if(maxSize > 0) {
+		if(maxSize > 0 && maxSize != MAX_LENGTH) {
 			sb.append(c).append("max-size=").append(maxSize); c = '&';
 		}
 		if(force != null) {
