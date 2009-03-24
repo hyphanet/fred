@@ -1,5 +1,6 @@
 package freenet.node.fcp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,9 +37,9 @@ public class FCPClient {
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
 		final boolean forever = (persistenceType == ClientRequest.PERSIST_FOREVER);
-		runningPersistentRequests = new Vector();
-		completedUnackedRequests = new Vector();
-		clientRequestsByIdentifier = new HashMap();
+		runningPersistentRequests = new ArrayList<ClientRequest>();
+		completedUnackedRequests = new ArrayList<ClientRequest>();
+		clientRequestsByIdentifier = new HashMap<String, ClientRequest>();
 		this.isGlobalQueue = isGlobalQueue;
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
