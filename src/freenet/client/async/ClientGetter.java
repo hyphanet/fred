@@ -249,9 +249,9 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.store(this);
 		if(s != null) {
-			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
 			if(persistent())
 				container.activate(s, 1);
+			if(logMINOR) Logger.minor(this, "Cancelling "+s);
 			s.cancel(container, context);
 			if(persistent())
 				container.deactivate(s, 1);
@@ -289,9 +289,9 @@ public class ClientGetter extends BaseClientGetter {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
-				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this);
+				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent());
 			} else
-				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this);
+				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent());
 		}
 		if(persistent())
 			container.store(this);
