@@ -289,9 +289,11 @@ public class ClientGetter extends BaseClientGetter {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
-				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent());
-			} else
-				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent());
+				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
+			} else {
+				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
+				return;
+			}
 		}
 		if(persistent())
 			container.store(this);
