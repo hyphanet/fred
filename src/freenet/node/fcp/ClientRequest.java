@@ -280,6 +280,7 @@ public abstract class ClientRequest {
 		// It might have been finished on startup.
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(cr, 1);
+		if(logMINOR) Logger.minor(this, "Cancelling "+cr+" for "+this+" persistenceType = "+persistenceType);
 		if(cr != null) cr.cancel(container, context);
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER)
