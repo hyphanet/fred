@@ -666,6 +666,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 		container.activate(blockFetchContext, 1);
 		blockFetchContext.removeFrom(container);
 		if(deleteFetchContext)
@@ -688,7 +689,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	public boolean objectCanUpdate(ObjectContainer container) {
 		if(hashCode == 0) {
-			Logger.error(this, "Trying to update with hash 0 => already deleted!", new Exception("error"));
+			Logger.error(this, "Trying to update with hash 0 => already deleted! active="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
 			return false;
 		}
 		return true;
@@ -696,7 +697,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(hashCode == 0) {
-			Logger.error(this, "Trying to write with hash 0 => already deleted!", new Exception("error"));
+			Logger.error(this, "Trying to write with hash 0 => already deleted! active="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
 			return false;
 		}
 		return true;
