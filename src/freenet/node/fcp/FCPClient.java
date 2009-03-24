@@ -7,20 +7,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import com.db4o.ObjectContainer;
-import com.db4o.types.Db4oList;
-import com.db4o.types.Db4oMap;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.DBJob;
-import freenet.client.async.DBJobRunner;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.NullObject;
-import freenet.support.io.NativeThread;
 
 /**
  * An FCP client.
