@@ -851,34 +851,34 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return true;
 		} else {
 			try {
-			// try to load
-			RandomAccessFile raf = new RandomAccessFile(configFile, "r");
+				// try to load
+				RandomAccessFile raf = new RandomAccessFile(configFile, "r");
 				try {
-			byte[] salt = new byte[0x10];
-			raf.readFully(salt);
-			cipherManager = new CipherManager(salt);
+					byte[] salt = new byte[0x10];
+					raf.readFully(salt);
+					cipherManager = new CipherManager(salt);
 
-			storeSize = raf.readLong();
-			prevStoreSize = raf.readLong();
-			keyCount.set(raf.readLong());
-			generation = raf.readInt();
-			flags = raf.readInt();
+					storeSize = raf.readLong();
+					prevStoreSize = raf.readLong();
+					keyCount.set(raf.readLong());
+					generation = raf.readInt();
+					flags = raf.readInt();
 
-			if ((flags & FLAG_DIRTY) != 0)
-				flags |= FLAG_REBUILD_BLOOM;
+					if ((flags & FLAG_DIRTY) != 0)
+						flags |= FLAG_REBUILD_BLOOM;
 
-			try {
-				bloomFilterK = raf.readInt();
-				if (bloomFilterK == 0) {
-					bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
-					flags |= FLAG_REBUILD_BLOOM;
-					checkBloom = false;
-				}
-			} catch (IOException e) {
-				flags |= FLAG_REBUILD_BLOOM;
-			}
+					try {
+						bloomFilterK = raf.readInt();
+						if (bloomFilterK == 0) {
+							bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
+							flags |= FLAG_REBUILD_BLOOM;
+							checkBloom = false;
+						}
+					} catch (IOException e) {
+						flags |= FLAG_REBUILD_BLOOM;
+					}
 
-			return false;
+					return false;
 				} finally {
 					Closer.close(raf);
 				}
