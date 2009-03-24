@@ -1559,6 +1559,11 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	@Override
+	public boolean isSeed() {
+		return false;
+	}
+
+	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
 		// Ignore it
 	}

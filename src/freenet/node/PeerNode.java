@@ -2712,6 +2712,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public abstract boolean isOpennet();
 
+	public abstract boolean isSeed();
+
 	/**
 	* @return The time at which we last connected (or reconnected).
 	*/

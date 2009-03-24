@@ -39,6 +39,11 @@ public class SeedServerPeerNode extends PeerNode {
 	}
 
 	@Override
+	public boolean isSeed() {
+		return true;
+	}
+
+	@Override
 	public boolean isRealConnection() {
 		return false;
 	}

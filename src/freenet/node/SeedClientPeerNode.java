@@ -33,6 +33,11 @@ public class SeedClientPeerNode extends PeerNode {
 	}
 
 	@Override
+	public boolean isSeed() {
+		return true;
+	}
+
+	@Override
 	public boolean isRealConnection() {
 		return false; // We may be connected to the same node as a seed and as a regular connection.
 	}
