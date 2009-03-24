@@ -202,11 +202,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			states = (ClientPutState[]) waitingFor.toArray(states);
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		for(int i=0;i<states.length;i++) {
 			if(persistent)
 				container.activate(states[i], 1);
-			if(logMINOR) Logger.minor(this, "Cancelling state "+i+" of "+states.length+" : "+states[i]);
+			if(logDEBUG) Logger.minor(this, "Cancelling state "+i+" of "+states.length+" : "+states[i]);
 			states[i].cancel(container, context);
 		}
 	}
