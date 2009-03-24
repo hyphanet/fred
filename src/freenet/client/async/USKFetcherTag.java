@@ -125,7 +125,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		}
 		if(persistent) {
 			// If cancelled externally, and this function is called from USKFetcher,
-			// container may be null even though we are running on the database thread
+			// container may be null even though we are running on the database thread,
+			// resulting in a database leak.
 			context.jobRunner.runBlocking(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
