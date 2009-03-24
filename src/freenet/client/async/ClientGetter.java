@@ -251,7 +251,7 @@ public class ClientGetter extends BaseClientGetter {
 		if(s != null) {
 			if(persistent())
 				container.activate(s, 1);
-			if(logMINOR) Logger.minor(this, "Cancelling "+s);
+			if(logMINOR) Logger.minor(this, "Cancelling "+s+" for "+this+" instance "+super.toString());
 			s.cancel(container, context);
 			if(persistent())
 				container.deactivate(s, 1);
@@ -289,14 +289,24 @@ public class ClientGetter extends BaseClientGetter {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
-				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
+				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent()+" instance = "+super.toString(), new Exception("debug"));
 			} else {
 				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
 				return;
 			}
 		}
-		if(persistent())
+		if(persistent()) {
 			container.store(this);
+//			container.deactivate(this, 1);
+//			System.gc();
+//			System.runFinalization();
+//			System.gc();
+//			System.runFinalization();
+//			container.activate(this, 1);
+//			synchronized(this) {
+//				Logger.minor(this, "Post transition: "+currentState);
+//			}
+		}
 	}
 
 	public boolean canRestart() {
