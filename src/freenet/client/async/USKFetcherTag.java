@@ -5,6 +5,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -206,7 +207,20 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		return finished;
 	}
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Removing "+this);
 		container.activate(origUSK, 5);
 		origUSK.removeFrom(container);
 		if(ownFetchContext) {
