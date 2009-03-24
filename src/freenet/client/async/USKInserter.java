@@ -254,22 +254,27 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public void cancel(ObjectContainer container, ClientContext context) {
 		USKFetcherTag tag;
+		boolean persist = persistent;
 		synchronized(this) {
+			if(finished) return;
+			finished = true;
 			tag = fetcher;
 			fetcher = null;
 		}
-		if(tag != null)
+		if(persistent) container.store(this);
+		if(tag != null) {
 			tag.cancel(container, context);
+			if(persist) container.activate(this, 1); // May have been deactivated by callbacks
+		}
 		if(sbi != null) {
 			sbi.cancel(container, context); // will call onFailure, which will removeFrom()
-		}
-		synchronized(this) {
-			finished = true;
+			if(persist) container.activate(this, 1); // May have been deactivated by callbacks
 		}
 		if(freeData) {
 			data.free();
 			if(persistent) data.removeFrom(container);
 		}
+		if(persistent) container.activate(cb, 1);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
@@ -331,7 +336,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Removing from database: "+this);
+			Logger.minor(this, "Removing from database: "+this, new Exception("debug"));
 		// parent will remove self
 		if(freeData && data != null && container.ext().isStored(data)) {
 			try {
