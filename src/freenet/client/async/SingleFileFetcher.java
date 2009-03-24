@@ -995,6 +995,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.deactivate(SingleFileFetcher.this, 1);
 			if(state != null)
 				state.removeFrom(container, context);
+			if(persistent)
+				container.delete(this);
 		}
 
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
