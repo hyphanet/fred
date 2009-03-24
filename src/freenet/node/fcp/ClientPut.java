@@ -446,7 +446,7 @@ public class ClientPut extends ClientPutBase {
 		}
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob);
+				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob);
 	}
 
 	@Override
@@ -475,11 +475,13 @@ public class ClientPut extends ClientPutBase {
 		return origFilename;
 	}
 
-	public long getDataSize() {
+	public long getDataSize(ObjectContainer container) {
 		if(data == null)
 			return finishedSize;
-		else
+		else {
+			container.activate(data, 1);
 			return data.size();
+		}
 	}
 
 	public String getMIMEType() {

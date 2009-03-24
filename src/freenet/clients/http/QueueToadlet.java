@@ -644,7 +644,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						lowestQueuedPrio = prio;
 					uncompletedUpload.add(cp);
 				}
-				long size = cp.getDataSize();
+				long size = cp.getDataSize(container);
 				if(size > 0)
 					totalQueuedUploadSize += size;
 			} else if(req instanceof ClientPutDir) {
@@ -1196,7 +1196,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					if (clientRequest instanceof ClientGet) {
 						requestRow.addChild(createSizeCell(((ClientGet) clientRequest).getDataSize(container), ((ClientGet) clientRequest).isTotalFinalized(container), advancedModeEnabled));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize(), true, advancedModeEnabled));
+						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize(container), true, advancedModeEnabled));
 					}
 				} else if (column == LIST_DOWNLOAD) {
 					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest, container));
@@ -1432,7 +1432,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
 			}
-			long size = ((ClientPut)req).getDataSize();
+			long size = ((ClientPut)req).getDataSize(container);
 			String name = uri.getPreferredFilename();
 			String title = l10n("uploadSucceededTitle", "filename", name);
 			HTMLNode text = new HTMLNode("div");
