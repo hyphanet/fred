@@ -103,7 +103,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		if(fetcher != null) fetcher.cancel(container, context);
+		if(fetcher != null) fetcher.cancel(null, context);
 		finish(context);
 	}
 
