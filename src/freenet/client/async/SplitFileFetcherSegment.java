@@ -1451,7 +1451,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		SplitFileFetcherSubSegment seg;
 		short onSuccessResult = (short) -1;
 		synchronized(this) {
-			if(finished || startedDecode) {
+			if(finished || startedDecode || fetcherFinished) {
 				return false;
 			}
 			blockNum = this.getBlockNumber(key, container);
