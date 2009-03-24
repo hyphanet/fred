@@ -35,6 +35,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.TooBigException;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.api.Bucket;
@@ -47,6 +48,17 @@ import freenet.support.io.BucketTools;
 public class SplitFileFetcherSegment implements FECCallback {
 
 	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	final short splitfileType;
 	final ClientCHK[] dataKeys;
 	final ClientCHK[] checkKeys;
@@ -112,7 +124,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private transient FECCodec codec;
 	
 	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.segNum = segNum;
 		this.hashCode = super.hashCode();
 		this.persistent = fetcher.persistent;
@@ -344,7 +355,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(persistent)
 			container.activate(this, 1);
 		if(data == null) throw new NullPointerException();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
@@ -786,7 +796,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 	public void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 1);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
 		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
@@ -1517,7 +1526,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		try {
 			data = block.decode(context.getBucketFactory(persistent), (int)(Math.min(this.blockFetchContext.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Decode failure: "+e1, e1);
 			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), blockNum, null, container, context);
 			return null;
@@ -1529,7 +1538,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			this.onFatalFailure(new FetchException(FetchException.BUCKET_ERROR, e), blockNum, null, container, context);
 			return null;
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, data == null ? "Could not decode: null" : ("Decoded "+data.size()+" bytes"));
 		return data;
 	}
