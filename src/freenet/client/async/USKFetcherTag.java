@@ -105,22 +105,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(fetcher != null) fetcher.cancel(null, context);
-		finish(context);
-	}
-
-	private void finish(ClientContext context) {
 		synchronized(this) {
 			finished = true;
 		}
-		if(persistent) {
-			context.jobRunner.queue(new DBJob() {
-
-				public void run(ObjectContainer container, ClientContext context) {
-					container.store(USKFetcherTag.this);
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
-		}
+		// onCancelled() will removeFrom(), so we do NOT want to store(this)
 	}
 
 	public long getToken() {
