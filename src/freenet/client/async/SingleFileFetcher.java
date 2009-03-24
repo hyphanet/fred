@@ -554,6 +554,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				this.metadata = null;
 				if(persistent) container.store(this);
 				if(persistent) container.store(f);
+				
+				// We must transition to the sub-fetcher so that if the request is cancelled, it will get deleted.
+				parent.onTransition(this, f, container);
+				
 				f.wrapHandleMetadata(true, container, context);
 				if(persistent) container.deactivate(f, 1);
 				return;
@@ -766,6 +770,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
 		// callback, or just go back around handleMetadata() on this, which will see that the data is now
 		// available.
+		
+		// We need to transition here, so that everything gets deleted if we are cancelled during the archive fetch phase.
+		if(persistent) container.activate(parent, 1);
+		parent.onTransition(this, f, container);
+		
 		f.wrapHandleMetadata(true, container, context);
 		if(persistent) container.deactivate(f, 1);
 	}
@@ -835,6 +844,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				wasActive = container.ext().isActive(SingleFileFetcher.this);
 				if(!wasActive)
 					container.activate(SingleFileFetcher.this, 1);
+				container.activate(parent, 1);
+				parent.onTransition(state, SingleFileFetcher.this, container);
 				if(persistent)
 					container.activate(actx, 1);
 				ah.activateForExecution(container);
@@ -940,8 +951,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) {
 				wasActive = container.ext().isActive(SingleFileFetcher.this);
 				container.activate(SingleFileFetcher.this, 1);
+				container.activate(parent, 1);
 			}
 			try {
+				parent.onTransition(state, SingleFileFetcher.this, container);
 				Metadata meta = Metadata.construct(result.asBucket());
 				removeMetadata(container);
 				synchronized(SingleFileFetcher.this) {
