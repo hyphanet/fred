@@ -124,7 +124,9 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			finished = true;
 		}
 		if(persistent) {
-			context.jobRunner.queue(new DBJob() {
+			// If cancelled externally, and this function is called from USKFetcher,
+			// container may be null even though we are running on the database thread
+			context.jobRunner.runBlocking(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
@@ -133,7 +135,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 					container.deactivate(callback, 1);
 				}
 				
-			}, NativeThread.HIGH_PRIORITY, false);
+			}, NativeThread.HIGH_PRIORITY);
 		} else {
 			callback.onCancelled(container, context);
 		}
