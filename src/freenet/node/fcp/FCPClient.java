@@ -255,6 +255,8 @@ public class FCPClient {
 				container.ext().store(clientRequestsByIdentifier, 2);
 			}
 		}
+		if(container != null)
+			container.activate(req, 1);
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
 			req.cancel(container, context);
