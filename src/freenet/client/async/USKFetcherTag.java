@@ -147,6 +147,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			finished = true;
 		}
 		if(persistent) {
+			if(container != null) {
+				container.activate(callback, 1);
+				callback.onFailure(container, context);
+				container.deactivate(callback, 1);
+				removeFrom(container, context);
+			} else {
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
@@ -157,6 +163,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
+			}
 		} else {
 			callback.onFailure(container, context);
 		}
@@ -179,6 +186,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			fetcher = null;
 		}
 		if(persistent) {
+			if(container != null) {
+				container.activate(callback, 1);
+				callback.onFoundEdition(l, key, container, context, metadata, codec, data);
+				container.deactivate(callback, 1);
+				removeFrom(container, context);
+			} else {
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
@@ -189,6 +202,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
+			}
 		} else {
 			callback.onFoundEdition(l, key, container, context, metadata, codec, data);
 		}
