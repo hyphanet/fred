@@ -213,6 +213,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	private static volatile boolean logMINOR;
+//	private static volatile boolean logDEBUG;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -220,6 +221,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+//				logDEBUG = Logger.shouldLog(Logger.MINOR, this);
 			}
 		});
 	}
@@ -239,4 +241,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		return false;
 	}
 	
+//	public void objectOnNew(ObjectContainer container) {
+//		if(logDEBUG) Logger.debug(this, "Storing as new: "+this);
+//	}
+//	
+//	public void objectOnUpdate(ObjectContainer container) {
+//		if(logDEBUG) Logger.debug(this, "Updating: "+this, new Exception("debug"));
+//	}
+//	
 }
