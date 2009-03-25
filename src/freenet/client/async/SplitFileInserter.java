@@ -20,6 +20,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -30,6 +31,17 @@ import freenet.support.io.NativeThread;
 public class SplitFileInserter implements ClientPutState {
 
 	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	final BaseClientPutter parent;
 	final InsertContext ctx;
 	final PutCompletionCallback cb;
@@ -85,7 +97,6 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		hashCode = super.hashCode();
 		this.parent = put;
 		this.archiveType = archiveType;
@@ -153,7 +164,6 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		hashCode = super.hashCode();
 		this.parent = parent;
 		this.archiveType = archiveType;
