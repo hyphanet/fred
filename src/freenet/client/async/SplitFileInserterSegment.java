@@ -31,6 +31,7 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -42,7 +43,17 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 public class SplitFileInserterSegment extends SendableInsert implements FECCallback, Encodeable {
 
 	private static volatile boolean logMINOR;
-
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	final SplitFileInserter parent;
 	final BaseClientPutter putter;
 
@@ -104,7 +115,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			short splitfileAlgo, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, ObjectContainer container) {
 		super(persistent);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
 		this.persistent = persistent;
@@ -563,7 +573,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 			return;
 		}
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		// Start the inserts
 		try {
 			if(logMINOR)
@@ -1284,7 +1293,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(this, 1);
 			container.activate(blocks, 1);
 		}
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
 			if(finished) return null;
 			if(blocks.isEmpty()) {
