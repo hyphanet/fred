@@ -129,7 +129,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			ClientPutState oldState = null;
 			synchronized(this) {
 				if(cancelled) return;
-				if(finished) return;
 				super.cancel();
 				oldState = currentState;
 			}
@@ -197,7 +196,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.activate(putHandlersWaitingForFetchable, 2);
 				if(putHandlersWaitingForFetchable.contains(this)) {
 					putHandlersWaitingForFetchable.remove(this);
-					container.store(putHandlersWaitingForFetchable);
+					container.ext().store(putHandlersWaitingForFetchable, 2);
 					// Not getting an onFetchable is not unusual, just ignore it.
 					if(logMINOR) Logger.minor(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
@@ -467,13 +466,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				currentState = null;
 			}
 			if(oldSFI != null) {
-				Logger.error(this, "origSFI is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this);
+				Logger.error(this, "origSFI is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this, new Exception("debug"));
 				oldSFI.cancel(container, context);
 				oldSFI.removeFrom(container, context);
 				if(oldState == oldSFI) oldState = null;
 			}
 			if(oldState != null) {
-				Logger.error(this, "currentState is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this);
+				Logger.error(this, "currentState is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this, new Exception("debug"));
 				oldState.cancel(container, context);
 				oldState.removeFrom(container, context);
 			}
@@ -583,7 +582,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				gotAllMetadata(container, context);
 			}
 		} catch (InsertException e) {
-			cancelAndFinish(container);
+			synchronized(this) {
+				finished = true;
+			}
+			cancelAndFinish(container, context);
 			throw e;
 		}
 	}
@@ -1071,7 +1073,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		// Cancel all, then call the callback
-		cancelAndFinish(container);
+		synchronized(this) {
+			if(finished) return;
+			finished = true;
+		}
+		cancelAndFinish(container, context);
 		if(persistent()) removePutHandlers(container, context);
 		
 		if(persistent())
@@ -1198,20 +1204,21 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	/**
 	 * Cancel all running inserters and set finished to true.
 	 */
-	private void cancelAndFinish(ObjectContainer container) {
+	private void cancelAndFinish(ObjectContainer container, ClientContext context) {
 		PutHandler[] running;
-		if(persistent())
+		boolean persistent = persistent();
+		if(persistent)
 			container.activate(runningPutHandlers, 2);
 		synchronized(this) {
-			if(finished) return;
 			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
-			finished = true;
 		}
 		if(persistent())
 			container.store(this);
 		
 		for(int i=0;i<running.length;i++) {
-			running[i].cancel();
+			if(persistent) container.activate(running[i], 1);
+			running[i].cancel(container, context);
+			if(persistent) container.activate(this, 1);
 		}
 	}
 	
