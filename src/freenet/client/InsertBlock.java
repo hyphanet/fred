@@ -78,5 +78,9 @@ public class InsertBlock {
 	public void nullURI() {
 		this.desiredURI = null;
 	}
+
+	public void nullMetadata() {
+		this.clientMetadata = null;
+	}
 	
 }

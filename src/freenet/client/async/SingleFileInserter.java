@@ -116,7 +116,7 @@ class SingleFileInserter implements ClientPutState {
 		this.freeData = freeData;
 		this.targetFilename = targetFilename;
 		this.persistent = parent.persistent();
-		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent);
+		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent+" freeData="+freeData);
 	}
 	
 	public void start(SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws InsertException {
@@ -356,6 +356,7 @@ class SingleFileInserter implements ClientPutState {
 				container.deactivate(sfi, 1);
 			}
 			block.nullData();
+			block.nullMetadata();
 			if(persistent) removeFrom(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
