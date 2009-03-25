@@ -214,10 +214,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
 			fail(new InsertException(InsertException.COLLISION), container, context);
-			break;
+			return;
 		case LowLevelPutException.INTERNAL_ERROR:
 			fail(new InsertException(InsertException.INTERNAL_ERROR), container, context);
-			break;
+			return;
 		case LowLevelPutException.REJECTED_OVERLOAD:
 			errors.inc(InsertException.REJECTED_OVERLOAD);
 			break;
