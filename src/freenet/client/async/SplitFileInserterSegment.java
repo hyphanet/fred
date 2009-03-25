@@ -622,6 +622,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		synchronized (this) {
 			for (int i = 0; i < dataBlocks.length; i++) {
 				if (dataFinished[i] && dataBlocks[i] != null) {
+					if(logMINOR) Logger.minor(this, "Freeing data block "+i+" delayed for encode");
 					if(persistent) container.activate(dataBlocks[i], 1);
 					dataBlocks[i].free();
 					if(persistent)
@@ -682,6 +683,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	 * @param parent
 	 */
 	private void finish(ObjectContainer container, ClientContext context, SplitFileInserter parent) {
+		if(logMINOR) Logger.minor(this, "Finishing "+this);
 		if(persistent)
 			container.activate(errors, 5);
 		synchronized (this) {
@@ -816,6 +818,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	private void cancelInner(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Cancelling "+this);
 		super.unregister(container, context);
 		if(persistent) {
 			container.store(this);
@@ -924,6 +927,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			data = context.tempBucketFactory.makeBucket(sourceData.size());
 			BucketTools.copy(sourceData, data);
 		}
+		if(logMINOR) Logger.minor(this, "Block "+blockNum+" : bucket "+sourceData+" shadow "+data);
 		if(persistent) {
 			if(deactivateBucket)
 				container.deactivate(sourceData, 1);
@@ -1046,6 +1050,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		boolean isRNF = e.code == LowLevelPutException.ROUTE_NOT_FOUND ||
 			e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND;
 		int blockNum = block.blockNum;
+		if(logMINOR) Logger.minor(this, "Block "+blockNum+" failed on "+this+" : "+e);
 		boolean treatAsSuccess = false;
 		boolean failedBlock = false;
 		int completed;
@@ -1088,6 +1093,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							checkBlocks[checkNum].free();
 							if(persistent) checkBlocks[checkNum].removeFrom(container);
 							checkBlocks[checkNum] = null;
+							if(logMINOR) Logger.minor(this, "Failed to insert check block "+checkNum+" on "+this);
 						} else {
 							Logger.error(this, "Check block "+checkNum+" failed on "+this+" but bucket is already nulled out!");
 						}
@@ -1110,6 +1116,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						checkBlocks[checkNum].free();
 						if(persistent) checkBlocks[checkNum].removeFrom(container);
 						checkBlocks[checkNum] = null;
+						if(logMINOR) Logger.minor(this, "Repeated RNF, treating as success for check block "+checkNum+" on "+this);
 					} else {
 						Logger.error(this, "Check block "+checkNum+" succeeded (sort of) on "+this+" but bucket is already nulled out!");
 					}
@@ -1150,6 +1157,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							dataBlocks[blockNum].free();
 							if(persistent) dataBlocks[blockNum].removeFrom(container);
 							dataBlocks[blockNum] = null;
+							if(logMINOR) Logger.minor(this, "Failed to insert data block "+blockNum+" on "+this);
 						} else {
 							Logger.error(this, "Data block "+blockNum+" failed on "+this+" but bucket is already nulled out!");
 						}
@@ -1172,6 +1180,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						dataBlocks[blockNum].free();
 						if(persistent) dataBlocks[blockNum].removeFrom(container);
 						dataBlocks[blockNum] = null;
+						if(logMINOR) Logger.minor(this, "Repeated RNF, treating as success for data block "+blockNum+" on "+this);
 					} else {
 						Logger.error(this, "Data block "+blockNum+" succeeded (sort of) on "+this+" but bucket is already nulled out!");
 					}
@@ -1261,6 +1270,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					dataBlocks[blockNum] = null;
 				} else if(dataBlocks[blockNum] == null) {
 					Logger.error(this, "Data block "+blockNum+" succeeded on "+this+" but bucket is already nulled out!");
+					if(persistent) Logger.minor(this, "Activation state: "+container.ext().isActive(this));
 				}
 			}
 			if(persistent)
