@@ -1196,6 +1196,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		int blockNum = block.blockNum;
 		int completed;
 		int succeeded;
+		if(logMINOR) Logger.minor(this, "Block "+blockNum+" succeeded on "+this);
 		synchronized(this) {
 			if(finished) {
 				return;
