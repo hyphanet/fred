@@ -57,7 +57,9 @@ public class NodeRestartJobsQueue {
 	private Set<DBJob>[] dbJobsEarly;
 	
 	public synchronized void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Queueing restart job "+job+" at priority "+priority+" early="+early);
 		Set<DBJob> jobs = early ? dbJobsEarly[priority] : dbJobs[priority];
+		container.store(job);
 		container.activate(jobs, 1);
 		if(jobs.add(job)) {
 			/*
