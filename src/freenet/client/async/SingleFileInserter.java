@@ -20,6 +20,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.node.PrioRunnable;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
@@ -42,7 +43,18 @@ import freenet.support.io.SegmentedBucketChainBucket;
  */
 class SingleFileInserter implements ClientPutState {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	final BaseClientPutter parent;
 	InsertBlock block;
 	final InsertContext ctx;
@@ -104,7 +116,6 @@ class SingleFileInserter implements ClientPutState {
 		this.freeData = freeData;
 		this.targetFilename = targetFilename;
 		this.persistent = parent.persistent();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent);
 	}
 	
@@ -582,7 +593,6 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) {
 				container.activate(block, 2);
 			}
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
 			boolean lateStart = false;
 			ClientPutState toRemove = null;
@@ -901,8 +911,6 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) // FIXME debug-point
 				if(logMINOR) Logger.minor(this, "onFetchable on "+this);
 			
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
-
 			if(logMINOR) Logger.minor(this, "onFetchable("+state+ ')');
 			
 			boolean meta;
