@@ -30,7 +30,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	// Stuff to be passed on to the SingleBlockInserter
 	final BaseClientPutter parent;
-	final Bucket data;
+	Bucket data;
 	final short compressionCodec;
 	final InsertContext ctx;
 	final PutCompletionCallback cb;
@@ -148,21 +148,26 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, parent.persistent(), freeData);
+					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, parent.persistent(), false);
 		}
 		try {
 			sbi.schedule(container, context);
+			if(persistent) container.store(this);
 		} catch (InsertException e) {
-			cb.onFailure(e, this, container, context);
 			synchronized(this) {
 				finished = true;
 			}
 			if(freeData) {
+				if(persistent) container.activate(data, 1);
 				data.free();
 				data.removeFrom(container);
+				synchronized(this) {
+					data = null;
+				}
 			}
+			if(persistent) container.store(this);
+			cb.onFailure(e, this, container, context);
 		}
-		if(persistent) container.store(this);
 	}
 
 	public synchronized void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -170,12 +175,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		USK newEdition = pubUSK.copy(edition);
 		finished = true;
 		sbi = null;
-		if(persistent) {
-			container.activate(cb, 1);
-			container.store(this);
-		}
-		cb.onEncode(newEdition, this, container, context);
-		cb.onSuccess(this, container, context);
 		FreenetURI targetURI = pubUSK.getSSK(edition).getURI();
 		FreenetURI realURI = ((SingleBlockInserter)state).getURI(container, context);
 		if(!targetURI.equals(realURI))
@@ -186,6 +185,21 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			context.uskManager.update(pubUSK, edition, context);
 		}
 		if(persistent) state.removeFrom(container, context);
+		if(freeData) {
+			if(persistent) container.activate(data, 1);
+			data.free();
+			data.removeFrom(container);
+			synchronized(this) {
+				data = null;
+			}
+			if(persistent) container.store(this);
+		}
+		if(persistent) {
+			container.activate(cb, 1);
+			container.store(this);
+		}
+		cb.onEncode(newEdition, this, container, context);
+		cb.onSuccess(this, container, context);
 		// FINISHED!!!! Yay!!!
 	}
 
@@ -204,6 +218,15 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			else
 				scheduleInsert(container, context);
 		} else {
+			if(freeData) {
+				if(persistent) container.activate(data, 1);
+				data.free();
+				data.removeFrom(container);
+				synchronized(this) {
+					data = null;
+				}
+				if(persistent) container.store(this);
+			}
 			if(persistent)
 				container.activate(cb, 1);
 			cb.onFailure(e, state, container, context);
@@ -271,8 +294,15 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(persist) container.activate(this, 1); // May have been deactivated by callbacks
 		}
 		if(freeData) {
-			data.free();
-			if(persistent) data.removeFrom(container);
+			if(freeData) {
+				if(persistent) container.activate(data, 1);
+				data.free();
+				data.removeFrom(container);
+				synchronized(this) {
+					data = null;
+				}
+				if(persistent) container.store(this);
+			}
 		}
 		if(persistent) container.activate(cb, 1);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
