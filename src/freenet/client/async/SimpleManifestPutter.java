@@ -198,7 +198,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(putHandlersWaitingForFetchable.contains(this)) {
 					putHandlersWaitingForFetchable.remove(this);
 					container.store(putHandlersWaitingForFetchable);
-					Logger.error(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
+					// Not getting an onFetchable is not unusual, just ignore it.
+					if(logMINOR) Logger.minor(this, "PutHandler was in waitingForFetchable in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
 				if(persistent)
 					container.deactivate(putHandlersWaitingForFetchable, 1);
