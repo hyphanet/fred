@@ -30,6 +30,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
@@ -38,7 +39,18 @@ import freenet.support.io.BucketTools;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	/** Original URI */
 	final FreenetURI uri;
 	/** Meta-strings. (Path elements that aren't part of a key type) */
@@ -71,7 +83,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			boolean dontTellClientGet, long l, boolean isEssential,
 			Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
 		super(key, maxRetries, ctx, parent, cb, isEssential, false, l, container, context, deleteFetchContext);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" from "+origURI+" meta="+metaStrings.toString()+" persistent="+persistent, new Exception("debug"));
 		this.isFinal = isFinal;
 		this.cancelled = false;
@@ -106,7 +117,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	public SingleFileFetcher(SingleFileFetcher fetcher, boolean persistent, boolean deleteFetchContext, Metadata newMeta, GetCompletionCallback callback, FetchContext ctx2, ObjectContainer container, ClientContext context) throws FetchException {
 		// Don't add a block, we have already fetched the data, we are just handling the metadata in a different fetcher.
 		super(persistent ? fetcher.key.cloneKey() : fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, true, fetcher.token, container, context, deleteFetchContext);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
 		this.returnBucket = null;
 		// We expect significant further processing in the parent
