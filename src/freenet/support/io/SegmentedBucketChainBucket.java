@@ -465,7 +465,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				if(segment != null) {
 					container.activate(segment, 1);
 					if(Logger.shouldLog(Logger.MINOR, SegmentedBucketChainBucket.this)) 
-						Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
+						Logger.minor(SegmentedBucketChainBucket.this, "Clearing segment "+segment);
 					segment.clear(container);
 					synchronized(this) {
 						if(!segments.isEmpty()) {
