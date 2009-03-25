@@ -169,13 +169,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(persistent) container.store(this);
 				runningPutHandlers.remove(this);
 				if(persistent)
-					container.store(runningPutHandlers);
+					container.ext().store(runningPutHandlers, 2);
 				
 				if(persistent)
 					container.activate(putHandlersWaitingForMetadata, 2);
 				if(putHandlersWaitingForMetadata.contains(this)) {
 					putHandlersWaitingForMetadata.remove(this);
-					container.store(putHandlersWaitingForMetadata);
+					container.ext().store(putHandlersWaitingForMetadata, 2);
 					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
 				
@@ -206,16 +206,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(!runningPutHandlers.isEmpty()) {
 					if(logMINOR) {
 						Logger.minor(this, "Running put handlers: "+runningPutHandlers.size());
-//						for(Object o : runningPutHandlers) {
-//							boolean activated = true;
-//							if(persistent) {
-//								activated = container.ext().isActive(o);
-//								if(!activated) container.activate(o, 1);
-//							}
-//							Logger.minor(this, "Still running: "+o);
-//							if(!activated)
-//								container.deactivate(o, 1);
-//						}
+						for(Object o : runningPutHandlers) {
+							boolean activated = true;
+							if(persistent) {
+								activated = container.ext().isActive(o);
+								if(!activated) container.activate(o, 1);
+							}
+							Logger.minor(this, "Still running: "+o);
+							if(!activated)
+								container.deactivate(o, 1);
+						}
 					}
 					insertedAllFiles = false;
 				}
