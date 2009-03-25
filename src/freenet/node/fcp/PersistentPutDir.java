@@ -90,7 +90,7 @@ public class PersistentPutDir extends FCPMessage {
 				// What to do with the bucket?
 				// It is either a persistent encrypted bucket or a file bucket ...
 				if(data == null) {
-					Logger.error(this, "Bucket already freed: "+e.getData()+" for "+e+" for "+identifier);
+					Logger.error(this, "Bucket already freed: "+e.getData()+" for "+e+" for "+e.getName()+" for "+identifier);
 				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
