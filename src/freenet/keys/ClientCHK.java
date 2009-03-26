@@ -190,7 +190,7 @@ public class ClientCHK extends ClientKey {
 		return compressionAlgorithm >= 0;
 	}
 
-	public ClientKey cloneKey() {
+	public ClientCHK cloneKey() {
 		return new ClientCHK(this);
 	}
 
