@@ -836,8 +836,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void cancel(ObjectContainer container, ClientContext context) {
-			if(persistent) // FIXME debug-point
-				if(logMINOR) Logger.minor(this, "Cancelling "+this);
+			if(logMINOR) Logger.minor(this, "Cancelling "+this);
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
 			synchronized(this) {
@@ -1015,6 +1014,7 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Cancel "+this);
 		synchronized(this) {
 			if(cancelled) return;
 			cancelled = true;
