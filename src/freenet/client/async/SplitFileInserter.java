@@ -383,14 +383,10 @@ public class SplitFileInserter implements ClientPutState {
 					container.activate(segments[i], 1);
 				ClientCHK[] data = segments[i].getDataCHKs();
 				System.arraycopy(data, 0, dataURIs, dpos, data.length);
-				if(persistent) segments[i].clearDataCHKs();
 				dpos += data.length;
 				ClientCHK[] check = segments[i].getCheckCHKs();
 				System.arraycopy(check, 0, checkURIs, cpos, check.length);
-				if(persistent) segments[i].clearCheckCHKs();
 				cpos += check.length;
-				if(persistent)
-					container.store(segments[i]);
 				if(persistent && segments[i] != dontDeactivateSegment)
 					container.deactivate(segments[i], 1);
 			}
@@ -401,10 +397,17 @@ public class SplitFileInserter implements ClientPutState {
 			missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
 			
 			if(persistent) {
-				for(ClientCHK key : dataURIs)
-					container.activate(key, 5);
-				for(ClientCHK key : checkURIs)
-					container.activate(key, 5);
+				// Copy the URIs. We don't know what the callee wants the metadata for:
+				// he might well ignore it, as in SimpleManifestPutter.onMetadata().
+				// This way he doesn't need to worry about removing them.
+				for(int i=0;i<dataURIs.length;i++) {
+					container.activate(dataURIs[i], 5);
+					dataURIs[i] = dataURIs[i].cloneKey();
+				}
+				for(int i=0;i<checkURIs.length;i++) {
+					container.activate(checkURIs[i], 5);
+					checkURIs[i] = checkURIs[i].cloneKey();
+				}
 			}
 			
 			if(!missingURIs) {

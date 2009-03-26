@@ -786,16 +786,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return dataURIs;
 	}
 
-	public void clearCheckCHKs() {
-		for(int i=0;i<checkURIs.length;i++)
-			checkURIs[i] = null;
-	}
-	
-	public void clearDataCHKs() {
-		for(int i=0;i<dataURIs.length;i++)
-			dataURIs[i] = null;
-	}
-	
 	/** Get the InsertException for this segment.
 	 * NOTE: This will be deleted when the segment is deleted! Do not store it or pass 
 	 * it on!
