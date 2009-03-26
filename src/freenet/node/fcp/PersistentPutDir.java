@@ -36,10 +36,11 @@ public class PersistentPutDir extends FCPMessage {
 	final boolean started;
 	final int maxRetries;
 	final boolean wasDiskPut;
+	private final SimpleFieldSet cached;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
 	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean wasDiskPut) {
+	        String token, boolean started, int maxRetries, boolean wasDiskPut, ObjectContainer container) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -52,10 +53,10 @@ public class PersistentPutDir extends FCPMessage {
 		this.started = started;
 		this.maxRetries = maxRetries;
 		this.wasDiskPut = wasDiskPut;
+		cached = generateFieldSet(container);
 	}
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
+	private SimpleFieldSet generateFieldSet(ObjectContainer container) {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // false because this can get HUGE
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
@@ -81,6 +82,8 @@ public class PersistentPutDir extends FCPMessage {
 				subset.putSingle("TargetURI", tempURI.toString());
 			} else {
 				Bucket data = e.getData();
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.activate(data, 1);
 				if(data instanceof DelayedFreeBucket) {
 					data = ((DelayedFreeBucket)data).getUnderlying();
 				}
@@ -99,6 +102,8 @@ public class PersistentPutDir extends FCPMessage {
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.deactivate(data, 1);
 			}
 			files.put(num, subset);
 		}
@@ -109,6 +114,11 @@ public class PersistentPutDir extends FCPMessage {
 		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);
 		return fs;
+	}
+
+	@Override
+	public SimpleFieldSet getFieldSet() {
+		return cached;
 	}
 
 	@Override
@@ -125,6 +135,7 @@ public class PersistentPutDir extends FCPMessage {
 	public void removeFrom(ObjectContainer container) {
 		uri.removeFrom(container);
 		removeFrom(manifestElements, container);
+		cached.removeFrom(container);
 		container.delete(this);
 	}
 
