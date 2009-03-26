@@ -1267,8 +1267,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		boolean fin = false;
 		ClientPutState oldState;
+		Metadata token = (Metadata) state.getToken();
 		synchronized(this) {
-			Metadata token = (Metadata) state.getToken();
 			if(persistent()) container.activate(token, 1);
 			oldState = metadataPuttersByMetadata.remove(token);
 			if(!metadataPuttersByMetadata.isEmpty()) {
@@ -1291,6 +1291,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			}
 		}
+		if(token != baseMetadata)
+			token.removeFrom(container);
 		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
 			container.deactivate(metadataPuttersByMetadata, 1);
@@ -1309,11 +1311,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.activate(metadataPuttersByMetadata, 2);
 		}
 		ClientPutState oldState;
+		Metadata token = (Metadata) state.getToken();
 		synchronized(this) {
-			Metadata token = (Metadata) state.getToken();
 			if(persistent()) container.activate(token, 1);
 			oldState = metadataPuttersByMetadata.remove(token);
 		}
+		if(token != baseMetadata)
+			token.removeFrom(container);
 		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
 			container.deactivate(metadataPuttersByMetadata, 1);
