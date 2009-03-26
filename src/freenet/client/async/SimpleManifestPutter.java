@@ -1305,6 +1305,24 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(metadataPuttersByMetadata, 2);
+		}
+		ClientPutState oldState;
+		synchronized(this) {
+			Metadata token = (Metadata) state.getToken();
+			if(persistent()) container.activate(token, 1);
+			oldState = metadataPuttersByMetadata.remove(token);
+		}
+		if(persistent()) {
+			container.store(metadataPuttersByMetadata);
+			container.deactivate(metadataPuttersByMetadata, 1);
+			state.removeFrom(container, context);
+			if(oldState != state && oldState != null) {
+				container.activate(oldState, 1);
+				oldState.removeFrom(container, context);
+			}
+		}
 		fail(e, container, context);
 	}
 	
