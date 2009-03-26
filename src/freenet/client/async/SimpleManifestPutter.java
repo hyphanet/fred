@@ -1221,6 +1221,20 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			running[i].cancel(container, context);
 			if(persistent) container.activate(this, 1);
 		}
+		
+		ClientPutState[] runningMeta;
+		if(persistent())
+			container.activate(metadataPuttersByMetadata, 2);
+		synchronized(this) {
+			runningMeta = metadataPuttersByMetadata.keySet().toArray(new ClientPutState[metadataPuttersByMetadata.size()]);
+		}
+		
+		for(int i=0;i<running.length;i++) {
+			if(persistent) container.activate(runningMeta[i], 1);
+			runningMeta[i].cancel(container, context);
+			if(persistent) container.activate(this, 1);
+		}
+		
 	}
 	
 	@Override
