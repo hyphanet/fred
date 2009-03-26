@@ -22,6 +22,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -31,6 +32,18 @@ import freenet.support.io.BucketTools;
  */
 public class ClientGetter extends BaseClientGetter {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	final ClientCallback clientCallback;
 	FreenetURI uri;
 	final FetchContext ctx;
@@ -85,7 +98,7 @@ public class ClientGetter extends BaseClientGetter {
 	public boolean start(boolean restart, FreenetURI overrideURI, ObjectContainer container, ClientContext context) throws FetchException {
 		if(persistent())
 			container.activate(uri, 5);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" persistent="+persistent());
 		try {
 			// FIXME synchronization is probably unnecessary.
@@ -137,7 +150,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Succeeded from "+state+" on "+this);
 		if(persistent())
 			container.activate(uri, 5);
@@ -155,7 +168,7 @@ public class ClientGetter extends BaseClientGetter {
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;
 			try {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Copying - returnBucket not respected by client.async");
 				if(persistent()) {
 					container.activate(from, 5);
@@ -172,7 +185,7 @@ public class ClientGetter extends BaseClientGetter {
 			}
 			result = new FetchResult(result, to);
 		} else {
-			if(returnBucket != null && Logger.shouldLog(Logger.MINOR, this))
+			if(returnBucket != null && logMINOR)
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
 		if(persistent()) {
@@ -188,7 +201,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
 		closeBinaryBlobStream(container, context);
 		if(persistent() && state != null) {
@@ -204,7 +217,7 @@ public class ClientGetter extends BaseClientGetter {
 					archiveRestarts++;
 					ar = archiveRestarts;
 				}
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Archive restart on "+this+" ar="+ar);
 				if(ar > ctx.maxArchiveRestarts)
 					e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
@@ -226,7 +239,7 @@ public class ClientGetter extends BaseClientGetter {
 				e = new FetchException(e.errorCodes.getFirstCode(), e);
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
-			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
+			if(logMINOR) Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
 			if(persistent())
 				container.store(this);
@@ -236,7 +249,6 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientGetState s;
 		synchronized(this) {
@@ -280,7 +292,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized(container, context);
 	}
@@ -289,9 +301,9 @@ public class ClientGetter extends BaseClientGetter {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
-				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent()+" instance = "+super.toString(), new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent()+" instance = "+super.toString(), new Exception("debug"));
 			} else {
-				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
+				if(logMINOR) Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
 				return;
 			}
 		}
@@ -311,7 +323,7 @@ public class ClientGetter extends BaseClientGetter {
 
 	public boolean canRestart() {
 		if(currentState != null && !finished) {
-			Logger.minor(this, "Cannot restart because not finished for "+uri);
+			if(logMINOR) Logger.minor(this, "Cannot restart because not finished for "+uri);
 			return false;
 		}
 		return true;
@@ -334,7 +346,7 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(binaryBlobStream, 1);
 			container.activate(binaryBlobKeysAddedAlready, 1);
 		}
-		if(Logger.shouldLog(Logger.MINOR, this)) 
+		if(logMINOR) 
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		Key key = block.getKey();
 		synchronized(binaryBlobKeysAddedAlready) {
