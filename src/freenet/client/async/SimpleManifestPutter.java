@@ -489,6 +489,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// Data is responsibility of original caller (usually ClientPutDir), we don't support freeData atm
 			super.removeFrom(container, context);
 		}
+		
+		public boolean objectCanNew(ObjectContainer container) {
+			if(cancelled) {
+				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
+				return false;
+			}
+			if(logMINOR) Logger.minor(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+			return true;
+		}
 
 	}
 
@@ -1670,6 +1679,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		container.activate(runGotAllMetadata, 1);
 		container.delete(runGotAllMetadata);
 		super.removeFrom(container, context);
+	}
+	
+	public void objectOnUpdate(ObjectContainer container) {
+		if(logMINOR) Logger.minor(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+	}
+
+	public boolean objectCanNew(ObjectContainer container) {
+		if(finished) {
+			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
+			return false;
+		}
+		if(logMINOR) Logger.minor(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		return true;
 	}
 
 }
