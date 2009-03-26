@@ -768,7 +768,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		while(true) {
 			try {
 				if(persistent())
-					container.activate(baseMetadata, 100);
+					container.activate(baseMetadata, Integer.MAX_VALUE);
 				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
 				if(logMINOR)
 					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
