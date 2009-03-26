@@ -1234,14 +1234,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			runningMeta = metadataPuttersByMetadata.keySet().toArray(new ClientPutState[metadataPuttersByMetadata.size()]);
 		}
 		
-		for(int i=0;i<running.length;i++) {
+		for(int i=0;i<runningMeta.length;i++) {
 			boolean active = true;
 			if(persistent) {
-				active = container.ext().isActive(running[i]);
-				if(!active) container.activate(running[i], 1);
+				active = container.ext().isActive(runningMeta[i]);
+				if(!active) container.activate(runningMeta[i], 1);
 			}
 			runningMeta[i].cancel(container, context);
-			if(!active) container.deactivate(running[i], 1);
+			if(!active) container.deactivate(runningMeta[i], 1);
 			if(persistent) container.activate(this, 1);
 		}
 		
