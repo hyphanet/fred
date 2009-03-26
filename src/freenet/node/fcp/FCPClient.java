@@ -465,6 +465,7 @@ public class FCPClient {
 		container.activate(lowLevelClient, 2);
 		lowLevelClient.removeFrom(container);
 		container.delete(this);
+		container.delete(clientsWatchingLock);
 	}
 
 	public void removeAll(ObjectContainer container, ClientContext context) {
