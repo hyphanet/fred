@@ -1216,14 +1216,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent())
 			container.store(this);
 		
-		for(int i=0;i<running.length;i++) {
+		for(PutHandler putter : running) {
 			boolean active = true;
 			if(persistent) {
-				active = container.ext().isActive(running[i]);
-				if(!active) container.activate(running[i], 1);
+				active = container.ext().isActive(putter);
+				if(!active) container.activate(putter, 1);
 			}
-			running[i].cancel(container, context);
-			if(!active) container.deactivate(running[i], 1);
+			putter.cancel(container, context);
+			if(!active) container.deactivate(putter, 1);
 			if(persistent) container.activate(this, 1);
 		}
 		
@@ -1234,14 +1234,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			runningMeta = metadataPuttersByMetadata.keySet().toArray(new ClientPutState[metadataPuttersByMetadata.size()]);
 		}
 		
-		for(int i=0;i<runningMeta.length;i++) {
+		for(ClientPutState putter : runningMeta) {
 			boolean active = true;
 			if(persistent) {
-				active = container.ext().isActive(runningMeta[i]);
-				if(!active) container.activate(runningMeta[i], 1);
+				active = container.ext().isActive(putter);
+				if(!active) container.activate(putter, 1);
 			}
-			runningMeta[i].cancel(container, context);
-			if(!active) container.deactivate(runningMeta[i], 1);
+			putter.cancel(container, context);
+			if(!active) container.deactivate(putter, 1);
 			if(persistent) container.activate(this, 1);
 		}
 		
