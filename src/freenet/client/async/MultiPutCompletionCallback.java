@@ -158,9 +158,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		waitingForBlockSet.add(ps);
 		waitingForFetchable.add(ps);
 		if(persistent) {
-			container.store(waitingFor);
-			container.store(waitingForBlockSet);
-			container.store(waitingForFetchable);
+			container.store(ps);
+			container.ext().store(waitingFor, 2);
+			container.ext().store(waitingForBlockSet, 2);
+			container.ext().store(waitingForFetchable, 2);
 		}
 	}
 
