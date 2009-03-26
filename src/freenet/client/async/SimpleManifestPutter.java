@@ -311,7 +311,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
 				if(persistent) {
-					container.store(putHandlersWaitingForMetadata);
+					container.ext().store(putHandlersWaitingForMetadata, 2);
 					container.store(this);
 				}
 				allMetadatas = putHandlersWaitingForMetadata.isEmpty();
@@ -1266,12 +1266,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.activate(metadataPuttersByMetadata, 2);
 		}
 		boolean fin = false;
-		ClientPutState oldState;
+		ClientPutState oldState = null;
 		Metadata token = (Metadata) state.getToken();
 		synchronized(this) {
 			if(persistent()) container.activate(token, 1);
-			oldState = metadataPuttersByMetadata.remove(token);
-			if(oldState != null) {
+			boolean present = metadataPuttersByMetadata.containsKey(token);
+			if(present) {
+				oldState = metadataPuttersByMetadata.remove(token);
 				if(persistent())
 					container.activate(metadataPuttersUnfetchable, 2);
 				if(metadataPuttersUnfetchable.containsKey(token)) {
@@ -1318,12 +1319,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent()) {
 			container.activate(metadataPuttersByMetadata, 2);
 		}
-		ClientPutState oldState;
+		ClientPutState oldState = null;
 		Metadata token = (Metadata) state.getToken();
 		synchronized(this) {
 			if(persistent()) container.activate(token, 1);
-			oldState = metadataPuttersByMetadata.remove(token);
-			if(oldState != null) {
+			boolean present = metadataPuttersByMetadata.containsKey(token);
+			if(present) {
+				oldState = metadataPuttersByMetadata.remove(token);
 				if(persistent())
 					container.activate(metadataPuttersUnfetchable, 2);
 				if(metadataPuttersUnfetchable.containsKey(token)) {
@@ -1555,7 +1557,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(checkFetchable(handler)) {
 			if(persistent()) {
-				container.store(putHandlersWaitingForMetadata);
+				container.ext().store(putHandlersWaitingForMetadata, 2);
 				container.store(this);
 				container.deactivate(putHandlersWaitingForFetchable, 1);
 				container.deactivate(metadataPuttersUnfetchable, 1);
