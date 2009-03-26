@@ -1532,12 +1532,14 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 		for(ClientCHK chk : dataURIs) {
 			if(chk != null) {
+				if(logMINOR) Logger.minor(this, "dataURI is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
 			}
 		}
 		for(ClientCHK chk : checkURIs) {
 			if(chk != null) {
+				if(logMINOR) Logger.minor(this, "checkURI is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
 			}
@@ -1573,4 +1575,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return retval;
 	}
 	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(finished) {
+			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
+			return false;
+		}
+		if(logMINOR) Logger.minor(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		return true;
+	}
+
 }
