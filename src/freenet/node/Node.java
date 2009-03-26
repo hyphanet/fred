@@ -934,12 +934,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			} catch (Throwable t) {
 				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
 			}
+			db.deactivate(o, 1);
 		}
 		int total = 0;
 		for(Map.Entry<String,Integer> entry : map.entrySet()) {
 			System.err.println(entry.getKey()+" : "+entry.getValue());
 			total += entry.getValue();
 		}
+		// Some structures e.g. collections are sensitive to the activation depth.
+		// If they are activated to depth 1, they are broken, and activating them to
+		// depth 2 does NOT un-break them! Hence we need to deactivate (above) and
+		// GC here...
+		System.gc();
+		System.runFinalization();
+		System.gc();
+		System.runFinalization();
 		System.err.println("END DATABASE DUMP: "+total+" objects");
 
 		// Boot ID
