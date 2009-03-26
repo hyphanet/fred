@@ -457,6 +457,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		
 		public void removeFrom(ObjectContainer container, ClientContext context) {
+			if(logMINOR) Logger.minor(this, "Removing "+this);
 			SingleFileInserter oldSFI;
 			ClientPutState oldState;
 			synchronized(this) {
@@ -1532,7 +1533,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Logger.error(this, "Put handlers list still present in removeFrom() on "+this);
 			removePutHandlers(container, context);
 		}
-		finalURI.removeFrom(container);
+		if(finalURI != null) finalURI.removeFrom(container);
 		targetURI.removeFrom(container);
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
