@@ -313,7 +313,10 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 			removeElement(found);
 		} else {
 			if(count == 0) Logger.error(this, "Not in parent: "+r+" for "+this, new Exception("error"));
-			else if(persistent) r.removeFrom(container);
+			else if(persistent) {
+				container.store(this);
+				r.removeFrom(container);
+			}
 			return;
 		}
 		}
