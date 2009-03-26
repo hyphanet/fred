@@ -389,6 +389,8 @@ public class SplitFileInserter implements ClientPutState {
 				System.arraycopy(check, 0, checkURIs, cpos, check.length);
 				if(persistent) segments[i].clearCheckCHKs();
 				cpos += check.length;
+				if(persistent)
+					container.store(segments[i]);
 				if(persistent && segments[i] != dontDeactivateSegment)
 					container.deactivate(segments[i], 1);
 			}
