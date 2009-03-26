@@ -1217,8 +1217,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.store(this);
 		
 		for(int i=0;i<running.length;i++) {
-			if(persistent) container.activate(running[i], 1);
+			boolean active = true;
+			if(persistent) {
+				active = container.ext().isActive(running[i]);
+				if(!active) container.activate(running[i], 1);
+			}
 			running[i].cancel(container, context);
+			if(!active) container.deactivate(running[i], 1);
 			if(persistent) container.activate(this, 1);
 		}
 		
@@ -1230,8 +1235,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		
 		for(int i=0;i<running.length;i++) {
-			if(persistent) container.activate(runningMeta[i], 1);
+			boolean active = true;
+			if(persistent) {
+				active = container.ext().isActive(running[i]);
+				if(!active) container.activate(running[i], 1);
+			}
 			runningMeta[i].cancel(container, context);
+			if(!active) container.deactivate(running[i], 1);
 			if(persistent) container.activate(this, 1);
 		}
 		
