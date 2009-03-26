@@ -8,7 +8,7 @@ import freenet.client.async.ClientContext;
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
  * returned.
  */
-public class SectoredRandomGrabArray implements RemoveRandom {
+public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent {
 
 	/*
 	 * Yes, this is O(n). No, I don't care.
@@ -32,11 +32,13 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	private RemoveRandomWithObject[] grabArrays;
 	private Object[] grabClients;
 	private final boolean persistent;
+	private final RemoveRandomParent parent;
 	
-	public SectoredRandomGrabArray(boolean persistent, ObjectContainer container) {
+	public SectoredRandomGrabArray(boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
 		this.persistent = persistent;
 		grabClients = new Object[0];
 		grabArrays = new RemoveRandomWithObject[0];
+		this.parent = parent;
 	}
 
 	/**
@@ -49,7 +51,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		if(clientIndex == -1) {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-			rga = new RandomGrabArrayWithClient(client, persistent, container);
+			rga = new RandomGrabArrayWithClient(client, persistent, container, this);
 			addElement(client, rga);
 			if(persistent) {
 				container.store(rga);
@@ -291,6 +293,30 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			}
 		}
 		container.delete(this);
+	}
+
+	public void maybeRemove(RemoveRandom r, ObjectContainer container) {
+		int count = 0;
+		while(true) {
+		int found = -1;
+		synchronized(this) {
+			for(int i=0;i<grabArrays.length;i++) {
+				if(grabArrays[i] == r) {
+					found = i;
+					break;
+				}
+			}
+		}
+		if(found != -1) {
+			count++;
+			if(count > 1) Logger.error(this, "Found "+r+" many times in "+this, new Exception("error"));
+			removeElement(found);
+		} else {
+			if(count == 0) Logger.error(this, "Not in parent: "+r+" for "+this, new Exception("error"));
+			else if(persistent) r.removeFrom(container);
+			return;
+		}
+		}
 	}
 
 }

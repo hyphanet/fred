@@ -11,4 +11,6 @@ public interface RemoveRandom {
 
 	/** Just for consistency checking */
 	public boolean persistent();
+	
+	public void removeFrom(ObjectContainer container);
 }

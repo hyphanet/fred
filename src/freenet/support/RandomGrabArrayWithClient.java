@@ -6,8 +6,8 @@ public class RandomGrabArrayWithClient extends RandomGrabArray implements Remove
 
 	final Object client;
 	
-	public RandomGrabArrayWithClient(Object client, boolean persistent, ObjectContainer container) {
-		super(persistent, container);
+	public RandomGrabArrayWithClient(Object client, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
+		super(persistent, container, parent);
 		this.client = client;
 	}
 

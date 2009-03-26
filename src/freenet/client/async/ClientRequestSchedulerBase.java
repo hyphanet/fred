@@ -144,7 +144,7 @@ abstract class ClientRequestSchedulerBase {
 		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc, container);
 		if(persistent()) container.activate(clientGrabber, 1);
 		if(clientGrabber == null) {
-			clientGrabber = new SectoredRandomGrabArrayWithInt(rc, persistent(), container);
+			clientGrabber = new SectoredRandomGrabArrayWithInt(rc, persistent(), container, null);
 			prio.add(clientGrabber, container);
 			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
 		}
@@ -155,7 +155,7 @@ abstract class ClientRequestSchedulerBase {
 			SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
 			if(persistent()) container.activate(requestGrabber, 1);
 			if(requestGrabber == null) {
-				requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container);
+				requestGrabber = new SectoredRandomGrabArrayWithObject(client, persistent(), container, clientGrabber);
 				if(logMINOR)
 					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
 				clientGrabber.addGrabber(client, requestGrabber, container);

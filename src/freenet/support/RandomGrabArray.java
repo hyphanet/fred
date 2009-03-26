@@ -7,7 +7,7 @@ import freenet.client.async.ClientContext;
 /**
  * An array which supports very fast remove-and-return-a-random-element.
  */
-public class RandomGrabArray {
+public class RandomGrabArray implements RemoveRandom {
 
 	private class Block {
 		RandomGrabArrayItem[] reqs;
@@ -24,13 +24,15 @@ public class RandomGrabArray {
 	private final static int BLOCK_SIZE = 1024;
 	private final boolean persistent;
 	private final int hashCode;
+	private final RemoveRandomParent parent;
 
-	public RandomGrabArray(boolean persistent, ObjectContainer container) {
+	public RandomGrabArray(boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
 		this.blocks = new Block[] { new Block() };
 		blocks[0].reqs = new RandomGrabArrayItem[MIN_SIZE];
 		this.persistent = persistent;
 		index = 0;
 		this.hashCode = super.hashCode();
+		this.parent = parent;
 	}
 	
 	public int hashCode() {
@@ -368,6 +370,7 @@ public class RandomGrabArray {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing "+it+" from "+this);
 		boolean matched = false;
+		boolean empty = false;
 		synchronized(this) {
 			if(blocks.length == 1) {
 				Block block = blocks[0];
@@ -383,6 +386,7 @@ public class RandomGrabArray {
 						break;
 					}
 				}
+				if(index == 0) empty = true;
 				if(persistent)
 					container.deactivate(block, 1);
 			} else {
@@ -421,6 +425,7 @@ public class RandomGrabArray {
 					if(persistent)
 						container.deactivate(block, 1);
 				}
+				if(index == 0) empty = true;
 			}
 		}
 		if(it.getParentGrabArray() == this)
@@ -430,6 +435,13 @@ public class RandomGrabArray {
 		if(!matched) return;
 		if(persistent) {
 			container.store(this);
+		}
+		if(empty && parent != null) {
+			boolean active = true;
+			if(persistent) active = container.ext().isActive(parent);
+			if(!active) container.activate(parent, 1);
+			parent.maybeRemove(this, container);
+			if(!active) container.deactivate(parent, 1);
 		}
 	}
 
