@@ -290,7 +290,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		FCPMessage msg;
 		synchronized (this) {
 			FreenetURI uri = generatedURI;
-			if(persistenceType == PERSIST_FOREVER) {
+			if(persistenceType == PERSIST_FOREVER && uri != null) {
 				container.activate(uri, 5);
 				uri = uri.clone();
 			}
