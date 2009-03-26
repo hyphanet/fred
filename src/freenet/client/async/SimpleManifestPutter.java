@@ -31,6 +31,7 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.support.DebuggingHashMap;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -1216,6 +1217,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent())
 			container.store(this);
 		
+		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: "+running.length);
 		for(PutHandler putter : running) {
 			boolean active = true;
 			if(persistent) {
@@ -1231,9 +1233,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent())
 			container.activate(metadataPuttersByMetadata, 2);
 		synchronized(this) {
-			runningMeta = metadataPuttersByMetadata.keySet().toArray(new ClientPutState[metadataPuttersByMetadata.size()]);
+			runningMeta = metadataPuttersByMetadata.values().toArray(new ClientPutState[metadataPuttersByMetadata.size()]);
 		}
 		
+		if(logMINOR) Logger.minor(this, "Metadata putters to cancel: "+runningMeta.length);
 		for(ClientPutState putter : runningMeta) {
 			boolean active = true;
 			if(persistent) {
@@ -1271,7 +1274,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
 			} else {
-				Logger.minor(this, "Inserted manifest successfully on "+this);
+				Logger.minor(this, "Inserted manifest successfully on "+this+" : "+state);
 				insertedManifest = true;
 				if(finished) {
 					if(logMINOR) Logger.minor(this, "Already finished");
@@ -1338,10 +1341,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		synchronized(this) {
 			if(metadataPuttersByMetadata.containsKey(m)) {
+				if(persistent()) container.store(newState);
 				metadataPuttersByMetadata.put(m, newState);
+				if(persistent()) container.ext().store(metadataPuttersByMetadata, 2);
 				if(logMINOR) Logger.minor(this, "Metadata putter transition: "+oldState+" -> "+newState);
 				if(metadataPuttersUnfetchable.containsKey(m)) {
 					metadataPuttersUnfetchable.put(m, newState);
+					if(persistent()) container.ext().store(metadataPuttersUnfetchable, 2);
 					if(logMINOR) Logger.minor(this, "Unfetchable metadata putter transition: "+oldState+" -> "+newState);
 				}
 			} else {
