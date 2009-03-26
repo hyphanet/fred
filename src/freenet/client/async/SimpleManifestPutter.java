@@ -1271,6 +1271,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		synchronized(this) {
 			if(persistent()) container.activate(token, 1);
 			oldState = metadataPuttersByMetadata.remove(token);
+			if(oldState != null) {
+				if(persistent())
+					container.activate(metadataPuttersUnfetchable, 2);
+				if(metadataPuttersUnfetchable.containsKey(token)) {
+					metadataPuttersUnfetchable.remove(token);
+					container.store(metadataPuttersUnfetchable);
+				}
+			}
 			if(!metadataPuttersByMetadata.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
 			} else {
@@ -1315,6 +1323,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		synchronized(this) {
 			if(persistent()) container.activate(token, 1);
 			oldState = metadataPuttersByMetadata.remove(token);
+			if(oldState != null) {
+				if(persistent())
+					container.activate(metadataPuttersUnfetchable, 2);
+				if(metadataPuttersUnfetchable.containsKey(token)) {
+					metadataPuttersUnfetchable.remove(token);
+					container.store(metadataPuttersUnfetchable);
+				}
+			}
 		}
 		if(token != baseMetadata)
 			token.removeFrom(container);
