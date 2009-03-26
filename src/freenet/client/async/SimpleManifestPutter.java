@@ -504,8 +504,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private final boolean getCHKOnly;
 	private boolean insertedAllFiles;
 	private boolean insertedManifest;
-	private final HashMap<Metadata,SingleFileInserter> metadataPuttersByMetadata;
-	private final HashMap<Metadata,SingleFileInserter> metadataPuttersUnfetchable;
+	private final HashMap<Metadata,ClientPutState> metadataPuttersByMetadata;
+	private final HashMap<Metadata,ClientPutState> metadataPuttersUnfetchable;
 	private final String defaultName;
 	private int numberOfFiles;
 	private long totalSize;
@@ -537,8 +537,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		putHandlersWaitingForMetadata = new HashSet<PutHandler>();
 		putHandlersWaitingForFetchable = new HashSet<PutHandler>();
 		waitingForBlockSets = new HashSet<PutHandler>();
-		metadataPuttersByMetadata = new HashMap<Metadata,SingleFileInserter>();
-		metadataPuttersUnfetchable = new HashMap<Metadata,SingleFileInserter>();
+		metadataPuttersByMetadata = new HashMap<Metadata,ClientPutState>();
+		metadataPuttersUnfetchable = new HashMap<Metadata,ClientPutState>();
 		elementsToPutInArchive = new ArrayList<PutHandler>();
 		makePutHandlers(manifestElements, putHandlersByName);
 		checkZips();
@@ -1541,10 +1541,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		container.activate(metadataPuttersUnfetchable, 2);
 		if(!metadataPuttersByMetadata.isEmpty()) {
 			Logger.error(this, "Metadata putters by metadata not empty in removeFrom() on "+this);
-			for(Map.Entry<Metadata, SingleFileInserter> entry : metadataPuttersByMetadata.entrySet()) {
+			for(Map.Entry<Metadata, ClientPutState> entry : metadataPuttersByMetadata.entrySet()) {
 				Metadata meta = entry.getKey();
 				container.activate(meta, 1);
-				SingleFileInserter sfi = entry.getValue();
+				ClientPutState sfi = entry.getValue();
 				container.activate(sfi, 1);
 				metadataPuttersUnfetchable.remove(meta);
 				Logger.error(this, "Metadata putters not empty: "+sfi+" for "+this);
@@ -1554,10 +1554,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(!metadataPuttersUnfetchable.isEmpty()) {
 			Logger.error(this, "Metadata putters unfetchable by metadata not empty in removeFrom() on "+this);
-			for(Map.Entry<Metadata, SingleFileInserter> entry : metadataPuttersByMetadata.entrySet()) {
+			for(Map.Entry<Metadata, ClientPutState> entry : metadataPuttersByMetadata.entrySet()) {
 				Metadata meta = entry.getKey();
 				container.activate(meta, 1);
-				SingleFileInserter sfi = entry.getValue();
+				ClientPutState sfi = entry.getValue();
 				container.activate(sfi, 1);
 				metadataPuttersUnfetchable.remove(meta);
 				Logger.error(this, "Metadata putters unfetchable not empty: "+sfi+" for "+this);
