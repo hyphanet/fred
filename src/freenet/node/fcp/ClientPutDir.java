@@ -43,37 +43,6 @@ public class ClientPutDir extends ClientPutBase {
 	private final int numberOfFiles;
 	private final boolean wasDiskPut;
 	
-	@SuppressWarnings("serial")
-	static class MyHashMap extends HashMap<String, Object> {
-		public boolean objectCanUpdate(ObjectContainer container) {
-			if(logMINOR)
-				Logger.minor(this, "objectCanUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-			return true;
-		}
-		
-		public boolean objectCanNew(ObjectContainer container) {
-			if(logMINOR)
-				Logger.minor(this, "objectCanNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-			return true;
-		}
-		
-		public void objectOnUpdate(ObjectContainer container) {
-			if(logMINOR)
-				Logger.minor(this, "objectOnUpdate() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-		}
-		
-		public void objectOnNew(ObjectContainer container) {
-			if(logMINOR)
-				Logger.minor(this, "objectOnNew() on HashMap for ClientPutDir "+this+" stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-		}
-		
-		public void objectOnActivate(ObjectContainer container) {
-			if(logMINOR)
-				Logger.minor(this, "objectOnActivate() on HashMap for ClientPutDir stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this)+" size="+size(), new Exception("debug"));
-		}
-		
-	}
-	
 	private static volatile boolean logMINOR;
 	
 	static {
