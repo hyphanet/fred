@@ -295,7 +295,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 				uri = uri.clone();
 			}
 			if(succeeded) {
-				msg = new PutSuccessfulMessage(identifier, global, generatedURI, startupTime, completionTime);
+				msg = new PutSuccessfulMessage(identifier, global, uri, startupTime, completionTime);
 			} else {
 				msg = putFailedMessage;
 			}
