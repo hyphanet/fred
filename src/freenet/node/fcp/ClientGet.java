@@ -376,12 +376,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					failed = false;
 				}
 			}
+			if(failed && persistenceType == PERSIST_FOREVER) {
+				if(container.ext().getID(returnBucket) == container.ext().getID(data))
+					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
+				if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+					Logger.error(this, "Succeeding anyway as the data should be on disk...");
+					failed = false;
+				}
+			}
 			if(failed) {
 				Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
-				if(persistenceType == PERSIST_FOREVER) {
-					if(container.ext().getID(returnBucket) == container.ext().getID(data))
-						Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" but UID(data)="+container.ext().getID(data)+" for "+data);
-				}
 				// Caller guarantees that data == returnBucket
 				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
 				return;
@@ -879,13 +883,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * @return The data in a {@link Bucket}, or <code>null</code> if this
 	 *         isn&rsquo;t applicable
 	 */
-	public Bucket getBucket() {
+	public Bucket getBucket(ObjectContainer container) {
 		synchronized(this) {
 			if(targetFile != null) {
-				if(succeeded || tempFile == null)
+				if(succeeded || tempFile == null) {
+					if(persistenceType == PERSIST_FOREVER) container.activate(targetFile, 5);
 					return new FileBucket(targetFile, false, true, false, false, false);
-				else
+				} else {
+					if(persistenceType == PERSIST_FOREVER) container.activate(tempFile, 5);
 					return new FileBucket(tempFile, false, true, false, false, false);
+				}
 			} else return returnBucket;
 		}
 	}

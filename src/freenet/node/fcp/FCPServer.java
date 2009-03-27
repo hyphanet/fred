@@ -1091,7 +1091,7 @@ public class FCPServer implements Runnable {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 		if(get != null) {
 			// FIXME race condition with free() - arrange refcounting for the data to prevent this
-			return new TempFetchResult(new ClientMetadata(get.getMIMEType(null)), get.getBucket(), false);
+			return new TempFetchResult(new ClientMetadata(get.getMIMEType(null)), get.getBucket(null), false);
 		}
 		
 		class OutputWrapper {
@@ -1109,7 +1109,7 @@ public class FCPServer implements Runnable {
 					ClientGet get = globalForeverClient.getCompletedRequest(key, container);
 					container.activate(get, 1);
 					if(get != null) {
-						Bucket origData = get.getBucket();
+						Bucket origData = get.getBucket(container);
 						container.activate(origData, 5);
 						boolean copied = false;
 						Bucket newData;
