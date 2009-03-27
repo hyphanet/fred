@@ -601,7 +601,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	private void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName) {
+	protected void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName) {
 		makePutHandlers(manifestElements, putHandlersByName, "/");
 	}
 	
