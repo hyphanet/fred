@@ -1,14 +1,20 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.IOException;
 
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 public class PersistentTempFileBucket extends TempFileBucket {
 
-	protected PersistentTempFileBucket(long id, FilenameGenerator generator) {
-		super(id, generator, false, true);
+	public PersistentTempFileBucket(long id, FilenameGenerator generator) {
+		this(id, generator, true);
+	}
+	
+	protected PersistentTempFileBucket(long id, FilenameGenerator generator, boolean deleteOnFree) {
+		super(id, generator, false, deleteOnFree);
 	}
 
 	@Override
@@ -40,7 +46,7 @@ public class PersistentTempFileBucket extends TempFileBucket {
 		} catch (NumberFormatException e) {
 			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
 		}
-		Bucket bucket = new PersistentTempFileBucket(id, f.getGenerator());
+		Bucket bucket = new PersistentTempFileBucket(id, f.getGenerator(), true);
 		if(file.exists()) // no point otherwise!
 			f.register(file);
 		return bucket;
@@ -53,6 +59,16 @@ public class PersistentTempFileBucket extends TempFileBucket {
 		fs.putOverwrite("Type", "PersistentTempFileBucket");
 		fs.put("FilenameID", filenameID);
 		return fs;
+	}
+	
+	/** Must override createShadow() so it creates a persistent bucket, which will have
+	 * deleteOnExit() = deleteOnFinalize() = false.
+	 */
+	public Bucket createShadow() throws IOException {
+		PersistentTempFileBucket ret = new PersistentTempFileBucket(filenameID, generator, false);
+		ret.setReadOnly();
+		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
+		return ret;
 	}
 	
 }

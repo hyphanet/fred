@@ -15,7 +15,7 @@ public class TempFileBucketTest extends BucketTestBase {
 	@Override
 	protected Bucket makeBucket(long size) throws IOException {
 		FilenameGenerator filenameGenerator = new FilenameGenerator(weakPRNG, false, null, "junit");
-		BaseFileBucket bfb = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true);
+		BaseFileBucket bfb = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
 
 		assertTrue("deleteOnExit", bfb.deleteOnExit());
 		assertTrue("deleteOnFree", bfb.deleteOnFree());

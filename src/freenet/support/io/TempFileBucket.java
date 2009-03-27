@@ -24,20 +24,26 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	final FilenameGenerator generator;
 	private static boolean logDebug = true;
 	private boolean readOnly;
-	private final boolean deleteOnExit;
 	private final boolean deleteOnFree;
+	
+	public TempFileBucket(long id, FilenameGenerator generator) {
+		this(id, generator, true, true);
+	}
+	
 	/**
 	 * Constructor for the TempFileBucket object
-	 *
-	 * @param  f  File
+	 * Subclasses can call this constructor.
+	 * @param deleteOnExit Set if you want the bucket deleted on shutdown. Passed to 
+	 * the parent BaseFileBucket. You must also override deleteOnExit() and 
+	 * implement your own createShadow()!
+	 * @param deleteOnFree True for a normal temp bucket, false for a shadow.
 	 */
-	public TempFileBucket(
+	protected TempFileBucket(
 		long id,
 		FilenameGenerator generator, boolean deleteOnExit, boolean deleteOnFree) {
-		super(generator.getFilename(id));
+		super(generator.getFilename(id), deleteOnExit);
 		this.filenameID = id;
 		this.generator = generator;
-		this.deleteOnExit = deleteOnExit;
 		this.deleteOnFree = deleteOnFree;
 		synchronized(this) {
 			logDebug = Logger.shouldLog(Logger.DEBUG, this);
@@ -59,7 +65,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	protected boolean deleteOnFinalize() {
 		// Make sure finalize wacks temp file 
 		// if it is not explictly freed.
-		return deleteOnExit; // not if shadow
+		return true; // not if shadow
 	}
 	
 	@Override
@@ -95,7 +101,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	protected boolean deleteOnExit() {
-		return deleteOnExit;
+		return true;
 	}
 
 	public void storeTo(ObjectContainer container) {
@@ -111,7 +117,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public Bucket createShadow() throws IOException {
-		TempFileBucket ret = new TempFileBucket(filenameID, generator, deleteOnExit, false);
+		TempFileBucket ret = new TempFileBucket(filenameID, generator, true, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;

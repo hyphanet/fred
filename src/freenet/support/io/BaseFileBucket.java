@@ -46,9 +46,11 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	protected static String tempDir = null;
 
-	public BaseFileBucket(File file) {
+	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) throw new NullPointerException();
 		this.length = file.length();
+		if(deleteOnExit)
+			file.deleteOnExit();
 	}
 	
 	protected void setDeleteOnExit(File file) {

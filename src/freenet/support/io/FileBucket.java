@@ -43,7 +43,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
 	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
-		super(file);
+		super(file, deleteOnExit);
 		if(file == null) throw new NullPointerException();
 		File origFile = file;
 		file = file.getAbsoluteFile();
@@ -56,8 +56,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		this.deleteOnFinalize = deleteOnFinalize;
 		this.deleteOnFree = deleteOnFree;
 		this.deleteOnExit = deleteOnExit;
-		if(deleteOnExit)
-			setDeleteOnExit(file);
 		// Useful for finding temp file leaks.
 		// System.err.println("-- FileBucket.ctr(0) -- " +
 		// file.getAbsolutePath());
