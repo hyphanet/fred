@@ -159,6 +159,9 @@ public class ClientGetter extends BaseClientGetter {
 			finished = true;
 			currentState = null;
 		}
+		if(persistent()) {
+			container.store(this);
+		}
 		// Rest of method does not need to be synchronized.
 		// Variables will be updated on exit of method, and the only thing that is
 		// set is the returnBucket and the result. Not locking not only prevents
@@ -194,7 +197,6 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		FetchResult res = result;
 		if(persistent()) {
-			container.store(this);
 			container.activate(clientCallback, 1);
 		}
 		clientCallback.onSuccess(res, ClientGetter.this, container);
