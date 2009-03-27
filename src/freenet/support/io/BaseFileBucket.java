@@ -67,7 +67,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		synchronized (this) {
 			File file = getFile();
 			if(freed)
-				throw new IOException("File already freed");
+				throw new IOException("File already freed: "+this);
 			if(isReadOnly())
 				throw new IOException("Bucket is read-only: "+this);
 			
