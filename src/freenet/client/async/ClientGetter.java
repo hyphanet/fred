@@ -245,6 +245,9 @@ public class ClientGetter extends BaseClientGetter {
 			final FetchException e1 = e;
 			if(persistent())
 				container.store(this);
+			if(persistent()) {
+				container.activate(clientCallback, 1);
+			}
 			clientCallback.onFailure(e1, ClientGetter.this, container);
 			return;
 		}
