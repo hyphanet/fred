@@ -1695,5 +1695,45 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return true;
 	}
 
+	// compose helper stuff
+
+	protected final ClientMetadata guessMime(String name, ManifestElement me) {
+		String mimeType = me.mimeOverride;
+		if(mimeType == null)
+			mimeType = DefaultMIMETypes.guessMIMEType(name, true);
+		ClientMetadata cm;
+		if(mimeType == null || mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
+			cm = null;
+		else
+			cm = new ClientMetadata(mimeType);
+		return cm;
+	}
+
+	protected final void addRedirectNoMime(String name, ManifestElement me, HashMap<String, Object> putHandlersByName2) {
+		addRedirect(name, me, null, putHandlersByName2);
+	}
+
+	protected final void addRedirect(String name, ManifestElement me, HashMap<String, Object> putHandlersByName2) {
+		addRedirect(name, me, guessMime(name, me), putHandlersByName2);
+	}
+
+	protected final void addRedirect(String name, ManifestElement me, ClientMetadata cm, HashMap<String, Object> putHandlersByName2) {
+		PutHandler ph;
+		Bucket data = me.data;
+		if(me.targetURI != null) {
+			ph = new PutHandler(this, name, me.targetURI, cm);
+			// Just a placeholder, don't actually run it
+		} else {
+			ph = new PutHandler(this, name, data, cm, getCHKOnly);
+			runningPutHandlers.add(ph);
+			putHandlersWaitingForMetadata.add(ph);
+			putHandlersWaitingForFetchable.add(ph);
+			if(logMINOR)
+				Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent+" "+persistent());
+			numberOfFiles++;
+			totalSize += data.size();
+		}
+		putHandlersByName2.put(name, ph);
+	}
 }
 
