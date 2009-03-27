@@ -88,7 +88,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			origSFI = null;
 		}
 		
-		private SingleFileInserter origSFI;
+		private ClientPutState origSFI;
 		private ClientPutState currentState;
 		private ClientMetadata cm;
 		private Metadata metadata;
@@ -105,7 +105,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.error(this, "metdata=" + metadata + " on start(), should be impossible", new Exception("debug"));
 				return;
 			}
-			SingleFileInserter sfi;
+			ClientPutState sfi;
 			synchronized(this) {
 				sfi = origSFI;
 				currentState = sfi;
@@ -115,7 +115,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(sfi, 1);
 				container.store(this);
 			}
-			sfi.start(null, container, context);
+			sfi.schedule(container, context);
 			if(persistent())
 				container.deactivate(sfi, 1);
 			if(persistent)
@@ -459,7 +459,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Removing "+this);
-			SingleFileInserter oldSFI;
+			ClientPutState oldSFI;
 			ClientPutState oldState;
 			synchronized(this) {
 				oldSFI = origSFI;
