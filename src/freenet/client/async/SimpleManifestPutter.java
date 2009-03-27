@@ -1286,7 +1286,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.activate(metadataPuttersUnfetchable, 2);
 				if(metadataPuttersUnfetchable.containsKey(token)) {
 					metadataPuttersUnfetchable.remove(token);
-					container.store(metadataPuttersUnfetchable);
+					if(persistent())
+						container.store(metadataPuttersUnfetchable);
 				}
 			}
 			if(!metadataPuttersByMetadata.isEmpty()) {
