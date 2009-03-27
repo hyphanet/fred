@@ -280,7 +280,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					newAck = node.usm.waitFor(mf1, this);
 				} catch (DisconnectedException e) {
 					if(logMINOR) Logger.minor(this, "Disconnected from "+next);
-					break;
+					continue;
 				}
             	
             	if(newAck == null) {
@@ -289,7 +289,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					next.localRejectedOverload("Timeout2");
 					forwardRejectedOverload();
 					// Try another peer
-					break;
+					continue;
             	}
             }
             
