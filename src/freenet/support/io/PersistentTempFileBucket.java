@@ -8,7 +8,7 @@ import freenet.support.api.Bucket;
 public class PersistentTempFileBucket extends TempFileBucket {
 
 	protected PersistentTempFileBucket(long id, FilenameGenerator generator) {
-		super(id, generator, false);
+		super(id, generator, false, true);
 	}
 
 	@Override

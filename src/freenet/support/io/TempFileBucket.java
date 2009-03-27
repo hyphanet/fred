@@ -25,6 +25,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	private static boolean logDebug = true;
 	private boolean readOnly;
 	private final boolean deleteOnExit;
+	private final boolean deleteOnFree;
 	/**
 	 * Constructor for the TempFileBucket object
 	 *
@@ -32,11 +33,12 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	 */
 	public TempFileBucket(
 		long id,
-		FilenameGenerator generator, boolean deleteOnExit) {
+		FilenameGenerator generator, boolean deleteOnExit, boolean deleteOnFree) {
 		super(generator.getFilename(id));
 		this.filenameID = id;
 		this.generator = generator;
 		this.deleteOnExit = deleteOnExit;
+		this.deleteOnFree = deleteOnFree;
 		synchronized(this) {
 			logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		}
@@ -47,7 +49,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 			if (logDebug)
 				Logger.debug(
 					this,
-					"Initializing TempFileBucket(" + getFile());
+					"Initializing TempFileBucket(" + getFile()+" deleteOnExit="+deleteOnExit);
 		}
 		if(deleteOnExit)
 			setDeleteOnExit(getFile());
@@ -75,7 +77,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	protected boolean deleteOnFree() {
-		return true;
+		return deleteOnFree;
 	}
 
 	@Override
@@ -109,7 +111,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public Bucket createShadow() throws IOException {
-		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
+		TempFileBucket ret = new TempFileBucket(filenameID, generator, deleteOnExit, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;
