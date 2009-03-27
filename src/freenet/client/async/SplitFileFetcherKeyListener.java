@@ -296,6 +296,9 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 
 	public void writeFilters() throws IOException {
 		if(!persistent) return;
+		synchronized(this) {
+			if(killed) return;
+		}
 		RandomAccessFile raf = new RandomAccessFile(mainBloomFile, "rw");
 		raf.write(filterBuffer);
 		raf.close();
