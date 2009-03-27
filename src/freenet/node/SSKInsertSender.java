@@ -115,6 +115,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         } finally {
+        	if(logMINOR) Logger.minor(this, "Finishing "+this);
         	node.removeInsertSender(myKey, origHTL, this);
         }
 	}
