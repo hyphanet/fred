@@ -560,7 +560,7 @@ public class FreenetURI implements Cloneable {
 	@Override
 	public String toString() {
 		if (toStringCache == null)
-			toStringCache = toString(false, false) + "#"+super.toString()+"#"+uniqueHashCode;
+			toStringCache = toString(false, false)/* + "#"+super.toString()+"#"+uniqueHashCode*/;
 		return toStringCache;
 	}
 
@@ -894,6 +894,18 @@ public class FreenetURI implements Cloneable {
 		return true;
 	}
 
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(!container.ext().isActive(this)) {
+			Logger.error(this, "Updating but not active!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+	
+	public void objectOnDelete(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.minor(this, "Deleting URI", new Exception("debug"));
+	}
+	
 	public boolean isUSK() {
 		return "USK".equals(keyType);
 	}
