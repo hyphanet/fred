@@ -124,6 +124,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.store(this);
 		}
 		
+		@Override
 		public void cancel(ObjectContainer container, ClientContext context) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Cancelling "+this, new Exception("debug"));
@@ -457,6 +458,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent) container.store(this);
 		}
 		
+		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Removing "+this);
 			SingleFileInserter oldSFI;
