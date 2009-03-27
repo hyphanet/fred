@@ -987,7 +987,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
-			if(state != null)
+			if(persistent && state != null)
 				state.removeFrom(container, context);
 			if(persistent)
 				container.delete(this);
@@ -1003,7 +1003,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			SingleFileFetcher.this.onFailure(e, true, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
-			if(state != null)
+			if(persistent && state != null)
 				state.removeFrom(container, context);
 			if(persistent)
 				container.delete(this);
