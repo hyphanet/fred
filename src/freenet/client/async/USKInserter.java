@@ -82,6 +82,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
 			fetcher = context.uskManager.getFetcherForInsertDontSchedule(persistent ? pubUSK.clone() : pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "scheduled: "+fetcher);
 		}
 		if(persistent) {
 			container.store(fetcher);
@@ -188,7 +190,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(freeData) {
 			if(persistent) container.activate(data, 1);
 			data.free();
-			data.removeFrom(container);
+			if(persistent) data.removeFrom(container);
 			synchronized(this) {
 				data = null;
 			}
