@@ -579,7 +579,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(client, 1);
 		}
-		freeData(container);
+		// We do not want the data to be removed on failure, because the request
+		// may be restarted, and the bucket persists on the getter, even if we get rid of it here.
+		//freeData(container);
 		finish(container);
 		if(client != null)
 			client.notifyFailure(this, container);
@@ -923,16 +925,30 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			finished = false;
 			redirect = 
 				getFailedMessage == null ? null : getFailedMessage.redirectURI;
+			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null)
+				getFailedMessage.removeFrom(container);
 			this.getFailedMessage = null;
+			if(persistenceType == PERSIST_FOREVER && allDataPending != null)
+				allDataPending.removeFrom(container);
 			this.allDataPending = null;
+			if(persistenceType == PERSIST_FOREVER && postFetchProtocolErrorMessage != null)
+				postFetchProtocolErrorMessage.removeFrom(container);
 			this.postFetchProtocolErrorMessage = null;
+			if(persistenceType == PERSIST_FOREVER && progressPending != null)
+				progressPending.removeFrom(container);
 			this.progressPending = null;
 			started = false;
 		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.store(this);
 		try {
 			if(getter.restart(redirect, container, context)) {
 				synchronized(this) {
-					if(redirect != null) this.uri = redirect;
+					if(redirect != null) {
+						if(persistenceType == PERSIST_FOREVER)
+							uri.removeFrom(container);
+						this.uri = redirect;
+					}
 					started = true;
 				}
 				if(persistenceType == PERSIST_FOREVER)
