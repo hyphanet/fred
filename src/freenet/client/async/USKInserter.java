@@ -113,6 +113,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				}
 			}
 			if(parent.persistent()) {
+				container.activate(fetcher, 1);
+				container.activate(fetcher.ctx, 1);
 				fetcher.removeFrom(container, context);
 				fetcher.ctx.removeFrom(container);
 				fetcher = null;
@@ -318,6 +320,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	public synchronized void onCancelled(ObjectContainer container, ClientContext context) {
 		if(fetcher != null) {
 			if(parent.persistent()) {
+				container.activate(fetcher, 1);
+				container.activate(fetcher.ctx, 1);
 				fetcher.ctx.removeFrom(container);
 				fetcher.removeFrom(container, context);
 			}
@@ -387,7 +391,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		pubUSK.removeFrom(container);
 		if(fetcher != null) {
 			Logger.error(this, "Fetcher tag still present: "+fetcher+" in removeFrom() for "+this, new Exception("debug"));
-			container.activate(fetcher.ctx, 2);
+			container.activate(fetcher, 1);
+			container.activate(fetcher.ctx, 1);
 			fetcher.ctx.removeFrom(container);
 			fetcher.removeFrom(container, context);
 		}

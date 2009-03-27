@@ -620,6 +620,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		freeData(container);
 		
 		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(fctx, 1);
 			if(fctx.allowedMIMETypes != null) {
 				container.activate(fctx.allowedMIMETypes, 5);
 				container.delete(fctx.allowedMIMETypes);

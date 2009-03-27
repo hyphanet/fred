@@ -341,7 +341,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		super.removeFrom(container, context);
-		if(deleteFetchContext) ctx.removeFrom(container);
+		if(deleteFetchContext) {
+			container.activate(ctx, 1);
+			ctx.removeFrom(container);
+		}
 		key.removeFrom(container);
 	}
 	
