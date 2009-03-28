@@ -274,10 +274,15 @@ public class FreenetURI implements Cloneable {
 		if(!validKeyType)
 			throw new MalformedURLException("Invalid key type: " + keyType);
 
+		boolean isSSK = "SSK".equals(keyType);
+		boolean isUSK = "USK".equals(keyType);
+		boolean isKSK = "KSK".equals(keyType);
+
 		// decode metaString
 		ArrayList<String> sv = null;
 		int slash2;
 		sv = new ArrayList<String>();
+		if (isKSK) URI = "/" + URI; // ensure that KSK docNames are decoded
 		while ((slash2 = URI.lastIndexOf('/')) != -1) {
 			String s;
 			try {
@@ -295,11 +300,7 @@ public class FreenetURI implements Cloneable {
 		// sv is *backwards*
 		// this makes for more efficient handling
 
-		boolean isSSK = "SSK".equals(keyType);
-		boolean isUSK = "USK".equals(keyType);
-		boolean isKSK = "KSK".equals(keyType);
-
-		if(isSSK || isUSK) {
+		if(isSSK || isUSK || isKSK) {
 
 			if(sv.isEmpty())
 				throw new MalformedURLException("No docname for " + keyType);
@@ -316,10 +317,6 @@ public class FreenetURI implements Cloneable {
 				}
 			} else
 				suggestedEdition = -1;
-		} else if(isKSK) {
-			// Deal with KSKs
-			docName = URI;
-			suggestedEdition = -1;
 		} else {
 			// docName not necessary, nor is it supported, for CHKs.
 			docName = null;
