@@ -63,6 +63,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.origSFI =
 				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode);
 			metadata = null;
+			containerHandle = null;
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm) {
@@ -74,6 +75,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadata = m;
 			if(logMINOR) Logger.minor(this, "Simple redirect metadata: "+m);
 			origSFI = null;
+			containerHandle = null;
 		}
 		
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data) {
@@ -86,6 +88,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadata = m;
 			if(logMINOR) Logger.minor(this, "Internal redirect: "+m);
 			origSFI = null;
+			containerHandle = null;
 		}
 		
 		private ClientPutState origSFI;
@@ -95,6 +98,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private String targetInArchive;
 		private final Bucket data;
 		private final boolean persistent;
+		private final PutHandler containerHandle;
 		
 		public void start(ObjectContainer container, ClientContext context) throws InsertException {
 			if (origSFI == null) {
