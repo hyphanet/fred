@@ -120,10 +120,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.store(this);
 			}
 			sfi.schedule(container, context);
-			if(persistent())
+			if(persistent) {
 				container.deactivate(sfi, 1);
-			if(persistent)
 				container.store(this);
+			}
 		}
 		
 		@Override
@@ -171,33 +171,30 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			synchronized(SimpleManifestPutter.this) {
 				if(persistent) container.store(this);
 				runningPutHandlers.remove(this);
-				if(persistent)
+				if(persistent) {
 					container.ext().store(runningPutHandlers, 2);
-				
-				if(persistent)
 					container.activate(putHandlersWaitingForMetadata, 2);
+				}
 				if(putHandlersWaitingForMetadata.contains(this)) {
 					putHandlersWaitingForMetadata.remove(this);
 					container.ext().store(putHandlersWaitingForMetadata, 2);
 					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
 				
-				if(persistent)
+				if(persistent) {
 					container.deactivate(putHandlersWaitingForMetadata, 1);
-				if(persistent)
 					container.activate(waitingForBlockSets, 2);
+				}
 				if(waitingForBlockSets.contains(this)) {
 					waitingForBlockSets.remove(this);
 					container.store(waitingForBlockSets);
 					Logger.error(this, "PutHandler was in waitingForBlockSets in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
-				if(persistent)
+				if(persistent) {
 					container.deactivate(waitingForBlockSets, 1);
-				
-				if(persistent)
 					container.deactivate(putHandlersWaitingForFetchable, 1);
-				if(persistent)
 					container.activate(putHandlersWaitingForFetchable, 2);
+				}
 				if(putHandlersWaitingForFetchable.contains(this)) {
 					putHandlersWaitingForFetchable.remove(this);
 					container.ext().store(putHandlersWaitingForFetchable, 2);
