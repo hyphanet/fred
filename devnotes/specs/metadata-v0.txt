@@ -2,7 +2,7 @@
 
 Ian has agreed that binary metadata is probably the best thing. I
 therefore propose a simple, extensible binary metadata format, primarily
-aimed at implementing splitfiles in the not too distant future. It
+aimed at implementing splitfiles in the not-too-distant future. It
 provides limited extension capabilities in the areas of metadata,
 splitfile codecs, document types, and ZIP manifests, and is reasonably
 compact. It allows for various tricks which may be provided for in
