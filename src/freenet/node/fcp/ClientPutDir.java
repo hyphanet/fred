@@ -304,7 +304,7 @@ public class ClientPutDir extends ClientPutBase {
 				e.freeData(container, persistenceType == PERSIST_FOREVER);
 			}
 		}
-		container.delete(manifestElements);
+		if(persistenceType == PERSIST_FOREVER) container.delete(manifestElements);
 	}
 
 	@Override
