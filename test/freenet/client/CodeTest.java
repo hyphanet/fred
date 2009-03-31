@@ -48,7 +48,7 @@ public class CodeTest extends TestCase {
 		int[] index = new int[KK];
 
 		for (int i = 0; i < KK; i++)
-			index[i] = KK - i;
+			index[i] = lim - i - 1;
 		encodeDecode(code, code2, index);
 		encodeDecode(code2, code, index);
 	}
@@ -75,7 +75,7 @@ public class CodeTest extends TestCase {
 		if (max_i0 + KK > lim)
 			max_i0 = lim - KK;
 
-		for (int s = 1; s <= max_i0; s++) {
+		for (int s = max_i0 - 2; s <= max_i0; s++) {
 			for (int i = 0; i < KK; i++)
 				index[i] = i + s;
 			encodeDecode(code, code2, index);
