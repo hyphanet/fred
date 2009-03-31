@@ -357,7 +357,7 @@ public class FCPClient {
 		if(isGlobalQueue) {
 			synchronized(clientsWatchingLock) {
 				if(clientsWatching != null)
-				clients = (FCPClient[]) clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
+				clients = clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
 				else
 					clients = null;
 			}
@@ -395,7 +395,7 @@ public class FCPClient {
 		if(container != null) {
 			container.activate(clientRequestsByIdentifier, 2);
 		}
-		ClientRequest req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
+		ClientRequest req = clientRequestsByIdentifier.get(identifier);
 		if(persistenceType == ClientRequest.PERSIST_FOREVER)
 			container.activate(req, 1);
 		return req;
@@ -410,7 +410,7 @@ public class FCPClient {
 			container.activate(toStart, 2);
 		}
 		synchronized(this) {
-			reqs = (ClientRequest[]) toStart.toArray(new ClientRequest[toStart.size()]);
+			reqs = toStart.toArray(new ClientRequest[toStart.size()]);
 			toStart.clear();
 			container.store(toStart);
 		}
@@ -477,9 +477,9 @@ public class FCPClient {
 			container.activate(clientRequestsByIdentifier, 2);
 		}
 		synchronized(this) {
-			Iterator i = runningPersistentRequests.iterator();
+			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
-				ClientRequest req = (ClientRequest) i.next();
+				ClientRequest req = i.next();
 				toKill.add(req);
 			}
 			runningPersistentRequests.clear();
@@ -488,21 +488,21 @@ public class FCPClient {
 			completedUnackedRequests.clear();
 			i = clientRequestsByIdentifier.values().iterator();
 			while(i.hasNext()) {
-				ClientRequest req = (ClientRequest) i.next();
+				ClientRequest req = i.next();
 				toKill.add(req);
 			}
 			clientRequestsByIdentifier.clear();
 			container.ext().store(clientRequestsByIdentifier, 2);
 			i = toStart.iterator();
 			while(i.hasNext()) {
-				ClientRequest req = (ClientRequest) i.next();
+				ClientRequest req = i.next();
 				toKill.add(req);
 			}
 			toStart.clear();
 		}
-		Iterator i = toStart.iterator();
+		Iterator<ClientRequest> i = toStart.iterator();
 		while(i.hasNext()) {
-			ClientRequest req = (ClientRequest) i.next();
+			ClientRequest req = i.next();
 			req.cancel(container, context);
 			req.requestWasRemoved(container, context);
 		}
@@ -516,7 +516,7 @@ public class FCPClient {
 			container.activate(completedUnackedRequests, 2);
 		}
 		for(int i=0;i<completedUnackedRequests.size();i++) {
-			ClientRequest req = (ClientRequest) completedUnackedRequests.get(i);
+			ClientRequest req = completedUnackedRequests.get(i);
 			if(!(req instanceof ClientGet)) continue;
 			ClientGet getter = (ClientGet) req;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
