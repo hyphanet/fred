@@ -345,6 +345,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			container.activate(ctx, 1);
 			ctx.removeFrom(container);
 		}
+		container.activate(key, 5);
 		key.removeFrom(container);
 	}
 	
