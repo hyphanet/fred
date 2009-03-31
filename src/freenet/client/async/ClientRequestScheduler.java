@@ -544,8 +544,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(reqGroup != null) {
 				// Try to find a better non-persistent request
+				if(logMINOR) Logger.minor(this, "Persistent request: "+reqGroup+" prio "+reqGroup.prio+" retryCount "+reqGroup.retryCount);
 				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio, reqGroup.retryCount);
-				if(better != null) return better;
+				if(better != null) {
+					if(better.getPriority() > reqGroup.prio) {
+						Logger.error(this, "Selected "+better+" as better than "+reqGroup+" but isn't better!");
+					}
+					return better;
+				}
 			}
 			if(reqGroup == null) {
 				queueFillRequestStarterQueue();
