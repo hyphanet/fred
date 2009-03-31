@@ -365,7 +365,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				Logger.minor(this, "Nothing to do");
 			return null;
 		}
-		for(;choosenPriorityClass <= RequestStarter.MINIMUM_PRIORITY_CLASS;choosenPriorityClass++) {
+		if(maxPrio >= RequestStarter.MINIMUM_PRIORITY_CLASS)
+			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+		for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 		if(tryOfferedKeys) {
 			if(offeredKeys[choosenPriorityClass].hasValidKeys(this, null, context))
