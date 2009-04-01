@@ -657,14 +657,12 @@ class SingleFileInserter implements ClientPutState {
 					toRemove = true;
 					sfi = null;
 					if(metadataPutter != null) {
-						toFail = false;
 						if(persistent) container.store(this);
 					}
 				} else if(state == metadataPutter) {
 					toRemove = true;
 					metadataPutter = null;
 					if(sfi != null) {
-						toFail = false;
 						if(persistent) container.store(this);
 					}
 				} else {
@@ -785,11 +783,6 @@ class SingleFileInserter implements ClientPutState {
 			synchronized(this) {
 				if(finished){
 					return;
-				} else {
-					if(freeData)
-						block.free(container);
-					else
-						block.nullData();
 				}
 				finished = true;
 				oldSFI = sfi;
@@ -807,6 +800,12 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
+			synchronized(this) {
+				if(freeData)
+					block.free(container);
+				else
+					block.nullData();
+			}
 			cb.onFailure(e, this, container, context);
 		}
 
