@@ -4,6 +4,9 @@
 package freenet.node.fcp;
 
 import java.util.HashMap;
+import java.util.Iterator;
+
+import com.db4o.ObjectContainer;
 
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
@@ -33,10 +36,11 @@ public class PersistentPutDir extends FCPMessage {
 	final boolean started;
 	final int maxRetries;
 	final boolean wasDiskPut;
+	private final SimpleFieldSet cached;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
 	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean wasDiskPut) {
+	        String token, boolean started, int maxRetries, boolean wasDiskPut, ObjectContainer container) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -49,10 +53,10 @@ public class PersistentPutDir extends FCPMessage {
 		this.started = started;
 		this.maxRetries = maxRetries;
 		this.wasDiskPut = wasDiskPut;
+		cached = generateFieldSet(container);
 	}
 
-	@Override
-	public SimpleFieldSet getFieldSet() {
+	private SimpleFieldSet generateFieldSet(ObjectContainer container) {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // false because this can get HUGE
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("URI", uri.toString(false, false));
@@ -78,6 +82,8 @@ public class PersistentPutDir extends FCPMessage {
 				subset.putSingle("TargetURI", tempURI.toString());
 			} else {
 				Bucket data = e.getData();
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.activate(data, 1);
 				if(data instanceof DelayedFreeBucket) {
 					data = ((DelayedFreeBucket)data).getUnderlying();
 				}
@@ -87,7 +93,7 @@ public class PersistentPutDir extends FCPMessage {
 				// What to do with the bucket?
 				// It is either a persistent encrypted bucket or a file bucket ...
 				if(data == null) {
-					Logger.error(this, "Bucket already freed: "+e.getData()+" for "+e+" for "+identifier);
+					Logger.error(this, "Bucket already freed: "+e.getData()+" for "+e+" for "+e.getName()+" for "+identifier);
 				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
@@ -96,6 +102,8 @@ public class PersistentPutDir extends FCPMessage {
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.deactivate(data, 1);
 			}
 			files.put(num, subset);
 		}
@@ -109,6 +117,11 @@ public class PersistentPutDir extends FCPMessage {
 	}
 
 	@Override
+	public SimpleFieldSet getFieldSet() {
+		return cached;
+	}
+
+	@Override
 	public String getName() {
 		return name;
 	}
@@ -119,6 +132,23 @@ public class PersistentPutDir extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentPut goes from server to client not the other way around", identifier, global);
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		uri.removeFrom(container);
+		removeFrom(manifestElements, container);
+		cached.removeFrom(container);
+		container.delete(this);
+	}
 
+	private void removeFrom(HashMap manifestElements, ObjectContainer container) {
+		for(Iterator i=manifestElements.values().iterator();i.hasNext();) {
+			Object o = i.next();
+			if(o instanceof HashMap)
+				removeFrom((HashMap)o, container);
+			else
+				((ManifestElement) o).removeFrom(container);
+		}
+		manifestElements.clear();
+		container.delete(manifestElements);
+	}
 	
 }

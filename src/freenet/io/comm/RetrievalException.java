@@ -97,6 +97,10 @@ public class RetrievalException extends Exception {
 				return "UNKNOWN ("+reason+")";
 		}
 	}
+	
+	public String getMessage() {
+		return toString();
+	}
 
     @Override
     public final synchronized Throwable fillInStackTrace() {

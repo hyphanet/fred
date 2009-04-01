@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 public class InsertException extends Exception {
@@ -23,11 +26,23 @@ public class InsertException extends Exception {
 		return mode;
 	}
 	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	public InsertException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
 		extra = msg;
 		mode = m;
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
 		this.uri = expectedURI;
@@ -37,7 +52,7 @@ public class InsertException extends Exception {
 		super(getMessage(m));
 		extra = null;
 		mode = m;
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		errorCodes = null;
 		this.uri = expectedURI;
@@ -46,7 +61,7 @@ public class InsertException extends Exception {
 	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
 		extra = e.getMessage();
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
@@ -58,7 +73,7 @@ public class InsertException extends Exception {
 		super(getMessage(mode));
 		extra = null;
 		this.mode = mode;
-		if(Logger.shouldLog(Logger.MINOR, getClass()))
+		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;
@@ -70,6 +85,17 @@ public class InsertException extends Exception {
 		this.mode = mode;
 		this.errorCodes = null;
 		this.uri = null;
+	}
+
+	public InsertException(InsertException e) {
+		super(e.getMessage());
+		extra = e.extra;
+		mode = e.mode;
+		errorCodes = e.errorCodes.clone();
+		if(e.uri == null)
+			uri = null;
+		else
+			uri = e.uri.clone();
 	}
 
 	/** Caller supplied a URI we cannot use */
@@ -152,5 +178,25 @@ public class InsertException extends Exception {
 		else
 			mode = TOO_MANY_RETRIES_IN_BLOCKS;
 		return new InsertException(mode, errors, null);
+	}
+	
+	public InsertException clone() {
+		return new InsertException(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(errorCodes != null) {
+			container.activate(errorCodes, 1);
+			errorCodes.removeFrom(container);
+		}
+		if(uri != null) {
+			container.activate(uri, 5);
+			uri.removeFrom(container);
+		}
+		StackTraceElement[] elements = getStackTrace();
+		if(elements != null)
+			for(StackTraceElement element : elements)
+				container.delete(element);
+		container.delete(this);
 	}
 }

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -29,7 +31,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 		if(global) fs.putSingle("Global", "true");
 		// This is useful for simple clients.
 		if(uri != null)
-			fs.putSingle("URI", uri.toString());
+			fs.putSingle("URI", uri.toString(false, false));
 		fs.put("StartupTime", startupTime);
 		fs.put("CompletionTime", completionTime);
 		return fs;
@@ -44,6 +46,11 @@ public class PutSuccessfulMessage extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "InsertSuccessful goes from server to client not the other way around", identifier, global);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		uri.removeFrom(container);
+		container.delete(this);
 	}
 
 }

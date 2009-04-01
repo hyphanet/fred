@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 
+import com.db4o.ObjectContainer;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.store.StorableBlock;
 import freenet.support.Base64;
@@ -57,6 +59,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	public DSAPublicKey(byte[] pubkeyBytes) throws IOException, CryptFormatException {
 		this(new ByteArrayInputStream(pubkeyBytes));
+	}
+
+	private DSAPublicKey(DSAPublicKey key) {
+		fingerprint = null; // regen when needed
+		this.y = new NativeBigInteger(1, key.y.toByteArray());
+		this.group = key.group.cloneKey();
 	}
 
 	public static DSAPublicKey create(byte[] pubkeyAsBytes) throws CryptFormatException {
@@ -205,5 +213,15 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	public byte[] getRoutingKey() {
 		return asBytesHash();
+	}
+
+	public DSAPublicKey cloneKey() {
+		return new DSAPublicKey(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(y);
+		group.removeFrom(container);
+		container.delete(this);
 	}
 }

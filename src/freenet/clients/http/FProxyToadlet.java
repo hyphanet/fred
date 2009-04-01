@@ -11,6 +11,8 @@ import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -26,6 +28,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -478,7 +481,13 @@ public final class FProxyToadlet extends Toadlet {
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
-			FetchResult result = fetch(key, maxSize, httprequest /* fixme replace if HTTPRequest ever becomes comparable */); 
+			FetchResult result = fetch(key, maxSize, new RequestClient() {
+				public boolean persistent() {
+					return false;
+				}
+				public void removeFrom(ObjectContainer container) {
+					throw new UnsupportedOperationException();
+				} }); 
 			
 			// Now, is it safe?
 			

@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.node.GetPubkey;
@@ -35,7 +37,7 @@ public class NodeSSK extends Key {
 	/** E(H(docname)) (E = encrypt using decrypt key, which only clients know) */
 	final byte[] encryptedHashedDocname;
 	/** The signature key, if we know it */
-	DSAPublicKey pubKey;
+	transient DSAPublicKey pubKey;
 	final int hashCode;
 	
 	static final int SSK_VERSION = 1;
@@ -69,6 +71,21 @@ public class NodeSSK extends Key {
 		hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
 	}
 	
+    private NodeSSK(NodeSSK key) {
+    	super(key);
+    	this.cryptoAlgorithm = key.cryptoAlgorithm;
+    	this.pubKey = key.pubKey;
+    	this.pubKeyHash = new byte[key.pubKeyHash.length];
+    	System.arraycopy(key.pubKeyHash, 0, pubKeyHash, 0, key.pubKeyHash.length);
+    	this.encryptedHashedDocname = new byte[key.encryptedHashedDocname.length];
+    	System.arraycopy(key.encryptedHashedDocname, 0, encryptedHashedDocname, 0, key.encryptedHashedDocname.length);
+    	this.hashCode = key.hashCode;
+    }
+    
+    public Key cloneKey() {
+    	return new NodeSSK(this);
+    }
+
 	// routingKey = H( E(H(docname)) + H(pubkey) )
 	private static byte[] makeRoutingKey(byte[] pkHash, byte[] ehDocname) {
 		MessageDigest md256 = SHA256.getMessageDigest();
@@ -151,6 +168,7 @@ public class NodeSSK extends Key {
 
 	@Override
 	public boolean equals(Object o) {
+		if(o == this) return true;
 		if(!(o instanceof NodeSSK)) return false;
 		NodeSSK key = (NodeSSK)o;
 		if(!Arrays.equals(key.encryptedHashedDocname, encryptedHashedDocname)) return false;
@@ -210,6 +228,19 @@ public class NodeSSK extends Key {
 		System.arraycopy(keyBuf, 2, encryptedHashedDocname, 0, E_H_DOCNAME_SIZE);
 		System.arraycopy(keyBuf, 2+E_H_DOCNAME_SIZE, pubKeyHash, 0, PUBKEY_HASH_SIZE);
 		return makeRoutingKey(pubKeyHash, encryptedHashedDocname);
+	}
+
+	public int compareTo(Object arg0) {
+		if(arg0 instanceof NodeCHK) return -1;
+		NodeSSK key = (NodeSSK) arg0;
+		int result = Fields.compareBytes(encryptedHashedDocname, key.encryptedHashedDocname);
+		if(result != 0) return result;
+		return Fields.compareBytes(pubKeyHash, key.pubKeyHash);
+	}
+	
+	@Override
+	public void removeFrom(ObjectContainer container) {
+		super.removeFrom(container);
 	}
 	
 }

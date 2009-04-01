@@ -4,14 +4,20 @@
 package freenet.client.async;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Vector;
+
+import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
+import freenet.node.SendableRequestItem;
+import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -30,7 +36,7 @@ import freenet.support.LogThresholdCallback;
  * @author toad
  *
  */
-public class OfferedKeysList extends BaseSendableGet {
+public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	private final HashSet<Key> keys;
 	private final Vector<Key> keysList; // O(1) remove random element the way we use it, see chooseKey().
@@ -48,13 +54,16 @@ public class OfferedKeysList extends BaseSendableGet {
 	private final RandomSource random;
 	private final short priorityClass;
 	private final NodeClientCore core;
+	private final boolean isSSK;
 	
-	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass) {
+	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK) {
+		super(false);
 		this.keys = new HashSet<Key>();
 		this.keysList = new Vector<Key>();
 		this.random = random;
 		this.priorityClass = priorityClass;
 		this.core = core;
+		this.isSSK = isSSK;
 	}
 	
 	/** Called when a key is found, when it no longer belongs to this list etc. */
@@ -67,24 +76,34 @@ public class OfferedKeysList extends BaseSendableGet {
 		assert(keysList.size() == keys.size());
 	}
 	
-	public synchronized boolean isEmpty() {
+	public synchronized boolean isEmpty(ObjectContainer container) {
 		return keys.isEmpty();
 	}
 
 	@Override
-	public Object[] allKeys() {
+	public SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Object[] sendableKeys() {
+	public SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
+	private class MySendableRequestItem implements SendableRequestItem {
+		final Key key;
+		MySendableRequestItem(Key key) {
+			this.key = key;
+		}
+		public void dump() {
+			// Ignore, we will be GC'ed
+		}
+	}
+	
 	@Override
-	public synchronized Object chooseKey(KeysFetchingLocally fetching) {
+	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
@@ -92,7 +111,7 @@ public class OfferedKeysList extends BaseSendableGet {
 			if(fetching.hasKey(k)) return null;
 			keys.remove(k);
 			keysList.setSize(0);
-			return k;
+			return new MySendableRequestItem(k);
 		}
 		for(int i=0;i<10;i++) {
 			// Pick a random key
@@ -105,13 +124,13 @@ public class OfferedKeysList extends BaseSendableGet {
 			keysList.setSize(keysList.size()-1);
 			keys.remove(k);
 			assert(keysList.size() == keys.size());
-			return k;
+			return new MySendableRequestItem(k);
 		}
 		return null;
 	}
 
 	@Override
-	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching) {
+	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
@@ -131,7 +150,7 @@ public class OfferedKeysList extends BaseSendableGet {
 	}
 
 	@Override
-	public Object getClient() {
+	public RequestClient getClient(ObjectContainer container) {
 		return this;
 	}
 
@@ -142,7 +161,7 @@ public class OfferedKeysList extends BaseSendableGet {
 	}
 
 	@Override
-	public short getPriorityClass() {
+	public short getPriorityClass(ObjectContainer container) {
 		return priorityClass;
 	}
 
@@ -152,33 +171,35 @@ public class OfferedKeysList extends BaseSendableGet {
 	}
 
 	@Override
-	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
+	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	
 	@Override
-	public boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum) {
-		Key key = (Key) keyNum;
-		// Have to cache it in order to propagate it; FIXME
-		// Don't let a node force us to start a real request for a specific key.
-		// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
-		// Obviously this may have a marginal impact on load but it should only be marginal.
-		core.asyncGet(key, true, true, new SimpleRequestSenderCompletionListener() {
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		return new SendableRequestSender() {
 
-			public void completed(boolean success) {
-				// Ignore
+			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
+				Key key = ((MySendableRequestItem) req.token).key;
+				// Have to cache it in order to propagate it; FIXME
+				// Don't let a node force us to start a real request for a specific key.
+				// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
+				// Obviously this may have a marginal impact on load but it should only be marginal.
+				core.asyncGet(key, true, true, new SimpleRequestSenderCompletionListener() {
+
+					public void completed(boolean success) {
+						// Ignore
+					}
+					
+				});
+				return true;
 			}
 			
-		});
-		return true;
-	}
-
-	public boolean canRemove() {
-		return false;
+		};
 	}
 
 	@Override
-	public boolean isCancelled() {
+	public boolean isCancelled(ObjectContainer container) {
 		return false;
 	}
 
@@ -192,8 +213,34 @@ public class OfferedKeysList extends BaseSendableGet {
 	}
 
 	@Override
-	public Key getNodeKey(Object token) {
-		return (Key) token;
+	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
+		return ((MySendableRequestItem) token).key;
+	}
+
+	public boolean isSSK() {
+		return isSSK;
+	}
+
+	@Override
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		throw new UnsupportedOperationException("Transient only");
+	}
+
+	@Override
+	public boolean isInsert() {
+		return false;
+	}
+
+	@Override
+	public ClientRequestScheduler getScheduler(ClientContext context) {
+		if(isSSK)
+			return context.getSskFetchScheduler();
+		else
+			return context.getChkFetchScheduler();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 
 }

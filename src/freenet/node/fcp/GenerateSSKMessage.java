@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.Node;
@@ -38,6 +40,10 @@ public class GenerateSSKMessage extends FCPMessage {
     	FreenetURI requestURI = key.getURI();
     	SSKKeypairMessage msg = new SSKKeypairMessage(insertURI, requestURI, identifier);
     	handler.outputHandler.queue(msg);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 
 }

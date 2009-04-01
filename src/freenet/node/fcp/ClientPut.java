@@ -20,10 +20,12 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
@@ -34,15 +36,17 @@ import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
+import com.db4o.ObjectContainer;
+
 public class ClientPut extends ClientPutBase {
 
-	final ClientPutter putter;
+	ClientPutter putter;
 	private final short uploadFrom;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
 	private final File origFilename;
 	/** If uploadFrom==UPLOAD_FROM_REDIRECT, this is the target of the redirect */
 	private final FreenetURI targetURI;
-	private final Bucket data;
+	private Bucket data;
 	private final ClientMetadata clientMetadata;
 	/** We store the size of inserted data before freeing it */
 	private long finishedSize;
@@ -93,14 +97,16 @@ public class ClientPut extends ClientPutBase {
 	 * @throws NotAllowedException 
 	 * @throws FileNotFoundException 
 	 * @throws MalformedURLException 
+	 * @throws MetadataUnresolvedException 
+	 * @throws InsertException 
 	 */
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException {
-		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode);
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
+		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
-			if(!globalClient.core.allowUploadFrom(origFilename))
+			if(!server.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
 			if(!(origFilename.exists() && origFilename.canRead()))
 				throw new FileNotFoundException();
@@ -114,8 +120,6 @@ public class ClientPut extends ClientPutBase {
 		// Now go through the fields one at a time
 		String mimeType = contentType;
 		this.clientToken = clientToken;
-		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this, false);
 		Bucket tempData = data;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
@@ -125,17 +129,7 @@ public class ClientPut extends ClientPutBase {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			byte[] d;
-			try {
-				d = m.writeToByteArray();
-			} catch (MetadataUnresolvedException e) {
-				// Impossible
-				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
-				this.data = null;
-				clientMetadata = cm;
-				putter = null;
-				return;
-			}
+			d = m.writeToByteArray();
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
 		} else
@@ -145,18 +139,16 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 
 		putter = new ClientPutter(this, data, uri, cm, 
-				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
-				getCHKOnly, isMetadata, client.lowLevelClient, null, targetFilename, binaryBlob);
-		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-		}
+				ctx, priorityClass, 
+				getCHKOnly, isMetadata, 
+				lowLevelClient,
+				null, targetFilename, binaryBlob);
 	}
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
+				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
 		String salt = null;
 		byte[] saltedHash = null;
 		binaryBlob = message.binaryBlob;
@@ -197,8 +189,6 @@ public class ClientPut extends ClientPutBase {
 			mimeType = DefaultMIMETypes.guessMIMEType(identifier, true);
 		}
 		clientToken = message.clientToken;
-		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this, false);
 		Bucket tempData = message.bucket;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
@@ -212,11 +202,11 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				putter = null;
-				return;
+				// This is *not* an InsertException since we don't register it: it's a protocol error.
+				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Impossible: metadata unresolved: "+e, identifier, global);
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
@@ -258,14 +248,10 @@ public class ClientPut extends ClientPutBase {
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
-				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
-				getCHKOnly, isMetadata, client.lowLevelClient, null, targetFilename, binaryBlob);
-		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-			if(handler != null && (!handler.isGlobalSubscribed()))
-				handler.outputHandler.queue(msg);
-		}
+				ctx, priorityClass, 
+				getCHKOnly, isMetadata,
+				lowLevelClient,
+				null, targetFilename, binaryBlob);
 	}
 	
 	/**
@@ -274,9 +260,10 @@ public class ClientPut extends ClientPutBase {
 	 * by the node.
 	 * @throws PersistenceParseException 
 	 * @throws IOException 
+	 * @throws InsertException 
 	 */
-	public ClientPut(SimpleFieldSet fs, FCPClient client2) throws PersistenceParseException, IOException {
-		super(fs, client2);
+	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException, InsertException {
+		super(fs, client2, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String mimeType = fs.get("Metadata.ContentType");
 
@@ -311,7 +298,7 @@ public class ClientPut extends ClientPutBase {
 				Logger.minor(this, "Uploading from direct for "+this);
 			if(!finished) {
 				try {
-					data = SerializableToFieldSetBucketUtil.create(fs.subset("TempBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
+					data = SerializableToFieldSetBucketUtil.create(fs.subset("TempBucket"), server.core.random, server.core.persistentTempBucketFactory);
 				} catch (CannotCreateFromFieldSetException e) {
 					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 				}
@@ -333,12 +320,11 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				origFilename = null;
 				putter = null;
-				return;
+				throw new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null);
 			}
 			data = new SimpleReadOnlyArrayBucket(d);
 			origFilename = null;
@@ -350,50 +336,71 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		SimpleFieldSet oldProgress = fs.subset("progress");
 		if(finished) oldProgress = null; // Not useful any more
-		putter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
-				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, 
-				client.lowLevelClient, oldProgress, targetFilename, binaryBlob);
+		putter = new ClientPutter(this, data, uri, cm, ctx, 
+				priorityClass, getCHKOnly, isMetadata,
+				lowLevelClient,
+				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
+			FCPMessage msg = persistentTagMessage(container);
+			client.queueClientRequestMessage(msg, 0, container);
 		}
 		
 	}
 
+	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
+		if(persistenceType != PERSIST_CONNECTION)
+			client.register(this, false, container);
+		if(persistenceType != PERSIST_CONNECTION && !noTags) {
+			FCPMessage msg = persistentTagMessage(container);
+			client.queueClientRequestMessage(msg, 0, container);
+		}
+	}
+	
 	@Override
-	public void start() {
+	public void start(ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this+" : "+identifier);
 		synchronized(this) {
 			if(finished) return;
 		}
 		try {
-			putter.start(earlyEncode);
+			putter.start(earlyEncode, false, container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
-				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
+				FCPMessage msg = persistentTagMessage(container);
+				client.queueClientRequestMessage(msg, 0, container);
 			}
 			synchronized(this) {
 				started = true;
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.store(this); // Update
 		} catch (InsertException e) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(e, null);
+			onFailure(e, null, container);
 		} catch (Throwable t) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null);
+			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null, container);
 		}
 	}
 
 	@Override
-	protected void freeData() {
-		if(data == null) return;
-		finishedSize=data.size();
-		data.free();
+	protected void freeData(ObjectContainer container) {
+		Bucket d;
+		synchronized(this) {
+			d = data;
+			data = null;
+			if(d == null) return;
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(d, 5);
+			finishedSize = d.size();
+		}
+		d.free();
+		if(persistenceType == PERSIST_FOREVER)
+			d.removeFrom(container);
 	}
 	
 	@Override
@@ -431,10 +438,15 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	protected FCPMessage persistentTagMessage() {
+	protected FCPMessage persistentTagMessage(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(publicURI, 5);
+			container.activate(clientMetadata, 5);
+			container.activate(origFilename, 5);
+		}
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob);
+				getDataSize(container), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob);
 	}
 
 	@Override
@@ -447,7 +459,9 @@ public class ClientPut extends ClientPutBase {
 		return succeeded;
 	}
 
-	public FreenetURI getFinalURI() {
+	public FreenetURI getFinalURI(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(generatedURI, 5);
 		return generatedURI;
 	}
 
@@ -461,11 +475,13 @@ public class ClientPut extends ClientPutBase {
 		return origFilename;
 	}
 
-	public long getDataSize() {
+	public long getDataSize(ObjectContainer container) {
 		if(data == null)
 			return finishedSize;
-		else
+		else {
+			container.activate(data, 1);
 			return data.size();
+		}
 	}
 
 	public String getMIMEType() {
@@ -486,24 +502,49 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	public boolean restart() {
+	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
-		setVarsRestart();
+		setVarsRestart(container);
 		try {
-			if(putter.restart(earlyEncode)) {
+			if(putter.restart(earlyEncode, container, context)) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;
 				}
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.store(this);
 			return true;
 		} catch (InsertException e) {
-			onFailure(e, null);
+			onFailure(e, null, container);
 			return false;
 		}
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {}
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {}
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
+
+	public void onRemoveEventProducer(ObjectContainer container) {
+		// Do nothing, we called the removeFrom().
+	}
+	
+	@Override
+	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(putter, 1);
+			putter.removeFrom(container, context);
+			putter = null;
+			if(origFilename != null) {
+				container.activate(origFilename, 5);
+				container.delete(origFilename);
+			}
+			// clientMetadata will be deleted by putter
+			if(targetURI != null) {
+				container.activate(targetURI, 5);
+				targetURI.removeFrom(container);
+			}
+		}
+		super.requestWasRemoved(container, context);
+	}
 }

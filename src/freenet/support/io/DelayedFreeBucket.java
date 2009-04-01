@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -19,10 +21,21 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	private final PersistentFileTracker factory;
 	Bucket bucket;
 	boolean freed;
+	boolean removed;
+	boolean reallyRemoved;
+	
+	public boolean toFree() {
+		return freed;
+	}
+	
+	public boolean toRemove() {
+		return removed;
+	}
 	
 	public DelayedFreeBucket(PersistentTempBucketFactory factory, Bucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
+		if(bucket == null) throw new NullPointerException();
 	}
 
 	public DelayedFreeBucket(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
@@ -67,7 +80,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 			if(freed) return;
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-			this.factory.delayedFreeBucket(bucket);
+			this.factory.delayedFreeBucket(this);
 			freed = true;
 		}
 	}
@@ -86,6 +99,83 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 			return null;
 		}
 		return fs;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		bucket.storeTo(container);
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this);
+		synchronized(this) {
+			boolean wasQueued = freed || removed;
+			if(!freed)
+				Logger.error(this, "Asking to remove from database but not freed: "+this, new Exception("error"));
+			removed = true;
+			if(!wasQueued)
+				this.factory.delayedFreeBucket(this);
+		}
+	}
+
+	public String toString() {
+		return super.toString()+":"+bucket;
+	}
+	
+	private transient int _activationCount = 0;
+	
+	public void objectOnActivate(ObjectContainer container) {
+		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+		if(elements != null && elements.length > 100) {
+			System.err.println("Infinite recursion in progress...");
+		}
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
+		if(bucket == this) {
+			Logger.error(this, "objectOnActivate on DelayedFreeBucket: wrapping self!!!");
+			return;
+		}
+		// Cascading activation of dependancies
+		container.activate(bucket, 1);
+	}
+
+	public Bucket createShadow() throws IOException {
+		return bucket.createShadow();
+	}
+
+	public void realFree() {
+		bucket.free();
+	}
+
+	public void realRemoveFrom(ObjectContainer container) {
+		synchronized(this) {
+			if(reallyRemoved)
+				Logger.error(this, "Calling realRemoveFrom() twice on "+this);
+			reallyRemoved = true;
+		}
+		bucket.removeFrom(container);
+		container.delete(this);
+	}
+	
+//	public void objectOnDeactivate(ObjectContainer container) {
+//		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating "+super.toString()+" : "+bucket, new Exception("debug"));
+//	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(reallyRemoved) {
+			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(reallyRemoved) {
+			Logger.error(this, "objectCanUpdate() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
+			return false;
+		}
+		return true;
 	}
 
 }

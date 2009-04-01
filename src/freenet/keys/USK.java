@@ -6,6 +6,8 @@ package freenet.keys;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Fields;
 import freenet.support.Logger;
 
@@ -85,6 +87,16 @@ public class USK extends BaseClientKey {
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
 
+	public USK(USK usk) {
+		this.pubKeyHash = usk.pubKeyHash;
+		this.cryptoAlgorithm = usk.cryptoAlgorithm;
+		this.cryptoKey = usk.cryptoKey;
+		this.siteName = usk.siteName;
+		this.suggestedEdition = usk.suggestedEdition;
+		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
+			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
+	}
+
 	@Override
 	public FreenetURI getURI() {
 		return new FreenetURI(pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm), siteName, suggestedEdition);
@@ -110,6 +122,10 @@ public class USK extends BaseClientKey {
 
 	public USK clearCopy() {
 		return copy(0);
+	}
+	
+	public USK clone() {
+		return new USK(this);
 	}
 	
 	@Override
@@ -166,5 +182,9 @@ public class USK extends BaseClientKey {
 			return new FreenetURI("USK", siteName, uri.getAllMetaStrings(), pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm), edition);
 		}
 		return uri;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 }

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.support.Logger;
@@ -50,7 +52,9 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		newURI = null;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this)) 
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -63,7 +67,9 @@ public class FetchException extends Exception {
 		newURI = null;
 		this.expectedSize = expectedSize;
 		this.expectedMimeType = expectedMimeType;
-		if(Logger.shouldLog(Logger.MINOR, this)) 
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
@@ -76,7 +82,9 @@ public class FetchException extends Exception {
 		newURI = uri;
 		this.expectedSize = expectedSize;
 		this.expectedMimeType = expectedMimeType;
-		if(Logger.shouldLog(Logger.MINOR, this)) 
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
@@ -88,8 +96,10 @@ public class FetchException extends Exception {
 		initCause(e);
 		newURI = null;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(ArchiveFailureException e) {
@@ -100,8 +110,10 @@ public class FetchException extends Exception {
 		newURI = null;
 		initCause(e);
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(ArchiveRestartException e) {
@@ -112,8 +124,11 @@ public class FetchException extends Exception {
 		initCause(e);
 		newURI = null;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);	}
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+	}
 
 	public FetchException(int mode, Throwable t) {
 		super(getMessage(mode)+": "+t.getMessage());
@@ -123,8 +138,10 @@ public class FetchException extends Exception {
 		initCause(t);
 		newURI = null;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(int mode, String reason, Throwable t) {
@@ -135,8 +152,10 @@ public class FetchException extends Exception {
 		initCause(t);
 		newURI = null;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
@@ -146,8 +165,10 @@ public class FetchException extends Exception {
 		this.errorCodes = errorCodes;
 		newURI = null;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+ ')');
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
 	public FetchException(int mode, String msg) {
@@ -157,8 +178,10 @@ public class FetchException extends Exception {
 		this.mode = mode;
 		newURI = null;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(int mode, FreenetURI newURI) {
@@ -168,8 +191,10 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		this.newURI = newURI;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+") -> "+newURI, this);
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
 	public FetchException(int mode, String msg, FreenetURI uri) {
@@ -179,8 +204,10 @@ public class FetchException extends Exception {
 		this.mode = mode;
 		newURI = uri;
 		expectedSize = -1;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(FetchException e, int newMode) {
@@ -192,6 +219,10 @@ public class FetchException extends Exception {
 		this.expectedSize = e.expectedSize;
 		this.extraMessage = e.extraMessage;
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public FetchException(FetchException e, FreenetURI uri) {
@@ -204,6 +235,26 @@ public class FetchException extends Exception {
 		this.expectedSize = e.expectedSize;
 		this.extraMessage = e.extraMessage;
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+	}
+
+	public FetchException(FetchException e) {
+		super(e.getMessage());
+		initCause(e);
+		this.mode = e.mode;
+		this.newURI = e.newURI == null ? null : e.newURI.clone();
+		this.errorCodes = e.errorCodes == null ? null : e.errorCodes.clone();
+		this.expectedMimeType = e.expectedMimeType;
+		this.expectedSize = e.expectedSize;
+		this.extraMessage = e.extraMessage;
+		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
 	public static String getShortMessage(int mode) {
@@ -368,5 +419,21 @@ public class FetchException extends Exception {
 
 	public void setNotFinalizedSize() {
 		this.finalizedSizeAndMimeType = false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(errorCodes != null)
+			errorCodes.removeFrom(container);
+		if(newURI != null)
+			newURI.removeFrom(container);
+		StackTraceElement[] elements = getStackTrace();
+		if(elements != null)
+			for(StackTraceElement element : elements)
+				container.delete(element);
+		container.delete(this);
+	}
+	
+	public FetchException clone() {
+		return new FetchException(this);
 	}
 }

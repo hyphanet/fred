@@ -7,6 +7,8 @@ import java.math.BigInteger;
 import java.io.*;
 import java.util.Random;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -83,6 +85,11 @@ public class DSAPrivateKey extends CryptoKey {
 		if(y.bitLength() > 512)
 			throw new IllegalBase64Exception("Probably a pubkey");
 		return new DSAPrivateKey(y, group);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(x);
+		container.delete(this);
 	}
     
 //    public static void main(String[] args) throws Exception {

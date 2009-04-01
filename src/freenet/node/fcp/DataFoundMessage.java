@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchResult;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -46,6 +48,10 @@ public class DataFoundMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "DataFound goes from server to client not the other way around", identifier, global);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 
 }

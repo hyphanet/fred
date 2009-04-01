@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.Node;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.Fields;
@@ -51,6 +53,10 @@ public class GetPluginInfo extends FCPMessage {
 		} else {
 			handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, detailed));
 		}
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 	
 }

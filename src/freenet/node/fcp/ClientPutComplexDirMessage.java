@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.Logger;
@@ -177,6 +179,24 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 					throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload "+((DiskDirPutFile) f).getFile(), identifier, global);
 				ManifestElement e = f.getElement();
 				manifestElements.put(tempName, e);
+			}
+		}
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		filesToRead.clear();
+		removeFrom(container, filesByName);
+		container.delete(this);
+	}
+
+	private void removeFrom(ObjectContainer container, HashMap filesByName) {
+		Iterator i = filesByName.values().iterator();
+		while(i.hasNext()) {
+			Object val = i.next();
+			if(val instanceof HashMap) {
+				removeFrom(container, (HashMap) val);
+			} else {
+				((DirPutFile)val).removeFrom(container);
 			}
 		}
 	}

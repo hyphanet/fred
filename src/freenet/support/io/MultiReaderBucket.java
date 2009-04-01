@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -133,6 +135,24 @@ public class MultiReaderBucket {
 		@Override
 		protected void finalize() {
 			free();
+		}
+
+		public void storeTo(ObjectContainer container) {
+			container.store(this);
+		}
+
+		public void removeFrom(ObjectContainer container) {
+			container.delete(this);
+			synchronized(MultiReaderBucket.this) {
+				if(!closed) return;
+			}
+			bucket.removeFrom(container);
+			container.delete(readers);
+			container.delete(MultiReaderBucket.this);
+		}
+
+		public Bucket createShadow() throws IOException {
+			return null;
 		}
 		
 	}

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
@@ -43,6 +45,10 @@ public class GetNode extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetNode requires full access", identifier, false);
 		}
 		handler.outputHandler.queue(new NodeData(node, giveOpennetRef, withPrivate, withVolatile, identifier));
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 	
 }

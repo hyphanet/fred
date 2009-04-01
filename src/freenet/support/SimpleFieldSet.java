@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.FSParseException;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReader;
@@ -890,6 +892,14 @@ public class SimpleFieldSet {
 		String s = get(key);
 		if(s == null) throw new FSParseException("No such element "+key);
 		return s;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(values);
+		for(SimpleFieldSet fs : subsets.values())
+			fs.removeFrom(container);
+		container.delete(subsets);
+		container.delete(this);
 	}
 
 }

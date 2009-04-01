@@ -16,6 +16,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+
+import com.db4o.ObjectContainer;
+
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
@@ -111,6 +114,9 @@ public class Metadata implements Cloneable {
 	/** The simple redirect key */
 	FreenetURI simpleRedirectKey;
 	
+	/** Metadata is sometimes used as a key in hashtables. Therefore it needs a persistent hashCode. */
+	private final int hashCode;
+	
 	short splitfileAlgorithm;
 	static public final short SPLITFILE_NONREDUNDANT = 0;
 	static public final short SPLITFILE_ONION_STANDARD = 1;
@@ -180,9 +186,14 @@ public class Metadata implements Cloneable {
 		this(new DataInputStream(new ByteArrayInputStream(data)), data.length);
 	}
 
+	public int hashCode() {
+		return hashCode;
+	}
+	
 	/** Parse some metadata from a DataInputStream
 	 * @throws IOException If an I/O error occurs, or the data is incomplete. */
 	public Metadata(DataInputStream dis, long length) throws IOException, MetadataParseException {
+		hashCode = super.hashCode();
 		long magic = dis.readLong();
 		if(magic != FREENET_METADATA_MAGIC)
 			throw new MetadataParseException("Invalid magic "+magic);
@@ -372,6 +383,7 @@ public class Metadata implements Cloneable {
 	 * Create an empty Metadata object 
 	 */
 	private Metadata() {
+		hashCode = super.hashCode();
 		// Should be followed by addRedirectionManifest
 	}
 	
@@ -452,11 +464,17 @@ public class Metadata implements Cloneable {
 				Metadata data = (Metadata) dir.get(key);
 				if(data == null)
 					throw new NullPointerException();
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
 				HashMap hm = (HashMap)o;
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Making metadata map for "+key);
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
 				manifestEntries.put(key, subMap);
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Putting metadata map for "+key);
 			}
 		}
 	}
@@ -468,6 +486,7 @@ public class Metadata implements Cloneable {
 	 * directories (more HashMap's)
 	 */
 	Metadata(HashMap dir, String prefix) {
+		hashCode = super.hashCode();
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
@@ -500,6 +519,7 @@ public class Metadata implements Cloneable {
 	 * the archive to read from.
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
+		hashCode = super.hashCode();
 		if(docType == ARCHIVE_INTERNAL_REDIRECT) {
 			documentType = docType;
 			this.archiveType = archiveType;
@@ -520,6 +540,7 @@ public class Metadata implements Cloneable {
 	 * @param cm The client metadata, if any.
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
+		hashCode = super.hashCode();
 		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
 			documentType = docType;
 			this.archiveType = archiveType;
@@ -531,6 +552,7 @@ public class Metadata implements Cloneable {
 				setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
 				noMIME = true;
 			}
+			if(uri == null) throw new NullPointerException();
 			simpleRedirectKey = uri;
 			if(!(uri.getKeyType().equals("CHK") && !uri.hasMetaStrings()))
 				fullKeys = true;
@@ -540,6 +562,7 @@ public class Metadata implements Cloneable {
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, 
 			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata) {
+		hashCode = super.hashCode();
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
@@ -555,7 +578,9 @@ public class Metadata implements Cloneable {
 		splitfileBlocks = dataURIs.length;
 		splitfileCheckBlocks = checkURIs.length;
 		splitfileDataKeys = dataURIs;
+		assert(keysValid(splitfileDataKeys));
 		splitfileCheckKeys = checkURIs;
+		assert(keysValid(splitfileCheckKeys));
 		clientMetadata = cm;
 		this.compressionCodec = compressionCodec;
 		this.decompressedLength = decompressedLength;
@@ -564,6 +589,12 @@ public class Metadata implements Cloneable {
 		else
 			setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
 		splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
+	}
+
+	private boolean keysValid(ClientCHK[] keys) {
+		for(int i=0;i<keys.length;i++)
+			if(keys[i].getNodeCHK().getRoutingKey() == null) return false;
+		return true;
 	}
 
 	/**
@@ -657,6 +688,15 @@ public class Metadata implements Cloneable {
 	public Metadata getDocument(String name) {
 		return (Metadata) manifestEntries.get(name);
 	}
+	
+	/**
+	 * Return and remove a specific document. Used in persistent requests
+	 * so that when removeFrom() is called, the default document won't be 
+	 * removed, since it is being processed.
+	 */
+	public Metadata grabDocument(String name) {
+		return (Metadata) manifestEntries.remove(name);
+	}
 
 	/**
 	 * The default document is the one which has an empty name.
@@ -664,6 +704,15 @@ public class Metadata implements Cloneable {
 	 */
 	public Metadata getDefaultDocument() throws MetadataParseException {
 		return getDocument("");
+	}
+	
+	/**
+	 * Return and remove the default document. Used in persistent requests
+	 * so that when removeFrom() is called, the default document won't be 
+	 * removed, since it is being processed.
+	 */
+	public Metadata grabDefaultDocument() {
+		return grabDocument("");
 	}
 	
 	/**
@@ -942,5 +991,49 @@ public class Metadata implements Cloneable {
 	public String getMIMEType() {
 		if(clientMetadata == null) return null;
 		return clientMetadata.getMIMEType();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(resolvedURI != null) {
+			container.activate(resolvedURI, 5);
+			resolvedURI.removeFrom(container);
+		}
+		if(simpleRedirectKey != null) {
+			container.activate(simpleRedirectKey, 5);
+			simpleRedirectKey.removeFrom(container);
+		}
+		if(splitfileDataKeys != null) {
+			for(ClientCHK key : splitfileDataKeys)
+				if(key != null) {
+					container.activate(key, 5);
+					key.removeFrom(container);
+				}
+		}
+		if(splitfileCheckKeys != null) {
+			for(ClientCHK key : splitfileCheckKeys)
+				if(key != null) {
+					container.activate(key, 5);
+					key.removeFrom(container);
+				}
+		}
+		if(manifestEntries != null) {
+			container.activate(manifestEntries, 2);
+			for(Object m : manifestEntries.values()) {
+				Metadata meta = (Metadata) m;
+				container.activate(meta, 1);
+				meta.removeFrom(container);
+			}
+			container.delete(manifestEntries);
+		}
+		if(clientMetadata != null) {
+			container.activate(clientMetadata, 1);
+			clientMetadata.removeFrom(container);
+		}
+		container.delete(this);
+	}
+
+	public void clearSplitfileKeys() {
+		splitfileDataKeys = null;
+		splitfileCheckKeys = null;
 	}
 }

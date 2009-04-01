@@ -17,14 +17,14 @@ public abstract class PluginReplySender {
 		identifier = identifier2;
 	}
 
-	public void send(SimpleFieldSet params) {
+	public void send(SimpleFieldSet params) throws PluginNotFoundException {
 		send(params, (Bucket)null);
 	}
 	
-	public void send(SimpleFieldSet params, byte[] data) {
+	public void send(SimpleFieldSet params, byte[] data) throws PluginNotFoundException {
 		send(params, new ArrayBucket(data));
 	}
 	
-	public abstract void send(SimpleFieldSet params, Bucket bucket);
+	public abstract void send(SimpleFieldSet params, Bucket bucket) throws PluginNotFoundException;
 	
 }

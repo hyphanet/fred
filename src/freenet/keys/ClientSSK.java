@@ -8,10 +8,13 @@ import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -22,16 +25,33 @@ public class ClientSSK extends ClientKey {
 	/** Document name */
 	public final String docName;
 	/** Public key */
-	protected DSAPublicKey pubKey;
+	protected transient DSAPublicKey pubKey;
 	/** Public key hash */
 	public final byte[] pubKeyHash;
 	/** Encryption key */
 	public final byte[] cryptoKey;
 	/** Encrypted hashed docname */
 	public final byte[] ehDocname;
+	private final int hashCode;
 	
 	static final int CRYPTO_KEY_LENGTH = 32;
 	public static final int EXTRA_LENGTH = 5;
+	
+	private ClientSSK(ClientSSK key) {
+		this.cryptoAlgorithm = key.cryptoAlgorithm;
+		this.docName = new String(key.docName);
+		if(key.pubKey != null)
+			this.pubKey = key.pubKey.cloneKey();
+		else
+			this.pubKey = null;
+		pubKeyHash = new byte[key.pubKeyHash.length];
+		System.arraycopy(key.pubKeyHash, 0, pubKeyHash, 0, pubKeyHash.length);
+		cryptoKey = new byte[key.cryptoKey.length];
+		System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
+		ehDocname = new byte[key.ehDocname.length];
+		System.arraycopy(key.ehDocname, 0, ehDocname, 0, key.ehDocname.length);
+		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^ Fields.hashCode(ehDocname) ^ docName.hashCode();
+	}
 	
 	public ClientSSK(String docName, byte[] pubKeyHash, byte[] extras, DSAPublicKey pubKey, byte[] cryptoKey) throws MalformedURLException {
 		this.docName = docName;
@@ -77,6 +97,9 @@ public class ClientSSK extends ClientKey {
 		} finally {
 			SHA256.returnMessageDigest(md);
 		}
+		if(ehDocname == null)
+			throw new NullPointerException();
+		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^ Fields.hashCode(ehDocname) ^ docName.hashCode();
 	}
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {
@@ -118,6 +141,10 @@ public class ClientSSK extends ClientKey {
 	@Override
 	public Key getNodeKey() {
 		try {
+			if(ehDocname == null)
+				throw new NullPointerException();
+			if(pubKeyHash == null)
+				throw new NullPointerException();
 			return new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
@@ -134,5 +161,29 @@ public class ClientSSK extends ClientKey {
 	@Override
 	public String toString() {
 		return "ClientSSK:"+getURI().toString();
+	}
+
+	public ClientKey cloneKey() {
+		return new ClientSSK(this);
+	}
+
+	@Override
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+	
+	public int hashCode() {
+		return hashCode;
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof ClientSSK)) return false;
+		ClientSSK key = (ClientSSK) o;
+		if(cryptoAlgorithm != key.cryptoAlgorithm) return false;
+		if(!docName.equals(key.docName)) return false;
+		if(!Arrays.equals(pubKeyHash, key.pubKeyHash)) return false;
+		if(!Arrays.equals(cryptoKey, key.cryptoKey)) return false;
+		if(!Arrays.equals(ehDocname, key.ehDocname)) return false;
+		return true;
 	}
 }

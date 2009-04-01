@@ -7,7 +7,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+
+import com.db4o.ObjectContainer;
+
 import freenet.support.Base64;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -26,6 +30,15 @@ public class NodeCHK extends Key {
         if(routingKey2.length != KEY_LENGTH)
             throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
         this.cryptoAlgorithm = cryptoAlgorithm;
+    }
+    
+    private NodeCHK(NodeCHK key) {
+    	super(key);
+    	this.cryptoAlgorithm = key.cryptoAlgorithm;
+    }
+    
+    public Key cloneKey() {
+    	return new NodeCHK(this);
     }
 
     public static final int KEY_LENGTH = 32;
@@ -60,6 +73,7 @@ public class NodeCHK extends Key {
 
     @Override
 	public boolean equals(Object key) {
+    	if(key == this) return true;
         if(key instanceof NodeCHK) {
             NodeCHK chk = (NodeCHK) key;
             return java.util.Arrays.equals(chk.routingKey, routingKey) && (cryptoAlgorithm == chk.cryptoAlgorithm);
@@ -113,5 +127,15 @@ public class NodeCHK extends Key {
 		byte[] out = new byte[KEY_LENGTH];
 		System.arraycopy(keyBuf, 2, out, 0, KEY_LENGTH);
 		return out;
+	}
+
+	public int compareTo(Object arg0) {
+		if(arg0 instanceof NodeSSK) return 1;
+		NodeCHK key = (NodeCHK) arg0;
+		return Fields.compareBytes(routingKey, key.routingKey);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 }

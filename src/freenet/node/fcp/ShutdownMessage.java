@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.Node;
 import freenet.node.fcp.FCPMessage;
 import freenet.support.SimpleFieldSet;
@@ -32,5 +34,9 @@ public class ShutdownMessage extends FCPMessage{
 		FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN,true,"The node is shutting down","Node",false);
 		handler.outputHandler.queue(msg);
 		node.exit("Received FCP shutdown message");
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}	
 }

@@ -6,6 +6,8 @@ package freenet.support;
 import java.util.Collection;
 import java.util.Iterator;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -109,7 +111,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 			synchronized(mFetches) {
 				Iterator<ClientGetter> r = mFetches.iterator();
 				int rcounter = 0;
-				while (r.hasNext()) { r.next().cancel(); r.remove(); ++rcounter; }
+				while (r.hasNext()) { r.next().cancel(null, mNode.clientCore.clientContext); r.remove(); ++rcounter; }
 				Logger.debug(this, "Stopped " + rcounter + " current requests");
 			}
 
@@ -117,7 +119,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 			synchronized(mInserts) {
 				Iterator<BaseClientPutter> i = mInserts.iterator();
 				int icounter = 0;
-				while (i.hasNext()) { i.next().cancel(); i.remove(); ++icounter; }
+				while (i.hasNext()) { i.next().cancel(null, mNode.clientCore.clientContext); i.remove(); ++icounter; }
 				Logger.debug(this, "Stopped " + icounter + " current inserts");
 			}
 	}
@@ -212,4 +214,9 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	 * disk, if it is a persistent request. */
 	public abstract void onMajorProgress();
 
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing TransferThread in database", new Exception("error"));
+		return false;
+	}
+	
 }

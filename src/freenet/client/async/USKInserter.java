@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
@@ -28,7 +30,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	// Stuff to be passed on to the SingleBlockInserter
 	final BaseClientPutter parent;
-	final Bucket data;
+	Bucket data;
 	final short compressionCodec;
 	final InsertContext ctx;
 	final PutCompletionCallback cb;
@@ -37,11 +39,12 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	final int token;
 	final boolean getCHKOnly;
 	public final Object tokenObject;
+	final boolean persistent;
 	
 	final InsertableUSK privUSK;
 	final USK pubUSK;
 	/** Scanning for latest slot */
-	private USKFetcher fetcher;
+	private USKFetcherTag fetcher;
 	/** Insert the actual SSK */
 	private SingleBlockInserter sbi;
 	private long edition;
@@ -51,8 +54,9 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	/** After attempting inserts on this many slots, go back to the Fetcher */
 	private static final long MAX_TRIED_SLOTS = 10;
 	private boolean freeData;
+	final int hashCode;
 	
-	public void schedule() throws InsertException {
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Caller calls schedule()
 		// schedule() calls scheduleFetcher()
 		// scheduleFetcher() creates a Fetcher (set up to tell us about author-errors as well as valid inserts)
@@ -62,7 +66,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// if that succeeds, we complete
 		// if that fails, we increment our index and try again (in the callback)
 		// if that continues to fail 5 times, we go back to scheduleFetcher()
-		scheduleFetcher();
+		scheduleFetcher(container, context);
 	}
 
 	/**
@@ -70,27 +74,34 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	 * The Fetcher must be insert-mode, in other words, it must know that we want the latest edition,
 	 * including author errors and so on.
 	 */
-	private void scheduleFetcher() {
+	private void scheduleFetcher(ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(pubUSK, 5);
 		synchronized(this) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
-			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient());
+			fetcher = context.uskManager.getFetcherForInsertDontSchedule(persistent ? pubUSK.clone() : pubUSK, parent.priorityClass, this, parent.getClient(), container, context, persistent);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "scheduled: "+fetcher);
 		}
-		fetcher.schedule();
+		if(persistent) {
+			container.store(fetcher);
+			container.store(this);
+		}
+		fetcher.schedule(container, context);
 	}
 
-	public void onFoundEdition(long l, USK key) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData) {
 		boolean alreadyInserted = false;
 		synchronized(this) {
 			edition = Math.max(l, edition);
 			consecutiveCollisions = 0;
-			if((fetcher.lastContentWasMetadata() == isMetadata) && fetcher.hasLastData()
-					&& (fetcher.lastCompressionCodec() == compressionCodec)) {
+			if((lastContentWasMetadata == isMetadata) && hisData != null
+					&& (codec == compressionCodec)) {
 				try {
+					if(persistent) container.activate(data, 1);
 					byte[] myData = BucketTools.toByteArray(data);
-					byte[] hisData = BucketTools.toByteArray(fetcher.getLastData());
-					fetcher.freeLastData();
 					if(Arrays.equals(myData, hisData)) {
 						// Success
 						alreadyInserted = true;
@@ -101,79 +112,149 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					Logger.error(this, "Could not decode: "+e, e);
 				}
 			}
-			if(!alreadyInserted) {
+			if(parent.persistent()) {
+				container.activate(fetcher, 1);
+				container.activate(fetcher.ctx, 1);
+				fetcher.removeFrom(container, context);
+				fetcher.ctx.removeFrom(container);
 				fetcher = null;
+				container.store(this);
 			}
 		}
 		if(alreadyInserted) {
 			// Success!
-			cb.onEncode(pubUSK.copy(edition), this);
-			parent.addMustSucceedBlocks(1);
-			parent.completedBlock(true);
-			cb.onSuccess(this);
-			if(freeData) data.free();
+			parent.addMustSucceedBlocks(1, container);
+			parent.completedBlock(true, container, context);
+			if(persistent) {
+				container.activate(cb, 1);
+				container.activate(pubUSK, 5);
+			}
+			cb.onEncode(pubUSK.copy(edition), this, container, context);
+			cb.onSuccess(this, container, context);
+			if(freeData) {
+				data.free();
+				if(persistent) data.removeFrom(container);
+			}
 		} else {
-			scheduleInsert();
+			scheduleInsert(container, context);
 		}
 	}
 
-	private void scheduleInsert() {
-		long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK)+1);
+	private void scheduleInsert(ObjectContainer container, ClientContext context) {
+		long edNo = Math.max(edition, context.uskManager.lookup(pubUSK)+1);
+		if(persistent) {
+			container.activate(privUSK, 5);
+			container.activate(pubUSK, 5);
+		}
 		synchronized(this) {
 			if(finished) return;
 			edition = edNo;
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, freeData);
+					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, parent.persistent(), false);
 		}
 		try {
-			sbi.schedule();
+			sbi.schedule(container, context);
+			if(persistent) container.store(this);
 		} catch (InsertException e) {
-			cb.onFailure(e, this);
 			synchronized(this) {
 				finished = true;
 			}
-			if(freeData)
+			if(freeData) {
+				if(persistent) container.activate(data, 1);
 				data.free();
+				data.removeFrom(container);
+				synchronized(this) {
+					data = null;
+				}
+			}
+			if(persistent) container.store(this);
+			cb.onFailure(e, this, container, context);
 		}
 	}
 
-	public synchronized void onSuccess(ClientPutState state) {
-		cb.onEncode(pubUSK.copy(edition), this);
-		cb.onSuccess(this);
+	public synchronized void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent) container.activate(pubUSK, 5);
+		USK newEdition = pubUSK.copy(edition);
 		finished = true;
 		sbi = null;
 		FreenetURI targetURI = pubUSK.getSSK(edition).getURI();
-		FreenetURI realURI = ((SingleBlockInserter)state).getURI();
+		FreenetURI realURI = ((SingleBlockInserter)state).getURI(container, context);
 		if(!targetURI.equals(realURI))
 			Logger.error(this, "URI should be "+targetURI+" actually is "+realURI);
 		else {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
-			ctx.uskManager.update(pubUSK, edition);
+			context.uskManager.update(pubUSK, edition, context);
 		}
+		if(persistent) state.removeFrom(container, context);
+		if(freeData) {
+			if(persistent) container.activate(data, 1);
+			data.free();
+			if(persistent) data.removeFrom(container);
+			synchronized(this) {
+				data = null;
+			}
+			if(persistent) container.store(this);
+		}
+		if(persistent) {
+			container.activate(cb, 1);
+			container.store(this);
+		}
+		cb.onEncode(newEdition, this, container, context);
+		cb.onSuccess(this, container, context);
 		// FINISHED!!!! Yay!!!
 	}
 
-	public synchronized void onFailure(InsertException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		ClientPutState oldSBI;
+		synchronized(this) {
+		oldSBI = sbi;
 		sbi = null;
 		if(e.getMode() == InsertException.COLLISION) {
 			// Try the next slot
 			edition++;
-			if(consecutiveCollisions++ > MAX_TRIED_SLOTS)
-				scheduleFetcher();
+			consecutiveCollisions++;
+			if(persistent) container.store(this);
+			if(consecutiveCollisions > MAX_TRIED_SLOTS)
+				scheduleFetcher(container, context);
 			else
-				scheduleInsert();
+				scheduleInsert(container, context);
 		} else {
-			cb.onFailure(e, state);
+			if(freeData) {
+				if(persistent) container.activate(data, 1);
+				data.free();
+				data.removeFrom(container);
+				synchronized(this) {
+					data = null;
+				}
+				if(persistent) container.store(this);
+			}
+			if(persistent)
+				container.activate(cb, 1);
+			cb.onFailure(e, state, container, context);
+		}
+		}
+		if(state != null && persistent) {
+			state.removeFrom(container, context);
+		}
+		if(oldSBI != null && oldSBI != state) {
+			container.activate(oldSBI, 1);
+			oldSBI.removeFrom(container, context);
 		}
 	}
 
+	public int hashCode() {
+		return hashCode;
+	}
+	
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
-			boolean getCHKOnly, boolean addToParent, Object tokenObject, boolean freeData) throws MalformedURLException {
+			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData, boolean persistent) throws MalformedURLException {
+		this.hashCode = super.hashCode();
 		this.tokenObject = tokenObject;
+		this.persistent = persistent;
 		this.parent = parent;
 		this.data = data;
 		this.compressionCodec = compressionCodec;
@@ -184,11 +265,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		this.token = token;
 		this.getCHKOnly = getCHKOnly;
 		if(addToParent) {
-			parent.addBlock();
-			parent.addMustSucceedBlocks(1);
-			parent.notifyClients();
+			parent.addBlock(container);
+			parent.addMustSucceedBlocks(1, container);
+			parent.notifyClients(container, context);
 		}
-		privUSK = InsertableUSK.createInsertable(uri);
+		privUSK = InsertableUSK.createInsertable(uri, persistent);
 		pubUSK = privUSK.getUSK();
 		edition = pubUSK.suggestedEdition;
 		this.freeData = freeData;
@@ -198,45 +279,74 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return parent;
 	}
 
-	public void cancel() {
-		if(fetcher != null)
-			fetcher.cancel();
-		if(sbi != null)
-			sbi.cancel();
+	public void cancel(ObjectContainer container, ClientContext context) {
+		USKFetcherTag tag;
+		boolean persist = persistent;
 		synchronized(this) {
+			if(finished) return;
 			finished = true;
+			tag = fetcher;
+			fetcher = null;
 		}
-		if(freeData)
-			data.free();
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
+		if(persistent) container.store(this);
+		if(tag != null) {
+			tag.cancel(container, context);
+			if(persist) container.activate(this, 1); // May have been deactivated by callbacks
+		}
+		if(sbi != null) {
+			sbi.cancel(container, context); // will call onFailure, which will removeFrom()
+			if(persist) container.activate(this, 1); // May have been deactivated by callbacks
+		}
+		if(freeData) {
+			if(freeData) {
+				if(persistent) container.activate(data, 1);
+				data.free();
+				if(persistent) data.removeFrom(container);
+				synchronized(this) {
+					data = null;
+				}
+				if(persistent) container.store(this);
+			}
+		}
+		if(persistent) container.activate(cb, 1);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
-	public void onFailure() {
+	public void onFailure(ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Fetcher failed", new Exception("debug"));
-		scheduleInsert();
+		scheduleInsert(container, context);
 	}
 
-	public synchronized void onCancelled() {
+	public synchronized void onCancelled(ObjectContainer container, ClientContext context) {
+		if(fetcher != null) {
+			if(parent.persistent()) {
+				container.activate(fetcher, 1);
+				container.activate(fetcher.ctx, 1);
+				fetcher.ctx.removeFrom(container);
+				fetcher.removeFrom(container, context);
+			}
+			fetcher = null;
+		}
 		if(finished) return;
 		Logger.error(this, "Unexpected onCancelled()", new Exception("error"));
-		cancel();
+		cancel(container, context);
 	}
 
-	public void onEncode(BaseClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		// Shouldn't happen
 		Logger.error(this, "Got onTransition("+oldState+ ',' +newState+ ')');
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Shouldn't happen
 		Logger.error(this, "Got onMetadata("+m+ ',' +state+ ')');
 	}
 
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
@@ -248,7 +358,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return null;
 	}
 
-	public void onFetchable(ClientPutState state) {
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
 
@@ -260,4 +370,48 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return parent.getPriorityClass();
 	}
 
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this, new Exception("debug"));
+		// parent will remove self
+		if(freeData && data != null && container.ext().isStored(data)) {
+			try {
+				data.free();
+			} catch (Throwable t) {
+				Logger.error(this, "Already freed? Caught in removeFrom on "+this+" : "+data+" : "+t, t);
+			}
+			data.removeFrom(container);
+		}
+		// ctx is passed in, cb will deal with
+		// cb will remove self
+		// tokenObject will be removed by creator
+		container.activate(privUSK, 5);
+		privUSK.removeFrom(container);
+		container.activate(pubUSK, 5);
+		pubUSK.removeFrom(container);
+		if(fetcher != null) {
+			Logger.error(this, "Fetcher tag still present: "+fetcher+" in removeFrom() for "+this, new Exception("debug"));
+			container.activate(fetcher, 1);
+			container.activate(fetcher.ctx, 1);
+			fetcher.ctx.removeFrom(container);
+			fetcher.removeFrom(container, context);
+		}
+		if(sbi != null) {
+			Logger.error(this, "sbi still present: "+sbi+" in removeFrom() for "+this);
+			container.activate(sbi, 1);
+			sbi.removeFrom(container, context);
+		}
+		container.delete(this);
+	}
+
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+		return true;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+		return true;
+	}
+	
 }

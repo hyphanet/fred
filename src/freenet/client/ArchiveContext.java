@@ -4,6 +4,9 @@
 package freenet.client;
 
 import java.util.HashSet;
+
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 
 /**
@@ -32,5 +35,10 @@ public class ArchiveContext {
 	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(soFar);
+		container.delete(this);
 	}
 }

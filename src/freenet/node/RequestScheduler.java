@@ -3,20 +3,26 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.LinkedList;
+
+import com.db4o.ObjectContainer;
+
+import freenet.client.FECQueue;
+import freenet.client.async.ChosenBlock;
+import freenet.client.async.ClientContext;
 import freenet.keys.ClientKey;
-import freenet.support.RandomGrabArray;
+import freenet.keys.Key;
 
 public interface RequestScheduler {
-
-	public SendableRequest removeFirst();
 
 	/**
 	 * Tell the scheduler that a request from a specific RandomGrabArray succeeded.
 	 * Definition of "succeeded" will vary, but the point is most schedulers will run another
 	 * request from the parentGrabArray in the near future on the theory that if one works,
-	 * another may also work. 
+	 * another may also work. Also, delete the ChosenRequest if it is persistent. 
+	 * @param req The request we ran, which must be deleted.
 	 * */
-	public void succeeded(RandomGrabArray parentGrabArray);
+	public void succeeded(BaseSendableGet get, ChosenBlock req);
 
 	/**
 	 * After a key has been requested a few times, it is added to the cooldown queue for
@@ -26,14 +32,8 @@ public interface RequestScheduler {
 	 * @param key The key to be added.
 	 * @return The time at which the key will leave the cooldown queue.
 	 */
-	public long queueCooldown(ClientKey key, SendableGet getter);
+	long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container);
 
-	/**
-	 * Remove keys from the cooldown queue who have now served their time and can be requested 
-	 * again.
-	 */
-	public void moveKeysFromCooldownQueue();
-	
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
 	public static final long COOLDOWN_PERIOD = 30*60*1000;
@@ -41,6 +41,40 @@ public interface RequestScheduler {
 	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
 	 * your max retry count less than this (and more than -1). */
 	public static final int COOLDOWN_RETRIES = 3;
-	public long countQueuedRequests();
+	public long countTransientQueuedRequests();
+
+	public void queueFillRequestStarterQueue();
+
+	public KeysFetchingLocally fetchingKeys();
+
+	public void removeFetchingKey(Key key);
 	
+	public void callFailure(SendableGet get, LowLevelGetException e, int prio, boolean persistent);
+	
+	public void callFailure(SendableInsert insert, LowLevelPutException exception, int prio, boolean persistent);
+	
+	public FECQueue getFECQueue();
+
+	public ClientContext getContext();
+	
+	public boolean addToFetching(Key key);
+
+	public ChosenBlock grabRequest();
+
+	public void removeRunningRequest(SendableRequest request);
+
+	/**
+	 * This only works for persistent requests, because transient requests are not
+	 * selected on a SendableRequest level, they are selected on a {SendableRequest, token} level.
+	 */
+	public abstract boolean isRunningOrQueuedPersistentRequest(SendableRequest request);
+	
+	public boolean hasFetchingKey(Key key);
+
+	public void start(NodeClientCore core);
+
+	public boolean addTransientInsertFetching(SendableInsert insert, Object token);
+
+	public void removeTransientInsertFetching(SendableInsert insert, Object token);
+
 }

@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -55,9 +57,10 @@ public class FailureCodeTracker {
 		int x;
 	}
 
-	final HashMap map = new HashMap();
+	private HashMap map;
 
 	public synchronized void inc(int k) {
+		if(map == null) map = new HashMap();
 		Integer key = k;
 		Item i = (Item) map.get(key);
 		if(i == null)
@@ -67,6 +70,7 @@ public class FailureCodeTracker {
 	}
 
 	public synchronized void inc(Integer k, int val) {
+		if(map == null) map = new HashMap();
 		Integer key = k;
 		Item i = (Item) map.get(key);
 		if(i == null)
@@ -76,6 +80,7 @@ public class FailureCodeTracker {
 	}
 	
 	public synchronized String toVerboseString() {
+		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder();
 		Collection values = map.keySet();
 		Iterator i = values.iterator();
@@ -93,6 +98,7 @@ public class FailureCodeTracker {
 
 	@Override
 	public synchronized String toString() {
+		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder(super.toString());
 		sb.append(':');
 		if(map.size() == 0) sb.append("empty");
@@ -112,6 +118,8 @@ public class FailureCodeTracker {
 	 * Merge codes from another tracker into this one.
 	 */
 	public synchronized FailureCodeTracker merge(FailureCodeTracker source) {
+		if(source.map == null) return this;
+		if(map == null) map = new HashMap();
 		Iterator keys = source.map.keySet().iterator();
 		while(keys.hasNext()) {
 			Integer k = (Integer) keys.next();
@@ -137,6 +145,7 @@ public class FailureCodeTracker {
 	/** Copy verbosely to a SimpleFieldSet */
 	public synchronized SimpleFieldSet toFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		if(map != null) {
 		Iterator keys = map.keySet().iterator();
 		while(keys.hasNext()) {
 			Integer k = (Integer) keys.next();
@@ -148,6 +157,7 @@ public class FailureCodeTracker {
 				sfs.putSingle(Integer.toString(code)+".Description", 
 						insert ? InsertException.getMessage(code) : FetchException.getMessage(code));
 			sfs.put(Integer.toString(code)+".Count", item.x);
+		}
 		}
 		return sfs;
 	}
@@ -161,6 +171,7 @@ public class FailureCodeTracker {
 	}
 
 	public synchronized boolean isFatal(boolean insert) {
+		if(map == null) return false;
 		Iterator i = map.keySet().iterator();
 		while(i.hasNext()) {
 			Integer code = (Integer) i.next();
@@ -181,8 +192,37 @@ public class FailureCodeTracker {
 		inc(e.getMode());
 	}
 
-	public boolean isEmpty() {
-		return map.isEmpty();
+	public synchronized boolean isEmpty() {
+		return map == null || map.isEmpty();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		Item[] items;
+		Integer[] ints;
+		synchronized(this) {
+			items = map == null ? null : (Item[]) map.values().toArray(new Item[map.size()]);
+			ints = map == null ? null : (Integer[]) map.keySet().toArray(new Integer[map.size()]);
+			if(map != null) map.clear();
+		}
+		if(items != null)
+			for(int i=0;i<items.length;i++) {
+				container.delete(items[i]);
+				container.delete(ints[i]);
+			}
+		if(map != null) {
+			container.activate(map, 5);
+			container.delete(map);
+		}
+		container.delete(this);
 	}
 	
+	public void objectOnActivate(ObjectContainer container) {
+		if(map != null) container.activate(map, 5);
+	}
+	
+	public FailureCodeTracker clone() {
+		FailureCodeTracker tracker = new FailureCodeTracker(insert);
+		tracker.merge(this);
+		return tracker;
+	}
 }

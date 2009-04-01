@@ -9,7 +9,7 @@ import freenet.support.api.Bucket;
 /**
  * Base class for items stored in the archive cache.
  */
-abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item {
+abstract class ArchiveStoreItem extends DoublyLinkedListImpl.Item<ArchiveStoreItem> {
 	final ArchiveKey key;
 	final ArchiveStoreContext context;
 	

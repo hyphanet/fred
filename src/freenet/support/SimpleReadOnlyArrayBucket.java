@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 
 /**
@@ -55,6 +57,23 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 
 	public void free() {
 		// Do nothing
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
+	public Bucket createShadow() throws IOException {
+		if(buf.length < 256*1024) {
+			byte[] newBuf = new byte[length];
+			System.arraycopy(buf, offset, newBuf, 0, length);
+			return new SimpleReadOnlyArrayBucket(newBuf);
+		}
+		return null;
 	}
 
 }

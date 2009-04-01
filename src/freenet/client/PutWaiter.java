@@ -1,5 +1,7 @@
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
@@ -13,27 +15,27 @@ public class PutWaiter implements ClientCallback {
 	private FreenetURI uri;
 	private InsertException error;
 	
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		// Ignore
 	}
 
-	public synchronized void onSuccess(BaseClientPutter state) {
+	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		succeeded = true;
 		finished = true;
 		notifyAll();
 	}
 
-	public synchronized void onFailure(InsertException e, BaseClientPutter state) {
+	public synchronized void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		error = e;
 		finished = true;
 		notifyAll();
 	}
 
-	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "URI: "+uri);
 		if(this.uri == null)
@@ -59,11 +61,11 @@ public class PutWaiter implements ClientCallback {
 		throw new InsertException(InsertException.INTERNAL_ERROR, "Did not succeed but no error", uri);
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore
 	}
 

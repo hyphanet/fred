@@ -2,8 +2,11 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import com.db4o.ObjectContainer;
 
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -62,6 +65,18 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "NullBucket");
 		return fs;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
+	public Bucket createShadow() throws IOException {
+		return new NullBucket();
 	}
 }
 

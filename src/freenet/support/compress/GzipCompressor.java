@@ -12,6 +12,7 @@ import java.util.zip.GZIPOutputStream;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.CountedOutputStream;
 
 public class GzipCompressor implements Compressor {
@@ -57,12 +58,19 @@ public class GzipCompressor implements Compressor {
 			output = preferred;
 		else
 			output = bf.makeBucket(maxLength);
-		InputStream is = data.getInputStream();
-		OutputStream os = output.getOutputStream();
+		InputStream is = null;
+		OutputStream os = null;
+		try {
+		is = data.getInputStream();
+		os = output.getOutputStream();
 		decompress(is, os, maxLength, maxCheckSizeLength);
-		os.close();
-		is.close();
+		os.close(); os = null;
+		is.close(); is = null;
 		return output;
+		} finally {
+			if(is != null) Closer.close(is);
+			if(os != null) Closer.close(os);
+		}
 	}
 
 	private long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {

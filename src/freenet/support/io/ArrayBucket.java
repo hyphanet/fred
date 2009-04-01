@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 
 /**
@@ -92,5 +94,19 @@ public class ArrayBucket implements Bucket {
 		byte[] buf = new byte[size];
 		System.arraycopy(data, 0, buf, 0, size);
 		return buf;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(data);
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(data);
+		container.delete(this);
+	}
+
+	public Bucket createShadow() throws IOException {
+		return null;
 	}
 }

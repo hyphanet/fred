@@ -3,6 +3,8 @@ package freenet.node.fcp;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -107,5 +109,8 @@ public abstract class FCPMessage {
 	/** Do whatever it is that we do with this type of message. 
 	 * @throws MessageInvalidException */
 	public abstract void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException;
+
+	/** Remove this message and its dependancies (internal objects) from the database. */
+	public abstract void removeFrom(ObjectContainer container);
 
 }

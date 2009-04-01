@@ -6,11 +6,14 @@ package freenet.keys;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.SHA256;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 
 /**
@@ -49,6 +52,7 @@ public class SSKBlock implements KeyBlock {
 	final DSAPublicKey pubKey;
     final short hashIdentifier;
     final short symCipherIdentifier;
+    final int hashCode;
     
     public static final short DATA_LENGTH = 1024;
     /* Maximum length of compressed payload */
@@ -83,7 +87,7 @@ public class SSKBlock implements KeyBlock {
     
     @Override
 	public int hashCode(){
-    	return super.hashCode();
+    	return hashCode;
     }
     
 	/**
@@ -147,6 +151,7 @@ public class SSKBlock implements KeyBlock {
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: "+HexUtil.bytesToHex(ehDocname)+"\nfrom key:     "+HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
 		SHA256.returnMessageDigest(md);
+		hashCode = Fields.hashCode(data) ^ Fields.hashCode(headers) ^ nodeKey.hashCode() ^ pubKey.hashCode() ^ hashIdentifier;
 	}
 
 	public Key getKey() {
@@ -175,6 +180,23 @@ public class SSKBlock implements KeyBlock {
 
 	public byte[] getRoutingKey() {
 		return getKey().getRoutingKey();
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		/* Storing an SSKBlock is not supported. There are some complications, so lets
+		 * not implement this since we don't actually use the functionality atm.
+		 * 
+		 * The major problems are:
+		 * - In both CHKBlock and SSKBlock, who is responsible for deleting the node keys? We
+		 *   have to have them in the objects.
+		 * - In SSKBlock, who is responsible for deleting the DSAPublicKey? And the DSAGroup?
+		 *   A group might be unique or might be shared between very many SSKs...
+		 * 
+		 * Especially in the second case, we don't want to just copy every time even for
+		 * transient uses ... the best solution may be to copy in objectCanNew(), but even
+		 * then callers to the relevant getter methods may be a worry.
+		 */
+		throw new UnsupportedOperationException("Block set storage in database not supported");
 	}
 
 }

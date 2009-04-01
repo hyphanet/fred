@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -290,8 +292,19 @@ public class ClientPutMessage extends DataCarryingMessage {
 		return global;
 	}
 
-	public void freeData() {
+	public void removeFrom(ObjectContainer container) {
+		uri.removeFrom(container);
+		container.delete(origFilename);
+		if(redirectTarget != null)
+			redirectTarget.removeFrom(container);
+	}
+
+	public void freeData(ObjectContainer container) {
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			container.activate(bucket, 5);
 		bucket.free();
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			bucket.removeFrom(container);
 	}
 	
 }

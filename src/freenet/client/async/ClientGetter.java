@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -18,18 +20,30 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.node.PrioRunnable;
-import freenet.node.RequestStarter;
+import freenet.node.RequestClient;
+import freenet.node.RequestScheduler;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 
 /**
  * A high level data request.
  */
 public class ClientGetter extends BaseClientGetter {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	final ClientCallback clientCallback;
 	FreenetURI uri;
 	final FetchContext ctx;
@@ -60,9 +74,9 @@ public class ClientGetter extends BaseClientGetter {
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
 	 */
-	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, Object clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
-		super(priorityClass, chkSched, sskSched, clientContext);
+	public ClientGetter(ClientCallback client, 
+			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
+		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
 		this.uri = uri;
@@ -77,13 +91,15 @@ public class ClientGetter extends BaseClientGetter {
 		archiveRestarts = 0;
 	}
 
-	public void start() throws FetchException {
-		start(false, null);
+	public void start(ObjectContainer container, ClientContext context) throws FetchException {
+		start(false, null, container, context);
 	}
 
-	public boolean start(boolean restart, FreenetURI overrideURI) throws FetchException {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Starting "+this);
+	public boolean start(boolean restart, FreenetURI overrideURI, ObjectContainer container, ClientContext context) throws FetchException {
+		if(persistent())
+			container.activate(uri, 5);
+		if(logMINOR)
+			Logger.minor(this, "Starting "+this+" persistent="+persistent());
 		try {
 			// FIXME synchronization is probably unnecessary.
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
@@ -96,37 +112,55 @@ public class ClientGetter extends BaseClientGetter {
 					cancelled = false;
 					finished = false;
 				}
-				currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
+				currentState = SingleFileFetcher.create(this, this, 
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						returnBucket, true);
+						returnBucket, true, container, context);
 			}
 			if(cancelled) cancel();
+			// schedule() may deactivate stuff, so store it now.
+			if(persistent()) {
+				container.store(currentState);
+				container.store(this);
+			}
 			if(currentState != null && !finished) {
 				if(binaryBlobBucket != null) {
 					try {
 						binaryBlobStream = new DataOutputStream(new BufferedOutputStream(binaryBlobBucket.getOutputStream()));
 						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null);
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null, container, context);
+						if(persistent())
+							container.store(this);
 						return false;
 					}
 				}
-				currentState.schedule();
+				currentState.schedule(container, context);
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
+		} catch (KeyListenerConstructionException e) {
+			onFailure(e.getFetchException(), currentState, container, context);
+		}
+		if(persistent()) {
+			container.store(this);
+			container.deactivate(currentState, 1);
 		}
 		return true;
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Succeeded from "+state);
-		if(!closeBinaryBlobStream()) return;
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(logMINOR)
+			Logger.minor(this, "Succeeded from "+state+" on "+this);
+		if(persistent())
+			container.activate(uri, 5);
+		if(!closeBinaryBlobStream(container, context)) return;
 		synchronized(this) {
 			finished = true;
 			currentState = null;
+		}
+		if(persistent()) {
+			container.store(this);
 		}
 		// Rest of method does not need to be synchronized.
 		// Variables will be updated on exit of method, and the only thing that is
@@ -137,39 +171,42 @@ public class ClientGetter extends BaseClientGetter {
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;
 			try {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Copying - returnBucket not respected by client.async");
+				if(persistent()) {
+					container.activate(from, 5);
+					container.activate(returnBucket, 5);
+				}
 				BucketTools.copy(from, to);
 				from.free();
+				if(persistent())
+					from.removeFrom(container);
 			} catch (IOException e) {
 				Logger.error(this, "Error copying from "+from+" to "+to+" : "+e.toString(), e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */, container, context);
+				return;
 			}
 			result = new FetchResult(result, to);
 		} else {
-			if(returnBucket != null && Logger.shouldLog(Logger.MINOR, this))
+			if(returnBucket != null && logMINOR)
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
-		final FetchResult res = result;
-		ctx.executor.execute(new PrioRunnable() {
-			public void run() {
-				clientCallback.onSuccess(res, ClientGetter.this);
-			}
-
-			public int getPriority() {
-				if(getPriorityClass() <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-					return NativeThread.NORM_PRIORITY;
-				else
-					return NativeThread.LOW_PRIORITY;
-			}
-		}, "ClientGetter onSuccess callback for "+this);
-		
+		if(persistent()) {
+			container.activate(state, 1);
+			state.removeFrom(container, context);
+			container.activate(clientCallback, 1);
+		}
+		FetchResult res = result;
+		clientCallback.onSuccess(res, ClientGetter.this, container);
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Failed from "+state+" : "+e, e);
-		closeBinaryBlobStream();
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(logMINOR)
+			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
+		closeBinaryBlobStream(container, context);
+		if(persistent())
+			container.activate(uri, 5);
+		ClientGetState oldState = null;
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
@@ -177,13 +214,13 @@ public class ClientGetter extends BaseClientGetter {
 					archiveRestarts++;
 					ar = archiveRestarts;
 				}
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Archive restart on "+this+" ar="+ar);
 				if(ar > ctx.maxArchiveRestarts)
 					e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
 				else {
 					try {
-						start();
+						start(container, context);
 					} catch (FetchException e1) {
 						e = e1;
 						continue;
@@ -193,42 +230,56 @@ public class ClientGetter extends BaseClientGetter {
 			}
 			synchronized(this) {
 				finished = true;
+				oldState = currentState;
 				currentState = null;
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
 				e = new FetchException(e.errorCodes.getFirstCode(), e);
 			if(e.mode == FetchException.DATA_NOT_FOUND && super.successfulBlocks > 0)
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
-			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
+			if(logMINOR) Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
-			ctx.executor.execute(new PrioRunnable() {
-				public void run() {
-					clientCallback.onFailure(e1, ClientGetter.this);
-				}
-				public int getPriority() {
-					if(getPriorityClass() <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-						return NativeThread.NORM_PRIORITY;
-					else
-						return NativeThread.LOW_PRIORITY;
-				}
-			}, "ClientGetter onFailure callback");
-			
-			return;
+			if(persistent())
+				container.store(this);
+			if(persistent()) {
+				container.activate(clientCallback, 1);
+			}
+			clientCallback.onFailure(e1, ClientGetter.this, container);
+			break;
+		}
+		if(persistent()) {
+			if(state != null) {
+				container.activate(state, 1);
+				state.removeFrom(container, context);
+			}
+			if(oldState != state && oldState != null) {
+				container.activate(oldState, 1);
+				oldState.removeFrom(container, context);
+			}
 		}
 	}
 
-	@Override
-	public void cancel() {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Cancelling "+this);
+	public void cancel(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientGetState s;
 		synchronized(this) {
-			super.cancel();
+			if(super.cancel()) {
+				if(logMINOR) Logger.minor(this, "Already cancelled "+this);
+				return;
+			}
 			s = currentState;
 		}
+		if(persistent())
+			container.store(this);
 		if(s != null) {
-			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
-			s.cancel();
+			if(persistent())
+				container.activate(s, 1);
+			if(logMINOR) Logger.minor(this, "Cancelling "+s+" for "+this+" instance "+super.toString());
+			s.cancel(container, context);
+			if(persistent())
+				container.deactivate(s, 1);
+		} else {
+			if(logMINOR) Logger.minor(this, "Nothing to cancel");
 		}
 	}
 
@@ -243,47 +294,70 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	@Override
-	public void notifyClients() {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
+	public void notifyClients(ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(ctx, 1);
+			container.activate(ctx.eventProducer, 1);
+		}
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 
-	public void onBlockSetFinished(ClientGetState state) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(logMINOR)
 			Logger.minor(this, "Set finished", new Exception("debug"));
-		blockSetFinalized();
+		blockSetFinalized(container, context);
 	}
 
-	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
-				Logger.minor(this, "Transition: "+oldState+" -> "+newState);
-			} else
-				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState);
+				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this+" persistent = "+persistent()+" instance = "+super.toString(), new Exception("debug"));
+			} else {
+				if(logMINOR) Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this+" persistent = "+persistent(), new Exception("debug"));
+				return;
+			}
+		}
+		if(persistent()) {
+			container.store(this);
+//			container.deactivate(this, 1);
+//			System.gc();
+//			System.runFinalization();
+//			System.gc();
+//			System.runFinalization();
+//			container.activate(this, 1);
+//			synchronized(this) {
+//				Logger.minor(this, "Post transition: "+currentState);
+//			}
 		}
 	}
 
 	public boolean canRestart() {
 		if(currentState != null && !finished) {
-			Logger.minor(this, "Cannot restart because not finished for "+uri);
+			if(logMINOR) Logger.minor(this, "Cannot restart because not finished for "+uri);
 			return false;
 		}
 		return true;
 	}
 
-	public boolean restart(FreenetURI redirect) throws FetchException {
-		return start(true, redirect);
+	public boolean restart(FreenetURI redirect, ObjectContainer container, ClientContext context) throws FetchException {
+		return start(true, redirect, container, context);
 	}
 
 	@Override
 	public String toString() {
-		return super.toString()+ ':' +uri;
+		return super.toString();
 	}
 	
-	void addKeyToBinaryBlob(ClientKeyBlock block) {
+	// FIXME not persisting binary blob stuff - any stream won't survive shutdown...
+	
+	void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
 		if(binaryBlobKeysAddedAlready == null) return;
-		if(Logger.shouldLog(Logger.MINOR, this)) 
+		if(persistent()) {
+			container.activate(binaryBlobStream, 1);
+			container.activate(binaryBlobKeysAddedAlready, 1);
+		}
+		if(logMINOR) 
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		Key key = block.getKey();
 		synchronized(binaryBlobKeysAddedAlready) {
@@ -294,7 +368,7 @@ public class ClientGetter extends BaseClientGetter {
 				BinaryBlob.writeKey(binaryBlobStream, block, key);
 			} catch (IOException e) {
 				Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, container, context);
 				binaryBlobStream = null;
 				binaryBlobKeysAddedAlready.clear();
 			}
@@ -306,7 +380,11 @@ public class ClientGetter extends BaseClientGetter {
 	 * @return True unless a failure occurred, in which case we will have already
 	 * called onFailure() with an appropriate error.
 	 */
-	private boolean closeBinaryBlobStream() {
+	private boolean closeBinaryBlobStream(ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(binaryBlobStream, 1);
+			container.activate(binaryBlobKeysAddedAlready, 1);
+		}
 		if(binaryBlobKeysAddedAlready == null) return true;
 		synchronized(binaryBlobKeysAddedAlready) {
 			if(binaryBlobStream == null) return true;
@@ -319,7 +397,7 @@ public class ClientGetter extends BaseClientGetter {
 				return true;
 			} catch (IOException e) {
 				Logger.error(this, "Failed to close binary blob stream: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+e), null);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+e), null, container, context);
 				if(!triedClose) {
 					try {
 						binaryBlobStream.close();
@@ -339,18 +417,24 @@ public class ClientGetter extends BaseClientGetter {
 		return binaryBlobBucket != null;
 	}
 
-	public void onExpectedMIME(String mime) {
+	public void onExpectedMIME(String mime, ObjectContainer container) {
 		if(finalizedMetadata) return;
 		expectedMIME = mime;
+		if(persistent())
+			container.store(this);
 	}
 
-	public void onExpectedSize(long size) {
+	public void onExpectedSize(long size, ObjectContainer container) {
 		if(finalizedMetadata) return;
 		expectedSize = size;
+		if(persistent())
+			container.store(this);
 	}
 
-	public void onFinalizedMetadata() {
+	public void onFinalizedMetadata(ObjectContainer container) {
 		finalizedMetadata = true;
+		if(persistent())
+			container.store(this);
 	}
 	
 	public boolean finalizedMetadata() {
@@ -367,5 +451,20 @@ public class ClientGetter extends BaseClientGetter {
 
 	public ClientCallback getClientCallback() {
 		return clientCallback;
+	}
+	
+	@Override
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.activate(uri, 5);
+		uri.removeFrom(container);
+		container.activate(ctx, 1);
+		ctx.removeFrom(container);
+		container.activate(actx, 5);
+		actx.removeFrom(container);
+		if(returnBucket != null) {
+			container.activate(returnBucket, 1);
+			returnBucket.removeFrom(container);
+		}
+		super.removeFrom(container, context);
 	}
 }

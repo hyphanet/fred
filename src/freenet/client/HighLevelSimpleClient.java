@@ -11,6 +11,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 
 public interface HighLevelSimpleClient {
 
@@ -38,12 +39,12 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Blocking fetch of a URI with a configurable max-size and context object.
 	 */
-	public FetchResult fetch(FreenetURI uri, long maxSize, Object context) throws FetchException;
+	public FetchResult fetch(FreenetURI uri, long maxSize, RequestClient context) throws FetchException;
 	
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
 	 */
-	public ClientGetter fetch(FreenetURI uri, long maxSize, Object context, ClientCallback callback, FetchContext fctx) throws FetchException;
+	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientCallback callback, FetchContext fctx) throws FetchException;
 	
 	/**
 	 * Blocking insert.

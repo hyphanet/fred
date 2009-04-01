@@ -1,13 +1,13 @@
 package freenet.support;
 
-import freenet.crypt.RandomSource;
+import com.db4o.ObjectContainer;
 
 public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray implements RemoveRandomWithObject {
 
 	private final Object object;
 	
-	public SectoredRandomGrabArrayWithObject(Object object, RandomSource rand) {
-		super(rand);
+	public SectoredRandomGrabArrayWithObject(Object object, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
+		super(persistent, container, parent);
 		this.object = object;
 	}
 
@@ -19,5 +19,5 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 	public String toString() {
 		return super.toString()+":"+object;
 	}
-	
+
 }

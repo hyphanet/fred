@@ -5,6 +5,8 @@ package freenet.node.fcp;
 
 import java.io.File;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -39,6 +41,11 @@ public class DiskDirPutFile extends DirPutFile {
 
 	public File getFile() {
 		return file;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(file);
+		container.delete(this);
 	}
 
 }

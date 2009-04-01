@@ -9,7 +9,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Base64;
+import freenet.support.Fields;
 
 /**
  * Client level CHK. Can be converted into a FreenetURI, can be used to decrypt
@@ -18,7 +21,7 @@ import freenet.support.Base64;
 public class ClientCHK extends ClientKey {
     
 	/** Lazily constructed: the NodeCHK */
-    NodeCHK nodeKey;
+    transient NodeCHK nodeKey;
     /** Routing key */
     final byte[] routingKey;
     /** Decryption key */
@@ -29,6 +32,7 @@ public class ClientCHK extends ClientKey {
     final byte cryptoAlgorithm;
     /** Compression algorithm, negative means uncompressed */
     final short compressionAlgorithm;
+    final int hashCode;
     
     /* We use EXTRA_LENGTH above for consistency, rather than dis.read etc. Some code depends on this
      * being accurate. Change those uses if you like. */
@@ -36,6 +40,19 @@ public class ClientCHK extends ClientKey {
     static final short EXTRA_LENGTH = 5;
     /** The length of the decryption key */
     static final short CRYPTO_KEY_LENGTH = 32;
+    
+    private ClientCHK(ClientCHK key) {
+    	this.routingKey = new byte[key.routingKey.length];
+    	System.arraycopy(key.routingKey, 0, routingKey, 0, key.routingKey.length);
+    	this.nodeKey = null;
+    	this.cryptoKey = new byte[key.cryptoKey.length];
+    	System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
+    	this.controlDocument = key.controlDocument;
+    	this.cryptoAlgorithm = key.cryptoAlgorithm;
+    	this.compressionAlgorithm = key.compressionAlgorithm;
+        if(routingKey == null) throw new NullPointerException();
+        hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(routingKey) ^ compressionAlgorithm;
+    }
     
     /**
      * @param routingKey The routing key. This is the overall hash of the
@@ -56,6 +73,8 @@ public class ClientCHK extends ClientKey {
         this.controlDocument = isControlDocument;
         this.cryptoAlgorithm = algo;
         this.compressionAlgorithm = compressionAlgorithm;
+        if(routingKey == null) throw new NullPointerException();
+        hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(encKey) ^ compressionAlgorithm;
     }
 
     /**
@@ -75,6 +94,7 @@ public class ClientCHK extends ClientKey {
 			throw new MalformedURLException("Invalid crypto algorithm");
         controlDocument = (extra[2] & 0x02) != 0;
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
+        hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(cryptoKey) ^ compressionAlgorithm;
     }
 
     /**
@@ -95,6 +115,7 @@ public class ClientCHK extends ClientKey {
 		dis.readFully(routingKey);
 		cryptoKey = new byte[CRYPTO_KEY_LENGTH];
 		dis.readFully(cryptoKey);
+        hashCode = Fields.hashCode(routingKey) ^ Fields.hashCode(cryptoKey) ^ compressionAlgorithm;
 	}
 
 	/**
@@ -167,5 +188,40 @@ public class ClientCHK extends ClientKey {
 
 	public boolean isCompressed() {
 		return compressionAlgorithm >= 0;
+	}
+
+	public ClientCHK cloneKey() {
+		return new ClientCHK(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+	
+	public int hashCode() {
+		return hashCode;
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof ClientCHK)) return false;
+		ClientCHK key = (ClientCHK) o;
+		if(controlDocument != key.controlDocument) return false;
+		if(cryptoAlgorithm != key.cryptoAlgorithm) return false;
+		if(compressionAlgorithm != key.compressionAlgorithm) return false;
+		if(!Arrays.equals(routingKey, key.routingKey)) return false;
+		if(!Arrays.equals(cryptoKey, key.cryptoKey)) return false;
+		return true;
+	}
+
+	public byte[] getRoutingKey() {
+		return routingKey;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(routingKey == null)
+			throw new NullPointerException("Storing a ClientCHK with no routingKey!: stored="+container.ext().isStored(this)+" active="+container.ext().isActive(this));
+		if(cryptoKey == null)
+			throw new NullPointerException("Storing a ClientCHK with no cryptoKey!");
+		return true;
 	}
 }

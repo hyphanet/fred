@@ -11,12 +11,18 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.InsertException;
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 
 public class FCPConnectionHandler implements Closeable {
 	private static final class DirectoryAccess {
@@ -59,11 +65,14 @@ public class FCPConnectionHandler implements Closeable {
 	private boolean inputClosed;
 	private boolean outputClosed;
 	private String clientName;
-	private FCPClient client;
+	private FCPClient rebootClient;
+	private FCPClient foreverClient;
+	private boolean failedGetForever;
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 	protected final String connectionIdentifier;
 	private static volatile boolean logMINOR;
+	private boolean killedDupe;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
@@ -98,18 +107,44 @@ public class FCPConnectionHandler implements Closeable {
 
 	public void close() {
 		ClientRequest[] requests;
-		if(client != null)
-			client.onLostConnection(this);
+		if(rebootClient != null)
+			rebootClient.onLostConnection(this);
+		if(foreverClient != null)
+			foreverClient.onLostConnection(this);
+		boolean dupe;
 		synchronized(this) {
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
 			requests = requestsByIdentifier.values().toArray(requests);
+			dupe = killedDupe;
 		}
 		for(int i=0;i<requests.length;i++)
-			requests[i].onLostConnection();
-		if((client != null) && !client.hasPersistentRequests())
-			server.unregisterClient(client);
+			requests[i].onLostConnection(null, server.core.clientContext);
+		if(!dupe) {
+		server.core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
+					server.unregisterClient(rebootClient, null);
+				if(foreverClient != null) {
+					if(!container.ext().isStored(foreverClient)) {
+						Logger.error(this, "foreverClient is not stored in the database in lost connection non-dupe callback; not deleting it");
+						return;
+					}
+					container.activate(foreverClient, 1);
+					if(!foreverClient.hasPersistentRequests(container))
+						server.unregisterClient(foreverClient, container);
+					container.deactivate(foreverClient, 1);
+				}
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
+		}
 		outputHandler.onClosed();
+	}
+	
+	synchronized void setKilledDupe() {
+		killedDupe = true;
 	}
 	
 	public synchronized boolean isClosed() {
@@ -150,19 +185,54 @@ public class FCPConnectionHandler implements Closeable {
 		}
 	}
 
-	public void setClientName(String name) {
+	public void setClientName(final String name) {
 		this.clientName = name;
-		client = server.registerClient(name, server.core, this);
+		rebootClient = server.registerRebootClient(name, server.core, this);
+		rebootClient.queuePendingMessagesOnConnectionRestart(outputHandler, null);
+		server.core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				try {
+					createForeverClient(name, container);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" creating persistent client for "+name, t);
+					failedGetForever = true;
+					synchronized(FCPConnectionHandler.this) {
+						failedGetForever = true;
+						FCPConnectionHandler.this.notifyAll();
+					}
+				}
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
 		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
 	}
 	
+	protected FCPClient createForeverClient(String name, ObjectContainer container) {
+		synchronized(FCPConnectionHandler.this) {
+			if(foreverClient != null) return foreverClient;
+		}
+		FCPClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this, container);
+		synchronized(FCPConnectionHandler.this) {
+			foreverClient = client;
+			FCPConnectionHandler.this.notifyAll();
+		}
+		client.queuePendingMessagesOnConnectionRestart(outputHandler, container);
+		return foreverClient;
+	}
+
 	public String getClientName() {
 		return clientName;
 	}
 
+	/**
+	 * Start a ClientGet. If there is an identifier collision, queue an IdentifierCollisionMessage.
+	 * Hence, we can run stuff on other threads if we need to, as long as we send the right messages.
+	 */
 	public void startClientGet(ClientGetMessage message) {
-		String id = message.identifier;
+		final String id = message.identifier;
+		final boolean global = message.global;
 		ClientGet cg = null;
 		boolean success;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
@@ -175,9 +245,30 @@ public class FCPConnectionHandler implements Closeable {
 				success = !requestsByIdentifier.containsKey(id);
 			if(success) {
 				try {
-					cg = new ClientGet(this, message);
+					cg = new ClientGet(this, message, server);
 					if(!persistent)
 						requestsByIdentifier.put(id, cg);
+					else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+						final ClientGet getter = cg;
+						server.core.clientContext.jobRunner.queue(new DBJob() {
+
+							public void run(ObjectContainer container, ClientContext context) {
+								try {
+									getter.register(container, false, false);
+									container.store(getter);
+								} catch (IdentifierCollisionException e) {
+									Logger.normal(this, "Identifier collision on "+this);
+									FCPMessage msg = new IdentifierCollisionMessage(id, global);
+									outputHandler.queue(msg);
+									return;
+								}
+								getter.start(container, context);
+								container.deactivate(getter, 1);
+							}
+							
+						}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
+						return; // Don't run the start() below
+					}
 				} catch (IdentifierCollisionException e) {
 					success = false;
 				} catch (MessageInvalidException e) {
@@ -192,20 +283,15 @@ public class FCPConnectionHandler implements Closeable {
 			outputHandler.queue(msg);
 			return;
 		} else {
-			// Register before starting, because it may complete immediately, and if it does,
-			// we may end up with it not being removable because it wasn't registered!
-			if(cg.isPersistent()) {
-				if(cg.isPersistentForever())
-					server.forceStorePersistentRequests();
-			}
-			cg.start();
+			cg.start(null, server.core.clientContext);
 		}
 	}
 
-	public void startClientPut(ClientPutMessage message) {
+	public void startClientPut(final ClientPutMessage message) {
 		if(logMINOR)
 			Logger.minor(this, "Starting insert ID=\""+message.identifier+ '"');
-		String id = message.identifier;
+		final String id = message.identifier;
+		final boolean global = message.global;
 		ClientPut cp = null;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
 		FCPMessage failedMessage = null;
@@ -219,7 +305,7 @@ public class FCPConnectionHandler implements Closeable {
 				success = !requestsByIdentifier.containsKey(id);
 			if(success) {
 				try {
-					cp = new ClientPut(this, message);
+					cp = new ClientPut(this, message, server);
 				} catch (IdentifierCollisionException e) {
 					success = false;
 				} catch (MessageInvalidException e) {
@@ -228,8 +314,29 @@ public class FCPConnectionHandler implements Closeable {
 				} catch (MalformedURLException e) {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 				}
-				if(!persistent)
+				if(cp != null && !persistent)
 					requestsByIdentifier.put(id, cp);
+				else if(cp != null && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+					final ClientPut putter = cp;
+					server.core.clientContext.jobRunner.queue(new DBJob() {
+
+						public void run(ObjectContainer container, ClientContext context) {
+							try {
+								putter.register(container, false, false);
+								container.store(putter);
+							} catch (IdentifierCollisionException e) {
+								Logger.normal(this, "Identifier collision on "+this);
+								FCPMessage msg = new IdentifierCollisionMessage(id, global);
+								outputHandler.queue(msg);
+								return;
+							}
+							putter.start(container, context);
+							container.deactivate(putter, 1);
+						}
+						
+					}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
+					return; // Don't run the start() below
+				}
 			}
 			if(!success) {
 				Logger.normal(this, "Identifier collision on "+this);
@@ -238,27 +345,36 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
-			if(cp != null)
-				cp.freeData();
-			else
-				message.freeData();
+			if(persistent) {
+				final ClientPut c = cp;
+				server.core.clientContext.jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						if(c != null)
+							c.freeData(container);
+						else
+							message.freeData(container);
+					}
+					
+				}, NativeThread.HIGH_PRIORITY-1, false);
+			} else {
+				if(cp != null)
+					cp.freeData(null);
+				else
+					message.freeData(null);
+			}
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
-			// Register before starting, because it may complete immediately, and if it does,
-			// we may end up with it not being removable because it wasn't registered!
-			if(cp.isPersistent()) {
-				if(cp.isPersistentForever())
-					server.forceStorePersistentRequests();
-			}
-			cp.start();
+			cp.start(null, server.core.clientContext);
 		}
 	}
 
 	public void startClientPutDir(ClientPutDirMessage message, HashMap<String, Object> buckets, boolean wasDiskPut) {
 		if(logMINOR)
 			Logger.minor(this, "Start ClientPutDir");
-		String id = message.identifier;
+		final String id = message.identifier;
+		final boolean global = message.global;
 		ClientPutDir cp = null;
 		FCPMessage failedMessage = null;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
@@ -273,17 +389,38 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(success) {
 			try {
-				cp = new ClientPutDir(this, message, buckets, wasDiskPut);
+				cp = new ClientPutDir(this, message, buckets, wasDiskPut, server);
 			} catch (IdentifierCollisionException e) {
 				success = false;
 			} catch (MalformedURLException e) {
 				failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 			}
-			if(!persistent) {
+			if(cp != null && !persistent) {
 				synchronized(this) {
 					requestsByIdentifier.put(id, cp);
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
+			} else if(cp != null && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+				final ClientPutDir putter = cp;
+				server.core.clientContext.jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						try {
+							putter.register(container, false, false);
+							container.store(putter);
+						} catch (IdentifierCollisionException e) {
+							Logger.normal(this, "Identifier collision on "+this);
+							FCPMessage msg = new IdentifierCollisionMessage(id, global);
+							outputHandler.queue(msg);
+							return;
+						}
+						putter.start(container, context);
+						container.deactivate(putter, 1);
+					}
+					
+				}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
+				return; // Don't run the start() below
+				
 			}
 			if(!success) {
 				Logger.normal(this, "Identifier collision on "+this);
@@ -293,23 +430,36 @@ public class FCPConnectionHandler implements Closeable {
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
 			if(cp != null)
-				cp.cancel();
+				cp.cancel(null, server.core.clientContext);
 			return;
 		} else {
-			// Register before starting, because it may complete immediately, and if it does,
-			// we may end up with it not being removable because it wasn't registered!
-			if(cp.isPersistent()) {
-				if(cp.isPersistentForever())
-					server.forceStorePersistentRequests();
-			}
 			if(logMINOR)
 				Logger.minor(this, "Starting "+cp);
-			cp.start();
+			cp.start(null, server.core.clientContext);
 		}
 	}
 	
-	public FCPClient getClient() {
-		return client;
+	public FCPClient getRebootClient() {
+		return rebootClient;
+	}
+
+	public FCPClient getForeverClient(ObjectContainer container) {
+		synchronized(this) {
+			if(foreverClient != null)
+				return foreverClient;
+			if(container == null) {
+				while(foreverClient == null && (!failedGetForever) && (!isClosed)) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				return foreverClient;
+			} else {
+				return createForeverClient(clientName, container);
+			}
+		}
 	}
 
 	public void finishedClientRequest(ClientRequest get) {
@@ -319,7 +469,7 @@ public class FCPConnectionHandler implements Closeable {
 	}
 
 	public boolean isGlobalSubscribed() {
-		return client.watchGlobal;
+		return rebootClient.watchGlobal;
 	}
 
 	public boolean hasFullAccess() {
@@ -465,10 +615,56 @@ public class FCPConnectionHandler implements Closeable {
 			req = requestsByIdentifier.remove(identifier);
 		}
 		if(req != null) {
-			req.requestWasRemoved();
 			if(kill)
-				req.cancel();
+				req.cancel(null, server.core.clientContext);
+			req.requestWasRemoved(null, server.core.clientContext);
 		}
 		return req;
 	}
+	
+	ClientRequest getRebootRequest(boolean global, FCPConnectionHandler handler, String identifier) {
+		if(global)
+			return handler.server.globalRebootClient.getRequest(identifier, null);
+		else
+			return handler.getRebootClient().getRequest(identifier, null);
+	}
+	
+	ClientRequest getForeverRequest(boolean global, FCPConnectionHandler handler, String identifier, ObjectContainer container) {
+		if(global)
+			return handler.server.globalForeverClient.getRequest(identifier, container);
+		else
+			return handler.getForeverClient(container).getRequest(identifier, container);
+	}
+	
+	ClientRequest removePersistentRebootRequest(boolean global, String identifier) throws MessageInvalidException {
+		FCPClient client =
+			global ? server.globalRebootClient :
+			getRebootClient();
+		ClientRequest req = client.getRequest(identifier, null);
+		if(req != null) {
+			client.removeByIdentifier(identifier, true, server, null, server.core.clientContext);
+		}
+		return req;
+	}
+	
+	ClientRequest removePersistentForeverRequest(boolean global, String identifier, ObjectContainer container) throws MessageInvalidException {
+		FCPClient client =
+			global ? server.globalForeverClient :
+			getForeverClient(container);
+		container.activate(client, 1);
+		ClientRequest req = client.getRequest(identifier, container);
+		if(req != null) {
+			client.removeByIdentifier(identifier, true, server, container, server.core.clientContext);
+		}
+		if(!global)
+			container.deactivate(client, 1);
+		return req;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing FCPConnectionHandler in database", new Exception("error"));
+		return false;
+	}
+	
+
 }

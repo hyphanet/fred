@@ -9,6 +9,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
+import freenet.client.async.DBJobRunner;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -20,7 +26,14 @@ public class BucketChainBucket implements Bucket {
 	private boolean freed;
 	private boolean readOnly;
 	private final BucketFactory bf;
-	
+	boolean stored;
+
+	/**
+	 * @param bucketSize
+	 * @param bf
+	 * @param dbJobRunner If not null, use this to store buckets to disk progressively
+	 * to avoid a big transaction at the end. Caller then MUST call storeTo() at some point.
+	 */
 	public BucketChainBucket(long bucketSize, BucketFactory bf) {
 		this.bucketSize = bucketSize;
 		this.buckets = new Vector<Bucket>();
@@ -28,6 +41,14 @@ public class BucketChainBucket implements Bucket {
 		size = 0;
 		freed = false;
 		readOnly = false;
+	}
+
+	private BucketChainBucket(Vector newBuckets, long bucketSize2, long size2, boolean readOnly, BucketFactory bf2) {
+		this.buckets = newBuckets;
+		this.bucketSize = bucketSize2;
+		this.size = size2;
+		this.readOnly = readOnly;
+		this.bf = bf2;
 	}
 
 	public void free() {
@@ -43,7 +64,7 @@ public class BucketChainBucket implements Bucket {
 	}
 	
 	/** Equivalent to free(), but don't free the underlying buckets. */
-	public void clear() {
+	void clear() {
 		synchronized(this) {
 			size = 0;
 			buckets.clear();
@@ -57,7 +78,7 @@ public class BucketChainBucket implements Bucket {
 	public InputStream getInputStream() throws IOException {
 		synchronized(this) {
 			if(freed) throw new IOException("Freed");
-		}
+			if(buckets.size() == 0) return new NullInputStream();
 		return new InputStream() {
 
 			private int bucketNo = 0;
@@ -88,6 +109,10 @@ public class BucketChainBucket implements Bucket {
 						}
 					} catch (EOFException e) {
 						// Handle the same
+					}
+					synchronized(BucketChainBucket.this) {
+						// No more data to read at the moment.
+						if(readBytes >= size) return -1;
 					}
 					bucketNo++;
 					curBucketStream.close();
@@ -133,6 +158,10 @@ public class BucketChainBucket implements Bucket {
 					} catch (EOFException e) {
 						// Handle the same
 					}
+					synchronized(BucketChainBucket.this) {
+						// No more data to read at the moment.
+						if(readBytes >= size) return -1;
+					}
 					bucketNo++;
 					curBucketStream.close();
 					curBucketStream = getBucketInputStream(bucketNo++);
@@ -158,6 +187,7 @@ public class BucketChainBucket implements Bucket {
 			}
 			
 		};
+		}
 	}
 
 	protected synchronized InputStream getBucketInputStream(int i) throws IOException {
@@ -262,15 +292,20 @@ public class BucketChainBucket implements Bucket {
 	}
 
 	protected OutputStream makeBucketOutputStream(int i) throws IOException {
-		Bucket bucket = bf.makeBucket(bucketSize);
-		buckets.add(bucket);
-		if (buckets.size() != i + 1)
-			throw new IllegalStateException("Added bucket, size should be " + (i + 1) + " but is " + buckets.size());
-		if (buckets.get(i) != bucket)
-			throw new IllegalStateException("Bucket got replaced. Race condition?");
+		Bucket bucket;
+		synchronized(this) {
+			bucket = bf.makeBucket(bucketSize);
+			buckets.add(bucket);
+			if (buckets.size() != i + 1)
+				throw new IllegalStateException("Added bucket, size should be " + (i + 1) + " but is " + buckets.size());
+			if (buckets.get(i) != bucket)
+				throw new IllegalStateException("Bucket got replaced. Race condition?");
+		}
 		return bucket.getOutputStream();
 	}
 
+	private int storedTo = 0;
+	
 	public boolean isReadOnly() {
 		return readOnly;
 	}
@@ -283,4 +318,36 @@ public class BucketChainBucket implements Bucket {
 		return size;
 	}
 
+	public void storeTo(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+
+	public Bucket createShadow() throws IOException {
+		Vector newBuckets = new Vector();
+		for(int i=0;i<buckets.size();i++) {
+			Bucket data = (Bucket) buckets.get(i);
+			Bucket shadow = data.createShadow();
+			if(shadow == null) {
+				// Shadow buckets don't need to be freed.
+				return null;
+			}
+			newBuckets.add(shadow);
+		}
+		return new BucketChainBucket(newBuckets, bucketSize, size, true, bf);
+	}
+
+	// For debugging
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		return true;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		return true;
+	}
+	
 }

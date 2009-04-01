@@ -3,23 +3,28 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.lang.ref.WeakReference;
+import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Map;
-import java.util.WeakHashMap;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+
+import freenet.client.FECQueue;
+import freenet.client.FetchException;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.keys.ClientKey;
-import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
-import freenet.keys.KeyVerifyException;
+import freenet.node.BaseSendableGet;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
+import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
@@ -29,11 +34,9 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
-import freenet.support.RandomGrabArray;
-import freenet.support.SectoredRandomGrabArrayWithInt;
-import freenet.support.SectoredRandomGrabArrayWithObject;
-import freenet.support.SortedVectorByNumber;
+import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.api.StringCallback;
+import freenet.support.io.NativeThread;
 
 /**
  * Every X seconds, the RequestSender calls the ClientRequestScheduler to
@@ -42,17 +45,20 @@ import freenet.support.api.StringCallback;
  */
 public class ClientRequestScheduler implements RequestScheduler {
 	
-    private static volatile boolean logMINOR;
-
-    static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-
-            @Override
-            public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
-            }
-        });
-    }
+	private final ClientRequestSchedulerCore schedCore;
+	final ClientRequestSchedulerNonPersistent schedTransient;
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
 		final ClientRequestScheduler cs;
@@ -89,100 +95,39 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	/**
-	 * Structure:
-	 * array (by priority) -> // one element per possible priority
-	 * SortedVectorByNumber (by # retries) -> // contains each current #retries
-	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
-	 * 
-	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
-	 */
-	private final SortedVectorByNumber[] priorities;
+	/** This DOES NOT PERSIST */
 	private final OfferedKeysList[] offeredKeys;
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
 	final RandomSource random;
-	private final Map<ClientRequester, HashSet<SendableRequest>> allRequestsByClientRequest;
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
-	private final LinkedList<WeakReference<RandomGrabArray>> recentSuccesses = new LinkedList<WeakReference<RandomGrabArray>>();
-	private final RequestCooldownQueue cooldownQueue;
-	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
-	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
-	 * itself. */
-	private final HashMap<Key, Object> pendingKeys;
+	private final CooldownQueue transientCooldownQueue;
+	private final CooldownQueue persistentCooldownQueue;
+	final PrioritizedSerialExecutor databaseExecutor;
+	final DatastoreChecker datastoreChecker;
+	public final ClientContext clientContext;
+	final DBJobRunner jobRunner;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
 	public static final String PRIORITY_HARD = "HARD";
-	/** Minimum number of retries at which we start to hold it against a request.
-	 * See the comments on fixRetryCount; we don't want many untried requests to prevent
-	 * us from trying requests which have only been tried once (e.g. USK checkers), from 
-	 * other clients (and we DO want retries to take precedence over client round robin IF 
-	 * the request has been tried many times already). */
-	private static final int MIN_RETRY_COUNT = 3;
 	private String choosenPriorityScheduler; 
 	
-	private final short[] tweakedPrioritySelector = { 
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-			
-			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
-			
-			RequestStarter.UPDATE_PRIORITY_CLASS,
-			RequestStarter.UPDATE_PRIORITY_CLASS, 
-			RequestStarter.UPDATE_PRIORITY_CLASS, 
-			RequestStarter.UPDATE_PRIORITY_CLASS,
-			
-			RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
-			RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
-			RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
-			
-			RequestStarter.PREFETCH_PRIORITY_CLASS, 
-			RequestStarter.PREFETCH_PRIORITY_CLASS,
-			
-			RequestStarter.MINIMUM_PRIORITY_CLASS
-	};
-	private final short[] prioritySelector = {
-			RequestStarter.MAXIMUM_PRIORITY_CLASS,
-			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
-			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-			RequestStarter.UPDATE_PRIORITY_CLASS,
-			RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
-			RequestStarter.PREFETCH_PRIORITY_CLASS,
-			RequestStarter.MINIMUM_PRIORITY_CLASS
-	};
-	
-	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
+		this.isInsertScheduler = forInserts;
+		this.isSSKScheduler = forSSKs;
+		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, node.db, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, context);
+		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs);
+		persistentCooldownQueue = schedCore.persistentCooldownQueue;
+		this.databaseExecutor = core.clientDatabaseExecutor;
+		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
-		this.isInsertScheduler = forInserts;
-		this.isSSKScheduler = forSSKs;
-		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-		allRequestsByClientRequest = new WeakHashMap<ClientRequester, HashSet<SendableRequest>>();
-		if(forInserts)
-			pendingKeys = null;
-		else
-			pendingKeys = new HashMap<Key, Object>();
+		this.clientContext = context;
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
@@ -194,14 +139,49 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(!forInserts) {
 			offeredKeys = new OfferedKeysList[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			for(short i=0;i<RequestStarter.NUMBER_OF_PRIORITY_CLASSES;i++)
-				offeredKeys[i] = new OfferedKeysList(core, random, i);
+				offeredKeys[i] = new OfferedKeysList(core, random, i, forSSKs);
 		} else {
 			offeredKeys = null;
 		}
 		if(!forInserts)
-			cooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
+			transientCooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
 		else
-			cooldownQueue = null;
+			transientCooldownQueue = null;
+		jobRunner = clientContext.jobRunner;
+	}
+	
+	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
+		ObjectSet<HasKeyListener> results =
+			Db4oBugs.query(container, HasKeyListener.class);
+		for(HasKeyListener l : results) {
+			container.activate(l, 1);
+			try {
+				if(l.isCancelled(container)) continue;
+				KeyListener listener = l.makeKeyListener(container, context);
+				if(listener != null) {
+					if(listener.isSSK())
+						context.getSskFetchScheduler().addPersistentPendingKeys(listener);
+					else
+						context.getChkFetchScheduler().addPersistentPendingKeys(listener);
+					System.err.println("Loaded request key listener: "+listener+" for "+l);
+				}
+			} catch (KeyListenerConstructionException e) {
+				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
+				e.printStackTrace();
+				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
+			} catch (Throwable t) {
+				// Probably an error on last startup???
+				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST: "+t, t);
+				System.err.println("FAILED TO LOAD REQUEST: "+t);
+				t.printStackTrace();
+			}
+			container.deactivate(l, 1);
+		}
+	}
+
+	public void start(NodeClientCore core) {
+		schedCore.start(core);
+		queueFillRequestStarterQueue();
 	}
 	
 	/** Called by the  config. Callback
@@ -212,505 +192,807 @@ public class ClientRequestScheduler implements RequestScheduler {
 		choosenPriorityScheduler = val;
 	}
 	
-	public void register(SendableRequest req) {
-		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
-		if(isInsertScheduler != (req instanceof SendableInsert))
-			throw new IllegalArgumentException("Expected a SendableInsert: "+req);
-		if(req instanceof SendableGet) {
-			SendableGet getter = (SendableGet)req;
-			if(!getter.ignoreStore()) {
-				boolean anyValid = false;
-				Object[] keyTokens = getter.sendableKeys();
-				for(int i=0;i<keyTokens.length;i++) {
-					Object tok = keyTokens[i];
-					ClientKeyBlock block = null;
-					try {
-						ClientKey key = getter.getKey(tok);
-						if(key == null) {
-							if(logMINOR)
-								Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
-							continue;
-						} else {
-							if(getter.getContext().blocks != null)
-								block = getter.getContext().blocks.get(key);
-							if(block == null)
-								block = node.fetchKey(key, getter.dontCache());
-							if(block == null) {
-								addPendingKey(key, getter);
-							} else {
-								if(logMINOR)
-									Logger.minor(this, "Got "+block+" for "+key.getURI());
-							}
-						}
-					} catch (KeyVerifyException e) {
-						// Verify exception, probably bogus at source;
-						// verifies at low-level, but not at decode.
-						if(logMINOR)
-							Logger.minor(this, "Decode failed: "+e, e);
-						getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this);
-						continue; // other keys might be valid
-					}
-					if(block != null) {
-						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
-						getter.onSuccess(block, true, tok, this);
-						// Even with working thread priorities, we still get very high latency accessing
-						// the datastore when background threads are doing it in parallel.
-						// So yield() here, unless priority is very high.
-						if(req.getPriorityClass() > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-							Thread.yield();
-					} else {
-						anyValid = true;
-					}
-				}
-				if(!anyValid) {
+	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, ObjectContainer container) {
+		registerInsert(req, persistent, regmeOnly, databaseExecutor.onThread(), container);
+	}
+
+	static final int QUEUE_THRESHOLD = 100;
+	
+	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, boolean onDatabaseThread, ObjectContainer container) {
+		if(!isInsertScheduler)
+			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
+		if(persistent) {
+			if(onDatabaseThread) {
+				if(regmeOnly) {
+					long bootID = 0;
+					boolean queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) >= QUEUE_THRESHOLD;
+					if(!queueFull)
+						bootID = this.node.bootID;
+					final RegisterMe regme = new RegisterMe(req, req.getPriorityClass(container), schedCore, null, bootID);
+					container.store(regme);
 					if(logMINOR)
-						Logger.minor(this, "No valid keys, returning without registering for "+req);
+						Logger.minor(this, "Added insert RegisterMe: "+regme);
+					if(!queueFull) {
+					jobRunner.queue(new DBJob() {
+						
+						public void run(ObjectContainer container, ClientContext context) {
+							container.delete(regme);
+							if(req.isCancelled(container)) {
+								if(logMINOR) Logger.minor(this, "Request already cancelled");
+								return;
+							}
+							if(container.ext().isActive(req))
+								Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
+							container.activate(req, 1);
+							registerInsert(req, true, false, true, container);
+							container.deactivate(req, 1);
+						}
+						
+					}, NativeThread.NORM_PRIORITY, false);
+					} else {
+						schedCore.rerunRegisterMeRunner(jobRunner);
+					}
+					container.deactivate(req, 1);
 					return;
 				}
-			}
-		}
-		innerRegister(req);
-		starter.wakeUp();
-	}
-	
-	/**
-	 * Register a pending key to an already-registered request. This is necessary if we've
-	 * already registered a SendableGet, but we later add some more keys to it.
-	 */
-	void addPendingKey(ClientKey key, SendableGet getter) {
-		if(logMINOR)
-			Logger.minor(this, "Adding pending key "+key+" for "+getter);
-		Key nodeKey = key.getNodeKey();
-		synchronized(pendingKeys) {
-			Object o = pendingKeys.get(nodeKey);
-			if(o == null) {
-				pendingKeys.put(nodeKey, getter);
-			} else if(o instanceof SendableGet) {
-				SendableGet oldGet = (SendableGet) o;
-				if(oldGet != getter) {
-					pendingKeys.put(nodeKey, new SendableGet[] { oldGet, getter });
-				}
+				schedCore.innerRegister(req, random, container, null);
+				starter.wakeUp();
 			} else {
-				SendableGet[] gets = (SendableGet[]) o;
-				boolean found = false;
-				for(int j=0;j<gets.length;j++) {
-					if(gets[j] == getter) {
-						found = true;
-						break;
-					}
-				}
-				if(!found) {
-					SendableGet[] newGets = new SendableGet[gets.length+1];
-					System.arraycopy(gets, 0, newGets, 0, gets.length);
-					newGets[gets.length] = getter;
-					pendingKeys.put(nodeKey, newGets);
-				}
-			}
-		}
-	}
+				jobRunner.queue(new DBJob() {
 
-	private synchronized void innerRegister(SendableRequest req) {
-		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
-		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
-		HashSet<SendableRequest> v = allRequestsByClientRequest.get(req.getClientRequest());
-		if(v == null) {
-			v = new HashSet<SendableRequest>();
-			allRequestsByClientRequest.put(req.getClientRequest(), v);
+					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(req))
+							Logger.error(this, "ALREADY ACTIVE: "+req+" in off-thread insert register");
+						container.activate(req, 1);
+						schedCore.innerRegister(req, random, container, null);
+						container.deactivate(req, 1);
+					}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			}
+		} else {
+			schedTransient.innerRegister(req, random, null, null);
+			starter.wakeUp();
 		}
-		v.add(req);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
-	private synchronized void addToGrabArray(short priorityClass, int retryCount, Object client, ClientRequester cr, SendableRequest req) {
-		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
-			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
-		// Priority
-		SortedVectorByNumber prio = priorities[priorityClass];
-		if(prio == null) {
-			prio = new SortedVectorByNumber();
-			priorities[priorityClass] = prio;
-		}
-		// Client
-		int rc = fixRetryCount(retryCount);
-		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc);
-		if(clientGrabber == null) {
-			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc);
-			prio.add(clientGrabber);
-			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
-		}
-		// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
-		// To avoid a race condition it is essential to mirror that here.
-		synchronized(clientGrabber) {
-			// Request
-			SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
-			if(requestGrabber == null) {
-				requestGrabber = new SectoredRandomGrabArrayWithObject(client, random);
-				if(logMINOR)
-					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
-				clientGrabber.addGrabber(client, requestGrabber);
-			}
-			requestGrabber.add(cr, req);
-		}
-	}
-
 	/**
-	 * Mangle the retry count.
-	 * Below a certain number of attempts, we don't prefer one request to another just because
-	 * it's been tried more times. The reason for this is to prevent floods of low-retry-count
-	 * requests from starving other clients' requests which need to be retried. The other
-	 * solution would be to sort by client before retry count, but that would be excessive 
-	 * IMHO; we DO want to avoid rerequesting keys we've tried many times before.
+	 * Register a group of requests (not inserts): a GotKeyListener and/or one 
+	 * or more SendableGet's.
+	 * @param listener Listeners for specific keys. Can be null if the listener
+	 * is already registered e.g. most of the time with SplitFileFetcher*.
+	 * @param getters The actual requests to register to the request sender queue.
+	 * @param persistent True if the request is persistent.
+	 * @param onDatabaseThread True if we are running on the database thread.
+	 * NOTE: delayedStoreCheck/probablyNotInStore is unnecessary because we only
+	 * register the listener once.
+	 * @throws FetchException 
 	 */
-	private int fixRetryCount(int retryCount) {
-		return Math.max(0, retryCount-MIN_RETRY_COUNT);
-	}
-
-	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys){
-		SortedVectorByNumber result = null;
-		
-		short fuzz = -1, iteration = 0, priority;
-		synchronized (this) {
-			if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
-				fuzz = -1;
-			else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-				fuzz = 0;	
+	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, boolean onDatabaseThread, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
+		if(logMINOR)
+			Logger.minor(this, "register("+persistent+","+hasListener+","+getters);
+		if(isInsertScheduler) {
+			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
+			throw e;
 		}
-		// we loop to ensure we try every possibilities ( n + 1)
-		//
-		// PRIO will do 0,1,2,3,4,5,6,0
-		// TWEAKED will do rand%6,0,1,2,3,4,5,6
-		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
-			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
-			result = priorities[priority];
-			if((result != null) && 
-					(!result.isEmpty()) || (tryOfferedKeys && !offeredKeys[priority].isEmpty())) {
-				if(logMINOR) Logger.minor(this, "using priority : "+priority);
-				return priority;
+		if(persistent) {
+			if(onDatabaseThread) {
+				innerRegister(hasListener, getters, blocks, noCheckStore, container);
+			} else {
+				jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						// registerOffThread would be pointless because this is a separate job.
+						if(hasListener != null) {
+							if(container.ext().isActive(hasListener))
+								Logger.error(this, "ALREADY ACTIVE in delayed register: "+hasListener);
+							container.activate(hasListener, 1);
+						}
+						if(getters != null) {
+							for(int i=0;i<getters.length;i++) {
+								if(container.ext().isActive(getters[i]))
+									Logger.error(this, "ALREADY ACTIVE in delayed register: "+getters[i]);
+								container.activate(getters[i], 1);
+							}
+						}
+						try {
+							innerRegister(hasListener, getters, blocks, noCheckStore, container);
+						} catch (KeyListenerConstructionException e) {
+							Logger.error(this, "Registration failed to create Bloom filters: "+e+" on "+hasListener, e);
+						}
+						if(hasListener != null)
+							container.deactivate(hasListener, 1);
+						if(getters != null) {
+							for(int i=0;i<getters.length;i++)
+								container.deactivate(getters[i], 1);
+						}
+					}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			}
+		} else {
+			final KeyListener listener;
+			if(hasListener != null) {
+				listener = hasListener.makeKeyListener(container, clientContext);
+				if(listener != null)
+					schedTransient.addPendingKeys(listener);
+				else
+					Logger.normal(this, "No KeyListener for "+listener);
+			} else
+				listener = null;
+			if(getters != null && !noCheckStore) {
+				for(SendableGet getter : getters)
+					datastoreChecker.queueTransientRequest(getter, blocks);
+			} else {
+				boolean anyValid = false;
+				for(int i=0;i<getters.length;i++) {
+					if(!(getters[i].isCancelled(null) || getters[i].isEmpty(null)))
+						anyValid = true;
+				}
+				finishRegister(getters, false, onDatabaseThread, container, anyValid, null);
+			}
+		}
+	}
+	
+	
+	private void innerRegister(final HasKeyListener hasListener, final SendableGet[] getters, final BlockSet blocks, boolean noCheckStore, ObjectContainer container) throws KeyListenerConstructionException {
+		final KeyListener listener;
+		if(hasListener != null) {
+			listener = hasListener.makeKeyListener(container, clientContext);
+			schedCore.addPendingKeys(listener);
+			container.store(hasListener);
+		} else
+			listener = null;
+		
+		// Avoid NPEs due to deactivation.
+		if(getters != null) {
+			for(SendableGet getter : getters) {
+				container.activate(getter, 1);
+				container.store(getter);
+			}
+		}
+		
+		if(isInsertScheduler) {
+			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
+			throw e;
+		}
+		if(!noCheckStore) {
+			// Check the datastore before proceding.
+			for(SendableGet getter : getters) {
+				container.activate(getter, 1);
+				datastoreChecker.queuePersistentRequest(getter, blocks, container);
+				container.deactivate(getter, 1);
 			}
 			
-			if(logMINOR) Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+ ')');
-			fuzz++;
+		} else {
+			// We have already checked the datastore, this is a retry, the listener hasn't been unregistered.
+			short prio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+			for(int i=0;i<getters.length;i++) {
+				short p = getters[i].getPriorityClass(container);
+				if(p < prio) prio = p;
+			}
+			this.finishRegister(getters, true, true, container, true, null);
 		}
-		
-		//FIXME: implement NONE
-		return -1;
 	}
-	
-	// LOCKING: Life is a good deal simpler if we just synchronize on (this). 
-	// We prevent a number of race conditions (e.g. adding a retry count and then another 
-	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
-	// The worry is ... is there any nested locking outside of the hierarchy?
-	public synchronized SendableRequest removeFirst() {
-		// Priorities start at 0
-		if(logMINOR) Logger.minor(this, "removeFirst()");
-		boolean tryOfferedKeys = offeredKeys != null && node.random.nextBoolean();
-		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys);
-		if(choosenPriorityClass == -1 && offeredKeys != null && !tryOfferedKeys) {
-			tryOfferedKeys = true;
-			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys);
-		}
-		if(choosenPriorityClass == -1) {
-			if(logMINOR)
-				Logger.minor(this, "Nothing to do");
-			return null;
-		}
-		for(;choosenPriorityClass <= RequestStarter.MINIMUM_PRIORITY_CLASS;choosenPriorityClass++) {
-			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-		if(tryOfferedKeys) {
-			if(offeredKeys[choosenPriorityClass].hasValidKeys(starter))
-				return offeredKeys[choosenPriorityClass];
-		}
-		SortedVectorByNumber s = priorities[choosenPriorityClass];
-		if(s != null){
-			for(int retryIndex=0;retryIndex<s.count();retryIndex++) {
-				SectoredRandomGrabArrayWithInt retryTracker = (SectoredRandomGrabArrayWithInt) s.getByIndex(retryIndex);
-				if(retryTracker == null) {
-					if(logMINOR) Logger.minor(this, "No retrycount's left");
-					break;
-				}
-				while(true) {
-					if(logMINOR)
-						Logger.minor(this, "Got retry count tracker "+retryTracker);
-					SendableRequest req = (SendableRequest) retryTracker.removeRandom(starter);
-					if(retryTracker.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Removing retrycount "+retryTracker.getNumber()+" : "+retryTracker);
-						s.remove(retryTracker.getNumber());
-						if(s.isEmpty()) {
-							if(logMINOR) Logger.minor(this, "Should remove priority ");
-						}
-					}
-					if(req == null) {
-						if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+retryTracker.getNumber()+" ("+retryTracker+ ')');
-						break; // Try next retry count.
-					} else if(req.getPriorityClass() != choosenPriorityClass) {
-						// Reinsert it : shouldn't happen if we are calling reregisterAll,
-						// maybe we should ask people to report that error if seen
-						Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
-						// Remove it.
-						SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) retryTracker.getGrabber(req.getClient());
-						if(clientGrabber != null) {
-							RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
-							if(baseRGA != null) {
-								baseRGA.remove(req);
-							}
-						} else {
-							Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+retryTracker);
-						}
-						innerRegister(req);
-						continue; // Try the next one on this retry count.
-					}
-					
-					RandomGrabArray altRGA = null;
-					synchronized(this) {
-						if(!recentSuccesses.isEmpty()) {
-							if(random.nextBoolean()) {
-								WeakReference<RandomGrabArray> ref = recentSuccesses.removeLast();
-								altRGA = ref.get();
-							}
-						}
-					}
-					if(altRGA != null) {
-						SendableRequest altReq = (SendableRequest) (altRGA.removeRandom(starter));
-						if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
-								fixRetryCount(altReq.getRetryCount()) <= retryTracker.getNumber()) {
-							// Use the recent one instead
-							if(logMINOR)
-								Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
-							innerRegister(req);
-							req = altReq;
-						} else {
-							if(altReq != null) {
-								synchronized(this) {
-									recentSuccesses.addLast(new WeakReference<RandomGrabArray>(altRGA));
-								}
-								if(logMINOR)
-									Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-								innerRegister(altReq);
-							}
-						}
-					}
-					
-					if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+retryTracker.getNumber()+", prio "+
-							req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
-					ClientRequester cr = req.getClientRequest();
-					if(req.canRemove()) {
-						synchronized(this) {
-							HashSet<SendableRequest> v = allRequestsByClientRequest.get(cr);
-							if(v == null) {
-								Logger.error(this, "No HashSet registered for "+cr);
-							} else {
-								boolean removed = v.remove(req);
-								if(v.isEmpty())
-									allRequestsByClientRequest.remove(cr);
-								if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
-							}
-						}
-						// Do not remove from the pendingKeys list.
-						// Whether it is running a request, waiting to execute, or waiting on the
-						// cooldown queue, ULPRs and backdoor coalescing should still be active.
-					}
-					if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
-					return req;
+
+	void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
+		if(isInsertScheduler && getters != null) {
+			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
+			if(onDatabaseThread || !persistent) {
+				for(int i=0;i<getters.length;i++) {
+					if(persistent)
+						container.activate(getters[i], 1);
+					getters[i].internalError(e, this, container, clientContext, persistent);
+					if(persistent)
+						container.deactivate(getters[i], 1);
 				}
 			}
+			throw e;
 		}
-		}
-		if(logMINOR) Logger.minor(this, "No requests to run");
-		return null;
-	}
-	
-	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
-		boolean dropped = false;
-		Object o;
-		synchronized(pendingKeys) {
-			o = pendingKeys.get(key);
-			if(o == null) {
-				if(complain)
-					Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
-			} else if(o instanceof SendableGet) {
-				SendableGet oldGet = (SendableGet) o;
-				if(oldGet != getter) {
-					if(complain)
-						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
-				} else {
-					dropped = true;
-					pendingKeys.remove(key);
+		if(persistent) {
+			// Add to the persistent registration queue
+			if(onDatabaseThread) {
+				if(!databaseExecutor.onThread()) {
+					throw new IllegalStateException("Not on database thread!");
 				}
+				if(persistent)
+					container.activate(getters, 1);
+				if(logMINOR)
+					Logger.minor(this, "finishRegister() for "+getters);
+				if(anyValid) {
+					boolean wereAnyValid = false;
+					for(int i=0;i<getters.length;i++) {
+						SendableGet getter = getters[i];
+						container.activate(getter, 1);
+						if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
+							wereAnyValid = true;
+							schedCore.innerRegister(getter, random, container, getters);
+						}
+					}
+					if(!wereAnyValid) {
+						Logger.normal(this, "No requests valid: "+getters);
+					}
+				} else {
+					Logger.normal(this, "No valid requests passed in: "+getters);
+				}
+				if(reg != null)
+					container.delete(reg);
+				maybeFillStarterQueue(container, clientContext, getters);
+				starter.wakeUp();
 			} else {
-				SendableGet[] gets = (SendableGet[]) o;
-				final int getsLength = gets.length;
-				SendableGet[] newGets = new SendableGet[getsLength > 1 ? getsLength-1 : 0];
-				boolean found = false;
-				int x = 0;
-				for(int j=0;j<getsLength;j++) {
-					if(gets[j] == getter) {
-						found = true;
-						dropped = true;
-						continue;
+				jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						if(logMINOR)
+							Logger.minor(this, "finishRegister() for "+getters);
+						boolean wereAnyValid = false;
+						for(SendableGet getter : getters) {
+							if(container.ext().isActive(getter))
+								Logger.error(this, "ALREADY ACTIVE in delayed finishRegister: "+getter);
+							container.activate(getter, 1);
+							if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
+								wereAnyValid = true;
+								schedCore.innerRegister(getter, random, container, getters);
+							}
+							container.deactivate(getter, 1);
+						}
+						if(!wereAnyValid) {
+							Logger.normal(this, "No requests valid: "+getters);
+						}
+						if(reg != null)
+							container.delete(reg);
+						maybeFillStarterQueue(container, context, getters);
+						starter.wakeUp();
 					}
-					if(x == newGets.length) {
-						if(!found) {
-							if(complain)
-								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+getsLength+" getters)");
-							return; // not here
-						} // else is a contradiction, let it get an ArrayIndexOutOfBounds.
-					}
-					if(gets[j] == null || gets[j].isCancelled()) continue;
-					newGets[x++] = gets[j];
-				}
-				if(x == 0) {
-					pendingKeys.remove(key);
-				} else if(x == 1) {
-					pendingKeys.put(key, newGets[0]);
-				} else {
-					if(x != getsLength-1) {
-						SendableGet[] newNewGets = new SendableGet[x];
-						System.arraycopy(newGets, 0, newNewGets, 0, x);
-						newGets = newNewGets;
-					}
-					pendingKeys.put(key, newGets);
-				}
+					
+				}, NativeThread.NORM_PRIORITY+1, false);
 			}
+		} else {
+			if(!anyValid) return;
+			// Register immediately.
+			for(int i=0;i<getters.length;i++)
+				schedTransient.innerRegister(getters[i], random, null, getters);
+			starter.wakeUp();
 		}
-		if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
-			for(int i=0;i<offeredKeys.length;i++)
-				offeredKeys[i].remove(key);
+	}
+
+	private void maybeFillStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
+		synchronized(this) {
+			if(starterQueue.size() > MAX_STARTER_QUEUE_SIZE / 2)
+				return;
 		}
-		if(cooldownQueue != null)
-			cooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key));
+		fillRequestStarterQueue(container, context, mightBeActive);
+	}
+
+	public ChosenBlock getBetterNonPersistentRequest(short prio, int retryCount) {
+		short fuzz = -1;
+		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
+			fuzz = -1;
+		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
+			fuzz = 0;	
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, prio, retryCount, clientContext, null);
 	}
 	
 	/**
-	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
-	 * in that key.
+	 * All the persistent SendableRequest's currently running (either actually in flight, just chosen,
+	 * awaiting the callbacks being executed etc). Note that this is an ArrayList because we *must*
+	 * compare by pointer: these objects may well implement hashCode() etc for use by other code, but 
+	 * if they are deactivated, they will be unreliable. Fortunately, this will be fairly small most
+	 * of the time, since a single SendableRequest might include 256 actual requests.
+	 * 
+	 * SYNCHRONIZATION: Synched on starterQueue.
+	 */
+	private final transient ArrayList<SendableRequest> runningPersistentRequests = new ArrayList<SendableRequest> ();
+	
+	public void removeRunningRequest(SendableRequest request) {
+		synchronized(starterQueue) {
+			for(int i=0;i<runningPersistentRequests.size();i++) {
+				if(runningPersistentRequests.get(i) == request) {
+					runningPersistentRequests.remove(i);
+					i--;
+					if(logMINOR)
+						Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
+				}
+			}
+		}
+	}
+	
+	public boolean isRunningOrQueuedPersistentRequest(SendableRequest request) {
+		synchronized(starterQueue) {
+			for(int i=0;i<runningPersistentRequests.size();i++) {
+				if(runningPersistentRequests.get(i) == request)
+					return true;
+			}
+			for(PersistentChosenRequest req : starterQueue) {
+				if(req.request == request) return true;
+			}
+		}
+		return false;
+	}
+	
+	/** The maximum number of requests that we will keep on the in-RAM request
+	 * starter queue. */
+	static final int MAX_STARTER_QUEUE_SIZE = 512; // two full segments
+	
+	/** The above doesn't include in-flight requests. In-flight requests will
+	 * of course still have PersistentChosenRequest's in the database (on disk)
+	 * even though they are not on the starter queue and so don't count towards
+	 * the above limit. So we have a higher limit before we complain that 
+	 * something odd is happening.. (e.g. leaking PersistentChosenRequest's). */
+	static final int WARNING_STARTER_QUEUE_SIZE = 800;
+	private static final long WAIT_AFTER_NOTHING_TO_START = 60*1000;
+	
+	private transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
+	
+	/**
+	 * Called by RequestStarter to find a request to run.
+	 */
+	public ChosenBlock grabRequest() {
+		while(true) {
+			PersistentChosenRequest reqGroup = null;
+			synchronized(starterQueue) {
+				short bestPriority = Short.MAX_VALUE;
+				int bestRetryCount = Integer.MAX_VALUE;
+				for(PersistentChosenRequest req : starterQueue) {
+					if(req.prio < bestPriority || 
+							(req.prio == bestPriority && req.retryCount < bestRetryCount)) {
+						bestPriority = req.prio;
+						bestRetryCount = req.retryCount;
+						reqGroup = req;
+					}
+				}
+			}
+			if(reqGroup != null) {
+				// Try to find a better non-persistent request
+				if(logMINOR) Logger.minor(this, "Persistent request: "+reqGroup+" prio "+reqGroup.prio+" retryCount "+reqGroup.retryCount);
+				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio, reqGroup.retryCount);
+				if(better != null) {
+					if(better.getPriority() > reqGroup.prio) {
+						Logger.error(this, "Selected "+better+" as better than "+reqGroup+" but isn't better!");
+					}
+					return better;
+				}
+			}
+			if(reqGroup == null) {
+				queueFillRequestStarterQueue();
+				return getBetterNonPersistentRequest(Short.MAX_VALUE, Integer.MAX_VALUE);
+			}
+			ChosenBlock block;
+			int finalLength = 0;
+			synchronized(starterQueue) {
+				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom, this);
+				if(block == null) {
+					for(int i=0;i<starterQueue.size();i++) {
+						if(starterQueue.get(i) == reqGroup) {
+							starterQueue.remove(i);
+							if(logMINOR)
+								Logger.minor(this, "Removed "+reqGroup+" from starter queue because is empty");
+							i--;
+						} else {
+							finalLength += starterQueue.get(i).sizeNotStarted();
+						}
+					}
+					continue;
+				} else {
+					// Prevent this request being selected, even though we may remove the PCR from the starter queue
+					// in the very near future. When the PCR finishes, the requests will be un-blocked.
+					if(!runningPersistentRequests.contains(reqGroup.request))
+						runningPersistentRequests.add(reqGroup.request);
+				}
+			}
+			if(finalLength < MAX_STARTER_QUEUE_SIZE)
+				queueFillRequestStarterQueue();
+			if(logMINOR)
+				Logger.minor(this, "grabRequest() returning "+block+" for "+reqGroup);
+			return block;
+		}
+	}
+	
+	/** Don't fill the starter queue until this point. Used to implement a 60 second
+	 * cooldown after failing to fill the queue: if there was nothing queued, and since
+	 * we know if more requests are started they will be added to the queue, this is
+	 * an acceptable optimisation to reduce the database load from the idle schedulers... */
+	private long nextQueueFillRequestStarterQueue = -1;
+	
+	public void queueFillRequestStarterQueue() {
+		if(System.currentTimeMillis() < nextQueueFillRequestStarterQueue)
+			return;
+		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
+			return;
+		jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
+	}
+
+	private int starterQueueLength() {
+		int length = 0;
+		synchronized(starterQueue) {
+			for(PersistentChosenRequest request : starterQueue)
+				length += request.sizeNotStarted();
+		}
+		return length;
+	}
+
+	/**
+	 * @param request
+	 * @param container
+	 * @return True if the queue is now full/over-full.
+	 */
+	boolean addToStarterQueue(SendableRequest request, ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "Adding to starter queue: "+request);
+		container.activate(request, 1);
+		PersistentChosenRequest chosen;
+		try {
+			chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), request.getRetryCount(), container, ClientRequestScheduler.this, clientContext);
+		} catch (NoValidBlocksException e) {
+			return false;
+		}
+		if(logMINOR)
+			Logger.minor(this, "Created PCR: "+chosen);
+		container.deactivate(request, 1);
+		boolean dumpNew = false;
+		synchronized(starterQueue) {
+			for(PersistentChosenRequest req : starterQueue) {
+				if(req.request == request) {
+					Logger.error(this, "Already on starter queue: "+req+" for "+request, new Exception("debug"));
+					dumpNew = true;
+					break;
+				}
+			}
+			if(!dumpNew) {
+				starterQueue.add(chosen);
+				int length = starterQueueLength();
+				length += chosen.sizeNotStarted();
+				runningPersistentRequests.add(request);
+				if(logMINOR)
+					Logger.minor(this, "Added to running persistent requests, size now "+runningPersistentRequests.size()+" : "+request);
+				return length > MAX_STARTER_QUEUE_SIZE;
+			}
+		}
+		if(dumpNew)
+			chosen.onDumped(schedCore, container, false);
+		return false;
+	}
+	
+	void removeFromStarterQueue(SendableRequest req, ObjectContainer container, boolean reqAlreadyActive) {
+		PersistentChosenRequest dumped = null;
+		synchronized(starterQueue) {
+			for(int i=0;i<starterQueue.size();i++) {
+				PersistentChosenRequest pcr = starterQueue.get(i);
+				if(pcr.request == req) {
+					starterQueue.remove(i);
+					dumped = pcr;
+					break;
+				}
+			}
+		}
+		if(dumped != null)
+			dumped.onDumped(schedCore, container, reqAlreadyActive);
+	}
+	
+	int starterQueueSize() {
+		synchronized(starterQueue) {
+			return starterQueue.size();
+		}
+	}
+	
+	/** Maximum number of requests to select from a single SendableRequest */
+	final int MAX_CONSECUTIVE_SAME_REQ = 50;
+	
+	private DBJob requestStarterQueueFiller = new DBJob() {
+		public void run(ObjectContainer container, ClientContext context) {
+			fillRequestStarterQueue(container, context, null);
+		}
+	};
+	
+	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
+		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+		long noLaterThan = Long.MAX_VALUE;
+		if(!isInsertScheduler) {
+			noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
+			noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
+		}
+		// If anything has been re-added, the request starter will have been woken up.
+		short fuzz = -1;
+		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
+			fuzz = -1;
+		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
+			fuzz = 0;
+		boolean added = false;
+		synchronized(starterQueue) {
+			if(logMINOR && (!isSSKScheduler) && (!isInsertScheduler)) {
+				Logger.minor(this, "Scheduling CHK fetches...");
+				for(SendableRequest req : runningPersistentRequests) {
+					boolean wasActive = container.ext().isActive(req);
+					if(!wasActive) container.activate(req, 1);
+					Logger.minor(this, "Running persistent request: "+req);
+					if(!wasActive) container.deactivate(req, 1);
+				}
+			}
+			// Recompute starterQueueLength
+			int length = 0;
+			PersistentChosenRequest old = null;
+			for(PersistentChosenRequest req : starterQueue) {
+				if(old == req)
+					Logger.error(this, "DUPLICATE CHOSEN REQUESTS ON QUEUE: "+req);
+				if(old != null && old.request == req.request)
+					Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
+				boolean ignoreActive = false;
+				if(mightBeActive != null) {
+					for(SendableRequest tmp : mightBeActive)
+						if(tmp == req.request) ignoreActive = true;
+				}
+				if(!ignoreActive) {
+					if(container.ext().isActive(req.request))
+						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
+					else if(logMINOR)
+						Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
+				} else if(logMINOR)
+					Logger.minor(this, "Ignoring active because just registered: "+req.request);
+				req.pruneDuplicates(ClientRequestScheduler.this);
+				old = req;
+				length += req.sizeNotStarted();
+			}
+			if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+			if(length >= MAX_STARTER_QUEUE_SIZE) {
+				if(length >= WARNING_STARTER_QUEUE_SIZE)
+					Logger.error(this, "Queue already full: "+length);
+				return;
+			}
+			if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
+				return;
+			}
+		}
+		
+		if((!isSSKScheduler) && (!isInsertScheduler)) {
+			Logger.minor(this, "Scheduling CHK fetches...");
+		}
+		boolean addedMore = false;
+		while(true) {
+			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
+			if(request == null) {
+				synchronized(ClientRequestScheduler.this) {
+					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
+					if(!added) {
+						nextQueueFillRequestStarterQueue = 
+							System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
+						if(nextQueueFillRequestStarterQueue > noLaterThan)
+							nextQueueFillRequestStarterQueue = noLaterThan + 1;
+					}
+				}
+				if(addedMore) starter.wakeUp();
+				return;
+			}
+			boolean full = addToStarterQueue(request, container);
+			container.deactivate(request, 1);
+			if(!added) starter.wakeUp();
+			else addedMore = true;
+			added = true;
+			if(full) {
+				if(addedMore) starter.wakeUp();
+				return;
+			}
+		}
+	}
+	
+	/**
+	 * Compare a recently registered SendableRequest to what is already on the
+	 * starter queue. If it is better, kick out stuff from the queue until we
+	 * are just over the limit.
+	 * @param req
+	 * @param container
+	 */
+	public void maybeAddToStarterQueue(SendableRequest req, ObjectContainer container, SendableRequest[] mightBeActive) {
+		short prio = req.getPriorityClass(container);
+		int retryCount = req.getRetryCount();
+		if(logMINOR)
+			Logger.minor(this, "Maybe adding to starter queue: prio="+prio+" retry count="+retryCount);
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		synchronized(starterQueue) {
+			boolean betterThanSome = false;
+			int size = 0;
+			PersistentChosenRequest prev = null;
+			for(PersistentChosenRequest old : starterQueue) {
+				if(old.request == req) {
+					// Wait for a reselect. Otherwise we can starve other
+					// requests. Note that this happens with persistent SBI's:
+					// they are added at the new retry count before being
+					// removed at the old retry count.
+					if(logMINOR) Logger.minor(this, "Already on starter queue: "+old+" for "+req);
+					return;
+				}
+				if(prev == old)
+					Logger.error(this, "ON STARTER QUEUE TWICE: "+prev+" for "+prev.request);
+				if(prev != null && prev.request == old.request)
+					Logger.error(this, "REQUEST ON STARTER QUEUE TWICE: "+prev+" for "+prev.request+" vs "+old+" for "+old.request);
+				boolean ignoreActive = false;
+				if(mightBeActive != null) {
+					for(SendableRequest tmp : mightBeActive)
+						if(tmp == old.request) ignoreActive = true;
+				}
+				if(!ignoreActive) {
+					if(container.ext().isActive(old.request))
+						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
+					else if(logDEBUG)
+						Logger.debug(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
+				} else if(logMINOR)
+					Logger.minor(this, "Ignoring active because just registered: "+old.request+" in maybeAddToStarterQueue for "+req);
+				size += old.sizeNotStarted();
+				if(old.prio > prio || old.prio == prio && old.retryCount > retryCount)
+					betterThanSome = true;
+				if(old.request == req) return;
+				prev = old;
+			}
+			if(size >= MAX_STARTER_QUEUE_SIZE && !betterThanSome) {
+				if(logMINOR)
+					Logger.minor(this, "Not adding to starter queue: over limit and req not better than any queued requests");
+				return;
+			}
+		}
+		addToStarterQueue(req, container);
+		trimStarterQueue(container);
+	}
+	
+	private void trimStarterQueue(ObjectContainer container) {
+		ArrayList<PersistentChosenRequest> dumped = null;
+		synchronized(starterQueue) {
+			int length = starterQueueLength();
+			while(length > MAX_STARTER_QUEUE_SIZE) {
+				// Find the lowest priority/retry count request.
+				// If we can dump it without going below the limit, then do so.
+				// If we can't, return.
+				PersistentChosenRequest worst = null;
+				short worstPrio = -1;
+				int worstRetryCount = -1;
+				int worstIndex = -1;
+				int worstLength = -1;
+				if(starterQueue.isEmpty()) {
+					break;
+				}
+				length = 0;
+				for(int i=0;i<starterQueue.size();i++) {
+					PersistentChosenRequest req = starterQueue.get(i);
+					short prio = req.prio;
+					int retryCount = req.retryCount;
+					int size = req.sizeNotStarted();
+					length += size;
+					if(prio > worstPrio ||
+							(prio == worstPrio && retryCount > worstRetryCount)) {
+						worstPrio = prio;
+						worstRetryCount = retryCount;
+						worst = req;
+						worstIndex = i;
+						worstLength = size;
+						continue;
+					}
+				}
+				int lengthAfter = length - worstLength;
+				if(lengthAfter >= MAX_STARTER_QUEUE_SIZE) {
+					if(dumped == null)
+						dumped = new ArrayList<PersistentChosenRequest>(2);
+					dumped.add(worst);
+					starterQueue.remove(worstIndex);
+					if(lengthAfter == MAX_STARTER_QUEUE_SIZE) break;
+				} else {
+					// Can't remove any more.
+					break;
+				}
+			}
+		}
+		if(dumped == null) return;
+		for(PersistentChosenRequest req : dumped) {
+			req.onDumped(schedCore, container, false);
+		}
+	}
+
+	/**
+	 * Remove a KeyListener from the list of KeyListeners.
 	 * @param getter
 	 * @param complain
 	 */
-	public void removePendingKeys(SendableGet getter, boolean complain) {
-		Object[] keyTokens = getter.allKeys();
-		for(int i=0;i<keyTokens.length;i++) {
-			Object tok = keyTokens[i];
-			ClientKey ckey = getter.getKey(tok);
-			if(ckey == null) {
-				if(complain)
-					Logger.error(this, "Key "+tok+" is null for "+getter, new Exception("debug"));
-				continue;
-			}
-			removePendingKey(getter, complain, ckey.getNodeKey());
-		}
+	public void removePendingKeys(KeyListener getter, boolean complain) {
+		boolean found = schedTransient.removePendingKeys(getter);
+		found |= schedCore.removePendingKeys(getter);
+		if(complain && !found)
+			Logger.error(this, "Listener not found when removing: "+getter);
 	}
 
-	public void reregisterAll(ClientRequester request) {
-		SendableRequest[] reqs;
-		synchronized(this) {
-			HashSet<SendableRequest> h = allRequestsByClientRequest.get(request);
-			if(h == null) return;
-			reqs = h.toArray(new SendableRequest[h.size()]);
-		}
-		
-		for(int i=0;i<reqs.length;i++) {
-			SendableRequest req = reqs[i];
-			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-			req.unregister(true);
-			// Then can do innerRegister() (not register()).
-			innerRegister(req);
-		}
+	/**
+	 * Remove a KeyListener from the list of KeyListeners.
+	 * @param getter
+	 * @param complain
+	 */
+	public void removePendingKeys(HasKeyListener getter, boolean complain) {
+		boolean found = schedTransient.removePendingKeys(getter);
+		found |= schedCore.removePendingKeys(getter);
+		if(complain && !found)
+			Logger.error(this, "Listener not found when removing: "+getter);
+	}
+
+	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
+		schedTransient.reregisterAll(request, random, this, null, clientContext);
+		schedCore.reregisterAll(request, random, this, container, clientContext);
 		starter.wakeUp();
 	}
-
+	
 	public String getChoosenPriorityScheduler() {
 		return choosenPriorityScheduler;
 	}
 
-	public void succeeded(RandomGrabArray parentGrabArray) {
-		synchronized(this) {
-			if(logMINOR)
-				Logger.minor(this, "Recording successful fetch from "+parentGrabArray);
-			recentSuccesses.addFirst(new WeakReference<RandomGrabArray>(parentGrabArray));
-			while(recentSuccesses.size() > 8)
-				recentSuccesses.removeLast();
-		}
+	/*
+	 * tripPendingKey() callbacks must run quickly, since we've found a block.
+	 * succeeded() must run quickly, since we delete the PersistentChosenRequest.
+	 * tripPendingKey() must run before succeeded() so we don't choose the same
+	 * request again, then remove it from pendingKeys before it completes! 
+	 */
+	static final short TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
+	
+	public synchronized void succeeded(final BaseSendableGet succeeded, final ChosenBlock req) {
+		if(req.isPersistent()) {
+			jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					if(container.ext().isActive(succeeded))
+						Logger.error(this, "ALREADY ACTIVE in succeeded(): "+succeeded);
+					container.activate(succeeded, 1);
+					schedCore.succeeded(succeeded, container);
+					container.deactivate(succeeded, 1);
+				}
+				
+			}, TRIP_PENDING_PRIORITY, false);
+			// Boost the priority so the PersistentChosenRequest gets deleted reasonably quickly.
+		} else
+			schedTransient.succeeded(succeeded, null);
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
+		
 		if(offeredKeys != null) {
 			for(int i=0;i<offeredKeys.length;i++) {
 				offeredKeys[i].remove(block.getKey());
 			}
 		}
 		final Key key = block.getKey();
-		final SendableGet[] gets;
-		Object o;
-		synchronized(pendingKeys) {
-			o = pendingKeys.get(key);
-			pendingKeys.remove(key);
-		}
-		if(o == null) return;
-		if(o instanceof SendableGet) {
-			gets = new SendableGet[] { (SendableGet) o };
-			if(cooldownQueue != null)
-				cooldownQueue.removeKey(key, (SendableGet)o, ((SendableGet)o).getCooldownWakeupByKey(key));
-		} else {
-			gets = (SendableGet[]) o;
-			if(cooldownQueue != null)
-				for(int i=0;i<gets.length;i++)
-					cooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key));
-				
-		}
-		if(gets == null) return;
-		Runnable r = new Runnable() {
-			public void run() {
-				if(logMINOR) Logger.minor(this, "Running "+gets.length+" callbacks off-thread for "+block.getKey());
-				for(SendableGet get : gets) {
-					try {
-						if(logMINOR) Logger.minor(this, "Calling callback for "+get+" for "+key);
-						get.onGotKey(key, block, ClientRequestScheduler.this);
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" running callback "+get+" for "+key, t);
-					}
-				}
-				if(logMINOR) Logger.minor(this, "Finished running callbacks");
-			}
-		};
-		node.executor.execute(r, "Callbacks for "+name);
-	}
+		schedTransient.tripPendingKey(key, block, null, clientContext);
+		if(schedCore.anyProbablyWantKey(key, clientContext)) {
+			jobRunner.queue(new DBJob() {
 
-	public boolean anyWantKey(Key key) {
-		synchronized(pendingKeys) {
-			return pendingKeys.get(key) != null;
-		}
+				public void run(ObjectContainer container, ClientContext context) {
+					if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
+					schedCore.tripPendingKey(key, block, container, clientContext);
+				}
+			}, TRIP_PENDING_PRIORITY, false);
+		} else schedCore.countNegative();
 	}
 
 	/** If we want the offered key, or if force is enabled, queue it */
-	public void maybeQueueOfferedKey(Key key, boolean force) {
+	public void maybeQueueOfferedKey(final Key key, boolean force) {
 		if(logMINOR)
 			Logger.minor(this, "maybeQueueOfferedKey("+key+","+force);
 		short priority = Short.MAX_VALUE;
-		synchronized(pendingKeys) {
-			if(force) {
-				// FIXME what priority???
-				priority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
-			}
-			Object o = pendingKeys.get(key);
-			if(o == null) {
-				// Blah
-			} else if(o instanceof SendableGet) {
-				short p = ((SendableGet)o).getPriorityClass();
-				if(p < priority) priority = p;
-			} else { // if(o instanceof SendableGet[]) {
-				SendableGet[] gets = (SendableGet[]) o;
-				for(int i=0;i<gets.length;i++) {
-					short p = gets[i].getPriorityClass();
-					if(p < priority) priority = p;
-				}
-			}
+		if(force) {
+			// FIXME what priority???
+			priority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 		}
-		if(priority == Short.MAX_VALUE) return;
-		if(logMINOR)
-			Logger.minor(this, "Priority: "+priority);
-		offeredKeys[priority].queueKey(key);
-		starter.wakeUp();
+		priority = schedTransient.getKeyPrio(key, priority, null, clientContext);
+		if(priority < Short.MAX_VALUE) {
+			offeredKeys[priority].queueKey(key);
+			starter.wakeUp();
+		}
+		
+		final short oldPrio = priority;
+		
+		jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				// Don't activate/deactivate the key, because it's not persistent in the first place!!
+				short priority = schedCore.getKeyPrio(key, oldPrio, container, context);
+				if(priority >= oldPrio) return; // already on list at >= priority
+				offeredKeys[priority].queueKey(key.cloneKey());
+				starter.wakeUp();
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
 	}
 
 	public void dequeueOfferedKey(Key key) {
@@ -719,38 +1001,211 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
-	public long queueCooldown(ClientKey key, SendableGet getter) {
-		return cooldownQueue.add(key.getNodeKey(), getter);
+	/**
+	 * MUST be called from database thread!
+	 */
+	public long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container) {
+		if(getter.persistent())
+			return persistentCooldownQueue.add(key.getNodeKey(), getter, container);
+		else
+			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
 	}
 
-	public void moveKeysFromCooldownQueue() {
-		if(cooldownQueue == null) return;
+	/**
+	 * Restore keys from the given cooldown queue. Find any keys that are due to be
+	 * restored, restore all requests both persistent and non-persistent for those keys.
+	 * @param queue
+	 * @param persistent
+	 * @param container
+	 * @return Long.MAX_VALUE if nothing is queued in the next WAIT_AFTER_NOTHING_TO_START
+	 * millis, the time at which the next key is due to be restored if there are keys queued
+	 * to be restarted in the near future.
+	 */
+	private long moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
+		if(queue == null) return Long.MAX_VALUE;
 		long now = System.currentTimeMillis();
-		Key key;
-		while((key = cooldownQueue.removeKeyBefore(now)) != null) { 
+		/*
+		 * Only go around once. We will be called again. If there are keys to move, then RequestStarter will not
+		 * sleep, because it will start them. Then it will come back here. If we are off-thread i.e. on the database
+		 * thread, then we will wake it up if we find keys... and we'll be scheduled again.
+		 * 
+		 * FIXME: I think we need to restore all the listeners for a single key 
+		 * simultaneously to avoid some kind of race condition? Or could we just
+		 * restore the one request on the queue? Maybe it's just a misguided
+		 * optimisation? IIRC we had some severe problems when we didn't have 
+		 * this, related to requests somehow being lost altogether... Is it 
+		 * essential? We can save a query if it's not... Is this about requests
+		 * or about keys? Should we limit all requests across any 
+		 * SendableRequest's to 3 every half hour for a specific key? Probably 
+		 * yes...? In which case, can the cooldown queue be entirely in RAM,
+		 * and would it be useful for it to be? Less disk, more RAM... for fast
+		 * nodes with little RAM it would be bad...
+		 */
+		final int MAX_KEYS = 20;
+		Object ret = queue.removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS);
+		if(ret == null) return Long.MAX_VALUE;
+		if(ret instanceof Long) {
+			return (Long) ret;
+		}
+		Key[] keys = (Key[]) ret;
+		for(int j=0;j<keys.length;j++) {
+			Key key = keys[j];
+			if(persistent)
+				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			Object o;
-			synchronized(pendingKeys) {
-				o = pendingKeys.get(key);
-			}
-			if(o == null) {
+			SendableGet[] reqs = schedCore.requestsForKey(key, container, clientContext);
+			SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
+			if(reqs == null && transientReqs == null) {
 				// Not an error as this can happen due to race conditions etc.
 				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
-				continue;
-			} else if(o instanceof SendableGet) {
-				SendableGet get = (SendableGet) o;
-				get.requeueAfterCooldown(key, now);
-			} else {
-				SendableGet[] gets = (SendableGet[]) o;
-				for(int i=0;i<gets.length;i++)
-					gets[i].requeueAfterCooldown(key, now);
 			}
+			if(reqs != null) {
+				for(int i=0;i<reqs.length;i++) {
+					// Requests may or may not be returned activated from requestsForKey(), so don't check
+					// But do deactivate them once we're done with them.
+					container.activate(reqs[i], 1);
+					reqs[i].requeueAfterCooldown(key, now, container, clientContext);
+					container.deactivate(reqs[i], 1);
+				}
+			}
+			if(transientReqs != null) {
+				for(int i=0;i<transientReqs.length;i++)
+					transientReqs[i].requeueAfterCooldown(key, now, container, clientContext);
+			}
+			if(persistent)
+				container.deactivate(key, 5);
 		}
+		return Long.MAX_VALUE;
 	}
 
-	public long countQueuedRequests() {
-		if(pendingKeys != null)
-			return pendingKeys.size();
-		else return 0;
+	public long countTransientQueuedRequests() {
+		return schedTransient.countQueuedRequests(null, clientContext);
 	}
+
+	public KeysFetchingLocally fetchingKeys() {
+		return schedCore;
+	}
+
+	public void removeFetchingKey(Key key) {
+		schedCore.removeFetchingKey(key);
+	}
+
+	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
+		schedCore.removeTransientInsertFetching(insert, token);
+	}
+	
+	/**
+	 * Map from SendableGet implementing SupportsBulkCallFailure to BulkCallFailureItem[].
+	 */
+	private transient HashMap bulkFailureLookupItems = new HashMap();
+	private transient HashMap bulkFailureLookupJob = new HashMap();
+
+	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
+		if(!persistent) {
+			get.onFailure(e, null, null, clientContext);
+		} else {
+			jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					if(container.ext().isActive(get))
+						Logger.error(this, "ALREADY ACTIVE: "+get+" in callFailure(request)");
+					container.activate(get, 1);
+					get.onFailure(e, null, container, clientContext);
+					container.deactivate(get, 1);
+				}
+				
+			}, prio, false);
+		}
+	}
+	
+	public void callFailure(final SendableInsert insert, final LowLevelPutException e, int prio, boolean persistent) {
+		if(!persistent) {
+			insert.onFailure(e, null, null, clientContext);
+		} else {
+			jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					if(container.ext().isActive(insert))
+						Logger.error(this, "ALREADY ACTIVE: "+insert+" in callFailure(insert)");
+					container.activate(insert, 1);
+					insert.onFailure(e, null, container, context);
+					container.deactivate(insert, 1);
+				}
+				
+			}, prio, false);
+		}
+	}
+	
+	public FECQueue getFECQueue() {
+		return clientContext.fecQueue;
+	}
+
+	public ClientContext getContext() {
+		return clientContext;
+	}
+
+	/**
+	 * @return True unless the key was already present.
+	 */
+	public boolean addToFetching(Key key) {
+		return schedCore.addToFetching(key);
+	}
+	
+	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
+		return schedCore.addTransientInsertFetching(insert, token);
+	}
+	
+	public boolean hasFetchingKey(Key key) {
+		return schedCore.hasKey(key);
+	}
+
+	public long countPersistentWaitingKeys(ObjectContainer container) {
+		return schedCore.countWaitingKeys(container);
+	}
+	
+	public long countPersistentQueuedRequests(ObjectContainer container) {
+		return schedCore.countQueuedRequests(container, clientContext);
+	}
+
+	public boolean isQueueAlmostEmpty() {
+		return starterQueueSize() < MAX_STARTER_QUEUE_SIZE / 4;
+	}
+	
+	public boolean isInsertScheduler() {
+		return isInsertScheduler;
+	}
+
+	public void removeFromAllRequestsByClientRequest(ClientRequester clientRequest, SendableRequest get, boolean dontComplain, ObjectContainer container) {
+		if(get.persistent())
+			schedCore.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, container);
+		else
+			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, null);
+	}
+
+	public byte[] saltKey(Key key) {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(key.getRoutingKey());
+		md.update(schedCore.globalSalt);
+		byte[] ret = md.digest();
+		SHA256.returnMessageDigest(md);
+		return ret;
+	}
+
+	void addPersistentPendingKeys(KeyListener listener) {
+		schedCore.addPendingKeys(listener);
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing ClientRequestScheduler in database", new Exception("error"));
+		return false;
+	}
+
+	public void wakeStarter() {
+		starter.wakeUp();
+	}
+
+	public boolean cacheInserts() {
+		return this.node.clientCore.cacheInserts();
+	}
+	
 }

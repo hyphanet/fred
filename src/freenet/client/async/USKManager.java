@@ -6,9 +6,12 @@ package freenet.client.async;
 import java.util.HashMap;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.LRUQueue;
@@ -17,8 +20,10 @@ import freenet.support.Logger;
 /**
  * Tracks the latest version of every known USK.
  * Also does auto-updates.
+ * 
+ * Note that this is a transient class. It is not stored in the database. All fetchers and subscriptions are likewise transient.
  */
-public class USKManager {
+public class USKManager implements RequestClient {
 
 	/** Latest version by blanked-edition-number USK */
 	final HashMap latestVersionByClearUSK;
@@ -39,18 +44,14 @@ public class USKManager {
 	final HashMap checkersByUSK;
 
 	final FetchContext backgroundFetchContext;
-	final ClientRequestScheduler chkRequestScheduler;
-	final ClientRequestScheduler sskRequestScheduler;
 	
 	final Executor executor;
-
+	
+	private ClientContext context;
 	
 	public USKManager(NodeClientCore core) {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
 		backgroundFetchContext.followRedirects = false;
-		backgroundFetchContext.uskManager = this;
-		this.chkRequestScheduler = core.requestStarters.chkFetchScheduler;
-		this.sskRequestScheduler = core.requestStarters.sskFetchScheduler;
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
@@ -60,6 +61,11 @@ public class USKManager {
 		executor = core.getExecutor();
 	}
 
+	public void init(ObjectContainer container, ClientContext context) {
+		this.context = context;
+		USKManagerPersistent.init(this, container, context);
+	}
+	
 	/**
 	 * Look up the latest known version of the given USK.
 	 * @return The latest known edition number, or -1.
@@ -71,7 +77,12 @@ public class USKManager {
 		else return -1;
 	}
 
-	public synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
+	public USKFetcherTag getFetcher(USK usk, FetchContext ctx, boolean keepLast, boolean persistent, 
+			USKFetcherCallback callback, boolean ownFetchContext, ObjectContainer container, ClientContext context) {
+		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0, ownFetchContext);
+	}
+
+	synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
 			ClientRequester requester, boolean keepLastData) {
 		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
 		USK clear = usk.clearCopy();
@@ -85,15 +96,12 @@ public class USKManager {
 		fetchersByUSK.put(usk, f);
 		return f;
 	}
-
-	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, Object client) {
-		USKFetcher f = new USKFetcher(usk, this, backgroundFetchContext, 
-				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler, client), 3, false, true);
-		f.addCallback(cb);
-		return f;
+	
+	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
+		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, true, container, context);
 	}
 
-	public void startTemporaryBackgroundFetcher(USK usk) {
+	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context) {
 		USK clear = usk.clearCopy();
 		USKFetcher sched = null;
 		Vector toCancel = null;
@@ -106,7 +114,7 @@ public class USKManager {
 //			}
 			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, this), 3, true, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, true, false);
 				sched = f;
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
@@ -129,13 +137,13 @@ public class USKManager {
 		if(toCancel != null) {
 			for(int i=0;i<toCancel.size();i++) {
 				USKFetcher fetcher = (USKFetcher) toCancel.get(i);
-				fetcher.cancel();
+				fetcher.cancel(null, context);
 			}
 		}
-		if(sched != null) sched.schedule();
+		if(sched != null) sched.schedule(null, context);
 	}
 	
-	void update(final USK origUSK, final long number) {
+	void update(final USK origUSK, final long number, final ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
@@ -152,14 +160,15 @@ public class USKManager {
 		}
 		if(callbacks != null) {
 			// Run off-thread, because of locking, and because client callbacks may take some time
-			final USK usk = origUSK.copy(number);
-			for(final USKCallback callback : callbacks)
-				executor.execute(new Runnable() {
-					public void run() {
-						callback.onFoundEdition(number, usk);
-					}
-				}, "USKManager callback executor for " +callback);
-		}
+					final USK usk = origUSK.copy(number);
+					for(final USKCallback callback : callbacks)
+						context.mainExecutor.execute(new Runnable() {
+							public void run() {
+								callback.onFoundEdition(number, usk, null, // non-persistent
+										context, false, (short)-1, null);
+							}
+						}, "USKManager callback executor for " +callback);
+				}
 	}
 	
 	/**
@@ -167,7 +176,8 @@ public class USKManager {
 	 * updated. Note that this does not imply that the USK will be
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
-	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, Object client) {
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
+		if(client.persistent()) throw new UnsupportedOperationException("USKManager subscriptions cannot be persistent");
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
 		if(ed < 0) {
@@ -193,7 +203,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, client), 10, true, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 10, true, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -201,12 +211,12 @@ public class USKManager {
 			}
 		}
 		if(curEd > ed)
-			cb.onFoundEdition(curEd, origUSK.copy(curEd));
+			cb.onFoundEdition(curEd, origUSK.copy(curEd), null, context, false, (short)-1, null);
 		final USKFetcher fetcher = sched;
 		if(fetcher != null) {
 			executor.execute(new Runnable() {
 				public void run() {
-					fetcher.schedule();
+					fetcher.schedule(null, context);
 				}
 			}, "USKManager.schedule for "+fetcher);
 		}
@@ -244,7 +254,7 @@ public class USKManager {
 					else
 						Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
 				} else {
-					f.removeSubscriber(cb);
+					f.removeSubscriber(cb, context);
 					if(!f.hasSubscribers()) {
 						if(!temporaryBackgroundFetchersLRU.contains(clear)) {
 							toCancel = f;
@@ -254,7 +264,7 @@ public class USKManager {
 				}
 			}
 		}
-		if(toCancel != null) toCancel.cancel();
+		if(toCancel != null) toCancel.cancel(null, context);
 	}
 	
 	/**
@@ -267,8 +277,8 @@ public class USKManager {
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @return
 	 */
-	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, Object client) {
-		USKRetriever ret = new USKRetriever(fctx, prio, chkRequestScheduler, sskRequestScheduler, client, cb);
+	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
+		USKRetriever ret = new USKRetriever(fctx, prio, client, cb);
 		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}
@@ -314,5 +324,13 @@ public class USKManager {
 				Logger.error(this, "onCancelled for "+fetcher+" - was still registered, how did this happen??", new Exception("debug"));
 			}
 		}
+	}
+
+	public boolean persistent() {
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 }

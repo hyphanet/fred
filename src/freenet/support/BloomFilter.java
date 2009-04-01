@@ -100,6 +100,13 @@ public abstract class BloomFilter {
 	protected abstract void setBit(int offset);
 
 	protected abstract void unsetBit(int offset);
+	
+	// Wierd impl's should override
+	public void unsetAll() {
+		int x = filter.limit();
+		for(int i=0;i<x;i++)
+			filter.put(i, (byte)0);
+	}
 
 	protected Random getHashes(byte[] key) {
 		return new MersenneTwister(key);

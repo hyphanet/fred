@@ -13,9 +13,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
+
+import com.db4o.ObjectContainer;
 
 import freenet.client.InsertException;
 import freenet.support.Base64;
@@ -81,11 +83,12 @@ public class FreenetURI implements Cloneable {
 	private final long suggestedEdition; // for USKs
 	private boolean hasHashCode;
 	private int hashCode;
+	private final int uniqueHashCode;
 	static final String[] VALID_KEY_TYPES =
 		new String[]{"CHK", "SSK", "KSK", "USK"};
 
 	@Override
-	public int hashCode() {
+	public synchronized int hashCode() {
 		if(hasHashCode)
 			return hashCode;
 		int x = keyType.hashCode();
@@ -150,15 +153,18 @@ public class FreenetURI implements Cloneable {
 	}
 
 	@Override
-	public final Object clone() {
+	public final FreenetURI clone() {
 		return new FreenetURI(this);
 	}
 
 	public FreenetURI(FreenetURI uri) {
+		this.uniqueHashCode = super.hashCode();
 		keyType = uri.keyType;
 		docName = uri.docName;
-		metaStr = new String[uri.metaStr.length];
-		System.arraycopy(uri.metaStr, 0, metaStr, 0, metaStr.length);
+		if(uri.metaStr != null) {
+			metaStr = new String[uri.metaStr.length];
+			System.arraycopy(uri.metaStr, 0, metaStr, 0, metaStr.length);
+		} else metaStr = null;
 		if(uri.routingKey != null) {
 			routingKey = new byte[uri.routingKey.length];
 			System.arraycopy(uri.routingKey, 0, routingKey, 0, routingKey.length);
@@ -175,6 +181,7 @@ public class FreenetURI implements Cloneable {
 		} else
 			extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
+		Logger.minor(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
 	}
 
 	public FreenetURI(String keyType, String docName) {
@@ -211,6 +218,7 @@ public class FreenetURI implements Cloneable {
 		String[] metaStr,
 		byte[] routingKey,
 		byte[] cryptoKey, byte[] extra2) {
+		this.uniqueHashCode = super.hashCode();
 		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
@@ -218,6 +226,8 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = -1;
+		Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
+		toString();
 	}
 
 	public FreenetURI(
@@ -227,6 +237,7 @@ public class FreenetURI implements Cloneable {
 		byte[] routingKey,
 		byte[] cryptoKey, byte[] extra2,
 		long suggestedEdition) {
+		this.uniqueHashCode = super.hashCode();
 		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
@@ -234,12 +245,14 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = suggestedEdition;
+		Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
 	}
 
 	// Strip http:// and freenet: prefix
 	protected final static Pattern URI_PREFIX = Pattern.compile("^(http://[^/]+/+)?(freenet:)?");
 	
 	public FreenetURI(String URI) throws MalformedURLException {
+		this.uniqueHashCode = super.hashCode();
 		if(URI == null)
 			throw new MalformedURLException("No URI specified");
 		
@@ -369,10 +382,12 @@ public class FreenetURI implements Cloneable {
 		} catch(IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
+		Logger.minor(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
 	}
 
 	/** USK constructor from components. */
 	public FreenetURI(byte[] pubKeyHash, byte[] cryptoKey, byte[] extra, String siteName, long suggestedEdition2) {
+		this.uniqueHashCode = super.hashCode();
 		this.keyType = "USK";
 		this.routingKey = pubKeyHash;
 		this.cryptoKey = cryptoKey;
@@ -380,6 +395,7 @@ public class FreenetURI implements Cloneable {
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
 		metaStr = null;
+		Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
 
 	public void decompose() {
@@ -506,7 +522,7 @@ public class FreenetURI implements Cloneable {
 		}
 	}
 
-	public FreenetURI addMetaStrings(LinkedList<String> metaStrings) {
+	public FreenetURI addMetaStrings(List<String> metaStrings) {
 		return addMetaStrings(metaStrings.toArray(new String[metaStrings.size()]));
 	}
 
@@ -541,7 +557,7 @@ public class FreenetURI implements Cloneable {
 	@Override
 	public String toString() {
 		if (toStringCache == null)
-			toStringCache = toString(false, false);
+			toStringCache = toString(false, false)/* + "#"+super.toString()+"#"+uniqueHashCode*/;
 		return toStringCache;
 	}
 
@@ -558,6 +574,12 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public String toString(boolean prefix, boolean pureAscii) {
+		if(keyType == null) {
+			// Not activated or something...
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Not activated?? in toString("+prefix+","+pureAscii+")");
+			return null;
+		}
 		StringBuilder b;
 		if(prefix)
 			b = new StringBuilder("freenet:");
@@ -622,12 +644,13 @@ public class FreenetURI implements Cloneable {
 		return extra;
 	}
 
-	public LinkedList<String> listMetaStrings() {
-		LinkedList<String> l = new LinkedList<String>();
-		if(metaStr != null)
+	public ArrayList<String> listMetaStrings() {
+		if(metaStr != null) {
+			ArrayList<String> l = new ArrayList<String>(metaStr.length);
 			for(int i = 0; i < metaStr.length; i++)
-				l.addLast(metaStr[i]);
-		return l;
+				l.add(metaStr[i]);
+			return l;
+		} else return new ArrayList<String>(0);
 	}
 	static final byte CHK = 1;
 	static final byte SSK = 2;
@@ -856,6 +879,30 @@ public class FreenetURI implements Cloneable {
 		return "SSK".equals(keyType);
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
+		container.delete(this);
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(this == FreenetURI.EMPTY_CHK_URI) {
+			throw new RuntimeException("Storing static CHK@ to database - can't remove it!");
+		}
+		return true;
+	}
+
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(!container.ext().isActive(this)) {
+			Logger.error(this, "Updating but not active!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+	
+	public void objectOnDelete(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.minor(this, "Deleting URI", new Exception("debug"));
+	}
+	
 	public boolean isUSK() {
 		return "USK".equals(keyType);
 	}

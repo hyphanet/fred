@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.config.Config;
 import freenet.config.SubConfig;
@@ -36,7 +37,7 @@ public class RequestStarterGroup {
 	public final ClientRequestScheduler sskPutScheduler;
 
 	private final NodeStats stats;
-	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs) {
+	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs, ClientContext ctx) {
 		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
 		this.stats = core.nodeStats;
 		
@@ -47,27 +48,27 @@ public class RequestStarterGroup {
 		throttleWindowRequest = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowRequest"), node);
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request", fs == null ? null : fs.subset("CHKRequestThrottle"), 32768);
 		chkRequestStarter = new RequestStarter(core, chkRequestThrottle, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false);
-		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, node, core, schedulerConfig, "CHKrequester");
+		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, node, core, schedulerConfig, "CHKrequester", ctx);
 		chkRequestStarter.setScheduler(chkFetchScheduler);
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert", fs == null ? null : fs.subset("CHKInsertThrottle"), 32768);
 		chkInsertStarter = new RequestStarter(core, chkInsertThrottle, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false);
-		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, node, core, schedulerConfig, "CHKinserter");
+		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, node, core, schedulerConfig, "CHKinserter", ctx);
 		chkInsertStarter.setScheduler(chkPutScheduler);
 		chkInsertStarter.start();
 
 		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024);
 		sskRequestStarter = new RequestStarter(core, sskRequestThrottle, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true);
-		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, node, core, schedulerConfig, "SSKrequester");
+		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, node, core, schedulerConfig, "SSKrequester", ctx);
 		sskRequestStarter.setScheduler(sskFetchScheduler);
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottle"), 1024);
 		sskInsertStarter = new RequestStarter(core, sskInsertThrottle, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true);
-		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, node, core, schedulerConfig, "SSKinserter");
+		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, node, core, schedulerConfig, "SSKinserter", ctx);
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
 		
@@ -228,11 +229,11 @@ public class RequestStarterGroup {
 		return throttleWindow.realCurrentValue();
 	}
 
-	public long countQueuedRequests() {
-		return chkFetchScheduler.countQueuedRequests() +
-			sskFetchScheduler.countQueuedRequests() +
-			chkPutScheduler.countQueuedRequests() +
-			sskPutScheduler.countQueuedRequests();
+	public long countTransientQueuedRequests() {
+		return chkFetchScheduler.countTransientQueuedRequests() +
+			sskFetchScheduler.countTransientQueuedRequests() +
+			chkPutScheduler.countTransientQueuedRequests() +
+			sskPutScheduler.countTransientQueuedRequests();
 	}
 	
 }

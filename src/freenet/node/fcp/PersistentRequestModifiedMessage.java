@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.*;
 import freenet.support.*;
 
@@ -51,4 +53,8 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
         throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentRequestModified goes from server to client not the other way around", ident, global);
     }
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
 }

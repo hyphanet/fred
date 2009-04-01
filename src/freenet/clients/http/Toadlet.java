@@ -16,6 +16,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.RequestClient;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -108,7 +109,7 @@ public abstract class Toadlet {
 	 * for any two unrelated requests. Request selection round-robin's over these, within any priority and retry count class,
 	 * and above the level of individual block fetches.
 	 */
-	FetchResult fetch(FreenetURI uri, long maxSize, Object clientContext) throws FetchException {
+	FetchResult fetch(FreenetURI uri, long maxSize, RequestClient clientContext) throws FetchException {
 		// For now, just run it blocking.
 		return client.fetch(uri, maxSize, clientContext);
 	}

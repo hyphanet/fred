@@ -3,12 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
 import freenet.node.LowLevelGetException;
-import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 
 /**
@@ -20,20 +21,27 @@ class USKChecker extends BaseSingleFileFetcher {
 	private int dnfs;
 
 	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
-		super(key, maxRetries, ctx, parent);
+		super(key, maxRetries, ctx, parent, false);
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "Created USKChecker for "+key);
 		this.cb = cb;
 	}
 	
 	@Override
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched) {
-		unregister(false);
-		cb.onSuccess((ClientSSKBlock)block);
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(cb, 1);
+		}
+		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
 	@Override
-	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched) {
+	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(cb, 1);
+		}
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
@@ -63,22 +71,22 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 		}
 
-		if(canRetry && retry(sched, ctx.executor)) return;
+		if(canRetry && retry(container, context)) return;
 		
 		// Ran out of retries.
-		unregister(false);
+		unregisterAll(container, context);
 		if(e.code == LowLevelGetException.CANCELLED){
-			cb.onCancelled();
+			cb.onCancelled(context);
 			return;
 		}else if(e.code == LowLevelGetException.DECODE_FAILED){
-			cb.onFatalAuthorError();
+			cb.onFatalAuthorError(context);
 			return;
 		}
 		// Rest are non-fatal. If have DNFs, DNF, else network error.
 		if(dnfs > 0)
-			cb.onDNF();
+			cb.onDNF(context);
 		else
-			cb.onNetworkError();
+			cb.onNetworkError(context);
 	}
 
 	@Override
@@ -86,8 +94,12 @@ class USKChecker extends BaseSingleFileFetcher {
 		return "USKChecker for "+key.getURI()+" for "+cb;
 	}
 
-	@Override
 	public short getPriorityClass() {
 		return cb.getPriority();
 	}
+	
+	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
+		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "IMPOSSIBLE: Failed to create Bloom filters (we don't have any!)", e), null, container, context);
+	}
+
 }

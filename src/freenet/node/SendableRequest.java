@@ -1,6 +1,15 @@
 package freenet.node;
 
+import java.util.List;
+
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ChosenBlock;
+import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.PersistentChosenBlock;
+import freenet.client.async.PersistentChosenRequest;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
@@ -14,46 +23,66 @@ import freenet.support.RandomGrabArrayItem;
  */
 public abstract class SendableRequest implements RandomGrabArrayItem {
 	
+	// Since we put these into Set's etc, hashCode must be persistent.
+	private final int hashCode;
+	
+	SendableRequest(boolean persistent) {
+		this.persistent = persistent;
+		this.hashCode = super.hashCode();
+	}
+	
+	public final int hashCode() {
+		return hashCode;
+	}
+	
 	protected RandomGrabArray parentGrabArray;
+	/** Member because must be accessible when only marginally activated */
+	protected final boolean persistent;
 	
 	/** Get the priority class of the request. */
-	public abstract short getPriorityClass();
+	public abstract short getPriorityClass(ObjectContainer container);
 	
 	public abstract int getRetryCount();
 	
 	/** Choose a key to fetch. Removes the block number from any internal queues 
 	 * (but not the key itself, implementors must have a separate queue of block 
 	 * numbers and mapping of block numbers to keys).
-	 * @return An object identifying a specific key. -1 indicates no keys available. */
-	public abstract Object chooseKey(KeysFetchingLocally keys);
+	 * @return An object identifying a specific key. null indicates no keys available. */
+	public abstract SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context);
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
 	 * they are on a cooldown queue, requests for them are in progress, etc. */
-	public abstract Object[] allKeys();
+	public abstract SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context);
 
 	/** All key identifiers currently eligible to be sent. Does not include those 
 	 * currently running, on the cooldown queue etc. */
-	public abstract Object[] sendableKeys();
+	public abstract SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context);
 
-	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
-	 * provided, and the key and key number earlier got from chooseKey(). 
-	 * The request itself may have been removed from the overall queue already.
-	 * @param sched The scheduler this request has just been grabbed from.
-	 * @param keyNum The key number that was fed into getKeyObject().
-	 * @param key The key returned from grabKey().
-	 * @return True if a request was sent, false otherwise (in which case the request will
-	 * be removed if it hasn't already been). */
-	public abstract boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum);
+	/**
+	 * Get or create a SendableRequestSender for this object. This is a non-persistent
+	 * object used to send the requests. @see SendableGet.getSender().
+	 * @param container A database handle may be necessary for creating it.
+	 * @param context A client context may also be necessary.
+	 * @return
+	 */
+	public abstract SendableRequestSender getSender(ObjectContainer container, ClientContext context);
 	
 	/** If true, the request has been cancelled, or has completed, either way it need not
 	 * be registered any more. isEmpty() on the other hand means there are no queued blocks.
 	 */
-	public abstract boolean isCancelled();
+	public abstract boolean isCancelled(ObjectContainer container);
 	
-	/** Get client context object */
-	public abstract Object getClient();
+	/** Get client context object. This isn't called as frequently as you might expect 
+	 * - once on registration, and then when there is an error. So it doesn't need to be
+	 * stored on the request itself, hence we pass in a container. */
+	public abstract RequestClient getClient(ObjectContainer container);
 	
-	/** Get the ClientRequest */
+	/** Is this request persistent? MUST NOT CHANGE. */
+	public final boolean persistent() {
+		return persistent;
+	}
+	
+	/** Get the ClientRequest. This DOES need to be cached on the request itself. */
 	public abstract ClientRequester getClientRequest();
 	
 	public synchronized RandomGrabArray getParentGrabArray() {
@@ -64,22 +93,44 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return true;
 	}
 	
-	public synchronized void setParentGrabArray(RandomGrabArray parent) {
+	public synchronized void setParentGrabArray(RandomGrabArray parent, ObjectContainer container) {
 		parentGrabArray = parent;
+		if(persistent())
+			container.store(this);
 	}
 	
-	public void unregister(boolean staySubscribed) {
+	public void unregister(ObjectContainer container, ClientContext context) {
 		RandomGrabArray arr = getParentGrabArray();
 		if(arr != null) {
-			arr.remove(this);
+			if(persistent)
+				container.activate(arr, 1);
+			arr.remove(this, container);
 		} else {
 			// Should this be a higher priority?
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
 		}
+		ClientRequester cr = getClientRequest();
+		if(persistent)
+			container.activate(cr, 1);
+		getScheduler(context).removeFromAllRequestsByClientRequest(cr, this, true, container);
+		// FIXME should we deactivate??
+		//if(persistent) container.deactivate(cr, 1);
 	}
+	
+	public abstract ClientRequestScheduler getScheduler(ClientContext context);
 
+	/** Is this an SSK? For purposes of determining which scheduler to use. */
+	public abstract boolean isSSK();
+	
+	/** Is this an insert? For purposes of determining which scheduler to use. */
+	public abstract boolean isInsert();
+	
 	/** Requeue after an internal error */
-	public abstract void internalError(Object keyNum, Throwable t, RequestScheduler sched);
+	public abstract void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
+
+	/** Construct a full set of ChosenBlock's for a persistent request. These are transient, so we will need to clone keys
+	 * etc. */
+	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context);
 
 }

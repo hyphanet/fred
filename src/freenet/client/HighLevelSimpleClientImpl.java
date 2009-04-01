@@ -7,12 +7,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
 
-import freenet.client.async.BackgroundBlockEncoder;
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
-import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
@@ -22,9 +22,9 @@ import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -33,23 +33,19 @@ import freenet.support.io.NullBucket;
 import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;
 
-public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
+public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, RequestClient {
 
-	private final ArchiveManager archiveManager;
 	private final short priorityClass;
 	private final BucketFactory bucketFactory;
 	private final BucketFactory persistentBucketFactory;
 	private final PersistentFileTracker persistentFileTracker;
 	private final NodeClientCore core;
-	private final BackgroundBlockEncoder blockEncoder;
 	/** One CEP for all requests and inserts */
 	private final ClientEventProducer globalEventProducer;
 	private long curMaxLength;
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
-	private final HealingQueue healingQueue;
-	private final Executor slowSerialExecutor[];
 	/** See comments in Node */
 	private final boolean cacheLocalRequests;
 	static final int MAX_RECURSION = 10;
@@ -81,27 +77,23 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	// going by memory usage only; 4kB per stripe
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
-	static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
+	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	
 	
-	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor[] slowSerialExecutor) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;
-		this.slowSerialExecutor = slowSerialExecutor;
-		archiveManager = mgr;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
 		this.persistentFileTracker = node.persistentTempBucketFactory;
 		random = r;
 		this.globalEventProducer = new SimpleEventProducer();
-		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR));
+		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR, false));
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.persistentBucketFactory = node.persistentTempBucketFactory;
-		this.healingQueue = node.getHealingQueue();
-		this.blockEncoder = node.backgroundBlockEncoder;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -119,8 +111,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetchContext context = getFetchContext();
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null, null);
-		get.start();
+		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, this, null, null);
+		core.clientContext.start(get);
 		return fw.waitForCompletion();
 	}
 
@@ -128,19 +120,19 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return fetch(uri, overrideMaxSize, this);
 	}
 
-	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, Object clientContext) throws FetchException {
+	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, RequestClient clientContext) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		FetchWaiter fw = new FetchWaiter();
 		FetchContext context = getFetchContext(overrideMaxSize);
-		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, clientContext, null, null);
-		get.start();
+		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, clientContext, null, null);
+		core.clientContext.start(get);
 		return fw.waitForCompletion();
 	}
 	
-	public ClientGetter fetch(FreenetURI uri, long maxSize, Object context, ClientCallback callback, FetchContext fctx) throws FetchException {
+	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientCallback callback, FetchContext fctx) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, context, null, null);
-		get.start();
+		ClientGetter get = new ClientGetter(callback, uri, fctx, priorityClass, clientContext, null, null);
+		core.clientContext.start(get);
 		return get;
 	}
 	
@@ -152,17 +144,17 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		InsertContext context = getInsertContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata, 
-				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
+				context, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
-		put.start(false);
+		core.clientContext.start(put, false);
 		return pw.waitForCompletion();
 	}
 	
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata, 
-				ctx, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
+				ctx, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
-		put.start(false);
+		core.clientContext.start(put, false);
 		return put;
 	}
 
@@ -186,8 +178,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false);
-		putter.start();
+			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false);
+		core.clientContext.start(putter);
 		return pw.waitForCompletion();
 	}
 	
@@ -212,17 +204,16 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				random, archiveManager, bucketFactory, globalEventProducer, 
-				cacheLocalRequests, core.uskManager, healingQueue, 
-				false, core.getTicker(), core.getExecutor(), slowSerialExecutor);
+				bucketFactory, globalEventProducer, 
+				cacheLocalRequests, false);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
 		return new InsertContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
 				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
-				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
+				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				globalEventProducer, cacheLocalRequests, core.uskManager, blockEncoder, core.getExecutor(), core.compressor);
+				globalEventProducer, cacheLocalRequests);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {
@@ -232,31 +223,31 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 
 	private final ClientCallback nullCallback = new ClientCallback() {
 
-		public void onFailure(FetchException e, ClientGetter state) {
+		public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 			// Ignore
 		}
 
-		public void onFailure(InsertException e, BaseClientPutter state) {
+		public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 
-		public void onFetchable(BaseClientPutter state) {
+		public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 
-		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 
-		public void onMajorProgress() {
+		public void onMajorProgress(ObjectContainer container) {
 			// Ignore
 		}
 
-		public void onSuccess(FetchResult result, ClientGetter state) {
+		public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 			result.data.free();
 		}
 
-		public void onSuccess(BaseClientPutter state) {
+		public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 		
@@ -265,18 +256,26 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
-		final ClientGetter get = new ClientGetter(nullCallback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
-		ctx.ticker.queueTimedJob(new Runnable() {
+		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
+		core.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
-				get.cancel();
+				get.cancel(null, core.clientContext);
 			}
 			
 		}, timeout);
 		try {
-			get.start();
+			core.clientContext.start(get);
 		} catch (FetchException e) {
 			// Ignore
 		}
+	}
+
+	public boolean persistent() {
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 
 }

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 /**
  * Stores the metadata that the client might actually be interested in.
  */
@@ -41,9 +43,9 @@ public class ClientMetadata implements Cloneable {
 	}
 	
 	@Override
-	public Object clone() {
+	public ClientMetadata clone() {
 		try {
-			return super.clone();
+			return (ClientMetadata) super.clone();
 		} catch (CloneNotSupportedException e) {
 			throw new Error(e);
 		}
@@ -66,5 +68,9 @@ public class ClientMetadata implements Cloneable {
 			s = s.substring(i);
 		}
 		return s;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 }

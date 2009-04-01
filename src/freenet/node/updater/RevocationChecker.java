@@ -3,6 +3,8 @@ package freenet.node.updater;
 import java.io.File;
 import java.io.IOException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -12,6 +14,7 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.io.FileBucket;
@@ -21,7 +24,7 @@ import freenet.support.io.FileUtil;
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
  * be immediately fed to the NodeUpdateManager.
  */
-public class RevocationChecker implements ClientCallback {
+public class RevocationChecker implements ClientCallback, RequestClient {
 
 	public final static int REVOCATION_DNF_MIN = 3;
 	
@@ -104,17 +107,17 @@ public class RevocationChecker implements ClientCallback {
 					} catch (IOException e) {
 						Logger.error(this, "Cannot record revocation fetch (therefore cannot pass it on to peers)!: "+e, e);
 					}
-					cg = revocationGetter = new ClientGetter(this, core.requestStarters.chkFetchScheduler, 
-							core.requestStarters.sskFetchScheduler, manager.revocationURI, ctxRevocation, 
+					cg = revocationGetter = new ClientGetter(this, 
+							manager.revocationURI, ctxRevocation, 
 							aggressive ? RequestStarter.MAXIMUM_PRIORITY_CLASS : RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 							this, null, tmpBlobFile == null ? null : new FileBucket(tmpBlobFile, false, false, false, false, false));
 					if(logMINOR) Logger.minor(this, "Queued another revocation fetcher (count="+revocationDNFCounter+")");
 				}
 			}
 			if(toCancel != null)
-				toCancel.cancel();
+				toCancel.cancel(null, core.clientContext);
 			if(cg != null) {
-				cg.start();
+				core.clientContext.start(cg);
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
 			}
 		} catch (FetchException e) {
@@ -138,7 +141,7 @@ public class RevocationChecker implements ClientCallback {
 		start(wasAggressive);
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, tmpBlobFile);
 	}
 	
@@ -171,7 +174,7 @@ public class RevocationChecker implements ClientCallback {
                 FileUtil.renameTo(tmpBlobFile, blobFile);
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		onFailure(e, state, tmpBlobFile);
 	}
 	
@@ -212,34 +215,34 @@ public class RevocationChecker implements ClientCallback {
 			start(wasAggressive, false);
 	}
 
-	public void onSuccess(BaseClientPutter state) {
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	public void kill() {
 		if(revocationGetter != null)
-			revocationGetter.cancel();
+			revocationGetter.cancel(null, core.clientContext);
 	}
 
 	public long getBlobSize() {
@@ -251,6 +254,14 @@ public class RevocationChecker implements ClientCallback {
 		if(!manager.isBlown()) return null;
 		if(blobFile.exists()) return blobFile;
 		return null;
+	}
+
+	public boolean persistent() {
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 
 }

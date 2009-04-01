@@ -1,6 +1,9 @@
 package freenet.client.async;
 
+import java.util.Arrays;
 import java.util.Vector;
+
+import com.db4o.ObjectContainer;
 
 import freenet.client.InsertException;
 import freenet.client.Metadata;
@@ -10,7 +13,7 @@ import freenet.support.SimpleFieldSet;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
-	// LinkedList's rather than HashSet's for memory reasons.
+	// Vector's rather than HashSet's for memory reasons.
 	// This class will not be used with large sets, so O(n) is cheaper than O(1) -
 	// at least it is on memory!
 	private final Vector waitingFor;
@@ -23,6 +26,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private boolean finished;
 	private boolean started;
 	public final Object token;
+	private final boolean persistent;
+	
+	public void objectOnActivate(ObjectContainer container) {
+		// Only activate the arrays
+		container.activate(waitingFor, 1);
+		container.activate(waitingForBlockSet, 1);
+		container.activate(waitingForFetchable, 1);
+	}
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token) {
 		this.cb = cb;
@@ -32,63 +43,129 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		this.parent = parent;
 		this.token = token;
 		finished = false;
+		this.persistent = parent.persistent();
 	}
 
-	public void onSuccess(ClientPutState state) {
-		onBlockSetFinished(state);
-		onFetchable(state);
+	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		onBlockSetFinished(state, container, context);
+		onFetchable(state, container);
+		if(persistent)
+			container.activate(waitingFor, 2);
+		boolean complete = true;
 		synchronized(this) {
-			if(finished) return;
-			waitingFor.remove(state);
-			if(!(waitingFor.isEmpty() && started))
+			if(finished) {
+				Logger.error(this, "Already finished but got onSuccess() for "+state+" on "+this);
 				return;
+			}
+			waitingFor.remove(state);
+			if(waitingForBlockSet.contains(state)) {
+				waitingForBlockSet.remove(state);
+				if(persistent && !waitingFor.isEmpty())
+					container.ext().store(waitingForBlockSet, 1);
+			}
+			if(waitingForFetchable.contains(state)) {
+				waitingForFetchable.remove(state);
+				if(persistent && !waitingFor.isEmpty())
+					container.ext().store(waitingForFetchable, 1);
+			}
+			if(!(waitingFor.isEmpty() && started)) {
+				if(persistent) {
+					container.ext().store(waitingFor, 1);
+				}
+				complete = false;
+			}
+			if(state == generator)
+				generator = null;
 		}
-		complete(null);
+		if(persistent) state.removeFrom(container, context);
+		if(complete) {
+		Logger.minor(this, "Completing...");
+		complete(null, container, context);
+		}
 	}
 
-	public void onFailure(InsertException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		boolean complete = true;
 		synchronized(this) {
-			if(finished) return;
+			if(finished) {
+				Logger.error(this, "Already finished but got onFailure() for "+state+" on "+this);
+				return;
+			}
 			waitingFor.remove(state);
 			waitingForBlockSet.remove(state);
 			waitingForFetchable.remove(state);
 			if(!(waitingFor.isEmpty() && started)) {
+				if(this.e != null) {
+					if(persistent) {
+						container.activate(this.e, 10);
+						this.e.removeFrom(container);
+					}
+				}
 				this.e = e;
-				return;
+				if(persistent)
+					container.store(this);
+				complete = false;
 			}
+			if(state == generator)
+				generator = null;
 		}
-		complete(e);
+		if(persistent) {
+			container.ext().store(waitingFor, 2);
+			container.ext().store(waitingForBlockSet, 2);
+			container.ext().store(waitingForFetchable, 2);
+		}
+		if(persistent) state.removeFrom(container, context);
+		if(complete)
+		complete(e, container, context);
 	}
 
-	private void complete(InsertException e) {
+	private void complete(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
-			if(e != null && this.e != null && this.e != e) {
-				if(!(e.getMode() == InsertException.CANCELLED)) // Cancelled is okay, ignore it, we cancel after failure sometimes.
-					Logger.error(this, "Completing with "+e+" but already set "+this.e);
+			if(e != null && this.e != null && this.e != e && persistent) {
+				container.activate(this.e, 10);
+				this.e.removeFrom(container);
 			}
-			if(e == null) e = this.e;
+			if(e == null) {
+				e = this.e;
+				if(persistent && e != null) {
+					container.activate(e, 10);
+					e = e.clone(); // Since we will remove it, we can't pass it on
+				}
+			}
+		}
+		if(persistent) {
+			container.store(this);
+			container.activate(cb, 1);
 		}
 		if(e != null)
-			cb.onFailure(e, this);
+			cb.onFailure(e, this, container, context);
 		else
-			cb.onSuccess(this);
+			cb.onSuccess(this, container, context);
 	}
 
-	public synchronized void addURIGenerator(ClientPutState ps) {
-		add(ps);
+	public synchronized void addURIGenerator(ClientPutState ps, ObjectContainer container) {
+		add(ps, container);
 		generator = ps;
+		if(persistent)
+			container.store(this);
 	}
 	
-	public synchronized void add(ClientPutState ps) {
+	public synchronized void add(ClientPutState ps, ObjectContainer container) {
 		if(finished) return;
 		waitingFor.add(ps);
 		waitingForBlockSet.add(ps);
 		waitingForFetchable.add(ps);
+		if(persistent) {
+			container.store(ps);
+			container.ext().store(waitingFor, 2);
+			container.ext().store(waitingForBlockSet, 2);
+			container.ext().store(waitingForFetchable, 2);
+		}
 	}
 
-	public void arm() {
+	public void arm(ObjectContainer container, ClientContext context) {
 		boolean allDone;
 		boolean allGotBlocks;
 		synchronized(this) {
@@ -96,12 +173,15 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			allDone = waitingFor.isEmpty();
 			allGotBlocks = waitingForBlockSet.isEmpty();
 		}
-
+		if(persistent) {
+			container.store(this);
+			container.activate(cb, 1);
+		}
 		if(allGotBlocks) {
-			cb.onBlockSetFinished(this);
+			cb.onBlockSetFinished(this, container, context);
 		}
 		if(allDone) {
-			complete(e);
+			complete(e, container, context);
 		}
 	}
 
@@ -109,55 +189,79 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		return parent;
 	}
 
-	public void onEncode(BaseClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(state != generator) return;
 		}
-		cb.onEncode(key, this);
+		if(persistent)
+			container.activate(cb, 1);
+		cb.onEncode(key, this, container, context);
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientPutState[] states = new ClientPutState[waitingFor.size()];
 		synchronized(this) {
 			states = (ClientPutState[]) waitingFor.toArray(states);
 		}
-		for(int i=0;i<states.length;i++)
-			states[i].cancel();
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		for(int i=0;i<states.length;i++) {
+			if(persistent)
+				container.activate(states[i], 1);
+			if(logDEBUG) Logger.minor(this, "Cancelling state "+i+" of "+states.length+" : "+states[i]);
+			states[i].cancel(container, context);
+		}
 	}
 
-	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(generator == oldState)
 			generator = newState;
 		if(oldState == newState) return;
 		for(int i=0;i<waitingFor.size();i++) {
-			if(waitingFor.get(i) == oldState) waitingFor.set(i, newState);
+			if(waitingFor.get(i) == oldState) {
+				waitingFor.set(i, newState);
+				container.ext().store(waitingFor, 2);
+			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
-			if(waitingForBlockSet.get(i) == oldState) waitingForBlockSet.set(i, newState);
+			if(waitingForBlockSet.get(i) == oldState) {
+				waitingForBlockSet.set(i, newState);
+				container.ext().store(waitingFor, 2);
+			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
-			if(waitingForFetchable.get(i) == oldState) waitingForFetchable.set(i, newState);
+			if(waitingForFetchable.get(i) == oldState) {
+				waitingForFetchable.set(i, newState);
+				container.ext().store(waitingFor, 2);
+			}
 		}
 	}
 
-	public synchronized void onMetadata(Metadata m, ClientPutState state) {
+	public synchronized void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(cb, 1);
 		if(generator == state) {
-			cb.onMetadata(m, this);
+			cb.onMetadata(m, this, container, context);
 		} else {
 			Logger.error(this, "Got metadata for "+state);
 		}
 	}
 
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(waitingForBlockSet, 2);
 		synchronized(this) {
 			this.waitingForBlockSet.remove(state);
+			if(persistent)
+				container.ext().store(waitingForBlockSet, 2);
 			if(!started) return;
 			if(!waitingForBlockSet.isEmpty()) return;
 		}
-		cb.onBlockSetFinished(this);
+		if(persistent)
+			container.activate(cb, 1);
+		cb.onBlockSetFinished(this, container, context);
 	}
 
-	public void schedule() throws InsertException {
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Do nothing
 	}
 
@@ -169,13 +273,44 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		return null;
 	}
 
-	public void onFetchable(ClientPutState state) {
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
+		if(persistent)
+			container.activate(waitingForFetchable, 2);
 		synchronized(this) {
 			this.waitingForFetchable.remove(state);
+			if(persistent)
+				container.ext().store(waitingForFetchable, 2);
 			if(!started) return;
 			if(!waitingForFetchable.isEmpty()) return;
 		}
-		cb.onFetchable(this);
+		if(persistent)
+			container.activate(cb, 1);
+		cb.onFetchable(this, container);
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.activate(waitingFor, 2);
+		container.activate(waitingForBlockSet, 2);
+		container.activate(waitingForFetchable, 2);
+		// Should have been cleared by now
+		if(!waitingFor.isEmpty())
+			Logger.error(this, "waitingFor not empty in removeFrom() on "+this+" : "+waitingFor);
+		if(!waitingForBlockSet.isEmpty())
+			Logger.error(this, "waitingForBlockSet not empty in removeFrom() on "+this+" : "+waitingFor);
+		if(!waitingForFetchable.isEmpty())
+			Logger.error(this, "waitingForFetchable not empty in removeFrom() on "+this+" : "+waitingFor);
+		container.delete(waitingFor);
+		container.delete(waitingForBlockSet);
+		container.delete(waitingForFetchable);
+		// cb is at a higher level, we don't remove that, it removes itself
+		// generator is just a reference to one of the waitingFor's
+		// parent removes itself
+		if(e != null) {
+			container.activate(e, 5);
+			e.removeFrom(container);
+		}
+		// whoever set the token is responsible for removing it
+		container.delete(this);
 	}
 
 }

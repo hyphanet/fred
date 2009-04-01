@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.PeerNode;
@@ -54,6 +56,10 @@ public class ListPeerNotesMessage extends FCPMessage {
 		String noteText = dpn.getPrivateDarknetCommentNote();
 		handler.outputHandler.queue(new PeerNote(nodeIdentifier, noteText, Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT, identifier));
 		handler.outputHandler.queue(new EndListPeerNotesMessage(nodeIdentifier, identifier));
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 	
 }

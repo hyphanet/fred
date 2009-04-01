@@ -54,7 +54,7 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 	protected void writeData(OutputStream os) throws IOException {
 		long len = dataLength();
 		if(len > 0) BucketTools.copyTo(bucket, os, len);
-		if(freeOnSent) bucket.free();
+		if(freeOnSent) bucket.free(); // Always transient so no removeFrom() needed.
 	}
 	
 	@Override

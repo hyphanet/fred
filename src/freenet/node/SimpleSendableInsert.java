@@ -3,12 +3,22 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.List;
+
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ChosenBlock;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.PersistentChosenBlock;
+import freenet.client.async.PersistentChosenRequest;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 /**
  * Simple SendableInsert implementation. No feedback, no retries, just insert the
@@ -20,22 +30,26 @@ public class SimpleSendableInsert extends SendableInsert {
 	public final KeyBlock block;
 	public final short prioClass;
 	private boolean finished;
-	public final Object client;
+	public final RequestClient client;
 	public final ClientRequestScheduler scheduler;
 	
 	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
+		super(false);
 		this.block = block;
 		this.prioClass = prioClass;
-		this.client = core;
+		this.client = core.node.nonPersistentClient;
 		if(block instanceof CHKBlock)
 			scheduler = core.requestStarters.chkPutScheduler;
 		else if(block instanceof SSKBlock)
 			scheduler = core.requestStarters.sskPutScheduler;
 		else
 			throw new IllegalArgumentException("Don't know what to do with "+block);
+		if(!scheduler.isInsertScheduler())
+			throw new IllegalStateException("Scheduler "+scheduler+" is not an insert scheduler!");
 	}
 	
-	public SimpleSendableInsert(KeyBlock block, short prioClass, Object client, ClientRequestScheduler scheduler) {
+	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
+		super(false);
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = client;
@@ -43,20 +57,20 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	@Override
-	public void onSuccess(Object keyNum) {
+	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		// Yay!
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
 	@Override
-	public void onFailure(LowLevelPutException e, Object keyNum) {
+	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
 
 	@Override
-	public short getPriorityClass() {
+	public short getPriorityClass(ObjectContainer container) {
 		return prioClass;
 	}
 
@@ -67,26 +81,31 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
-		// Ignore keyNum, key, since this is a single block
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		try {
-			if(logMINOR) Logger.minor(this, "Starting request: "+this);
-			core.realPut(block, shouldCache());
-		} catch (LowLevelPutException e) {
-			onFailure(e, keyNum);
-			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
-			return true;
-		} finally {
-			finished = true;
-		}
-		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		onSuccess(keyNum);
-		return true;
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		return new SendableRequestSender() {
+
+			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
+				// Ignore keyNum, key, since this is a single block
+				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				try {
+					if(logMINOR) Logger.minor(this, "Starting request: "+this);
+					core.realPut(block, shouldCache());
+				} catch (LowLevelPutException e) {
+					onFailure(e, req.token, null, context);
+					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
+					return true;
+				} finally {
+					finished = true;
+				}
+				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
+				onSuccess(req.token, null, context);
+				return true;
+			}
+		};
 	}
 
 	@Override
-	public Object getClient() {
+	public RequestClient getClient(ObjectContainer container) {
 		return client;
 	}
 
@@ -96,29 +115,25 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public boolean isCancelled() {
+	public boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
 	
-	public boolean isEmpty() {
+	public boolean isEmpty(ObjectContainer container) {
 		return finished;
-	}
-
-	public boolean canRemove() {
-		return true;
 	}
 
 	public void schedule() {
 		finished = false; // can reschedule
-		scheduler.register(this);
+		scheduler.registerInsert(this, false, false, null);
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		super.unregister(false);
+		super.unregister(container, context);
 	}
 
 	public boolean shouldCache() {
@@ -126,22 +141,47 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
+	private static SendableRequestItem nullItem = new SendableRequestItem() {
+
+		public void dump() {
+			// No problem
+		}
+		
+	};
+	
 	@Override
-	public synchronized Object[] allKeys() {
-		if(finished) return new Object[] {};
-		return new Object[] { 0 };
+	public synchronized SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
+		if(finished) return new SendableRequestItem[] {};
+		return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	}
 
 	@Override
-	public synchronized Object[] sendableKeys() {
-		if(finished) return new Object[] {};
-		return new Object[] { 0 };
+	public synchronized SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
+		if(finished) return new SendableRequestItem[] {};
+		return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
 	}
 
 	@Override
-	public synchronized Object chooseKey(KeysFetchingLocally keys) {
+	public synchronized SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		if(keys.hasTransientInsert(this, NullSendableRequestItem.nullItem))
+			return null;
 		if(finished) return null;
 		else
-			return 0;
+			return NullSendableRequestItem.nullItem;
+	}
+
+	public boolean isSSK() {
+		return block instanceof SSKBlock;
+	}
+
+	@Override
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		// Transient-only so no makeBlocks().
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean cacheInserts(ObjectContainer container) {
+		return scheduler.cacheInserts();
 	}
 }

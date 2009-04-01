@@ -15,6 +15,8 @@ import java.util.List;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.SHA256;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -257,7 +259,7 @@ public class BucketTools {
 				if ((bytesRead < bucketLength) && (bucketLength > 0))
 					throw new EOFException();
 				if ((bytesRead != bucketLength) && (bucketLength > 0))
-					throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + '!');
+					throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + " on " + data + '!');
 				byte[] retval = md.digest();
 				return retval;
 			} finally {
@@ -340,22 +342,44 @@ public class BucketTools {
 	 * 
 	 * Note that this method will allocate a buffer of size splitSize.
 	 * @param freeData 
+	 * @param persistent If true, the data is persistent. This method is responsible for ensuring that the returned
+	 * buckets HAVE ALREADY BEEN STORED TO THE DATABASE, using the provided handle. The point? SegmentedBCB's buckets
+	 * have already been stored!!
+	 * @param container Database handle, only needed if persistent = true. 
 	 * @throws IOException If there is an error creating buckets, reading from
 	 * the provided bucket, or writing to created buckets.
 	 */
-	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf, boolean freeData) throws IOException {
+	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf, boolean freeData, boolean persistent, ObjectContainer container) throws IOException {
 		if(origData instanceof FileBucket) {
 			if(freeData) {
 				Logger.error(BucketTools.class, "Asked to free data when splitting a FileBucket ?!?!? Not freeing as this would clobber the split result...");
 			}
-			return ((FileBucket)origData).split(splitSize);
+			Bucket[] buckets = ((FileBucket)origData).split(splitSize);
+			for(Bucket bucket : buckets)
+				bucket.storeTo(container);
+			return buckets;
 		}
 		if(origData instanceof BucketChainBucket) {
+			if(persistent) throw new IllegalArgumentException("Splitting a BucketChainBucket but persistent = true!");
 			BucketChainBucket data = (BucketChainBucket)origData;
 			if(data.bucketSize == splitSize) {
 				Bucket[] buckets = data.getBuckets();
 				if(freeData)
 					data.clear();
+				return buckets;
+			} else {
+				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is "+data.bucketSize+" but mine is "+splitSize+" - we will copy the data, but this suggests a bug", new Exception("debug"));
+			}
+		}
+		if(origData instanceof SegmentedBucketChainBucket) {
+			SegmentedBucketChainBucket data = (SegmentedBucketChainBucket)origData;
+			if(data.bucketSize == splitSize) {
+				Bucket[] buckets = data.getBuckets();
+				if(freeData)
+					data.clear();
+				if(persistent && freeData)
+					data.removeFrom(container);
+				// Buckets have already been stored, no need to storeTo().
 				return buckets;
 			} else {
 				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is "+data.bucketSize+" but mine is "+splitSize+" - we will copy the data, but this suggests a bug", new Exception("debug"));
@@ -396,6 +420,12 @@ public class BucketTools {
 		}
 		if(freeData)
 			origData.free();
+		if(persistent && freeData)
+			origData.removeFrom(container);
+		if(persistent) {
+			for(Bucket bucket : buckets)
+				bucket.storeTo(container);
+		}
 		return buckets;
 	}
 	
@@ -431,4 +461,5 @@ public class BucketTools {
 			return b;
 		} finally { Closer.close(os); }
 	}
+
 }

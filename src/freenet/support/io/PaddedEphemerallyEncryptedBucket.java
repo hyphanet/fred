@@ -6,8 +6,11 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.SoftReference;
 import java.util.Random;
+
+import org.spaceroots.mantissa.random.MersenneTwister;
+
+import com.db4o.ObjectContainer;
 
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
@@ -27,10 +30,9 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
-	private final Random randomSource;
-	private SoftReference<Rijndael> aesRef;
 	/** The decryption key. */
 	private final byte[] key;
+	private final byte[] randomSeed;
 	private long dataLength;
 	private boolean readOnly;
 	private int lastOutputStream;
@@ -42,13 +44,16 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param minSize The minimum padded size of the file (after it has been closed).
 	 * @param strongPRNG a strong prng we will key from.
 	 * @param weakPRNG a week prng we will padd from.
+	 * Serialization: Note that it is not our responsibility to free the random number generators,
+	 * but we WILL free the underlying bucket.
 	 * @throws UnsupportedCipherException 
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource strongPRNG, Random weakPRNG) {
-		this.randomSource = weakPRNG;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
 		byte[] tempKey = new byte[32];
+		randomSeed = new byte[32];
+		weakPRNG.nextBytes(randomSeed);
 		strongPRNG.nextBytes(tempKey);
 		this.key = tempKey;
 		this.minPaddedSize = minSize;
@@ -72,9 +77,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		if(bucket.size() < knownSize)
 			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
 		this.dataLength = knownSize;
-		this.randomSource = origRandom;
 		this.bucket = bucket;
 		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
+		randomSeed = new byte[32];
+		origRandom.nextBytes(randomSeed);
 		this.key = key;
 		this.minPaddedSize = minSize;
 		readOnly = false;
@@ -82,7 +88,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
-		this.randomSource = origRandom;
 		String tmp = fs.get("DataLength");
 		if(tmp == null)
 			throw new CannotCreateFromFieldSetException("No DataLength");
@@ -112,6 +117,18 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		}
 		if(dataLength > bucket.size())
 			throw new CannotCreateFromFieldSetException("Underlying bucket "+bucket+" is too small: should be "+dataLength+" actually "+bucket.size());
+		randomSeed = new byte[32];
+		origRandom.nextBytes(randomSeed);
+	}
+
+	public PaddedEphemerallyEncryptedBucket(PaddedEphemerallyEncryptedBucket orig, Bucket newBucket) {
+		this.dataLength = orig.dataLength;
+		this.key = new byte[orig.key.length];
+		System.arraycopy(orig.key, 0, key, 0, orig.key.length);
+		this.randomSeed = null; // Will be read-only
+		setReadOnly();
+		this.bucket = newBucket;
+		this.minPaddedSize = orig.minPaddedSize;
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -186,6 +203,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 					Logger.normal(this, "Not padding out to length because have been superceded: "+getName());
 					return;
 				}
+				Random random = new MersenneTwister(randomSeed);
 				synchronized(PaddedEphemerallyEncryptedBucket.this) {
 					long finalLength = paddedLength();
 					long padding = finalLength - dataLength;
@@ -193,7 +211,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 					long writtenPadding = 0;
 					while(writtenPadding < padding) {
 						int left = (int) Math.min((long) (padding - writtenPadding), (long) buf.length);
-						randomSource.nextBytes(buf);
+						random.nextBytes(buf);
 						out.write(buf, 0, left);
 						writtenPadding += left;
 					}
@@ -302,17 +320,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private synchronized Rijndael getRijndael() {
 		Rijndael aes;
-		if(aesRef != null) {
-			aes = aesRef.get();
-			if(aes != null) return aes;
-		}
 		try {
 			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
 		aes.initialize(key);
-		aesRef = new SoftReference<Rijndael>(aes);
 		return aes;
 	}
 
@@ -375,6 +388,31 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		}
 		fs.put("MinPaddedSize", minPaddedSize);
 		return fs;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		bucket.storeTo(container);
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this);
+		bucket.removeFrom(container);
+		// The random is passed in and not our responsibility.
+		container.delete(this);
+	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		Logger.minor(this, "Activating "+super.toString()+" bucket == null = "+(bucket == null));
+		// Cascading activation of dependancies
+		container.activate(bucket, 1);
+	}
+
+	public Bucket createShadow() throws IOException {
+		Bucket newUnderlying = bucket.createShadow();
+		if(newUnderlying == null) return null;
+		return new PaddedEphemerallyEncryptedBucket(this, newUnderlying);
 	}
 
 }

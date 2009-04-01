@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
@@ -44,5 +46,11 @@ public class SubscribedUSKMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
+	}
+
+	@Override
+	public void removeFrom(ObjectContainer container) {
+		message.removeFrom(container);
+		container.delete(this);
 	}
 }

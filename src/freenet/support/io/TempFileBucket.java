@@ -1,6 +1,9 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.IOException;
+
+import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -21,17 +24,27 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	final FilenameGenerator generator;
 	private static boolean logDebug = true;
 	private boolean readOnly;
+	private final boolean deleteOnFree;
+	
+	public TempFileBucket(long id, FilenameGenerator generator) {
+		this(id, generator, true, true);
+	}
+	
 	/**
 	 * Constructor for the TempFileBucket object
-	 *
-	 * @param  f  File
+	 * Subclasses can call this constructor.
+	 * @param deleteOnExit Set if you want the bucket deleted on shutdown. Passed to 
+	 * the parent BaseFileBucket. You must also override deleteOnExit() and 
+	 * implement your own createShadow()!
+	 * @param deleteOnFree True for a normal temp bucket, false for a shadow.
 	 */
-	public TempFileBucket(
+	protected TempFileBucket(
 		long id,
-		FilenameGenerator generator) {
-		super(generator.getFilename(id));
+		FilenameGenerator generator, boolean deleteOnExit, boolean deleteOnFree) {
+		super(generator.getFilename(id), deleteOnExit);
 		this.filenameID = id;
 		this.generator = generator;
+		this.deleteOnFree = deleteOnFree;
 		synchronized(this) {
 			logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		}
@@ -42,15 +55,17 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 			if (logDebug)
 				Logger.debug(
 					this,
-					"Initializing TempFileBucket(" + getFile());
+					"Initializing TempFileBucket(" + getFile()+" deleteOnExit="+deleteOnExit);
 		}
+		if(deleteOnExit)
+			setDeleteOnExit(getFile());
 	}
 
 	@Override
 	protected boolean deleteOnFinalize() {
 		// Make sure finalize wacks temp file 
 		// if it is not explictly freed.
-		return true;
+		return true; // not if shadow
 	}
 	
 	@Override
@@ -68,7 +83,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	protected boolean deleteOnFree() {
-		return true;
+		return deleteOnFree;
 	}
 
 	@Override
@@ -87,5 +102,24 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	@Override
 	protected boolean deleteOnExit() {
 		return true;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(generator);
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this);
+		// filenameGenerator is a global, we don't need to worry about it.
+		container.delete(this);
+	}
+
+	public Bucket createShadow() throws IOException {
+		TempFileBucket ret = new TempFileBucket(filenameID, generator, true, false);
+		ret.setReadOnly();
+		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
+		return ret;
 	}
 }

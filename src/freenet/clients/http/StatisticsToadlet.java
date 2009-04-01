@@ -295,8 +295,13 @@ public class StatisticsToadlet extends Toadlet {
 			
 			// rejection reasons box
 			drawRejectReasonsBox(nextTableCell, false);
-			drawRejectReasonsBox(nextTableCell, true);			
-
+			drawRejectReasonsBox(nextTableCell, true);
+			
+			// database thread jobs box
+			
+			HTMLNode databaseJobsInfobox = nextTableCell.addChild("div", "class", "infobox");
+			drawDatabaseJobsBox(databaseJobsInfobox);
+			
 			// peer distribution box
 			overviewTableRow = overviewTable.addChild("tr");
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
@@ -430,6 +435,24 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
+	private void drawDatabaseJobsBox(HTMLNode node) {
+		node.addChild("div", "class", "infobox-header", l10n("databaseJobsByPriority"));
+		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
+		int[] jobsByPriority = core.clientDatabaseExecutor.runningJobs();
+		
+		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
+		HTMLNode row = threadsByPriorityTable.addChild("tr");
+
+		row.addChild("th", l10n("priority"));
+		row.addChild("th", l10n("waiting"));
+		
+		for(int i=0; i<jobsByPriority.length; i++) {
+			row = threadsByPriorityTable.addChild("tr");
+			row.addChild("td", String.valueOf(i));
+			row.addChild("td", String.valueOf(jobsByPriority[i]));
+		}
+	}
+	
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
 		
 		storeSizeInfobox.addChild("div", "class", "infobox-header", "Datastore");

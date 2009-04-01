@@ -5,6 +5,8 @@ package freenet.keys;
 
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
@@ -24,12 +26,12 @@ public class InsertableUSK extends USK {
 	public final DSAPrivateKey privKey;
 	public final DSAGroup group;
 	
-	public static InsertableUSK createInsertable(FreenetURI uri) throws MalformedURLException {
+	public static InsertableUSK createInsertable(FreenetURI uri, boolean persistent) throws MalformedURLException {
 		if(!uri.getKeyType().equalsIgnoreCase("USK"))
 			throw new MalformedURLException();
 		InsertableClientSSK ssk =
 			InsertableClientSSK.create(uri.setKeyType("SSK"));
-		return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, ssk.getCryptoGroup(), uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
+		return new InsertableUSK(ssk.docName, ssk.pubKeyHash, ssk.cryptoKey, ssk.privKey, persistent ? ssk.getCryptoGroup().cloneKey() : ssk.getCryptoGroup(), uri.getSuggestedEdition(), ssk.cryptoAlgorithm);
 	}
 	
 	InsertableUSK(String docName, byte[] pubKeyHash, byte[] cryptoKey, DSAPrivateKey key, DSAGroup group, long suggestedEdition, byte cryptoAlgorithm) throws MalformedURLException {
@@ -68,4 +70,9 @@ public class InsertableUSK extends USK {
 		}
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		privKey.removeFrom(container);
+		group.removeFrom(container);
+		super.removeFrom(container);
+	}
 }

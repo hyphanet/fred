@@ -11,15 +11,21 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertException;
+import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
+import freenet.client.events.ClientEvent;
 import freenet.keys.FreenetURI;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -30,32 +36,44 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPutDir extends ClientPutBase {
 
-	private final HashMap<String, Object> manifestElements;
+	private HashMap<String, Object> manifestElements;
 	private SimpleManifestPutter putter;
 	private final String defaultName;
 	private final long totalSize;
 	private final int numberOfFiles;
-	private static boolean logMINOR;
 	private final boolean wasDiskPut;
 	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap<String, Object> manifestElements, boolean wasDiskPut) throws IdentifierCollisionException,
-	        MalformedURLException {
+			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
+				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.wasDiskPut = wasDiskPut;
-		this.manifestElements = manifestElements;
+		
+		// objectOnNew is called once, objectOnUpdate is never called, yet manifestElements get blanked anyway!
+		
+		this.manifestElements = new HashMap<String,Object>();
+		this.manifestElements.putAll(manifestElements);
+		
+//		this.manifestElements = manifestElements;
+		
+//		this.manifestElements = new HashMap<String, Object>();
+//		this.manifestElements.putAll(manifestElements);
 		this.defaultName = message.defaultName;
 		makePutter();
-		if(persistenceType != PERSIST_CONNECTION) {
-			client.register(this, false);
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-			if(handler != null && (!handler.isGlobalSubscribed()))
-				handler.outputHandler.queue(msg);
-		}
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -68,20 +86,16 @@ public class ClientPutDir extends ClientPutBase {
 
 	/**
 	*	Puts a disk dir
+	 * @throws InsertException 
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
-		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode);
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, FCPServer server) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
+		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 
 		wasDiskPut = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
 		this.defaultName = defaultName;
 		makePutter();
-		if(persistenceType != PERSIST_CONNECTION) {
-			client.register(this, false);
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-		}
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -92,8 +106,16 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
-	private HashMap<String, Object> makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles)
-	        throws FileNotFoundException {
+	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
+		if(persistenceType != PERSIST_CONNECTION)
+			client.register(this, false, container);
+		if(persistenceType != PERSIST_CONNECTION && !noTags) {
+			FCPMessage msg = persistentTagMessage(container);
+			client.queueClientRequestMessage(msg, 0, container);
+		}
+	}
+	
+	private HashMap<String, Object> makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles) throws FileNotFoundException {
 
 		HashMap<String, Object> map = new HashMap<String, Object>();
 		File[] files = dir.listFiles();
@@ -129,20 +151,17 @@ public class ClientPutDir extends ClientPutBase {
 	
 	private void makePutter() {
 		SimpleManifestPutter p;
-		try {
-			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
-					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client.lowLevelClient, earlyEncode);
-		} catch (InsertException e) {
-			onFailure(e, null);
-			p = null;
-		}
+			p = new SimpleManifestPutter(this, 
+					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
+					lowLevelClient,
+					earlyEncode);
 		putter = p;
 	}
 
 
 
-	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {
-		super(fs, client);
+	public ClientPutDir(SimpleFieldSet fs, FCPClient client, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException {
+		super(fs, client, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet files = fs.subset("Files");
 		defaultName = fs.get("DefaultName");
@@ -173,7 +192,7 @@ public class ClientPutDir extends ClientPutBase {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				if(!finished) {
 					try {
-						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
+						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), server.core.random, server.core.persistentTempBucketFactory);
 					} catch (CannotCreateFromFieldSetException e) {
 						throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 					}
@@ -207,66 +226,85 @@ public class ClientPutDir extends ClientPutBase {
 		}
 		manifestElements = SimpleManifestPutter.unflatten(v);
 		SimpleManifestPutter p = null;
-		try {
 			if(!finished)
-				p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
-						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client, earlyEncode);
-		} catch (InsertException e) {
-			onFailure(e, null);
-			p = null;
-		}
+				p = new SimpleManifestPutter(this, 
+						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
+						lowLevelClient,
+						earlyEncode);
 		putter = p;
 		numberOfFiles = fileCount;
 		totalSize = size;
 		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
+			FCPMessage msg = persistentTagMessage(container);
+			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
 
 	@Override
-	public void start() {
+	public void start(ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		if(started) return;
 		try {
 			if(putter != null)
-				putter.start();
+				putter.start(container, context);
 			started = true;
-			if(logMINOR) Logger.minor(this, "Started "+putter);
+			if(logMINOR) Logger.minor(this, "Started "+putter+" for "+this+" persistence="+persistenceType);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
-				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
+				FCPMessage msg = persistentTagMessage(container);
+				client.queueClientRequestMessage(msg, 0, container);
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.store(this); // Update
 		} catch (InsertException e) {
 			started = true;
-			onFailure(e, null);
+			onFailure(e, null, container);
 		}
 	}
 	
 	@Override
-	public void onLostConnection() {
+	public void onLostConnection(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel();
+			cancel(container, context);
 		// otherwise ignore
 	}
 	
-	@Override
-	protected void freeData() {
-		freeData(manifestElements);
+	@SuppressWarnings("unchecked")
+	protected void freeData(ObjectContainer container) {
+		if(logMINOR) Logger.minor(this, "freeData() on "+this+" persistence type = "+persistenceType);
+		synchronized(this) {
+			if(manifestElements == null) {
+				if(logMINOR)
+					Logger.minor(this, "manifestElements = "+manifestElements +
+							(persistenceType != PERSIST_FOREVER ? "" : (" dir.active="+container.ext().isActive(this))), new Exception("error"));
+				return;
+			}
+		}
+		if(logMINOR) Logger.minor(this, "freeData() more on "+this+" persistence type = "+persistenceType);
+		// We have to commit everything, so activating everything here doesn't cost us much memory...?
+		if(persistenceType == PERSIST_FOREVER) {
+			container.deactivate(manifestElements, 1); // Must deactivate before activating: If it has been activated to depth 1 (empty map) at some point it will fail to activate to depth 2 (with contents). See http://tracker.db4o.com/browse/COR-1582
+			container.activate(manifestElements, Integer.MAX_VALUE);
+		}
+		freeData(manifestElements, container);
+		manifestElements = null;
+		if(persistenceType == PERSIST_FOREVER) container.store(this);
 	}
 	
 	@SuppressWarnings("unchecked")
-    private void freeData(HashMap<String, Object> manifestElements) {
-		Iterator<Object> i = manifestElements.values().iterator();
+	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
+		if(logMINOR) Logger.minor(this, "freeData() inner on "+this+" persistence type = "+persistenceType+" size = "+manifestElements.size());
+		Iterator i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
-			if(o instanceof HashMap)
-				freeData((HashMap<String, Object>) o);
-			else {
+			if(o instanceof HashMap) {
+				freeData((HashMap<String, Object>) o, container);
+			} else {
 				ManifestElement e = (ManifestElement) o;
-				e.freeData();
+				if(logMINOR) Logger.minor(this, "Freeing "+e);
+				e.freeData(container, persistenceType == PERSIST_FOREVER);
 			}
 		}
+		if(persistenceType == PERSIST_FOREVER) container.delete(manifestElements);
 	}
 
 	@Override
@@ -322,9 +360,14 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	@Override
-	protected FCPMessage persistentTagMessage() {
+	protected FCPMessage persistentTagMessage(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(publicURI, 5);
+			container.activate(ctx, 1);
+			container.activate(manifestElements, 5);
+		}
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut);
+				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut, container);
 	}
 
 	@Override
@@ -337,7 +380,9 @@ public class ClientPutDir extends ClientPutBase {
 		return succeeded;
 	}
 
-	public FreenetURI getFinalURI() {
+	public FreenetURI getFinalURI(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(generatedURI, 5);
 		return generatedURI;
 	}
 
@@ -363,15 +408,37 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	@Override
-	public boolean restart() {
+	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
-		setVarsRestart();
-		makePutter();
-		start();
+		setVarsRestart(container);
+			makePutter();
+		start(container, context);
 		return true;
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {}
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {}
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
+	
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+		super.onSuccess(state, container);
+	}
+	
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+		super.onFailure(e, state, container);
+	}
+
+	public void onRemoveEventProducer(ObjectContainer container) {
+		// Do nothing, we called the removeFrom().
+	}
+	
+	@Override
+	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(putter, 1);
+			putter.removeFrom(container, context);
+			putter = null;
+		}
+		super.requestWasRemoved(container, context);
+	}
 }

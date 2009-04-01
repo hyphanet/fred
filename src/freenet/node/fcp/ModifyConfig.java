@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
@@ -68,5 +70,9 @@ public class ModifyConfig extends FCPMessage {
 		}
 		node.clientCore.storeConfig();
 		handler.outputHandler.queue(new ConfigData(node, true, false, false, false, false, false, false, false, identifier));
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 }

@@ -5,6 +5,8 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
@@ -109,6 +111,15 @@ public class PutFailedMessage extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFailed goes from server to client not the other way around", identifier, global);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.activate(this, 5); // everything
+		if(tracker != null)
+			tracker.removeFrom(container);
+		if(expectedURI != null)
+			expectedURI.removeFrom(container);
+		container.delete(this);
 	}
 
 }

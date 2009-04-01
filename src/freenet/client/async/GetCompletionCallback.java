@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 
@@ -12,21 +14,21 @@ import freenet.client.FetchResult;
  */
 public interface GetCompletionCallback {
 
-	public void onSuccess(FetchResult result, ClientGetState state);
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context);
 	
-	public void onFailure(FetchException e, ClientGetState state);
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context);
 	
 	/** Called when the ClientGetState knows that it knows about
 	 * all the blocks it will need to fetch.
 	 */
-	public void onBlockSetFinished(ClientGetState state);
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context);
 
-	public void onTransition(ClientGetState oldState, ClientGetState newState);
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
 
-	public void onExpectedSize(long size);
+	public void onExpectedSize(long size, ObjectContainer container);
 	
-	public void onExpectedMIME(String mime);
+	public void onExpectedMIME(String mime, ObjectContainer container);
 	
-	public void onFinalizedMetadata();
+	public void onFinalizedMetadata(ObjectContainer container);
 	
 }

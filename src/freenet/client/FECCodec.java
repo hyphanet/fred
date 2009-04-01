@@ -6,21 +6,17 @@ package freenet.client;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
 
-import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.NativeThread;
 
 /**
  * FEC (forward error correction) handler.
@@ -29,33 +25,35 @@ import freenet.support.io.NativeThread;
  * @author root
  *
  */
-public abstract class FECCodec implements OOMHook {
+public abstract class FECCodec {
 
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 
 	private static int STRIPE_SIZE = 4096;
 	static boolean logMINOR;
-	FECCode fec;
+	protected transient FECCode fec;
 	protected final int k, n;
-	private final Executor executor;
 
-	protected FECCodec(Executor executor, int k, int n) {
-		this.executor = executor;
+	protected abstract void loadFEC();
+	
+	protected FECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
-		
-		OOMHandler.addOOMHook(this);
+		if(n == 0 || n < k)
+			throw new IllegalArgumentException("Invalid: k="+k+" n="+n);
 	}
 	
 	/**
 	 * Get a codec where we know both the number of data blocks and the number
 	 * of check blocks, and the codec type. Normally for decoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks, Executor executor) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks) {
+		if(Logger.shouldLog(Logger.MINOR, FECCodec.class))
+			Logger.minor(FECCodec.class, "getCodec: splitfileType="+splitfileType+" dataBlocks="+dataBlocks+" checkBlocks="+checkBlocks);
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
-			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
+			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
 		else
 			return null;
 	}
@@ -64,26 +62,38 @@ public abstract class FECCodec implements OOMHook {
 	 * Get a codec where we know only the number of data blocks and the codec
 	 * type. Normally for encoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks, Executor executor) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			/**
-			 * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
-			 * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
-			 * we have to have some redundancy at the duplicating blocks level because we do use
-			 * some keys directly etc: we store an insert in 3 nodes. We also cache it on 20 nodes,
-			 * but generally the key will fall out of the caches within days. So long term, it's 3.
-			 * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
-			 * all FEC.
-			 */
-			int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT;
-			if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
-				checkBlocks = HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
-			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
+			int checkBlocks = standardOnionCheckBlocks(dataBlocks);
+			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
 		}
 		else
 			return null;
+	}
+	
+	private static int standardOnionCheckBlocks(int dataBlocks) {
+		/**
+		 * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
+		 * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
+		 * we have to have some redundancy at the duplicating blocks level because we do use
+		 * some keys directly etc: we store an insert in 3 nodes. We also cache it on 20 nodes,
+		 * but generally the key will fall out of the caches within days. So long term, it's 3.
+		 * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
+		 * all FEC.
+		 */
+		int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT;
+		if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
+			checkBlocks = HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
+		return checkBlocks;
+	}
+
+	public static int getCheckBlocks(short splitfileType, int dataBlocks) {
+		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
+			return standardOnionCheckBlocks(dataBlocks);
+		} else
+			return 0;
 	}
 
 	/**
@@ -92,6 +102,7 @@ public abstract class FECCodec implements OOMHook {
 	public abstract int countCheckBlocks();
 
 	protected void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		loadFEC();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Doing decode: " + dataBlockStatus.length + " data blocks, " + checkBlockStatus.length + " check blocks, block length " + blockLength + " with " + this, new Exception("debug"));
@@ -145,20 +156,7 @@ public abstract class FECCodec implements OOMHook {
 					long sz = buckets[i].size();
 					if(sz < blockLength) {
 						if(i != dataBlockStatus.length - 1)
-							throw new IllegalArgumentException("All buckets except the last must be the full size but data bucket " + i + " of " + dataBlockStatus.length + " (" + dataBlockStatus[i] + ") is " + sz + " not " + blockLength);
-						if(sz < blockLength) {
-							// FIXME NOT FETCHING LAST BLOCK
-//							buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
-							buckets[i].free();
-							buckets[i] = bf.makeBucket(blockLength);
-							writers[i] = buckets[i].getOutputStream();
-							if(logMINOR)
-								Logger.minor(this, "writers[" + i + "] != null (NOT PADDING)");
-							readers[i] = null;
-							numberToDecode++;
-						}
-						else
-							throw new IllegalArgumentException("Too big: " + sz + " bigger than " + blockLength);
+							throw new IllegalArgumentException("All buckets must be the full size (caller must pad if needed) but data bucket " + i + " of " + dataBlockStatus.length + " (" + dataBlockStatus[i] + ") is " + sz + " not " + blockLength);
 					} else {
 						if(logMINOR)
 							Logger.minor(this, "writers[" + i + "] = null (already filled)");
@@ -233,6 +231,7 @@ public abstract class FECCodec implements OOMHook {
 	protected void realEncode(Bucket[] dataBlockStatus,
 		Bucket[] checkBlockStatus, int blockLength, BucketFactory bf)
 		throws IOException {
+		loadFEC();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		//		Runtime.getRuntime().gc();
 //		Runtime.getRuntime().runFinalization();
@@ -270,29 +269,29 @@ public abstract class FECCodec implements OOMHook {
 
 			for(int i = 0; i < dataBlockStatus.length; i++) {
 				buckets[i] = dataBlockStatus[i];
+				if(buckets[i] == null)
+					throw new NullPointerException("Data bucket "+i+" is null!");
 				long sz = buckets[i].size();
 				if(sz < blockLength) {
-					if(i != dataBlockStatus.length - 1)
-						throw new IllegalArgumentException("All buckets except the last must be the full size");
-					if(sz < blockLength) {
-						buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
-						toFree = buckets[i];
-					} else
-						throw new IllegalArgumentException("Too big: " + sz + " bigger than " + blockLength);
+					throw new IllegalArgumentException("All buckets must be the full size: caller must pad the last one if needed");
 				}
 				readers[i] = new DataInputStream(buckets[i].getInputStream());
 			}
 
+			int created = 0;
 			for(int i = 0; i < checkBlockStatus.length; i++) {
 				buckets[i + k] = checkBlockStatus[i];
 				if(buckets[i + k] == null) {
 					buckets[i + k] = bf.makeBucket(blockLength);
 					writers[i] = buckets[i + k].getOutputStream();
 					toEncode[numberToEncode++] = i + k;
+					created++;
 				}
 				else
 					writers[i] = null;
 			}
+			if(logMINOR)
+				Logger.minor(this, "Created "+created+" check buckets");
 
 			//			Runtime.getRuntime().gc();
 //			Runtime.getRuntime().runFinalization();
@@ -367,148 +366,13 @@ public abstract class FECCodec implements OOMHook {
 	 * 
 	 * @param FECJob
 	 */
-	public void addToQueue(FECJob job) {
-		addToQueue(job, this, executor);
-	}
-
-	public static void addToQueue(FECJob job, FECCodec codec, Executor executor) {
-		int maxThreads = getMaxRunningFECThreads();
-		synchronized(_awaitingJobs) {
-			_awaitingJobs.addFirst(job);
-			if(runningFECThreads < maxThreads) {
-				executor.execute(fecRunner, "FEC Pool(" + (fecPoolCounter++) + ")");
-				runningFECThreads++;
-			}
-			_awaitingJobs.notifyAll();
-		}
-		if(logMINOR)
-			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue (" + _awaitingJobs.size() + ").");
-	}
-	private static final LinkedList _awaitingJobs = new LinkedList();
-	private static final FECRunner fecRunner = new FECRunner();
-	private static int runningFECThreads;
-	private static int fecPoolCounter;
-	
-	private synchronized static int getMaxRunningFECThreads() {
-		if (maxRunningFECThreads != -1)
-			return maxRunningFECThreads;
-		String osName = System.getProperty("os.name");
-		if(osName.indexOf("Windows") == -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode())) {
-			// OS/X niceness is really weak, so we don't want any more background CPU load than necessary
-			// Also, on non-Windows, we need the native threads library to be working.
-			maxRunningFECThreads = 1;
-		} else {
-			// Most other OSs will have reasonable niceness, so go by RAM.
-			Runtime r = Runtime.getRuntime();
-			int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
-			long maxMemory = r.maxMemory();
-			if(maxMemory < 256*1024*1024) {
-				max = 1;
-			} else {
-				// Measured 11MB decode 8MB encode on amd64.
-				// No more than 10% of available RAM, so 110MB for each extra processor.
-				// No more than 3 so that we don't reach any FileDescriptor related limit
-				max = Math.min(3, Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128*1024*1024)))));
-			}
-			maxRunningFECThreads = max;
-		}
-		Logger.minor(FECCodec.class, "Maximum FEC threads: "+maxRunningFECThreads);
-		return maxRunningFECThreads;
+	public void addToQueue(FECJob job, FECQueue queue, ObjectContainer container) {
+		queue.addToQueue(job, this, container);
 	}
 	
-	private static int maxRunningFECThreads = -1;
-
-	/**
-	 * A private Thread started by {@link FECCodec}...
-	 * 
-	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
-	 */
-	private static class FECRunner implements PrioRunnable {
-
-		public void run() {
-			freenet.support.Logger.OSThread.logPID(this);
-			try {
-				while(true) {
-					FECJob job = null;
-					// Get a job
-					synchronized (_awaitingJobs) {
-						while (_awaitingJobs.isEmpty()) {
-							_awaitingJobs.wait(Integer.MAX_VALUE);
-							if (runningFECThreads > getMaxRunningFECThreads())
-								return;
-						}
-						job = (FECJob) _awaitingJobs.removeLast();
-					}
-
-					// Encode it
-					try {
-						if (job.isADecodingJob)
-							job.codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength,
-							        job.bucketFactory);
-						else {
-							job.codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
-							// Update SplitFileBlocks from buckets if necessary
-							if ((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
-								for (int i = 0; i < job.dataBlocks.length; i++)
-									job.dataBlockStatus[i].setData(job.dataBlocks[i]);
-								for (int i = 0; i < job.checkBlocks.length; i++)
-									job.checkBlockStatus[i].setData(job.checkBlocks[i]);
-							}
-						}
-					} catch (IOException e) {
-						Logger.error(this, "BOH! ioe:" + e.getMessage(), e);
-					}
-
-					// Call the callback
-					try {
-						if (job.isADecodingJob)
-							job.callback.onDecodedSegment();
-						else
-							job.callback.onEncodedSegment();
-					} catch (Throwable e) {
-						Logger.error(this, "The callback failed!" + e.getMessage(), e);
-					}
-				}
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" in "+this, t);
-			}
-			finally {
-				synchronized (_awaitingJobs) {
-					runningFECThreads--;
-				}
-			}
-		}
-
-		public int getPriority() {
-			return NativeThread.LOW_PRIORITY;
-		}
+	public void objectCanDeactivate(ObjectContainer container) {
+		Logger.minor(this, "Deactivating "+this, new Exception("debug"));
 	}
 
-	public void handleLowMemory() throws Exception {
-		synchronized (_awaitingJobs) {
-			maxRunningFECThreads = Math.max(1, maxRunningFECThreads - 1);
-			_awaitingJobs.notify(); // not notifyAll()
-		}
-	}
-
-	public void handleOutOfMemory() throws Exception {
-		synchronized (_awaitingJobs) {
-			maxRunningFECThreads = 1;
-			_awaitingJobs.notifyAll();
-		}
-	}
-
-	/**
-	 * An interface wich has to be implemented by FECJob submitters
-	 * 
-	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
-	 * 
-	 * WARNING: the callback is expected to release the thread !
-	 */
-	public interface StandardOnionFECCodecEncoderCallback {
-
-		public void onEncodedSegment();
-
-		public void onDecodedSegment();
-	}
+	public abstract short getAlgorithm();
 }

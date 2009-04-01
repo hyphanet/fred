@@ -3,154 +3,98 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
-import freenet.keys.KeyBlock;
-import freenet.support.Logger;
-import freenet.support.LogThresholdCallback;
+import freenet.support.io.NativeThread;
 
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
  */
 public abstract class SendableGet extends BaseSendableGet {
-    private static volatile boolean logMINOR;
 
-    static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-
-            @Override
-            public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
-            }
-        });
-    }
-	/** Is this an SSK? */
-	public abstract boolean isSSK();
-	
 	/** Parent BaseClientGetter. Required for schedulers. */
 	public final ClientRequester parent;
 	
 	/** Get a numbered key to fetch. */
-	public abstract ClientKey getKey(Object token);
+	public abstract ClientKey getKey(Object token, ObjectContainer container);
 	
 	@Override
-	public Key getNodeKey(Object token) {
-		ClientKey key = getKey(token);
+	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
+		ClientKey key = getKey(token, container);
 		if(key == null) return null;
 		return key.getNodeKey();
 	}
 	
+	/**
+	 * What keys are we interested in? For purposes of checking the datastore.
+	 * This is in SendableGet, *not* KeyListener, in order to deal with it in
+	 * smaller chunks.
+	 * @param container Database handle.
+	 */
+	public abstract Key[] listKeys(ObjectContainer container);
+
 	/** Get the fetch context (settings) object. */
 	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, Object token, RequestScheduler sched);
+	public abstract void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context);
 	
 	/** Should the request ignore the datastore? */
 	public abstract boolean ignoreStore();
 
-	/** If true, don't cache local requests */
-	public abstract boolean dontCache();
+	/** If true, don't cache local requests 
+	 * @param container */
+	public abstract boolean dontCache(ObjectContainer container);
 
 	// Implementation
 
 	public SendableGet(ClientRequester parent) {
+		super(parent.persistent());
 		this.parent = parent;
 	}
 	
-	/** Do the request, blocking. Called by RequestStarter. 
-	 * @return True if a request was executed. False if caller should try to find another request, and remove
-	 * this one from the queue. */
-	@Override
-	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
-		ClientKey key = getKey(keyNum);
-		if(key == null) {
-			Logger.error(this, "Key is null in send(): keyNum = "+keyNum+" for "+this);
-			return false;
-		}
-		if(logMINOR)
-			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
-		FetchContext ctx = getContext();
-		long now = System.currentTimeMillis();
-		if(getCooldownWakeupByKey(key.getNodeKey()) > now) {
-			Logger.error(this, "Key is still on the cooldown queue in send() for "+this+" - key = "+key, new Exception("error"));
-			return false;
-		}
-		if(isCancelled()) {
-			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
-			onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null, sched);
-			return false;
-		}
-		try {
-			try {
-				core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
-			} catch (LowLevelGetException e) {
-				onFailure(e, keyNum, sched);
-				return true;
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
-				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);
-				return true;
-			}
-			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
-			sched.succeeded(this.getParentGrabArray());
-		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
-			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);
-			return true;
-		}
-		return true;
-	}
-
-	public void schedule() {
-		if(logMINOR)
-			Logger.minor(this, "Scheduling "+this);
-		getScheduler().register(this);
+	static final SendableGetRequestSender sender = new SendableGetRequestSender();
+	
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		return sender;
 	}
 	
-	public ClientRequestScheduler getScheduler() {
+	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
-			return parent.sskScheduler;
+			return context.getSskFetchScheduler();
 		else
-			return parent.chkScheduler;
+			return context.getChkFetchScheduler();
 	}
 
-	public abstract void onGotKey(Key key, KeyBlock block, RequestScheduler sched);
-	
 	/**
 	 * Get the time at which the key specified by the given token will wake up from the 
 	 * cooldown queue.
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(Object token);
+	public abstract long getCooldownWakeup(Object token, ObjectContainer container);
 	
-	public abstract long getCooldownWakeupByKey(Key key);
+	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container);
 	
 	/** Reset the cooldown times when the request is reregistered. */
-	public abstract void resetCooldownTimes();
+	public abstract void resetCooldownTimes(ObjectContainer container);
 
+	/**
+	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.
+	 */
 	@Override
-	public final void unregister(boolean staySubscribed) {
-		if(!staySubscribed)
-			getScheduler().removePendingKeys(this, false);
-		super.unregister(staySubscribed);
-	}
-	
-	public final void unregisterKey(Key key) {
-		getScheduler().removePendingKey(this, false, key);
-	}
-
-	@Override
-	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
-		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, sched);
+	public void internalError(final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
 
 	/**
@@ -158,6 +102,14 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * Only requeue if our requeue time is less than or equal to the given time.
 	 * @param key
 	 */
-	public abstract void requeueAfterCooldown(Key key, long time);
+	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context);
 
+	public final boolean isInsert() {
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.delete(this);
+	}
+	
 }

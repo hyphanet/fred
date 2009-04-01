@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
@@ -17,7 +19,7 @@ public class ManifestElement {
 	final String fullName;
 	
 	/** Data to be inserted. Can be null, if the insert has completed. */
-	final Bucket data;
+	Bucket data;
 	
 	/** MIME type override. null => use default for filename */
 	final String mimeOverride;
@@ -78,9 +80,17 @@ public class ManifestElement {
 		return false;
 	}
 
-	public void freeData() {
-		if(data != null)
+	public void freeData(ObjectContainer container, boolean persistForever) {
+		if(data != null) {
+			if(persistForever)
+				container.activate(data, 1);
 			data.free();
+			if(persistForever)
+				data.removeFrom(container);
+			data = null;
+		}
+		if(persistForever)
+			container.delete(this);
 	}
 
 	public String getName() {
@@ -101,5 +111,11 @@ public class ManifestElement {
 
 	public FreenetURI getTargetURI() {
 		return targetURI;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		data.removeFrom(container);
+		targetURI.removeFrom(container);
+		container.delete(this);
 	}
 }

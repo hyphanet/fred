@@ -14,6 +14,8 @@ import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -363,6 +365,20 @@ public class TempBucketFactory implements BucketFactory {
 				}
 			}
 		}
+
+		public Bucket createShadow() throws IOException {
+			return currentBucket.createShadow();
+		}
+
+		public void removeFrom(ObjectContainer container) {
+			currentBucket.removeFrom(container);
+			container.delete(this);
+		}
+
+		public void storeTo(ObjectContainer container) {
+			currentBucket.storeTo(container);
+			container.store(this);
+		}
 		
 		private WeakReference<TempBucket> weakRef = new WeakReference<TempBucket>(this);
 
@@ -527,7 +543,7 @@ public class TempBucketFactory implements BucketFactory {
 	private final Queue<WeakReference<TempBucket>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<TempBucket>>();
 	
 	private Bucket _makeFileBucket() {
-		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
+		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator, true, true);
 		// Do we want it to be encrypted?
 		return (reallyEncrypt ? new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, strongPRNG, weakPRNG) : fileBucket);
 	}

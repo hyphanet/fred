@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+
 
 /**
  * Event handling for clients.
@@ -15,7 +19,7 @@ public interface ClientEventProducer {
      * Sends the event to all registered EventListeners.
      * @param ce  the ClientEvent to raise
      */
-    void produceEvent(ClientEvent ce);
+    void produceEvent(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context);
         
     /**
      * Adds an EventListener that will receive all events produced
@@ -31,6 +35,8 @@ public interface ClientEventProducer {
      * @return     true if a Listener was removed, false otherwise.
      */
     boolean removeEventListener(ClientEventListener cel);
+
+	void removeFrom(ObjectContainer container);
 }
 
 

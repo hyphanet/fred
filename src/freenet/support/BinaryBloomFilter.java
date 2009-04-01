@@ -43,6 +43,11 @@ public class BinaryBloomFilter extends BloomFilter {
 		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, length / 8).load();
 	}
 
+	public BinaryBloomFilter(ByteBuffer slice, int length, int k) {
+		super(length, k);
+		filter = slice;
+	}
+
 	@Override
 	public void removeKey(byte[] key) {
 		// ignore

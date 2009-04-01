@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -23,7 +25,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	private final long length;
 
 	public ReadOnlyFileSliceBucket(File f, long startAt, long length) {
-		this.file = f;
+		this.file = new File(f.getPath()); // copy so we can delete it
 		this.startAt = startAt;
 		this.length = length;
 	}
@@ -148,4 +150,25 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		fs.put("Length", length);
 		return fs;
 	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(file);
+		container.delete(this);
+	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		// Cascading activation of dependancies
+		container.activate(file, 5);
+	}
+
+	public Bucket createShadow() throws IOException {
+		String fnam = new String(file.getPath());
+		File newFile = new File(fnam);
+		return new ReadOnlyFileSliceBucket(newFile, startAt, length);
+	}
+
 }

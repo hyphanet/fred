@@ -10,21 +10,26 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashMap;
+
+import com.db4o.ObjectContainer;
+
 import java.util.List;
 
+import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
 import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-public class BookmarkManager {
+public class BookmarkManager implements RequestClient {
 
 	public static final SimpleFieldSet DEFAULT_BOOKMARKS;
 	private final NodeClientCore node;
@@ -92,7 +97,7 @@ public class BookmarkManager {
 
 	private class USKUpdatedCallback implements USKCallback {
 
-		public void onFoundEdition(long edition, USK key) {
+		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
@@ -367,5 +372,13 @@ public class BookmarkManager {
 		sfs.put(BookmarkItem.NAME, bi.size());
 
 		return sfs;
+	}
+
+	public boolean persistent() {
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 }

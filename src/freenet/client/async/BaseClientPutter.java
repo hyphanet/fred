@@ -3,12 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
+import freenet.node.RequestClient;
+
 public abstract class BaseClientPutter extends ClientRequester {
 
-	protected BaseClientPutter(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object context) {
-		super(priorityClass, chkScheduler, sskScheduler, context);
+	protected BaseClientPutter(short priorityClass, RequestClient context) {
+		super(priorityClass, context);
 	}
 
-	public abstract void onMajorProgress();
+	public abstract void onMajorProgress(ObjectContainer container);
 
 }

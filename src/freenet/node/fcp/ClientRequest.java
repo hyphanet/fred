@@ -1,17 +1,24 @@
 package freenet.node.fcp;
 
-import freenet.client.async.ClientRequester;
-import freenet.keys.FreenetURI;
-import freenet.support.Fields;
-import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
-import freenet.support.api.Bucket;
-import freenet.support.io.SerializableToFieldSetBucket;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import freenet.client.async.ClientRequester;
+import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
+import freenet.support.Fields;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
+import freenet.support.io.SerializableToFieldSetBucket;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
+import freenet.support.io.NativeThread;
 
 /**
  * A request process carried out by the node for an FCP client.
@@ -27,7 +34,7 @@ public abstract class ClientRequest {
 	 * differently. */
 	protected final int verbosity;
 	/** Original FCPConnectionHandler. Null if persistence != connection */
-	protected final FCPConnectionHandler origHandler;
+	protected transient final FCPConnectionHandler origHandler;
 	/** Client */
 	protected final FCPClient client;
 	/** Priority class */
@@ -45,9 +52,30 @@ public abstract class ClientRequest {
 	protected final long startupTime;
 	/** Timestamp : completion time */
 	protected long completionTime;
+	protected final RequestClient lowLevelClient;
+	private final int hashCode; // for debugging it is good to have a persistent id
+	
+	public int hashCode() {
+		return hashCode;
+	}
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+		int hash = super.hashCode();
+		if(hash == 0) hash = 1;
+		hashCode = hash;
 		this.uri = uri2;
 		this.identifier = identifier2;
 		if(global)
@@ -59,16 +87,35 @@ public abstract class ClientRequest {
 		this.persistenceType = persistenceType2;
 		this.clientToken = clientToken2;
 		this.global = global;
-		if(persistenceType == PERSIST_CONNECTION)
+		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
-		else
+			lowLevelClient = new RequestClient() {
+
+				public boolean persistent() {
+					return false;
+				}
+
+				public void removeFrom(ObjectContainer container) {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+			this.client = null;
+		} else {
 			origHandler = null;
-		this.client = client;
+			this.client = client;
+			if(client != null)
+				assert(client.persistenceType == persistenceType);
+			lowLevelClient = client.lowLevelClient;
+		}
 		this.startupTime = System.currentTimeMillis();
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+		int hash = super.hashCode();
+		if(hash == 0) hash = 1;
+		hashCode = hash;
 		this.uri = uri2;
 		this.identifier = identifier2;
 		if(global)
@@ -80,19 +127,43 @@ public abstract class ClientRequest {
 		this.persistenceType = persistenceType2;
 		this.clientToken = clientToken2;
 		this.global = global;
-		if(persistenceType == PERSIST_CONNECTION)
+		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
-		else
+			client = null;
+			lowLevelClient = new RequestClient() {
+
+				public boolean persistent() {
+					return false;
+				}
+
+				public void removeFrom(ObjectContainer container) {
+					throw new UnsupportedOperationException();
+				}
+				
+			};
+		} else {
 			origHandler = null;
 		if(global) {
-			client = handler.server.globalClient;
+			client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
 		} else {
-			client = handler.getClient();
+			assert(!handler.server.core.clientDatabaseExecutor.onThread());
+			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(null) : handler.getRebootClient();
 		}
+		lowLevelClient = client.lowLevelClient;
+		if(lowLevelClient == null)
+			throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
+		}
+		if(lowLevelClient.persistent() != (persistenceType == PERSIST_FOREVER))
+			throw new IllegalStateException("Low level client.persistent="+lowLevelClient.persistent()+" but persistence type = "+persistenceType);
+		if(client != null)
+			assert(client.persistenceType == persistenceType);
 		this.startupTime = System.currentTimeMillis();
 	}
 
 	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+		int hash = super.hashCode();
+		if(hash == 0) hash = 1;
+		hashCode = hash;
 		priorityClass = Short.parseShort(fs.get("PriorityClass"));
 		uri = new FreenetURI(fs.get("URI"));
 		identifier = fs.get("Identifier");
@@ -113,13 +184,15 @@ public abstract class ClientRequest {
 		completionTime = fs.getLong("CompletionTime", 0);
 		if (finished)
 			started=true;
+		assert(client.persistenceType == persistenceType);
+		lowLevelClient = client.lowLevelClient;
 	}
 
 	/** Lost connection */
-	public abstract void onLostConnection();
+	public abstract void onLostConnection(ObjectContainer container, ClientContext context);
 
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
-	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData);
+	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container);
 
 	// Persistence
 
@@ -150,8 +223,7 @@ public abstract class ClientRequest {
 		return Short.parseShort(string);
 	}
 
-	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequest.class);
+	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server, ObjectContainer container, ClientContext context) throws IOException {
 		Runtime rt = Runtime.getRuntime();
 		if(logMINOR)
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use before loading request");
@@ -165,28 +237,28 @@ public abstract class ClientRequest {
 		}
 		FCPClient client;
 		if(!isGlobal)
-			client = server.registerClient(clientName, server.core, null);
+			client = server.registerForeverClient(clientName, server.core, null, container);
 		else
-			client = server.globalClient;
+			client = server.globalForeverClient;
 		if(logMINOR)
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use loading request "+clientName+" "+fs.get("Identifier"));
 		try {
 			String type = fs.get("Type");
 			boolean lazyResume = server.core.lazyResume();
 			if(type.equals("GET")) {
-				ClientGet cg = new ClientGet(fs, client);
-				client.register(cg, lazyResume);
-				if(!lazyResume) cg.start();
+				ClientGet cg = new ClientGet(fs, client, server);
+				cg.register(container, lazyResume, true);
+				if(!lazyResume) cg.start(container, context);
 				return cg;
 			} else if(type.equals("PUT")) {
-				ClientPut cp = new ClientPut(fs, client);
-				client.register(cp, lazyResume);
-				if(!lazyResume) cp.start();
+				ClientPut cp = new ClientPut(fs, client, server, container);
+				client.register(cp, lazyResume, container);
+				if(!lazyResume) cp.start(container, context);
 				return cp;
 			} else if(type.equals("PUTDIR")) {
-				ClientPutDir cp = new ClientPutDir(fs, client);
-				client.register(cp, lazyResume);
-				if(!lazyResume) cp.start();
+				ClientPutDir cp = new ClientPutDir(fs, client, server, container);
+				client.register(cp, lazyResume, container);
+				if(!lazyResume) cp.start(container, context);
 				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
@@ -200,12 +272,19 @@ public abstract class ClientRequest {
 			return null;
 		}
 	}
+	
+	abstract void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException;
 
-	public void cancel() {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientRequester cr = getClientRequest();
 		// It might have been finished on startup.
-		if(cr != null) cr.cancel();
-		freeData();
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(cr, 1);
+		if(logMINOR) Logger.minor(this, "Cancelling "+cr+" for "+this+" persistenceType = "+persistenceType);
+		if(cr != null) cr.cancel(container, context);
+		freeData(container);
+		if(persistenceType == PERSIST_FOREVER)
+			container.store(this);
 	}
 
 	public boolean isPersistentForever() {
@@ -229,9 +308,9 @@ public abstract class ClientRequest {
 	protected abstract ClientRequester getClientRequest();
 
 	/** Completed request dropped off the end without being acknowledged */
-	public void dropped() {
-		cancel();
-		freeData();
+	public void dropped(ObjectContainer container, ClientContext context) {
+		cancel(container, context);
+		freeData(container);
 	}
 
 	/** Return the priority class */
@@ -240,16 +319,17 @@ public abstract class ClientRequest {
 	}
 
 	/** Free cached data bucket(s) */
-	protected abstract void freeData(); 
+	protected abstract void freeData(ObjectContainer container); 
 
 	/** Request completed. But we may have to stick around until we are acked. */
-	protected void finish() {
+	protected void finish(ObjectContainer container) {
 		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
-			client.server.forceStorePersistentRequests();
-		client.finishedClientRequest(this);
+			client.finishedClientRequest(this, container);
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			container.store(this);
 	}
 
 	/**
@@ -271,30 +351,27 @@ public abstract class ClientRequest {
 	 */
 	public abstract SimpleFieldSet getFieldSet() throws IOException;
 
-	public abstract double getSuccessFraction();
+	public abstract double getSuccessFraction(ObjectContainer container);
 
-	public abstract double getTotalBlocks();
-	public abstract double getMinBlocks();
-	public abstract double getFetchedBlocks();
-	public abstract double getFailedBlocks();
-	public abstract double getFatalyFailedBlocks();
+	public abstract double getTotalBlocks(ObjectContainer container);
+	public abstract double getMinBlocks(ObjectContainer container);
+	public abstract double getFetchedBlocks(ObjectContainer container);
+	public abstract double getFailedBlocks(ObjectContainer container);
+	public abstract double getFatalyFailedBlocks(ObjectContainer container);
 
-	public abstract String getFailureReason();
+	public abstract String getFailureReason(ObjectContainer container);
 
 	/**
 	 * Has the total number of blocks to insert been determined yet?
 	 */
-	public abstract boolean isTotalFinalized();
+	public abstract boolean isTotalFinalized(ObjectContainer container);
 
-	public void onMajorProgress() {
-		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			if(client != null)
-				client.server.forceStorePersistentRequests();
-		}
+	public void onMajorProgress(ObjectContainer container) {
+		// Ignore
 	}
 
 	/** Start the request, if it has not already been started. */
-	public abstract void start();
+	public abstract void start(ObjectContainer container, ClientContext context);
 
 	protected boolean started;
 
@@ -306,15 +383,16 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart();
+	public abstract boolean restart(ObjectContainer container, ClientContext context);
 
-	protected abstract FCPMessage persistentTagMessage();
+	protected abstract FCPMessage persistentTagMessage(ObjectContainer container);
 
 	/**
 	 * Called after a ModifyPersistentRequest.
 	 * Sends a PersistentRequestModified message to clients if any value changed. 
+	 * Commits before sending the messages.
 	 */
-	public void modifyRequest(String newClientToken, short newPriorityClass) {
+	public void modifyRequest(String newClientToken, short newPriorityClass, FCPServer server, ObjectContainer container) {
 
 		boolean clientTokenChanged = false;
 		boolean priorityClassChanged = false;
@@ -333,18 +411,18 @@ public abstract class ClientRequest {
 
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
-			getClientRequest().setPriorityClass(priorityClass);
+			getClientRequest().setPriorityClass(priorityClass, server.core.clientContext, container);
 			priorityClassChanged = true;
 		}
 
-		if( clientTokenChanged || priorityClassChanged ) {
-			if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-				if(client != null) {
-					client.server.forceStorePersistentRequests();
-				}
-			}
-		} else {
+		if(! ( clientTokenChanged || priorityClassChanged ) ) {
 			return; // quick return, nothing was changed
+		}
+		
+		if(persistenceType == PERSIST_FOREVER) {
+			container.store(this);
+			container.commit(); // commit before we send the message
+			if(logMINOR) Logger.minor(this, "COMMITTED");
 		}
 
 		// this could become too complex with more parameters, but for now its ok
@@ -358,13 +436,8 @@ public abstract class ClientRequest {
 		} else {
 			return; // paranoia, we should not be here if nothing was changed!
 		}
-		client.queueClientRequestMessage(modifiedMsg, 0);
+		client.queueClientRequestMessage(modifiedMsg, 0, container);
 	}
-
-	/**
-	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
-	 */
-	public abstract void requestWasRemoved();
 
 	/** Utility method for storing details of a possibly encrypted bucket. */
 	protected void bucketToFS(SimpleFieldSet fs, String name, boolean includeSize, Bucket data) {
@@ -372,14 +445,59 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync() {
+	public void restartAsync(FCPServer server) {
 		synchronized(this) {
 			this.started = false;
 		}
-		client.core.getExecutor().execute(new Runnable() {
-			public void run() {
-				restart();
+		server.core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				container.activate(ClientRequest.this, 1);
+				restart(container, context);
+				container.deactivate(ClientRequest.this, 1);
 			}
-		}, "Restarting "+this);
+			
+		}, NativeThread.HIGH_PRIORITY, false);
 	}
+
+	/**
+	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
+	 * If the request is in the database, delete it.
+	 */
+	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
+		if(persistenceType != PERSIST_FOREVER) return;
+		if(uri != null) uri.removeFrom(container);
+		container.delete(this);
+	}
+
+	protected boolean isGlobalQueue() {
+		if(client == null) return false;
+		return client.isGlobalQueue;
+	}
+
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(hashCode == 0) {
+			Logger.error(this, "Trying to update with hash 0 => already deleted!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(persistenceType != PERSIST_FOREVER) {
+			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
+			return false;
+		}
+		if(hashCode == 0) {
+			Logger.error(this, "Trying to write with hash 0 => already deleted!", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(this);
+	}
+	
+	
 }

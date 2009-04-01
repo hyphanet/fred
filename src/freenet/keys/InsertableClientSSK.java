@@ -11,6 +11,8 @@ import net.i2p.util.NativeBigInteger;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
@@ -236,6 +238,12 @@ public class InsertableClientSSK extends ClientSSK {
 
 	public DSAGroup getCryptoGroup() {
 		return Global.DSAgroupBigA;
+	}
+	
+	@Override
+	public void removeFrom(ObjectContainer container) {
+		privKey.removeFrom(container);
+		super.removeFrom(container);
 	}
 	
 }

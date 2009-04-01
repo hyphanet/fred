@@ -2,6 +2,8 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -34,5 +36,10 @@ public class RedirectDirPutFile extends DirPutFile {
 	@Override
 	public ManifestElement getElement() {
 		return new ManifestElement(name, targetURI, getMIMEType());
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		targetURI.removeFrom(container);
+		container.delete(this);
 	}
 }

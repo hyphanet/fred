@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
@@ -29,7 +32,7 @@ import freenet.support.io.BucketTools;
  * 
  * Base class for node keys.
  */
-public abstract class Key implements WritableToDataOutputStream {
+public abstract class Key implements WritableToDataOutputStream, Comparable {
 
     final int hash;
     double cachedNormalizedDouble;
@@ -44,6 +47,15 @@ public abstract class Key implements WritableToDataOutputStream {
     	hash = Fields.hashCode(routingKey);
         cachedNormalizedDouble = -1;
     }
+    
+    protected Key(Key key) {
+    	this.hash = key.hash;
+    	this.cachedNormalizedDouble = key.cachedNormalizedDouble;
+    	this.routingKey = new byte[key.routingKey.length];
+    	System.arraycopy(key.routingKey, 0, routingKey, 0, routingKey.length);
+    }
+    
+    public abstract Key cloneKey();
     
     /**
      * Write to disk.
@@ -97,6 +109,7 @@ public abstract class Key implements WritableToDataOutputStream {
     public synchronized double toNormalizedDouble() {
         if(cachedNormalizedDouble > 0) return cachedNormalizedDouble;
         MessageDigest md = SHA256.getMessageDigest();
+        if(routingKey == null) throw new NullPointerException();
         md.update(routingKey);
         int TYPE = getType();
         md.update((byte)(TYPE >> 8));
@@ -254,4 +267,8 @@ public abstract class Key implements WritableToDataOutputStream {
 
 	/** Get the full key, including any crypto type bytes, everything needed to construct a Key object */
 	public abstract byte[] getFullKey();
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
 }

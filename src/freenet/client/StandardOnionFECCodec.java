@@ -47,14 +47,14 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks, Executor executor) {
+	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
 		StandardOnionFECCodec codec = (StandardOnionFECCodec) recentlyUsedCodecs.get(key);
 		if(codec != null) {
 			recentlyUsedCodecs.push(key, codec);
 			return codec;
 		}
-		codec = new StandardOnionFECCodec(executor, dataBlocks, checkBlocks + dataBlocks);
+		codec = new StandardOnionFECCodec(dataBlocks, checkBlocks + dataBlocks);
 		recentlyUsedCodecs.push(key, codec);
 		while(recentlyUsedCodecs.size() > MAX_CACHED_CODECS) {
 			recentlyUsedCodecs.popKey();
@@ -62,9 +62,18 @@ public class StandardOnionFECCodec extends FECCodec {
 		return codec;
 	}
 
-	public StandardOnionFECCodec(Executor executor, int k, int n) {
-		super(executor, k, n);
+	public StandardOnionFECCodec(int k, int n) {
+		super(k, n);
 		
+		loadFEC();
+		
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+	}
+	
+	protected void loadFEC() {
+		synchronized(this) {
+			if(fec != null) return;
+		}
 		FECCode fec2 = null;
 		if(!noNative) {
 			try {
@@ -82,19 +91,22 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 		
 		if (fec2 != null){
+			synchronized(this) {
 			fec = fec2;
+			}
 		} else 	{
-			fec = new PureCode(k,n);
+			fec2 = new PureCode(k,n);
+			synchronized(this) {
+				fec = fec2;
+			}
 		}
 
 		// revert to below if above causes JVM crashes
 		// Worst performance, but decode crashes
 		// fec = new PureCode(k,n);
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
-
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
-	
+
 	@Override
 	public int countCheckBlocks() {
 		return n-k;
@@ -103,5 +115,10 @@ public class StandardOnionFECCodec extends FECCodec {
 	@Override
 	public String toString() {
 		return super.toString()+":n="+n+",k="+k;
+	}
+
+	@Override
+	public short getAlgorithm() {
+		return Metadata.SPLITFILE_ONION_STANDARD;
 	}
 }

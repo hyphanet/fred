@@ -6,6 +6,9 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
 /**
@@ -16,14 +19,14 @@ import freenet.support.Logger;
  **/
 public class SimpleEventProducer implements ClientEventProducer {
 
-    private Vector listeners;
+    private Vector<ClientEventListener> listeners;
 
     /**
      * Create a new SimpleEventProducer
      *
      **/
     public SimpleEventProducer() {
-	listeners = new Vector();
+	listeners = new Vector<ClientEventListener>();
     }
     
     /** Create a new SimpleEventProducer with the given listeners. */
@@ -49,11 +52,16 @@ public class SimpleEventProducer implements ClientEventProducer {
     /**
      * Sends the ClientEvent to all registered listeners of this object.
      **/
-    public void produceEvent(ClientEvent ce) {
-	for (Enumeration e = listeners.elements() ; 
+    public void produceEvent(ClientEvent ce, ObjectContainer container, ClientContext context) {
+    	if(container != null)
+    		container.activate(listeners, 1);
+	for (Enumeration<ClientEventListener> e = listeners.elements() ; 
 	     e.hasMoreElements();) {
             try {
-                ((ClientEventListener) e.nextElement()).receive(ce);
+            	ClientEventListener cel = e.nextElement();
+            	if(container != null)
+            		container.activate(cel, 1);
+                cel.receive(ce, container, context);
             } catch (NoSuchElementException ne) {
 		Logger.normal(this, "Concurrent modification in "+
 				"produceEvent!: "+this);
@@ -78,4 +86,15 @@ public class SimpleEventProducer implements ClientEventProducer {
 	for (int i = 0 ; i < cela.length ; i++)
 	    addEventListener(cela[i]);
     }
+
+	public void removeFrom(ObjectContainer container) {
+    	if(container != null)
+    		container.activate(listeners, 1);
+		ClientEventListener[] list = listeners.toArray(new ClientEventListener[listeners.size()]);
+		listeners.clear();
+		container.delete(listeners);
+		for(int i=0;i<list.length;i++)
+			list[i].onRemoveEventProducer(container);
+		container.delete(this);
+	}
 }

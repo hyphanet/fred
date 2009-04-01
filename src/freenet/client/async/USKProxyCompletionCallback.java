@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
@@ -11,47 +13,71 @@ import freenet.keys.USK;
 public class USKProxyCompletionCallback implements GetCompletionCallback {
 
 	final USK usk;
-	final USKManager uskManager;
 	final GetCompletionCallback cb;
+	final boolean persistent;
 	
-	public USKProxyCompletionCallback(USK usk, USKManager um, GetCompletionCallback cb) {
+	public USKProxyCompletionCallback(USK usk, GetCompletionCallback cb, boolean persistent) {
 		this.usk = usk;
-		this.uskManager = um;
 		this.cb = cb;
+		this.persistent = persistent;
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
-		uskManager.update(usk, usk.suggestedEdition);
-		cb.onSuccess(result, state);
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(container != null && persistent) {
+			container.activate(cb, 1);
+			container.activate(usk, 5);
+		}
+		context.uskManager.update(usk, usk.suggestedEdition, context);
+		cb.onSuccess(result, state, container, context);
+		if(persistent) removeFrom(container);
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
+	private void removeFrom(ObjectContainer container) {
+		container.activate(usk, 5);
+		usk.removeFrom(container);
+		container.delete(this);
+	}
+
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(cb, 1);
+			container.activate(usk, 5);
+		}
 		FreenetURI uri = e.newURI;
 		if(uri != null) {
 			uri = usk.turnMySSKIntoUSK(uri);
 			e = new FetchException(e, uri);
 		}
-		cb.onFailure(e, state);
+		cb.onFailure(e, state, container, context);
+		if(persistent) removeFrom(container);
 	}
 
-	public void onBlockSetFinished(ClientGetState state) {
-		cb.onBlockSetFinished(state);
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
+		cb.onBlockSetFinished(state, container, context);
 	}
 
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onExpectedMIME(String mime) {
-		cb.onExpectedMIME(mime);
+	public void onExpectedMIME(String mime, ObjectContainer container) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
+		cb.onExpectedMIME(mime, container);
 	}
 
-	public void onExpectedSize(long size) {
-		cb.onExpectedSize(size);
+	public void onExpectedSize(long size, ObjectContainer container) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
+		cb.onExpectedSize(size, container);
 	}
 
-	public void onFinalizedMetadata() {
-		cb.onFinalizedMetadata();
+	public void onFinalizedMetadata(ObjectContainer container) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
+		cb.onFinalizedMetadata(container);
 	}
 
 }

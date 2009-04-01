@@ -62,36 +62,43 @@ public class SubConfig implements Comparable<SubConfig> {
 	
 	public void register(String optionName, int defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		if(cb == null) cb = new NullIntCallback();
 		register(new IntOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, long defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+		if(cb == null) cb = new NullLongCallback();
 		register(new LongOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValueString, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		if(cb == null) cb = new NullIntCallback();
 		register(new IntOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValueString, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+		if(cb == null) cb = new NullLongCallback();
 		register(new LongOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, boolean defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
+		if(cb == null) cb = new NullBooleanCallback();
 		register(new BooleanOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringCallback cb) {
+		if(cb == null) cb = new NullStringCallback();
 		register(new StringOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, short defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb) {
+		if(cb == null) cb = new NullShortCallback();
 		register(new ShortOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	

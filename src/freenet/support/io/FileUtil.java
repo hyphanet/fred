@@ -71,9 +71,16 @@ final public class FileUtil {
 	}
 	
 	public static File getCanonicalFile(File file) {
+		// Having some problems storing File's in db4o ...
+		// It would start up, and canonicalise a file with path "/var/lib/freenet-experimental/persistent-temp-24374"
+		// to /var/lib/freenet-experimental/var/lib/freenet-experimental/persistent-temp-24374 
+		// (where /var/lib/freenet-experimental is the current working dir)
+		// Regenerating from path worked. So do that here.
+		// And yes, it's voodoo.
+		file = new File(file.getPath());
 		File result;
 		try {
-			result = file.getCanonicalFile();
+			result = file.getAbsoluteFile().getCanonicalFile();
 		} catch (IOException e) {
 			result = file.getAbsoluteFile();
 		}
@@ -180,6 +187,52 @@ final public class FileUtil {
             return true;
         }
 
+        /**
+         * Like renameTo(), but can move across filesystems, by copying the data.
+         * @param f
+         * @param file
+         */
+    	public static boolean moveTo(File orig, File dest, boolean overwrite) {
+            if(orig.equals(dest))
+                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
+            if(!orig.exists()) {
+            	throw new IllegalArgumentException("Original doesn't exist!");
+            }
+    		if(dest.exists() && overwrite)
+    			dest.delete();
+    		else {
+    			System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
+    			return false;
+    		}
+    		if(!orig.renameTo(dest)) {
+    			// Copy the data
+    			InputStream is = null;
+    			OutputStream os = null;
+    			try {
+    				is = new FileInputStream(orig);
+    				os = new FileOutputStream(dest);
+    				copy(is, os, orig.length());
+    				is.close();
+    				is = null;
+    				os.close();
+    				os = null;
+    				orig.delete();
+    				return true;
+    			} catch (IOException e) {
+    				dest.delete();
+    				Logger.error(FileUtil.class, "Move failed from "+orig+" to "+dest+" : "+e, e);
+    				System.err.println("Move failed from "+orig+" to "+dest+" : "+e);
+    				e.printStackTrace();
+    				return false;
+    			} finally {
+    				Closer.close(is);
+    				Closer.close(os);
+    			}
+    		} else return true;
+    	}
+
+
+        
 	public static String sanitize(String s) {
 		StringBuilder sb = new StringBuilder(s.length());
 		for(int i=0;i<s.length();i++) {

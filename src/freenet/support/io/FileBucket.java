@@ -4,7 +4,11 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.IOException;
 
+import com.db4o.ObjectContainer;
+
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /**
@@ -39,9 +43,13 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
 	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
-		super(file);
+		super(file, deleteOnExit);
 		if(file == null) throw new NullPointerException();
+		File origFile = file;
 		file = file.getAbsoluteFile();
+		// Copy it so we can safely delete it.
+		if(origFile == file)
+			file = new File(file.getPath());
 		this.readOnly = readOnly;
 		this.createFileOnly = createFileOnly;
 		this.file = file;
@@ -98,5 +106,38 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	@Override
 	protected boolean deleteOnFree() {
 		return deleteOnFree;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.store(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		Logger.minor(this, "Removing "+this);
+		container.activate(file, 5);
+		container.delete(file);
+		container.delete(this);
+	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		container.activate(file, 5);
+	}
+	
+	public void objectOnNew(ObjectContainer container) {
+		Logger.minor(this, "Storing "+this, new Exception("debug"));
+	}
+	
+	public void objectOnUpdate(ObjectContainer container) {
+		Logger.minor(this, "Updating "+this, new Exception("debug"));
+	}
+	
+	public void objectOnDelete(ObjectContainer container) {
+		Logger.minor(this, "Deleting "+this, new Exception("debug"));
+	}
+	
+	public Bucket createShadow() throws IOException {
+		String fnam = new String(file.getPath());
+		File newFile = new File(fnam);
+		return new FileBucket(newFile, true, false, false, false, false);
 	}
 }

@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import java.io.IOException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
@@ -13,6 +15,8 @@ import freenet.client.Metadata;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
+import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -53,9 +57,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
-			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
-			boolean isMetadata, Object clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
-		super(priorityClass, chkScheduler, sskScheduler, clientContext);
+			short priorityClass, boolean getCHKOnly, 
+			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
+		super(priorityClass, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;
@@ -70,11 +74,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.binaryBlob = binaryBlob;
 	}
 
-	public void start(boolean earlyEncode) throws InsertException {
-		start(earlyEncode, false);
+	public void start(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
+		start(earlyEncode, false, container, context);
 	}
 	
-	public boolean start(boolean earlyEncode, boolean restart) throws InsertException {
+	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
+		if(persistent())
+			container.activate(client, 1);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
@@ -94,17 +100,19 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				if(currentState != null) return false;
 				cancel = this.cancelled;
 				if(!cancel) {
-					if(!binaryBlob)
+					if(!binaryBlob) {
+						ClientMetadata meta = cm;
+						if(meta != null) meta = persistent() ? meta.clone() : meta; 
 						currentState =
-							new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, 
+							new SingleFileInserter(this, this, new InsertBlock(data, meta, persistent() ? targetURI.clone() : targetURI), isMetadata, ctx, 
 									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode);
-					else
+					} else
 						currentState =
-							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx);
+							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
 				}
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null);
+				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				oldProgress = null;
 				return false;
 			}
@@ -112,22 +120,29 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null);
+				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				oldProgress = null;
+				if(persistent())
+					container.store(this);
 				return false;
 			}
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Starting insert: "+currentState);
 			if(currentState instanceof SingleFileInserter)
-				((SingleFileInserter)currentState).start(oldProgress);
+				((SingleFileInserter)currentState).start(oldProgress, container, context);
 			else
-				currentState.schedule();
+				currentState.schedule(container, context);
 			synchronized(this) {
 				oldProgress = null;
 				cancel = cancelled;
 			}
+			if(persistent()) {
+				container.store(this);
+				// It has scheduled, we can safely deactivate it now, so it won't hang around in memory.
+				container.deactivate(currentState, 1);
+			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null);
+				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				return false;
 			}
 		} catch (InsertException e) {
@@ -137,9 +152,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				oldProgress = null;
 				currentState = null;
 			}
+			if(persistent())
+				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(e, this);
+				this.client.onFailure(e, this, container);
 			}
 		} catch (IOException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -148,9 +165,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				oldProgress = null;
 				currentState = null;
 			}
+			if(persistent())
+				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this);
+				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this, container);
 			}
 		} catch (BinaryBlobFormatException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -159,9 +178,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				oldProgress = null;
 				currentState = null;
 			}
+			if(persistent())
+				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this);
+				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this, container);
 			}
 		} 
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -169,55 +190,97 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
-	public void onSuccess(ClientPutState state) {
+	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(client, 1);
+		ClientPutState oldState;
 		synchronized(this) {
 			finished = true;
+			oldState = currentState;
 			currentState = null;
 			oldProgress = null;
 		}
+		if(oldState != null && persistent()) {
+			container.activate(oldState, 1);
+			oldState.removeFrom(container, context);
+		}
+		if(state != null && state != oldState && persistent())
+			state.removeFrom(container, context);
 		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
 			Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
 					", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
 					new Exception("debug"));
 		}
-		client.onSuccess(this);
+		if(persistent())
+			container.store(this);
+		client.onSuccess(this, container);
 	}
 
-	public void onFailure(InsertException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
+		if(persistent())
+			container.activate(client, 1);
+		ClientPutState oldState;
 		synchronized(this) {
 			finished = true;
+			oldState = currentState;
 			currentState = null;
 			oldProgress = null;
 		}
-		client.onFailure(e, this);
+		if(oldState != null && persistent()) {
+			container.activate(oldState, 1);
+			oldState.removeFrom(container, context);
+		}
+		if(state != null && state != oldState && persistent())
+			state.removeFrom(container, context);
+		if(persistent())
+			container.store(this);
+		client.onFailure(e, this, container);
 	}
 
 	@Override
-	public void onMajorProgress() {
-		client.onMajorProgress();
+	public void onMajorProgress(ObjectContainer container) {
+		if(persistent())
+			container.activate(client, 1);
+		client.onMajorProgress(container);
 	}
 	
-	public void onEncode(BaseClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(client, 1);
 		synchronized(this) {
+			if(this.uri != null) {
+				Logger.error(this, "onEncode() called twice? Already have a uri: "+uri+" for "+this);
+				if(persistent())
+					this.uri.removeFrom(container);
+			}
 			this.uri = key.getURI();
 			if(targetFilename != null)
 				uri = uri.pushMetaString(targetFilename);
 		}
-		client.onGeneratedURI(uri, this);
+		if(persistent())
+			container.store(this);
+		client.onGeneratedURI(uri, this, container);
 	}
-	
+
 	@Override
-	public void cancel() {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientPutState oldState = null;
 		synchronized(this) {
 			if(cancelled) return;
+			if(finished) return;
 			super.cancel();
 			oldState = currentState;
 		}
-		if(oldState != null) oldState.cancel();
-		onFailure(new InsertException(InsertException.CANCELLED), null);
+		if(persistent()) {
+			container.store(this);
+			if(oldState != null)
+				container.activate(oldState, 1);
+		}
+		if(oldState != null) oldState.cancel(container, context);
+		onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 	}
 	
 	@Override
@@ -230,31 +293,36 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return uri;
 	}
 
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {		
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(newState == null) throw new NullPointerException();
 		
+		// onTransition is *not* responsible for removing the old state, the caller is.
 		synchronized (this) {
 			if (currentState == oldState) {
 				currentState = newState;
+				if(persistent())
+					container.store(this);
 				return;
 			}
 		}
 		Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 	
 	@Override
-	public void notifyClients() {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
+	public void notifyClients(ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(ctx, 2);
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 	
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set finished", new Exception("debug"));
-		blockSetFinalized();
+		blockSetFinalized(container, context);
 	}
 
 	public SimpleFieldSet getProgressFieldset() {
@@ -262,8 +330,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return currentState.getProgressFieldset();
 	}
 
-	public void onFetchable(ClientPutState state) {
-		client.onFetchable(this);
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
+		if(persistent())
+			container.activate(client, 1);
+		client.onFetchable(this, container);
 	}
 
 	public boolean canRestart() {
@@ -275,13 +345,27 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
-	public boolean restart(boolean earlyEncode) throws InsertException {
-		return start(earlyEncode, true);
+	public boolean restart(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
+		return start(earlyEncode, true, container, context);
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore, at the moment
 	}
 
+	@Override
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.activate(cm, 2);
+		cm.removeFrom(container);
+		container.activate(ctx, 1);
+		ctx.removeFrom(container);
+		container.activate(targetURI, 5);
+		targetURI.removeFrom(container);
+		if(uri != null) {
+			container.activate(uri, 5);
+			uri.removeFrom(container);
+		}
+		super.removeFrom(container, context);
+	}
 }

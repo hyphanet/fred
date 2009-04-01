@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
 /**
@@ -13,9 +16,11 @@ import freenet.support.Logger;
 public class EventLogger implements ClientEventListener {
 
 	final int logPrio;
+	final boolean removeWithProducer;
 	
-	public EventLogger(int prio) {
+	public EventLogger(int prio, boolean removeWithProducer) {
 		logPrio = prio;
+		this.removeWithProducer = removeWithProducer;
 	}
 	
     /**
@@ -24,7 +29,12 @@ public class EventLogger implements ClientEventListener {
      * @param ce
      *            The event that occured
      */
-    public void receive(ClientEvent ce) {
+    public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
     	Logger.logStatic(ce, ce.getDescription(), logPrio);
     }
+
+	public void onRemoveEventProducer(ObjectContainer container) {
+		if(removeWithProducer)
+			container.delete(this);
+	}
 }

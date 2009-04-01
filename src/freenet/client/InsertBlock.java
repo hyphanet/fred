@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
@@ -11,10 +13,10 @@ import freenet.support.api.Bucket;
  */
 public class InsertBlock {
 
-	private final Bucket data;
+	private Bucket data;
 	private boolean isFreed;
-	public final FreenetURI desiredURI;
-	public final ClientMetadata clientMetadata;
+	public FreenetURI desiredURI;
+	public ClientMetadata clientMetadata;
 	
 	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
 		if(data == null) throw new NullPointerException();
@@ -31,11 +33,54 @@ public class InsertBlock {
 		return (isFreed ? null : data);
 	}
 	
-	public void free(){
+	public void free(ObjectContainer container){
 		synchronized (this) {
 			if(isFreed) return;
 			isFreed = true;
+			if(data == null) return;
 		}
 		data.free();
+		if(container != null) {
+			data.removeFrom(container);
+		}
 	}
+	
+	public void removeFrom(ObjectContainer container) {
+		if(data != null) {
+			container.activate(data, 1);
+			data.removeFrom(container);
+		}
+		if(desiredURI != null) {
+			container.activate(desiredURI, 5);
+			desiredURI.removeFrom(container);
+		}
+		if(clientMetadata != null) {
+			container.activate(clientMetadata, 5);
+			clientMetadata.removeFrom(container);
+		}
+		container.delete(this);
+	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		// Cascading activation of dependancies
+		container.activate(data, 1); // will cascade
+		container.activate(desiredURI, 5);
+	}
+
+	/** Null out the data so it doesn't get removed in removeFrom().
+	 * Call this when the data becomes somebody else's problem. */
+	public void nullData() {
+		data = null;
+	}
+
+	/** Null out the URI so it doesn't get removed in removeFrom().
+	 * Call this when the URI becomes somebody else's problem. */
+	public void nullURI() {
+		this.desiredURI = null;
+	}
+
+	public void nullMetadata() {
+		this.clientMetadata = null;
+	}
+	
 }

@@ -3,10 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.node.RequestClient;
 
 /**
  * Wrapper for a backgrounded USKFetcher.
@@ -15,8 +18,8 @@ public class USKFetcherWrapper extends BaseClientGetter {
 
 	final USK usk;
 	
-	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object client) {
-		super(prio, chkScheduler, sskScheduler, client);
+	public USKFetcherWrapper(USK usk, short prio, RequestClient client) {
+		super(prio, client);
 		this.usk = usk;
 	}
 
@@ -31,24 +34,24 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	}
 
 	@Override
-	public void notifyClients() {
+	public void notifyClients(ObjectContainer container, ClientContext context) {
 		// Do nothing
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
-	public void onBlockSetFinished(ClientGetState state) {
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 
@@ -57,15 +60,19 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		return super.toString()+ ':' +usk;
 	}
 
-	public void onExpectedMIME(String mime) {
+	public void onExpectedMIME(String mime, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onExpectedSize(long size) {
+	public void onExpectedSize(long size, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onFinalizedMetadata() {
+	public void onFinalizedMetadata(ObjectContainer container) {
 		// Ignore
+	}
+
+	public void cancel(ObjectContainer container, ClientContext context) {
+		super.cancel();
 	}
 }

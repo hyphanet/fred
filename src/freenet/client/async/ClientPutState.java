@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertException;
 import freenet.support.SimpleFieldSet;
 
@@ -17,10 +19,10 @@ public interface ClientPutState {
 	public abstract BaseClientPutter getParent();
 
 	/** Cancel the request. */
-	public abstract void cancel();
+	public abstract void cancel(ObjectContainer container, ClientContext context);
 
 	/** Schedule the request. */
-	public abstract void schedule() throws InsertException;
+	public abstract void schedule(ObjectContainer container, ClientContext context) throws InsertException;
 	
 	/**
 	 * Get the token, an object which is passed around with the insert and may be
@@ -31,4 +33,11 @@ public interface ClientPutState {
 	/** Serialize current progress to a SimpleFieldSet.
 	 * Does not have to be complete! */
 	public abstract SimpleFieldSet getProgressFieldset();
+
+	/**
+	 * Once the callback has finished with this fetch, it will call removeFrom() to instruct the fetch
+	 * to remove itself and all its subsidiary objects from the database.
+	 * @param container
+	 */
+	public void removeFrom(ObjectContainer container, ClientContext context);
 }

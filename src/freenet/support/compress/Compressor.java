@@ -53,32 +53,6 @@ public interface Compressor {
 			return compressor.decompress(dbuf, i, j, output);
 		}
 		
-		
-		public static final Semaphore compressorSemaphore = new Semaphore(getMaxRunningCompressionThreads());
-		
-		private static int getMaxRunningCompressionThreads() {
-			int maxRunningThreads = 1;
-			
-			String osName = System.getProperty("os.name");
-			if(osName.indexOf("Windows") == -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode()))
-				// OS/X niceness is really weak, so we don't want any more background CPU load than necessary
-				// Also, on non-Windows, we need the native threads library to be working.
-				maxRunningThreads = 1;
-			else {
-				// Most other OSs will have reasonable niceness, so go by RAM.
-				Runtime r = Runtime.getRuntime();
-				int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
-				long maxMemory = r.maxMemory();
-				if(maxMemory < 128 * 1024 * 1024)
-					max = 1;
-				else
-					// one compressor thread per (128MB of ram + available core)
-					max = Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128 * 1024 * 1024))));
-				maxRunningThreads = max;
-			}
-			Logger.minor(COMPRESSOR_TYPE.class, "Maximum Compressor threads: " + maxRunningThreads);
-			return maxRunningThreads;
-		}
 	}
 
 	/**

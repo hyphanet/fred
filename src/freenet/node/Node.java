@@ -22,11 +22,22 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import com.db4o.Db4o;
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectServer;
+import com.db4o.ObjectSet;
+import com.db4o.config.Configuration;
+import com.db4o.config.QueryEvaluationMode;
+import com.db4o.diagnostic.ClassHasNoFields;
+import com.db4o.diagnostic.Diagnostic;
+import com.db4o.diagnostic.DiagnosticBase;
+import com.db4o.diagnostic.DiagnosticListener;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -110,6 +121,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.NullObject;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
@@ -234,6 +246,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			return L10n.LANGUAGE.valuesWithFullNames();
 		}
 	}
+	
+	/** db4o database for node and client layer.
+	 * Other databases can be created for the datastore (since its usage
+	 * patterns and content are completely different), or for plugins (for
+	 * security reasons). */
+	public final ObjectContainer db;
+	/** A fixed random number which identifies the top-level objects belonging to
+	 * this node, as opposed to any others that might be stored in the same database
+	 * (e.g. because of many-nodes-in-one-VM). */
+	public final long nodeDBHandle;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -795,6 +817,140 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
 		}
 		
+		// init shutdown hook
+		shutdownHook = new SemiOrderedShutdownHook();
+		Runtime.getRuntime().addShutdownHook(shutdownHook);
+		
+		/* FIXME: Backup the database! */
+		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
+		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
+		 * This is unacceptable! */
+		Configuration dbConfig = Db4o.newConfiguration();
+		dbConfig.freespace().useBTreeSystem();
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
+		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
+		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("priority").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
+		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
+		dbConfig.objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
+		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("index").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("bucket").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("factory").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("isFree").indexed(true);
+		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
+		/*
+		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
+		 * internally through the TMap translator.
+		 */
+		/** Maybe we want a different query evaluation mode?
+		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
+		 * for every key, which means one RegisterMe for each ... this results in a long pause
+		 * when we run the RegisterMe query, plus a lot of RAM usage for all the UIDs.
+		 * 
+		 * Having said that, if we only run it once, and especially if we make splitfile
+		 * inserts work like splitfile requests, it may not be a big problem.
+		 */
+		// LAZY appears to cause ClassCastException's relating to db4o objects inside db4o code. :(
+		// Also it causes duplicates if we activate immediately.
+		// And the performance gain for e.g. RegisterMeRunner isn't that great.
+//		dbConfig.queries().evaluationMode(QueryEvaluationMode.LAZY);
+		dbConfig.messageLevel(1);
+		dbConfig.activationDepth(1);
+		/* TURN OFF SHUTDOWN HOOK.
+		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a
+		 * transaction hasn't commit()ed, it's not safe to commit it. For example,
+		 * a splitfile is started, gets half way through, then we shut down.
+		 * The shutdown hook commits the half-finished transaction. When we start
+		 * back up, we assume the whole transaction has been committed, and end
+		 * up only registering the proportion of segments for which a RegisterMe
+		 * has already been created. Yes, this has happened, yes, it sucks.
+		 * Add our own hook to rollback and close... */
+		dbConfig.automaticShutDown(false);
+		/* Block size 8 should have minimal impact since pointers are this
+		 * long, and allows databases of up to 16GB. 
+		 * FIXME make configurable by user. */
+		dbConfig.blockSize(8);
+		dbConfig.diagnostic().addListener(new DiagnosticListener() {
+			
+			public void onDiagnostic(Diagnostic arg0) {
+				if(arg0 instanceof ClassHasNoFields)
+					return; // Ignore
+				if(arg0 instanceof DiagnosticBase) {
+					DiagnosticBase d = (DiagnosticBase) arg0;
+					Logger.error(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
+				} else
+					Logger.error(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
+			}
+		});
+		
+		shutdownHook.addEarlyJob(new Thread() {
+			
+			public void run() {
+				System.err.println("Stopping database jobs...");
+				clientCore.killDatabase();
+			}
+			
+		});
+		
+		shutdownHook.addLateJob(new Thread() {
+
+			public void run() {
+				System.err.println("Rolling back unfinished transactions...");
+				db.rollback();
+				System.err.println("Closing database...");
+				db.close();
+			}
+			
+		});
+		
+		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
+		System.err.println("Query activation depth: "+dbConfig.activationDepth());
+		db = Db4o.openFile(dbConfig, new File(nodeDir, "node.db4o").toString());
+		
+		System.err.println("Opened database");
+		
+		// DUMP DATABASE CONTENTS
+		System.err.println("DUMPING DATABASE CONTENTS:");
+		ObjectSet<Object> contents = db.queryByExample(new Object());
+		Map<String,Integer> map = new HashMap<String, Integer>();
+		Iterator i = contents.iterator();
+		while(i.hasNext()) {
+			Object o = i.next();
+			String name = o.getClass().getName();
+			if((map.get(name)) != null) {
+				map.put(name, map.get(name)+1);
+			} else {
+				map.put(name, 1);
+			}
+			// Activated to depth 1
+			try {
+				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+db.ext().getID(o));
+			} catch (Throwable t) {
+				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
+			}
+			db.deactivate(o, 1);
+		}
+		int total = 0;
+		for(Map.Entry<String,Integer> entry : map.entrySet()) {
+			System.err.println(entry.getKey()+" : "+entry.getValue());
+			total += entry.getValue();
+		}
+		// Some structures e.g. collections are sensitive to the activation depth.
+		// If they are activated to depth 1, they are broken, and activating them to
+		// depth 2 does NOT un-break them! Hence we need to deactivate (above) and
+		// GC here...
+		System.gc();
+		System.runFinalization();
+		System.gc();
+		System.runFinalization();
+		System.err.println("END DATABASE DUMP: "+total+" objects");
+
 		// Boot ID
 		bootID = random.nextLong();
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
@@ -1064,6 +1220,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
 		
 		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
+		
+		nodeDBHandle = darknetCrypto.getNodeHandle(db);
+		
+		db.commit();
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
@@ -1072,10 +1233,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			((PooledExecutor)executor).setTicker(ps);
 		
 		Logger.normal(Node.class, "Creating node...");
-
-		// init shutdown hook
-		shutdownHook = new SemiOrderedShutdownHook();
-		Runtime.getRuntime().addShutdownHook(shutdownHook);
 
 		shutdownHook.addEarlyJob(new Thread() {
 			@Override
@@ -1733,7 +1890,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets);
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, db);
 
 		netid = new NetworkIDManager(this);
 		
@@ -2413,7 +2570,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				}
 			} else
 				throw new IllegalStateException("Unknown key type: "+key.getClass());
-			if(chk != null) return chk;
+			if(chk != null) {
+				// Probably somebody waiting for it. Trip it.
+				if(clientCore != null && clientCore.requestStarters != null) {
+					if(chk instanceof CHKBlock)
+						clientCore.requestStarters.chkFetchScheduler.tripPendingKey(chk);
+					else
+						clientCore.requestStarters.sskFetchScheduler.tripPendingKey(chk);
+				}
+				failureTable.onFound(chk);
+				return chk;
+			}
 		}
 		if(localOnly) return null;
 		if(logMINOR) Logger.minor(this, "Not in store locally");
@@ -3948,6 +4115,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	private SimpleUserAlert alertMTUTooSmall;
 	
+	public final RequestClient nonPersistentClient = new RequestClient() {
+		public boolean persistent() {
+			return false;
+		}
+		public void removeFrom(ObjectContainer container) {
+			throw new UnsupportedOperationException();
+		}
+	};
+	
 	public void onTooLowMTU(int minAdvertisedMTU, int minAcceptableMTU) {
 		if(alertMTUTooSmall == null) {
 			alertMTUTooSmall = new SimpleUserAlert(false, l10n("tooSmallMTU"), l10n("tooSmallMTULong", new String[] { "mtu", "minMTU" }, new String[] { Integer.toString(minAdvertisedMTU), Integer.toString(minAcceptableMTU) }), l10n("tooSmallMTUShort"), UserAlert.ERROR);
@@ -3966,7 +4142,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
 	}
-
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing Node in database", new Exception("error"));
+		return false;
+	}
+	
 	private volatile long turtleCount;
 	
 	/**

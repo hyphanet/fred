@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
@@ -71,5 +73,13 @@ abstract class DirPutFile {
 			Logger.minor(this, "Element name: "+name+" -> "+n);
 		return new ManifestElement(n, getData(), getMIMEType(), getData().size());
 	}
+
+	/**
+	 * Remove the DirPutFile from the database. This would only be called if we had stored a ClientPut*DirMessage
+	 * into the database without executing it, which never happens. 
+	 * Maybe we should get rid and throw UnsupportedOperationException?
+	 * @param container
+	 */
+	public abstract void removeFrom(ObjectContainer container);
 
 }

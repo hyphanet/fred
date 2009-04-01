@@ -5,12 +5,15 @@ package freenet.client.async;
 
 import java.util.HashMap;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -21,14 +24,20 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	InsertContext ctx;
 	final HashMap runningInserters;
 	
-	public SimpleHealingQueue(ClientRequestScheduler scheduler, InsertContext context, short prio, int maxRunning) {
-		super(prio, scheduler, null, context);
+	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
+		super(prio, new RequestClient() {
+			public boolean persistent() {
+				return false;
+			}
+			public void removeFrom(ObjectContainer container) {
+				throw new UnsupportedOperationException();
+			} });
 		this.ctx = context;
 		this.runningInserters = new HashMap();
 		this.maxRunning = maxRunning;
 	}
 
-	public boolean innerQueue(Bucket data) {
+	public boolean innerQueue(Bucket data, ClientContext context) {
 		SingleBlockInserter sbi;
 		int ctr;
 		synchronized(this) {
@@ -37,7 +46,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			try {
 				sbi = new SingleBlockInserter(this, data, (short)-1, 
 							FreenetURI.EMPTY_CHK_URI, ctx, this, false, 
-							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, true);
+							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context, false, true);
 			} catch (Throwable e) {
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
 				return false;
@@ -45,7 +54,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			runningInserters.put(data, sbi);
 		}
 		try {
-			sbi.schedule();
+			sbi.schedule(null, context);
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Started healing insert "+ctr+" for "+data);
 			return true;
@@ -55,13 +64,13 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		}
 	}
 
-	public void queue(Bucket data) {
-		if(!innerQueue(data))
+	public void queue(Bucket data, ClientContext context) {
+		if(!innerQueue(data, context))
 			data.free();
 	}
 	
 	@Override
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
@@ -76,11 +85,11 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	}
 
 	@Override
-	public void notifyClients() {
+	public void notifyClients(ObjectContainer container, ClientContext context) {
 		// Do nothing
 	}
 
-	public void onSuccess(ClientPutState state) {
+	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
 		synchronized(this) {
@@ -91,7 +100,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		data.free();
 	}
 
-	public void onFailure(InsertException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
 		synchronized(this) {
@@ -102,31 +111,35 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		data.free();
 	}
 
-	public void onEncode(BaseClientKey usk, ClientPutState state) {
+	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		// Should never happen
 		Logger.error(this, "impossible: onTransition on SimpleHealingQueue from "+oldState+" to "+newState, new Exception("debug"));
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Should never happen
 		Logger.error(this, "Got metadata on SimpleHealingQueue from "+state+": "+m, new Exception("debug"));
 	}
 
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
-	public void onFetchable(ClientPutState state) {
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
 
 	@Override
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
+	}
+
+	public void cancel(ObjectContainer container, ClientContext context) {
+		super.cancel();
 	}
 
 }

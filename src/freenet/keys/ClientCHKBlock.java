@@ -9,6 +9,8 @@ import java.util.Arrays;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
@@ -232,4 +234,19 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		return key.isMetadata();
 	}
 
+	public boolean objectCanNew(ObjectContainer container) {
+		// Useful to be able to tell whether it's a CHKBlock or a ClientCHKBlock, so override here too.
+		throw new UnsupportedOperationException("ClientCHKBlock storage in database not supported");
+	}
+
+	public int hashCode() {
+		return key.hashCode;
+	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof ClientCHKBlock)) return false;
+		ClientCHKBlock block = (ClientCHKBlock) o;
+		if(!key.equals(block.key)) return false;
+		return super.equals(o);
+	}
 }

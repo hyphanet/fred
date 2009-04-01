@@ -32,6 +32,11 @@ public class BitArray implements WritableToDataOutputStream {
 	private final int _size;
 	private final byte[] _bits;
 
+	public BitArray(byte[] data) {
+		_bits = data;
+		_size = data.length*8;
+	}
+	
 	/**
 	 * This constructor does not check for unacceptable sizes, and should only be used on trusted data.
 	 */

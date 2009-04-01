@@ -12,6 +12,10 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.zip.DeflaterOutputStream;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Predicate;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
@@ -542,4 +546,38 @@ public class NodeCrypto {
 	public FreenetInetAddress getBindTo() {
 		return config.getBindTo();
 	}
+
+	public long getNodeHandle(ObjectContainer setupContainer) {
+		// Ignore warnings, this is db4o magic.
+		ObjectSet<HandlePortTuple> result = setupContainer.query(new Predicate<HandlePortTuple>() {
+			public boolean match(HandlePortTuple tuple) {
+				return tuple.portNumber == portNumber;
+			}
+		});
+		long handle;
+		if(result.hasNext()) {
+			handle = result.next().handle;
+			System.err.println("Retrieved database handle for node on port "+portNumber+": "+handle);
+			return handle;
+		} else {
+			while(true) {
+				handle = random.nextLong();
+				HandlePortTuple tuple = new HandlePortTuple();
+				tuple.handle = handle;
+				// Double-check with QBE, just in case the RNG is broken (similar things have happened before!)
+				ObjectSet os = setupContainer.get(tuple);
+				if(os.hasNext()) {
+					System.err.println("Generating database handle for node: already taken: "+handle);
+					continue;
+				}
+				tuple.portNumber = portNumber;
+				setupContainer.store(tuple);
+				setupContainer.commit();
+				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+				System.err.println("Generated and stored database handle for node on port "+portNumber+": "+handle);
+				return handle;
+			}
+		}
+	}
 }
+

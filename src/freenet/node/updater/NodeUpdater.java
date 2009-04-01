@@ -12,18 +12,22 @@ import java.net.MalformedURLException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.Version;
@@ -33,7 +37,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
-public class NodeUpdater implements ClientCallback, USKCallback {
+public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 
 	static private boolean logMINOR;
 	private FetchContext ctx;
@@ -86,14 +90,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		try {
 			// because of UoM, this version is actually worth having as well
 			USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
-			ctx.uskManager.subscribe(myUsk, this, true, this);
+			core.uskManager.subscribe(myUsk, this, true, this);
 		} catch(MalformedURLException e) {
 			Logger.error(this, "The auto-update URI isn't valid and can't be used");
 			manager.blow("The auto-update URI isn't valid and can't be used");
 		}
 	}
-
-	public void onFoundEdition(long l, USK key) {
+	
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Found edition " + l);
@@ -170,7 +174,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
 					uri = uri.sskForUSK();
-					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler,
+					cg = new ClientGetter(this,  
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
@@ -185,7 +189,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 		if(toStart != null)
 			try {
-				toStart.start();
+				node.clientCore.clientContext.start(toStart);
 			} catch(FetchException e) {
 				Logger.error(this, "Error while starting the fetching: " + e, e);
 				synchronized(this) {
@@ -193,7 +197,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				}
 			}
 		if(cancelled != null)
-			cancelled.cancel();
+			cancelled.cancel(null, core.clientContext);
 	}
 
 	File getBlobFile(int availableVersion) {
@@ -225,7 +229,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		System.err.println("Written " + (extUpdate ? "ext" : "main") + " jar to " + fNew);
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
 	}
 
@@ -339,7 +343,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private static final String RECOMMENDED_EXT_PREFIX = "Recommended-Ext-Version: ";
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(!isRunning)
 			return;
@@ -376,15 +380,15 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 
-	public void onSuccess(BaseClientPutter state) {
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		// Impossible
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		// Impossible
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		// Impossible
 	}
 
@@ -399,11 +403,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			synchronized(this) {
 				isRunning = false;
 				USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
-				ctx.uskManager.unsubscribe(myUsk, this, true);
+				core.uskManager.unsubscribe(myUsk, this, true);
 				c = cg;
 				cg = null;
 			}
-			c.cancel();
+			c.cancel(null, core.clientContext);
 		} catch(Exception e) {
 			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}
@@ -413,7 +417,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		return URI;
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
@@ -421,7 +425,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		return fetchedVersion > currentVersion;
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore, we don't insert
 	}
 
@@ -469,6 +473,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		return RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 	}
 
+	public boolean persistent() {
+		return false;
+	}
+
 	public void setMinMax(int requiredExt, int recommendedExt) {
 		int callFinishedFound = -1;
 		synchronized(this) {
@@ -491,4 +499,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		if(callFinishedFound > -1)
 			finishOnFoundEdition(callFinishedFound);
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing NodeUpdater in database", new Exception("error"));
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
+	}
+	
 }

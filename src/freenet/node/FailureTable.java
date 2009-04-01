@@ -275,6 +275,7 @@ public class FailureTable implements OOMHook {
 	 * serialise it, as high latencies can otherwise result.
 	 */
 	protected void innerOnOffer(Key key, PeerNode peer, byte[] authenticator) {
+		if(key.getRoutingKey() == null) throw new NullPointerException();
 		//NB: node.hasKey() executes a datastore fetch
 		if(node.hasKey(key)) {
 			Logger.minor(this, "Already have key");

@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
+
+import com.db4o.ObjectContainer;
+
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.Fields;
@@ -17,7 +21,7 @@ import freenet.support.LogThresholdCallback;
  * circular buffer, we expand it if necessary.
  * @author toad
  */
-public class RequestCooldownQueue {
+public class RequestCooldownQueue implements CooldownQueue {
 
 	/** keys which have been put onto the cooldown queue */ 
 	private Key[] keys;
@@ -57,10 +61,10 @@ public class RequestCooldownQueue {
 		this.cooldownTime = cooldownTime;
 	}
 	
-	/**
-	 * Add a key to the end of the queue. Returns the time at which it will be valid again.
+	/* (non-Javadoc)
+	 * @see freenet.client.async.CooldownQueue#add(freenet.keys.Key, freenet.node.SendableGet)
 	 */
-	synchronized long add(Key key, SendableGet client) {
+	public synchronized long add(Key key, SendableGet client, ObjectContainer container) {
 		long removeTime = System.currentTimeMillis() + cooldownTime;
 		if(removeTime < getLastTime()) {
 			removeTime = getLastTime();
@@ -88,7 +92,7 @@ public class RequestCooldownQueue {
 				if(startPtr == 0) {
 					// No room
 					expandQueue();
-					add(key, client);
+					add(key, client, null);
 					return;
 				} else {
 					// Wrap around
@@ -101,7 +105,7 @@ public class RequestCooldownQueue {
 			if(logMINOR) Logger.minor(this, "endPtr < startPtr");
 			if(endPtr == startPtr - 1) {
 				expandQueue();
-				add(key, client);
+				add(key, client, null);
 				return;
 			} else {
 				endPtr++;
@@ -119,11 +123,11 @@ public class RequestCooldownQueue {
 		return;
 	}
 
-	/**
-	 * Remove a key whose cooldown time has passed.
-	 * @return Either a Key or null if no keys have passed their cooldown time.
+	/* (non-Javadoc)
+	 * @see freenet.client.async.CooldownQueue#removeKeyBefore(long)
 	 */
-	synchronized Key removeKeyBefore(long now) {
+	public synchronized Object removeKeyBefore(long now, long dontCareAfterMillis, ObjectContainer container, int maxKeys) {
+		ArrayList v = new ArrayList();
 		boolean foundIT = false;
 		if(logDEBUG) {
 			foundIT = bigLog();
@@ -137,7 +141,10 @@ public class RequestCooldownQueue {
 		while(true) {
 			if(startPtr == endPtr) {
 				if(logMINOR) Logger.minor(this, "No keys queued");
-				return null;
+				if(!v.isEmpty())
+					return (Key[]) v.toArray(new Key[v.size()]);
+				else
+					return null;
 			}
 			long time = times[startPtr];
 			Key key = keys[startPtr];
@@ -152,7 +159,12 @@ public class RequestCooldownQueue {
 			} else {
 				if(time > now) {
 					if(logMINOR) Logger.minor(this, "First key is later at time "+time);
-					return null;
+					if(!v.isEmpty())
+						return (Key[]) v.toArray(new Key[v.size()]);
+					else if(time < (now + dontCareAfterMillis)) 
+						return Long.valueOf(time);
+					else
+						return null;
 				}
 				times[startPtr] = 0;
 				keys[startPtr] = null;
@@ -161,7 +173,12 @@ public class RequestCooldownQueue {
 				if(startPtr == times.length) startPtr = 0;
 			}
 			if(logMINOR) Logger.minor(this, "Returning key "+key);
-			return key;
+			v.add(key);
+			if(v.size() == maxKeys) {
+				if(!v.isEmpty())
+					return (Key[]) v.toArray(new Key[v.size()]);
+				else return null;
+			}
 		}
 	}
 	
@@ -227,10 +244,10 @@ public class RequestCooldownQueue {
 		return foundIT;
 	}
 
-	/**
-	 * @return True if the key was found.
+	/* (non-Javadoc)
+	 * @see freenet.client.async.CooldownQueue#removeKey(freenet.keys.Key, freenet.node.SendableGet, long)
 	 */
-	synchronized boolean removeKey(Key key, SendableGet client, long time) {
+	public synchronized boolean removeKey(Key key, SendableGet client, long time, ObjectContainer container) {
 		if(time <= 0) return false; // We won't find it.
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		if(logMINOR) Logger.minor(this, "Remove key "+key+" client "+client+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);

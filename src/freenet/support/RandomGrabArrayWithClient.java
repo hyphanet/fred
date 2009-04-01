@@ -1,13 +1,13 @@
 package freenet.support;
 
-import freenet.crypt.RandomSource;
+import com.db4o.ObjectContainer;
 
 public class RandomGrabArrayWithClient extends RandomGrabArray implements RemoveRandomWithObject {
 
 	final Object client;
 	
-	public RandomGrabArrayWithClient(Object client, RandomSource rand) {
-		super(rand);
+	public RandomGrabArrayWithClient(Object client, boolean persistent, ObjectContainer container, RemoveRandomParent parent) {
+		super(persistent, container, parent);
 		this.client = client;
 	}
 

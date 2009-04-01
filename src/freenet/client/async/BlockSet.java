@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import java.util.Set;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
@@ -38,5 +40,5 @@ public interface BlockSet {
 
 	/** Get a high level block, given a high level key */
 	public ClientKeyBlock get(ClientKey key);
-	
+
 }

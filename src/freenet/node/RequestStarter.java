@@ -3,8 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.HashSet;
+import com.db4o.ObjectContainer;
 
+import freenet.client.async.ChosenBlock;
+import freenet.client.async.ClientContext;
+import freenet.client.async.TransientChosenBlock;
 import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -20,7 +23,7 @@ import freenet.support.LogThresholdCallback;
  * And you have to provide a RequestStarterClient. We do round robin between 
  * clients on the same priority level.
  */
-public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrabArrayItemExclusionList {
+public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionList {
 	private static volatile boolean logMINOR;
 
 	static {
@@ -83,7 +86,6 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
 		this.isSSK = isSSK;
-		if(!isInsert) keysFetching = new HashSet<Key>();
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -91,7 +93,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	}
 	
 	void start() {
+		sched.start(core);
 		core.getExecutor().execute(this, name);
+		sched.queueFillRequestStarterQueue();
 	}
 	
 	final String name;
@@ -102,7 +106,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	}
 	
 	void realRun() {
-		SendableRequest req = null;
+		ChosenBlock req = null;
 		sentRequestTime = System.currentTimeMillis();
 		// The last time at which we sent a request or decided not to
 		long cycleTime = sentRequestTime;
@@ -121,10 +125,11 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 				}
 				continue;
 			}
-			sched.moveKeysFromCooldownQueue();
-			if(req == null) req = sched.removeFirst();
+			if(req == null) {
+				req = sched.grabRequest();
+			}
 			if(req != null) {
-				if(logMINOR) Logger.minor(this, "Running "+req+" prio "+req.getPriorityClass()+" retries "+req.getRetryCount());
+				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
 				// Wait
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
@@ -161,7 +166,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 				// Always take the lock on RequestStarter first. AFAICS we don't synchronize on RequestStarter anywhere else.
 				// Nested locks here prevent extra latency when there is a race, and therefore allow us to sleep indefinitely
 				synchronized(this) {
-					req = sched.removeFirst();
+					req = sched.grabRequest();
 					if(req == null) {
 						try {
 							wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
@@ -173,67 +178,34 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 			}
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
-				if(!req.isCancelled())
+				// Don't log if it's a cancelled transient request.
+				if(!((!req.isPersistent()) && req.isCancelled()))
 					Logger.normal(this, "No requests to start on "+req);
 			}
 			req = null;
 			cycleTime = sentRequestTime = System.currentTimeMillis();
 		}
 	}
-	
-	/**
-	 * All Key's we are currently fetching. 
-	 * Locally originated requests only, avoids some complications with HTL, 
-	 * and also has the benefit that we can see stuff that's been scheduled on a SenderThread
-	 * but that thread hasn't started yet. FIXME: Both issues can be avoided: first we'd get 
-	 * rid of the SenderThread and start the requests directly and asynchronously, secondly
-	 * we'd move this to node but only track keys we are fetching at max HTL.
-	 * LOCKING: Always lock this LAST.
-	 */
-	private HashSet<Key> keysFetching;
-	
-	private boolean startRequest(SendableRequest req, boolean logMINOR) {
-		// Create a thread to handle starting the request, and the resulting feedback
-		Object keyNum = null;
-		Key key = null;
-		while(true) {
-			try {
-				keyNum = req.chooseKey(isInsert ? null : this);
-				if(keyNum == null) return false;
-				if(!isInsert) {
-					key = ((BaseSendableGet)req).getNodeKey(keyNum);
-					if(key == null) return false;
-					synchronized(keysFetching) {
-						keysFetching.add(key);
-					}
-				}
-				core.getExecutor().execute(new SenderThread(req, keyNum, key), "RequestStarter$SenderThread for "+req);
-				if(logMINOR) Logger.minor(this, "Started "+req+" key "+keyNum);
-				return true;
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will retry above failed operation...");
-				// Possibly out of threads
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e1) {
-					// Ignore
-				}
-				synchronized(keysFetching) {
-					if(key != null) keysFetching.remove(key);
-				}
-			} catch (Throwable t) {
-				if(keyNum != null) {
-					// Re-queue
-					Logger.error(this, "Caught "+t+" while trying to start request");
-					req.internalError(keyNum, t, sched);
-					return true; // Sort of ... maybe it will clear
-				}
-				synchronized(keysFetching) {
-					if(key != null) keysFetching.remove(key);
-				}
+
+	private boolean startRequest(ChosenBlock req, boolean logMINOR) {
+		if((!req.isPersistent()) && req.isCancelled()) {
+			req.onDumped();
+			return false;
+		}
+		if(req.key != null) {
+			if(!sched.addToFetching(req.key)) {
+				req.onDumped();
+				return false;
+			}
+		} else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert) {
+			if(!sched.addTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token)) {
+				req.onDumped();
+				return false;
 			}
 		}
+		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.getPriority());
+		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
+		return true;
 	}
 
 	public void run() {
@@ -251,13 +223,11 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	
 	private class SenderThread implements Runnable {
 
-		private final SendableRequest req;
-		private final Object keyNum;
+		private final ChosenBlock req;
 		private final Key key;
 		
-		public SenderThread(SendableRequest req, Object keyNum, Key key) {
+		public SenderThread(ChosenBlock req, Key key) {
 			this.req = req;
-			this.keyNum = keyNum;
 			this.key = key;
 		}
 
@@ -267,8 +237,8 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		    // FIXME ? key is not known for inserts here
 		    if (key != null)
 		    	stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());
-			if(!req.send(core, sched, keyNum)) {
-				if(!req.isCancelled())
+		    if(!req.send(core, sched)) {
+				if(!((!req.isPersistent()) && req.isCancelled()))
 					Logger.error(this, "run() not able to send a request on "+req);
 				else
 					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");
@@ -276,11 +246,10 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 			if(logMINOR) 
 				Logger.minor(this, "Finished "+req);
 			} finally {
-				if(!isInsert) {
-					synchronized(keysFetching) {
-						keysFetching.remove(key);
-					}
-				}
+				if(key != null) sched.removeFetchingKey(key);
+				else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
+					sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
+
 			}
 		}
 		
@@ -292,16 +261,18 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		}
 	}
 
-	public boolean hasKey(Key key) {
-		synchronized(keysFetching) {
-			return keysFetching.contains(key);
+	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
+		if(sched.isRunningOrQueuedPersistentRequest((SendableRequest)item)) {
+			Logger.normal(this, "Excluding already-running request: "+item, new Exception("debug"));
+			return true;
 		}
-	}
-
-	public boolean exclude(RandomGrabArrayItem item) {
 		if(isInsert) return false;
+		if(!(item instanceof BaseSendableGet)) {
+			Logger.error(this, "On a request scheduler, exclude() called with "+item, new Exception("error"));
+			return false;
+		}
 		BaseSendableGet get = (BaseSendableGet) item;
-		if(get.hasValidKeys(this))
+		if(get.hasValidKeys(sched.fetchingKeys(), container, context))
 			return false;
 		Logger.normal(this, "Excluding (no valid keys): "+get);
 		return true;

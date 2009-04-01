@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
@@ -21,10 +24,10 @@ public class SubscribeUSK implements USKCallback {
 		this.dontPoll = message.dontPoll;
 		this.identifier = message.identifier;
 		this.core = core;
-		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getClient().lowLevelClient);
+		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient);
 	}
 
-	public void onFoundEdition(long l, USK key) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
 		if(handler.isClosed()) {
 			core.uskManager.unsubscribe(key, this, !dontPoll);
 			return;
