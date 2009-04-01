@@ -193,6 +193,10 @@ public class InsertException extends Exception {
 			container.activate(uri, 5);
 			uri.removeFrom(container);
 		}
+		StackTraceElement[] elements = getStackTrace();
+		if(elements != null)
+			for(StackTraceElement element : elements)
+				container.delete(element);
 		container.delete(this);
 	}
 }

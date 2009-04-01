@@ -426,6 +426,10 @@ public class FetchException extends Exception {
 			errorCodes.removeFrom(container);
 		if(newURI != null)
 			newURI.removeFrom(container);
+		StackTraceElement[] elements = getStackTrace();
+		if(elements != null)
+			for(StackTraceElement element : elements)
+				container.delete(element);
 		container.delete(this);
 	}
 	
