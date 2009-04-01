@@ -987,10 +987,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
-			if(persistent && state != null)
-				state.removeFrom(container, context);
-			if(persistent)
+			if(persistent) {
+				if(state != null) state.removeFrom(container, context);
 				container.delete(this);
+			}
 		}
 		
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
