@@ -1006,6 +1006,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent) {
 				if(state != null)
 					state.removeFrom(container, context);
+				// Conceivably removeFrom() could deactivate this, so don't recheck
 				container.delete(this);
 			}
 		}
