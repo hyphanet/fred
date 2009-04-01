@@ -493,31 +493,31 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			 * they reactivate deactivated data in their commit hooks and thus
 			 * cause serious problems. */
 			if(!req.persistent()) {
-			List recent = schedTransient.recentSuccesses;
-			SendableRequest altReq = null;
-			if(!recent.isEmpty()) {
-				if(random.nextBoolean()) {
-					altReq = (BaseSendableGet) recent.remove(recent.size()-1);
+				List recent = schedTransient.recentSuccesses;
+				SendableRequest altReq = null;
+				if(!recent.isEmpty()) {
+					if(random.nextBoolean()) {
+						altReq = (BaseSendableGet) recent.remove(recent.size()-1);
+					}
 				}
-			}
-			if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
-				if(logMINOR)
-					Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
-				altReq = null;
-			}
-			if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
-					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
-				// Use the recent one instead
-				if(logMINOR)
-					Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
-				schedTransient.innerRegister(req, random, null, null);
-				req = altReq;
-			} else if(altReq != null) {
-				// Don't use the recent one
-				if(logMINOR)
-					Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-				recent.add(altReq);
-			}
+				if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
+					if(logMINOR)
+						Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
+					altReq = null;
+				}
+				if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
+						fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
+					// Use the recent one instead
+					if(logMINOR)
+						Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
+					schedTransient.innerRegister(req, random, null, null);
+					req = altReq;
+				} else if(altReq != null) {
+					// Don't use the recent one
+					if(logMINOR)
+						Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
+					recent.add(altReq);
+				}
 			}
 			
 			// Now we have chosen a request.
