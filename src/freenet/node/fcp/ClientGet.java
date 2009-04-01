@@ -377,10 +377,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				}
 			}
 			if(failed && persistenceType == PERSIST_FOREVER) {
-				if(container.ext().getID(returnBucket) == container.ext().getID(data))
+				if(container.ext().getID(returnBucket) == container.ext().getID(data)) {
 					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
-				if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-					Logger.error(this, "Succeeding anyway as the data should be on disk...");
+					// Succeed anyway, hope that the returned bucket is consistent...
+					returnBucket = data;
 					failed = false;
 				}
 			}
