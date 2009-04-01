@@ -206,10 +206,6 @@ public class ClientGetter extends BaseClientGetter {
 		if(logMINOR)
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
 		closeBinaryBlobStream(container, context);
-		if(persistent() && state != null) {
-			container.activate(state, 1);
-			state.removeFrom(container, context);
-		}
 		if(persistent())
 			container.activate(uri, 5);
 		while(true) {
@@ -249,7 +245,11 @@ public class ClientGetter extends BaseClientGetter {
 				container.activate(clientCallback, 1);
 			}
 			clientCallback.onFailure(e1, ClientGetter.this, container);
-			return;
+			break;
+		}
+		if(persistent() && state != null) {
+			container.activate(state, 1);
+			state.removeFrom(container, context);
 		}
 	}
 
