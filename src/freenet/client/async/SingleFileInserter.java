@@ -650,7 +650,6 @@ class SingleFileInserter implements ClientPutState {
 			if(persistent) {
 				container.activate(block, 1);
 			}
-			ClientPutState killMe = null;
 			boolean toFail = true;
 			boolean toRemove = false;
 			synchronized(this) {
@@ -659,7 +658,6 @@ class SingleFileInserter implements ClientPutState {
 					sfi = null;
 					if(metadataPutter != null) {
 						toFail = false;
-						killMe = metadataPutter;
 						if(persistent) container.store(this);
 					}
 				} else if(state == metadataPutter) {
@@ -667,7 +665,6 @@ class SingleFileInserter implements ClientPutState {
 					metadataPutter = null;
 					if(sfi != null) {
 						toFail = false;
-						killMe = sfi;
 						if(persistent) container.store(this);
 					}
 				} else {
@@ -679,11 +676,8 @@ class SingleFileInserter implements ClientPutState {
 			}
 			if(toRemove && persistent)
 				state.removeFrom(container, context);
-			if(killMe != null) {
-				if(logMINOR) Logger.minor(this, "onFailure: killing "+killMe);
-				killMe.cancel(container, context);
-				// Should call back here and finish it
-			}
+			// fail() will cancel the other one, so we don't need to.
+			// When it does, it will come back here, and we won't call fail(), because fail() has already set finished = true.
 			if(toFail)
 			fail(e, container, context);
 		}
