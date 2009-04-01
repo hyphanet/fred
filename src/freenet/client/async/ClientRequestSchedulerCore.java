@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -94,6 +96,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	public final byte[] globalSalt;
 	
+	private transient List<RandomGrabArray> recentSuccesses;
+	
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
 	 * @param node
@@ -154,6 +158,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		if(!isInsertScheduler) {
 			keysFetching = new HashSet();
 			runningTransientInserts = null;
+			this.recentSuccesses = new ArrayList<RandomGrabArray>();
 		} else {
 			keysFetching = null;
 			runningTransientInserts = new HashSet<RunningTransientInsert>();
@@ -482,16 +487,16 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			
 			// Check recentSuccesses
-			/** FIXME:
-			 * This does not make sense with selecting a whole SendableRequest
-			 * at a time (for persistent requests), so turn it off. However, 
-			 * what would make sense would be to have recentSuccesses be a list 
-			 * of ClientRequester's instead. This should improve efficiency.
-			 * We could make it transient even for persistent requests, although
-			 * we'd probably get better results if it wasn't. We cannot use the
-			 * Db4o built-in deprecated activation aware collections, because 
-			 * they reactivate deactivated data in their commit hooks and thus
-			 * cause serious problems. */
+			/** Choose a recently succeeded request.
+			 * 50% chance of using a recently succeeded request, if there is one.
+			 * For transient requests, we keep a list of recently succeeded BaseSendableGet's,
+			 * because transient requests are chosen individually.
+			 * But for persistent requests, we keep a list of RandomGrabArray's, because
+			 * persistent requests are chosen a whole SendableRequest at a time.
+			 * 
+			 * FIXME: Only replaces persistent requests with persistent requests (of similar priority and retry count), or transient with transient.
+			 * Probably this is acceptable.
+			 */
 			if(!req.persistent()) {
 				List recent = schedTransient.recentSuccesses;
 				SendableRequest altReq = null;
@@ -509,14 +514,45 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
 					// Use the recent one instead
 					if(logMINOR)
-						Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
-					schedTransient.innerRegister(req, random, null, null);
+						Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+					// Don't need to reregister, because removeRandom doesn't actually remove!
 					req = altReq;
 				} else if(altReq != null) {
 					// Don't use the recent one
 					if(logMINOR)
 						Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
 					recent.add(altReq);
+				}
+			} else {
+				RandomGrabArray altRGA = null;
+				synchronized(recentSuccesses) {
+					if(!(recentSuccesses.isEmpty() || random.nextBoolean())) {
+						altRGA = recentSuccesses.remove(0);
+					}
+				}
+				container.activate(altRGA, 1);
+				if(altRGA != null && container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
+					container.activate(altRGA, 1);
+					if(logMINOR)
+						Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
+					SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
+					container.activate(altReq, 1);
+					if(altReq != null) {
+						if(altReq.getPriorityClass(container) <= choosenPriorityClass &&
+								fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
+							// Use the recent one instead
+							if(logMINOR)
+								Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+							// Don't need to reregister, because removeRandom doesn't actually remove!
+							req = altReq;
+						} else if(altReq != null) {
+							if(logMINOR)
+								Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
+							synchronized(recentSuccesses) {
+								recentSuccesses.add(altRGA);
+							}
+						}
+					}
 				}
 			}
 			
@@ -770,5 +806,17 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 
+	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
+		RandomGrabArray array = succeeded.getParentGrabArray();
+		container.activate(array, 1);
+		if(array == null) return; // Unregistered already?
+		synchronized(recentSuccesses) {
+			if(recentSuccesses.contains(array)) return;
+			recentSuccesses.add(array);
+			while(recentSuccesses.size() > 8)
+				recentSuccesses.remove(0);
+		}
+	}
+	
 }
 

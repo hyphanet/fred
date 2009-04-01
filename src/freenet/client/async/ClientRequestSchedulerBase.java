@@ -217,7 +217,6 @@ abstract class ClientRequestSchedulerBase {
 
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		// Do nothing.
-		// FIXME: Keep a list of recently succeeded ClientRequester's.
 	}
 
 	public synchronized void addPendingKeys(KeyListener listener) {
