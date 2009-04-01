@@ -470,21 +470,25 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			if(oldSFI != null) {
 				Logger.error(this, "origSFI is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this, new Exception("debug"));
+				container.activate(oldSFI, 1);
 				oldSFI.cancel(container, context);
 				oldSFI.removeFrom(container, context);
 				if(oldState == oldSFI) oldState = null;
 			}
 			if(oldState != null) {
 				Logger.error(this, "currentState is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this, new Exception("debug"));
+				container.activate(oldState, 1);
 				oldState.cancel(container, context);
 				oldState.removeFrom(container, context);
 			}
 			if(cm != null) {
+				container.activate(cm, 5);
 				cm.removeFrom(container);
 			}
 			if(metadata != null) {
 				// Possible if cancelled
 				Logger.error(this, "Metadata is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this);
+				container.activate(metadata, 1);
 				metadata.removeFrom(container);
 			}
 			// Data is responsibility of original caller (usually ClientPutDir), we don't support freeData atm
