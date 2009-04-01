@@ -20,6 +20,7 @@ public interface ClientGetState {
 	/**
 	 * Once the callback has finished with this fetch, it will call removeFrom() to instruct the fetch
 	 * to remove itself and all its subsidiary objects from the database.
+	 * WARNING: It is possible that the caller will get deactivated! Be careful...
 	 * @param container
 	 */
 	public void removeFrom(ObjectContainer container, ClientContext context);
