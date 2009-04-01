@@ -194,11 +194,9 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent()) {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
-		}
-		FetchResult res = result;
-		if(persistent()) {
 			container.activate(clientCallback, 1);
 		}
+		FetchResult res = result;
 		clientCallback.onSuccess(res, ClientGetter.this, container);
 	}
 
