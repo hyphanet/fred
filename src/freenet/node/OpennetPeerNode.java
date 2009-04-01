@@ -34,7 +34,12 @@ public class OpennetPeerNode extends PeerNode {
 	public boolean isOpennet() {
 		return true;
 	}
-	
+
+	@Override
+	public boolean isSeed() {
+		return false;
+	}
+
 	public boolean isDroppable(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
 		if(now - getPeerAddedTime() < OpennetManager.DROP_MIN_AGE)

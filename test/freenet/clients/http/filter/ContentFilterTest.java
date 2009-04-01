@@ -52,6 +52,10 @@ public class ContentFilterTest extends TestCase {
 	private static final String POUNT_CHARACTER_ENCODING_TEST_RESULT = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing%20-%20%5bblah%5d%20Apostrophe%27%20-%20gratuitous%201%20AND%20CAPITAL%20LETTERS%21%21%21%21.ogg\" />";
 	// @see bug #2297
 	private static final String PREVENT_FPROXY_ACCESS = "<a href=\""+BASE_URI+"\"/>";
+	// @see bug #2921
+	private static final String PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE = "<style>div { background: url("+BASE_URI+") }</style>";
+	private static final String PREVENT_EXTERNAL_ACCESS_CSS_CASE = "<style>div { background: uRl("+BASE_URI+") }</style>";
+	private static final String PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE = "<style>div { background: \\u\\r\\l("+BASE_URI+") }</style>";
 	private static final String WHITELIST_STATIC_CONTENT = "<a href=\"/static/themes/clean/theme.css\" />";
 
 	private final BucketFactory bf = new ArrayBucketFactory();
@@ -83,6 +87,10 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(POUNT_CHARACTER_ENCODING_TEST_RESULT, HTMLFilter(POUNT_CHARACTER_ENCODING_TEST));
 		// bug #2297
 		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(GenericReadFilterCallback.magicHTTPEscapeString));
+		// bug #2921
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("CHECKED_HTTP"));
+		assertFalse(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("http"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("CHECKED_HTTP"));
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
 	}
 		

@@ -43,6 +43,7 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 
@@ -849,34 +850,53 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			writeConfigFile();
 			return true;
 		} else {
-			// try to load
-			RandomAccessFile raf = new RandomAccessFile(configFile, "r");
-			byte[] salt = new byte[0x10];
-			raf.readFully(salt);
-			cipherManager = new CipherManager(salt);
-
-			storeSize = raf.readLong();
-			prevStoreSize = raf.readLong();
-			keyCount.set(raf.readLong());
-			generation = raf.readInt();
-			flags = raf.readInt();
-
-			if ((flags & FLAG_DIRTY) != 0)
-				flags |= FLAG_REBUILD_BLOOM;
-
 			try {
-				bloomFilterK = raf.readInt();
-				if (bloomFilterK == 0) {
-					bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
-					flags |= FLAG_REBUILD_BLOOM;
-					checkBloom = false;
+				// try to load
+				RandomAccessFile raf = new RandomAccessFile(configFile, "r");
+				try {
+					byte[] salt = new byte[0x10];
+					raf.readFully(salt);
+					cipherManager = new CipherManager(salt);
+
+					storeSize = raf.readLong();
+					prevStoreSize = raf.readLong();
+					keyCount.set(raf.readLong());
+					generation = raf.readInt();
+					flags = raf.readInt();
+
+					if ((flags & FLAG_DIRTY) != 0)
+						flags |= FLAG_REBUILD_BLOOM;
+
+					try {
+						bloomFilterK = raf.readInt();
+						if (bloomFilterK == 0) {
+							bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
+							flags |= FLAG_REBUILD_BLOOM;
+							checkBloom = false;
+						}
+					} catch (IOException e) {
+						flags |= FLAG_REBUILD_BLOOM;
+					}
+
+					return false;
+				} finally {
+					Closer.close(raf);
 				}
 			} catch (IOException e) {
-				flags |= FLAG_REBUILD_BLOOM;
-			}
+				// corrupted? delete it and try again
+				Logger.error(this, "config file corrupted, trying to create a new store: " + name, e);
+				System.err.println("config file corrupted, trying to create a new store: " + name);
+				if (configFile.exists() && configFile.delete()) {
+					File metaFile = new File(baseDir, name + ".metadata");
+					metaFile.delete();
+					return loadConfigFile();
+				}
 
-			raf.close();
-			return false;
+				// last restore
+				Logger.error(this, "can't delete config file, please delete the store manually: " + name, e);
+				System.err.println( "can't delete config file, please delete the store manually: " + name);
+				throw e;
+			}
 		}
 	}
 

@@ -378,13 +378,9 @@ public final class FProxyToadlet extends Toadlet {
 				}
 				
 				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
-				String type = httprequest.getParam("type");
-				String location;
-				if ((type != null) && (type.length() > 0)) {
-					location =  "/"+newURI + "?type=" + type;
-				} else {
-					location =  "/"+newURI;
-				}
+				String requestedMimeType = httprequest.getParam("type");
+				long maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
+				String location = getLink(newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
 				writeTemporaryRedirect(ctx, null, location);
 				return;
 			}
@@ -508,7 +504,8 @@ public final class FProxyToadlet extends Toadlet {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
 			if(e.newURI != null) {
-				Toadlet.writePermanentRedirect(ctx, msg, '/' +e.newURI.toASCIIString() + override);
+				Toadlet.writePermanentRedirect(ctx, msg,
+					getLink(e.newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload")));
 			} else if(e.mode == FetchException.TOO_BIG) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -660,7 +657,7 @@ public final class FProxyToadlet extends Toadlet {
 		if(requestedMimeType != null) {
 			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
 		}
-		if(maxSize > 0) {
+		if(maxSize > 0 && maxSize != MAX_LENGTH) {
 			sb.append(c).append("max-size=").append(maxSize); c = '&';
 		}
 		if(force != null) {

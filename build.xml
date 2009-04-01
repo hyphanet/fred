@@ -87,11 +87,8 @@
 			<compilerarg value="-Xlint"/>
 
 			<!-- following a very temporary list of files to be build -->
-			<include name="org/**/*.java"/>
 			<include name="freenet/**/*.java"/>
 			<include name="net/i2p/util/*.java"/>
-			<exclude name="org/**/MersenneTwisterTest.java"/>
-			<exclude name="freenet/node/*Test.java"/>
 			<exclude name="**/package-info.java"/>
 		</javac>
 		<!-- Copy web interface static files to the build dir -->

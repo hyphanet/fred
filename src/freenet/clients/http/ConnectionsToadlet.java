@@ -145,6 +145,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected final PeerManager peers;
 	protected boolean isReversed = false;
 	protected final DecimalFormat fix1 = new DecimalFormat("##0.0%");
+	public enum PeerAdditionReturnCodes{ OK, WRONG_ENCODING, CANT_PARSE, INTERNAL_ERROR, INVALID_SIGNATURE, TRY_TO_ADD_SELF, ALREADY_IN_REFERENCE}
 	
 	@Override
 	public String supportedMethods() {
@@ -511,7 +512,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			String reftext = request.getPartAsString("ref", Integer.MAX_VALUE);
 			reftext = reftext.trim();
 			if (reftext.length() < 200) {
-				reftext = request.getPartAsString("reffile", 2000);
+				reftext = request.getPartAsString("reffile", Integer.MAX_VALUE);
 				reftext = reftext.trim();
 			}
 			String privateComment = null;
@@ -551,59 +552,46 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			ref = new StringBuilder(ref.toString().trim());
 
 			request.freeParts();
-			// we have a node reference in ref
-			SimpleFieldSet fs;
+
+			//Split the references string, because the peers are added individually
+			String[] nodesToAdd=ref.toString().split("End");
+			//The peer's additions results
+			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
+			for(int i=0;i<nodesToAdd.length;i++){
+				//We need to trim then concat 'End' to the node's reference, this way we have a normal reference(the split() removes the 'End'-s!)
+				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment);
+				//Store the result
+				if(results.containsKey(result)==false){
+					results.put(result, new Integer(0));
+				}
+				results.put(result, results.get(result)+1);
+			}
 			
-			try {
-				fs = new SimpleFieldSet(ref.toString(), false, true);
-				if(!fs.getEndMarker().endsWith("End")) {
-					sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
-							L10n.getString("DarknetConnectionsToadlet.cantParseWrongEnding", new String[] { "end" }, new String[] { fs.getEndMarker() }));
-					return;
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			//We create a table to show the results
+			HTMLNode detailedStatusBox=new HTMLNode("table");
+			//Header of the table
+			detailedStatusBox.addChild(new HTMLNode("tr")).addChildren(new HTMLNode[]{new HTMLNode("th",l10n("resultName")),new HTMLNode("th",l10n("numOfResults"))});
+			HTMLNode statusBoxTable=detailedStatusBox.addChild(new HTMLNode("tbody"));
+			//Iterate through the return codes
+			for(PeerAdditionReturnCodes returnCode:PeerAdditionReturnCodes.values()){
+				if(results.containsKey(returnCode)){
+					//Add a <tr> and 2 <td> with the name of the code and the number of occasions it happened. If the code is OK, we use green, red elsewhere.
+					statusBoxTable.addChild(new HTMLNode("tr","style","color:"+(returnCode==PeerAdditionReturnCodes.OK?"green":"red"))).addChildren(new HTMLNode[]{new HTMLNode("td",l10n("peerAdditionCode."+returnCode.toString())),new HTMLNode("td",results.get(returnCode).toString())});
 				}
-				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
-			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
-						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e.toString() }));
-				return;
-			} catch (Throwable t) {
-				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
-				return;
 			}
-			PeerNode pn;
-			try {
-				if(isOpennet()) {
-					pn = node.createNewOpennetNode(fs);
-				} else {
-					pn = node.createNewDarknetNode(fs);
-					((DarknetPeerNode)pn).setPrivateDarknetCommentNote(privateComment);
-				}
-			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"),
-						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
-				return;
-			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), 
-						L10n.getString("DarknetConnectionsToadlet.cantParseTryAgain", new String[] { "error" }, new String[] { e1.toString() }));
-				return;
-			} catch (ReferenceSignatureVerificationException e1){
-				HTMLNode node = new HTMLNode("div");
-				node.addChild("#", L10n.getString("DarknetConnectionsToadlet.invalidSignature", new String[] { "error" }, new String[] { e1.toString() }));
-				node.addChild("br");
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), node);
-				return;
-			} catch (Throwable t) {
-				this.sendErrorPage(ctx, l10n("failedToAddNodeInternalErrorTitle"), l10n("failedToAddNodeInternalError"), t);
-				return;
-			}
-			if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity())) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("triedToAddSelf"));
-				return;
-			}
-			if(!this.node.addPeerConnection(pn)) {
-				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("alreadyInReferences"));
-				return;
-			}
+
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition")));
+			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			infoboxContent.addChild(detailedStatusBox);
+			infoboxContent.addChild("br");
+			infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
+			infoboxContent.addChild("br");
+			addHomepageLink(infoboxContent);
+			
+			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
 			
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
@@ -612,6 +600,50 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		} else handleAltPost(uri, request, ctx, logMINOR);
 		
 		
+	}
+	
+	/** Adds a new node. If any error arises, it returns the appropriate return code.
+	 * @param nodeReference - The reference to the new node
+	 * @param privateComment - The private comment when adding a Darknet node
+	 * @return The result of the addition*/
+	private PeerAdditionReturnCodes addNewNode(String nodeReference,String privateComment){
+		SimpleFieldSet fs;
+		
+		try {
+			fs = new SimpleFieldSet(nodeReference.toString(), false, true);
+			if(!fs.getEndMarker().endsWith("End")) {
+				return PeerAdditionReturnCodes.WRONG_ENCODING;
+			}
+			fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
+		} catch (IOException e) {
+			return PeerAdditionReturnCodes.CANT_PARSE;
+		} catch (Throwable t) {
+			return PeerAdditionReturnCodes.INTERNAL_ERROR;
+		}
+		PeerNode pn;
+		try {
+			if(isOpennet()) {
+				pn = node.createNewOpennetNode(fs);
+			} else {
+				pn = node.createNewDarknetNode(fs);
+				((DarknetPeerNode)pn).setPrivateDarknetCommentNote(privateComment);
+			}
+		} catch (FSParseException e1) {
+			return PeerAdditionReturnCodes.CANT_PARSE;
+		} catch (PeerParseException e1) {
+			return PeerAdditionReturnCodes.CANT_PARSE;
+		} catch (ReferenceSignatureVerificationException e1){
+			return PeerAdditionReturnCodes.INVALID_SIGNATURE;
+		} catch (Throwable t) {
+			return PeerAdditionReturnCodes.INTERNAL_ERROR;
+		}
+		if(Arrays.equals(pn.getIdentity(), node.getDarknetIdentity())) {
+			return PeerAdditionReturnCodes.TRY_TO_ADD_SELF;
+		}
+		if(!this.node.addPeerConnection(pn)) {
+			return PeerAdditionReturnCodes.ALREADY_IN_REFERENCE;
+		}
+		return PeerAdditionReturnCodes.OK;
 	}
 
 	/** Adding a darknet node or an opennet node? */

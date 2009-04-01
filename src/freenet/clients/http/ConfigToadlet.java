@@ -71,9 +71,10 @@ public class ConfigToadlet extends Toadlet {
 
 			if (node.isUsingWrapper()) {
 				alertNode.addChild("br");
-				HTMLNode restartForm = alertNode.addChild("form", //
-						new String[] { "action", "method" },//
-				        new String[] { "/", "get" });
+				HTMLNode restartForm = alertNode.addChild("form", new String[] { "action", "method", "enctype", "id",  "accept-charset" },
+						new String[] { "/", "post", "multipart/form-data", "restartForm", "utf-8"} ).addChild("div");
+				restartForm.addChild("input", new String[] { "type", "name", "value" },
+						new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
 						new String[] { "type", "name" },//
@@ -297,9 +298,7 @@ public class ConfigToadlet extends Toadlet {
 
 				if (node.isUsingWrapper()) {
 					content.addChild("br");
-					HTMLNode restartForm = content.addChild("form",//
-					        new String[] { "action", "method" }, new String[] { "/", "get" }//
-					        ).addChild("div");
+					HTMLNode restartForm = ctx.addFormChild(content, "/", "restartForm");
 					restartForm.addChild("input",//
 					        new String[] { "type", "name" },//
 					        new String[] { "hidden", "restart" });

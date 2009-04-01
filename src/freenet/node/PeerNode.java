@@ -2705,12 +2705,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("ark.pubURI", myARK.getBaseSSK().toString(false, false));
 		}
 		fs.put("opennet", isOpennet());
+		fs.put("seed", isSeed());
 		return fs;
 	}
 
 	public abstract boolean isDarknet();
 
 	public abstract boolean isOpennet();
+
+	public abstract boolean isSeed();
 
 	/**
 	* @return The time at which we last connected (or reconnected).
