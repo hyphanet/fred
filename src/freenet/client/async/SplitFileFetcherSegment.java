@@ -827,8 +827,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			// :(
-			if(persistent)
-				container.activate(parent, 1);
+			boolean deactivateParent = false; // can get called from wierd places, don't deactivate parent if not necessary
+			if(persistent) {
+				deactivateParent = !container.ext().isActive(parent);
+				if(deactivateParent) container.activate(parent, 1);
+			}
 			if(e.isFatal()) {
 				fatallyFailedBlocks++;
 				parent.fatallyFailedBlock(container, context);
@@ -836,7 +839,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				failedBlocks++;
 				parent.failedBlock(container, context);
 			}
-			if(persistent)
+			if(deactivateParent)
 				container.deactivate(parent, 1);
 			// Once it is no longer possible to have a successful fetch, fail...
 			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
@@ -990,10 +993,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(ret != null) return ret;
 			if(noCreate) return null;
-			if(persistent)
-				container.activate(parent, 1);
+			boolean deactivateParent = false;
+			if(persistent) {
+				deactivateParent = !container.ext().isActive(parent);
+				if(deactivateParent) container.activate(parent, 1);
+			}
 			sub = new SplitFileFetcherSubSegment(this, parent, retryCount);
-			if(persistent)
+			if(deactivateParent)
 				container.deactivate(parent, 1);
 			subSegments.add(sub);
 		}
