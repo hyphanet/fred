@@ -166,11 +166,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public synchronized boolean isFinished(ObjectContainer container) {
 		if(finished) return true;
+		// Deactivating parent is a *bad* side-effect, so avoid it.
+		boolean deactivateParent = false;
 		if(persistent) {
-			container.activate(parent, 1);
+			deactivateParent = !container.ext().isActive(parent);
+			if(deactivateParent) container.activate(parent, 1);
 		}
 		boolean ret = parent.isCancelled();
-		if(persistent)
+		if(deactivateParent)
 			container.deactivate(parent, 1);
 		return ret;
 	}
