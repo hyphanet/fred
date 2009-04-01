@@ -666,7 +666,11 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
+		if(logMINOR) Logger.minor(this, "removeFrom() on "+this, new Exception("debug"));
+		if(!container.ext().isStored(this)) {
+			Logger.error(this, "Already removed??? on "+this, new Exception("error"));
+			return;
+		}
 		container.activate(blockFetchContext, 1);
 		blockFetchContext.removeFrom(container);
 		if(deleteFetchContext)
