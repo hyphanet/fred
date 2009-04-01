@@ -38,7 +38,7 @@ public abstract class ClientRequester {
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 	}
 
-	synchronized boolean cancel() {
+	public synchronized boolean cancel() {
 		boolean ret = cancelled;
 		cancelled = true;
 		return ret;
