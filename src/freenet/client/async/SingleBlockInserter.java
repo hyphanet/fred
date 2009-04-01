@@ -716,10 +716,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return retval;
 	}
 	
-//	public boolean objectCanNew(ObjectContainer container) {
-//		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
-//		return true;
-//	}
+	public boolean objectCanNew(ObjectContainer container) {
+		if(finished) {
+			Logger.error(this, "objectCanNew when already finished on "+this);
+			return false;
+		}
+		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+		return true;
+	}
 //	
 //	public boolean objectCanUpdate(ObjectContainer container) {
 //		Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
