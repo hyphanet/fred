@@ -52,7 +52,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 		int idx = find(req);
 		if(idx == -1) return false;
 		list.remove(idx);
-		container.store(list);
+		container.ext().store(list, 2);
 		return true;
 	}
 
