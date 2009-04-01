@@ -802,6 +802,7 @@ class SingleFileInserter implements ClientPutState {
 				oldMetadataPutter = metadataPutter;
 			}
 			if(persistent) {
+				container.store(this);
 				if(oldSFI != null)
 					container.activate(oldSFI, 1);
 				if(oldMetadataPutter != null)
@@ -812,9 +813,6 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
-			// Store before calling callback as callback may call us.
-			if(persistent)
-				container.store(this);
 			cb.onFailure(e, this, container, context);
 		}
 
