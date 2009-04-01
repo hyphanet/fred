@@ -778,8 +778,6 @@ class SingleFileInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "Failing: "+e, e);
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
-			if(persistent)
-				container.activate(block, 2);
 			synchronized(this) {
 				if(finished){
 					return;
@@ -794,12 +792,15 @@ class SingleFileInserter implements ClientPutState {
 					container.activate(oldSFI, 1);
 				if(oldMetadataPutter != null)
 					container.activate(oldMetadataPutter, 1);
-				container.activate(cb, 1);
 			}
 			if(oldSFI != null)
 				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
+			if(persistent) {
+				container.activate(block, 2);
+				container.activate(cb, 1);
+			}
 			synchronized(this) {
 				if(freeData)
 					block.free(container);
