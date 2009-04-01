@@ -208,6 +208,7 @@ public class ClientGetter extends BaseClientGetter {
 		closeBinaryBlobStream(container, context);
 		if(persistent())
 			container.activate(uri, 5);
+		ClientGetState oldState = null;
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
@@ -231,6 +232,7 @@ public class ClientGetter extends BaseClientGetter {
 			}
 			synchronized(this) {
 				finished = true;
+				oldState = currentState;
 				currentState = null;
 			}
 			if(e.errorCodes != null && e.errorCodes.isOneCodeOnly())
@@ -247,9 +249,15 @@ public class ClientGetter extends BaseClientGetter {
 			clientCallback.onFailure(e1, ClientGetter.this, container);
 			break;
 		}
-		if(persistent() && state != null) {
-			container.activate(state, 1);
-			state.removeFrom(container, context);
+		if(persistent()) {
+			if(state != null) {
+				container.activate(state, 1);
+				state.removeFrom(container, context);
+			}
+			if(oldState != state && oldState != null) {
+				container.activate(oldState, 1);
+				oldState.removeFrom(container, context);
+			}
 		}
 	}
 
