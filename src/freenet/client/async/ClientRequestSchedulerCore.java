@@ -525,7 +525,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					RandomGrabArray altRGA = null;
 					synchronized(recentSuccesses) {
 						if(!(recentSuccesses.isEmpty() || random.nextBoolean())) {
-							altRGA = recentSuccesses.remove(0);
+							altRGA = recentSuccesses.remove(recentSuccesses.size()-1);
 						}
 					}
 					container.activate(altRGA, 1);
