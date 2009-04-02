@@ -74,8 +74,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				}
 				complete = false;
 			}
-			if(state == generator)
+			if(state == generator) {
 				generator = null;
+				if(persistent) container.store(this);
+			}
 		}
 		if(persistent) state.removeFrom(container, context);
 		if(complete) {
@@ -106,8 +108,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 					container.store(this);
 				complete = false;
 			}
-			if(state == generator)
+			if(state == generator) {
 				generator = null;
+				if(persistent) container.store(this);
+			}
 		}
 		if(persistent) {
 			container.ext().store(waitingFor, 2);
@@ -234,6 +238,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				container.ext().store(waitingFor, 2);
 			}
 		}
+		if(persistent) container.store(this);
 	}
 
 	public synchronized void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
