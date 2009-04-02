@@ -45,8 +45,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	}
 	
 	public Bucket get(String internalName, ArchiveContext archiveContext,
-			ClientMetadata dm, int recursionLevel,
-			boolean dontEnterImplicitArchives, ArchiveManager manager)
+			ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException {
 		
@@ -67,11 +66,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		return null;
 	}
 
-	public Bucket getMetadata(ArchiveContext archiveContext, ClientMetadata dm,
-			int recursionLevel, boolean dontEnterImplicitArchives,
+	public Bucket getMetadata(ArchiveContext archiveContext, 
 			ArchiveManager manager) throws ArchiveFailureException,
 			ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, dm, recursionLevel, dontEnterImplicitArchives, manager);
+		return get(".metadata", archiveContext, manager);
 	}
 
 	public void extractToCache(Bucket bucket, ArchiveContext actx,
