@@ -16,7 +16,7 @@ import freenet.support.Logger;
  * 
  * Always take the lock on ArchiveStoreContext before the lock on ArchiveManager, NOT the other way around.
  */
-public class ArchiveStoreContext {
+class ArchiveStoreContext {
 
 	private FreenetURI key;
 	private final ArchiveManager.ARCHIVE_TYPE archiveType;
