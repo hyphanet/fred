@@ -300,8 +300,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
-		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, maxPrio, retryCount, context, container);
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, true, false, maxPrio, retryCount, context, container);
 		if(isInsertScheduler && req instanceof SendableGet) {
 			IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
 			req.internalError(e, sched, container, context, req.persistent());
@@ -341,8 +341,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(req instanceof SendableGet) {
 				SendableGet sg = (SendableGet) req;
 				FetchContext ctx = sg.getContext();
-				if(container != null)
-					container.activate(ctx, 1);
 				localRequestOnly = ctx.localRequestOnly;
 				cacheLocalRequests = ctx.cacheLocalRequests;
 				ignoreStore = ctx.ignoreStore;

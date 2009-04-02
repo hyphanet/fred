@@ -463,7 +463,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, prio, retryCount, clientContext, null);
+		return schedCore.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, retryCount, clientContext, null);
 	}
 	
 	/**
