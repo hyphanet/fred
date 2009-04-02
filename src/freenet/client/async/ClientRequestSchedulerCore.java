@@ -282,8 +282,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
-			if((result != null) && 
-					(!result.isEmpty()) || (tryOfferedKeys && !offeredKeys[priority].isEmpty(container))) {
+			if(((result != null) && (!result.isEmpty()))
+					|| (tryOfferedKeys && !offeredKeys[priority].isEmpty(container))) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
