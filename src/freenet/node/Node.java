@@ -45,6 +45,7 @@ import com.sleepycat.je.EnvironmentMutableConfig;
 import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
@@ -916,6 +917,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		System.err.println("Opened database");
 		
 		// DUMP DATABASE CONTENTS
+		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class)) {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = db.queryByExample(new Object());
 		Map<String,Integer> map = new HashMap<String, Integer>();
@@ -950,6 +952,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		System.gc();
 		System.runFinalization();
 		System.err.println("END DATABASE DUMP: "+total+" objects");
+		}
 
 		// Boot ID
 		bootID = random.nextLong();
