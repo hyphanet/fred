@@ -372,195 +372,195 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 		for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-		if(tryOfferedKeys) {
-			if(offeredKeys[choosenPriorityClass].hasValidKeys(this, null, context))
-				return offeredKeys[choosenPriorityClass];
-		}
-		SortedVectorByNumber perm = null;
-		if(!transientOnly)
-			perm = priorities[choosenPriorityClass];
-		SortedVectorByNumber trans = null;
-		if(!notTransient)
-			trans = schedTransient.priorities[choosenPriorityClass];
-		if(perm == null && trans == null) {
-			if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
-			continue; // Try next priority
-		}
-		int permRetryIndex = 0;
-		int transRetryIndex = 0;
-		while(true) {
-			int permRetryCount = perm == null ? Integer.MAX_VALUE : perm.getNumberByIndex(permRetryIndex);
-			int transRetryCount = trans == null ? Integer.MAX_VALUE : trans.getNumberByIndex(transRetryIndex);
-			if(choosenPriorityClass == maxPrio) {
-				if(permRetryCount >= retryCount) {
-					permRetryCount = Integer.MAX_VALUE;
-				}
-				if(transRetryCount >= retryCount) {
-					transRetryCount = Integer.MAX_VALUE;
-				}
+			if(tryOfferedKeys) {
+				if(offeredKeys[choosenPriorityClass].hasValidKeys(this, null, context))
+					return offeredKeys[choosenPriorityClass];
 			}
-			if(permRetryCount == Integer.MAX_VALUE && transRetryCount == Integer.MAX_VALUE) {
-				if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
-				break; // Try next priority
+			SortedVectorByNumber perm = null;
+			if(!transientOnly)
+				perm = priorities[choosenPriorityClass];
+			SortedVectorByNumber trans = null;
+			if(!notTransient)
+				trans = schedTransient.priorities[choosenPriorityClass];
+			if(perm == null && trans == null) {
+				if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
+				continue; // Try next priority
 			}
-			SectoredRandomGrabArrayWithInt chosenTracker = null;
-			SortedVectorByNumber trackerParent = null;
-			if(permRetryCount == transRetryCount) {
-				// Choose between them.
-				SectoredRandomGrabArrayWithInt permRetryTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
-				if(persistent() && permRetryTracker != null)
-					container.activate(permRetryTracker, 1);
-				SectoredRandomGrabArrayWithInt transRetryTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
-				int permTrackerSize = permRetryTracker.size();
-				int transTrackerSize = transRetryTracker.size();
-				if(permTrackerSize + transTrackerSize == 0) {
-					permRetryIndex++;
-					transRetryIndex++;
-					continue;
+			int permRetryIndex = 0;
+			int transRetryIndex = 0;
+			while(true) {
+				int permRetryCount = perm == null ? Integer.MAX_VALUE : perm.getNumberByIndex(permRetryIndex);
+				int transRetryCount = trans == null ? Integer.MAX_VALUE : trans.getNumberByIndex(transRetryIndex);
+				if(choosenPriorityClass == maxPrio) {
+					if(permRetryCount >= retryCount) {
+						permRetryCount = Integer.MAX_VALUE;
+					}
+					if(transRetryCount >= retryCount) {
+						transRetryCount = Integer.MAX_VALUE;
+					}
 				}
-				if(random.nextInt(permTrackerSize + transTrackerSize) > permTrackerSize) {
-					chosenTracker = permRetryTracker;
+				if(permRetryCount == Integer.MAX_VALUE && transRetryCount == Integer.MAX_VALUE) {
+					if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
+					break; // Try next priority
+				}
+				SectoredRandomGrabArrayWithInt chosenTracker = null;
+				SortedVectorByNumber trackerParent = null;
+				if(permRetryCount == transRetryCount) {
+					// Choose between them.
+					SectoredRandomGrabArrayWithInt permRetryTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
+					if(persistent() && permRetryTracker != null)
+						container.activate(permRetryTracker, 1);
+					SectoredRandomGrabArrayWithInt transRetryTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
+					int permTrackerSize = permRetryTracker.size();
+					int transTrackerSize = transRetryTracker.size();
+					if(permTrackerSize + transTrackerSize == 0) {
+						permRetryIndex++;
+						transRetryIndex++;
+						continue;
+					}
+					if(random.nextInt(permTrackerSize + transTrackerSize) > permTrackerSize) {
+						chosenTracker = permRetryTracker;
+						trackerParent = perm;
+						permRetryIndex++;
+					} else {
+						chosenTracker = transRetryTracker;
+						trackerParent = trans;
+						transRetryIndex++;
+					}
+				} else if(permRetryCount < transRetryCount) {
+					chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
+					if(persistent() && chosenTracker != null)
+						container.activate(chosenTracker, 1);
 					trackerParent = perm;
 					permRetryIndex++;
 				} else {
-					chosenTracker = transRetryTracker;
+					chosenTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
 					trackerParent = trans;
 					transRetryIndex++;
 				}
-			} else if(permRetryCount < transRetryCount) {
-				chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
-				if(persistent() && chosenTracker != null)
-					container.activate(chosenTracker, 1);
-				trackerParent = perm;
-				permRetryIndex++;
-			} else {
-				chosenTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
-				trackerParent = trans;
-				transRetryIndex++;
-			}
-			if(logMINOR)
-				Logger.minor(this, "Got retry count tracker "+chosenTracker);
-			SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container, context);
-			if(chosenTracker.isEmpty()) {
-				trackerParent.remove(chosenTracker.getNumber(), container);
-				if(chosenTracker.persistent())
-					chosenTracker.removeFrom(container);
-				if(trackerParent.isEmpty()) {
-					if(logMINOR) Logger.minor(this, "Should remove priority");
-				}
-			}
-			if(req == null) {
-				if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+chosenTracker.getNumber()+" ("+chosenTracker+") of priority "+choosenPriorityClass);
-				continue; // Try next retry count.
-			}
-			if(chosenTracker.persistent())
-				container.activate(req, 1); // FIXME
-			if(req.persistent() != trackerParent.persistent()) {
-				Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent()+" for "+req);
-				// FIXME fix it
-			}
-			if(req.getPriorityClass(container) != choosenPriorityClass) {
-				// Reinsert it : shouldn't happen if we are calling reregisterAll,
-				// maybe we should ask people to report that error if seen
-				Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass(container)+" but chosen="+choosenPriorityClass+ ')');
-				// Remove it.
-				SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient(container));
-				if(clientGrabber != null) {
+				if(logMINOR)
+					Logger.minor(this, "Got retry count tracker "+chosenTracker);
+				SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container, context);
+				if(chosenTracker.isEmpty()) {
+					trackerParent.remove(chosenTracker.getNumber(), container);
 					if(chosenTracker.persistent())
-						container.activate(clientGrabber, 1);
-					RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
-					if(baseRGA != null) {
-						baseRGA.remove(req, container);
+						chosenTracker.removeFrom(container);
+					if(trackerParent.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "Should remove priority");
+					}
+				}
+				if(req == null) {
+					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+chosenTracker.getNumber()+" ("+chosenTracker+") of priority "+choosenPriorityClass);
+					continue; // Try next retry count.
+				}
+				if(chosenTracker.persistent())
+					container.activate(req, 1); // FIXME
+				if(req.persistent() != trackerParent.persistent()) {
+					Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent()+" for "+req);
+					// FIXME fix it
+				}
+				if(req.getPriorityClass(container) != choosenPriorityClass) {
+					// Reinsert it : shouldn't happen if we are calling reregisterAll,
+					// maybe we should ask people to report that error if seen
+					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass(container)+" but chosen="+choosenPriorityClass+ ')');
+					// Remove it.
+					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient(container));
+					if(clientGrabber != null) {
+						if(chosenTracker.persistent())
+							container.activate(clientGrabber, 1);
+						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
+						if(baseRGA != null) {
+							baseRGA.remove(req, container);
+						} else {
+							// Okay, it's been removed already. Cool.
+						}
 					} else {
-						// Okay, it's been removed already. Cool.
+						Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
+					}
+					if(req.persistent())
+						innerRegister(req, random, container, null);
+					else
+						schedTransient.innerRegister(req, random, container, null);
+					continue; // Try the next one on this retry count.
+				}
+				
+				// Check recentSuccesses
+				/** Choose a recently succeeded request.
+				 * 50% chance of using a recently succeeded request, if there is one.
+				 * For transient requests, we keep a list of recently succeeded BaseSendableGet's,
+				 * because transient requests are chosen individually.
+				 * But for persistent requests, we keep a list of RandomGrabArray's, because
+				 * persistent requests are chosen a whole SendableRequest at a time.
+				 * 
+				 * FIXME: Only replaces persistent requests with persistent requests (of similar priority and retry count), or transient with transient.
+				 * Probably this is acceptable.
+				 */
+				if(!req.persistent()) {
+					List recent = schedTransient.recentSuccesses;
+					SendableRequest altReq = null;
+					if(!recent.isEmpty()) {
+						if(random.nextBoolean()) {
+							altReq = (BaseSendableGet) recent.remove(recent.size()-1);
+						}
+					}
+					if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
+						if(logMINOR)
+							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
+						altReq = null;
+					}
+					if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
+							fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
+						// Use the recent one instead
+						if(logMINOR)
+							Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+						// Don't need to reregister, because removeRandom doesn't actually remove!
+						req = altReq;
+					} else if(altReq != null) {
+						// Don't use the recent one
+						if(logMINOR)
+							Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
+						recent.add(altReq);
 					}
 				} else {
-					Logger.error(this, "Could not find client grabber for client "+req.getClient(container)+" from "+chosenTracker);
-				}
-				if(req.persistent())
-					innerRegister(req, random, container, null);
-				else
-					schedTransient.innerRegister(req, random, container, null);
-				continue; // Try the next one on this retry count.
-			}
-			
-			// Check recentSuccesses
-			/** Choose a recently succeeded request.
-			 * 50% chance of using a recently succeeded request, if there is one.
-			 * For transient requests, we keep a list of recently succeeded BaseSendableGet's,
-			 * because transient requests are chosen individually.
-			 * But for persistent requests, we keep a list of RandomGrabArray's, because
-			 * persistent requests are chosen a whole SendableRequest at a time.
-			 * 
-			 * FIXME: Only replaces persistent requests with persistent requests (of similar priority and retry count), or transient with transient.
-			 * Probably this is acceptable.
-			 */
-			if(!req.persistent()) {
-				List recent = schedTransient.recentSuccesses;
-				SendableRequest altReq = null;
-				if(!recent.isEmpty()) {
-					if(random.nextBoolean()) {
-						altReq = (BaseSendableGet) recent.remove(recent.size()-1);
+					RandomGrabArray altRGA = null;
+					synchronized(recentSuccesses) {
+						if(!(recentSuccesses.isEmpty() || random.nextBoolean())) {
+							altRGA = recentSuccesses.remove(0);
+						}
 					}
-				}
-				if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
-					if(logMINOR)
-						Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
-					altReq = null;
-				}
-				if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
-						fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
-					// Use the recent one instead
-					if(logMINOR)
-						Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
-					// Don't need to reregister, because removeRandom doesn't actually remove!
-					req = altReq;
-				} else if(altReq != null) {
-					// Don't use the recent one
-					if(logMINOR)
-						Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-					recent.add(altReq);
-				}
-			} else {
-				RandomGrabArray altRGA = null;
-				synchronized(recentSuccesses) {
-					if(!(recentSuccesses.isEmpty() || random.nextBoolean())) {
-						altRGA = recentSuccesses.remove(0);
-					}
-				}
-				container.activate(altRGA, 1);
-				if(altRGA != null && container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
 					container.activate(altRGA, 1);
-					if(logMINOR)
-						Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
-					SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
-					container.activate(altReq, 1);
-					if(altReq != null) {
-						if(altReq.getPriorityClass(container) <= choosenPriorityClass &&
-								fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
-							// Use the recent one instead
-							if(logMINOR)
-								Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
-							// Don't need to reregister, because removeRandom doesn't actually remove!
-							req = altReq;
-						} else if(altReq != null) {
-							if(logMINOR)
-								Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
-							synchronized(recentSuccesses) {
-								recentSuccesses.add(altRGA);
+					if(altRGA != null && container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
+						container.activate(altRGA, 1);
+						if(logMINOR)
+							Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
+						SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
+						container.activate(altReq, 1);
+						if(altReq != null) {
+							if(altReq.getPriorityClass(container) <= choosenPriorityClass &&
+									fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
+								// Use the recent one instead
+								if(logMINOR)
+									Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+								// Don't need to reregister, because removeRandom doesn't actually remove!
+								req = altReq;
+							} else if(altReq != null) {
+								if(logMINOR)
+									Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
+								synchronized(recentSuccesses) {
+									recentSuccesses.add(altRGA);
+								}
 							}
 						}
 					}
 				}
+				
+				// Now we have chosen a request.
+				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
+						req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
+				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
+				return req;
+				
 			}
-			
-			// Now we have chosen a request.
-			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
-					req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient(container)+", client-req "+req.getClientRequest()+ ')');
-			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
-			return req;
-			
-		}
 		}
 		if(logMINOR) Logger.minor(this, "No requests to run");
 		return null;
