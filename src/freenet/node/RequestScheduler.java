@@ -19,10 +19,10 @@ public interface RequestScheduler {
 	 * Tell the scheduler that a request from a specific RandomGrabArray succeeded.
 	 * Definition of "succeeded" will vary, but the point is most schedulers will run another
 	 * request from the parentGrabArray in the near future on the theory that if one works,
-	 * another may also work. Also, delete the ChosenRequest if it is persistent. 
+	 * another may also work. 
 	 * @param req The request we ran, which must be deleted.
 	 * */
-	public void succeeded(BaseSendableGet get, ChosenBlock req);
+	public void succeeded(BaseSendableGet get, boolean persistent);
 
 	/**
 	 * After a key has been requested a few times, it is added to the cooldown queue for

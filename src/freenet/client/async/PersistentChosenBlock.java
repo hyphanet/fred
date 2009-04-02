@@ -52,7 +52,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 			fetchSucceeded = true;
 		}
 		parent.onFinished(this, context);
-		parent.scheduler.succeeded((SendableGet)parent.request, this);
+		parent.scheduler.succeeded((SendableGet)parent.request, true);
 	}
 
 	@Override

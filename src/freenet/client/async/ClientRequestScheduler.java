@@ -905,16 +905,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return choosenPriorityScheduler;
 	}
 
-	/*
-	 * tripPendingKey() callbacks must run quickly, since we've found a block.
-	 * succeeded() must run quickly, since we delete the PersistentChosenRequest.
-	 * tripPendingKey() must run before succeeded() so we don't choose the same
-	 * request again, then remove it from pendingKeys before it completes! 
-	 */
 	static final short TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
 	
-	public synchronized void succeeded(final BaseSendableGet succeeded, final ChosenBlock req) {
-		if(req.isPersistent()) {
+	public synchronized void succeeded(final BaseSendableGet succeeded, boolean persistent) {
+		if(persistent) {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {

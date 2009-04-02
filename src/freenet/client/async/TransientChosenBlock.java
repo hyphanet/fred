@@ -57,7 +57,7 @@ public class TransientChosenBlock extends ChosenBlock {
 
 	@Override
 	public void onFetchSuccess(ClientContext context) {
-		sched.succeeded((SendableGet)request, this);
+		sched.succeeded((SendableGet)request, false);
 	}
 
 	@Override
