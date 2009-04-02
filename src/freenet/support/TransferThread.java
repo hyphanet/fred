@@ -196,23 +196,23 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	/* Fetches */
 	
-	public abstract void onSuccess(FetchResult result, ClientGetter state);
+	public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
 
-	public abstract void onFailure(FetchException e, ClientGetter state);
+	public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
 
 	/* Inserts */
 	
-	public abstract void onSuccess(BaseClientPutter state);
+	public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
 
-	public abstract void onFailure(InsertException e, BaseClientPutter state);
+	public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
 
-	public abstract void onFetchable(BaseClientPutter state);
+	public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
 
-	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
+	public abstract void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
 
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
-	public abstract void onMajorProgress();
+	public abstract void onMajorProgress(ObjectContainer container);
 
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing TransferThread in database", new Exception("error"));
