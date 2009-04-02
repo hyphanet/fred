@@ -28,6 +28,6 @@ public interface FredPluginFCP {
 	 * @param access 0: direct call (plugin to plugin), 1: FCP restricted access,  2: FCP full access  
 	 * @throws PluginNotFoundException If the plugin has already been removed.
 	 */
-	void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype) throws PluginNotFoundException;
+	void handle(PluginReplySender replysender, SimpleFieldSet params, Bucket data, int accesstype);
 	
 }
