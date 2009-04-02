@@ -253,7 +253,7 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 	}
 
-	private void removeElement(int x) {
+	private synchronized void removeElement(int x) {
 		final int grabArraysLength = grabArrays.length;
 		int newLen = grabArraysLength > 1 ? grabArraysLength-1 : 0;
 		RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[newLen];
