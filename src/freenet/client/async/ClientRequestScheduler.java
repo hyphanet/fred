@@ -1075,12 +1075,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.removeTransientInsertFetching(insert, token);
 	}
 	
-	/**
-	 * Map from SendableGet implementing SupportsBulkCallFailure to BulkCallFailureItem[].
-	 */
-	private transient HashMap bulkFailureLookupItems = new HashMap();
-	private transient HashMap bulkFailureLookupJob = new HashMap();
-
 	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
 		if(!persistent) {
 			get.onFailure(e, null, null, clientContext);
