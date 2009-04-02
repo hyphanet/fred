@@ -287,6 +287,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					currentState = newState;
 					if(persistent())
 						container.store(this);
+					if(logMINOR)
+						Logger.minor(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
 					return;
 				}
 				Logger.error(this, "Ignoring onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
