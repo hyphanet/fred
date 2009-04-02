@@ -400,7 +400,7 @@ abstract class ClientRequestSchedulerBase {
 
 	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
 		ArrayList<SendableGet> list = null;
-		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		byte[] saltedKey = sched.saltKey(key);
 		synchronized(this) {
 		for(KeyListener listener : keyListeners) {
 			if(!listener.probablyWantKey(key, saltedKey)) continue;
