@@ -93,8 +93,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return key instanceof ClientSSK;
 	}
 
-	/** Try again - returns true if we can retry 
-	 * @param sched */
+	/** Try again - returns true if we can retry */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
 		retryCount++;
 		if(Logger.shouldLog(Logger.MINOR, this))
