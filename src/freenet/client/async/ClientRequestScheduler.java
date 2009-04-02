@@ -352,10 +352,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		
-		if(isInsertScheduler) {
-			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
-			throw e;
-		}
+		if(isInsertScheduler)
+			throw new IllegalStateException("finishRegister on an insert scheduler");
 		if(!noCheckStore) {
 			// Check the datastore before proceding.
 			for(SendableGet getter : getters) {
