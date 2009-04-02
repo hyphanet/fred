@@ -64,6 +64,7 @@ abstract class ClientRequestSchedulerBase {
 	 * Structure:
 	 * array (by priority) -> // one element per possible priority
 	 * SortedVectorByNumber (by # retries) -> // contains each current #retries
+	 * SectoredRandomGrabArray's // round-robin by RequestClient, then by SendableRequest
 	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
 	 * 
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
