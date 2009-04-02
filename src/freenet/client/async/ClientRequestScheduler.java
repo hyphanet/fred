@@ -369,7 +369,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
-		if(isInsertScheduler && getters != null) {
+		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			if(onDatabaseThread || !persistent) {
 				for(int i=0;i<getters.length;i++) {
