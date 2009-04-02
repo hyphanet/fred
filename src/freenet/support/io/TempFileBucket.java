@@ -65,7 +65,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	protected boolean deleteOnFinalize() {
 		// Make sure finalize wacks temp file 
 		// if it is not explictly freed.
-		return true; // not if shadow
+		return deleteOnFree; // not if shadow
 	}
 	
 	@Override
