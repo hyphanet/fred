@@ -668,9 +668,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	/** Maximum number of requests to select from a single SendableRequest */
-	final int MAX_CONSECUTIVE_SAME_REQ = 50;
-	
 	private DBJob requestStarterQueueFiller = new DBJob() {
 		public void run(ObjectContainer container, ClientContext context) {
 			fillRequestStarterQueue(container, context, null);
