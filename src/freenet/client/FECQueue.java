@@ -83,6 +83,7 @@ public class FECQueue implements OOMHook {
 			transientQueue[i] = new LinkedList();
 			persistentQueueCache[i] = new LinkedList();
 		}
+		maxRunningFECThreads = getMaxRunningFECThreads();
 		OOMHandler.addOOMHook(this);
 		initRunner();
 		initCacheFillerJob();
@@ -326,8 +327,8 @@ public class FECQueue implements OOMHook {
 					// Don't notify, let it sleep until more jobs are added.
 					return;
 				} else {
-					int maxRunningThreads = getMaxRunningFECThreads();
 					synchronized(FECQueue.this) {
+						int maxRunningThreads = maxRunningFECThreads;
 						if(runningFECThreads < maxRunningThreads) {
 							int queueSize = 0;
 							for(int i=0;i<priorities;i++) {
