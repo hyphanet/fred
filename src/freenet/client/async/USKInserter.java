@@ -298,13 +298,13 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(persist) container.activate(this, 1); // May have been deactivated by callbacks
 		}
 		if(freeData) {
-				if(persistent) container.activate(data, 1);
-				data.free();
-				if(persistent) data.removeFrom(container);
-				synchronized(this) {
-					data = null;
-				}
-				if(persistent) container.store(this);
+			if(persistent) container.activate(data, 1);
+			data.free();
+			if(persistent) data.removeFrom(container);
+			synchronized(this) {
+				data = null;
+			}
+			if(persistent) container.store(this);
 		}
 		if(persistent) container.activate(cb, 1);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
