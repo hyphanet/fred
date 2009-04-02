@@ -227,7 +227,8 @@ public class FetchException extends Exception {
 
 	public FetchException(FetchException e, FreenetURI uri) {
 		super(e.getMessage());
-		initCause(e);
+		if(e.getCause() != null)
+			initCause(e.getCause());
 		this.mode = e.mode;
 		this.newURI = uri;
 		this.errorCodes = e.errorCodes;
