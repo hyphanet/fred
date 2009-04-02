@@ -364,11 +364,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 		} else {
 			// We have already checked the datastore, this is a retry, the listener hasn't been unregistered.
-			short prio = RequestStarter.MINIMUM_PRIORITY_CLASS;
-			for(int i=0;i<getters.length;i++) {
-				short p = getters[i].getPriorityClass(container);
-				if(p < prio) prio = p;
-			}
 			this.finishRegister(getters, true, true, container, true, null);
 		}
 	}
