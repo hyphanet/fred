@@ -59,12 +59,12 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		}
 		boolean anyPersistent = false;
 		for(int i=0;i<sbis.length;i++) {
-			anyPersistent = true;
 			SingleBlockInserter inserter = sbis[i];
 			if(inserter == null) continue;
 			if(inserter.isCancelled(container)) continue;
 			if(inserter.resultingURI != null) continue;
 			if(!inserter.persistent()) continue;
+			anyPersistent = true;
 			queuePersistent(inserter, container, context);
 		}
 		if(anyPersistent)
