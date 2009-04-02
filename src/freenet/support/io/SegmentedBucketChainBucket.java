@@ -107,6 +107,9 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			
 		};
 		
+		// Must be run blocking so that if we are on the database thread, the job is
+		// added before committing. If we are not on the database thread, it doesn't
+		// matter.
 		dbJobRunner.runBlocking(freeJob, NativeThread.HIGH_PRIORITY);
 	}
 
@@ -488,6 +491,9 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			}
 
 		};
+		// Must be run blocking so that if we are on the database thread, the job is
+		// added before committing. If we are not on the database thread, it doesn't
+		// matter.
 		dbJobRunner.runBlocking(clearJob, NativeThread.HIGH_PRIORITY-1);
 	}
 
