@@ -847,6 +847,10 @@ class SingleFileInserter implements ClientPutState {
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
 			
+			// FIXME in the other cases, fail() and onSuccess(), we only free when
+			// we set finished. But we haven't set finished here. Can we rely on 
+			// the callback and not do anything here? Note that it is in fact safe
+			// to double-free, it's not safe to not free.
 			if(freeData) {
 				if(persistent)
 					container.activate(block, 2);
