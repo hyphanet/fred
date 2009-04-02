@@ -12,6 +12,7 @@ import com.onionnetworks.util.Util;
 
 public class CodeTest extends TestCase {
 
+	private static final boolean BENCHMARK = Boolean.getBoolean("benchmark");
 	public static FECMath fecMath = new FECMath(8);
 
 	public static final int KK = 192;
@@ -41,6 +42,31 @@ public class CodeTest extends TestCase {
 			Assert.assertEquals(src[i], repair[i]);
 	}
 
+	public void testBenchmark() {
+		if(!BENCHMARK) return;
+
+		int lim = fecMath.gfSize + 1;
+		FECCode maybeNative = FECCodeFactory.getDefault().createFECCode(KK, lim);
+		FECCode pureCode = new PureCode(KK, lim);
+		int[] index = new int[KK];
+
+		for (int i = 0; i < KK; i++)
+			index[i] = lim - i - 1;
+
+		System.out.println("Getting ready for benchmarking");
+		long t1 = System.currentTimeMillis();
+		encodeDecode(maybeNative, maybeNative, index);
+		long t2 = System.currentTimeMillis();
+		encodeDecode(pureCode, pureCode, index);
+		long t3 = System.currentTimeMillis();
+
+		System.out.println(maybeNative);
+		System.out.println(pureCode);
+		long dNative = t2 - t1;
+		long dPure = t3 - t2;
+		System.out.println("Native code took "+dNative+"ms whereas java's code took "+dPure+"ms.");
+	}
+
 	public void testSimpleRev() {
 		int lim = fecMath.gfSize + 1;
 		FECCode code = FECCodeFactory.getDefault().createFECCode(KK, lim);
@@ -49,6 +75,7 @@ public class CodeTest extends TestCase {
 
 		for (int i = 0; i < KK; i++)
 			index[i] = lim - i - 1;
+
 		encodeDecode(code, code2, index);
 		encodeDecode(code2, code, index);
 	}
