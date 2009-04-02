@@ -804,7 +804,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} else if(logMINOR)
 					Logger.minor(this, "Ignoring active because just registered: "+old.request+" in maybeAddToStarterQueue for "+req);
 				size += old.sizeNotStarted();
-				if(old.prio > prio || old.prio == prio && old.retryCount > retryCount)
+				if(old.prio > prio || (old.prio == prio && old.retryCount > retryCount))
 					betterThanSome = true;
 				if(old.request == req) return;
 				prev = old;
