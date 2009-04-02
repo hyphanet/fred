@@ -508,7 +508,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	static final int MAX_STARTER_QUEUE_SIZE = 512; // two full segments
 	
 	/** The above doesn't include in-flight requests. In-flight requests will
-	 * of course still have PersistentChosenRequest's in the database (on disk)
+	 * of course still have PersistentChosenRequest's 
 	 * even though they are not on the starter queue and so don't count towards
 	 * the above limit. So we have a higher limit before we complain that 
 	 * something odd is happening.. (e.g. leaking PersistentChosenRequest's). */
