@@ -203,7 +203,7 @@ abstract class ClientRequestSchedulerBase {
 				container.activate(req, 1);
 			// FIXME call getSendableRequests() and do the sorting in ClientRequestScheduler.reregisterAll().
 			if(req.isInsert() != isInsertScheduler || req.isSSK() != isSSKScheduler) {
-				container.deactivate(req, 1);
+				if(persistent()) container.deactivate(req, 1);
 				continue;
 			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
