@@ -508,8 +508,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;
 					}
-					if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
-							fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
+					int prio = altReq.getPriorityClass(container);
+					if(altReq != null && 
+							(prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
+									&& !altReq.isEmpty(container) && altReq != req) {
 						// Use the recent one instead
 						if(logMINOR)
 							Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
@@ -536,8 +538,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
 						container.activate(altReq, 1);
 						if(altReq != null) {
-							if(altReq.getPriorityClass(container) <= choosenPriorityClass &&
-									fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
+							int prio = altReq.getPriorityClass(container);
+							if(altReq != null && 
+									(prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
+											&& !altReq.isEmpty(container) && altReq != req) {
 								// Use the recent one instead
 								if(logMINOR)
 									Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
