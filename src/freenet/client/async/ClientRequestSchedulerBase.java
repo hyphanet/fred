@@ -366,7 +366,7 @@ abstract class ClientRequestSchedulerBase {
 		long totalPositives = persistentFalsePositives + persistentTruePositives;
 		double percent;
 		if(totalPositives > 0)
-			percent = ((double) persistentFalsePositives) / totalPositives;
+			percent = ((double) 100 * persistentFalsePositives) / totalPositives;
 		else
 			percent = 0;
 		if(!(percent > 2 || logMINOR)) return;
