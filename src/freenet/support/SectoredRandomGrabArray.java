@@ -298,22 +298,22 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	public void maybeRemove(RemoveRandom r, ObjectContainer container) {
 		int count = 0;
 		synchronized(this) {
-		while(true) {
-		int found = -1;
-			for(int i=0;i<grabArrays.length;i++) {
-				if(grabArrays[i] == r) {
-					found = i;
+			while(true) {
+				int found = -1;
+				for(int i=0;i<grabArrays.length;i++) {
+					if(grabArrays[i] == r) {
+						found = i;
+						break;
+					}
+				}
+				if(found != -1) {
+					count++;
+					if(count > 1) Logger.error(this, "Found "+r+" many times in "+this, new Exception("error"));
+					removeElement(found);
+				} else {
 					break;
 				}
 			}
-		if(found != -1) {
-			count++;
-			if(count > 1) Logger.error(this, "Found "+r+" many times in "+this, new Exception("error"));
-			removeElement(found);
-		} else {
-			break;
-		}
-		}
 		}
 		if(count == 0) Logger.error(this, "Not in parent: "+r+" for "+this, new Exception("error"));
 		else if(persistent) {
