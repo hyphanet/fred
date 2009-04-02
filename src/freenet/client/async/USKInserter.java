@@ -210,31 +210,31 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		ClientPutState oldSBI;
 		synchronized(this) {
-		oldSBI = sbi;
-		sbi = null;
-		if(e.getMode() == InsertException.COLLISION) {
-			// Try the next slot
-			edition++;
-			consecutiveCollisions++;
-			if(persistent) container.store(this);
-			if(consecutiveCollisions > MAX_TRIED_SLOTS)
-				scheduleFetcher(container, context);
-			else
-				scheduleInsert(container, context);
-		} else {
-			if(freeData) {
-				if(persistent) container.activate(data, 1);
-				data.free();
-				data.removeFrom(container);
-				synchronized(this) {
-					data = null;
-				}
+			oldSBI = sbi;
+			sbi = null;
+			if(e.getMode() == InsertException.COLLISION) {
+				// Try the next slot
+				edition++;
+				consecutiveCollisions++;
 				if(persistent) container.store(this);
+				if(consecutiveCollisions > MAX_TRIED_SLOTS)
+					scheduleFetcher(container, context);
+				else
+					scheduleInsert(container, context);
+			} else {
+				if(freeData) {
+					if(persistent) container.activate(data, 1);
+					data.free();
+					data.removeFrom(container);
+					synchronized(this) {
+						data = null;
+					}
+					if(persistent) container.store(this);
+				}
+				if(persistent)
+					container.activate(cb, 1);
+				cb.onFailure(e, state, container, context);
 			}
-			if(persistent)
-				container.activate(cb, 1);
-			cb.onFailure(e, state, container, context);
-		}
 		}
 		if(state != null && persistent) {
 			state.removeFrom(container, context);
