@@ -132,7 +132,7 @@ public class InsertCompressor implements CompressJob {
 				long resultSize = result.size();
 				if(resultSize < minSize) {
 					bestCodec = comp;
-					if(bestCompressedData != null)
+					if(bestCompressedData != null && bestCompressedData != origData)
 						// Don't need to removeFrom() : we haven't stored it.
 						bestCompressedData.free();
 					bestCompressedData = result;
