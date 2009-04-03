@@ -673,10 +673,13 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 		container.activate(blockFetchContext, 1);
 		blockFetchContext.removeFrom(container);
-		if(deleteFetchContext)
+		if(deleteFetchContext) {
+			container.activate(fetchContext, 1);
 			fetchContext.removeFrom(container);
+		}
 		container.activate(clientMetadata, 1);
 		clientMetadata.removeFrom(container);
+		container.activate(decompressors, 1);
 		container.delete(decompressors);
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment segment = segments[i];
