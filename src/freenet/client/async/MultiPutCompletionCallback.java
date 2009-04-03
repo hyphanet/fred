@@ -126,7 +126,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			finished = true;
 			if(e != null && this.e != null && this.e != e) {
 				if(persistent) container.activate(this.e, 10);
-				if(!(e.getMode() == InsertException.CANCELLED)) { // Cancelled is okay, ignore it, we cancel after failure sometimes.
+				if(e.getMode() == InsertException.CANCELLED) { // Cancelled is okay, ignore it, we cancel after failure sometimes.
 					// Ignore the new failure mode, use the old one
 					e = this.e;
 				} else {
