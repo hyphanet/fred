@@ -75,9 +75,10 @@ public class NativeThread extends Thread {
 		this.dontCheckRenice = dontCheckRenice;
 	}
 	
-	public NativeThread(ThreadGroup g, Runnable r, String name, int priority) {
+	public NativeThread(ThreadGroup g, Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(g, r, name);
 		this.currentPriority = priority;
+		this.dontCheckRenice = dontCheckRenice;
 	}
 
 	/**
