@@ -78,8 +78,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			state.removeFrom(container, context);
 		}
 		if(complete) {
-		Logger.minor(this, "Completing...");
-		complete(null, container, context);
+			Logger.minor(this, "Completing...");
+			complete(null, container, context);
 		}
 	}
 
@@ -117,7 +117,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			state.removeFrom(container, context);
 		}
 		if(complete)
-		complete(e, container, context);
+			complete(e, container, context);
 	}
 
 	private void complete(InsertException e, ObjectContainer container, ClientContext context) {
