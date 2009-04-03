@@ -112,7 +112,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					Logger.error(this, "Could not decode: "+e, e);
 				}
 			}
-			if(parent.persistent()) {
+			if(persistent) {
 				container.activate(fetcher, 1);
 				container.activate(fetcher.ctx, 1);
 				fetcher.removeFrom(container, context);
@@ -122,6 +122,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			}
 		}
 		if(alreadyInserted) {
+			if(persistent) container.activate(parent, 1);
 			// Success!
 			parent.addMustSucceedBlocks(1, container);
 			parent.completedBlock(true, container, context);
