@@ -27,7 +27,7 @@ public class TransientSendableRequestSet implements SendableRequestSet {
 		return set.toArray(new SendableRequest[set.size()]);
 	}
 
-	public boolean removeRequest(SendableRequest req, ObjectContainer container) {
+	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {
 		return set.remove(req);
 	}
 
