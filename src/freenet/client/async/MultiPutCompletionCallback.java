@@ -35,7 +35,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		container.activate(waitingForFetchable, 1);
 	}
 	
-	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token) {
+	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent) {
 		this.cb = cb;
 		waitingFor = new Vector();
 		waitingForBlockSet = new Vector();
@@ -43,7 +43,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		this.parent = parent;
 		this.token = token;
 		finished = false;
-		this.persistent = parent.persistent();
+		this.persistent = persistent;
 	}
 
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {

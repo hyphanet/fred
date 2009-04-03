@@ -296,7 +296,7 @@ class SingleFileInserter implements ClientPutState {
 				cb.onBlockSetFinished(this, container, context);
 			} else {
 				MultiPutCompletionCallback mcb = 
-					new MultiPutCompletionCallback(cb, parent, token);
+					new MultiPutCompletionCallback(cb, parent, token, persistent);
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
