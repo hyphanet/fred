@@ -737,9 +737,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
 		unregister(container, context);
-		Integer[] oldNums;
+		Integer[] oldNums = null;
 		synchronized(segment) {
-			oldNums = blockNums.toArray(new Integer[blockNums.size()]);
+			if(persistent)
+				oldNums = blockNums.toArray(new Integer[blockNums.size()]);
 			blockNums.clear();
 			cancelled = true;
 		}
