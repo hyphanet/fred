@@ -399,14 +399,14 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		container.delete(this);
 	}
 
-	public boolean objectCanNew(ObjectContainer container) {
-		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
-		return true;
-	}
-	
-	public boolean objectCanUpdate(ObjectContainer container) {
-		Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
-		return true;
-	}
+//	public boolean objectCanNew(ObjectContainer container) {
+//		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+//		return true;
+//	}
+//	
+//	public boolean objectCanUpdate(ObjectContainer container) {
+//		Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+//		return true;
+//	}
 	
 }
