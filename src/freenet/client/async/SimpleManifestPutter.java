@@ -1029,6 +1029,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Metadata meta = ph.metadata;
 				if(ph.metadata == null)
 					Logger.error(this, "Metadata for "+name+" : "+ph+" is null");
+				else {
 				ph.clearMetadata(container);
 				if(persistent())
 					container.activate(meta, 100);
@@ -1036,6 +1037,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				namesToByteArrays.put(name, meta);
 				if(logMINOR)
 					Logger.minor(this, "Putting PutHandler into base metadata: "+ph+" name "+name);
+				}
 			} else if(o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				if(persistent())
