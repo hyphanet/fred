@@ -124,9 +124,17 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
-			if(e != null && this.e != null && this.e != e && persistent) {
-				container.activate(this.e, 10);
-				this.e.removeFrom(container);
+			if(e != null && this.e != null && this.e != e) {
+				if(persistent) container.activate(this.e, 10);
+				if(!(e.getMode() == InsertException.CANCELLED)) { // Cancelled is okay, ignore it, we cancel after failure sometimes.
+					// Ignore the new failure mode, use the old one
+					e = this.e;
+				} else {
+					// Delete the old failure mode, use the new one
+					this.e.removeFrom(container);
+					this.e = e;
+				}
+				
 			}
 			if(e == null) {
 				e = this.e;
