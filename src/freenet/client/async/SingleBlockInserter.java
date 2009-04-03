@@ -684,7 +684,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
-		// FIXME remove sourceData ???
 		container.activate(uri, 5);
 		uri.removeFrom(container);
 		if(resultingURI != null) {
