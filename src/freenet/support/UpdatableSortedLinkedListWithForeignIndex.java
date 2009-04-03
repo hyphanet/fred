@@ -9,22 +9,22 @@ import java.util.HashMap;
  * Note that this class, unlike its parent, does not permit 
  * duplicates.
  */
-public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLinkedList {
+public class UpdatableSortedLinkedListWithForeignIndex<T extends IndexableUpdatableSortedLinkedListItem<T>> extends UpdatableSortedLinkedList<T> {
 
-    final HashMap map;
+    final HashMap<Object, T> map;
 
     public UpdatableSortedLinkedListWithForeignIndex() {
         super();
-        map = new HashMap();
+        map = new HashMap<Object, T>();
     }
     
     @Override
-	public synchronized void add(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
+	public synchronized void add(T item) throws UpdatableSortedLinkedListKilledException {
         if(!(item instanceof IndexableUpdatableSortedLinkedListItem)) {
             throw new IllegalArgumentException();
         }
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        IndexableUpdatableSortedLinkedListItem i = (IndexableUpdatableSortedLinkedListItem)item;
+        T i = item;
         if(map.get(i.indexValue()) != null) {
             // Ignore duplicate
             Logger.error(this, "Ignoring duplicate: "+i+" was already present: "+map.get(i.indexValue()));
@@ -36,21 +36,21 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
     }
     
     @Override
-	public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
+	public synchronized T remove(T item) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        map.remove(((IndexableUpdatableSortedLinkedListItem)item).indexValue());
+        map.remove(((IndexableUpdatableSortedLinkedListItem<?>)item).indexValue());
         return super.remove(item);
     }
     
-	public synchronized IndexableUpdatableSortedLinkedListItem get(Object key) {
-		return (IndexableUpdatableSortedLinkedListItem)map.get(key);
+	public synchronized IndexableUpdatableSortedLinkedListItem<?> get(Object key) {
+		return (IndexableUpdatableSortedLinkedListItem<?>)map.get(key);
 	}
 
     public synchronized boolean containsKey(Object key) {
         return map.containsKey(key);
     }
     
-    public synchronized boolean contains(IndexableUpdatableSortedLinkedListItem item) {
+    public synchronized boolean contains(IndexableUpdatableSortedLinkedListItem<?> item) {
     	return containsKey(item.indexValue());
     }
 
@@ -58,10 +58,9 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
      * Remove an element from the list by its key.
      * @throws UpdatableSortedLinkedListKilledException 
      */
-    public synchronized IndexableUpdatableSortedLinkedListItem removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
+    public synchronized IndexableUpdatableSortedLinkedListItem<?> removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        IndexableUpdatableSortedLinkedListItem item = 
-            (IndexableUpdatableSortedLinkedListItem) map.get(key);
+        T item = map.get(key);
         if(item != null) remove(item);
         checkList();
         return item;

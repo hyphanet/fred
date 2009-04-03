@@ -36,14 +36,14 @@ public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSorte
 	 * removed completely?
 	 */
 
-	private DoublyLinkedList parentList;
+	private DoublyLinkedList<? super T> parentList;
 
-	public DoublyLinkedList getParent() {
+	public DoublyLinkedList<? super T> getParent() {
 		return parentList;
 	}
 
-	public DoublyLinkedList setParent(DoublyLinkedList l) {
-		DoublyLinkedList oldParent = parentList;
+	public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
+		DoublyLinkedList<? super T> oldParent = parentList;
 		parentList = l;
 		return oldParent;
 	}

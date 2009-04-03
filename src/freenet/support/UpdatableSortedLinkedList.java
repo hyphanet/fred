@@ -2,7 +2,6 @@ package freenet.support;
 
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
  * @author amphibian
@@ -11,7 +10,7 @@ import java.util.NoSuchElementException;
  * and provides an update() function to move an item when its
  * value has changed. Allows duplicates.
  */
-public class UpdatableSortedLinkedList implements Iterable {
+public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T>> implements Iterable<T> {
 	boolean debug = false;
 	protected boolean killed = false;
 	private static volatile boolean logMINOR;
@@ -25,12 +24,12 @@ public class UpdatableSortedLinkedList implements Iterable {
 	}
 	
     public UpdatableSortedLinkedList() {
-        list = new DoublyLinkedListImpl();
+        list = new DoublyLinkedListImpl<T>();
     }
     
-    private final DoublyLinkedList list;
+    private final DoublyLinkedList<T> list;
     
-    public synchronized void add(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+    public synchronized void add(T i) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         if(logMINOR) Logger.minor(this, "Add("+i+") on "+this);
         if(list.isEmpty()) {
@@ -49,11 +48,10 @@ public class UpdatableSortedLinkedList implements Iterable {
             return;
         }
         // Search the list for a good place to put it
-        Enumeration e = list.elements();
-        UpdatableSortedLinkedListItem prev = null;
+        Enumeration<T> e = list.elements();
+        T prev = null;
         while(e.hasMoreElements()) {
-            UpdatableSortedLinkedListItem cur = 
-                (UpdatableSortedLinkedListItem) e.nextElement();
+            T cur =  e.nextElement();
             if((prev != null) && (cur.compareTo(i) >= 0) && (prev.compareTo(i) <= 0)) {
                 list.insertNext(prev, i);
                 checkList();
@@ -89,18 +87,17 @@ public class UpdatableSortedLinkedList implements Iterable {
     	}
 	}
 
-	public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+	public synchronized T remove(T i) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
     	if(logMINOR) Logger.minor(this, "Remove("+i+") on "+this);
         checkList();
-        UpdatableSortedLinkedListItem item = 
-        	(UpdatableSortedLinkedListItem) list.remove(i);
+        T item = list.remove(i);
         if(logMINOR) Logger.minor(this, "Returning "+item);
         checkList();
         return item;
     }
     
-	public synchronized void addOrUpdate(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
+	public synchronized void addOrUpdate(T item) throws UpdatableSortedLinkedListKilledException {
 		if(item.getParent() == list)
 			update(item);
 		else if(item.getParent() == null)
@@ -108,7 +105,7 @@ public class UpdatableSortedLinkedList implements Iterable {
 		else throw new IllegalStateException("Item "+item+" should be on our list: "+list+" or null, but is "+item.getParent());
 	}
 	
-    public synchronized void update(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+    public synchronized void update(T i) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
     	if(logMINOR) Logger.minor(this, "Update("+i+") on "+this);
         checkList();
@@ -131,8 +128,8 @@ public class UpdatableSortedLinkedList implements Iterable {
             return;
         }
         // Forwards or backwards?
-        UpdatableSortedLinkedListItem next = (UpdatableSortedLinkedListItem) list.next(i);
-        UpdatableSortedLinkedListItem prev = (UpdatableSortedLinkedListItem) list.prev(i);
+        T next = list.next(i);
+        T prev = list.prev(i);
         if((next == null) && (prev == null)) {
             return;
         }
@@ -148,7 +145,7 @@ public class UpdatableSortedLinkedList implements Iterable {
             // i > next - move forwards
             while(true) {
                 prev = next;
-                next = (UpdatableSortedLinkedListItem) list.next(next);
+                next = list.next(next);
                 if(next == null) {
                     throw new NullPointerException("impossible - we checked");
                 }
@@ -163,7 +160,7 @@ public class UpdatableSortedLinkedList implements Iterable {
             // i < next - move backwards
             while(true) {
                 next = prev;
-                prev = (UpdatableSortedLinkedListItem) list.prev(prev);
+                prev = list.prev(prev);
                 if(next == null) {
                     throw new NullPointerException("impossible - we checked");
                 }
@@ -224,7 +221,7 @@ public class UpdatableSortedLinkedList implements Iterable {
     /**
      * @return Does the list contain that item?
      */
-    public synchronized boolean contains(UpdatableSortedLinkedListItem item) {
+    public synchronized boolean contains(T item) {
     	return list.contains(item);
     }
     
@@ -238,8 +235,8 @@ public class UpdatableSortedLinkedList implements Iterable {
     /**
      * @return The item on the list with the lowest value.
      */
-    public synchronized UpdatableSortedLinkedListItem getLowest() {
-        return (UpdatableSortedLinkedListItem) list.head();
+    public synchronized T getLowest() {
+        return list.head();
     }
     
     public synchronized void clear() {
@@ -251,23 +248,23 @@ public class UpdatableSortedLinkedList implements Iterable {
     	killed = true;
     }
 
-	public synchronized UpdatableSortedLinkedListItem removeLowest() throws UpdatableSortedLinkedListKilledException {
+	public synchronized T removeLowest() throws UpdatableSortedLinkedListKilledException {
 		if(isEmpty()) return null;
-		UpdatableSortedLinkedListItem i = getLowest();
+		T i = getLowest();
 		remove(i);
 		return i;
 	}
 
-	public synchronized void moveTo(UpdatableSortedLinkedList dest) throws UpdatableSortedLinkedListKilledException {
-		Enumeration e = list.elements();
+	public synchronized void moveTo(UpdatableSortedLinkedList<T> dest) throws UpdatableSortedLinkedListKilledException {
+		Enumeration<T> e = list.elements();
 		while(e.hasMoreElements()) {
-			UpdatableSortedLinkedListItem item = (UpdatableSortedLinkedListItem) e.nextElement();
+			T item = e.nextElement();
 			remove(item);
 			dest.add(item);
 		}
 	}
 
-	public synchronized Iterator iterator() {
+	public synchronized Iterator<T> iterator() {
 		return list.iterator();
 	}
 }

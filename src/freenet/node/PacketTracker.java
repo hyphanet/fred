@@ -250,7 +250,7 @@ public class PacketTracker {
 			return next;
 		}
 
-		public final BaseQueuedResend setNext(Item i) {
+		public final BaseQueuedResend setNext(Item<?> i) {
 			BaseQueuedResend old = next;
 			next = (BaseQueuedResend)i;
 			return old;
@@ -260,7 +260,7 @@ public class PacketTracker {
 			return prev;
 		}
 
-		public BaseQueuedResend setPrev(Item i) {
+		public BaseQueuedResend setPrev(Item<?> i) {
 			BaseQueuedResend old = prev;
 			prev = (BaseQueuedResend)i;
 			return old;
@@ -281,14 +281,14 @@ public class PacketTracker {
 		public Object indexValue() {
 			return packetNumber;
 		}
-		private DoublyLinkedList parent;
+		private DoublyLinkedList<? super BaseQueuedResend> parent;
 
-		public DoublyLinkedList getParent() {
+		public DoublyLinkedList<? super BaseQueuedResend> getParent() {
 			return parent;
 		}
 
-		public DoublyLinkedList setParent(DoublyLinkedList l) {
-			DoublyLinkedList old = parent;
+		public DoublyLinkedList<? super BaseQueuedResend> setParent(DoublyLinkedList<? super BaseQueuedResend> l) {
+			DoublyLinkedList<? super BaseQueuedResend> old = parent;
 			parent = l;
 			return old;
 		}
