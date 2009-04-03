@@ -27,8 +27,7 @@ public class RegisterMe {
 		addedTime = System.currentTimeMillis();
 		this.blocks = blocks;
 		int hash = core.hashCode();
-		if(nonGetRequest != null)
-			hash ^= nonGetRequest.hashCode();
+		hash ^= nonGetRequest.hashCode();
 		hash *= prio;
 		hashCode = hash;
 	}
