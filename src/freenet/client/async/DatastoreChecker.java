@@ -339,12 +339,12 @@ public class DatastoreChecker implements PrioRunnable {
 					}
 				}
 				if(keys == null) {
+					context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
 					try {
 						wait(100*1000);
 					} catch (InterruptedException e) {
 						// Ok
 					}
-					context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
 					continue;
 				}
 				break;
