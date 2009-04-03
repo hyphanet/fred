@@ -1417,6 +1417,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					if(persistent()) container.ext().store(metadataPuttersUnfetchable, 2);
 					if(logMINOR) Logger.minor(this, "Unfetchable metadata putter transition: "+oldState+" -> "+newState);
 				}
+				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
 			} else {
 				Logger.error(this, "onTransition() but metadataPuttersByMetadata does not contain metadata tag "+m+" for "+oldState+" should -> "+newState);
 			}
@@ -1426,9 +1427,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.deactivate(m, 100);
 			container.deactivate(metadataPuttersUnfetchable, 2);
 			container.deactivate(metadataPuttersByMetadata, 2);
-		}
-		synchronized(this) {
-			if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
 		}
 	}
 	
