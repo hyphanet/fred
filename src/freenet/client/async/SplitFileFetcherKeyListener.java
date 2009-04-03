@@ -135,9 +135,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	void addKey(Key key, int segNo, ClientContext context) {
 		byte[] saltedKey = context.getChkFetchScheduler().saltKey(key);
 		filter.addKey(saltedKey);
-		segmentFilters[segNo].addKey(localSaltKey(key));
-		if(!segmentFilters[segNo].checkFilter(localSaltKey(key)))
-			Logger.error(this, "Key added but not in filter: "+key+" on "+this);
+		byte[] localSalted = localSaltKey(key);
+		segmentFilters[segNo].addKey(localSalted);
+//		if(!segmentFilters[segNo].checkFilter(localSalted))
+//			Logger.error(this, "Key added but not in filter: "+key+" on "+this);
 	}
 
 	private byte[] localSaltKey(Key key) {
