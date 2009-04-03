@@ -1697,6 +1697,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(metas != null) {
 			for(Metadata meta : metas) {
+				if(meta == baseMetadata) continue;
 				container.activate(meta, 1);
 				meta.removeFrom(container);
 			}
