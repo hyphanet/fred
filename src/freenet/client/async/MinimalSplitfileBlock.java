@@ -30,12 +30,13 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 	public void setData(Bucket data) {
 		this.data = data;
 	}
-	
-	public void objectOnDeactivate(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Deactivating "+this, new Exception("debug"));
-	}
 
+	// Useful for debugging duplicate object bugs. But use the new logging infrastructure if you reinstate it, please.
+//	public void objectOnDeactivate(ObjectContainer container) {
+//		if(Logger.shouldLog(Logger.MINOR, this))
+//			Logger.minor(this, "Deactivating "+this, new Exception("debug"));
+//	}
+//
 	public void storeTo(ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Storing "+this+" with data: "+data);
