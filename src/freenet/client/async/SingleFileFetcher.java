@@ -1188,10 +1188,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	}
 	
-	public void objectOnActivate(ObjectContainer container) {
-		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
-	}
-	
+//	public void objectOnActivate(ObjectContainer container) {
+//		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
+//	}
+//	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 		uri.removeFrom(container);
