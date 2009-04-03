@@ -288,18 +288,18 @@ public class PersistentChosenRequest {
 	public void pruneDuplicates(ClientRequestScheduler sched) {
 		ArrayList<PersistentChosenBlock> dumped = null;
 		try {
-		synchronized(this) {
-		for(int i=0;i<blocksNotStarted.size();i++) {
-			PersistentChosenBlock block = blocksNotStarted.get(i);
-			Key key = block.key;
-			if(key == null) continue;
-			if(sched.hasFetchingKey(key)) {
-				blocksNotStarted.remove(i);
-				if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
-				i--;
+			synchronized(this) {
+				for(int i=0;i<blocksNotStarted.size();i++) {
+					PersistentChosenBlock block = blocksNotStarted.get(i);
+					Key key = block.key;
+					if(key == null) continue;
+					if(sched.hasFetchingKey(key)) {
+						blocksNotStarted.remove(i);
+						if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
+						i--;
+					}
+				}
 			}
-		}
-		}
 		} finally {
 			if(dumped != null) {
 				for(PersistentChosenBlock block : dumped)
