@@ -1194,17 +1194,23 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 //	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
+		container.activate(uri, 5);
 		uri.removeFrom(container);
-		if(thisKey != null)
+		if(thisKey != null) {
+			container.activate(thisKey, 5);
 			thisKey.removeFrom(container);
+		}
 		if(ah != null) {
 			ah.activateForExecution(container);
 			ah.removeFrom(container);
 		}
+		container.activate(metaStrings, 1);
 		metaStrings.clear();
 		container.delete(metaStrings);
+		container.activate(clientMetadata, 1);
 		clientMetadata.removeFrom(container);
 		// actx is global to the ClientRequest, not our problem
+		container.activate(decompressors, 1);
 		decompressors.clear();
 		removeMetadata(container);
 		removeArchiveMetadata(container);
