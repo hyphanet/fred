@@ -127,7 +127,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	 * @see freenet.client.async.CooldownQueue#removeKeyBefore(long)
 	 */
 	public synchronized Object removeKeyBefore(long now, long dontCareAfterMillis, ObjectContainer container, int maxKeys) {
-		ArrayList v = new ArrayList();
+		ArrayList<Key> v = new ArrayList();
 		boolean foundIT = false;
 		if(logDEBUG) {
 			foundIT = bigLog();
