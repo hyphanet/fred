@@ -508,8 +508,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;
 					}
+					if (altReq != null) {
 					int prio = altReq.getPriorityClass(container);
-					if(altReq != null && 
+					if( 
 							(prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
 									&& !altReq.isEmpty(container) && altReq != req) {
 						// Use the recent one instead
@@ -517,11 +518,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 							Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
 						// Don't need to reregister, because removeRandom doesn't actually remove!
 						req = altReq;
-					} else if(altReq != null) {
+					} else {
 						// Don't use the recent one
 						if(logMINOR)
 							Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
 						recent.add(altReq);
+					}
 					}
 				} else {
 					RandomGrabArray altRGA = null;
