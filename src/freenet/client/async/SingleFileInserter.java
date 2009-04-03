@@ -318,14 +318,11 @@ class SingleFileInserter implements ClientPutState {
 				mcb.addURIGenerator(metaPutter, container);
 				mcb.add(dataPutter, container);
 				cb.onTransition(this, mcb, container);
-				// FIXME should encode only once?? why getBlock then encode?
-				if(earlyEncode && metaPutter instanceof SingleBlockInserter && isCHK)
-					((SingleBlockInserter)metaPutter).getBlock(container, context, true);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
 				mcb.arm(container, context);
 				dataPutter.schedule(container, context);
-				if(metaPutter instanceof SingleBlockInserter)
-					((SingleBlockInserter)metaPutter).encode(container, context, true);
+				if(earlyEncode && metaPutter instanceof SingleBlockInserter)
+					((SingleBlockInserter)metaPutter).getBlock(container, context, true);
 				metaPutter.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
 			}
