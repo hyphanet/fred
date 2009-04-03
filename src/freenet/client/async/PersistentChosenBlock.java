@@ -12,7 +12,7 @@ import freenet.node.SendableRequestSender;
 import freenet.support.Logger;
 
 /**
- * A block within a ChosenRequest.
+ * A block within a PersistentChosenRequest.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class PersistentChosenBlock extends ChosenBlock {
