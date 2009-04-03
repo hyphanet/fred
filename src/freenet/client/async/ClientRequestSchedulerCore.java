@@ -689,10 +689,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //					container.deactivate(reg, 1);
 //					continue; // Don't delete
 //				}
-				long endNext = System.currentTimeMillis();
-				if(logMINOR)
-					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
-				
 				if(logMINOR)
 					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.nonGetRequest+" : "+reg.addedTime+" : "+reg.priority);
 				// Don't need to activate, fields should exist? FIXME
