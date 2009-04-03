@@ -43,6 +43,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 public class SplitFileInserterSegment extends SendableInsert implements FECCallback, Encodeable {
 
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -50,6 +51,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 			}
 		});
 	}
@@ -1569,7 +1571,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
 			return false;
 		}
-		if(logMINOR) Logger.minor(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
+		if(logDEBUG) Logger.debug(this, "Storing "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 		return true;
 	}
 
