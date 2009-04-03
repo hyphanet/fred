@@ -725,11 +725,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * @param context
 	 */
 	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
-		if(persistent()) {
-			container.activate(putHandlersByName, 2); // depth 2 to load elements
-		}
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap<String, Object> namesToByteArrays = new HashMap<String, Object>();
+		// We'll end up committing it all anyway, and hash maps in hash maps can cause
+		// *severe* problems (see COR-1582), so activate to max depth first.
+		if(persistent()) container.activate(putHandlersByName, Integer.MAX_VALUE);
 		namesToByteArrays(putHandlersByName, namesToByteArrays, container);
 		if(defaultName != null) {
 			Metadata meta = (Metadata) namesToByteArrays.get(defaultName);
@@ -1040,8 +1040,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			} else if(o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
-				if(persistent())
-					container.activate(o, 2); // Depth 1 doesn't load the elements...
+				// Already activated
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR)
 					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+container == null ? "null" : Boolean.toString(container.ext().isActive(o)));
