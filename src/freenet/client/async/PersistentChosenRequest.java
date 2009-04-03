@@ -177,7 +177,7 @@ public class PersistentChosenRequest {
 			}
 		}
 		if(returnNow) {
-			scheduler.removeRunningRequest(request);
+			if(finished) scheduler.removeRunningRequest(request);
 			return;
 		}
 		if(finishedBlocks.length == 0) {
