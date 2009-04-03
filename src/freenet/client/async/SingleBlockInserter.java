@@ -327,6 +327,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				deactivateCB = !container.ext().isActive(cb);
 				if(deactivateCB)
 					container.activate(cb, 1);
+				container.activate(parent, 1);
 			}
 			ClientKeyBlock block = encode(container, context, true);
 			cb.onEncode(block.getClientKey(), this, container, context);
