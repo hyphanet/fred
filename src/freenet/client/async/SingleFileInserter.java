@@ -44,6 +44,7 @@ import freenet.support.io.SegmentedBucketChainBucket;
 class SingleFileInserter implements ClientPutState {
 
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 	
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -51,6 +52,7 @@ class SingleFileInserter implements ClientPutState {
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.MINOR, this);
 			}
 		});
 	}
@@ -988,16 +990,16 @@ class SingleFileInserter implements ClientPutState {
 		}
 		
 		public boolean objectCanUpdate(ObjectContainer container) {
-			if(logMINOR)
-				Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
+			if(logDEBUG)
+				Logger.debug(this, "objectCanUpdate() on "+this, new Exception("debug"));
 			return true;
 		}
 		
 		public boolean objectCanNew(ObjectContainer container) {
 			if(finished)
 				Logger.error(this, "objectCanNew but finished on "+this, new Exception("error"));
-			else if(logMINOR)
-				Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+			else if(logDEBUG)
+				Logger.debug(this, "objectCanNew() on "+this, new Exception("debug"));
 			return true;
 		}
 		
