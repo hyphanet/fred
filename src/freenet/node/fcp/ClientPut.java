@@ -404,35 +404,6 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = super.getFieldSet();
-		// This is all fixed, so no need for synchronization.
-		if(clientMetadata.getMIMEType() != null)
-			fs.putSingle("Metadata.ContentType", clientMetadata.getMIMEType());
-		fs.putSingle("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
-		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
-			fs.putSingle("Filename", origFilename.getPath());
-		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
-			if(!finished) {
-				// the bucket is a persistent encrypted temp bucket
-				bucketToFS(fs, "TempBucket", true, data);
-			}
-		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
-			fs.putSingle("TargetURI", targetURI.toString());
-		}
-		if(putter != null)  {
-			SimpleFieldSet sfs = putter.getProgressFieldset();
-			fs.put("progress", sfs);
-		}
-		if(targetFilename != null)
-			fs.putSingle("TargetFilename", targetFilename);
-		fs.putSingle("EarlyEncode", Boolean.toString(earlyEncode));
-		fs.put("BinaryBlob", binaryBlob);
-		
-		return fs;
-	}
-
-	@Override
 	protected freenet.client.async.ClientRequester getClientRequest() {
 		return putter;
 	}

@@ -325,11 +325,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		blockSetFinalized(container, context);
 	}
 
-	public SimpleFieldSet getProgressFieldset() {
-		if(currentState == null) return null;
-		return currentState.getProgressFieldset();
-	}
-
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		if(persistent())
 			container.activate(client, 1);

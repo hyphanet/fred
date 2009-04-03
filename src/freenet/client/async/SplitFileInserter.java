@@ -74,28 +74,6 @@ public class SplitFileInserter implements ClientPutState {
 		return hashCode;
 	}
 
-	public SimpleFieldSet getProgressFieldset() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
-		// don't save basic infrastructure such as ctx and parent
-		// only save details of the request
-		fs.putSingle("Type", "SplitFileInserter");
-		fs.put("DataLength", dataLength);
-		fs.put("DecompressedLength", decompressedLength);
-		if(compressionCodec != null)
-			fs.putSingle("CompressionCodec", compressionCodec.toString());
-		fs.put("SplitfileCodec", splitfileAlgorithm);
-		fs.put("Finished", finished);
-		fs.put("SegmentSize", segmentSize);
-		fs.put("CheckSegmentSize", checkSegmentSize);
-		SimpleFieldSet segs = new SimpleFieldSet(false);
-//		for(int i=0;i<segments.length;i++) {
-//			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
-//		}
-		segs.put("Count", segments.length);
-		fs.put("Segments", segs);
-		return fs;
-	}
-
 	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
 		hashCode = super.hashCode();
 		this.parent = put;

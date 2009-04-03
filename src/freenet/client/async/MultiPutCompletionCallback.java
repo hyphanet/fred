@@ -281,10 +281,6 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		return token;
 	}
 
-	public SimpleFieldSet getProgressFieldset() {
-		return null;
-	}
-
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		if(persistent)
 			container.activate(waitingForFetchable, 2);

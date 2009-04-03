@@ -89,11 +89,6 @@ public class BinaryBlobInserter implements ClientPutState {
 		return parent;
 	}
 
-	public SimpleFieldSet getProgressFieldset() {
-		// FIXME not supported
-		return null;
-	}
-
 	public Object getToken() {
 		return clientContext;
 	}

@@ -333,20 +333,6 @@ public abstract class ClientRequest {
 	}
 
 	/**
-	 * Write a persistent request to disk.
-	 * @throws IOException 
-	 */
-	public void write(BufferedWriter w) throws IOException {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
-			Logger.error(this, "Not persisting as persistenceType="+persistenceType);
-			return;
-		}
-		// Persist the request to disk
-		SimpleFieldSet fs = getFieldSet();
-		fs.writeTo(w);
-	}
-
-	/**
 	 * Get a SimpleFieldSet representing this request.
 	 */
 	public abstract SimpleFieldSet getFieldSet() throws IOException;

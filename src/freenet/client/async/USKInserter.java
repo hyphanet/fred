@@ -352,10 +352,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return tokenObject;
 	}
 
-	public SimpleFieldSet getProgressFieldset() {
-		return null;
-	}
-
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}

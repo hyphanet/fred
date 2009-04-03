@@ -886,22 +886,6 @@ class SingleFileInserter implements ClientPutState {
 			return token;
 		}
 
-		public SimpleFieldSet getProgressFieldset() {
-			ClientPutState curSFI;
-			ClientPutState curMetadataPutter;
-			synchronized(this) {
-				curSFI = sfi;
-				curMetadataPutter = metadataPutter;
-			}
-			SimpleFieldSet fs = new SimpleFieldSet(false);
-			fs.putSingle("Type", "SplitHandler");
-			if(curSFI != null)
-				fs.put("SplitFileInserter", curSFI.getProgressFieldset());
-			if(curMetadataPutter != null)
-				fs.put("MetadataPutter", metadataPutter.getProgressFieldset());
-			return fs;
-		}
-
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 
 			if(persistent) // FIXME debug-point
@@ -1034,10 +1018,6 @@ class SingleFileInserter implements ClientPutState {
 
 	public Object getToken() {
 		return token;
-	}
-
-	public SimpleFieldSet getProgressFieldset() {
-		return null;
 	}
 
 	public void onStartCompression(COMPRESSOR_TYPE ctype, ObjectContainer container, ClientContext context) {

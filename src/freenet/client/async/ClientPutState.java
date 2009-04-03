@@ -30,10 +30,6 @@ public interface ClientPutState {
 	 */
 	public Object getToken();
 
-	/** Serialize current progress to a SimpleFieldSet.
-	 * Does not have to be complete! */
-	public abstract SimpleFieldSet getProgressFieldset();
-
 	/**
 	 * Once the callback has finished with this fetch, it will call removeFrom() to instruct the fetch
 	 * to remove itself and all its subsidiary objects from the database.

@@ -537,10 +537,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return tokenObject;
 	}
 
-	public SimpleFieldSet getProgressFieldset() {
-		return null;
-	}
-
 	/** Attempt to encode the block, if necessary */
 	public void tryEncode(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
