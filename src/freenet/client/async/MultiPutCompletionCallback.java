@@ -58,16 +58,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				return;
 			}
 			waitingFor.remove(state);
-			if(waitingForBlockSet.contains(state)) {
-				waitingForBlockSet.remove(state);
-				if(persistent && !waitingFor.isEmpty())
-					container.ext().store(waitingForBlockSet, 1);
-			}
-			if(waitingForFetchable.contains(state)) {
-				waitingForFetchable.remove(state);
-				if(persistent && !waitingFor.isEmpty())
-					container.ext().store(waitingForFetchable, 1);
-			}
+			waitingForBlockSet.remove(state);
+			waitingForFetchable.remove(state);
 			if(!(waitingFor.isEmpty() && started)) {
 				if(persistent) {
 					container.ext().store(waitingFor, 1);
@@ -79,7 +71,12 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				if(persistent) container.store(this);
 			}
 		}
-		if(persistent) state.removeFrom(container, context);
+		if(persistent) {
+			container.ext().store(waitingFor, 2);
+			container.ext().store(waitingForBlockSet, 2);
+			container.ext().store(waitingForFetchable, 2);
+			state.removeFrom(container, context);
+		}
 		if(complete) {
 		Logger.minor(this, "Completing...");
 		complete(null, container, context);
