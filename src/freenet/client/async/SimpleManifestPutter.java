@@ -122,7 +122,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			sfi.schedule(container, context);
 			if(persistent) {
 				container.deactivate(sfi, 1);
-				container.store(this);
 			}
 		}
 		
