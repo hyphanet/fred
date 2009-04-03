@@ -99,7 +99,7 @@ public class DatastoreChecker implements PrioRunnable {
 					totalSize += persistentKeys[i].get(j).length;
 			}
 			if(totalSize > MAX_PERSISTENT_KEYS) {
-				if(logMINOR) Logger.minor(this, "Persistent datastore checker queue alreadyfull");
+				if(logMINOR) Logger.minor(this, "Persistent datastore checker queue already full");
 				return;
 			}
 		}
@@ -113,14 +113,12 @@ public class DatastoreChecker implements PrioRunnable {
 			for(DatastoreCheckerItem item : results) {
 				if(item.chosenBy == context.bootID) continue;
 				SendableGet getter = item.getter;
-				if(getter == null) {
-					// FIXME is this normal or isn't it? Probably ... if we don't always delete the DCI's ...
+				if(getter == null || !container.ext().isStored(getter)) {
 					if(logMINOR) Logger.minor(this, "Ignoring DatastoreCheckerItem because the SendableGet has already been deleted from the database");
 					container.delete(item);
 					continue;
 				}
 				BlockSet blocks = item.blocks;
-				if(!container.ext().isStored(getter)) continue; // Already deleted
 				container.activate(getter, 1);
 				boolean dontCache = getter.dontCache(container);
 				ClientRequestScheduler sched = getter.getScheduler(context);
