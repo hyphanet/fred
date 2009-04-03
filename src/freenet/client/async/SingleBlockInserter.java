@@ -31,6 +31,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -42,7 +43,20 @@ import freenet.support.io.NativeThread;
  */
 public class SingleBlockInserter extends SendableInsert implements ClientPutState, Encodeable {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+	
 	Bucket sourceData;
 	final short compressionCodec;
 	final FreenetURI uri; // uses essentially no RAM in the common case of a CHK because we use FreenetURI.EMPTY_CHK_URI
@@ -110,7 +124,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
 		}
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	protected ClientKeyBlock innerEncode(RandomSource random, ObjectContainer container) throws InsertException {
@@ -208,7 +221,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			fail(new InsertException(InsertException.CANCELLED), container, context);
 			return;
 		}
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "onFailure() on "+e+" for "+this);
 		
 		switch(e.code) {
@@ -721,7 +733,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			Logger.error(this, "objectCanNew when already finished on "+this);
 			return false;
 		}
-		Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
+		if(logDEBUG)
+			Logger.debug(this, "objectCanNew() on "+this, new Exception("debug"));
 		return true;
 	}
 //	
