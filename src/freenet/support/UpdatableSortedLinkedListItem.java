@@ -2,13 +2,14 @@ package freenet.support;
 
 import freenet.support.DoublyLinkedList.Item;
 
-public interface UpdatableSortedLinkedListItem extends DoublyLinkedList.Item, Comparable {
+public interface UpdatableSortedLinkedListItem<T extends UpdatableSortedLinkedListItem<T>> extends
+        DoublyLinkedList.Item<T>, Comparable<T> {
 
-    public abstract Item getNext();
+	public abstract T getNext();
 
-    public abstract Item setNext(Item i);
+	public abstract T setNext(Item<?> i);
 
-    public abstract Item getPrev();
+	public abstract T getPrev();
 
-    public abstract Item setPrev(Item i);
+	public abstract T setPrev(Item<?> i);
 }

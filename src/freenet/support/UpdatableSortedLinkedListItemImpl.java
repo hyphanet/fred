@@ -5,37 +5,38 @@ import freenet.support.DoublyLinkedList.Item;
 /**
  * An item that can be put into an UpdatableSortedLinkedList.
  */
-public abstract class UpdatableSortedLinkedListItemImpl implements UpdatableSortedLinkedListItem {
+public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSortedLinkedListItemImpl<T>> implements
+        UpdatableSortedLinkedListItem<T> {
 
-    private Item next;
-    private Item prev;
-    
-    public Item getNext() {
-        return next;
-    }
+	private T next;
+	private T prev;
 
-    public Item setNext(Item i) {
-        Item old = next;
-        next = i;
-        return old;
-    }
+	public T getNext() {
+		return next;
+	}
 
-    public Item getPrev() {
-        return prev;
-    }
+	public T setNext(Item<?> i) {
+		T old = next;
+		next = (T) i;
+		return old;
+	}
 
-    public Item setPrev(Item i) {
-        Item old = prev;
-        prev = i;
-        return old;
-    }
-    
-    /*
-     * FIXME: DoublyLinkedList says that this is only for debugging purposes.
-     * Maybe it should be removed completely?
-     */
-    
-    private DoublyLinkedList parentList;
+	public T getPrev() {
+		return prev;
+	}
+
+	public T setPrev(Item<?> i) {
+		T old = prev;
+		prev = (T) i;
+		return old;
+	}
+
+	/*
+	 * FIXME: DoublyLinkedList says that this is only for debugging purposes. Maybe it should be
+	 * removed completely?
+	 */
+
+	private DoublyLinkedList parentList;
 
 	public DoublyLinkedList getParent() {
 		return parentList;
@@ -46,5 +47,5 @@ public abstract class UpdatableSortedLinkedListItemImpl implements UpdatableSort
 		parentList = l;
 		return oldParent;
 	}
-    
+
 }

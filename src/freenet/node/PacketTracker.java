@@ -17,8 +17,8 @@ import freenet.support.DoublyLinkedList;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
 import freenet.support.LimitedRangeIntByteArrayMap;
 import freenet.support.LimitedRangeIntByteArrayMapElement;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.ReceivedPacketNumbers;
 import freenet.support.TimeUtil;
 import freenet.support.UpdatableSortedLinkedListItem;
@@ -216,7 +216,7 @@ public class PacketTracker {
 	}
 
 	private abstract class BaseQueuedResend extends PacketActionItem
-		implements IndexableUpdatableSortedLinkedListItem {
+		implements IndexableUpdatableSortedLinkedListItem<BaseQueuedResend> {
 
 		/** Time at which this item becomes sendable.
 		 * When we send a resend request, this is reset to t+500ms.
@@ -243,31 +243,30 @@ public class PacketTracker {
 		abstract long urgentDelay();
 
 		abstract long initialActiveTime(long now);
-		private Item next;
-		private Item prev;
+		private BaseQueuedResend next;
+		private BaseQueuedResend prev;
 
-		public final Item getNext() {
+		public final BaseQueuedResend getNext() {
 			return next;
 		}
 
-		public final Item setNext(Item i) {
-			Item old = next;
-			next = i;
+		public final BaseQueuedResend setNext(Item i) {
+			BaseQueuedResend old = next;
+			next = (BaseQueuedResend)i;
 			return old;
 		}
 
-		public Item getPrev() {
+		public BaseQueuedResend getPrev() {
 			return prev;
 		}
 
-		public Item setPrev(Item i) {
-			Item old = prev;
-			prev = i;
+		public BaseQueuedResend setPrev(Item i) {
+			BaseQueuedResend old = prev;
+			prev = (BaseQueuedResend)i;
 			return old;
 		}
 
-		public int compareTo(Object o) {
-			BaseQueuedResend r = (BaseQueuedResend) o;
+		public int compareTo(BaseQueuedResend r) {
 			if(urgentTime > r.urgentTime)
 				return 1;
 			if(urgentTime < r.urgentTime)
@@ -758,9 +757,9 @@ public class PacketTracker {
 			acks = new int[length];
 			int i = 0;
 
-			Iterator it = forgottenQueue.iterator();
+			Iterator<QueuedForgotten> it = forgottenQueue.iterator();
 			while(it.hasNext()) {
-				QueuedForgotten ack = (QueuedForgotten) it.next();
+				QueuedForgotten ack = it.next();
 				acks[i++] = ack.packetNumber;
 				if(logMINOR)
 					Logger.minor(this, "Grabbing ack " + ack.packetNumber + " from " + this);
