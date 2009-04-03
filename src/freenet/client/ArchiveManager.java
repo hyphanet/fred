@@ -155,7 +155,7 @@ public class ArchiveManager {
 	/** Get an ArchiveHandler by key */
 	ArchiveStoreContext getCached(FreenetURI key) {
 		if(logMINOR) Logger.minor(this, "Get cached AH for "+key);
-		ArchiveStoreContext handler = (ArchiveStoreContext) archiveHandlers.get(key);
+		ArchiveStoreContext handler = archiveHandlers.get(key);
 		if(handler == null) return null;
 		archiveHandlers.push(key, handler);
 		return handler;
@@ -205,7 +205,7 @@ public class ArchiveManager {
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = null;
 		synchronized (this) {
-			asi = (ArchiveStoreItem) storedData.get(k);	
+			asi = storedData.get(k);	
 			if(asi == null) return null;
 			// Promote to top of LRU
 			storedData.push(k, asi);
@@ -569,7 +569,7 @@ outerZIP:		while(true) {
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
 		ArchiveStoreItem oldItem;
 		synchronized (this) {
-			oldItem = (ArchiveStoreItem) storedData.get(element.key);
+			oldItem = storedData.get(element.key);
 			storedData.push(element.key, element);	
 			if(oldItem != null) {
 				oldItem.close();

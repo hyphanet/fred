@@ -26,7 +26,7 @@ public class SimpleBlockSet implements BlockSet {
 	}
 
 	public synchronized KeyBlock get(Key key) {
-		return (KeyBlock) blocksByKey.get(key);
+		return blocksByKey.get(key);
 	}
 
 	public synchronized Set keys() {

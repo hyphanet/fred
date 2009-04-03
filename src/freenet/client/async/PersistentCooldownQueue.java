@@ -125,7 +125,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 				v.add(i.key);
 			}
 			if(!v.isEmpty()) {
-				return (Key[]) v.toArray(new Key[v.size()]);
+				return v.toArray(new Key[v.size()]);
 			} else {
 				query = container.query();
 				query.descend("time").orderAscending().constrain(new Long(now + dontCareAfterMillis)).smaller().

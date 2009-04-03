@@ -65,7 +65,7 @@ class ArchiveStoreContext {
 		while(true) {
 			synchronized (myItems) {
 				// removeCachedItem() will call removeItem(), so don't remove it here.
-				item = (ArchiveStoreItem) myItems.head();
+				item = myItems.head();
 			}
 			if(item == null) break;
 			manager.removeCachedItem(item);

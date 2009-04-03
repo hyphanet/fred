@@ -155,7 +155,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			int initSize = blockNums.size();
 			Integer prev = null;
 			for(int i=0;i<blockNums.size();i++) {
-				Integer x = (Integer) blockNums.get(i);
+				Integer x = blockNums.get(i);
 				if(x == prev || x.equals(prev)) {
 					blockNums.remove(i);
 					i--;
@@ -704,7 +704,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			return;
 		}
 		Integer token = Integer.valueOf(blockNo);
-		ClientCHK ckey = (ClientCHK) segment.getBlockKey(blockNo, container);
+		ClientCHK ckey = segment.getBlockKey(blockNo, container);
 		ClientCHKBlock cb;
 		try {
 			cb = new ClientCHKBlock((CHKBlock)block, ckey);
@@ -716,7 +716,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(data == null) return;
 		
 		if(!cb.isMetadata()) {
-			onSuccess(data, false, (Integer)token, ((Integer)token).intValue(), cb, container, context);
+			onSuccess(data, false, token, (token).intValue(), cb, container, context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, container, context);
 		}
@@ -807,7 +807,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(segment, 1);
 		}
 		synchronized(segment) {
-			segment.resetCooldownTimes((Integer[])blockNums.toArray(new Integer[blockNums.size()]));
+			segment.resetCooldownTimes(blockNums.toArray(new Integer[blockNums.size()]));
 		}
 	}
 

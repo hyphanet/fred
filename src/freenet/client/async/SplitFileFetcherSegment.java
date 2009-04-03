@@ -980,7 +980,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		int dupes = 0;
 		synchronized(this) {
 			for(int i=0;i<subSegments.size();i++) {
-				sub = (SplitFileFetcherSubSegment) subSegments.get(i);
+				sub = subSegments.get(i);
 				if(persistent) container.activate(sub, 1);
 				if(sub.retryCount == retryCount) {
 					if(ret != null) {
@@ -1162,7 +1162,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(subSegments, 1);
 		SplitFileFetcherSubSegment[] deadSegs;
 		synchronized(this) {
-			deadSegs = (SplitFileFetcherSubSegment[]) subSegments.toArray(new SplitFileFetcherSubSegment[subSegments.size()]);
+			deadSegs = subSegments.toArray(new SplitFileFetcherSubSegment[subSegments.size()]);
 			subSegments.clear();
 		}
 		if(persistent && deadSegs.length > 0)
@@ -1253,7 +1253,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
-				SplitFileFetcherSubSegment sub = (SplitFileFetcherSubSegment) v.get(i);
+				SplitFileFetcherSubSegment sub = v.get(i);
 				if(persistent && sub != dontDeactivate)
 					container.activate(sub, 1);
 				RandomGrabArray rga = sub.getParentGrabArray();

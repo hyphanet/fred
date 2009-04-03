@@ -617,7 +617,7 @@ public class FCPServer implements Runnable {
 			container.activate(globalForeverClient, 2);
 		}
 		globalForeverClient.addPersistentRequests(v, false, container);
-		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
+		return v.toArray(new ClientRequest[v.size()]);
 	}
 
 	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException {

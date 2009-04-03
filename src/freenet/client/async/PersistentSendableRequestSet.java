@@ -44,7 +44,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 
 	public synchronized SendableRequest[] listRequests(ObjectContainer container) {
 		container.activate(list, 1);
-		return (SendableRequest[]) list.toArray(new SendableRequest[list.size()]);
+		return list.toArray(new SendableRequest[list.size()]);
 	}
 
 	public synchronized boolean removeRequest(SendableRequest req, ObjectContainer container) {

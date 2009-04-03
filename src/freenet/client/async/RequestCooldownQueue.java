@@ -142,7 +142,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			if(startPtr == endPtr) {
 				if(logMINOR) Logger.minor(this, "No keys queued");
 				if(!v.isEmpty())
-					return (Key[]) v.toArray(new Key[v.size()]);
+					return v.toArray(new Key[v.size()]);
 				else
 					return null;
 			}
@@ -160,7 +160,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 				if(time > now) {
 					if(logMINOR) Logger.minor(this, "First key is later at time "+time);
 					if(!v.isEmpty())
-						return (Key[]) v.toArray(new Key[v.size()]);
+						return v.toArray(new Key[v.size()]);
 					else if(time < (now + dontCareAfterMillis)) 
 						return Long.valueOf(time);
 					else
@@ -176,7 +176,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			v.add(key);
 			if(v.size() == maxKeys) {
 				if(!v.isEmpty())
-					return (Key[]) v.toArray(new Key[v.size()]);
+					return v.toArray(new Key[v.size()]);
 				else return null;
 			}
 		}
