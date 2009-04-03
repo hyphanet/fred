@@ -863,8 +863,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
 			if(persistent()) {
-				container.store(metadataPuttersByMetadata);
-				container.store(metadataPuttersUnfetchable);
+				container.ext().store(metadataPuttersByMetadata, 2);
+				container.ext().store(metadataPuttersUnfetchable, 2);
 				container.deactivate(metadataPuttersByMetadata, 1);
 				container.deactivate(metadataPuttersUnfetchable, 1);
 				container.deactivate(baseMetadata, 1);
@@ -1012,7 +1012,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 		if(persistent()) {
-			container.store(metadataPuttersByMetadata);
+			container.ext().store(metadataPuttersByMetadata, 2);
 			container.deactivate(metadataPuttersByMetadata, 1);
 		}
 	}
@@ -1293,7 +1293,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(metadataPuttersUnfetchable.containsKey(token)) {
 					metadataPuttersUnfetchable.remove(token);
 					if(persistent())
-						container.store(metadataPuttersUnfetchable);
+						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
 			}
 			if(!metadataPuttersByMetadata.isEmpty()) {
@@ -1319,7 +1319,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(token != baseMetadata)
 			token.removeFrom(container);
 		if(persistent()) {
-			container.store(metadataPuttersByMetadata);
+			container.ext().store(metadataPuttersByMetadata, 2);
 			container.deactivate(metadataPuttersByMetadata, 1);
 			state.removeFrom(container, context);
 			if(oldState != state && oldState != null) {
@@ -1346,7 +1346,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.activate(metadataPuttersUnfetchable, 2);
 				if(metadataPuttersUnfetchable.containsKey(token)) {
 					metadataPuttersUnfetchable.remove(token);
-					container.store(metadataPuttersUnfetchable);
+					container.ext().store(metadataPuttersUnfetchable, 2);
 				}
 			}
 		}
@@ -1616,7 +1616,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(checkFetchable(m)) {
 			if(persistent()) {
-				container.store(metadataPuttersUnfetchable);
+				container.ext().store(metadataPuttersUnfetchable, 2);
 				container.store(this);
 				container.activate(cb, 1);
 			}
