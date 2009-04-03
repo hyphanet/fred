@@ -148,8 +148,9 @@ public class DatastoreChecker implements PrioRunnable {
 						notifyAll();
 					totalSize += finalKeys.length;
 					if(totalSize > MAX_PERSISTENT_KEYS) {
-						if(trimPersistentQueue(prio, container)) return;
+						boolean full = trimPersistentQueue(prio, container);
 						notifyAll();
+						if(full) return;
 					}
 				}
 				container.deactivate(getter, 1);
