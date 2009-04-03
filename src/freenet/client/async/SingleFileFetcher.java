@@ -88,8 +88,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.cancelled = false;
 		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
-		this.ah = ah;
 		if(persistent && ah != null) ah = ah.cloneHandler();
+		this.ah = ah;
 		this.archiveMetadata = archiveMetadata;
 		//this.uri = uri;
 		//this.key = ClientKey.getBaseKey(uri);
@@ -123,8 +123,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.isFinal = false;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
-		this.ah = fetcher.ah;
 		if(persistent && ah != null) ah = ah.cloneHandler();
+		this.ah = fetcher.ah;
 		this.archiveMetadata = null;
 		this.clientMetadata = (fetcher.clientMetadata != null ? (ClientMetadata) fetcher.clientMetadata.clone() : new ClientMetadata());
 		this.metadata = newMeta;
