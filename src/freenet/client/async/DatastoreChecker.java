@@ -205,7 +205,7 @@ public class DatastoreChecker implements PrioRunnable {
 						container.store(item);
 						if(postQueueSize + preQueueSize - keys.length < MAX_PERSISTENT_KEYS) {
 							return false;
-						}
+						} else postQueueSize -= keys.length;
 					}
 				}
 				// Still over the limit.
