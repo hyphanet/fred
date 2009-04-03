@@ -14,7 +14,7 @@ public class Db4oBugs {
 //		ObjectSet<HasKeyListener> results =
 //			container.query(HasKeyListener.class);
 		Query query = container.query();
-		query.constrain(HasKeyListener.class);
+		query.constrain(clazz);
 		return query.execute();
 	}
 
