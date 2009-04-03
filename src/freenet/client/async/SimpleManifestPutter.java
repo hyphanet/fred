@@ -488,7 +488,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			if(metadata != null) {
 				// Possible if cancelled
-				Logger.error(this, "Metadata is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this);
+				Logger.normal(this, "Metadata is set in removeFrom() on "+this+" for "+SimpleManifestPutter.this);
 				container.activate(metadata, 1);
 				metadata.removeFrom(container);
 			}
