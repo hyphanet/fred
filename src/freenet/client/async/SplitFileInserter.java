@@ -487,14 +487,12 @@ public class SplitFileInserter implements ClientPutState {
 					container.activate(segments[i], 1);
 				if(!segments[i].isFetchable()) {
 					if(logMINOR) Logger.minor(this, "Segment not fetchable: "+i+": "+segments[i]);
-					if(persistent) {
-						for(int j=0;j<=i;j++) {
-							if(segments[j] == segment) continue;
-							container.deactivate(segments[j], 1);
-						}
-					}
+					if(persistent && segments[i] != segment)
+						container.deactivate(segments[i], 1);
 					return;
 				}
+				if(persistent && segments[i] != segment)
+					container.deactivate(segments[i], 1);
 			}
 			fetchable = true;
 		}
