@@ -628,7 +628,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 
 		public void run(ObjectContainer container, ClientContext context) {
 			if(sched.databaseExecutor.getQueueSize(NativeThread.NORM_PRIORITY) > 100) {
-				// If the queue isn't empty, reschedule at NORM-1
+				// If the queue isn't empty, reschedule at NORM-1, wait for the backlog to clear
 				if(!sched.isQueueAlmostEmpty()) {
 					context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, false);
 					return;
