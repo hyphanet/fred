@@ -195,13 +195,6 @@ public class InsertCompressor implements CompressJob {
 							inserter.onCompressed(output, null, context);
 						} catch (Throwable t) {
 							Logger.error(this, "Caught "+t+" running compression job", t);
-							context.jobRunner.queue(new DBJob() {
-
-								public void run(ObjectContainer container, ClientContext context) {
-									container.delete(InsertCompressor.this);
-								}
-								
-							}, NativeThread.NORM_PRIORITY+1, false);
 						}
 					}
 					
