@@ -1225,7 +1225,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	/**
-	 * Cancel all running inserters and set finished to true.
+	 * Cancel all running inserters.
 	 */
 	private void cancelAndFinish(ObjectContainer container, ClientContext context) {
 		PutHandler[] running;
@@ -1235,8 +1235,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		synchronized(this) {
 			running = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
-		if(persistent())
-			container.store(this);
 		
 		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: "+running.length);
 		for(PutHandler putter : running) {
