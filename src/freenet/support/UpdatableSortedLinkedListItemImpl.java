@@ -15,6 +15,7 @@ public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSorte
 		return next;
 	}
 
+	@SuppressWarnings("unchecked")
 	public T setNext(Item<?> i) {
 		T old = next;
 		next = (T) i;
@@ -25,6 +26,7 @@ public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSorte
 		return prev;
 	}
 
+	@SuppressWarnings("unchecked")
 	public T setPrev(Item<?> i) {
 		T old = prev;
 		prev = (T) i;

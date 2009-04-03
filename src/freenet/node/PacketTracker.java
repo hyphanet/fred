@@ -71,12 +71,12 @@ public class PacketTracker {
 	 * other side to us, the time at which they become sendable,
 	 * and the time at which they become urgent. In order of
 	 * the latter. */
-	private final UpdatableSortedLinkedListWithForeignIndex resendRequestQueue;
+	private final UpdatableSortedLinkedListWithForeignIndex<QueuedResendRequest> resendRequestQueue;
 	/** Serial numbers of packets we want to be acknowledged by
 	 * the other side, the time at which they become sendable,
 	 * and the time at which they become urgent. In order of
 	 * the latter. */
-	private final UpdatableSortedLinkedListWithForeignIndex ackRequestQueue;
+	private final UpdatableSortedLinkedListWithForeignIndex<QueuedAckRequest> ackRequestQueue;
 	/** Numbered packets that we need to send to the other side
 	 * because they asked for them. Just contains the numbers. */
 	private final HashSet<Integer> packetsToResend;
@@ -104,8 +104,8 @@ public class PacketTracker {
 		highestSeenIncomingSerialNumber = -1;
 		// give some leeway
 		sentPacketsContents = new LimitedRangeIntByteArrayMap(128);
-		resendRequestQueue = new UpdatableSortedLinkedListWithForeignIndex();
-		ackRequestQueue = new UpdatableSortedLinkedListWithForeignIndex();
+		resendRequestQueue = new UpdatableSortedLinkedListWithForeignIndex<QueuedResendRequest>();
+		ackRequestQueue = new UpdatableSortedLinkedListWithForeignIndex<QueuedAckRequest>();
 		packetsToResend = new HashSet<Integer>();
 		packetNumbersReceived = new ReceivedPacketNumbers(512);
 		isDeprecated = false;
@@ -215,8 +215,8 @@ public class PacketTracker {
 		}
 	}
 
-	private abstract class BaseQueuedResend extends PacketActionItem
-		implements IndexableUpdatableSortedLinkedListItem<BaseQueuedResend> {
+	private abstract class BaseQueuedResend<T extends BaseQueuedResend<T>> extends PacketActionItem
+		implements IndexableUpdatableSortedLinkedListItem<T> {
 
 		/** Time at which this item becomes sendable.
 		 * When we send a resend request, this is reset to t+500ms.
@@ -243,30 +243,30 @@ public class PacketTracker {
 		abstract long urgentDelay();
 
 		abstract long initialActiveTime(long now);
-		private BaseQueuedResend next;
-		private BaseQueuedResend prev;
+		private T next;
+		private T prev;
 
-		public final BaseQueuedResend getNext() {
+		public final T getNext() {
 			return next;
 		}
 
-		public final BaseQueuedResend setNext(Item<?> i) {
-			BaseQueuedResend old = next;
-			next = (BaseQueuedResend)i;
+		public final T setNext(Item<?> i) {
+			T old = next;
+			next = (T)i;
 			return old;
 		}
 
-		public BaseQueuedResend getPrev() {
+		public T getPrev() {
 			return prev;
 		}
 
-		public BaseQueuedResend setPrev(Item<?> i) {
-			BaseQueuedResend old = prev;
-			prev = (BaseQueuedResend)i;
+		public T setPrev(Item<?> i) {
+			T old = prev;
+			prev = (T)i;
 			return old;
 		}
 
-		public int compareTo(BaseQueuedResend r) {
+		public int compareTo(T r) {
 			if(urgentTime > r.urgentTime)
 				return 1;
 			if(urgentTime < r.urgentTime)
@@ -281,20 +281,20 @@ public class PacketTracker {
 		public Object indexValue() {
 			return packetNumber;
 		}
-		private DoublyLinkedList<? super BaseQueuedResend> parent;
+		private DoublyLinkedList<? super T> parent;
 
-		public DoublyLinkedList<? super BaseQueuedResend> getParent() {
+		public DoublyLinkedList<? super T> getParent() {
 			return parent;
 		}
 
-		public DoublyLinkedList<? super BaseQueuedResend> setParent(DoublyLinkedList<? super BaseQueuedResend> l) {
-			DoublyLinkedList<? super BaseQueuedResend> old = parent;
+		public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
+			DoublyLinkedList<? super T> old = parent;
 			parent = l;
 			return old;
 		}
 	}
 
-	private class QueuedResendRequest extends BaseQueuedResend {
+	private class QueuedResendRequest extends BaseQueuedResend<QueuedResendRequest> {
 
 		@Override
 		long initialActiveTime( long now) {
@@ -319,7 +319,7 @@ public class PacketTracker {
 		}
 	}
 
-	private class QueuedAckRequest extends BaseQueuedResend {
+	private class QueuedAckRequest extends BaseQueuedResend<QueuedAckRequest> {
 
 		final long createdTime;
 		long activeDelay;
@@ -596,7 +596,7 @@ public class PacketTracker {
 		QueuedAckRequest qr = null;
 
 		synchronized(ackRequestQueue) {
-			qr = (QueuedAckRequest) ackRequestQueue.removeByKey(seqNo);
+			qr = ackRequestQueue.removeByKey(seqNo);
 		}
 		if(qr != null)
 			qr.onAcked();
@@ -908,13 +908,13 @@ public class PacketTracker {
 		}
 		synchronized(resendRequestQueue) {
 			if(!resendRequestQueue.isEmpty()) {
-				QueuedResendRequest qr = (QueuedResendRequest) resendRequestQueue.getLowest();
+				QueuedResendRequest qr = resendRequestQueue.getLowest();
 				earliestTime = Math.min(earliestTime, qr.urgentTime);
 			}
 		}
 		synchronized(ackRequestQueue) {
 			if(!ackRequestQueue.isEmpty()) {
-				QueuedAckRequest qr = (QueuedAckRequest) ackRequestQueue.getLowest();
+				QueuedAckRequest qr = ackRequestQueue.getLowest();
 				earliestTime = Math.min(earliestTime, qr.urgentTime);
 			}
 		}

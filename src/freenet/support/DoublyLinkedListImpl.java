@@ -455,6 +455,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
             return next;
         }
 
+		@SuppressWarnings("unchecked")
 		public final T setNext(DoublyLinkedList.Item<?> i) {
 			T old = next;
 			next = (T) i;
@@ -465,6 +466,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
             return prev;
         }
 
+		@SuppressWarnings("unchecked")
 		public final T setPrev(DoublyLinkedList.Item<?> i) {
 			T old = prev;
 			prev = (T) i;

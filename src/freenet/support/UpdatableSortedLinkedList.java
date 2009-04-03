@@ -71,8 +71,8 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
     	if(ctr % 256 != 0 && !debug) return;
     	int statedLength = list.size();
     	int realLength = 0;
-    	for(Enumeration e = list.elements();e.hasMoreElements();) {
-    		UpdatableSortedLinkedListItem i = (UpdatableSortedLinkedListItem) e.nextElement();
+    	for(Enumeration<T> e = list.elements();e.hasMoreElements();) {
+    		T i = e.nextElement();
     		// Sanity check for infinite looping 
     		if(realLength > 100*1000)
     			Logger.normal(this, "["+realLength+"] = "+i+" (prev="+i.getPrev()+ ')');
@@ -185,8 +185,8 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
      */
     private synchronized void dump() throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        for(Enumeration e=list.elements();e.hasMoreElements();) {
-            UpdatableSortedLinkedListItem item = (UpdatableSortedLinkedListItem) e.nextElement();
+        for(Enumeration<T> e=list.elements();e.hasMoreElements();) {
+            T item = e.nextElement();
             if(logMINOR) Logger.minor(this, item.toString());
         }
     }
@@ -202,6 +202,7 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
      * @return an array, in order, of the elements in the list
      * @throws UpdatableSortedLinkedListKilledException 
      */
+    @SuppressWarnings("unchecked")
     public synchronized UpdatableSortedLinkedListItem[] toArray() throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         int size = list.size();
@@ -211,8 +212,8 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
         UpdatableSortedLinkedListItem[] output = 
             new UpdatableSortedLinkedListItem[size];
         int i=0;
-        for(Enumeration e = list.elements();e.hasMoreElements();) {
-            output[i++] = (UpdatableSortedLinkedListItem)e.nextElement();
+        for(Enumeration<T> e = list.elements();e.hasMoreElements();) {
+            output[i++] = e.nextElement();
             //Logger.minor(this, "["+(i-1)+"] = "+output[i-1]);
         }
         return output;

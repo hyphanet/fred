@@ -20,9 +20,6 @@ public class UpdatableSortedLinkedListWithForeignIndex<T extends IndexableUpdata
     
     @Override
 	public synchronized void add(T item) throws UpdatableSortedLinkedListKilledException {
-        if(!(item instanceof IndexableUpdatableSortedLinkedListItem)) {
-            throw new IllegalArgumentException();
-        }
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         T i = item;
         if(map.get(i.indexValue()) != null) {
@@ -42,8 +39,8 @@ public class UpdatableSortedLinkedListWithForeignIndex<T extends IndexableUpdata
         return super.remove(item);
     }
     
-	public synchronized IndexableUpdatableSortedLinkedListItem<?> get(Object key) {
-		return (IndexableUpdatableSortedLinkedListItem<?>)map.get(key);
+	public synchronized T get(Object key) {
+		return map.get(key);
 	}
 
     public synchronized boolean containsKey(Object key) {
@@ -58,7 +55,7 @@ public class UpdatableSortedLinkedListWithForeignIndex<T extends IndexableUpdata
      * Remove an element from the list by its key.
      * @throws UpdatableSortedLinkedListKilledException 
      */
-    public synchronized IndexableUpdatableSortedLinkedListItem<?> removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
+    public synchronized T removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         T item = map.get(key);
         if(item != null) remove(item);

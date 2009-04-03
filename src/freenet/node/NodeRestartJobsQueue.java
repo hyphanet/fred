@@ -39,7 +39,7 @@ public class NodeRestartJobsQueue {
 		});
 		if(results.hasNext()) {
 			System.err.println("Found old restart jobs queue");
-			NodeRestartJobsQueue queue = (NodeRestartJobsQueue) results.next();
+			NodeRestartJobsQueue queue = results.next();
 			container.activate(queue, 1);
 			queue.onInit(container);
 			return queue;
