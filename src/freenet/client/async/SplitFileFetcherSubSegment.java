@@ -774,13 +774,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(!segment.requeueAfterCooldown(key, time, container, context, this)) {
 			Logger.error(this, "Key was not wanted after cooldown: "+key+" for "+this+" in requeueAfterCooldown");
 		}
-		if(persistent) {
+		if(persistent)
 			container.deactivate(segment, 1);
-			if(container.ext().isActive(segment))
-				Logger.error(this, "SEGMENT STILL ACTIVE: "+segment);
-			else
-				if(logMINOR) Logger.minor(this, "Deactivated segment "+segment);
-		}
 	}
 
 	@Override
