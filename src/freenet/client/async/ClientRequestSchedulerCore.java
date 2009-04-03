@@ -624,8 +624,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	private transient RegisterMeRunner registerMeRunner;
 	
-	private transient boolean shouldReRunRegisterMeRunner;
-	
 	class RegisterMeRunner implements DBJob {
 
 		public void run(ObjectContainer container, ClientContext context) {
@@ -719,7 +717,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			else {
 				if(logMINOR) Logger.minor(this, "RegisterMeRunner finished");
 				synchronized(ClientRequestSchedulerCore.this) {
-					shouldReRunRegisterMeRunner = false;
 					registerMeSet = null;
 				}
 				// Always re-run the query. If there is nothing to register, it won't call back to us.
@@ -765,7 +762,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		
 	public void rerunRegisterMeRunner(DBJobRunner runner) {
 		synchronized(this) {
-			shouldReRunRegisterMeRunner = true;
 			if(registerMeSet != null) return;
 		}
 		startRegisterMeRunner(runner);
