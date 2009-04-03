@@ -51,10 +51,6 @@ public class TransientChosenBlock extends ChosenBlock {
 		((SendableGet) request).onFailure(e, token, null, context);
 	}
 
-	public void onSuccess(ClientKeyBlock data, boolean fromStore, ClientContext context) {
-		((SendableGet) request).onSuccess(data, fromStore, token, null, context);
-	}
-
 	@Override
 	public void onFetchSuccess(ClientContext context) {
 		sched.succeeded((SendableGet)request, false);
