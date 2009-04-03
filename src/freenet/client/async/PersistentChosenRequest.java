@@ -155,6 +155,7 @@ public class PersistentChosenRequest {
 					// Okay...
 					if(!alreadyActive)
 						container.deactivate(request, 1);
+					// Don't removeRunningRequest, because we've already done that.
 					return;
 				} else {
 					Logger.error(this, "Finished but blocksFinished not empty on "+this, new Exception("debug"));
@@ -167,6 +168,7 @@ public class PersistentChosenRequest {
 				// Wait... if we set finished, we have to process them now, and
 				// we can't process them now because we haven't had the callbacks,
 				// we don't know what the outcome will be.
+				// Don't removeRunningRequest, because we're not finished yet.
 				return;
 			}
 			finished = true;
