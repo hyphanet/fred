@@ -138,6 +138,7 @@ public class PersistentChosenRequest {
 	private void finish(ObjectContainer container, ClientContext context, boolean dumping, boolean alreadyActive) {
 		if(!container.ext().isStored(request)) {
 			if(logMINOR) Logger.minor(this, "Request apparently already deleted: "+request+" on "+this);
+			scheduler.removeRunningRequest(request);
 			return;
 		}
 		if((!alreadyActive) && container.ext().isActive(request))
@@ -146,30 +147,38 @@ public class PersistentChosenRequest {
 			container.activate(request, 1);
 		Logger.normal(this, "Finishing "+this+" for "+request);
 		// Call all the callbacks.
-		PersistentChosenBlock[] finishedBlocks;
+		PersistentChosenBlock[] finishedBlocks = null;
 		int startedSize;
+		boolean returnNow = false;
 		synchronized(this) {
 			if(finished) {
 				if(blocksFinished.isEmpty()) {
 					// Okay...
 					if(!alreadyActive)
 						container.deactivate(request, 1);
-					return;
+					returnNow = true;
 				} else {
 					Logger.error(this, "Finished but blocksFinished not empty on "+this, new Exception("debug"));
 					// Process the blocks...
 				}
 			}
+			if(!returnNow) {
 			startedSize = blocksStarted.size();
 			if(startedSize > 0) {
 				Logger.error(this, "Still waiting for callbacks on "+this+" for "+startedSize+" blocks");
 				// Wait... if we set finished, we have to process them now, and
 				// we can't process them now because we haven't had the callbacks,
 				// we don't know what the outcome will be.
-				return;
-			}
+				returnNow = true;
+			} else {
 			finished = true;
 			finishedBlocks = blocksFinished.toArray(new PersistentChosenBlock[blocksFinished.size()]);
+			}
+			}
+		}
+		if(returnNow) {
+			scheduler.removeRunningRequest(request);
+			return;
 		}
 		if(finishedBlocks.length == 0) {
 			if(!dumping)
