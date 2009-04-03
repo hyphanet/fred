@@ -516,7 +516,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					container.store(dataBuckets[i]);
 				}
 			}
-			if(isCollectingBinaryBlob(parent)) {
+			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
 					Bucket data = dataBlockStatus[i].getData();
 					if(data == null) 
@@ -553,7 +553,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
 			if(persistent) container.store(this);
-			if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob(parent))
+			if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob())
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			// Leave active before queueing
 		} catch (IOException e) {
@@ -728,7 +728,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
-		if(isCollectingBinaryBlob(parent)) {
+		if(isCollectingBinaryBlob()) {
 			if(persistent)
 				container.activate(parentFetcher, 1);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
@@ -741,7 +741,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 
-	boolean isCollectingBinaryBlob(ClientRequester parent) {
+	boolean isCollectingBinaryBlob() {
 		if(parent instanceof ClientGetter) {
 			ClientGetter getter = (ClientGetter) (parent);
 			return getter.collectingBinaryBlob();
