@@ -23,9 +23,6 @@ import freenet.support.io.NativeThread;
  * Compress a file in order to insert it. This class acts as a tag in the database to ensure that inserts
  * are not forgotten about, and also can be run on a non-database thread from an executor.
  * 
- * FIXME how many compressors do we want to have running simultaneously? Probably we should have a compression
- * queue, or at least a SerialExecutor?
- * 
  * @author toad
  */
 public class InsertCompressor implements CompressJob {
