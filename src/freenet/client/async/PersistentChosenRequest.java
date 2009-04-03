@@ -233,7 +233,10 @@ public class PersistentChosenRequest {
 			container.deactivate(request, 1);
 	}
 
-	public synchronized ChosenBlock grabNotStarted(Random random, RequestScheduler sched) {
+	public ChosenBlock grabNotStarted(Random random, RequestScheduler sched) {
+		ArrayList<PersistentChosenBlock> dumped = null;
+		try {
+		synchronized(this) {
 		while(true) {
 			int size = blocksNotStarted.size();
 			if(size == 0) return null;
@@ -241,11 +244,21 @@ public class PersistentChosenRequest {
 			if(size == 1) ret = blocksNotStarted.remove(0);
 			else ret = blocksNotStarted.remove(random.nextInt(size));
 			Key key = ret.key;
-			if(key != null && sched.hasFetchingKey(key))
+			if(key != null && sched.hasFetchingKey(key)) {
 				// Already fetching; remove from list.
+				if(dumped == null) dumped = new ArrayList<PersistentChosenBlock>();
+				dumped.add(ret);
 				continue;
+			}
 			blocksStarted.add(ret);
 			return ret;
+		}
+		}
+		} finally {
+		if(dumped != null) {
+			for(PersistentChosenBlock block : dumped)
+				block.onDumped();
+		}
 		}
 	}
 
