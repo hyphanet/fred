@@ -172,17 +172,15 @@ public class DatastoreChecker implements PrioRunnable {
 			if(preQueueSize > MAX_PERSISTENT_KEYS) {
 				// Dump everything
 				for(int i=prio+1;i<persistentKeys.length;i++) {
-					while(!persistentKeys[i].isEmpty()) {
-						int idx = persistentKeys[i].size() - 1;
-						DatastoreCheckerItem item = persistentCheckerItems[i].remove(idx);
-						persistentSchedulers[i].remove(idx);
-						persistentDontCache[i].remove(idx);
-						persistentGetters[i].remove(idx);
-						persistentKeys[i].remove(idx);
-						persistentBlockSets[i].remove(idx);
+					for(DatastoreCheckerItem item : persistentCheckerItems[i]) {
 						item.chosenBy = 0;
 						container.store(item);
 					}
+					persistentSchedulers[i].clear();
+					persistentDontCache[i].clear();
+					persistentGetters[i].clear();
+					persistentKeys[i].clear();
+					persistentBlockSets[i].clear();
 				}
 				return true;
 			} else {
