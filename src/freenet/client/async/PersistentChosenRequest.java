@@ -82,8 +82,10 @@ public class PersistentChosenRequest {
 		}
 		for(PersistentChosenBlock block : candidates) {
 			Key key = block.key;
-			if(key != null && sched.hasFetchingKey(key))
+			if(key != null && sched.hasFetchingKey(key)) {
+				block.onDumped();
 				continue;
+			}
 			blocksNotStarted.add(block);
 		}
 		sender = req.getSender(container, context);
