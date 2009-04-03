@@ -7,7 +7,7 @@ import com.db4o.ObjectContainer;
 
 /**
  * A job to be run on the database thread. We will pass a transactional context in,
- * and a RequestScheduler.
+ * and a ClientContext.
  * @author toad
  */
 public interface DBJob {
