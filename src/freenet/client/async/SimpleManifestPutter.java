@@ -1656,12 +1656,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Logger.error(this, "Put handlers list still present in removeFrom() on "+this);
 			removePutHandlers(container, context);
 		}
-		if(finalURI != null) finalURI.removeFrom(container);
+		if(finalURI != null) {
+			container.activate(finalURI, 5);
+			finalURI.removeFrom(container);
+		}
+		container.activate(targetURI, 5);
 		targetURI.removeFrom(container);
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
 		container.activate(metadataPuttersByMetadata, 2);
 		container.activate(metadataPuttersUnfetchable, 2);
+		ArrayList<Metadata> metas = null;
 		if(!metadataPuttersByMetadata.isEmpty()) {
 			Logger.error(this, "Metadata putters by metadata not empty in removeFrom() on "+this);
 			for(Map.Entry<Metadata, ClientPutState> entry : metadataPuttersByMetadata.entrySet()) {
@@ -1673,6 +1678,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.error(this, "Metadata putters not empty: "+sfi+" for "+this);
 				sfi.cancel(container, context);
 				sfi.removeFrom(container, context);
+				if(metas == null) metas = new ArrayList<Metadata>();
+				metas.add(meta);
 			}
 		}
 		if(!metadataPuttersUnfetchable.isEmpty()) {
@@ -1686,6 +1693,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.error(this, "Metadata putters unfetchable not empty: "+sfi+" for "+this);
 				sfi.cancel(container, context);
 				sfi.removeFrom(container, context);
+			}
+		}
+		if(metas != null) {
+			for(Metadata meta : metas) {
+				container.activate(meta, 1);
+				meta.removeFrom(container);
 			}
 		}
 		metadataPuttersByMetadata.clear();
