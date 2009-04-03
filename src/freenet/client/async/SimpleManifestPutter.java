@@ -1570,9 +1570,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	@Override
 	public void onMajorProgress(ObjectContainer container) {
-		if(persistent())
-			container.activate(cb, 1);
+		boolean deactivate = false;
+		if(persistent()) {
+			deactivate = !container.ext().isActive(cb);
+			if(deactivate) container.activate(cb, 1);
+		}
 		cb.onMajorProgress(container);
+		if(deactivate) container.deactivate(cb, 1);
 	}
 
 	protected void onFetchable(PutHandler handler, ObjectContainer container) {
