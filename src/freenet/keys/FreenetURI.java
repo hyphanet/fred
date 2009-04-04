@@ -227,7 +227,6 @@ public class FreenetURI implements Cloneable {
 		this.extra = extra2;
 		this.suggestedEdition = -1;
 		Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
-		toString();
 	}
 
 	public FreenetURI(
@@ -900,7 +899,7 @@ public class FreenetURI implements Cloneable {
 	}
 	
 	public void objectOnDelete(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.minor(this, "Deleting URI", new Exception("debug"));
+		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Deleting URI", new Exception("debug"));
 	}
 	
 	public boolean isUSK() {
