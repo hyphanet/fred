@@ -341,14 +341,4 @@ public class BucketChainBucket implements Bucket {
 		return new BucketChainBucket(newBuckets, bucketSize, size, true, bf);
 	}
 
-	// For debugging
-	
-	public boolean objectCanUpdate(ObjectContainer container) {
-		return true;
-	}
-	
-	public boolean objectCanNew(ObjectContainer container) {
-		return true;
-	}
-	
 }
