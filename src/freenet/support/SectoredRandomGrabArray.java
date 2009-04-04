@@ -163,6 +163,9 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 						Logger.error(this, "grabArrays["+(1-x)+"] is valid but ["+x+"] is null, correcting...");
 						grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
 						grabClients = new Object[] { grabClients[1-x] };
+						if(persistent) {
+							container.store(this);
+						}
 						continue;
 					}
 				}
