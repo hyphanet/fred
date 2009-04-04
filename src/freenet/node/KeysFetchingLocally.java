@@ -12,8 +12,8 @@ public interface KeysFetchingLocally {
 	
 	/**
 	 * Is this request:token pair being executed? This applies only to
-	 * non-persistent inserts, because persistent requests are selected on
-	 * a request level, and requests use hasKey(). Also, activation issues
+	 * non-persistent inserts, because persistent requests and inserts are selected 
+	 * on a request level, and requests use hasKey(). Also, activation issues
 	 * with SendableRequest meaning getting a hash code would be problematic!
 	 */
 	public boolean hasTransientInsert(SendableInsert insert, Object token);
