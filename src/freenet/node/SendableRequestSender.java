@@ -16,9 +16,8 @@ public interface SendableRequestSender {
 	 * persistent requests, the callbacks will be called on the database thread, and we 
 	 * will delete the PersistentChosenRequest from there before committing.
 	 * @param sched The scheduler this request has just been grabbed from.
-	 * @param keyNum The key number that was fed into getKeyObject().
-	 * @param key The key returned from grabKey().
-	 * @param ckey The client key for decoding, if available (mandatory for SendableGet, null otherwise).
+	 * @param request The ChosenBlock containing the key, the SendableRequestItem,
+	 * and the methods to call to indicate success/failure.
 	 * @return True if a request was sent, false otherwise (in which case the request will
 	 * be removed if it hasn't already been). */
 	public abstract boolean send(NodeClientCore node, RequestScheduler sched, ClientContext context, ChosenBlock request);
