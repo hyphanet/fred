@@ -64,10 +64,8 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 		}
 		if(logMINOR)
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
-		// rga is auto-activated to depth 1...
 		rga.add(item, container);
 		if(persistent)
-			// now deactivate to save memory
 			container.deactivate(rga, 1);
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
