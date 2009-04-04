@@ -57,8 +57,6 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 					this,
 					"Initializing TempFileBucket(" + getFile()+" deleteOnExit="+deleteOnExit);
 		}
-		if(deleteOnExit)
-			setDeleteOnExit(getFile());
 	}
 
 	@Override

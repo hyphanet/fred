@@ -371,13 +371,11 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public void removeFrom(ObjectContainer container) {
-			currentBucket.removeFrom(container);
-			container.delete(this);
+			throw new UnsupportedOperationException();
 		}
 
 		public void storeTo(ObjectContainer container) {
-			currentBucket.storeTo(container);
-			container.store(this);
+			throw new UnsupportedOperationException();
 		}
 		
 		private WeakReference<TempBucket> weakRef = new WeakReference<TempBucket>(this);
