@@ -327,12 +327,13 @@ public class BucketChainBucket implements Bucket {
 	}
 
 	public Bucket createShadow() throws IOException {
-		Vector newBuckets = new Vector();
+		Vector<Bucket> newBuckets = new Vector<Bucket>();
 		for(int i=0;i<buckets.size();i++) {
 			Bucket data = buckets.get(i);
 			Bucket shadow = data.createShadow();
 			if(shadow == null) {
-				// Shadow buckets don't need to be freed.
+				for(Bucket bucket : newBuckets)
+					bucket.free();
 				return null;
 			}
 			newBuckets.add(shadow);
