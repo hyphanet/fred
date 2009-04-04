@@ -185,6 +185,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 
 	public void removeFrom(ObjectContainer container) {
 		filesToRead.clear();
+		container.activate(filesByName, Integer.MAX_VALUE);
 		removeFrom(container, filesByName);
 		container.delete(this);
 	}
@@ -199,6 +200,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				((DirPutFile)val).removeFrom(container);
 			}
 		}
+		container.delete(filesByName);
 	}
 
 }
