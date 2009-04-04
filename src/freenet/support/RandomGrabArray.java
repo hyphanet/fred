@@ -358,14 +358,6 @@ public class RandomGrabArray implements RemoveRandom {
 		}
 	}
 
-	/**
-	 * FIXME: This does not remove from higher level structures! This will only
-	 * be removed from the SectoredRGA the next time the request selection loop
-	 * runs - and if there are higher priority requests, and hard priorities are 
-	 * enabled, it may not reach this.
-	 * @param it
-	 * @param container
-	 */
 	public void remove(RandomGrabArrayItem it, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing "+it+" from "+this);
