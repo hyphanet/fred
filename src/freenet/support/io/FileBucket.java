@@ -123,18 +123,19 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		container.activate(file, 5);
 	}
 	
-	public void objectOnNew(ObjectContainer container) {
-		Logger.minor(this, "Storing "+this, new Exception("debug"));
-	}
-	
-	public void objectOnUpdate(ObjectContainer container) {
-		Logger.minor(this, "Updating "+this, new Exception("debug"));
-	}
-	
-	public void objectOnDelete(ObjectContainer container) {
-		Logger.minor(this, "Deleting "+this, new Exception("debug"));
-	}
-	
+	// Debugging stuff. If reactivate, add the logging infrastructure and use if(logDEBUG).
+//	public void objectOnNew(ObjectContainer container) {
+//		Logger.minor(this, "Storing "+this, new Exception("debug"));
+//	}
+//	
+//	public void objectOnUpdate(ObjectContainer container) {
+//		Logger.minor(this, "Updating "+this, new Exception("debug"));
+//	}
+//	
+//	public void objectOnDelete(ObjectContainer container) {
+//		Logger.minor(this, "Deleting "+this, new Exception("debug"));
+//	}
+//	
 	public Bucket createShadow() throws IOException {
 		String fnam = new String(file.getPath());
 		File newFile = new File(fnam);
