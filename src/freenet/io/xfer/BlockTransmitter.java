@@ -34,6 +34,7 @@ import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
@@ -45,6 +46,16 @@ import freenet.support.math.MedianMeanRunningAverage;
  * Since a PRB can be concurrently transmitted to many peers NOWHERE in this class is prb.abort() to be called.
  */
 public class BlockTransmitter {
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	public static final int SEND_TIMEOUT = 60000;
 	public static final int PING_EVERY = 8;
@@ -126,7 +137,7 @@ public class BlockTransmitter {
 							//No unsent packets, no unreceived packets
 							sendAllSentNotification();
 							timeAllSent = System.currentTimeMillis();
-							if(Logger.shouldLog(Logger.MINOR, this))
+							if(logMINOR)
 								Logger.minor(this, "Sent all blocks, none unsent");
 							_senderThread.notifyAll();
 						}
@@ -188,7 +199,6 @@ public class BlockTransmitter {
 					if(_sendComplete) return false;
 				}
 				Message msg;
-				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {
 					MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 					MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);

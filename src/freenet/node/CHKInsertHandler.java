@@ -18,6 +18,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
@@ -29,7 +30,15 @@ import freenet.support.io.NativeThread;
  * This corresponds to RequestHandler.
  */
 public class CHKInsertHandler implements PrioRunnable, ByteCounter {
+	private static volatile boolean logMINOR;
 
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
     static final int DATA_INSERT_TIMEOUT = 10000;
     
@@ -46,7 +55,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     private Thread runThread;
     PartiallyReceivedBlock prb;
     final InsertTag tag;
-    private static boolean logMINOR;
     
     CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
         this.req = req;
@@ -58,7 +66,6 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
         if(htl <= 0) htl = 1;
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
         receivedBytes(req.receivedByteCount());
     }
     

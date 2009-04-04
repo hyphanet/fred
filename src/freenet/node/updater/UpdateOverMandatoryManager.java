@@ -49,6 +49,7 @@ import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.io.FileBucket;
@@ -62,6 +63,16 @@ import freenet.support.io.RandomAccessFileWrapper;
  * @author toad
  */
 public class UpdateOverMandatoryManager implements RequestClient {
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	final NodeUpdateManager updateManager;
 	/** Set of PeerNode's which say (or said before they disconnected) 
@@ -88,7 +99,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	static final int REQUEST_MAIN_JAR_TIMEOUT = 60 * 1000;
 	//** Grace time before we use UoM to update */
 	public static final int GRACE_TIME = 3 * 60 * 60 * 1000; // 3h
-	private boolean logMINOR;
 	private UserAlert alert;
 	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob$");
 	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
@@ -106,7 +116,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		nodesAskedSendExtJar = new HashSet<PeerNode>();
 		nodesSendingMainJar = new HashSet<PeerNode>();
 		nodesSendingExtJar = new HashSet<PeerNode>();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	/** 
@@ -133,7 +142,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Log it
 
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) {
 			Logger.minor(this, "Update Over Mandatory offer from node " + source.getPeer() + " : " + source.userToString() + ":");
 			Logger.minor(this, "Main jar key: " + mainJarKey + " version=" + mainJarVersion + " length=" + mainJarFileLength);

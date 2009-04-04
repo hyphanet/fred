@@ -14,10 +14,21 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
 
 public class AnnounceSender implements PrioRunnable, ByteCounter {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
@@ -33,7 +44,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private int noderefLength;
 	private short htl;
 	private double target;
-	private static boolean logMINOR;
 	private final AnnouncementCallback cb;
 	private final PeerNode onlyNode;
 	
@@ -46,7 +56,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.onlyNode = null;
 		htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
 		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		cb = null;
 	}
 
@@ -61,7 +70,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.cb = cb;
 		this.onlyNode = onlyNode;
 		noderefBuf = om.crypto.myCompressedFullRef();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public void run() {

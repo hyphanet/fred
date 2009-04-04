@@ -4,6 +4,15 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 public class LRUHashtable<K, V> {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
     /*
      * I've just converted this to using the DLList and Hashtable
@@ -30,7 +39,7 @@ public class LRUHashtable<K, V> {
         	insert.value = value;
             list.remove(insert);
         }
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(logMINOR)
         	Logger.minor(this, "Pushed "+insert+" ( "+key+ ' ' +value+" )");
 
         list.unshift(insert);

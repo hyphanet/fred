@@ -21,6 +21,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
@@ -32,7 +33,15 @@ import freenet.support.io.NativeThread;
  */
 public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.Listener {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	final Message req;
 	final Node node;
 	final long uid;
@@ -68,7 +77,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		this.key = key;
 		if(key instanceof NodeSSK)
 			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		receivedBytes(m.receivedByteCount());
 	}
 

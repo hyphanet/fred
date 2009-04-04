@@ -11,6 +11,7 @@ import java.net.UnknownHostException;
 
 import freenet.io.AddressIdentifier;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.HostnameUtil;
 import freenet.support.transport.ip.IPUtil;
@@ -24,6 +25,18 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class FreenetInetAddress {
 
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+
 	// hostname - only set if we were created with a hostname
 	// and not an address
 	private final String hostname;
@@ -36,12 +49,12 @@ public class FreenetInetAddress {
 		int firstByte = dis.readUnsignedByte();
 		byte[] ba;
 		if(firstByte == 255) {
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv6 address");
+			if(logMINOR) Logger.minor(this, "New format IPv6 address");
 			// New format IPv6 address
 			ba = new byte[16];
 			dis.readFully(ba);
 		} else if(firstByte == 0) {
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv4 address");
+			if(logMINOR) Logger.minor(this, "New format IPv4 address");
 			// New format IPv4 address
 			ba = new byte[4];
 			dis.readFully(ba);
@@ -64,12 +77,12 @@ public class FreenetInetAddress {
 		int firstByte = dis.readUnsignedByte();
 		byte[] ba;
 		if(firstByte == 255) {
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv6 address");
+			if(logMINOR) Logger.minor(this, "New format IPv6 address");
 			// New format IPv6 address
 			ba = new byte[16];
 			dis.readFully(ba);
 		} else if(firstByte == 0) {
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New format IPv4 address");
+			if(logMINOR) Logger.minor(this, "New format IPv4 address");
 			// New format IPv4 address
 			ba = new byte[4];
 			dis.readFully(ba);
@@ -108,7 +121,6 @@ public class FreenetInetAddress {
         // if we were created with an explicit IP address, use it as such
         // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
-        boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
         if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+ '\'');
         if(addressType != AddressIdentifier.AddressType.OTHER) {
         	// Is an IP address
@@ -139,7 +151,6 @@ public class FreenetInetAddress {
         // if we were created with an explicit IP address, use it as such
         // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
-        boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
         if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+ '\'');
         if(addressType != AddressIdentifier.AddressType.OTHER) {
             try {
@@ -264,7 +275,6 @@ public class FreenetInetAddress {
 	 */
 	public InetAddress getHandshakeAddress() {
 	    // Since we're handshaking, hostname-to-IP may have changed
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	    if ((_address != null) && (hostname == null)) {
 	    	if(logMINOR) Logger.minor(this, "hostname is null, returning "+_address);
 	        return _address;

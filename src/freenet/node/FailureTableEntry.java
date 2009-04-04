@@ -9,6 +9,7 @@ import java.util.HashSet;
 
 import freenet.keys.Key;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 class FailureTableEntry implements TimedOutNodesList {
 	

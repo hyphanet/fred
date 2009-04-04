@@ -8,12 +8,22 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * If the send fails, send the given message to the given node.
  * Otherwise do nothing.
  */
 public class SendMessageOnErrorCallback implements AsyncMessageCallback {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
     @Override
 	public String toString() {
@@ -28,7 +38,7 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
         this.msg = message;
         this.dest = pn;
         this.ctr = ctr;
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(logMINOR)
         	Logger.minor(this, "Created "+this);
     }
 
@@ -41,12 +51,12 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
     }
 
     public void disconnected() {
-    	if(Logger.shouldLog(Logger.MINOR, this))
+    	if(logMINOR)
     		Logger.minor(this, "Disconnect trigger: "+this);
         try {
             dest.sendAsync(msg, null, ctr);
         } catch (NotConnectedException e) {
-        	if(Logger.shouldLog(Logger.MINOR, this))
+        	if(logMINOR)
         		Logger.minor(this, "Both source and destination disconnected: "+msg+" for "+this);
         }
     }

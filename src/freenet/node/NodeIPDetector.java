@@ -25,6 +25,7 @@ import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPAddressDetector;
@@ -35,6 +36,15 @@ import freenet.support.transport.ip.IPUtil;
  * information (NodeCrypto - UdpSocketHandler etc).
  */
 public class NodeIPDetector {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	/** Parent node */
 	final Node node;
@@ -113,7 +123,6 @@ public class NodeIPDetector {
 			addedValidIP |= innerDetect(addresses);
 		}
 		
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	   	if(node.clientCore != null) {
 	   		boolean hadValidIP;
 	   		synchronized(this) {
@@ -176,7 +185,6 @@ public class NodeIPDetector {
 	 * @return
 	 */
 	private boolean innerDetect(List<FreenetInetAddress> addresses) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean addedValidIP = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
 		assert(detectedAddrs != null);
@@ -321,7 +329,7 @@ public class NodeIPDetector {
 		if(addrs == null || addrs.length == 0) return false;
 		for(int i=0;i<addrs.length;i++) {
 			if(IPUtil.isValidAddress(addrs[i], false)) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Has a directly detected IP: "+addrs[i]);
 				return true;
 			}
@@ -514,7 +522,7 @@ public class NodeIPDetector {
 	}
 
 	void hasDetectedPM() {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "hasDetectedPM() called", new Exception("debug"));
 		synchronized(this) {
 			hasDetectedPM = true;

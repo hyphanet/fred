@@ -8,6 +8,16 @@ import freenet.support.io.NativeThread;
 
 public class SerialExecutor implements Executor {
 
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+
 	private final LinkedBlockingQueue<Runnable> jobs;
 	private final Object syncLock;
 	private final int priority;
@@ -69,11 +79,11 @@ public class SerialExecutor implements Executor {
 		this.name=name;
 		synchronized (syncLock) {
 			if (!jobs.isEmpty())
-				reallyStart(Logger.shouldLog(Logger.MINOR, this));
+				reallyStart();
 		}
 	}
 	
-	private void reallyStart(boolean logMINOR) {
+	private void reallyStart() {
 		synchronized (syncLock) {
 		threadStarted=true;
 		}
@@ -83,7 +93,6 @@ public class SerialExecutor implements Executor {
 	}
 	
 	public void execute(Runnable job, String jobName) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if (logMINOR)
 			Logger.minor(this, "Running " + jobName + " : " + job + " started=" + threadStarted + " waiting="
 			        + threadWaiting);
@@ -91,7 +100,7 @@ public class SerialExecutor implements Executor {
 
 		synchronized (syncLock) {
 			if (!threadStarted && realExecutor != null)
-				reallyStart(logMINOR);
+				reallyStart();
 		}
 	}
 

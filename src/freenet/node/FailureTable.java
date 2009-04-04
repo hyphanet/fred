@@ -21,6 +21,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.SerialExecutor;
@@ -42,6 +43,18 @@ import freenet.support.io.NativeThread;
  */
 public class FailureTable implements OOMHook {
 	
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
 	private final LRUHashtable<Key,FailureTableEntry> entriesByKey;
 	/** BlockOfferList by key */
@@ -63,17 +76,12 @@ public class FailureTable implements OOMHook {
 	/** Clean up old data every 30 minutes to save memory and improve privacy */
 	static final int CLEANUP_PERIOD = 30*60*1000;
 	
-	static boolean logMINOR;
-	static boolean logDEBUG;
-	
 	FailureTable(Node node) {
 		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();
 		blockOfferListByKey = new LRUHashtable<Key,BlockOfferList>();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
 		node.ps.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
@@ -597,8 +605,6 @@ public class FailureTable implements OOMHook {
 		}
 
 		private void realRun() {
-			logMINOR = Logger.shouldLog(Logger.MINOR, FailureTable.this);
-			logDEBUG = Logger.shouldLog(Logger.DEBUG, FailureTable.this);
 			if(logMINOR) Logger.minor(this, "Starting FailureTable cleanup");
 			long startTime = System.currentTimeMillis();
 			FailureTableEntry[] entries;
