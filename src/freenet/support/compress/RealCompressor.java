@@ -97,7 +97,7 @@ public class RealCompressor implements PrioRunnable {
 	}
 	
 	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing NodeClientCore in database", new Exception("error"));
+		Logger.error(this, "Not storing RealCompressor in database", new Exception("error"));
 		return false;
 	}
 	
