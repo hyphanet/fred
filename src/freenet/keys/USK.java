@@ -88,7 +88,8 @@ public class USK extends BaseClientKey {
 	}
 
 	public USK(USK usk) {
-		this.pubKeyHash = usk.pubKeyHash;
+		this.pubKeyHash = new byte[usk.pubKeyHash.length];
+		System.arraycopy(usk.pubKeyHash, 0, pubKeyHash, 0, usk.pubKeyHash.length);
 		this.cryptoAlgorithm = usk.cryptoAlgorithm;
 		this.cryptoKey = usk.cryptoKey;
 		this.siteName = usk.siteName;
