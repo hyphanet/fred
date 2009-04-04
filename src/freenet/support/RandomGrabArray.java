@@ -505,7 +505,6 @@ public class RandomGrabArray implements RemoveRandom {
 				for(RandomGrabArrayItem item : block.reqs) {
 					if(item != null) {
 						Logger.error(this, "VALID ITEM WHILE DELETING BLOCK: "+item+" on "+this);
-						return;
 					}
 				}
 				container.delete(block);
