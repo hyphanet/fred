@@ -42,7 +42,9 @@ public class SSKKeypairMessage extends FCPMessage {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(insertURI, 5);
 		insertURI.removeFrom(container);
+		container.activate(requestURI, 5);
 		requestURI.removeFrom(container);
 		container.delete(this);
 	}
