@@ -126,10 +126,10 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	private transient int _activationCount = 0;
 	
 	public void objectOnActivate(ObjectContainer container) {
-		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
-		if(elements != null && elements.length > 100) {
-			System.err.println("Infinite recursion in progress...");
-		}
+//		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+//		if(elements != null && elements.length > 100) {
+//			System.err.println("Infinite recursion in progress...");
+//		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
 		if(bucket == this) {
