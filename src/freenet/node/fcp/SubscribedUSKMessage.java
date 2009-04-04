@@ -50,6 +50,7 @@ public class SubscribedUSKMessage extends FCPMessage {
 
 	@Override
 	public void removeFrom(ObjectContainer container) {
+		container.activate(message, 1);
 		message.removeFrom(container);
 		container.delete(this);
 	}
