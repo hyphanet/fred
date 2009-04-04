@@ -202,9 +202,6 @@ public class PersistentBlobTempBucket implements Bucket {
 			throw new UnsupportedOperationException("Can't store a shadow");
 		}
 		boolean p;
-		// Race conditions with storeTo and removeFrom running on different threads
-		// in parallel are possible... that sort of behaviour *should* be very rare,
-		// you should always store it before making it publicly available...
 		synchronized(this) {
 			if(tag == null) throw new NullPointerException();
 			p = persisted;
