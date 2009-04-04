@@ -96,8 +96,11 @@ public class PersistentPut extends FCPMessage {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(uri, 5);
 		uri.removeFrom(container);
+		container.activate(origFilename, 5);
 		container.delete(origFilename);
+		container.activate(targetURI, 5);
 		targetURI.removeFrom(container);
 		container.delete(this);
 	}

@@ -133,8 +133,11 @@ public class PersistentPutDir extends FCPMessage {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(uri, 5);
 		uri.removeFrom(container);
+		container.activate(manifestElements, Integer.MAX_VALUE);
 		removeFrom(manifestElements, container);
+		container.activate(cached, Integer.MAX_VALUE);
 		cached.removeFrom(container);
 		container.delete(this);
 	}

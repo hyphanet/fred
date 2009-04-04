@@ -91,8 +91,11 @@ public class PersistentGet extends FCPMessage {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(uri, 5);
 		uri.removeFrom(container);
+		container.activate(targetFile, 5);
 		container.delete(targetFile);
+		container.activate(tempFile, 5);
 		container.delete(tempFile);
 		container.delete(this);
 	}
