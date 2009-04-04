@@ -5,9 +5,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 
 /**
- * Normally only implemented by SendableGet's. YOU MUST ALSO IMPLEMENT equals() and a hashCode() consistent with it!
+ * Normally only implemented by SendableGet's.
  * @author toad
- *
  */
 public interface SupportsBulkCallFailure {
 	
