@@ -823,10 +823,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 		
 		/* FIXME: Backup the database! */
+		Configuration dbConfig = Db4o.newConfiguration();
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
 		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
-		 * This is unacceptable! */
-		Configuration dbConfig = Db4o.newConfiguration();
+		 * This is unacceptable, hence btree freespace. */
 		dbConfig.freespace().useBTreeSystem();
 		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
 		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
