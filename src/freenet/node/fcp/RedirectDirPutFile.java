@@ -39,6 +39,7 @@ public class RedirectDirPutFile extends DirPutFile {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(targetURI, 5);
 		targetURI.removeFrom(container);
 		container.delete(this);
 	}
