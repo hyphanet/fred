@@ -135,23 +135,10 @@ public class PersistentPutDir extends FCPMessage {
 	public void removeFrom(ObjectContainer container) {
 		container.activate(uri, 5);
 		uri.removeFrom(container);
-		container.activate(manifestElements, Integer.MAX_VALUE);
-		removeFrom(manifestElements, container);
+		// manifestElements will be removed by ClientPutDir.freeData, not our problem.
 		container.activate(cached, Integer.MAX_VALUE);
 		cached.removeFrom(container);
 		container.delete(this);
 	}
 
-	private void removeFrom(HashMap manifestElements, ObjectContainer container) {
-		for(Iterator i=manifestElements.values().iterator();i.hasNext();) {
-			Object o = i.next();
-			if(o instanceof HashMap)
-				removeFrom((HashMap)o, container);
-			else
-				((ManifestElement) o).removeFrom(container);
-		}
-		manifestElements.clear();
-		container.delete(manifestElements);
-	}
-	
 }
