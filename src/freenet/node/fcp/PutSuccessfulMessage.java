@@ -49,6 +49,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(uri, 5);
 		uri.removeFrom(container);
 		container.delete(this);
 	}
