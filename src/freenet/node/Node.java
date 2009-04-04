@@ -849,14 +849,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
 		 * internally through the TMap translator.
 		 */
-		/** Maybe we want a different query evaluation mode?
-		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
-		 * for every key, which means one RegisterMe for each ... this results in a long pause
-		 * when we run the RegisterMe query, plus a lot of RAM usage for all the UIDs.
-		 * 
-		 * Having said that, if we only run it once, and especially if we make splitfile
-		 * inserts work like splitfile requests, it may not be a big problem.
-		 */
 		// LAZY appears to cause ClassCastException's relating to db4o objects inside db4o code. :(
 		// Also it causes duplicates if we activate immediately.
 		// And the performance gain for e.g. RegisterMeRunner isn't that great.
