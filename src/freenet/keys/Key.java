@@ -11,7 +11,6 @@ import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ClientContext;
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
