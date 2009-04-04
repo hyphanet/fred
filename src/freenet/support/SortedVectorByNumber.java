@@ -34,7 +34,6 @@ public class SortedVectorByNumber {
 
 	public synchronized IntNumberedItem get(int retryCount, ObjectContainer container) {
 		if(persistent) {
-			container.activate(this, 1);
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
@@ -46,7 +45,6 @@ public class SortedVectorByNumber {
 
 	public synchronized void remove(int item, ObjectContainer container) {
 		if(persistent) {
-			container.activate(this, 1);
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
@@ -88,7 +86,6 @@ public class SortedVectorByNumber {
 	 */
 	public synchronized boolean push(IntNumberedItem grabber, ObjectContainer container) {
 		if(persistent) {
-			container.activate(this, 1);
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
@@ -102,7 +99,6 @@ public class SortedVectorByNumber {
 	
 	public synchronized void add(IntNumberedItem grabber, ObjectContainer container) {
 		if(persistent) {
-			container.activate(this, 1);
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
@@ -119,7 +115,6 @@ public class SortedVectorByNumber {
 
 	private synchronized void push(IntNumberedItem grabber, int x, ObjectContainer container) {
 		if(persistent) {
-			container.activate(this, 1);
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
