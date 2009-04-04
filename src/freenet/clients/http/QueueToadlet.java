@@ -29,7 +29,6 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.DefaultMIMETypes;
-import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.TempFetchResult;
@@ -62,7 +61,6 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NativeThread;
-import java.util.StringTokenizer;
 
 public class QueueToadlet extends Toadlet implements RequestCompletionCallback, LinkEnabledCallback {
 
@@ -562,7 +560,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 		}
 		
-		MultiValueTable pageHeaders = new MultiValueTable<String, String>();
+		MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
 		if(pageNode != null)
 			writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 		else
