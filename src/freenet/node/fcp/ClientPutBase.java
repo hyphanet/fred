@@ -161,6 +161,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.store(this);
 		// Could restart, and is on the putter, don't free data until we remove the putter
 		//freeData(container);
 		finish(container);
