@@ -71,7 +71,9 @@ public class InsertableUSK extends USK {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(privKey, 5);
 		privKey.removeFrom(container);
+		container.activate(group, 5);
 		group.removeFrom(container);
 		super.removeFrom(container);
 	}
