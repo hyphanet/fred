@@ -268,6 +268,7 @@ public class ClientPutDir extends ClientPutBase {
 		// otherwise ignore
 	}
 	
+	@Override
 	@SuppressWarnings("unchecked")
 	protected void freeData(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "freeData() on "+this+" persistence type = "+persistenceType);
