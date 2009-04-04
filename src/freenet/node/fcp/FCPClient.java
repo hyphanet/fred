@@ -250,7 +250,7 @@ public class FCPClient {
 			}
 			clientRequestsByIdentifier.remove(identifier);
 			if(container != null) {
-				if(removedFromRunning) container.store(runningPersistentRequests);
+				if(removedFromRunning) container.ext().store(runningPersistentRequests, 2);
 				else container.store(completedUnackedRequests);
 				container.ext().store(clientRequestsByIdentifier, 2);
 			}
@@ -483,19 +483,19 @@ public class FCPClient {
 				toKill.add(req);
 			}
 			runningPersistentRequests.clear();
-			for(int j=0;j<completedUnackedRequests.size();j++)
-				toKill.add(completedUnackedRequests.get(j));
+			for(ClientRequest req : completedUnackedRequests) {
+				if(persistenceType == ClientRequest.PERSIST_FOREVER) container.activate(req, 1);
+				toKill.add(req);
+			}
 			completedUnackedRequests.clear();
-			i = clientRequestsByIdentifier.values().iterator();
-			while(i.hasNext()) {
-				ClientRequest req = i.next();
+			for(ClientRequest req : clientRequestsByIdentifier.values()) {
+				if(persistenceType == ClientRequest.PERSIST_FOREVER) container.activate(req, 1);
 				toKill.add(req);
 			}
 			clientRequestsByIdentifier.clear();
 			container.ext().store(clientRequestsByIdentifier, 2);
-			i = toStart.iterator();
-			while(i.hasNext()) {
-				ClientRequest req = i.next();
+			for(ClientRequest req : toStart) {
+				if(persistenceType == ClientRequest.PERSIST_FOREVER) container.activate(req, 1);
 				toKill.add(req);
 			}
 			toStart.clear();
