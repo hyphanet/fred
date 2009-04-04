@@ -135,7 +135,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				
-				MultiValueTable responseHeaders = new MultiValueTable<String, String>();
+				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
 				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString());
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
@@ -143,7 +143,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-				MultiValueTable headers = new MultiValueTable<String, String>();
+				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Location", "/queue/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
@@ -220,7 +220,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					writePermanentRedirect(ctx, "Done", "/queue/");
 					return;
 				}
-				LinkedList<String> success = new LinkedList(), failure = new LinkedList();
+				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
 				
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
@@ -573,18 +573,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private HTMLNode handleGetInner(PageMaker pageMaker, final ObjectContainer container, ClientContext context, final HTTPRequest request, ToadletContext ctx) {
 		
 		// First, get the queued requests, and separate them into different types.
-		LinkedList<ClientRequest> completedDownloadToDisk = new LinkedList();
-		LinkedList<ClientRequest> completedDownloadToTemp = new LinkedList();
-		LinkedList<ClientRequest> completedUpload = new LinkedList();
-		LinkedList<ClientRequest> completedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> completedDownloadToDisk = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> completedDownloadToTemp = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> completedUpload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> completedDirUpload = new LinkedList<ClientRequest>();
 		
-		LinkedList<ClientRequest> failedDownload = new LinkedList();
-		LinkedList<ClientRequest> failedUpload = new LinkedList();
-		LinkedList<ClientRequest> failedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> failedDownload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> failedUpload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> failedDirUpload = new LinkedList<ClientRequest>();
 		
-		LinkedList<ClientRequest> uncompletedDownload = new LinkedList();
-		LinkedList<ClientRequest> uncompletedUpload = new LinkedList();
-		LinkedList<ClientRequest> uncompletedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> uncompletedDownload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> uncompletedUpload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> uncompletedDirUpload = new LinkedList<ClientRequest>();
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests(container);
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -1246,9 +1246,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	/**
 	 * List of completed request identifiers which the user hasn't acknowledged yet.
 	 */
-	private final HashSet<String> completedRequestIdentifiers = new HashSet();
+	private final HashSet<String> completedRequestIdentifiers = new HashSet<String>();
 	
-	private final HashMap<String, UserAlert> alertsByIdentifier = new HashMap();
+	private final HashMap<String, UserAlert> alertsByIdentifier = new HashMap<String, UserAlert>();
 	
 	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		// FIXME do something???
