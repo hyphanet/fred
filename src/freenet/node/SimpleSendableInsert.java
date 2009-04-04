@@ -14,11 +14,9 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistentChosenBlock;
 import freenet.client.async.PersistentChosenRequest;
 import freenet.keys.CHKBlock;
-import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
-import freenet.support.io.NativeThread;
 
 /**
  * Simple SendableInsert implementation. No feedback, no retries, just insert the
@@ -141,14 +139,6 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
-	private static SendableRequestItem nullItem = new SendableRequestItem() {
-
-		public void dump() {
-			// No problem
-		}
-		
-	};
-	
 	@Override
 	public synchronized SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
 		if(finished) return new SendableRequestItem[] {};
