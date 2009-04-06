@@ -213,15 +213,18 @@ public final class PageMaker {
 	}
 	
 	public HTMLNode getInfobox(String header) {
-		return getInfobox((header != null) ? new HTMLNode("#", header) : (HTMLNode) null);
+		if (header == null) throw new NullPointerException();
+		return getInfobox(new HTMLNode("#", header));
 	}
 	
 	public HTMLNode getInfobox(HTMLNode header) {
+		if (header == null) throw new NullPointerException();
 		return getInfobox(null, header);
 	}
 
 	public HTMLNode getInfobox(String category, String header) {
-		return getInfobox(category, (header != null) ? new HTMLNode("#", header) : (HTMLNode) null);
+		if (header == null) throw new NullPointerException();
+		return getInfobox(category, new HTMLNode("#", header));
 	}
 
 	/**
