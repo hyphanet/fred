@@ -48,7 +48,7 @@ public interface DoublyLinkedList<T extends DoublyLinkedList.Item<?>> extends It
 	Enumeration<T> elements(); // for consistency w/ typical Java API
 
     /**
-     * Returns true if the passed item is contained in the list.
+     * Returns true if the list contains an item i where <code>i.equals(item)</code> is true.
      */
 	public boolean contains(T item);
     

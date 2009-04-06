@@ -119,7 +119,7 @@ public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> 
 
 	public boolean contains(T item) {
     	for(T i : this) {
-    		if(i == item)
+    		if(i.equals(item))
     			return true;
     	}
     	return false;
