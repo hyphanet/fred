@@ -61,8 +61,12 @@ public class PluginTalker {
 
 				try {
 					plugin.handle(replysender, plugparams, data2, access);
+				} catch (ThreadDeath td) {
+					throw td;  // Fatal, thread is stop()'ed
+				} catch (VirtualMachineError vme) {
+					throw vme; // OOM is included here
 				} catch (Throwable t) {
-					Logger.error(this, "Cought error while execute fcp plugin handler: " + t.getMessage(), t);
+					Logger.error(this, "Cought error while execute fcp plugin handler for '"+pluginName+"', report it to the plugin author: " + t.getMessage(), t);
 				}
 
 			}
