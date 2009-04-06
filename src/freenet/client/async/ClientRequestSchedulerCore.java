@@ -530,9 +530,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 							altRGA = recentSuccesses.remove(recentSuccesses.size()-1);
 						}
 					}
-					container.activate(altRGA, 1);
-					if(altRGA != null && container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
+					if(altRGA != null) {
 						container.activate(altRGA, 1);
+						if(container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
 						if(logMINOR)
 							Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
 						SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
@@ -553,6 +553,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 									recentSuccesses.add(altRGA);
 								}
 							}
+						}
+						} else {
+							container.deactivate(altRGA, 1);
 						}
 					}
 				}
