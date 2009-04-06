@@ -17,8 +17,8 @@ import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.USK;
 import freenet.node.RequestStarter;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 

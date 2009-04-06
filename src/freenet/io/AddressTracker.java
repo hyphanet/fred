@@ -138,11 +138,13 @@ public class AddressTracker {
 	}
 	
 	private void packetTo(Peer peer, boolean sent) {
-		peer = peer.dropHostName();
-		if(peer == null) {
+		Peer peer2 = peer.dropHostName();
+		if(peer2 == null) {
 			Logger.error(this, "Impossible: No host name in AddressTracker.packetTo for "+peer);
 			return;
 		}
+		peer = peer2;
+		
 		InetAddress ip = peer.getAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
