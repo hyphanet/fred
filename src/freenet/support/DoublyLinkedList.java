@@ -6,6 +6,20 @@ import java.util.Enumeration;
  * Framework for managing a doubly linked list.
  * @author tavin
  */
+/* FIXME sdiz said:
+"but I really *hate* the idea of using DoublyLinkedList and its friends.
+
+It is a ugly hack for quick iteration of list in the early days, and can be replaced LinkList using ListIternator in most cases.
+
+- The performance benefit is marginal.
+- Custom code like these make casual contributor less likely.
+- The class was created in 2005 era, and I can still find bugs in recent months.
+
+Keep it out from the new code if you can.
+
+IF you REALLY HAVE to use it, PLEASE add a junit test for all new method you created."
+ */
+@Deprecated
 public interface DoublyLinkedList<T extends DoublyLinkedList.Item<?>> extends Iterable<T> {
 	// public abstract DoublyLinkedList<T> clone();
 
