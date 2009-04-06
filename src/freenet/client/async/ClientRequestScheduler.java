@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
@@ -32,8 +31,8 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
@@ -317,7 +316,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(listener != null)
 					schedTransient.addPendingKeys(listener);
 				else
-					Logger.normal(this, "No KeyListener for "+listener);
+					Logger.normal(this, "No KeyListener for "+hasListener);
 			} else
 				listener = null;
 			if(getters != null && !noCheckStore) {
