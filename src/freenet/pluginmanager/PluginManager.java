@@ -296,10 +296,12 @@ public class PluginManager {
 			this.filename = filename;
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return l10n("deleteFailedPluginButton");
 		}
 		
+		@Override
 		public void onDismiss() {
 			synchronized(pluginWrappers) {
 				pluginsFailedLoad.remove(filename);
