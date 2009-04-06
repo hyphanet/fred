@@ -508,10 +508,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 							Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 						altReq = null;
 					}
-					if (altReq != null) {
+					if (altReq != null && altReq != req) {
 						int prio = altReq.getPriorityClass(container);
-						if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
-								&& altReq != req) {
+						if(prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber())) {
 							// Use the recent one instead
 							if(logMINOR)
 								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
