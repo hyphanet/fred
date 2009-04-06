@@ -116,7 +116,7 @@ public class ManifestElement {
 	public void removeFrom(ObjectContainer container) {
 		container.activate(data, 1);
 		data.removeFrom(container);
-		container.activate(targetURI, 1);
+		container.activate(targetURI, 5);
 		targetURI.removeFrom(container);
 		container.delete(this);
 	}
