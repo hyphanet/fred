@@ -10,7 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import freenet.client.InsertException;
 
-
+@Deprecated
 public final class FrostMessage {
     private boolean isValid = false;
     private String invalidReason = null;

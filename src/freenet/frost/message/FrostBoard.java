@@ -1,5 +1,6 @@
 package freenet.frost.message;
 
+@Deprecated
 public final class FrostBoard {
 	
 	public static final int MAX_NAME_LENGTH = 64;
