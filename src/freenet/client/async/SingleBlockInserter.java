@@ -33,7 +33,6 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
@@ -481,6 +480,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					} finally {
 						block.copyBucket.free();
 					}
+					if (b==null) {
+						Logger.error(this, "Asked to send empty block on "+SingleBlockInserter.this, new Exception("error"));
+						return false;
+					}
 					final ClientKey key = b.getClientKey();
 					if(block.persistent) {
 					context.jobRunner.queue(new DBJob() {
@@ -503,12 +506,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						}, "Got URI");
 						
 					}
-					if(b != null)
-						core.realPut(b, req.cacheLocalRequests);
-					else {
-						Logger.error(this, "Asked to send empty block on "+SingleBlockInserter.this, new Exception("error"));
-						return false;
-					}
+					core.realPut(b, req.cacheLocalRequests);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);

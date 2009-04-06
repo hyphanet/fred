@@ -1373,6 +1373,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					} finally {
 						block.copyBucket.free();
 					}
+					if (b==null) {
+						Logger.error(this, "Asked to send empty block on "+SplitFileInserterSegment.this, new Exception("error"));
+						return false;
+					}
 					final ClientCHK key = (ClientCHK) b.getClientKey();
 					final int num = block.blockNum;
 					if(block.persistent) {
@@ -1396,12 +1400,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}, "Got URI");
 						
 					}
-					if(b != null)
-						core.realPut(b, req.cacheLocalRequests);
-					else {
-						Logger.error(this, "Asked to send empty block on "+SplitFileInserterSegment.this, new Exception("error"));
-						return false;
-					}
+					core.realPut(b, req.cacheLocalRequests);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
