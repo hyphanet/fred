@@ -88,7 +88,7 @@ public class SecurityLevels {
 			@Override
 			protected void setValue(String val) throws InvalidConfigValueException {
 				NETWORK_THREAT_LEVEL newValue = parseNetworkThreatLevel(val);
-				if(newValue != null)
+				if(newValue == null)
 					throw new InvalidConfigValueException("Invalid value for network threat level: "+val);
 				synchronized(SecurityLevels.this) {
 					networkThreatLevel = newValue;
