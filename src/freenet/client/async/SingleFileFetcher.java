@@ -477,8 +477,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					final Bucket out;
 					try {
 						// Data will not be freed until client is finished with it.
-						if(returnBucket != null && persistent) {
-							out = returnBucket;
+						if(returnBucket != null || persistent) {
+							if(returnBucket == null)
+								out = context.persistentBucketFactory.makeBucket(dataBucket.size());
+							else
+								out = returnBucket;
 							BucketTools.copy(dataBucket, out);
 							dataBucket.free();
 						} else {
