@@ -511,7 +511,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					if (altReq != null) {
 						int prio = altReq.getPriorityClass(container);
 						if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
-								&& !altReq.isEmpty(container) && altReq != req) {
+								&& altReq != req) {
 							// Use the recent one instead
 							if(logMINOR)
 								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
