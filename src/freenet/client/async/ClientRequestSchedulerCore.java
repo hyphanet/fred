@@ -533,27 +533,27 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					if(altRGA != null) {
 						container.activate(altRGA, 1);
 						if(container.ext().isStored(altRGA) && !altRGA.isEmpty()) {
-						if(logMINOR)
-							Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
-						SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
-						if(altReq != null) {
-							container.activate(altReq, 1);
-							int prio = altReq.getPriorityClass(container);
-							if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
-											&& !altReq.isEmpty(container) && altReq != req) {
-								// Use the recent one instead
-								if(logMINOR)
-									Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
-								// Don't need to reregister, because removeRandom doesn't actually remove!
-								req = altReq;
-							} else if(altReq != null) {
-								if(logMINOR)
-									Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
-								synchronized(recentSuccesses) {
-									recentSuccesses.add(altRGA);
+							if(logMINOR)
+								Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
+							SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
+							if(altReq != null) {
+								container.activate(altReq, 1);
+								int prio = altReq.getPriorityClass(container);
+								if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
+										&& !altReq.isEmpty(container) && altReq != req) {
+									// Use the recent one instead
+									if(logMINOR)
+										Logger.minor(this, "Recently succeeded (persistent) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+									// Don't need to reregister, because removeRandom doesn't actually remove!
+									req = altReq;
+								} else if(altReq != null) {
+									if(logMINOR)
+										Logger.minor(this, "Chosen (persistent) req "+req+" is better, reregistering recently succeeded "+altRGA+" for "+altReq);
+									synchronized(recentSuccesses) {
+										recentSuccesses.add(altRGA);
+									}
 								}
 							}
-						}
 						} else {
 							container.deactivate(altRGA, 1);
 						}
