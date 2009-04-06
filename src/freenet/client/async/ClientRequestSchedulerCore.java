@@ -509,20 +509,20 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						altReq = null;
 					}
 					if (altReq != null) {
-					int prio = altReq.getPriorityClass(container);
-					if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
-									&& !altReq.isEmpty(container) && altReq != req) {
-						// Use the recent one instead
-						if(logMINOR)
-							Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
-						// Don't need to reregister, because removeRandom doesn't actually remove!
-						req = altReq;
-					} else {
-						// Don't use the recent one
-						if(logMINOR)
-							Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-						recent.add(altReq);
-					}
+						int prio = altReq.getPriorityClass(container);
+						if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
+								&& !altReq.isEmpty(container) && altReq != req) {
+							// Use the recent one instead
+							if(logMINOR)
+								Logger.minor(this, "Recently succeeded (transient) req "+altReq+" (prio="+altReq.getPriorityClass(container)+" retry count "+altReq.getRetryCount()+") is better than "+req+" (prio="+req.getPriorityClass(container)+" retry "+req.getRetryCount()+"), using that");
+							// Don't need to reregister, because removeRandom doesn't actually remove!
+							req = altReq;
+						} else {
+							// Don't use the recent one
+							if(logMINOR)
+								Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
+							recent.add(altReq);
+						}
 					}
 				} else {
 					RandomGrabArray altRGA = null;
