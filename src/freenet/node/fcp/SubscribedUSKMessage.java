@@ -51,7 +51,7 @@ public class SubscribedUSKMessage extends FCPMessage {
 	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.activate(message, 1);
-		message.removeFrom(container);
+		message.removeFrom(container);	// FIXME this is throwing UnsupportedOperationException
 		container.delete(this);
 	}
 }
