@@ -510,8 +510,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					}
 					if (altReq != null) {
 					int prio = altReq.getPriorityClass(container);
-					if( 
-							(prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
+					if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
 									&& !altReq.isEmpty(container) && altReq != req) {
 						// Use the recent one instead
 						if(logMINOR)
@@ -538,11 +537,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						if(logMINOR)
 							Logger.minor(this, "Maybe using recently succeeded item from "+altRGA);
 						SendableRequest altReq = (SendableRequest) altRGA.removeRandom(starter, container, context);
-						container.activate(altReq, 1);
 						if(altReq != null) {
+							container.activate(altReq, 1);
 							int prio = altReq.getPriorityClass(container);
-							if(altReq != null && 
-									(prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
+							if((prio < choosenPriorityClass || (prio == choosenPriorityClass && fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()))
 											&& !altReq.isEmpty(container) && altReq != req) {
 								// Use the recent one instead
 								if(logMINOR)
