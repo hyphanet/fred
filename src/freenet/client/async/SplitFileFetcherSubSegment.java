@@ -140,7 +140,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(blockNums, 1);
 		}
 		cleanBlockNums(container);
-		return convertIntegerToMySendableRequestItems((Integer[])blockNums.toArray());
+		return convertIntegerToMySendableRequestItems(blockNums.toArray(new Integer[blockNums.size()]));
 	}
 	
 	private SendableRequestItem[] convertIntegerToMySendableRequestItems(Integer[] nums) {
