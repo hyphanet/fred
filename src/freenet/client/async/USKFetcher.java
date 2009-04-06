@@ -165,6 +165,7 @@ public class USKFetcher implements ClientGetState {
 		
 		public void schedule(ObjectContainer container, ClientContext context) {
 			assert(container == null);
+			assert(!checker.persistent());
 			if(checker == null) {
 				if(logMINOR)
 					Logger.minor(this, "Checker == null in schedule() for "+this, new Exception("debug"));
