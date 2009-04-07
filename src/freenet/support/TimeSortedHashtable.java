@@ -9,15 +9,10 @@ import java.util.TreeSet;
 /**
  * Variant on LRUHashtable which provides an efficient how-many-since-time-T operation.
  */
-public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
+public class TimeSortedHashtable<T extends Comparable>  {
 	public TimeSortedHashtable() {
 		this.elements = new TreeSet<Comparable>(new MyComparator());
 		this.valueToElement = new HashMap<T, Element<T>>();
-	}
-	
-	private TimeSortedHashtable(TimeSortedHashtable<T> c) {
-		this.elements = new TreeSet<Comparable>(c.elements);
-		this.valueToElement = new HashMap<T, Element<T>>(c.valueToElement);
 	}
 	
 	private static class Element<T extends Comparable> implements Comparable<Element<T>> {
@@ -67,15 +62,6 @@ public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
 	
     private final TreeSet<Comparable> /* <Long || Element<T>> */elements;
 	private final HashMap<T, Element<T>> valueToElement;
-
-    @Override
-	public TimeSortedHashtable<T> clone() {
-		return new TimeSortedHashtable<T>(this);
-    }
-    
-    public final void push(T value) {
-    	push(value, System.currentTimeMillis());
-    }
     
     /**
      *       push()ing an object that is already in
@@ -102,25 +88,6 @@ public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
     	assert(elements.size() == valueToElement.size());
     } 
 
-    /**
-     * Remove and return the least recently pushed value.
-     * @return Least recently pushed value.
-     */
-    public final synchronized T popValue() {
-    	assert(elements.size() == valueToElement.size());
-    	
-    	Element<T> e = (Element<T>) elements.first();
-    	valueToElement.remove(e.value);
-    	elements.remove(e);
-    	
-    	assert(elements.size() == valueToElement.size());
-    	return e.value;
-    }
-    
-	public final synchronized T peekValue() {
-		return ((Element<T>) elements.first()).value;
-	}
-    
     public final int size() {
         return elements.size();
     }
@@ -151,7 +118,7 @@ public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
     /**
      * @return The set of times after the given time.
      */
-    public final synchronized Long[] timesAfter(long t) {
+    private final synchronized Long[] timesAfter(long t) {
     	Set<Comparable> s = elements.tailSet(t);
     	
     	Long[] times = new Long[s.size()];
@@ -167,7 +134,7 @@ public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
      * @return The set of values after the given time.
      */
 	// FIXME this is broken if timestamp != -1
-    public final synchronized <E extends Comparable> E[] valuesAfter(long t, E[] values) {
+    private final synchronized <E extends Comparable> E[] valuesAfter(long t, E[] values) {
     	Set<Comparable> s = elements.tailSet(t);
     	
     	int x = 0;
