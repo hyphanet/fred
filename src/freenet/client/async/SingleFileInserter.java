@@ -212,6 +212,7 @@ class SingleFileInserter implements ClientPutState {
 				if(persistent) block.getData().removeFrom(container);
 			}
 			block.nullData();
+			if(persistent) container.store(block);
 		} else {
 			data = block.getData();
 		}
@@ -628,6 +629,8 @@ class SingleFileInserter implements ClientPutState {
 							container.store(this);
 					} else {
 						block.nullData();
+						if(persistent)
+							container.store(block);
 					}
 				}
 			}
@@ -806,6 +809,8 @@ class SingleFileInserter implements ClientPutState {
 					block.free(container);
 				else
 					block.nullData();
+				if(persistent)
+					container.store(block);
 			}
 			cb.onFailure(e, this, container, context);
 		}
@@ -857,6 +862,8 @@ class SingleFileInserter implements ClientPutState {
 				block.free(container);
 			} else {
 				block.nullData();
+				if(persistent)
+					container.store(block);
 			}
 		}
 
