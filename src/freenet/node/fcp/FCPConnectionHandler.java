@@ -277,6 +277,12 @@ public class FCPConnectionHandler implements Closeable {
 				}
 			}
 		}
+		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
+			try {
+				cg.register(null, false, false);
+			} catch (IdentifierCollisionException e) {
+				success = false;
+			}
 		if(!success) {
 			Logger.normal(this, "Identifier collision on "+this);
 			FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
@@ -343,6 +349,12 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
+		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
+			try {
+				cp.register(null, false, false);
+			} catch (IdentifierCollisionException e) {
+				failedMessage = new IdentifierCollisionMessage(id, message.global);
+			}
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
 			if(persistent) {
@@ -427,6 +439,13 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		}
+		
+		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
+			try {
+				cp.register(null, false, false);
+			} catch (IdentifierCollisionException e) {
+				failedMessage = new IdentifierCollisionMessage(id, message.global);
+			}
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
 			if(cp != null)
