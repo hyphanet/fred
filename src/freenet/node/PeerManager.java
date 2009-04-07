@@ -1121,7 +1121,7 @@ public class PeerManager {
 		shouldWritePeers = true;
 	}
 	
-	protected StringBuilder getDarknetPeersString() {
+	protected String getDarknetPeersString() {
 		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
@@ -1132,10 +1132,10 @@ public class PeerManager {
 				sb.append(pn.exportDiskFieldSet());
 		}
 		
-		return sb;
+		return sb.toString();
 	}
 	
-	protected StringBuilder getOpennetPeersString() {
+	protected String getOpennetPeersString() {
 		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
@@ -1146,23 +1146,23 @@ public class PeerManager {
 				sb.append(pn.exportDiskFieldSet());
 		}
 		
-		return sb;
+		return sb.toString();
 	}
 	
-	protected StringBuilder getOldOpennetPeersString(OpennetManager om) {
+	protected String getOldOpennetPeersString(OpennetManager om) {
 		StringBuilder sb = new StringBuilder();
 		for(PeerNode pn : om.getOldPeers()) {
 			if(pn instanceof OpennetPeerNode)
 				sb.append(pn.exportDiskFieldSet());
 		}
 		
-		return sb;
+		return sb.toString();
 	}
 
 	private void writePeersInner() {
-		StringBuilder darknet = null;
-		StringBuilder opennet = null;
-		StringBuilder oldOpennetPeers = null;
+		String darknet = null;
+		String opennet = null;
+		String oldOpennetPeers = null;
 		String oldOpennetPeersFilename = null;
 		
 		synchronized(writePeersSync) {
@@ -1191,7 +1191,7 @@ public class PeerManager {
 	/**
 	 * Write the peers file to disk
 	 */
-	private void writePeersInner(String filename, StringBuilder sb) {
+	private void writePeersInner(String filename, String sb) {
 		synchronized(writePeerFileSync) {
 			FileOutputStream fos = null;
 			String f = filename + ".bak";
@@ -1210,7 +1210,7 @@ public class PeerManager {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
 			}
 			try {
-				w.write(sb.toString());
+				w.write(sb);
 				w.flush();
 				w.close();
 				w = null;
