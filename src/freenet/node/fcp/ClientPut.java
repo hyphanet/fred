@@ -450,7 +450,7 @@ public class ClientPut extends ClientPutBase {
 		if(data == null)
 			return finishedSize;
 		else {
-			container.activate(data, 1);
+			if(persistenceType == PERSIST_FOREVER) container.activate(data, 1);
 			return data.size();
 		}
 	}
