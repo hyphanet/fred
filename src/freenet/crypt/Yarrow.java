@@ -649,9 +649,9 @@ public class Yarrow extends RandomSource {
 		Arrays.fill(v0, (byte) 0); // blank out for security
 		fast_entropy = 0;
 		if (DEBUG) {
-		long endTime = System.currentTimeMillis();
-		if(endTime - startTime > 5000)
-			Logger.normal(this, "Fast pool reseed took " + (endTime - startTime) + "ms");
+			long endTime = System.currentTimeMillis();
+			if(endTime - startTime > 5000)
+				Logger.normal(this, "Fast pool reseed took " + (endTime - startTime) + "ms");
 		}
 	}
 
