@@ -24,6 +24,7 @@ import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
@@ -76,6 +77,15 @@ import freenet.support.io.FileUtil;
  * in through name/value pairs. Do we want this?
  */
 public class FreenetURI implements Cloneable {
+	private static volatile boolean logMINOR;
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	private final String keyType,  docName;
 	private final String[] metaStr;
@@ -181,7 +191,7 @@ public class FreenetURI implements Cloneable {
 		} else
 			extra = null;
 		this.suggestedEdition = uri.suggestedEdition;
-		Logger.minor(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Copied: "+toString()+" from "+uri.toString(), new Exception("debug"));
 	}
 
 	public FreenetURI(String keyType, String docName) {
@@ -226,7 +236,7 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = -1;
-		Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
+		if (logMINOR) Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
 	}
 
 	public FreenetURI(
@@ -244,7 +254,7 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = suggestedEdition;
-		Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
+		if (logMINOR) Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
 	}
 
 	// Strip http:// and freenet: prefix
@@ -381,7 +391,7 @@ public class FreenetURI implements Cloneable {
 		} catch(IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
-		Logger.minor(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
+		if (logMINOR) Logger.minor(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
 	}
 
 	/** USK constructor from components. */
@@ -394,7 +404,7 @@ public class FreenetURI implements Cloneable {
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
 		metaStr = null;
-		Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
+		if (logMINOR) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
 
 	public void decompose() {
@@ -575,8 +585,7 @@ public class FreenetURI implements Cloneable {
 	public String toString(boolean prefix, boolean pureAscii) {
 		if(keyType == null) {
 			// Not activated or something...
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Not activated?? in toString("+prefix+","+pureAscii+")");
+			if(logMINOR) Logger.minor(this, "Not activated?? in toString("+prefix+","+pureAscii+")");
 			return null;
 		}
 		StringBuilder b;
@@ -660,8 +669,7 @@ public class FreenetURI implements Cloneable {
 		int len = dis.readShort();
 		byte[] buf = new byte[len];
 		dis.readFully(buf);
-		if(Logger.shouldLog(Logger.MINOR, FreenetURI.class))
-			Logger.minor(FreenetURI.class, "Read " + len + " bytes for key");
+		if(logMINOR) Logger.minor(FreenetURI.class, "Read " + len + " bytes for key");
 		return fromFullBinaryKey(buf);
 	}
 
@@ -724,7 +732,7 @@ public class FreenetURI implements Cloneable {
 		if(data.length > Short.MAX_VALUE)
 			throw new MalformedURLException("Full key too long: " + data.length + " - " + this);
 		dos.writeShort((short) data.length);
-		if(Logger.shouldLog(Logger.MINOR, FreenetURI.class))
+		if(logMINOR)
 			Logger.minor(this, "Written " + data.length + " bytes");
 		dos.write(data);
 	}
@@ -779,8 +787,8 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public String getPreferredFilename() {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		Logger.minor(this, "Getting preferred filename for " + this);
+		if (logMINOR)
+			Logger.minor(this, "Getting preferred filename for " + this);
 		ArrayList<String> names = new ArrayList<String>();
 		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK") || keyType.equals("USK"))) {
 			if(logMINOR)
