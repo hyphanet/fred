@@ -1533,7 +1533,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					from = transferringFrom;
 					if(from == null) return;
 				}
-				from.transferFailed("Turtled transfer");
+				from.transferFailed("TurtledTransfer");
 			}
 			
 		}, 30*1000);
