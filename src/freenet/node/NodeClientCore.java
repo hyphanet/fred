@@ -3,8 +3,6 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Iterator;
-import java.util.LinkedList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -62,6 +60,7 @@ import freenet.node.useralerts.UserAlertManager;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
@@ -73,7 +72,6 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
-import freenet.support.io.DelayedFreeBucket;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
@@ -85,8 +83,17 @@ import freenet.support.io.TempBucketFactory;
  * The connection between the node and the client layer.
  */
 public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
-
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -158,7 +165,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		compressor = new RealCompressor(node.executor);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		restartJobsQueue = NodeRestartJobsQueue.init(node.nodeDBHandle, container);
 		startupDatabaseJobs = restartJobsQueue.getEarlyRestartDatabaseJobs(container);
 		if(startupDatabaseJobs != null &&
@@ -689,7 +695,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	}
 
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
 		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL);
@@ -811,7 +816,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	}
 
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
 		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL);
@@ -933,7 +937,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	}
 
 	public void realPutCHK(CHKBlock block, boolean cache) throws LowLevelPutException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		byte[] data = block.getData();
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
@@ -1051,7 +1054,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	}
 
 	public void realPutSSK(SSKBlock block, boolean cache) throws LowLevelPutException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SSKInsertSender is;
 		long uid = random.nextLong();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL);
@@ -1383,7 +1385,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					persistentTempBucketFactory.preCommit(node.db);
 					node.db.commit();
 				}
-				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+				if(logMINOR) Logger.minor(this, "COMMITTED");
 				persistentTempBucketFactory.postCommit(node.db);
 			} catch (Throwable t) {
 				if(t instanceof OutOfMemoryError) {
