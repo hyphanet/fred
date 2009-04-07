@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.node.SendableRequest;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 /** A high level client request. A request (either fetch or put) started
@@ -16,6 +17,16 @@ import freenet.support.Logger;
  * retried.
  */
 public abstract class ClientRequester {
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
 	
@@ -81,7 +92,7 @@ public abstract class ClientRequester {
 			if(blockSetFinalized) return;
 			blockSetFinalized = true;
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Finalized set of blocks for "+this, new Exception("debug"));
 		if(persistent())
 			container.store(this);
@@ -102,7 +113,7 @@ public abstract class ClientRequester {
 				Logger.error(this, "addBlock() but set finalized! on " + this, new Exception("error"));
 		}
 		
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks);
+		if(logMINOR) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks);
 		if(persistent()) container.store(this);
 	}
 
@@ -120,12 +131,12 @@ public abstract class ClientRequester {
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
 		}
 		
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
+		if(logMINOR) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 		if(persistent()) container.store(this);
 	}
 
 	public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" required="+minSuccessBlocks+" on "+this);
 		synchronized(this) {
 			if(cancelled) return;
@@ -155,7 +166,7 @@ public abstract class ClientRequester {
 	public synchronized void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		minSuccessBlocks += blocks;
 		if(persistent()) container.store(this);
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
+		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
 	public abstract void notifyClients(ObjectContainer container, ClientContext context);
