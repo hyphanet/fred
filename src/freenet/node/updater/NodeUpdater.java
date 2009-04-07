@@ -492,7 +492,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 				} else if(availableVersion < requiredExt) { // Including if it hasn't been found at all
 					// Just try it ...
 					callFinishedFound = availableVersion = requiredExt;
-					System.err.println("Need minimum edition "+requiredExt+" for new jar, fetching...");
+					System.err.println("Need minimum edition "+requiredExt+" for new jar, have found "+availableVersion+", fetching...");
 				}
 			}
 		}
