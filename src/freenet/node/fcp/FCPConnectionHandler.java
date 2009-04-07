@@ -357,8 +357,9 @@ public class FCPConnectionHandler implements Closeable {
 			}
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
-			if(persistent) {
+			if(persistent && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				final ClientPut c = cp;
+				// Run on the database thread if persistent because it will try to activate stuff...
 				server.core.clientContext.jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
