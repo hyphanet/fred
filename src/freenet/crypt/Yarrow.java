@@ -19,11 +19,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.io.Closer;
 
 /**
@@ -443,12 +444,12 @@ public class Yarrow extends RandomSource {
 	private MessageDigest fast_pool,  slow_pool;
 	private int fast_entropy,  slow_entropy;
 	private boolean fast_select;
-	private Hashtable<EntropySource, Integer> entropySeen;
+	private Map<EntropySource, Integer> entropySeen;
 
 	private void accumulator_init(String digest) throws NoSuchAlgorithmException {
 		fast_pool = MessageDigest.getInstance(digest);
 		slow_pool = MessageDigest.getInstance(digest);
-		entropySeen = new Hashtable<EntropySource, Integer>();
+		entropySeen = new HashMap<EntropySource, Integer>();
 	}
 
 	@Override
@@ -523,9 +524,9 @@ public class Yarrow extends RandomSource {
 
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {
 						int kc = 0;
-						for(Enumeration<EntropySource> enu = entropySeen.keys(); enu.hasMoreElements();) {
-							Object key = enu.nextElement();
-							Integer v = entropySeen.get(key);
+						for(Map.Entry<EntropySource, Integer> e : entropySeen.entrySet()) {
+							EntropySource key = e.getKey();
+							Integer v = e.getValue();
 							if(DEBUG)
 								Logger.normal(this, "Key: <" + key + "> " + v);
 							if(v.intValue() > SLOW_THRESHOLD) {
