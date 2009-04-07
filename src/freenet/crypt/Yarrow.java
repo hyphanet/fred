@@ -444,12 +444,12 @@ public class Yarrow extends RandomSource {
 	private MessageDigest fast_pool,  slow_pool;
 	private int fast_entropy,  slow_entropy;
 	private boolean fast_select;
-	private Map<EntropySource, Integer> entropySeen;
+	private Map<EntropySource, int[]> entropySeen;
 
 	private void accumulator_init(String digest) throws NoSuchAlgorithmException {
 		fast_pool = MessageDigest.getInstance(digest);
 		slow_pool = MessageDigest.getInstance(digest);
-		entropySeen = new HashMap<EntropySource, Integer>();
+		entropySeen = new HashMap<EntropySource, int[]>();
 	}
 
 	@Override
@@ -515,21 +515,21 @@ public class Yarrow extends RandomSource {
 				slow_entropy += actualEntropy;
 
 				if(source != null) {
-					Integer contributedEntropy = entropySeen.get(source);
-					if(contributedEntropy == null)
-						contributedEntropy = Integer.valueOf(actualEntropy);
-					else
-						contributedEntropy = Integer.valueOf(actualEntropy + contributedEntropy.intValue());
-					entropySeen.put(source, contributedEntropy);
+					int[] contributedEntropy = entropySeen.get(source);
+					if(contributedEntropy == null) {
+						contributedEntropy = new int[] { actualEntropy };
+						entropySeen.put(source, contributedEntropy);
+					} else
+						contributedEntropy[0]++;
 
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {
 						int kc = 0;
-						for(Map.Entry<EntropySource, Integer> e : entropySeen.entrySet()) {
+						for(Map.Entry<EntropySource, int[]> e : entropySeen.entrySet()) {
 							EntropySource key = e.getKey();
-							Integer v = e.getValue();
+							int[] v = e.getValue();
 							if(DEBUG)
 								Logger.normal(this, "Key: <" + key + "> " + v);
-							if(v.intValue() > SLOW_THRESHOLD) {
+							if(v[0] > SLOW_THRESHOLD) {
 								kc++;
 								if(kc >= SLOW_K) {
 									slow_pool_reseed();
