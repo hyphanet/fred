@@ -412,6 +412,7 @@ public final class FProxyToadlet extends Toadlet {
 			while ( (len = strm.read(buf)) > 0) {
 				ctx.writeData(buf, 0, len);
 			}
+			strm.close();
 			return;
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){
 			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
