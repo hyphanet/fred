@@ -95,7 +95,7 @@ public class TimeSortedHashtable<T extends Comparable<T>>  {
      * @return value count
      */
 	public synchronized int countValuesAfter(long t) {
-    	Set<Comparable> s = elements.tailSet(new Element<T>(t, null));
+    	Set<Element<T>> s = elements.tailSet(new Element<T>(t, null));
     	
     	return s.size();
 	}
