@@ -9,7 +9,7 @@ import java.util.TreeSet;
 /**
  * Variant on LRUHashtable which provides an efficient how-many-since-time-T operation.
  */
-public class TimeSortedHashtable<T extends Comparable<?>> implements Cloneable {
+public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
 	public TimeSortedHashtable() {
 		this.elements = new TreeSet<Comparable>(new MyComparator());
 		this.valueToElement = new HashMap<T, Element<T>>();
@@ -152,7 +152,7 @@ public class TimeSortedHashtable<T extends Comparable<?>> implements Cloneable {
      * @return The set of times after the given time.
      */
     public final synchronized Long[] timesAfter(long t) {
-    	Set<Comparable> s = elements.tailSet(t, false);
+    	Set<Comparable> s = elements.tailSet(t);
     	
     	Long[] times = new Long[s.size()];
     	int x = 0;
@@ -168,7 +168,7 @@ public class TimeSortedHashtable<T extends Comparable<?>> implements Cloneable {
      */
 	// FIXME this is broken if timestamp != -1
     public final synchronized <E extends Comparable> E[] valuesAfter(long t, E[] values) {
-    	Set<Comparable> s = elements.tailSet(t, false);
+    	Set<Comparable> s = elements.tailSet(t);
     	
     	int x = 0;
     	for(Iterator<Comparable> i = s.iterator();i.hasNext();) {
@@ -179,7 +179,7 @@ public class TimeSortedHashtable<T extends Comparable<?>> implements Cloneable {
     }
 
 	public synchronized int countValuesAfter(long t) {
-    	Set<Comparable> s = elements.tailSet(t, false);
+    	Set<Comparable> s = elements.tailSet(t);
     	
     	return s.size();
 	}
@@ -189,7 +189,7 @@ public class TimeSortedHashtable<T extends Comparable<?>> implements Cloneable {
      */
 	public final synchronized void removeBefore(long t) {
     	assert(elements.size() == valueToElement.size());
-    	Set<Comparable> s = elements.headSet(t, false);
+    	Set<Comparable> s = elements.headSet(t);
     	
     	for(Iterator<Comparable> i = s.iterator();i.hasNext();) {
     		Element<T> e = (Element<T>) i.next();
