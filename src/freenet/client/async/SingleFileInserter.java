@@ -623,11 +623,9 @@ class SingleFileInserter implements ClientPutState {
 				if(splitInsertSuccess && metaInsertSuccess) {
 					if(logMINOR) Logger.minor(this, "Both succeeded for "+this);
 					finished = true;
-					if(freeData) {
+					if(freeData)
 						block.free(container);
-						if(persistent)
-							container.store(this);
-					} else {
+					else {
 						block.nullData();
 						if(persistent)
 							container.store(block);
@@ -807,10 +805,11 @@ class SingleFileInserter implements ClientPutState {
 			synchronized(this) {
 				if(freeData)
 					block.free(container);
-				else
+				else {
 					block.nullData();
-				if(persistent)
-					container.store(block);
+					if(persistent)
+						container.store(block);
+				}
 			}
 			cb.onFailure(e, this, container, context);
 		}
