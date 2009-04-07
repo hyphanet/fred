@@ -52,11 +52,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
 	 * they are on a cooldown queue, requests for them are in progress, etc. */
-	public abstract SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context);
+	public abstract long countAllKeys(ObjectContainer container, ClientContext context);
 
 	/** All key identifiers currently eligible to be sent. Does not include those 
 	 * currently running, on the cooldown queue etc. */
-	public abstract SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context);
+	public abstract long countSendableKeys(ObjectContainer container, ClientContext context);
 
 	/**
 	 * Get or create a SendableRequestSender for this object. This is a non-persistent

@@ -119,7 +119,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * those on cooldown queues. This is important when unregistering.
 	 */
 	@Override
-	public SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
+	public long countAllKeys(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -127,20 +127,20 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		// j16sdiz (22-DEC-2008):
 		// ClientRequestSchedular.removePendingKeys() call this to get a list of request to be removed
 		// FIXME ClientRequestSchedular.removePendingKeys() is leaking, what's missing here?
-		return convertIntegerToMySendableRequestItems(segment.getKeyNumbersAtRetryLevel(retryCount));
+		return segment.getKeyNumbersAtRetryLevel(retryCount).length;
 	}
 	
 	/**
 	 * Just those keys which are eligible to be started now.
 	 */
 	@Override
-	public SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
+	public long countSendableKeys(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(blockNums, 1);
 		}
 		cleanBlockNums(container);
-		return convertIntegerToMySendableRequestItems(blockNums.toArray(new Integer[blockNums.size()]));
+		return blockNums.size();
 	}
 	
 	private SendableRequestItem[] convertIntegerToMySendableRequestItems(Integer[] nums) {

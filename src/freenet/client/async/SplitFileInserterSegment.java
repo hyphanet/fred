@@ -1285,8 +1285,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	@Override
-	public SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
-		return sendableKeys(container, context);
+	public long countAllKeys(ObjectContainer container, ClientContext context) {
+		return countSendableKeys(container, context);
 	}
 
 	@Override
@@ -1466,22 +1466,15 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	@Override
-	public synchronized SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
+	public synchronized long countSendableKeys(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(blocks, 1);
 		}
-		SendableRequestItem[] items = new SendableRequestItem[blocks.size()];
-		for(int i=0;i<blocks.size();i++)
-			try {
-				items[i] = getBlockItem(container, context, blocks.get(i));
-			} catch (IOException e) {
-				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
-				return null;
-			}
+		int sz = blocks.size();
 		if(persistent) {
 			container.deactivate(blocks, 1);
 		}
-		return items;
+		return sz;
 	}
 
 	public synchronized boolean isEmpty(ObjectContainer container) {

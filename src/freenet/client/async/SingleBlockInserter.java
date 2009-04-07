@@ -553,16 +553,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	@Override
-	public synchronized SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
+	public synchronized long countSendableKeys(ObjectContainer container, ClientContext context) {
 		if(finished)
-			return new SendableRequestItem[] {};
+			return 0;
 		else
-			return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
+			return 1;
 	}
 
 	@Override
-	public synchronized SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
-		return sendableKeys(container, context);
+	public synchronized long countAllKeys(ObjectContainer container, ClientContext context) {
+		return countSendableKeys(container, context);
 	}
 
 	@Override

@@ -140,15 +140,15 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 
 	@Override
-	public synchronized SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
-		if(finished) return new SendableRequestItem[] {};
-		return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
+	public synchronized long countAllKeys(ObjectContainer container, ClientContext context) {
+		if(finished) return 0;
+		return 1;
 	}
 
 	@Override
-	public synchronized SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
-		if(finished) return new SendableRequestItem[] {};
-		return new SendableRequestItem[] { NullSendableRequestItem.nullItem };
+	public synchronized long countSendableKeys(ObjectContainer container, ClientContext context) {
+		if(finished) return 0;
+		return 1;
 	}
 
 	@Override

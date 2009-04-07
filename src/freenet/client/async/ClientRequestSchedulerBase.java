@@ -472,8 +472,8 @@ abstract class ClientRequestSchedulerBase {
 								SendableRequest req = (SendableRequest) rga.get(m, container);
 								if(req == null) continue;
 								container.activate(req, 1);
-								sendable += req.sendableKeys(container, context).length;
-								all += req.allKeys(container, context).length;
+								sendable += req.countSendableKeys(container, context);
+								all += req.countAllKeys(container, context);
 								container.deactivate(req, 1);
 							}
 							System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));

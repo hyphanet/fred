@@ -52,13 +52,13 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	@Override
-	public SendableRequestItem[] allKeys(ObjectContainer container, ClientContext context) {
-		return keys;
+	public long countAllKeys(ObjectContainer container, ClientContext context) {
+		return 1;
 	}
 	
 	@Override
-	public SendableRequestItem[] sendableKeys(ObjectContainer container, ClientContext context) {
-		return keys;
+	public long countSendableKeys(ObjectContainer container, ClientContext context) {
+		return 1;
 	}
 	
 	@Override
