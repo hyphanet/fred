@@ -46,6 +46,8 @@ public class TimeSortedHashtable<T extends Comparable<T>>  {
      */
     public final synchronized void push(T value, long now) {
     	assert(elements.size() == valueToElement.size());
+    	if (value == null)
+    		throw new NullPointerException();
     	
     	Element<T> e = valueToElement.get(value);
     	
