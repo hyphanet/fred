@@ -428,9 +428,9 @@ public class PacketSender implements Runnable, Ticker {
 		if(sleepTime > 0) {
 			// Update logging only when have time to do so
 			try {
+				if(logMINOR)
+					Logger.minor(this, "Sleeping for " + sleepTime);
 				synchronized(this) {
-					if(logMINOR)
-						Logger.minor(this, "Sleeping for " + sleepTime);
 					wait(sleepTime);
 				}
 			} catch(InterruptedException e) {
