@@ -13,14 +13,15 @@ public class TimeSortedHashtableTest extends TestCase {
 		tsh.push("KEY1", 100);
 		assertEquals(1, tsh.countValuesAfter(0));
 		assertEquals(1, tsh.size());
-		//assertEquals(0, tsh.countValuesAfter(100));
+		assertEquals(1, tsh.countValuesAfter(99));
+		assertEquals(0, tsh.countValuesAfter(100));
 		assertEquals(0, tsh.countValuesAfter(101));
 		assertTrue(tsh.containsValue("KEY1"));
 
 		tsh.push("KEY2", 100);
 		assertEquals(2, tsh.countValuesAfter(0));
 		assertEquals(2, tsh.size());
-		//assertEquals(0, tsh.countValuesAfter(100));
+		assertEquals(0, tsh.countValuesAfter(100));
 		assertEquals(0, tsh.countValuesAfter(101));
 		assertTrue(tsh.containsValue("KEY1"));
 		assertTrue(tsh.containsValue("KEY2"));
@@ -28,7 +29,7 @@ public class TimeSortedHashtableTest extends TestCase {
 		tsh.push("KEY3", 300);
 		assertEquals(3, tsh.countValuesAfter(0));
 		assertEquals(3, tsh.size());
-		//assertEquals(1, tsh.countValuesAfter(100));
+		assertEquals(1, tsh.countValuesAfter(100));
 		assertEquals(1, tsh.countValuesAfter(101));
 		assertTrue(tsh.containsValue("KEY1"));
 		assertTrue(tsh.containsValue("KEY2"));
@@ -37,7 +38,7 @@ public class TimeSortedHashtableTest extends TestCase {
 		tsh.push("KEY1", 200);
 		assertEquals(3, tsh.countValuesAfter(0));
 		assertEquals(3, tsh.size());
-		//assertEquals(2, tsh.countValuesAfter(100));
+		assertEquals(2, tsh.countValuesAfter(100));
 		assertEquals(2, tsh.countValuesAfter(101));
 		assertTrue(tsh.containsValue("KEY1"));
 		assertTrue(tsh.containsValue("KEY2"));
@@ -46,7 +47,7 @@ public class TimeSortedHashtableTest extends TestCase {
 		assertTrue(tsh.removeValue("KEY1"));
 		assertEquals(2, tsh.countValuesAfter(0));
 		assertEquals(2, tsh.size());
-		//assertEquals(1, tsh.countValuesAfter(100));
+		assertEquals(1, tsh.countValuesAfter(100));
 		assertEquals(1, tsh.countValuesAfter(101));
 		assertFalse(tsh.containsValue("KEY1"));
 		assertTrue(tsh.containsValue("KEY2"));
@@ -55,7 +56,7 @@ public class TimeSortedHashtableTest extends TestCase {
 		tsh.removeBefore(105);
 		assertEquals(1, tsh.countValuesAfter(0));
 		assertEquals(1, tsh.size());
-		//assertEquals(1, tsh.countValuesAfter(100));
+		assertEquals(1, tsh.countValuesAfter(100));
 		assertEquals(1, tsh.countValuesAfter(101));
 		assertFalse(tsh.containsValue("KEY1"));
 		assertFalse(tsh.containsValue("KEY2"));
@@ -84,6 +85,17 @@ public class TimeSortedHashtableTest extends TestCase {
 		assertEquals(200, tsh.getTime("KEY1"));
 		assertEquals(-1, tsh.getTime("KEY2"));
 		assertEquals(300, tsh.getTime("KEY3"));
+	}
+
+	public void testBeforeInclusive() {
+		TimeSortedHashtable<String> tsh = new TimeSortedHashtable<String>();
+
+		tsh.push("KEY1", 100); // 100=KEY1
+		tsh.push("KEY2", 100); // 100=KEY1, 100=KEY2
+		tsh.push("KEY3", 300); // 100=KEY1, 100=KEY2, 300=KEY3
+		tsh.removeBefore(100);
+		
+		assertEquals(1, tsh.size());
 	}
 
 	public void testPairs() {
