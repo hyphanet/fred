@@ -66,6 +66,11 @@ public class RetrievalException extends Exception {
 	public String toString() {
 		return getErrString(_reason)+":"+_cause;
 	}
+
+	/** Guaranteed not to have any spaces in it. */
+	public String getErrString() {
+		return getErrString(_reason);
+	}
 	
 	public static String getErrString(int reason) {
 		switch (reason) {
