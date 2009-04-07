@@ -42,6 +42,7 @@ public class InsertBlock {
 		data.free();
 		if(container != null) {
 			data.removeFrom(container);
+			data = null; // don't remove twice
 		}
 	}
 	
