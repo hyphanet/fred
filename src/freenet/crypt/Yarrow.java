@@ -660,9 +660,7 @@ public class Yarrow extends RandomSource {
 		fast_pool_reseed();
 		slow_entropy = 0;
 
-		Integer ZERO = 0;
-		for(EntropySource src : entropySeen.keySet())
-			entropySeen.put(src, ZERO);
+		entropySeen.clear();
 	}
 	/**
 	 * 5.4 Reseed Control parameters
