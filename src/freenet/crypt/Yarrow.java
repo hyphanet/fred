@@ -488,18 +488,21 @@ public class Yarrow extends RandomSource {
 	private int accept_entropy(long data, EntropySource source, int actualEntropy) {
 
 		boolean performedPoolReseed = false;
-
+		byte[] b = new byte[] {
+				(byte) data,
+				(byte) (data >> 8),
+				(byte) (data >> 16),
+				(byte) (data >> 24),
+				(byte) (data >> 32),
+				(byte) (data >> 40),
+				(byte) (data >> 48),
+				(byte) (data >> 56)
+		};
+		
 		synchronized(this) {
 			fast_select = !fast_select;
 			MessageDigest pool = (fast_select ? fast_pool : slow_pool);
-			pool.update((byte) data);
-			pool.update((byte) (data >> 8));
-			pool.update((byte) (data >> 16));
-			pool.update((byte) (data >> 24));
-			pool.update((byte) (data >> 32));
-			pool.update((byte) (data >> 40));
-			pool.update((byte) (data >> 48));
-			pool.update((byte) (data >> 56));
+			pool.update(b);
 
 			if(fast_select) {
 				fast_entropy += actualEntropy;
