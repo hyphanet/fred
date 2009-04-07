@@ -398,49 +398,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 	
-	@Override
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
-			container.activate(blockNums, 1);
-		}
-		Bucket data = extract(block, token, container, context);
-		int blockNum = ((MySendableRequestItem)token).x;
-		if(fromStore) {
-			// Normally when this method is called the block number has already
-			// been removed. However if fromStore=true, it won't have been, so
-			// we have to do it. (Check the call trace for why)
-			boolean removed = false;
-			synchronized(segment) {
-				for(int i=0;i<blockNums.size();i++) {
-					Integer x = blockNums.get(i);
-					// Compare by value as sometimes we will do new Integer(num) in requeueing after cooldown code.
-					if(x.intValue() == blockNum) {
-						blockNums.remove(i);
-						if(persistent) container.delete(x);
-						if(logMINOR) Logger.minor(this, "Removed block "+i+" : "+x);
-						i--;
-						removed = true;
-					}
-				}
-			}
-			if(persistent && removed)
-				container.store(blockNums);
-		}
-		if(!block.isMetadata()) {
-			onSuccess(data, fromStore, blockNum, blockNum, block, container, context);
-		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, container, context);
-			data.free();
-			if(persistent) data.removeFrom(container);
-		}
-		if(persistent) {
-			container.deactivate(segment, 1);
-			container.deactivate(blockNums, 1);
-		}
-	}
-	
 	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);

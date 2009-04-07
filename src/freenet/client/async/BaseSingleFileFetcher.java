@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -232,7 +233,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 	}
 	
-
+	/** Called when/if the low-level request succeeds. */
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
+	
 	@Override
 	public long getCooldownWakeup(Object token, ObjectContainer container) {
 		return cooldownWakeupTime;

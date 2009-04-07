@@ -43,9 +43,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Get the fetch context (settings) object. */
 	public abstract FetchContext getContext();
 	
-	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context);
-	
 	/** Called when/if the low-level request fails. */
 	public abstract void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context);
 	
