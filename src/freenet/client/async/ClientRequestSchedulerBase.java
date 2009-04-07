@@ -220,15 +220,20 @@ abstract class ClientRequestSchedulerBase {
 		// Do nothing.
 	}
 
-	public synchronized void addPendingKeys(KeyListener listener) {
+	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
-		keyListeners.add(listener);
+		synchronized (this) {
+			keyListeners.add(listener);
+		}
 		Logger.normal(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
 	}
 	
-	public synchronized boolean removePendingKeys(KeyListener listener) {
-		boolean ret = keyListeners.remove(listener);
-		listener.onRemove();
+	public boolean removePendingKeys(KeyListener listener) {
+		boolean ret;
+		synchronized (this) {
+			ret = keyListeners.remove(listener);
+			listener.onRemove();
+		}
 		Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 		return ret;
 	}
