@@ -448,6 +448,7 @@ public class FCPConnectionHandler implements Closeable {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
 		if(failedMessage != null) {
+			// FIXME do we need to freeData???
 			outputHandler.queue(failedMessage);
 			if(cp != null)
 				cp.cancel(null, server.core.clientContext);
