@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import freenet.client.async.ClientRequester;
 import freenet.keys.FreenetURI;
+import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
 import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
@@ -431,10 +432,11 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync(FCPServer server) {
+	public void restartAsync(final FCPServer server) {
 		synchronized(this) {
 			this.started = false;
 		}
+		if(persistenceType == PERSIST_FOREVER) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -444,6 +446,19 @@ public abstract class ClientRequest {
 			}
 			
 		}, NativeThread.HIGH_PRIORITY, false);
+		} else {
+			server.core.getExecutor().execute(new PrioRunnable() {
+
+				public int getPriority() {
+					return NativeThread.NORM_PRIORITY;
+				}
+
+				public void run() {
+					restart(null, server.core.clientContext);
+				}
+				
+			}, "Restart request");
+		}
 	}
 
 	/**
