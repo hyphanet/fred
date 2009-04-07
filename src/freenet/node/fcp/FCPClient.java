@@ -38,7 +38,6 @@ public class FCPClient {
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
-		toStart = new LinkedList<ClientRequest>();
 		lowLevelClient = new RequestClient() {
 			public boolean persistent() {
 				return forever;
@@ -78,7 +77,6 @@ public class FCPClient {
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList<FCPClient> clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
-	private final LinkedList<ClientRequest> toStart;
 	final RequestClient lowLevelClient;
 	private transient RequestCompletionCallback completionCallback;
 	/** Connection mode */
@@ -175,7 +173,6 @@ public class FCPClient {
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
 			container.activate(runningPersistentRequests, 2);
-			container.activate(toStart, 2);
 			container.activate(clientRequestsByIdentifier, 2);
 		}
 		synchronized(this) {
@@ -191,11 +188,9 @@ public class FCPClient {
 				}
 			} else {
 				runningPersistentRequests.add(cg);
-				if(startLater) toStart.add(cg);
 				if(container != null) {
 					cg.storeTo(container);
 					container.ext().store(runningPersistentRequests, 2);
-					if(startLater) container.store(toStart);
 				}
 			}
 			clientRequestsByIdentifier.put(ident, cg);
@@ -401,28 +396,6 @@ public class FCPClient {
 		return req;
 	}
 
-	/**
-	 * Start all delayed-start requests.
-	 */
-	public void finishStart(ObjectContainer container, ClientContext context) {
-		ClientRequest[] reqs;
-		if(container != null) {
-			container.activate(toStart, 2);
-		}
-		synchronized(this) {
-			reqs = toStart.toArray(new ClientRequest[toStart.size()]);
-			toStart.clear();
-			container.store(toStart);
-		}
-		for(int i=0;i<reqs.length;i++) {
-			System.err.println("Starting migrated request "+i+" of "+reqs.length);
-			final ClientRequest req = reqs[i];
-			container.activate(req, 1);
-			req.start(container, context);
-			container.deactivate(req, 1);
-		}
-	}
-	
 	@Override
 	public String toString() {
 		return super.toString()+ ':' +name;
@@ -460,8 +433,6 @@ public class FCPClient {
 		container.delete(completedUnackedRequests);
 		container.activate(clientRequestsByIdentifier, 2);
 		container.delete(clientRequestsByIdentifier);
-		container.activate(toStart, 2);
-		container.delete(toStart);
 		container.activate(lowLevelClient, 2);
 		lowLevelClient.removeFrom(container);
 		container.delete(this);
@@ -473,7 +444,6 @@ public class FCPClient {
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
 			container.activate(runningPersistentRequests, 2);
-			container.activate(toStart, 2);
 			container.activate(clientRequestsByIdentifier, 2);
 		}
 		synchronized(this) {
@@ -494,17 +464,6 @@ public class FCPClient {
 			}
 			clientRequestsByIdentifier.clear();
 			container.ext().store(clientRequestsByIdentifier, 2);
-			for(ClientRequest req : toStart) {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER) container.activate(req, 1);
-				toKill.add(req);
-			}
-			toStart.clear();
-		}
-		Iterator<ClientRequest> i = toStart.iterator();
-		while(i.hasNext()) {
-			ClientRequest req = i.next();
-			req.cancel(container, context);
-			req.requestWasRemoved(container, context);
 		}
 	}
 

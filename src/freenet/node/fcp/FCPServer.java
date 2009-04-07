@@ -899,33 +899,6 @@ public class FCPServer implements Runnable {
 	 * some time to start them.
 	 */
 	public void finishStart() {
-		node.clientCore.clientContext.jobRunner.queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				globalForeverClient.finishStart(container, context);
-			}
-			
-		}, NativeThread.HIGH_PRIORITY-1, false);
-		
-		final FCPClient[] clients;
-		synchronized(this) {
-			clients = rebootClientsByName.values().toArray(new FCPClient[rebootClientsByName.size()]);
-		}
-		
-		if(clients.length > 0) {
-			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
-
-				public void run(ObjectContainer container, ClientContext context) {
-					for (FCPClient client : clients) {
-						container.activate(client, 1);
-						System.err.println("Migrating client "+client.name);
-						client.finishStart(container, context);
-					}
-				}
-				
-			}, NativeThread.HIGH_PRIORITY-1, false);
-		}
-		
 		if(enablePersistentDownloads) {
 			boolean movedMain = false;
 			if(logMINOR) {

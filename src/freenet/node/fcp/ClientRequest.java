@@ -245,21 +245,38 @@ public abstract class ClientRequest {
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use loading request "+clientName+" "+fs.get("Identifier"));
 		try {
 			String type = fs.get("Type");
-			boolean lazyResume = server.core.lazyResume();
 			if(type.equals("GET")) {
 				ClientGet cg = new ClientGet(fs, client, server);
-				cg.register(container, lazyResume, true);
-				if(!lazyResume) cg.start(container, context);
+				cg.register(container, false, true);
+				cg.start(container, context);
 				return cg;
 			} else if(type.equals("PUT")) {
-				ClientPut cp = new ClientPut(fs, client, server, container);
-				client.register(cp, lazyResume, container);
-				if(!lazyResume) cp.start(container, context);
+				final ClientPut cp = new ClientPut(fs, client, server, container);
+				client.register(cp, false, container);
+				DBJob start = new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						cp.start(container, context);
+						context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+					}
+					
+				};
+				context.jobRunner.queueRestartJob(start, NativeThread.HIGH_PRIORITY, container, false);
+				context.jobRunner.queue(start, NativeThread.HIGH_PRIORITY, false);
 				return cp;
 			} else if(type.equals("PUTDIR")) {
-				ClientPutDir cp = new ClientPutDir(fs, client, server, container);
-				client.register(cp, lazyResume, container);
-				if(!lazyResume) cp.start(container, context);
+				final ClientPutDir cp = new ClientPutDir(fs, client, server, container);
+				client.register(cp, false, container);
+				DBJob start = new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						cp.start(container, context);
+						context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+					}
+					
+				};
+				context.jobRunner.queueRestartJob(start, NativeThread.HIGH_PRIORITY, container, false);
+				context.jobRunner.queue(start, NativeThread.HIGH_PRIORITY, false);
 				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);

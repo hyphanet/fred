@@ -125,7 +125,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	public final RealCompressor compressor;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
-	private boolean lazyResume;
 	protected final Persister persister;
 	/** All client-layer database access occurs on a SerialExecutor, so that we don't need
 	 * to have multiple parallel transactions. Advantages:
@@ -432,24 +431,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager.init(container, clientContext);
-
-		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
-			"NodeClientCore.lazyResumeLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return lazyResume;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException {
-				synchronized(NodeClientCore.this) {
-					lazyResume = val;
-				}
-			}
-		});
-
-		lazyResume = nodeConfig.getBoolean("lazyResume");
 
 		nodeConfig.register("maxBackgroundUSKFetchers", "64", sortOrder++, true, false, "NodeClientCore.maxUSKFetchers",
 			"NodeClientCore.maxUSKFetchersLong", new IntCallback() {
@@ -1265,10 +1246,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 
 	public int maxBackgroundUSKFetchers() {
 		return maxBackgroundUSKFetchers;
-	}
-
-	public boolean lazyResume() {
-		return lazyResume;
 	}
 
 	public boolean allowDownloadTo(File filename) {
