@@ -166,6 +166,7 @@ public class TimeSortedHashtable<T extends Comparable<?>> implements Cloneable {
     /**
      * @return The set of values after the given time.
      */
+	// FIXME this is broken if timestamp != -1
     public final synchronized <E extends Comparable> E[] valuesAfter(long t, E[] values) {
     	Set<Comparable> s = elements.tailSet(t, false);
     	
@@ -199,6 +200,7 @@ public class TimeSortedHashtable<T extends Comparable<?>> implements Cloneable {
     	assert(elements.size() == valueToElement.size());
 	}
 
+	// FIXME this is broken if timestamp != -1
 	public final synchronized <E extends Comparable> Object[] pairsAfter(long timestamp, E[] valuesArray) {
 		return new Object[] { valuesAfter(timestamp, valuesArray), timesAfter(timestamp) };
 	}
