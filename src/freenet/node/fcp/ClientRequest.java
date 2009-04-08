@@ -151,7 +151,6 @@ public abstract class ClientRequest {
 		if(global) {
 			client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
 		} else {
-			assert(!handler.server.core.clientDatabaseExecutor.onThread());
 			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
 		}
 		lowLevelClient = client.lowLevelClient;
