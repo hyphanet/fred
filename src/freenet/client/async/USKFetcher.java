@@ -279,11 +279,14 @@ public class USKFetcher implements ClientGetState {
 				sleepTime = newSleepTime;
 				end = now + context.random.nextInt(sleepTime);
                 
-				if(valAtEnd > valueAtSchedule) {
+				if(valAtEnd > valueAtSchedule && valAtEnd > origUSK.suggestedEdition) {
 					// We have advanced; keep trying as if we just started.
+					// Only if we actually DO advance, not if we just confirm our suspicion (valueAtSchedule always starts at 0).
 					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
 					end = now;
+					if(logMINOR)
+						Logger.minor(this, "We have advanced: at start, "+valueAtSchedule+" at end, "+valAtEnd);
 				} else {
 					// We have not found any new version; Increase exponentially but relatively slowly
 					long newMinFailures = Math.max(((int)(minFailures * 1.25)), minFailures+1);
