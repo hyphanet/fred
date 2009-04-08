@@ -231,7 +231,10 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 		} else if(l > crypto.myARKNumber) {
 			if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK number moving from "+crypto.myARKNumber+" to "+l);
 			crypto.myARKNumber = l;
-			node.writeNodeFile();
+			if(crypto.isOpennet)
+				node.writeOpennetFile();
+			else
+				node.writeNodeFile();
 			// We'll broadcast the new ARK edition to our connected peers via a differential node reference
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.putSingle("ark.number", Long.toString(crypto.myARKNumber));

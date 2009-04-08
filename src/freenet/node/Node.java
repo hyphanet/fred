@@ -598,6 +598,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 	
+	public void writeOpennetFile() {
+		OpennetManager om = opennet;
+		if(om != null) om.writeFile();
+	}
+	
 	private void writeNodeFile(File orig, File backup) {
 		SimpleFieldSet fs = darknetCrypto.exportPrivateFieldSet();
 		

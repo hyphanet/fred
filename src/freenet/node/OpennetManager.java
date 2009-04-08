@@ -162,6 +162,12 @@ public class OpennetManager {
 		}
 	}
 
+	public void writeFile() {
+		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
+		File backupNodeFile = new File("opennet-"+crypto.portNumber+".bak");
+		writeFile(nodeFile, backupNodeFile);
+	}
+	
 	private void writeFile(File orig, File backup) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet fs = crypto.exportPrivateFieldSet();
