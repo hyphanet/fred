@@ -97,5 +97,10 @@ class USKChecker extends BaseSingleFileFetcher {
 	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
 		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, "IMPOSSIBLE: Failed to create Bloom filters (we don't have any!)", e), null, container, context);
 	}
+	
+	@Override
+	public short getPriorityClass(ObjectContainer container) {
+		return cb.getPriority();
+	}
 
 }

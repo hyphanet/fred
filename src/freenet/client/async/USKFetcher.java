@@ -66,6 +66,7 @@ import freenet.support.io.BucketTools;
  */
 public class USKFetcher implements ClientGetState {
     private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
 
     static {
         Logger.registerLogThresholdCallback(new LogThresholdCallback() {
@@ -73,6 +74,7 @@ public class USKFetcher implements ClientGetState {
             @Override
             public void shouldUpdate() {
                 logMINOR = Logger.shouldLog(Logger.MINOR, this);
+                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
             }
         });
     }
@@ -570,12 +572,17 @@ public class USKFetcher implements ClientGetState {
 		for(int i=0;i<localCallbacks.length;i++) {
 			USKCallback cb = localCallbacks[i];
 			short prio = cb.getPollingPriorityNormal();
+			if(logDEBUG) Logger.debug(this, "Normal priority for "+cb+" : "+prio);
 			if(prio < normalPrio) normalPrio = prio;
+			if(logDEBUG) Logger.debug(this, "Progress priority for "+cb+" : "+prio);
 			prio = cb.getPollingPriorityProgress();
 			if(prio < progressPrio) progressPrio = prio;
 		}
-		normalPollPriority = normalPrio;
-		progressPollPriority = progressPrio;
+		if(logMINOR) Logger.minor(this, "Updating priorities: normal="+normalPrio+" progress="+progressPrio+" for "+this+" for "+origUSK);
+		synchronized(this) {
+			normalPollPriority = normalPrio;
+			progressPollPriority = progressPrio;
+		}
 	}
 
 	public synchronized boolean hasSubscribers() {
