@@ -126,6 +126,9 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 		assertEquals(0, exec.getQueueSize(4));
 		assertEquals(2, exec.getQueueSize(2));
 
+		Thread.yield();
+		Thread.sleep(10);
+
 		Q("JQ", 4, false);
 		Q("JR", 0, false);
 		assertEquals(1, exec.getQueueSize(4));
