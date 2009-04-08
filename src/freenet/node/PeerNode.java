@@ -402,15 +402,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		String locationString = fs.get("location");
 		String[] peerLocationsString = fs.getAll("peersLocation");
-		
-			currentLocation = Location.getLocation(locationString);
-			if(peerLocationsString != null) {
-				double[] peerLocations = new double[peerLocationsString.length];
-				for(int i = 0; i < peerLocationsString.length; i++)
-					peerLocations[i] = Location.getLocation(peerLocationsString[i]);
-				currentPeersLocation = peerLocations;
-			}
-			locSetTime = System.currentTimeMillis();
+
+		currentLocation = Location.getLocation(locationString);
+		if(peerLocationsString != null) {
+			double[] peerLocations = new double[peerLocationsString.length];
+			for(int i = 0; i < peerLocationsString.length; i++)
+				peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+			currentPeersLocation = peerLocations;
+		}
+		locSetTime = System.currentTimeMillis();
 
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
@@ -2405,17 +2405,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		String locationString = fs.get("location");
 		if(locationString != null) {
-				double newLoc = Location.getLocation(locationString);
-				if (newLoc == -1) {
-					if(logMINOR)
-						Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);	
-				} else {
+			double newLoc = Location.getLocation(locationString);
+			if (newLoc == -1) {
+				if(logMINOR)
+					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);	
+			} else {
 				if(!Location.equals(newLoc, currentLocation)) {
 					changedAnything = true;
 					currentLocation = newLoc;
 					locSetTime = System.currentTimeMillis();
 				}
-				}
+			}
 		}
 		try {
 			String physical[] = fs.getAll("physical.udp");

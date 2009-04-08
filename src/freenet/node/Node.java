@@ -568,10 +568,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		String loc = fs.get("location");
-			double locD = Location.getLocation(loc);
-			if (locD == -1.0)
-				throw new IOException("Invalid location: " + loc);
-			lm.setLocation(locD);
+		double locD = Location.getLocation(loc);
+		if (locD == -1.0)
+			throw new IOException("Invalid location: " + loc);
+		lm.setLocation(locD);
 		myName = fs.get("myName");
 		if(myName == null) {
 			myName = newName();
