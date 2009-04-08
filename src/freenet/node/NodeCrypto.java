@@ -12,11 +12,12 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.zip.DeflaterOutputStream;
 
+import net.i2p.util.NativeBigInteger;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -475,7 +476,7 @@ public class NodeCrypto {
 
 	public void stop() {
 		config.stopping(this);
-		socket.close(true);
+		socket.close();
 	}
 
 	public PeerNode[] getPeerNodes() {
