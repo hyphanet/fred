@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.Vector;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
@@ -30,10 +29,8 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
-import com.db4o.ObjectServer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
-import com.db4o.config.QueryEvaluationMode;
 import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
@@ -122,7 +119,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
-import freenet.support.NullObject;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
