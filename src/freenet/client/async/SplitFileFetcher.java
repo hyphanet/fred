@@ -568,6 +568,15 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		for(int i=0;i<segments.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Cancelling segment "+i);
+			if(segments[i] == null) {
+				synchronized(this) {
+					if(finished) {
+						// Not unusual, if some of the later segments are already finished when cancel() is called.
+						if(logMINOR) Logger.minor(this, "Finished mid-cancel on "+this);
+						return;
+					}
+				}
+			}
 			if(persistent)
 				container.activate(segments[i], 1);
 			segments[i].cancel(container, context);
