@@ -78,11 +78,13 @@ import freenet.support.io.FileUtil;
  */
 public class FreenetURI implements Cloneable {
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 			}
 		});
 	}
@@ -236,7 +238,7 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = -1;
-		if (logMINOR) Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(this, "Created from components: "+toString(), new Exception("debug"));
 	}
 
 	public FreenetURI(
@@ -254,7 +256,7 @@ public class FreenetURI implements Cloneable {
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
 		this.suggestedEdition = suggestedEdition;
-		if (logMINOR) Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(this, "Created from components (B): "+toString(), new Exception("debug"));
 	}
 
 	// Strip http:// and freenet: prefix
@@ -391,7 +393,7 @@ public class FreenetURI implements Cloneable {
 		} catch(IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
-		if (logMINOR) Logger.minor(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
+		if (logDEBUG) Logger.minor(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
 	}
 
 	/** USK constructor from components. */
@@ -404,7 +406,7 @@ public class FreenetURI implements Cloneable {
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
 		metaStr = null;
-		if (logMINOR) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
+		if (logDEBUG) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
 
 	public void decompose() {
