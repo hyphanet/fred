@@ -346,7 +346,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				ignoreStore = ctx.ignoreStore;
 			} else {
 				localRequestOnly = false;
-				cacheLocalRequests = false;
+				if(req instanceof SendableInsert)
+					cacheLocalRequests = ((SendableInsert)req).cacheInserts(null);
+				else
+					cacheLocalRequests = false;
 				ignoreStore = false;
 			}
 			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, sched);
