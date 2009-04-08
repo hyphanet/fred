@@ -383,8 +383,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** For debugging/testing, set this to true to stop the
 	 * probabilistic decrement at the edges of the HTLs. */
 	boolean disableProbabilisticHTLs;
-	/** If true, disable all hang-check functionality */
-	public boolean disableHangCheckers;
 	
 	/** HashSet of currently running request UIDs */
 	private final HashMap<Long,UIDTag> runningUIDs;
@@ -1994,22 +1992,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		
 		securityLevels.registerUserAlert(clientCore.alerts);
-		
-		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return disableHangCheckers;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException {
-				disableHangCheckers = val;
-			}
-		});
-		
-		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
-				
+						
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
