@@ -11,6 +11,8 @@ import freenet.support.io.NativeThread;
 public class PrioritizedSerialExecutor implements Executor {
 	
 	private final LinkedList<Runnable>[] jobs;
+	private final int[] jobCount;
+	
 	private final int priority;
 	private final int defaultPriority;
 	private boolean waiting;
@@ -117,7 +119,11 @@ public class PrioritizedSerialExecutor implements Executor {
 					if(!jobs[i].isEmpty()) {
 						if(Logger.shouldLog(Logger.MINOR, this))
 							Logger.minor(this, "Chosen job at priority "+i);
-						return (Runnable) jobs[i].removeFirst();
+						synchronized (jobs) {
+							Runnable r = jobs[i].removeFirst();
+							jobCount[i]--;
+							return r;
+						}
 					}
 				}
 			} else {
@@ -125,7 +131,11 @@ public class PrioritizedSerialExecutor implements Executor {
 					if(!jobs[i].isEmpty()) {
 						if(Logger.shouldLog(Logger.MINOR, this))
 							Logger.minor(this, "Chosen job at priority "+i);
-						return (Runnable) jobs[i].removeFirst();
+						synchronized (jobs) {
+							Runnable r = jobs[i].removeFirst();
+							jobCount[i]--;
+							return r;
+						}
 					}
 				}
 			}
@@ -145,6 +155,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		jobs = new LinkedList[internalPriorityCount];
 		for(int i=0;i<jobs.length;i++)
 			jobs[i] = new LinkedList<Runnable>();
+		jobCount = new int[internalPriorityCount];
 		this.priority = priority;
 		this.defaultPriority = defaultPriority;
 		this.invertOrder = invertOrder;
@@ -191,6 +202,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			if(logMINOR) 
 				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
 			jobs[prio].addLast(job);
+			jobCount[prio]++;
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
 				reallyStart(logMINOR);
@@ -209,6 +221,7 @@ public class PrioritizedSerialExecutor implements Executor {
 				return;
 			}
 			jobs[prio].addLast(job);
+			jobCount[prio]++;
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
 				reallyStart(logMINOR);
@@ -245,17 +258,16 @@ public class PrioritizedSerialExecutor implements Executor {
 	}
 
 	public int[] runningJobs() {
-		int[] retval = new int[jobs.length];
+		int[] retval;
 		synchronized(jobs) {
-			for(int i=0;i<retval.length;i++)
-				retval[i] = jobs[i].size();
+			retval = jobCount.clone();
 		}
 		return retval;
 	}
 
 	public int getQueueSize(int priority) {
 		synchronized(jobs) {
-			return jobs[priority].size();
+			return jobCount[priority];
 		}
 	}
 
