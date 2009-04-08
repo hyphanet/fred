@@ -438,7 +438,7 @@ public class StatisticsToadlet extends Toadlet {
 	private void drawDatabaseJobsBox(HTMLNode node) {
 		node.addChild("div", "class", "infobox-header", l10n("databaseJobsByPriority"));
 		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
-		int[] jobsByPriority = core.clientDatabaseExecutor.runningJobs();
+		int[] jobsByPriority = core.clientDatabaseExecutor.queuedJobs();
 		
 		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
 		HTMLNode row = threadsByPriorityTable.addChild("tr");

@@ -257,7 +257,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
-	public int[] runningJobs() {
+	public int[] queuedJobs() {
 		int[] retval;
 		synchronized(jobs) {
 			retval = jobCount.clone();
