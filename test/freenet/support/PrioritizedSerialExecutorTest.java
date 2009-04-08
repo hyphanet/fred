@@ -133,9 +133,10 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 		assertEquals(0, exec.getQueueSize(1));
 		assertEquals(1, exec.getQueueSize(0));
 
+		int[] r = exec.queuedJobs();
 		assertTrue(
-			Arrays.equals(new int[] { 1, 0, 2, 0, 1, 0, 0, 0, 0, 0 }, exec.queuedJobs()) ||
-			Arrays.equals(new int[] { 1, 0, 2, 1, 1, 0, 0, 0, 0, 0 }, exec.queuedJobs())
+			Arrays.equals(new int[] { 1, 0, 2, 0, 1, 0, 0, 0, 0, 0 }, r) ||
+			Arrays.equals(new int[] { 1, 0, 2, 1, 1, 0, 0, 0, 0, 0 }, r)
 		);
 
 		waitFor(5); // JP, JQ, J2, JO, JR
