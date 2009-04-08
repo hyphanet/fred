@@ -117,21 +117,26 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 		Q("JP", 3, false);
 
 		assertEquals(0, exec.getQueueSize(9));
-		assertEquals(1, exec.getQueueSize(4));
 		assertEquals(1, exec.getQueueSize(3));
 		assertEquals(2, exec.getQueueSize(2));
 
 		waitFor(2); // J8,JN
 
+		assertEquals(0, exec.getQueueSize(9));
+		assertEquals(0, exec.getQueueSize(4));
+		assertEquals(2, exec.getQueueSize(2));
+
 		Q("JQ", 4, false);
 		Q("JR", 0, false);
 		assertEquals(1, exec.getQueueSize(4));
-		assertEquals(0, exec.getQueueSize(3));
 		assertEquals(2, exec.getQueueSize(2));
 		assertEquals(0, exec.getQueueSize(1));
 		assertEquals(1, exec.getQueueSize(0));
 
-		assertTrue(Arrays.equals(new int[] { 1, 0, 2, 0, 1, 0, 0, 0, 0, 0 }, exec.runningJobs()));
+		assertTrue( // Two Possibility: JP may be running already. runningJobs() is queued jobs, not really "running"
+			Arrays.equals(new int[] { 1, 0, 2, 0, 1, 0, 0, 0, 0, 0 }, exec.runningJobs()) ||
+			Arrays.equals(new int[] { 1, 0, 2, 1, 1, 0, 0, 0, 0, 0 }, exec.runningJobs())
+		);
 
 		waitFor(5); // JP, JQ, J2, JO, JR
 
