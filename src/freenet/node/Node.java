@@ -572,13 +572,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		swapIdentifier = Fields.bytesToLong(darknetCrypto.identityHashHash);
 		String loc = fs.get("location");
-		try {
-			lm.setLocation(Location.getLocation(loc));
-		} catch (FSParseException e) {
-			IOException e1 = new IOException();
-			e1.initCause(e);
-			throw e1;
-		}
+			double locD = Location.getLocation(loc);
+			if (locD == -1.0)
+				throw new IOException("Invalid location: " + loc);
+			lm.setLocation(locD);
 		myName = fs.get("myName");
 		if(myName == null) {
 			myName = newName();

@@ -402,7 +402,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		String locationString = fs.get("location");
 		String[] peerLocationsString = fs.getAll("peersLocation");
-		try {
+		
 			currentLocation = Location.getLocation(locationString);
 			if(peerLocationsString != null) {
 				double[] peerLocations = new double[peerLocationsString.length];
@@ -411,10 +411,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				currentPeersLocation = peerLocations;
 			}
 			locSetTime = System.currentTimeMillis();
-		} catch(FSParseException e) {
-			// Wait for them to send us an FNPLocChangeNotification
-			currentLocation = -1.0;
-		}
 
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
@@ -2409,18 +2405,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		String locationString = fs.get("location");
 		if(locationString != null) {
-			try {
 				double newLoc = Location.getLocation(locationString);
+				if (newLoc == -1) {
+					if(logMINOR)
+						Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);	
+				} else {
 				if(!Location.equals(newLoc, currentLocation)) {
 					changedAnything = true;
 					currentLocation = newLoc;
 					locSetTime = System.currentTimeMillis();
 				}
-			} catch(FSParseException e) {
-				// Location is optional, we will wait for FNPLocChangeNotification. Until then we will use the last known location (or -1 if we have never known).
-				if(logMINOR)
-					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: " + e);
-			}
+				}
 		}
 		try {
 			String physical[] = fs.getAll("physical.udp");

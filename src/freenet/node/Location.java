@@ -13,14 +13,14 @@ import freenet.support.Logger;
  */
 public class Location {
 
-	public static double getLocation(String init) throws FSParseException {
+	public static double getLocation(String init) {
 		try {
-			if(init == null) throw new FSParseException("Null location");
+			if(init == null) return -1;
 			double d = Double.parseDouble(init);
-			if(d < 0.0 || d > 1.0) throw new FSParseException("Invalid location "+d);
+			if(d < 0.0 || d > 1.0) return -1;
 			return d;
 		} catch (NumberFormatException e) {
-			throw new FSParseException(e);
+			return -1;
 		}
 	}
 	
