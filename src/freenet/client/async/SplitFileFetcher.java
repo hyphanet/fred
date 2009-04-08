@@ -563,11 +563,17 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		if(persistent)
+		boolean persist = persistent;
+		if(persist)
 			container.activate(this, 1);
 		for(int i=0;i<segments.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Cancelling segment "+i);
+			if(segments == null && persist && !container.ext().isActive(this)) {
+				// FIXME is this normal? If so just reactivate.
+				Logger.error(this, "Deactivated mid-cancel on "+this, new Exception("error"));
+				container.activate(this, 1);
+			}
 			if(segments[i] == null) {
 				synchronized(this) {
 					if(finished) {
@@ -577,7 +583,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					}
 				}
 			}
-			if(persistent)
+			if(persist)
 				container.activate(segments[i], 1);
 			segments[i].cancel(container, context);
 		}
