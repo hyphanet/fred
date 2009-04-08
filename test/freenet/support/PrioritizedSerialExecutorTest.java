@@ -138,7 +138,5 @@ public class PrioritizedSerialExecutorTest extends TestCase {
 		int i = 0;
 		for (String s : new String[] { "JM", "J8", "JN", "JP", "JQ", "J2", "JO", "JR" })
 			assertEquals(s, s, completedJobs.get(i++));
-
-		assertEquals(1, exec.getWaitingThreadsCount());
 	}
 }
