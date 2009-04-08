@@ -9,12 +9,9 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.Vector;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.FileLoggerHook;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -87,61 +84,7 @@ public class PacketSender implements Runnable, Ticker {
 		rpiTemp = new Vector<ResendPacketItem>();
 		rpiIntTemp = new int[64];
 	}
-
-	/**
-	* The main purpose of this thread is to detect the lost-lock deadlocks that happen occasionally
-	* on Sun VMs with NPTL enabled, and restart the node.
-	* 
-	* Consequently it MUST NOT LOCK ANYTHING. That further means it must not use the Logger, and even
-	* System.err/System.out if they have been redirected.
-	* @author root
-	*
-	*/
-	private class Watchdog implements Runnable {
-
-		public void run() {
-			freenet.support.Logger.OSThread.logPID(this);
-			// Do not lock anything, or we may be caught up with a lost-lock deadlock.
-			while(true) {
-				try {
-					Thread.sleep(5000);
-				} catch(InterruptedException e) {
-				// Ignore
-				}
-				long now = System.currentTimeMillis();
-				long recordedTime = ((long) lastTimeInSeconds) * 1000;
-				long diff = now - recordedTime;
-				if((diff > 3 * 60 * 1000) && node.isHasStarted()) {
-					FileLoggerHook flh = Node.logConfigHandler.getFileLoggerHook();
-					boolean redirected = flh != null && !flh.hasRedirectedStdOutErrNoLock();
-					if(!redirected)
-						System.err.println("Restarting node: PacketSender froze for 3 minutes! (" + diff + ')');
-
-					try {
-						if(node.isUsingWrapper()) {
-							WrapperManager.requestThreadDump();
-							WrapperManager.restart();
-						} else {
-							if(!redirected)
-								System.err.println("Exiting on deadlock, but not running in the wrapper! Please restart the node manually.");
-
-							// No wrapper : we don't want to let it harm the network!
-							node.exit("PacketSender deadlock");
-						}
-					} catch(Throwable t) {
-						if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock()) {
-							System.err.println("Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
-							t.printStackTrace();
-						}
-						node.exit("PacketSender deadlock and error");
-					}
-
-				}
-
-			}
-		}
-	}
-
+	
 	void start(NodeStats stats) {
 		this.stats = stats;
 		Logger.normal(this, "Starting PacketSender");
@@ -161,12 +104,6 @@ public class PacketSender implements Runnable, Ticker {
 					}
 				}, transition - now);
 		lastTimeInSeconds = (int) (now / 1000);
-		if(!node.disableHangCheckers) {
-			// Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
-			Thread t1 = new NativeThread(new Watchdog(), "PacketSender watchdog", NativeThread.MAX_PRIORITY, false);
-			t1.setDaemon(true);
-			t1.start();
-		}
 		myThread.start();
 	}
 
