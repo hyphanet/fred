@@ -128,7 +128,7 @@ public class FCPConnectionHandler implements Closeable {
 					server.unregisterClient(rebootClient, null);
 				if(foreverClient != null) {
 					if(!container.ext().isStored(foreverClient)) {
-						Logger.error(this, "foreverClient is not stored in the database in lost connection non-dupe callback; not deleting it");
+						Logger.normal(this, "foreverClient is not stored in the database in lost connection non-dupe callback; not deleting it");
 						return;
 					}
 					container.activate(foreverClient, 1);
