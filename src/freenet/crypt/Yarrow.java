@@ -520,7 +520,7 @@ public class Yarrow extends RandomSource {
 						contributedEntropy = new int[] { actualEntropy };
 						entropySeen.put(source, contributedEntropy);
 					} else
-						contributedEntropy[0]++;
+						contributedEntropy[0]+=actualEntropy;
 
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {
 						int kc = 0;
