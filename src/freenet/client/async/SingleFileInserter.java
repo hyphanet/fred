@@ -263,7 +263,7 @@ class SingleFileInserter implements ClientPutState {
 					data = fixNotPersistent(data, context);
 				// Just insert it
 				ClientPutState bi =
-					createInserter(parent, data, codecNumber, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, container, context, shouldFreeData);
+					createInserter(parent, data, codecNumber, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, container, context, shouldFreeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi, container);
