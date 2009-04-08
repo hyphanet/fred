@@ -73,7 +73,7 @@ public abstract class ClientRequest {
 	}
 	
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
-			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -104,6 +104,10 @@ public abstract class ClientRequest {
 			this.client = null;
 		} else {
 			origHandler = null;
+			if(persistenceType == PERSIST_FOREVER) {
+				container.activate(client, 1);
+				client.init(container);
+			}
 			this.client = client;
 			if(client != null)
 				assert(client.persistenceType == persistenceType);
@@ -113,7 +117,7 @@ public abstract class ClientRequest {
 	}
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
-			short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+			short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -148,7 +152,7 @@ public abstract class ClientRequest {
 			client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
 		} else {
 			assert(!handler.server.core.clientDatabaseExecutor.onThread());
-			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(null) : handler.getRebootClient();
+			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
 		}
 		lowLevelClient = client.lowLevelClient;
 		if(lowLevelClient == null)

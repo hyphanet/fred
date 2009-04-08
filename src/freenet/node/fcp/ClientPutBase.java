@@ -62,8 +62,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries, boolean earlyEncode, FCPServer server) throws MalformedURLException {
-		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global);
+			boolean dontCompress, int maxRetries, boolean earlyEncode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
@@ -75,8 +75,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
 			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, FCPServer server) throws MalformedURLException {
-		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global);
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
