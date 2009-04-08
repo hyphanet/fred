@@ -299,6 +299,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 
     public void close() {
     	Logger.normal(this, "Closing.", new Exception("error"));
+		_sock.close();
 		synchronized (this) {
 			_active = false;
 			if(!_started) return;
@@ -310,7 +311,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				}
 			}
 		}
-		_sock.close();
 		tracker.storeData(node.bootID, node.getNodeDir(), listenPort);
 	}
     
