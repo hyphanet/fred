@@ -272,9 +272,9 @@ public class NodeCrypto {
 		node.random.nextBytes(clientNonce);
 	}
 
-	public void start(boolean disableHangchecker) {
+	public void start() {
 		packetMangler.start();
-		socket.start(disableHangchecker);
+		socket.start();
 	}
 	
 	public SimpleFieldSet exportPrivateFieldSet() {

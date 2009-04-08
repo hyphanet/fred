@@ -9,15 +9,10 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.Random;
 
-import org.tanukisoftware.wrapper.WrapperManager;
-
 import freenet.io.AddressTracker;
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.node.LoggingConfigHandler;
 import freenet.node.Node;
-import freenet.node.NodeInitException;
 import freenet.node.PrioRunnable;
-import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
@@ -38,7 +33,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private final Node node;
 	private static boolean logMINOR; 
 	private static boolean logDEBUG;
-	private volatile int lastTimeInSeconds;
 	private boolean _isDone;
 	private boolean _active = true;
 	private final int listenPort;
@@ -145,7 +139,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				if(!_active) return; // Finished
 			}
 			try {
-				lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 				realRun(packet);
             } catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
@@ -295,99 +288,14 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
     public int getPacketSendThreshold() {
     	return getMaxPacketSize() - 100;
     }
-    
-	public void start() {
-		start(false);
-	}
 	
-	public void start(boolean disableHangChecker) {
-		lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
+	public void start() {
 		synchronized(this) {
 			if(!_active) return;
 			_started = true;
 			startTime = System.currentTimeMillis();
 		}
 		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
-		if(!disableHangChecker) {
-			node.executor.execute(new USMChecker(), "UdpSocketHandler watchdog");
-		}
-	}
-	
-	public class USMChecker implements PrioRunnable {
-		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
-			while(true) {
-				if(_isDone) {
-					boolean active;
-					// Gone now, little reason to synchronize; particularly for reading a primitive.
-					// The EvilJVM bug may deadlock on proper synchronization here anyway.
-						active = _active;
-					if(active) {
-						System.err.println("UdpSocketHandler for port "+listenPort+" has died without being told to! Restarting node...");
-						if(node.isUsingWrapper()){
-							WrapperManager.requestThreadDump();
-							WrapperManager.restart();
-						}else{
-							// No wrapper : we don't want to let it harm the network!
-							node.exit("USM deadlock");
-						}
-					}
-					return; // don't synchronize because don't want to deadlock - this is our recovery mechanism
-				}
-				logMINOR = Logger.shouldLog(Logger.MINOR, UdpSocketHandler.this);
-				try {
-					Thread.sleep(10*1000);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-				if(_thread == null || _thread.isAlive()) {
-					if(logMINOR) Logger.minor(this, "PING on "+UdpSocketHandler.this);
-					long time = System.currentTimeMillis();
-					int timeSecs = (int) (time / 1000);
-					if(timeSecs - lastTimeInSeconds > 3*60) {
-						
-						// USM has hung.
-						// Probably caused by the EvilJVMBug (see PacketSender).
-						// We'd better restart... :(
-						
-						LoggingConfigHandler lch = Node.logConfigHandler;
-						FileLoggerHook flh = lch == null ? null : lch.getFileLoggerHook();
-						boolean hasRedirected = flh == null ? false : flh.hasRedirectedStdOutErrNoLock();
-						
-						if(!hasRedirected)
-							System.err.println("Restarting node: MessageCore froze for 3 minutes!");
-						
-						try {
-							if(node.isUsingWrapper()){
-								WrapperManager.requestThreadDump();
-								WrapperManager.restart();
-							}else{
-								if(!hasRedirected)
-									System.err.println("Exiting on deadlock, but not running in the wrapper! Please restart the node manually.");
-								
-								// No wrapper : we don't want to let it harm the network!
-								node.exit("USM deadlock");
-							}
-						} catch (Throwable t) {
-							if(!hasRedirected) {
-								System.err.println("Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
-								t.printStackTrace();
-							}
-							node.exit("USM deadlock and error");
-						}
-					}
-				} else {
-					if(_isDone) return;
-					Logger.error(this, "MAIN LOOP TERMINATED");
-					System.err.println("MAIN LOOP TERMINATED!");
-					node.exit(NodeInitException.EXIT_MAIN_LOOP_LOST);
-				}
-			}
-		}
-
-		public int getPriority() {
-			return NativeThread.MAX_PRIORITY;
-		}
 	}
 
     public void close() {

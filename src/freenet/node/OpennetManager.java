@@ -222,7 +222,7 @@ public class OpennetManager {
 	}
 
 	public void start() {
-		crypto.start(node.disableHangCheckers);
+		crypto.start();
 		if(announcer!= null)
 			announcer.start();
 	}

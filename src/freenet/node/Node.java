@@ -2280,7 +2280,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		uptime.start();
 		failureTable.start();
 		
-		darknetCrypto.start(disableHangCheckers);
+		darknetCrypto.start();
 		if(opennet != null)
 			opennet.start();
 		ps.start(nodeStats);
