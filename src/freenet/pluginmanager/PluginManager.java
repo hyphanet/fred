@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.jar.Attributes;
@@ -594,6 +595,50 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime);
 	}
 
+	private static class OfficialPluginDescription {
+		/** The name of the plugin */
+		final String name;
+		/** If true, we will download it, blocking, over HTTP, during startup (unless
+		 * explicitly forbidden to use HTTP). If not, we will download it on a 
+		 * separate thread after startup. Both are assuming we don't have it in a file. */
+		final boolean essential;
+		/** Minimum getRealVersion(). If the plugin is older than this, we will fail
+		 * the load. */
+		final long minimumVersion;
+		
+		OfficialPluginDescription(String name, boolean essential, long minVer) {
+			this.name = name;
+			this.essential = essential;
+			this.minimumVersion = minVer;
+		}
+	}
+	
+	static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
+	
+	static {
+		addOfficialPlugin("Echo");
+		addOfficialPlugin("Freemail");
+		addOfficialPlugin("HelloWorld");
+		addOfficialPlugin("HelloFCP");
+		addOfficialPlugin("JSTUN", true, -1);
+		addOfficialPlugin("KeyExplorer");
+		addOfficialPlugin("MDNSDiscovery");
+		addOfficialPlugin("SNMP");
+		addOfficialPlugin("TestGallery");
+		addOfficialPlugin("ThawIndexBrowser");
+		addOfficialPlugin("UPnP");
+		addOfficialPlugin("XMLLibrarian");
+		addOfficialPlugin("XMLSpider");
+	}
+	
+	static void addOfficialPlugin(String name) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1));
+	}
+	
+	static void addOfficialPlugin(String name, boolean essential, long minVer) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer));
+	}
+	
 	/**
 	 * Returns a list of the names of all available official plugins. Right now
 	 * this list is hardcoded but in future we could retrieve this list from emu
@@ -603,19 +648,7 @@ public class PluginManager {
 	 */
 	public List<String> findAvailablePlugins() {
 		List<String> availablePlugins = new ArrayList<String>();
-		availablePlugins.add("Echo");
-		availablePlugins.add("Freemail");
-		availablePlugins.add("HelloWorld");
-		availablePlugins.add("HelloFCP");
-		availablePlugins.add("JSTUN");
-		availablePlugins.add("KeyExplorer");
-		availablePlugins.add("MDNSDiscovery");
-		availablePlugins.add("SNMP");
-		availablePlugins.add("TestGallery");
-		availablePlugins.add("ThawIndexBrowser");
-		availablePlugins.add("UPnP");
-		availablePlugins.add("XMLLibrarian");
-		availablePlugins.add("XMLSpider");
+		availablePlugins.addAll(officialPlugins.keySet());
 		return availablePlugins;
 	}
 
@@ -769,6 +802,57 @@ public class PluginManager {
 			if(object instanceof FredPluginWithClassLoader) {
 				((FredPluginWithClassLoader)object).setClassLoader(jarClassLoader);
 			}
+			
+			if(pdl instanceof PluginDownLoaderOfficial) {
+				// Check the version after loading it!
+				// Building it into the manifest would be better, in that it would
+				// avoid having to unload ... but building it into the manifest is 
+				// problematic, specifically it involves either platform specific 
+				// scripts that aren't distributed and devs won't use when they 
+				// build locally, or executing java code, which would mean we have
+				// to protect the versioning info. Either way is bad. The latter is
+				// less bad if we don't auto-build.
+				
+				// Ugh, this is just as messy ... ideas???? Maybe we need to have OS
+				// detection and use grep/sed on unix and find on windows???
+				
+				OfficialPluginDescription desc = officialPlugins.get(name);
+				
+				long minVer = desc.minimumVersion;
+				long ver = -1;
+				
+				if(minVer != -1) {
+					
+					if(object instanceof FredPluginRealVersioned) {
+						ver = ((FredPluginRealVersioned)object).getRealVersion();
+					}
+				}
+				
+				if(ver < minVer) {
+					System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
+					Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
+					try {
+						if(object instanceof FredPluginThreadless) {
+							((FredPlugin)object).runPlugin(new PluginRespirator(node, PluginManager.this, (FredPlugin)object));
+						}
+					} catch (Throwable t) {
+						Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);
+					}
+					try {
+						((FredPlugin)object).terminate();
+					} catch (Throwable t) {
+						Logger.error(this, "Plugin failed to terminate: "+t, t);
+					}
+					try {
+						jarClassLoader.close();
+					} catch (Throwable t) {
+						Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
+					}
+					throw new PluginNotFoundException("plugin too old: need at least version "+minVer);
+				}
+
+			}
+			
 			return (FredPlugin) object;
 		} catch(IOException ioe1) {
 			Logger.error(this, "could not load plugin", ioe1);
