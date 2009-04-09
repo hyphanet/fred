@@ -428,7 +428,11 @@ public class PproxyToadlet extends Toadlet {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
 				pluginRow.addChild("td", pi.getPluginClassName());
-				pluginRow.addChild("td", pi.getPluginVersion());
+				long ver = pi.getPluginLongVersion();
+				if(ver != -1)
+					pluginRow.addChild("td", pi.getPluginVersion()+" ("+ver+")");
+				else
+					pluginRow.addChild("td", pi.getPluginVersion());
 				pluginRow.addChild("td", pi.getThreadName());
 				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
 				if (pi.isStopping()) {

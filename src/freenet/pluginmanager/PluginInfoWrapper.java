@@ -24,6 +24,7 @@ public class PluginInfoWrapper {
 	private final boolean isMultiplePlugin;
 	private final boolean isFCPPlugin;
 	private final boolean isVersionedPlugin;
+	private final boolean isLongVersionedPlugin;
 	private final boolean isThemedPlugin;
 	private final boolean isL10nPlugin;
 	private final boolean isUpdatedablePlugin;
@@ -47,6 +48,7 @@ public class PluginInfoWrapper {
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
 		isFCPPlugin = (plug instanceof FredPluginFCP);
 		isVersionedPlugin = (plug instanceof FredPluginVersioned);
+		isLongVersionedPlugin = (plug instanceof FredPluginRealVersioned);
 		isThemedPlugin = (plug instanceof FredPluginThemed);
 		isL10nPlugin = (plug instanceof FredPluginL10n);
 		isUpdatedablePlugin = (plug instanceof FredPluginUoF);
@@ -208,5 +210,13 @@ public class PluginInfoWrapper {
 
 	public synchronized boolean isStopping() {
 		return stopping;
+	}
+
+	public long getPluginLongVersion() {
+		if (isLongVersionedPlugin) {
+			return ((FredPluginRealVersioned)plug).getRealVersion();
+		} else {
+			return -1;
+		}
 	}
 }
