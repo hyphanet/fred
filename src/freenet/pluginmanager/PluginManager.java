@@ -621,14 +621,14 @@ public class PluginManager {
 		addOfficialPlugin("HelloWorld");
 		addOfficialPlugin("HelloFCP");
 		addOfficialPlugin("JSTUN", true, -1);
-		addOfficialPlugin("KeyExplorer");
+		addOfficialPlugin("KeyExplorer", false, 1);
 		addOfficialPlugin("MDNSDiscovery");
 		addOfficialPlugin("SNMP");
 		addOfficialPlugin("TestGallery");
-		addOfficialPlugin("ThawIndexBrowser");
+		addOfficialPlugin("ThawIndexBrowser", false, 1);
 		addOfficialPlugin("UPnP");
 		addOfficialPlugin("XMLLibrarian");
-		addOfficialPlugin("XMLSpider");
+		addOfficialPlugin("XMLSpider", false, 35);
 	}
 	
 	static void addOfficialPlugin(String name) {
