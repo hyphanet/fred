@@ -315,7 +315,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, fcp, container);
 							if(clientPut != null)
 								try {
-									fcp.startBlocking(clientPut);
+									fcp.startBlocking(clientPut, container, context);
 								} catch (IdentifierCollisionException e) {
 									Logger.error(this, "Cannot put same file twice in same millisecond");
 									writePermanentRedirect(ctx, "Done", "/queue/");
@@ -400,7 +400,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 							if(clientPut != null)
 								try {
-									fcp.startBlocking(clientPut);
+									fcp.startBlocking(clientPut, container, context);
 								} catch (IdentifierCollisionException e) {
 									Logger.error(this, "Cannot put same file twice in same millisecond");
 									writePermanentRedirect(ctx, "Done", "/queue/");
@@ -478,7 +478,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
 							if(clientPutDir != null)
 								try {
-									fcp.startBlocking(clientPutDir);
+									fcp.startBlocking(clientPutDir, container, context);
 								} catch (IdentifierCollisionException e) {
 									Logger.error(this, "Cannot put same file twice in same millisecond");
 									writePermanentRedirect(ctx, "Done", "/queue/");

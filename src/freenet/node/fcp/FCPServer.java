@@ -966,7 +966,7 @@ public class FCPServer implements Runnable {
 			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
 	}
 
-	public void startBlocking(final ClientRequest req) throws IdentifierCollisionException {
+	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException {
 		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
 			req.start(null, core.clientContext);
 		} else {
@@ -975,6 +975,21 @@ public class FCPServer implements Runnable {
 				IdentifierCollisionException collided;
 			}
 			final OutputWrapper ow = new OutputWrapper();
+			if(container != null) {
+				// Don't activate, it may not be stored yet.
+				try {
+					req.register(container, false, false);
+					req.start(container, context);
+				} catch (IdentifierCollisionException e) {
+					ow.collided = e;
+				} finally {
+					synchronized(ow) {
+						ow.done = true;
+						ow.notifyAll();
+					}
+				}
+				container.deactivate(req, 1);
+			} else {
 			core.clientContext.jobRunner.queue(new DBJob() {
 				
 				public void run(ObjectContainer container, ClientContext context) {
@@ -1010,6 +1025,7 @@ public class FCPServer implements Runnable {
 					}
 				}
 			}
+		}
 		}
 	}
 	
