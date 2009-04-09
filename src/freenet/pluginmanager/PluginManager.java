@@ -667,6 +667,7 @@ public class PluginManager {
 		for(int i = 0; i < RETRIES; i++) {
 			if(!pluginFile.exists() || pluginFile.length() == 0)
 				try {
+					System.err.println("Downloading plugin "+name);
 					File tempPluginFile = null;
 					OutputStream pluginOutputStream = null;
 					InputStream pluginInputStream = null;
