@@ -36,6 +36,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 		this.core = core;
 	}
 
+	// FIXME reentrancy issues with currentPath - fix running two at once.
 	/**
 	 * @see freenet.clients.http.Toadlet#handleGet(java.net.URI,
 	 *      freenet.clients.http.ToadletContext)
@@ -89,6 +90,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 				}
 			}
 		}
+		
+		if(currentPath == null)
+			currentPath = thisPath;
 		
 		HTMLNode pageNode;
 
