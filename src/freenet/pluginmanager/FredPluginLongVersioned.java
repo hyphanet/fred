@@ -1,7 +1,7 @@
 package freenet.pluginmanager;
 
 /** Version of a plugin in a form that is easy to compare. */
-public interface FredPluginRealVersioned {
+public interface FredPluginLongVersioned {
 	
 	/** The version of the plugin in a form that is easy to compare: a long!
 	 * Version 150 will always be later than version 20. */
