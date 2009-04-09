@@ -4,32 +4,12 @@ import java.util.Enumeration;
 
 /**
  * Framework for managing a doubly linked list.
+ * The purpose of DoublyLinkedList is simply and solely so that 
+ * we can override the entries with our own classes. This makes  
+ * removal for example extremely fast: O(1) not O(n).
+ * In any other case we can use LinkedList.
  * @author tavin
  */
-/* FIXME sdiz said:
-"but I really *hate* the idea of using DoublyLinkedList and its friends.
-
-It is a ugly hack for quick iteration of list in the early days, and can be replaced LinkList using ListIternator in most cases.
-
-- The performance benefit is marginal.
-- Custom code like these make casual contributor less likely.
-- The class was created in 2005 era, and I can still find bugs in recent months.
-
-Keep it out from the new code if you can.
-
-IF you REALLY HAVE to use it, PLEASE add a junit test for all new method you created."
-
-----------
-toad replied:
-> The purpose of DoublyLinkedList is simply and solely so that 
-> we can override the entries with our own classes. This makes 
-> removal for example extremely
-> fast: O(1) not O(n). In any other case we can use LinkedList.
------------
-
-so should we keep this class and use it everywhere or not?
- */
-@Deprecated
 public interface DoublyLinkedList<T extends DoublyLinkedList.Item<?>> extends Iterable<T> {
 	// public abstract DoublyLinkedList<T> clone();
 

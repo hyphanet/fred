@@ -5,13 +5,14 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * DoublyLinkedList implementation.
+ * DoublyLinkedList implementation. See DoublyLinkedList for an explanation
+ * when to use this.
+ * 
  * @author tavin
  *
  * TODO: there are still some unimplemented methods
  *       -- it remains to be seen if they are needed at all
  */
-@Deprecated
 public class DoublyLinkedListImpl<T extends DoublyLinkedList.Item<? extends T>> implements DoublyLinkedList<T> {
 
     protected int size;
