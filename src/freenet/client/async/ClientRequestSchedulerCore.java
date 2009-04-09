@@ -498,7 +498,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				 * FIXME: Only replaces persistent requests with persistent requests (of similar priority and retry count), or transient with transient.
 				 * Probably this is acceptable.
 				 */
-				if(!req.persistent()) {
+				if(!req.persistent() && !isInsertScheduler) {
 					List recent = schedTransient.recentSuccesses;
 					SendableRequest altReq = null;
 					if(!recent.isEmpty()) {
@@ -526,7 +526,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 							recent.add(altReq);
 						}
 					}
-				} else {
+				} else if(!isInsertScheduler) {
 					RandomGrabArray altRGA = null;
 					synchronized(recentSuccesses) {
 						if(!(recentSuccesses.isEmpty() || random.nextBoolean())) {
