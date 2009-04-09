@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import com.db4o.ObjectContainer;
@@ -159,7 +160,14 @@ public class NodeRestartJobsQueue {
 			container.activate(dbJobs[i], 1);
 			if(!dbJobs[i].isEmpty())
 				System.err.println("Adding "+dbJobs[i].size()+" restart jobs at priority "+i);
-			for(DBJob job : dbJobs[i]) {
+			for(Iterator<DBJob> it = dbJobs[i].iterator();it.hasNext();) {
+				DBJob job = it.next();
+				if(job == null) {
+					Logger.error(this, "Late restart job removed without telling the NodeRestartJobsQueue on priority "+i+"!");
+					it.remove();
+					container.ext().store(dbJobs[i], 2);
+					continue;
+				}
 				container.activate(job, 1);
 				runner.queue(job, i, false);
 			}
