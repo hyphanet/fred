@@ -254,6 +254,7 @@ public class PluginManager {
 				FredPlugin plug;
 				try {
 					plug = loadPlugin(pdl, filename);
+					if(plug == null) return; // Already loaded
 					pluginProgress.setProgress(PluginProgress.STARTING);
 					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
 					synchronized(pluginWrappers) {
@@ -816,6 +817,11 @@ public class PluginManager {
 					} else
 						throw e;
 				}
+		}
+		
+		if(this.isPluginLoaded(filename)) {
+			Logger.error(this, "Plugin already loaded: "+filename);
+			return null;
 		}
 
 		/* now get the manifest file. */
