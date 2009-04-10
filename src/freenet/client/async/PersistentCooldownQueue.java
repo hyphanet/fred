@@ -123,7 +123,12 @@ public class PersistentCooldownQueue implements CooldownQueue {
 					continue;
 				}
 				container.activate(i.key, 5);
-				v.add(i.key.cloneKey());
+				if(i.client == null || !container.ext().isStored(i.client)) {
+					Logger.normal(this, "Client has been removed but not the persistent cooldown queue item: time "+i.time+" for key "+i.key);
+				} else {
+					v.add(i.key.cloneKey());
+				}
+				i.key.removeFrom(container);
 				i.delete(container);
 			}
 			if(!v.isEmpty()) {
