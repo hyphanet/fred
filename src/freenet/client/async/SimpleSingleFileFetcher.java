@@ -182,5 +182,11 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		super.removeFrom(container, context);
 		// rcb is definitely not our responsibility.
 	}
-
+	
+	public void cancel(ObjectContainer container, ClientContext context) {
+		super.cancel(container, context);
+		if(persistent) container.activate(rcb, 1);
+		rcb.onFailure(new FetchException(FetchException.CANCELLED), this, container, context);
+	}
+	
 }

@@ -13,6 +13,9 @@ public interface ClientGetState {
 
 	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException;
 
+	/** Cancel the request, and call onFailure() on the callback in order to tell 
+	 * downstream (ultimately the client) that cancel has succeeded, and to allow
+	 * it to call removeFrom() to avoid a database leak. */
 	public void cancel(ObjectContainer container, ClientContext context);
 
 	public long getToken();
