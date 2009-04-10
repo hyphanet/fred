@@ -79,7 +79,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		while(results.hasNext()) {
 			found = true;
 			PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
-			container.delete(i);
+			i.delete(container);
 		}
 		return found;
 	}

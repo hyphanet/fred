@@ -3,6 +3,8 @@
  */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.HexUtil;
@@ -22,5 +24,12 @@ public class PersistentCooldownQueueItem {
 		this.keyAsBytes = HexUtil.bytesToHex(key.getFullKey());
 		this.time = time;
 		this.parent = parent;
+	}
+
+	public void delete(ObjectContainer container) {
+		// client not our problem.
+		// parent not our problem.
+		key.removeFrom(container);
+		container.delete(this);
 	}
 }
