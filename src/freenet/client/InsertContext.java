@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
+import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentFileTracker;
 
@@ -58,8 +59,12 @@ public class InsertContext {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		container.activate(eventProducer, 1);
-		eventProducer.removeFrom(container);
+		if(eventProducer == null) {
+			Logger.error(this, "No EventProducer on InsertContext! activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
+		} else {
+			container.activate(eventProducer, 1);
+			eventProducer.removeFrom(container);
+		}
 		container.delete(this);
 	}
 
