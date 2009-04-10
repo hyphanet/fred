@@ -974,22 +974,13 @@ public class FCPServer implements Runnable {
 				boolean done;
 				IdentifierCollisionException collided;
 			}
-			final OutputWrapper ow = new OutputWrapper();
 			if(container != null) {
 				// Don't activate, it may not be stored yet.
-				try {
 					req.register(container, false, false);
 					req.start(container, context);
-				} catch (IdentifierCollisionException e) {
-					ow.collided = e;
-				} finally {
-					synchronized(ow) {
-						ow.done = true;
-						ow.notifyAll();
-					}
-				}
 				container.deactivate(req, 1);
 			} else {
+				final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 				
 				public void run(ObjectContainer container, ClientContext context) {
