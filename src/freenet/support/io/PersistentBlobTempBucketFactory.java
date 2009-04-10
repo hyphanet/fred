@@ -5,14 +5,10 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.TreeMap;
 
 import com.db4o.ObjectContainer;
@@ -223,6 +219,7 @@ public class PersistentBlobTempBucketFactory {
 				}
 			}
 			}
+			/* FIXME: The issue below has been marked as FIXED in the db4o bugtracker. Can this be resolved now? */
 			
 			// Checking for slots marked occupied with bucket != null is nontrivial,
 			// because constraining to null doesn't work - causes an OOM with a large database,
