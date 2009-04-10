@@ -25,6 +25,8 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipException;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.config.Config;
@@ -769,6 +771,7 @@ public class PluginManager {
 			if(!pluginFile.exists() || pluginFile.length() == 0)
 				try {
 					System.err.println("Downloading plugin "+name);
+					WrapperManager.signalStarting(5*60*1000);
 					File tempPluginFile = null;
 					OutputStream pluginOutputStream = null;
 					InputStream pluginInputStream = null;
