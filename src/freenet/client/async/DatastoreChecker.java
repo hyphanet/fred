@@ -151,6 +151,8 @@ public class DatastoreChecker implements PrioRunnable {
 						boolean full = trimPersistentQueue(prio, container);
 						notifyAll();
 						if(full) return;
+					} else {
+						notifyAll();
 					}
 				}
 				container.deactivate(getter, 1);
