@@ -39,6 +39,7 @@ import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
@@ -257,6 +258,7 @@ public class PluginManager {
 					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
 					synchronized(pluginWrappers) {
 						pluginWrappers.add(pi);
+						pluginsFailedLoad.remove(filename);
 					}
 					Logger.normal(this, "Plugin loaded: " + filename);
 				} catch(PluginNotFoundException e) {
@@ -265,7 +267,7 @@ public class PluginManager {
 					synchronized(pluginWrappers) {
 						pluginsFailedLoad.add(filename);
 					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, true, l10n("pluginLoadingFailedTitle"), l10n("pluginLoadingFailedWithMessage", new String[]{"name", "message"}, new String[]{filename, message}), l10n("pluginLoadingFailedShort", "name", filename), UserAlert.ERROR, PluginManager.class));
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, message));
 				} catch(UnsupportedClassVersionError e) {
 					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 					System.err.println("Could not load plugin " + filename + " : " + e);
@@ -275,7 +277,7 @@ public class PluginManager {
 					synchronized(pluginWrappers) {
 						pluginsFailedLoad.add(filename);
 					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, true, l10n("pluginReqNewerJVMTitle", "name", filename), l10n("pluginReqNewerJVM", "name", filename), l10n("pluginLoadingFailedShort", "name", filename), UserAlert.ERROR, PluginManager.class));
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, l10n("pluginReqNewerJVMTitle", "name", filename)));
 				} finally {
 					synchronized(startingPlugins) {
 						startingPlugins.remove(pluginProgress);
@@ -288,25 +290,90 @@ public class PluginManager {
 				}
 	}
 
-	class PluginLoadFailedUserAlert extends SimpleUserAlert {
+	class PluginLoadFailedUserAlert implements UserAlert {
 
 		final String filename;
+		final String message;
+		final boolean official;
 		
-		public PluginLoadFailedUserAlert(String filename, boolean canDismiss, String title, String text, String shortText, short type, Object userIdentifier) {
-			super(canDismiss, title, text, shortText, type, userIdentifier);
+		public PluginLoadFailedUserAlert(String filename, boolean official, String message) {
 			this.filename = filename;
+			this.official = official;
+			this.message = message;
 		}
 
-		@Override
 		public String dismissButtonText() {
 			return l10n("deleteFailedPluginButton");
 		}
 		
-		@Override
 		public void onDismiss() {
 			synchronized(pluginWrappers) {
 				pluginsFailedLoad.remove(filename);
 			}
+		}
+
+		public String anchor() {
+			return "pluginfailed:"+filename;
+		}
+
+		public HTMLNode getHTMLText() {
+			HTMLNode p = new HTMLNode("p");
+			p.addChild("#", l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message }));
+			
+			if(official) {
+				HTMLNode reloadForm = p.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
+				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgain") });
+			}
+			
+			return p;
+		}
+
+		public short getPriorityClass() {
+			return UserAlert.ERROR;
+		}
+
+		public String getShortText() {
+			return l10n("pluginLoadingFailedShort", "name", filename);
+		}
+
+		public String getText() {
+			return l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message });
+		}
+
+		public String getTitle() {
+			return l10n("pluginLoadingFailedTitle");
+		}
+
+		public Object getUserIdentifier() {
+			return PluginManager.class;
+		}
+
+		public boolean isEventNotification() {
+			return false;
+		}
+
+		public boolean isValid() {
+			boolean success;
+			synchronized(pluginWrappers) {
+				success = pluginsFailedLoad.contains(filename);
+			}
+			if(!success) {
+				core.alerts.unregister(this);
+			}
+			return success;
+		}
+
+		public void isValid(boolean validity) {
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return true;
+		}
+
+		public boolean userCanDismiss() {
+			return true;
 		}
 		
 		
@@ -695,7 +762,7 @@ public class PluginManager {
 
 		/* check if file needs to be downloaded. */
 		if(logMINOR)
-			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists());
+			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists()+" downloader "+pdl+" name "+name);
 		int RETRIES = 5;
 		for(int i = 0; i < RETRIES; i++) {
 			if(!pluginFile.exists() || pluginFile.length() == 0)
@@ -804,6 +871,7 @@ public class PluginManager {
 			}
 			
 			if(pdl instanceof PluginDownLoaderOfficial) {
+				System.err.println("Loading official plugin "+name);
 				// Check the version after loading it!
 				// Building it into the manifest would be better, in that it would
 				// avoid having to unload ... but building it into the manifest is 
@@ -819,6 +887,7 @@ public class PluginManager {
 				OfficialPluginDescription desc = officialPlugins.get(name);
 				
 				long minVer = desc.minimumVersion;
+				System.err.println("Minimum version is: "+minVer);
 				long ver = -1;
 				
 				if(minVer != -1) {
@@ -827,6 +896,7 @@ public class PluginManager {
 						ver = ((FredPluginRealVersioned)object).getRealVersion();
 					}
 				}
+				System.err.println("Actual version is: "+ver);
 				
 				if(ver < minVer) {
 					System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
