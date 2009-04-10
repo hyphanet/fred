@@ -2021,6 +2021,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		// Node updater support
 		
+		System.out.println("Initializing Node Updater");
 		try {
 			nodeUpdater = NodeUpdateManager.maybeCreate(this, config);
 		} catch (InvalidConfigValueException e) {
