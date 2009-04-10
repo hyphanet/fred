@@ -2005,6 +2005,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
+		
+		// FIXME
+		// Short timeouts and JVM timeouts with nothing more said than the above have been seen...
+		// I don't know why... need a stack dump...
+		// For now just give it an extra 2 minutes. If it doesn't start in that time,
+		// it's likely (on reports so far) that a restart will fix it.
+		// And we have to get a build out because ALL plugins are now failing to load,
+		// including the absolutely essential (for most nodes) JSTUN and UPnP.
+		WrapperManager.signalStarting(120*1000);
 
 		FetchContext ctx = clientCore.makeClient((short)0, true).getFetchContext();
 		
