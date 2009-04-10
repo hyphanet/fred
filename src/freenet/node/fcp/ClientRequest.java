@@ -153,6 +153,10 @@ public abstract class ClientRequest {
 		} else {
 			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(container) : handler.getRebootClient();
 		}
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(client, 1);
+			client.init(container);
+		}
 		lowLevelClient = client.lowLevelClient;
 		if(lowLevelClient == null)
 			throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
