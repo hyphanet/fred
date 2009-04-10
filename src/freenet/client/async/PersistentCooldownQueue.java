@@ -35,6 +35,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 	public long add(Key key, SendableGet client, ObjectContainer container) {
 		assert(cooldownTime != 0);
 		long removeTime = System.currentTimeMillis() + cooldownTime;
+		container.activate(key, 5);
 		PersistentCooldownQueueItem persistentCooldownQueueItem = new PersistentCooldownQueueItem(client, key.cloneKey(), removeTime, this);
 		container.store(persistentCooldownQueueItem);
 		return removeTime;
@@ -121,6 +122,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 					Logger.error(this, "parent="+i.parent+" but should be "+this);
 					continue;
 				}
+				container.activate(i.key, 5);
 				v.add(i.key.cloneKey());
 				i.delete(container);
 			}
