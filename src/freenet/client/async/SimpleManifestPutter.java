@@ -1664,8 +1664,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		container.activate(targetURI, 5);
 		targetURI.removeFrom(container);
-		container.activate(ctx, 1);
-		ctx.removeFrom(container);
+		// This is passed in. We should not remove it, because the caller (ClientPutDir) should remove it.
+//		container.activate(ctx, 1);
+//		ctx.removeFrom(container);
 		container.activate(metadataPuttersByMetadata, 2);
 		container.activate(metadataPuttersUnfetchable, 2);
 		ArrayList<Metadata> metas = null;

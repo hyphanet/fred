@@ -353,8 +353,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(cm, 2);
 		cm.removeFrom(container);
-		container.activate(ctx, 1);
-		ctx.removeFrom(container);
+		// This is passed in. We should not remove it, because the caller (ClientPutBase) should remove it.
+//		container.activate(ctx, 1);
+//		ctx.removeFrom(container);
 		container.activate(targetURI, 5);
 		targetURI.removeFrom(container);
 		if(uri != null) {
