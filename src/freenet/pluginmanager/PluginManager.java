@@ -733,6 +733,11 @@ public class PluginManager {
 		return false;
 	}
 
+	/** Separate lock for plugin loading. Don't use (this) as we also use that for
+	 * writing the config file, and because we do a lot inside the lock below; it
+	 * must not be taken in any other circumstance. */
+	private final Object pluginLoadSyncObject = new Object();
+	
 	/**
 	 * Tries to load a plugin from the given name. If the name only contains the
 	 * name of a plugin it is loaded from the plugin directory, if found,
@@ -822,8 +827,8 @@ public class PluginManager {
 				}
 		}
 		
-		// synchronized(this), not (pluginwrappers)
-		synchronized (this) {
+		// we do quite a lot inside the lock, use a dedicated one
+		synchronized (pluginLoadSyncObject) {
 			if(this.isPluginLoaded(filename)) {
 				Logger.error(this, "Plugin already loaded: "+filename);
 				return null;
