@@ -512,7 +512,7 @@ public class WelcomeToadlet extends Toadlet {
             } else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
                 HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), ctx);
                 HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
- 		HTMLNode warnbox =contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning",new String[]{"color"},new String[]{"red"},l10n("confirmExternalLinkSubTitle")));
+ 		HTMLNode warnbox =contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning",l10n("confirmExternalLinkSubTitle")), new String[] { "color" }, new String[] { "red" });
                 HTMLNode externalLinkForm = ctx.addFormChild(ctx.getPageMaker().getContentNode(warnbox), "/", "confirmExternalLinkForm");
 
                 final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
