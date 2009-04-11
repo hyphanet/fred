@@ -822,144 +822,141 @@ public class PluginManager {
 				}
 		}
 		
-		// synchronized(this), not (pluginwrappers)
-		synchronized (this) {
-			if(this.isPluginLoaded(filename)) {
-				Logger.error(this, "Plugin already loaded: "+filename);
-				return null;
-			}
+		if(this.isPluginLoaded(filename)) {
+			Logger.error(this, "Plugin already loaded: "+filename);
+			return null;
+		}
 
-			/* now get the manifest file. */
-			JarFile pluginJarFile = null;
-			String pluginMainClassName = null;
-			try {
-				pluginJarFile = new JarFile(pluginFile);
-				Manifest manifest = pluginJarFile.getManifest();
-				if(manifest == null) {
-					Logger.error(this, "could not load manifest from plugin file");
-					pluginFile.delete();
-					throw new PluginNotFoundException("could not load manifest from plugin file");
-				}
-				Attributes mainAttributes = manifest.getMainAttributes();
-				if(mainAttributes == null) {
-					Logger.error(this, "manifest does not contain attributes");
-					pluginFile.delete();
-					throw new PluginNotFoundException("manifest does not contain attributes");
-				}
-				pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
-				if(pluginMainClassName == null) {
-					Logger.error(this, "manifest does not contain a Plugin-Main-Class attribute");
-					pluginFile.delete();
-					throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
-				}
-			} catch(JarException je1) {
-				Logger.error(this, "could not process jar file", je1);
+		/* now get the manifest file. */
+		JarFile pluginJarFile = null;
+		String pluginMainClassName = null;
+		try {
+			pluginJarFile = new JarFile(pluginFile);
+			Manifest manifest = pluginJarFile.getManifest();
+			if(manifest == null) {
+				Logger.error(this, "could not load manifest from plugin file");
 				pluginFile.delete();
-				throw new PluginNotFoundException("could not process jar file", je1);
-			} catch(ZipException ze1) {
-				Logger.error(this, "could not process jar file", ze1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not process jar file", ze1);
-			} catch(IOException ioe1) {
-				Logger.error(this, "error processing jar file", ioe1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("error procesesing jar file", ioe1);
-			} finally {
-				Closer.close(pluginJarFile);
+				throw new PluginNotFoundException("could not load manifest from plugin file");
 			}
+			Attributes mainAttributes = manifest.getMainAttributes();
+			if(mainAttributes == null) {
+				Logger.error(this, "manifest does not contain attributes");
+				pluginFile.delete();
+				throw new PluginNotFoundException("manifest does not contain attributes");
+			}
+			pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
+			if(pluginMainClassName == null) {
+				Logger.error(this, "manifest does not contain a Plugin-Main-Class attribute");
+				pluginFile.delete();
+				throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
+			}
+		} catch(JarException je1) {
+			Logger.error(this, "could not process jar file", je1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not process jar file", je1);
+		} catch(ZipException ze1) {
+			Logger.error(this, "could not process jar file", ze1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not process jar file", ze1);
+		} catch(IOException ioe1) {
+			Logger.error(this, "error processing jar file", ioe1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("error procesesing jar file", ioe1);
+		} finally {
+			Closer.close(pluginJarFile);
+		}
 
-			try {
-				JarClassLoader jarClassLoader = new JarClassLoader(pluginFile);
-				Class<?> pluginMainClass = jarClassLoader.loadClass(pluginMainClassName);
-				Object object = pluginMainClass.newInstance();
-				if(!(object instanceof FredPlugin)) {
-					Logger.error(this, "plugin main class is not a plugin");
-					pluginFile.delete();
-					throw new PluginNotFoundException("plugin main class is not a plugin");
-				}
-				if(object instanceof FredPluginWithClassLoader) {
-					((FredPluginWithClassLoader)object).setClassLoader(jarClassLoader);
-				}
+		try {
+			JarClassLoader jarClassLoader = new JarClassLoader(pluginFile);
+			Class<?> pluginMainClass = jarClassLoader.loadClass(pluginMainClassName);
+			Object object = pluginMainClass.newInstance();
+			if(!(object instanceof FredPlugin)) {
+				Logger.error(this, "plugin main class is not a plugin");
+				pluginFile.delete();
+				throw new PluginNotFoundException("plugin main class is not a plugin");
+			}
+			if(object instanceof FredPluginWithClassLoader) {
+				((FredPluginWithClassLoader)object).setClassLoader(jarClassLoader);
+			}
+			
+			if(pdl instanceof PluginDownLoaderOfficial) {
+				System.err.println("Loading official plugin "+name);
+				// Check the version after loading it!
+				// Building it into the manifest would be better, in that it would
+				// avoid having to unload ... but building it into the manifest is 
+				// problematic, specifically it involves either platform specific 
+				// scripts that aren't distributed and devs won't use when they 
+				// build locally, or executing java code, which would mean we have
+				// to protect the versioning info. Either way is bad. The latter is
+				// less bad if we don't auto-build.
 				
-				if(pdl instanceof PluginDownLoaderOfficial) {
-					System.err.println("Loading official plugin "+name);
-					// Check the version after loading it!
-					// Building it into the manifest would be better, in that it would
-					// avoid having to unload ... but building it into the manifest is 
-					// problematic, specifically it involves either platform specific 
-					// scripts that aren't distributed and devs won't use when they 
-					// build locally, or executing java code, which would mean we have
-					// to protect the versioning info. Either way is bad. The latter is
-					// less bad if we don't auto-build.
-					
-					// Ugh, this is just as messy ... ideas???? Maybe we need to have OS
-					// detection and use grep/sed on unix and find on windows???
-					
-					OfficialPluginDescription desc = officialPlugins.get(name);
-					
-					long minVer = desc.minimumVersion;
-					System.err.println("Minimum version is: "+minVer);
-					long ver = -1;
-					
-					if(minVer != -1) {
-						
-						if(object instanceof FredPluginRealVersioned) {
-							ver = ((FredPluginRealVersioned)object).getRealVersion();
-						}
-					}
-					System.err.println("Actual version is: "+ver);
-					
-					if(ver < minVer) {
-						System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
-						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
-						try {
-							if(object instanceof FredPluginThreadless) {
-								((FredPlugin)object).runPlugin(new PluginRespirator(node, PluginManager.this, (FredPlugin)object));
-							}
-						} catch (Throwable t) {
-							Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);
-						}
-						try {
-							((FredPlugin)object).terminate();
-						} catch (Throwable t) {
-							Logger.error(this, "Plugin failed to terminate: "+t, t);
-						}
-						try {
-							jarClassLoader.close();
-						} catch (Throwable t) {
-							Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
-						}
-						throw new PluginNotFoundException("plugin too old: need at least version "+minVer);
-					}
-
-				}
+				// Ugh, this is just as messy ... ideas???? Maybe we need to have OS
+				// detection and use grep/sed on unix and find on windows???
 				
-				return (FredPlugin) object;
-			} catch(IOException ioe1) {
-				Logger.error(this, "could not load plugin", ioe1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not load plugin", ioe1);
-			} catch(ClassNotFoundException cnfe1) {
-				Logger.error(this, "could not find plugin class", cnfe1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not find plugin class", cnfe1);
-			} catch(InstantiationException ie1) {
-				Logger.error(this, "could not instantiate plugin", ie1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not instantiate plugin", ie1);
-			} catch(IllegalAccessException iae1) {
-				Logger.error(this, "could not access plugin main class", iae1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not access plugin main class", iae1);
-			} catch(NoClassDefFoundError ncdfe1) {
-				Logger.error(this, "could not find class def, may a missing lib?", ncdfe1);
-				pluginFile.delete();
-				throw new PluginNotFoundException("could not find class def, may a missing lib?", ncdfe1);
-			} catch(Throwable t) {
-				Logger.error(this, "unexcpected error while plugin loading", t);
-				pluginFile.delete();
-				throw new PluginNotFoundException("unexcpected error while plugin loading " + t, t);
+				OfficialPluginDescription desc = officialPlugins.get(name);
+				
+				long minVer = desc.minimumVersion;
+				System.err.println("Minimum version is: "+minVer);
+				long ver = -1;
+				
+				if(minVer != -1) {
+					
+					if(object instanceof FredPluginRealVersioned) {
+						ver = ((FredPluginRealVersioned)object).getRealVersion();
+					}
+				}
+				System.err.println("Actual version is: "+ver);
+				
+				if(ver < minVer) {
+					System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
+					Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
+					try {
+						if(object instanceof FredPluginThreadless) {
+							((FredPlugin)object).runPlugin(new PluginRespirator(node, PluginManager.this, (FredPlugin)object));
+						}
+					} catch (Throwable t) {
+						Logger.error(this, "Failed to start plugin (to prevent NPEs) while terminating it because it is too old: "+t, t);
+					}
+					try {
+						((FredPlugin)object).terminate();
+					} catch (Throwable t) {
+						Logger.error(this, "Plugin failed to terminate: "+t, t);
+					}
+					try {
+						jarClassLoader.close();
+					} catch (Throwable t) {
+						Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
+					}
+					throw new PluginNotFoundException("plugin too old: need at least version "+minVer);
+				}
+
 			}
+			
+			return (FredPlugin) object;
+		} catch(IOException ioe1) {
+			Logger.error(this, "could not load plugin", ioe1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not load plugin", ioe1);
+		} catch(ClassNotFoundException cnfe1) {
+			Logger.error(this, "could not find plugin class", cnfe1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not find plugin class", cnfe1);
+		} catch(InstantiationException ie1) {
+			Logger.error(this, "could not instantiate plugin", ie1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not instantiate plugin", ie1);
+		} catch(IllegalAccessException iae1) {
+			Logger.error(this, "could not access plugin main class", iae1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not access plugin main class", iae1);
+		} catch(NoClassDefFoundError ncdfe1) {
+			Logger.error(this, "could not find class def, may a missing lib?", ncdfe1);
+			pluginFile.delete();
+			throw new PluginNotFoundException("could not find class def, may a missing lib?", ncdfe1);
+		} catch(Throwable t) {
+			Logger.error(this, "unexcpected error while plugin loading", t);
+			pluginFile.delete();
+			throw new PluginNotFoundException("unexcpected error while plugin loading " + t, t);
 		}
 	}
 
