@@ -326,7 +326,7 @@ public class FCPConnectionHandler implements Closeable {
 			else
 				success = !requestsByIdentifier.containsKey(id);
 			if(success) {
-				if(cp != null && !persistent) {
+				if(!persistent) {
 					try {
 						cp = new ClientPut(this, message, server, null);
 					} catch (IdentifierCollisionException e) {
@@ -338,7 +338,7 @@ public class FCPConnectionHandler implements Closeable {
 						failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 					}
 					requestsByIdentifier.put(id, cp);
-				} else if(cp != null && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+				} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
@@ -442,7 +442,7 @@ public class FCPConnectionHandler implements Closeable {
 				success = !requestsByIdentifier.containsKey(id);
 		}
 		if(success) {
-			if(cp != null && !persistent) {
+			if(!persistent) {
 				try {
 					cp = new ClientPutDir(this, message, buckets, wasDiskPut, server, null);
 					synchronized(this) {
@@ -454,7 +454,7 @@ public class FCPConnectionHandler implements Closeable {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
-			} else if(cp != null && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+			} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				server.core.clientContext.jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
