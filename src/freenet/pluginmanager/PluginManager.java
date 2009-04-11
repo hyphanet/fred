@@ -822,6 +822,8 @@ public class PluginManager {
 				}
 		}
 		
+		// synchronized(this), not (pluginwrappers)
+		synchronized (this) {
 		if(this.isPluginLoaded(filename)) {
 			Logger.error(this, "Plugin already loaded: "+filename);
 			return null;
@@ -957,6 +959,7 @@ public class PluginManager {
 			Logger.error(this, "unexcpected error while plugin loading", t);
 			pluginFile.delete();
 			throw new PluginNotFoundException("unexcpected error while plugin loading " + t, t);
+		}
 		}
 	}
 
