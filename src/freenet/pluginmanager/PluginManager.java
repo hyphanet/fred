@@ -961,9 +961,9 @@ public class PluginManager {
 				pluginFile.delete();
 				throw new PluginNotFoundException("could not find class def, may a missing lib?", ncdfe1);
 			} catch(Throwable t) {
-				Logger.error(this, "unexcpected error while plugin loading", t);
+				Logger.error(this, "unexpected error while plugin loading", t);
 				pluginFile.delete();
-				throw new PluginNotFoundException("unexcpected error while plugin loading " + t, t);
+				throw new PluginNotFoundException("unexpected error while plugin loading " + t, t);
 			}
 		}
 	}
