@@ -9,6 +9,16 @@ import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
 
 public class PrioritizedSerialExecutor implements Executor {
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	private final LinkedList<Runnable>[] jobs;
 	private final int priority;
@@ -46,7 +56,6 @@ public class PrioritizedSerialExecutor implements Executor {
 			}
 			try {
 			while(true) {
-				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				Runnable job = null;
 				synchronized(jobs) {
 					job = checkQueue();
@@ -115,7 +124,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			if(!invertOrder) {
 				for(int i=0;i<jobs.length;i++) {
 					if(!jobs[i].isEmpty()) {
-						if(Logger.shouldLog(Logger.MINOR, this))
+						if(logMINOR)
 							Logger.minor(this, "Chosen job at priority "+i);
 						return (Runnable) jobs[i].removeFirst();
 					}
@@ -123,7 +132,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			} else {
 				for(int i=jobs.length-1;i>=0;i--) {
 					if(!jobs[i].isEmpty()) {
-						if(Logger.shouldLog(Logger.MINOR, this))
+						if(logMINOR)
 							Logger.minor(this, "Chosen job at priority "+i);
 						return (Runnable) jobs[i].removeFirst();
 					}
@@ -162,11 +171,11 @@ public class PrioritizedSerialExecutor implements Executor {
 				}
 			}
 			if(!empty)
-				reallyStart(Logger.shouldLog(Logger.MINOR, this));
+				reallyStart();
 		}
 	}
 	
-	private void reallyStart(boolean logMINOR) {
+	private void reallyStart() {
 		synchronized(jobs) {
 			if(running) {
 				Logger.error(this, "Not reallyStart()ing: ALREADY RUNNING", new Exception("error"));
@@ -186,20 +195,18 @@ public class PrioritizedSerialExecutor implements Executor {
 	}
 
 	public void execute(Runnable job, int prio, String jobName) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(jobs) {
 			if(logMINOR) 
 				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
-				reallyStart(logMINOR);
+				reallyStart();
 			}
 		}
 	}
 
 	public void executeNoDupes(Runnable job, int prio, String jobName) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(jobs) {
 			if(logMINOR) 
 				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
@@ -211,7 +218,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
-				reallyStart(logMINOR);
+				reallyStart();
 			}
 		}
 	}
