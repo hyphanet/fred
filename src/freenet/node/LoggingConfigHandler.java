@@ -126,7 +126,7 @@ public class LoggingConfigHandler {
 							fileLoggerHook.setMaxOldLogsSize(val);
 						}
 					}
-    	});
+    	}, true);
     	
     	maxZippedLogsSize = config.getLong("maxZippedLogsSize");
     	
@@ -202,7 +202,7 @@ public class LoggingConfigHandler {
 						if(fileLoggerHook != null)
 							fileLoggerHook.setMaxListBytes(val);
 					}
-    	});
+    	}, true);
     	
     	maxCachedLogBytes = config.getLong("maxCachedBytes");
     	
@@ -221,7 +221,7 @@ public class LoggingConfigHandler {
 						if(fileLoggerHook != null)
 							fileLoggerHook.setMaxListLength(val);
 					}
-    	});
+    	}, false);
     	
     	maxCachedLogLines = config.getInt("maxCachedLines");
     	

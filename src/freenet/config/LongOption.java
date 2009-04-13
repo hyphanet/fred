@@ -9,17 +9,20 @@ import freenet.support.api.LongCallback;
 
 /** Long config variable */
 public class LongOption extends Option<Long> {
+	protected final boolean isSize;
+
 	public LongOption(SubConfig conf, String optionName, String defaultValueString, int sortOrder, boolean expert,
-	        boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+	        boolean forceWrite, String shortDesc, String longDesc, LongCallback cb, boolean isSize) {
 		this(conf, optionName, Fields.parseLong(defaultValueString), sortOrder, expert, forceWrite, shortDesc,
-		        longDesc, cb);
+		        longDesc, cb, isSize);
 	}
 	
 	public LongOption(SubConfig conf, String optionName, Long defaultValue, int sortOrder, boolean expert,
-	        boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+	        boolean forceWrite, String shortDesc, String longDesc, LongCallback cb, boolean isSize) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);
 		this.defaultValue = defaultValue;
 		this.currentValue = defaultValue;
+		this.isSize = isSize;
 	}
 
 	@Override
@@ -39,6 +42,6 @@ public class LongOption extends Option<Long> {
 	
 	@Override
 	protected String toString(Long val) {
-		return Fields.longToString(val);
+		return Fields.longToString(val, isSize);
 	}
 }

@@ -1010,7 +1010,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						if(maxHTL < 0) throw new InvalidConfigValueException("Impossible max HTL");
 						maxHTL = val;
 					}
-		});
+		}, false);
 		
 		maxHTL = nodeConfig.getShort("maxHTL");
 		
@@ -1257,7 +1257,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
-		});
+		}, false);
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		if(obwLimit <= 0)
@@ -1293,7 +1293,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						}
 						nodeStats.setInputLimit(ibwLimit);
 					}
-		});
+		}, true);
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
 		if(ibwLimit == -1) {
@@ -1471,7 +1471,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						maxOpennetPeers = inputMaxOpennetPeers;
 						}
 					}
-		);
+		, false);
 		
 		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
 		if(maxOpennetPeers > 20) {
@@ -1665,7 +1665,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						nodeStats.avgStoreLocation.changeMaxReports((int)maxStoreKeys);
 						nodeStats.avgCacheLocation.changeMaxReports((int)maxCacheKeys);
 					}
-		});
+		}, true);
 		
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
 		
@@ -1696,7 +1696,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					public boolean isReadOnly() {
 				        return !("salt-hash".equals(storeType));
 			        }
-		        });
+		        }, true);
 
 		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
 
@@ -1850,7 +1850,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					databaseMaxMemory = val;
 				}
 				
-			});
+			}, true);
 
 			/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
 			long maxHeapMemory = Runtime.getRuntime().maxMemory();

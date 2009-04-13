@@ -5,11 +5,14 @@ import freenet.support.Fields;
 import freenet.support.api.ShortCallback;
 
 public class ShortOption extends Option<Short> {
+	protected final boolean isSize;
+	
 	public ShortOption(SubConfig conf, String optionName, short defaultValue, int sortOrder, 
-			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb) {
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb, boolean isSize) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);
 		this.defaultValue = defaultValue;
 		this.currentValue = defaultValue;
+		this.isSize = isSize;
 	}
 
 	private String l10n(String key, String pattern, String value) {
@@ -29,6 +32,6 @@ public class ShortOption extends Option<Short> {
 
 	@Override
 	protected String toString(Short val) {
-		return Fields.shortToString(val);
+		return Fields.shortToString(val, isSize);
 	}	
 }

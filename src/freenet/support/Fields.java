@@ -687,16 +687,16 @@ public abstract class Fields {
 		return res;
 	}
 
-	public static String longToString(long val) {
+	public static String longToString(long val, boolean isSize) {
 		String ret = Long.toString(val);
 
 		if(val <= 0)
 			return ret;
 
 		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
-			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0 && (isSize || MULTIPLES[i] % 1000 == 0)) {
 				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
-				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i])) 
 					ret += "iB";
 				break;
 			}
@@ -704,14 +704,14 @@ public abstract class Fields {
 		return ret;
 	}
 
-	public static String intToString(int val) {
+	public static String intToString(int val, boolean isSize) {
 		String ret = Integer.toString(val);
 
 		if(val <= 0)
 			return ret;
 
 		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
-			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0 && (isSize || MULTIPLES[i] % 1000 == 0)) {
 				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
 				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
@@ -721,14 +721,14 @@ public abstract class Fields {
 		return ret;
 	}
 
-	public static String shortToString(short val) {
+	public static String shortToString(short val, boolean isSize) {
 		String ret = Short.toString(val);
 
 		if(val <= 0)
 			return ret;
 
 		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
-			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0 && (isSize || MULTIPLES[i] % 1000 == 0)) {
 				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
 				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
