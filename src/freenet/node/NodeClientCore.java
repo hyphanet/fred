@@ -282,7 +282,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					        return;
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
-		});
+		}, true);
 		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
 
 			@Override
@@ -296,7 +296,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					        return;
 				tempBucketFactory.setMaxRamUsed(val);
 			}
-		});
+		}, true);
 			
 		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
 
@@ -446,7 +446,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					throw new InvalidConfigValueException(l10n("maxUSKFetchersMustBeGreaterThanZero"));
 				maxBackgroundUSKFetchers = uskFetch;
 			}
-		});
+		}, false);
 
 		maxBackgroundUSKFetchers = nodeConfig.getInt("maxBackgroundUSKFetchers");
 

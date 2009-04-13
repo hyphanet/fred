@@ -86,7 +86,7 @@ public class NodeCryptoConfig {
 			public boolean isReadOnly() {
 				        return true;
 			        }		
-		});
+		}, false);
 		
 		try{
 			portNumber = config.getInt("listenPort");
@@ -128,7 +128,7 @@ public class NodeCryptoConfig {
 						crypto.onSetDropProbability(val);
 					}		
 			
-		});
+		}, false);
 		dropProbability = config.getInt("testingDropPacketsEvery"); 
 		
 		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",

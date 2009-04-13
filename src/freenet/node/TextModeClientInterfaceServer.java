@@ -70,7 +70,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		TMCIConfig.register("ssl", false, 1, true, true , "TextModeClientInterfaceServer.ssl", "TextModeClientInterfaceServer.sslLong", new TMCISSLCallback());
 		TMCIConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, 2, true, false, "TextModeClientInterfaceServer.bindTo", "TextModeClientInterfaceServer.bindToLong", new TMCIBindtoCallback(core));
 		TMCIConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, 2, true, false, "TextModeClientInterfaceServer.allowedHosts", "TextModeClientInterfaceServer.allowedHostsLong", new TMCIAllowedHostsCallback(core));
-		TMCIConfig.register("port", 2323, 1, true, false, "TextModeClientInterfaceServer.telnetPortNumber", "TextModeClientInterfaceServer.telnetPortNumberLong", new TCMIPortNumberCallback(core));
+		TMCIConfig.register("port", 2323, 1, true, false, "TextModeClientInterfaceServer.telnetPortNumber", "TextModeClientInterfaceServer.telnetPortNumberLong", new TCMIPortNumberCallback(core), false);
 		TMCIConfig.register("directEnabled", false, 1, true, false, "TextModeClientInterfaceServer.enableInputOutput", "TextModeClientInterfaceServer.enableInputOutputLong", new TMCIDirectEnabledCallback(core));
 		
 		boolean TMCIEnabled = TMCIConfig.getBoolean("enabled");

@@ -241,7 +241,7 @@ public class NodeStats implements Persistable {
 							throw new InvalidConfigValueException(l10n("valueTooLow"));
 						threadLimit = val;
 					}
-		});
+		},false);
 		threadLimit = statsConfig.getInt("threadLimit");
 		
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
@@ -258,7 +258,7 @@ public class NodeStats implements Persistable {
 						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
 						aggressiveGCModificator = val;
 					}
-		});
+		},false);
 		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
 		
 		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
