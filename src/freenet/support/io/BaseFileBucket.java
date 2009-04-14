@@ -408,7 +408,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	
 	public void free(boolean forceFree) {
 		Object[] toClose;
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Freeing "+this, new Exception("debug"));
 		synchronized(this) {
 			if(freed) return;
