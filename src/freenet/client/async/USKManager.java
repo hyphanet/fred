@@ -26,19 +26,19 @@ import freenet.support.Logger;
 public class USKManager implements RequestClient {
 
 	/** Latest version by blanked-edition-number USK */
-	final HashMap latestVersionByClearUSK;
+	final HashMap<USK, Long> latestVersionByClearUSK;
 	
 	/** Subscribers by clear USK */
-	final HashMap subscribersByClearUSK;
+	final HashMap<USK, USKCallback[]> subscribersByClearUSK;
 	
 	/** USKFetcher's by USK. USK includes suggested edition number, so there is one
 	 * USKFetcher for each {USK, edition number}. */
-	final HashMap fetchersByUSK;
+	final HashMap<USK, USKFetcher> fetchersByUSK;
 	
 	/** Backgrounded USKFetchers by USK. */
-	final HashMap backgroundFetchersByClearUSK;
+	final HashMap<USK, USKFetcher> backgroundFetchersByClearUSK;
 	
-	final LRUQueue temporaryBackgroundFetchersLRU;
+	final LRUQueue<USK> temporaryBackgroundFetchersLRU;
 	
 	final FetchContext backgroundFetchContext;
 	
@@ -49,11 +49,11 @@ public class USKManager implements RequestClient {
 	public USKManager(NodeClientCore core) {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
 		backgroundFetchContext.followRedirects = false;
-		latestVersionByClearUSK = new HashMap();
-		subscribersByClearUSK = new HashMap();
-		fetchersByUSK = new HashMap();
-		backgroundFetchersByClearUSK = new HashMap();
-		temporaryBackgroundFetchersLRU = new LRUQueue();
+		latestVersionByClearUSK = new HashMap<USK, Long>();
+		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
+		fetchersByUSK = new HashMap<USK, USKFetcher>();
+		backgroundFetchersByClearUSK = new HashMap<USK, USKFetcher>();
+		temporaryBackgroundFetchersLRU = new LRUQueue<USK>();
 		executor = core.getExecutor();
 	}
 
@@ -67,7 +67,7 @@ public class USKManager implements RequestClient {
 	 * @return The latest known edition number, or -1.
 	 */
 	public synchronized long lookup(USK usk) {
-		Long l = (Long) latestVersionByClearUSK.get(usk.clearCopy());
+		Long l = latestVersionByClearUSK.get(usk.clearCopy());
 		if(l != null)
 			return l.longValue();
 		else return -1;
@@ -80,7 +80,7 @@ public class USKManager implements RequestClient {
 
 	synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
 			ClientRequester requester, boolean keepLastData) {
-		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
+		USKFetcher f = fetchersByUSK.get(usk);
 		USK clear = usk.clearCopy();
 		if(temporaryBackgroundFetchersLRU.contains(clear))
 			temporaryBackgroundFetchersLRU.push(clear);
@@ -100,7 +100,7 @@ public class USKManager implements RequestClient {
 	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context) {
 		USK clear = usk.clearCopy();
 		USKFetcher sched = null;
-		Vector toCancel = null;
+		Vector<USKFetcher> toCancel = null;
 		synchronized(this) {
 //			java.util.Iterator i = backgroundFetchersByClearUSK.keySet().iterator();
 //			int x = 0;
@@ -108,7 +108,7 @@ public class USKManager implements RequestClient {
 //				System.err.println("Fetcher "+x+": "+i.next());
 //				x++;
 //			}
-			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
+			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
 				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, true, false);
 				sched = f;
@@ -116,10 +116,10 @@ public class USKManager implements RequestClient {
 			}
 			temporaryBackgroundFetchersLRU.push(clear);
 			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.maxBackgroundUSKFetchers) {
-				USK del = (USK) temporaryBackgroundFetchersLRU.pop();
-				USKFetcher fetcher = (USKFetcher) backgroundFetchersByClearUSK.get(del.clearCopy());
+				USK del = temporaryBackgroundFetchersLRU.pop();
+				USKFetcher fetcher = backgroundFetchersByClearUSK.get(del.clearCopy());
 				if(!fetcher.hasSubscribers()) {
-					if(toCancel == null) toCancel = new Vector(2);
+					if(toCancel == null) toCancel = new Vector<USKFetcher>(2);
 					toCancel.add(fetcher);
 					backgroundFetchersByClearUSK.remove(del);
 				} else {
@@ -132,7 +132,7 @@ public class USKManager implements RequestClient {
 		}
 		if(toCancel != null) {
 			for(int i=0;i<toCancel.size();i++) {
-				USKFetcher fetcher = (USKFetcher) toCancel.get(i);
+				USKFetcher fetcher = toCancel.get(i);
 				fetcher.cancel(null, context);
 			}
 		}
@@ -145,14 +145,14 @@ public class USKManager implements RequestClient {
 		USK clear = origUSK.clearCopy();
 		final USKCallback[] callbacks;
 		synchronized(this) {
-			Long l = (Long) latestVersionByClearUSK.get(clear);
+			Long l = latestVersionByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old value: "+l);
 			if((l == null) || (number > l.longValue())) {
 				l = Long.valueOf(number);
 				latestVersionByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 			} else return;
-			callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
+			callbacks = subscribersByClearUSK.get(clear);
 		}
 		if(callbacks != null) {
 			// Run off-thread, because of locking, and because client callbacks may take some time
@@ -184,7 +184,7 @@ public class USKManager implements RequestClient {
 		curEd = lookup(origUSK);
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
-			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
+			USKCallback[] callbacks = subscribersByClearUSK.get(clear);
 			if(callbacks == null)
 				callbacks = new USKCallback[1];
 			else {
@@ -197,7 +197,7 @@ public class USKManager implements RequestClient {
 			callbacks[callbacks.length-1] = cb;
 			subscribersByClearUSK.put(clear, callbacks);
 			if(runBackgroundFetch) {
-				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
+				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
 					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 10, true, false);
 					sched = f;
@@ -222,7 +222,7 @@ public class USKManager implements RequestClient {
 		USKFetcher toCancel = null;
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
-			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
+			USKCallback[] callbacks = subscribersByClearUSK.get(clear);
 			if(callbacks == null){ // maybe we should throw something ? shall we allow multiple unsubscriptions ?
 				Logger.error(this, "The callback is null! it has been already unsubscribed, hasn't it?", new Exception("debug"));
 				return;
@@ -243,7 +243,7 @@ public class USKManager implements RequestClient {
 				fetchersByUSK.remove(origUSK);
 			}
 			if(runBackgroundFetch) {
-				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
+				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
 					if(newCallbacks.length == 0)
 						Logger.minor(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed. No callbacks.", new Exception("debug"));
