@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
@@ -32,9 +32,9 @@ public class FailureCodeTracker {
 	 */
 	public FailureCodeTracker(boolean isInsert, SimpleFieldSet fs) {
 		this.insert = isInsert;
-		Iterator i = fs.directSubsetNameIterator();
+		Iterator<String> i = fs.directSubsetNameIterator();
 		while(i.hasNext()) {
-			String name = (String) i.next();
+			String name = i.next();
 			SimpleFieldSet f = fs.subset(name);
 			// We ignore the Description, if there is one; we just want the count
 			int num = Integer.parseInt(name);
@@ -57,12 +57,12 @@ public class FailureCodeTracker {
 		int x;
 	}
 
-	private HashMap map;
+	private HashMap<Integer, Item> map;
 
 	public synchronized void inc(int k) {
-		if(map == null) map = new HashMap();
+		if(map == null) map = new HashMap<Integer, Item>();
 		Integer key = k;
-		Item i = (Item) map.get(key);
+		Item i = map.get(key);
 		if(i == null)
 			map.put(key, i = new Item());
 		i.x++;
@@ -70,9 +70,9 @@ public class FailureCodeTracker {
 	}
 
 	public synchronized void inc(Integer k, int val) {
-		if(map == null) map = new HashMap();
+		if(map == null) map = new HashMap<Integer, Item>();
 		Integer key = k;
-		Item i = (Item) map.get(key);
+		Item i = map.get(key);
 		if(i == null)
 			map.put(key, i = new Item());
 		i.x+=val;
@@ -82,11 +82,9 @@ public class FailureCodeTracker {
 	public synchronized String toVerboseString() {
 		if(map == null) return super.toString()+":empty";
 		StringBuilder sb = new StringBuilder();
-		Collection values = map.keySet();
-		Iterator i = values.iterator();
-		while(i.hasNext()) {
-			Integer x = (Integer) i.next();
-			Item val = (Item) map.get(x);
+		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+			Integer x = e.getKey();
+			Item val = e.getValue();
 			String s = insert ? InsertException.getMessage(x.intValue()) : FetchException.getMessage(x.intValue());
 			sb.append(val.x);
 			sb.append('\t');
@@ -107,7 +105,7 @@ public class FailureCodeTracker {
 			Integer code = (Integer) (map.keySet().toArray())[0];
 			sb.append(code);
 			sb.append('=');
-			sb.append(((Item) map.get(code)).x);
+			sb.append((map.get(code)).x);
 		} else {
 			sb.append(map.size());
 		}
@@ -119,11 +117,10 @@ public class FailureCodeTracker {
 	 */
 	public synchronized FailureCodeTracker merge(FailureCodeTracker source) {
 		if(source.map == null) return this;
-		if(map == null) map = new HashMap();
-		Iterator keys = source.map.keySet().iterator();
-		while(keys.hasNext()) {
-			Integer k = (Integer) keys.next();
-			Item item = (Item) source.map.get(k);
+		if(map == null) map = new HashMap<Integer, Item>();
+		for (Map.Entry<Integer, Item> e : source.map.entrySet()) {
+			Integer k = e.getKey();
+			Item item = e.getValue();
 			inc(k, item.x);
 		}
 		return this;
@@ -146,10 +143,9 @@ public class FailureCodeTracker {
 	public synchronized SimpleFieldSet toFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
 		if(map != null) {
-		Iterator keys = map.keySet().iterator();
-		while(keys.hasNext()) {
-			Integer k = (Integer) keys.next();
-			Item item = (Item) map.get(k);
+		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+			Integer k = e.getKey();
+			Item item = e.getValue();
 			int code = k.intValue();
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
@@ -172,10 +168,9 @@ public class FailureCodeTracker {
 
 	public synchronized boolean isFatal(boolean insert) {
 		if(map == null) return false;
-		Iterator i = map.keySet().iterator();
-		while(i.hasNext()) {
-			Integer code = (Integer) i.next();
-			if(((Item)map.get(code)).x == 0) continue;
+		for (Map.Entry<Integer, Item> e : map.entrySet()) {
+			Integer code = e.getKey();
+			if(e.getValue().x == 0) continue;
 			if(insert) {
 				if(InsertException.isFatal(code.intValue())) return true;
 			} else {
@@ -200,8 +195,8 @@ public class FailureCodeTracker {
 		Item[] items;
 		Integer[] ints;
 		synchronized(this) {
-			items = map == null ? null : (Item[]) map.values().toArray(new Item[map.size()]);
-			ints = map == null ? null : (Integer[]) map.keySet().toArray(new Integer[map.size()]);
+			items = map == null ? null : map.values().toArray(new Item[map.size()]);
+			ints = map == null ? null : map.keySet().toArray(new Integer[map.size()]);
 			if(map != null) map.clear();
 		}
 		if(items != null)
