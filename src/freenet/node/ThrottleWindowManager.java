@@ -3,10 +3,21 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class ThrottleWindowManager {
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	static final float PACKET_DROP_DECREASE_MULTIPLE = 0.97f;
 	static final float PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
@@ -38,14 +49,14 @@ public class ThrottleWindowManager {
 		_droppedPackets++;
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(logMINOR)
         	Logger.minor(this, "request rejected overload: "+this);
 	}
 
 	public synchronized void requestCompleted() {
         _totalPackets++;
         _simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
-        if(Logger.shouldLog(Logger.MINOR, this))
+        if(logMINOR)
         	Logger.minor(this, "requestCompleted on "+this);
 	}
 
