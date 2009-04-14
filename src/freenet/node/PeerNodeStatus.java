@@ -2,7 +2,7 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
-
+ 
 import java.util.Map;
 
 import freenet.clients.http.DarknetConnectionsToadlet;
