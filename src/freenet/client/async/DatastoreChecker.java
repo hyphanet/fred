@@ -50,7 +50,8 @@ public class DatastoreChecker implements PrioRunnable {
 		this.context = context;
 	}
 
-	public DatastoreChecker(Node node) {
+	@SuppressWarnings("unchecked")
+    public DatastoreChecker(Node node) {
 		this.node = node;
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
 		persistentKeys = new ArrayList[priorities];
@@ -90,7 +91,7 @@ public class DatastoreChecker implements PrioRunnable {
 		
 	};
 	
-	public void loadPersistentRequests(ObjectContainer container, final ClientContext context) {
+    public void loadPersistentRequests(ObjectContainer container, final ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		int totalSize = 0;
 		synchronized(this) {
@@ -109,7 +110,8 @@ public class DatastoreChecker implements PrioRunnable {
 			query.constrain(DatastoreCheckerItem.class);
 			query.descend("nodeDBHandle").constrain(context.nodeDBHandle).
 				and(query.descend("prio").constrain(prio));
-				ObjectSet<DatastoreCheckerItem> results = query.execute();
+			@SuppressWarnings("unchecked")
+			ObjectSet<DatastoreCheckerItem> results = query.execute();
 			for(DatastoreCheckerItem item : results) {
 				if(item.chosenBy == context.bootID) continue;
 				SendableGet getter = item.getter;
