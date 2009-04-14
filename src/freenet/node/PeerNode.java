@@ -2677,7 +2677,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
 			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
 			fs.putSingle("totalInput", (getTotalInputSinceSource()+getTotalInputBytes()));
-			fs.putSingle("totalOutput", (getTotalOutputSinceSource()+getTotalOutputBytes());
+			fs.putSingle("totalOutput", (getTotalOutputSinceSource()+getTotalOutputBytes()));
 		}
 		fs.putSingle("status", getPeerNodeStatusString());
 		return fs;
