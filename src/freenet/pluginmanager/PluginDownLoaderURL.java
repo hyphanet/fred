@@ -47,6 +47,12 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 		return null;
 	}
 	
+	@Override
+	String getSHA256sum() throws PluginNotFoundException {
+		return null;
+	}
+
+	
 	static InputStream openConnectionCheckRedirects(URLConnection c) throws IOException
 	{
 		boolean redir;

@@ -800,9 +800,19 @@ public class PluginManager {
 							throw new PluginNotFoundException("could not rename temp file to plugin file");
 						}
 
-						String digest = pdl.getSHA1sum();
+						// try strongest first
+						String testsum = null;
+						String digest = pdl.getSHA256sum();
+						if(digest == null) {
+							digest = pdl.getSHA1sum();
+						} else {
+							testsum = getFileDigest(pluginFile, "SHA-256");
+						}
+						if(digest != null && testsum == null) {
+							testsum = getFileDigest(pluginFile, "SHA-1");
+						} 
+						
 						if(digest != null) {
-							String testsum = getFileSHA1(pluginFile);
 							if(!(digest.equalsIgnoreCase(testsum))) {
 								Logger.error(this, "Checksum verification failed, should be " + digest + " but was " + testsum);
 								throw new PluginNotFoundException("Checksum verification failed, should be " + digest + " but was " + testsum);
@@ -968,14 +978,14 @@ public class PluginManager {
 		}
 	}
 
-	private String getFileSHA1(File file) throws PluginNotFoundException {
+	private String getFileDigest(File file, String digest) throws PluginNotFoundException {
 		final int BUFFERSIZE = 4096;
 		MessageDigest hash = null;
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
 
 		try {
-			hash = MessageDigest.getInstance("SHA-1");
+			hash = MessageDigest.getInstance(digest);
 			// We compute the hash
 			// http://java.sun.com/developer/TechTips/1998/tt0915.html#tip2
 			fis = new FileInputStream(file);
