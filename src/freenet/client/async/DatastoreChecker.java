@@ -297,7 +297,6 @@ public class DatastoreChecker implements PrioRunnable {
 		ClientRequestScheduler sched = null;
 		DatastoreCheckerItem item = null;
 		BlockSet blocks = null;
-		short priority = -1;
 		// If the queue is too large, don't check any more blocks. It is possible
 		// that we can check the datastore faster than we can handle the resulting
 		// blocks, this will cause OOM.
