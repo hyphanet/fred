@@ -235,6 +235,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int messageRequeueLogRateLimitThreshold = 15;
 	/** Version of the node */
 	private String version;
+ 	/** Total input */
+	private long totalInput;
+	/** Total output */
+	private long totalOutput;
 	/** Peer node crypto group; changing this means new noderef */
 	final DSAGroup peerCryptoGroup;
 
@@ -706,6 +710,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
+
+		totalInput = Long.parseLong(fs.get("totalinput"));
+		totalOutput = Long.parseLong(fs.get("totaloutput"));
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
@@ -2701,6 +2708,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fs.put("opennet", isOpennet());
 		fs.put("seed", isSeed());
+		fs.put("totalinput", getTotalInputBytes());
+		fs.put("totaloutput", getTotalOutputBytes());	
 		return fs;
 	}
 
