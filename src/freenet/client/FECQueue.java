@@ -35,8 +35,8 @@ import freenet.support.io.NativeThread;
  */
 public class FECQueue implements OOMHook {
 	
-	private transient LinkedList[] transientQueue;
-	private transient LinkedList[] persistentQueueCache;
+	private transient LinkedList<FECJob>[] transientQueue;
+	private transient LinkedList<FECJob>[] persistentQueueCache;
 	private transient int maxPersistentQueueCacheSize;
 	private transient int priorities;
 	private transient DBJobRunner databaseJobRunner;
@@ -47,8 +47,9 @@ public class FECQueue implements OOMHook {
 	private transient PrioRunnable runner;
 	private transient DBJob cacheFillerJob;
 	private final long nodeDBHandle;
-
-	public static FECQueue create(final long nodeDBHandle, ObjectContainer container) {
+	
+    public static FECQueue create(final long nodeDBHandle, ObjectContainer container) {
+    	@SuppressWarnings("serial")
 		ObjectSet<FECQueue> result = container.query(new Predicate<FECQueue>() {
 			public boolean match(FECQueue queue) {
 				if(queue.nodeDBHandle == nodeDBHandle) return true;
@@ -71,7 +72,8 @@ public class FECQueue implements OOMHook {
 	}
 
 	/** Called after creating or deserializing the FECQueue. Initialises all the transient fields. */
-	public void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
+	@SuppressWarnings("unchecked")
+    public void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
 		this.priorities = priorities;
 		this.maxPersistentQueueCacheSize = maxCacheSize;
 		this.databaseJobRunner = dbJobRunner;
@@ -80,8 +82,8 @@ public class FECQueue implements OOMHook {
 		transientQueue = new LinkedList[priorities];
 		persistentQueueCache = new LinkedList[priorities];
 		for(int i=0;i<priorities;i++) {
-			transientQueue[i] = new LinkedList();
-			persistentQueueCache[i] = new LinkedList();
+			transientQueue[i] = new LinkedList<FECJob>();
+			persistentQueueCache[i] = new LinkedList<FECJob>();
 		}
 		maxRunningFECThreads = getMaxRunningFECThreads();
 		OOMHandler.addOOMHook(this);
@@ -279,13 +281,14 @@ public class FECQueue implements OOMHook {
 					if(logMINOR) Logger.minor(this, "Grabbing up to "+grab+" jobs at priority "+prio);
 					Query query = container.query();
 					query.constrain(FECJob.class);
-					Constraint con = query.descend("priority").constrain(new Short(prio));
+					Constraint con = query.descend("priority").constrain(Short.valueOf(prio));
 					con.and(query.descend("queue").constrain(FECQueue.this).identity());
 					query.descend("addedTime").orderAscending();
-					ObjectSet results = query.execute();
+					@SuppressWarnings("unchecked")
+					ObjectSet<FECJob> results = query.execute();
 					if(results.hasNext()) {
 						for(int j=0;j<grab && results.hasNext();j++) {
-							FECJob job = (FECJob) results.next();
+							FECJob job = results.next();
 							job.activateForExecution(container);
 							if(job.isCancelled(container)) {
 								container.delete(job);
@@ -304,8 +307,8 @@ public class FECQueue implements OOMHook {
 									continue;
 								}
 								boolean added = false;
-								for(ListIterator it = persistentQueueCache[prio].listIterator();it.hasNext();) {
-									FECJob cmp = (FECJob) it.next();
+								for(ListIterator<FECJob> it = persistentQueueCache[prio].listIterator();it.hasNext();) {
+									FECJob cmp = it.next();
 									if(cmp.addedTime >= job.addedTime) {
 										it.previous();
 										it.add(job);
@@ -390,9 +393,9 @@ public class FECQueue implements OOMHook {
 				return null;
 			for(int i=0;i<priorities;i++) {
 				if(!transientQueue[i].isEmpty())
-					return (FECJob) transientQueue[i].removeFirst();
+					return transientQueue[i].removeFirst();
 				if(!persistentQueueCache[i].isEmpty())
-					return (FECJob) persistentQueueCache[i].removeFirst();
+					return persistentQueueCache[i].removeFirst();
 			}
 			queueCacheFiller();
 			try {
