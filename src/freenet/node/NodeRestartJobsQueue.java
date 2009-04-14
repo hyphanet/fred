@@ -18,7 +18,8 @@ public class NodeRestartJobsQueue {
 	
 	private final long nodeDBHandle;
 
-	public NodeRestartJobsQueue(long nodeDBHandle2) {
+	@SuppressWarnings("unchecked")
+    public NodeRestartJobsQueue(long nodeDBHandle2) {
 		nodeDBHandle = nodeDBHandle2;
 		dbJobs = new Set[NativeThread.JAVA_PRIORITY_RANGE];
 		dbJobsEarly = new Set[NativeThread.JAVA_PRIORITY_RANGE];
@@ -27,11 +28,11 @@ public class NodeRestartJobsQueue {
 			dbJobsEarly[i] = new HashSet<DBJob>();
 		}
 	}
-
-	public static NodeRestartJobsQueue init(final long nodeDBHandle, ObjectContainer container) {
+	
+    public static NodeRestartJobsQueue init(final long nodeDBHandle, ObjectContainer container) {
+    	@SuppressWarnings("serial")
 		ObjectSet<NodeRestartJobsQueue> results = 
 			container.query(new Predicate<NodeRestartJobsQueue>() {
-
 			@Override
 			public boolean match(NodeRestartJobsQueue arg0) {
 				return (arg0.nodeDBHandle == nodeDBHandle);
