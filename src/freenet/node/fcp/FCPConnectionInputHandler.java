@@ -11,6 +11,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
@@ -19,7 +20,19 @@ import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
 
 public class FCPConnectionInputHandler implements Runnable {
-
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+	
 	final FCPConnectionHandler handler;
 	
 	FCPConnectionInputHandler(FCPConnectionHandler handler) {
@@ -37,7 +50,7 @@ public class FCPConnectionInputHandler implements Runnable {
 		} catch (TooLongException e) {
 			Logger.normal(this, "Caught"+e.getMessage(),e);
 		} catch (IOException e) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Caught "+e, e);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
@@ -82,7 +95,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			
 			FCPMessage msg;
 			try {
-				if(Logger.shouldLog(Logger.DEBUG, this))
+				if(logDEBUG)
 					Logger.debug(this, "Incoming FCP message:\n"+messageType+'\n'+fs.toString());
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
 				if(msg == null) continue;
@@ -122,7 +135,7 @@ public class FCPConnectionInputHandler implements Runnable {
 				continue;
 			}
 			try {
-				if(Logger.shouldLog(Logger.DEBUG, this))
+				if(logDEBUG)
 					Logger.debug(this, "Parsed message: "+msg+" for "+handler);
 				msg.run(handler, handler.server.node);
 			} catch (MessageInvalidException e) {
