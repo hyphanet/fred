@@ -134,7 +134,7 @@ public class NodeRestartJobsQueue {
 		if(!jobWasActive) container.deactivate(job, 1);
 	}
 	
-	class RestartDBJob {
+	static class RestartDBJob {
 		public RestartDBJob(DBJob job2, int i) {
 			job = job2;
 			prio = i;
