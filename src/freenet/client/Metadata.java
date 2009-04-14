@@ -47,7 +47,7 @@ public class Metadata implements Cloneable {
     }
 
 	static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;
-	static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
+	public static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 1000*1000;
 	
