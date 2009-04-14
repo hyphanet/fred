@@ -117,9 +117,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
-			}else if(sortBy.equals("total_traffic_since_restart")){
-				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalInputSinceSource();
-				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputSinceSource();
+			}else if(sortBy.equals("total_traffic_since_startup")){
+				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalInputSinceStartup();
+				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputSinceStartup();
 				return compareLongs(total1, total2);
 			}else if(sortBy.equals("selection_percentage")){
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
@@ -406,7 +406,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_routable")).addChild("#", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "selection_percentage")).addChild("#", "%\u00a0Selection");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "total_traffic")).addChild("#", "Total\u00a0Traffic\u00a0(in/out/resent)");
-					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "total_traffic_since_restart")).addChild("#", "Total\u00a0Traffic\u00a0(in/out) since restart");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "total_traffic_since_startup")).addChild("#", "Total\u00a0Traffic\u00a0(in/out) since startup");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_delta")).addChild("#", "Time\u00a0Delta");
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "uptime")).addChild("#", "Reported\u00a0Uptime");
