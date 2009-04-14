@@ -328,7 +328,6 @@ public class DatastoreChecker implements PrioRunnable {
 						persistent = false;
 						item = null;
 						blocks = transientBlockSets[prio].remove(0);
-						priority = prio;
 						break;
 					} else if((!notPersistent) && (!persistentGetters[prio].isEmpty())) {
 						keys = persistentKeys[prio].remove(0);
@@ -338,7 +337,6 @@ public class DatastoreChecker implements PrioRunnable {
 						sched = persistentSchedulers[prio].remove(0);
 						item = persistentCheckerItems[prio].remove(0);
 						blocks = persistentBlockSets[prio].remove(0);
-						priority = prio;
 						break;
 					}
 				}
