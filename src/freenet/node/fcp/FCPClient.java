@@ -463,7 +463,8 @@ public class FCPClient {
 				toKill.add(req);
 			}
 			clientRequestsByIdentifier.clear();
-			container.ext().store(clientRequestsByIdentifier, 2);
+			if (container != null)
+				container.ext().store(clientRequestsByIdentifier, 2);
 		}
 	}
 
