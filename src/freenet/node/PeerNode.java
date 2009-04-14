@@ -711,8 +711,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
 
-		totalInputSinceSource = Long.parseLong(fs.get("totalinput"));
-		totalOutputSinceSource = Long.parseLong(fs.get("totaloutput"));
+		totalInputSinceSource = Long.parseLong(fs.get("totalInput"));
+		totalOutputSinceSource = Long.parseLong(fs.get("totalOutput"));
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
@@ -2675,9 +2675,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("routingBackoff", Long.toString((Math.max(Math.max(routingBackedOffUntil, transferBackedOffUntil) - now, 0))));
 			fs.putSingle("routingBackoffLength", Integer.toString(routingBackoffLength));
 			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
-			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
-			fs.putSingle("totalInput", (getTotalInputSinceSource()+getTotalInputBytes()));
-			fs.putSingle("totalOutput", (getTotalOutputSinceSource()+getTotalOutputBytes()));
+			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));			
 		}
 		fs.putSingle("status", getPeerNodeStatusString());
 		return fs;
@@ -2708,8 +2706,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fs.put("opennet", isOpennet());
 		fs.put("seed", isSeed());
-		fs.put("totalinput", getTotalInputSinceSource()+);
-		fs.put("totaloutput", getTotalOutputSinceSource()+);	
+		fs.put("totalInput", (getTotalInputSinceSource()+getTotalInputBytes()));
+		fs.put("totalOutput", (getTotalOutputSinceSource()+getTotalOutputBytes()));	
 		return fs;
 	}
 
