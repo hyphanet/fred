@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -250,7 +250,6 @@ public class ArchiveManager {
 	 * OTOH maybe extracting inline on the database thread for small containers would be useful?
 	 */
 	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
-		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
@@ -471,7 +470,7 @@ outerZIP:		while(true) {
 	 * @param callbackName If we generate a 
 	 * @throws ArchiveFailureException 
 	 */
-	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException {
+	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, Set<String> names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException {
 		/* What we have to do is to:
 		 * - Construct a filesystem tree of the names.
 		 * - Turn each level of the tree into a Metadata object, including those below it, with
@@ -482,9 +481,7 @@ outerZIP:		while(true) {
 		// Root directory.
 		// String -> either itself, or another HashMap
 		HashMap<String, Object> dir = new HashMap<String, Object>();
-		Iterator i = names.iterator();
-		while(i.hasNext()) {
-			String name = (String) i.next();
+		for (String name : names) {
 			addToDirectory(dir, name, "");
 		}
 		Metadata metadata = new Metadata(dir, "");
