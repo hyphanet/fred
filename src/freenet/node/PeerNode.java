@@ -2676,8 +2676,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("routingBackoffLength", Integer.toString(routingBackoffLength));
 			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
 			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
-			fs.putSingle("totalInput", Long.toString(getTotalInputSinceSource()));
-			fs.putSingle("totalOutput", Long.toString(getTotalOutputSinceSource()));
+			fs.putSingle("totalInput", (getTotalInputSinceSource()+getTotalInputBytes()));
+			fs.putSingle("totalOutput", (getTotalOutputSinceSource()+getTotalOutputBytes());
 		}
 		fs.putSingle("status", getPeerNodeStatusString());
 		return fs;
@@ -2708,8 +2708,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fs.put("opennet", isOpennet());
 		fs.put("seed", isSeed());
-		fs.put("totalinput", getTotalInputBytesSinceSource());
-		fs.put("totaloutput", getTotalOutputBytesSinceSource());	
+		fs.put("totalinput", getTotalInputSinceSource()+);
+		fs.put("totaloutput", getTotalOutputSinceSource()+);	
 		return fs;
 	}
 
