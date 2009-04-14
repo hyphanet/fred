@@ -32,6 +32,7 @@ import freenet.clients.http.PageMaker.THEME;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.l10n.L10n.LANGUAGE;
@@ -984,7 +985,11 @@ public class PluginManager {
 		BufferedInputStream bis = null;
 
 		try {
-			hash = MessageDigest.getInstance(digest);
+			if ("SHA-256".equals(digest)) {
+				hash = SHA256.getMessageDigest(); // grab digest from pool
+			} else {
+				hash = MessageDigest.getInstance(digest);
+			}
 			// We compute the hash
 			// http://java.sun.com/developer/TechTips/1998/tt0915.html#tip2
 			fis = new FileInputStream(file);
@@ -995,7 +1000,7 @@ public class PluginManager {
 				hash.update(buffer, 0, len);
 			}
 		} catch(Exception e) {
-			throw new PluginNotFoundException("Error while computing sha1 hash of the downloaded plugin: " + e, e);
+			throw new PluginNotFoundException("Error while computing hash '"+digest+"' of the downloaded plugin: " + e, e);
 		} finally {
 			Closer.close(bis);
 			Closer.close(fis);
