@@ -236,9 +236,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Version of the node */
 	private String version;
  	/** Total input */
-	private long totalInput;
+	private long totalInputSinceSource;
 	/** Total output */
-	private long totalOutput;
+	private long totalOutputSinceSource;
 	/** Peer node crypto group; changing this means new noderef */
 	final DSAGroup peerCryptoGroup;
 
@@ -711,8 +711,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
 
-		totalInput = Long.parseLong(fs.get("totalinput"));
-		totalOutput = Long.parseLong(fs.get("totaloutput"));
+		totalInputSinceSource = Long.parseLong(fs.get("totalinput"));
+		totalOutputSinceSource = Long.parseLong(fs.get("totaloutput"));
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
@@ -2676,8 +2676,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("routingBackoffLength", Integer.toString(routingBackoffLength));
 			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
 			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
-			fs.putSingle("totalBytesIn", Long.toString(totalBytesIn));
-			fs.putSingle("totalBytesOut", Long.toString(totalBytesOut));
+			fs.putSingle("totalInput", Long.toString(getTotalInputSinceSource()));
+			fs.putSingle("totalOutput", Long.toString(getTotalOutputSinceSource()));
 		}
 		fs.putSingle("status", getPeerNodeStatusString());
 		return fs;
@@ -2708,8 +2708,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fs.put("opennet", isOpennet());
 		fs.put("seed", isSeed());
-		fs.put("totalinput", getTotalInputBytes());
-		fs.put("totaloutput", getTotalOutputBytes());	
+		fs.put("totalinput", getTotalInputBytesSinceSource());
+		fs.put("totaloutput", getTotalOutputBytesSinceSource());	
 		return fs;
 	}
 
@@ -3380,6 +3380,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized long getTotalOutputBytes() {
 		return totalBytesOut;
+	}
+
+	public synchronized long getTotalInputSinceSource() {
+		return totalInputSinceSource;
+	}
+
+	public synchronized long getTotalOutputSinceSource() {
+		return totalOutputSinceSource;
 	}
 
 	public boolean isSignatureVerificationSuccessfull() {
