@@ -9,6 +9,17 @@ import freenet.client.async.ClientContext;
  * returned.
  */
 public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent {
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 
 	/*
 	 * Yes, this is O(n). No, I don't care.
@@ -45,7 +56,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	 * Add directly to a RandomGrabArrayWithClient under us. */
 	public synchronized void add(Object client, RandomGrabArrayItem item, ObjectContainer container) {
 		if(item.persistent() != persistent) throw new IllegalArgumentException("item.persistent()="+item.persistent()+" but array.persistent="+persistent+" item="+item+" array="+this);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		RandomGrabArrayWithClient rga;
 		int clientIndex = haveClient(client);
 		if(clientIndex == -1) {
@@ -119,7 +129,6 @@ public class SectoredRandomGrabArray implements RemoveRandom, RemoveRandomParent
 	}
 
 	public synchronized RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		/** Count of arrays that have items but didn't return anything because of exclusions */
 		int excluded = 0;
 		final int MAX_EXCLUDED = 10;
