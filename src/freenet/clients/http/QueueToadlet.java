@@ -175,8 +175,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				
 				// FIXME panic button should just dump the entire database ???
 				// FIXME what about non-global requests ???
-				
-				boolean success = fcp.removeAllGlobalRequestsBlocking();
+				boolean success = false;
+				try {
+				  success = fcp.removeAllGlobalRequestsBlocking();
+				} catch (Exception e) {
+					Logger.error(this, "Exception on remove all", e);
+				}
 				
 				if(!success)
 					this.sendErrorPage(ctx, 200, 
