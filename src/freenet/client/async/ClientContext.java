@@ -163,6 +163,26 @@ public class ClientContext {
 		}
 	}
 
+	public void start(final BaseManifestPutter inserter) throws InsertException {
+		if(inserter.persistent()) {
+			jobRunner.queue(new DBJob() {
+				
+				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(inserter, 1);
+					try {
+						inserter.start(container, context);
+					} catch (InsertException e) {
+						inserter.cb.onFailure(e, inserter, container);
+					}
+					container.deactivate(inserter, 1);
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
+		} else {
+			inserter.start(null, this);
+		}
+	}
+
 	public BucketFactory getBucketFactory(boolean persistent) {
 		if(persistent)
 			return persistentBucketFactory;
