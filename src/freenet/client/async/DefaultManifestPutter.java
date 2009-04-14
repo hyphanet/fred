@@ -14,6 +14,8 @@ import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.ContainerSizeEstimator;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.ContainerSizeEstimator.ContainerSize;
 
 /**
@@ -45,6 +47,20 @@ import freenet.support.ContainerSizeEstimator.ContainerSize;
  */
 
 public class DefaultManifestPutter extends BaseManifestPutter {
+	
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 	
 	public static final long DEFAULT_MAX_CONTAINERSIZE = (2038-64)*1024;
 	public static final long DEFAULT_MAX_CONTAINERITEMSIZE = 1024*1024;
@@ -88,28 +104,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		}
 	}
 
-		
-	private void makePutHandlers2(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String prefix) {
-		Iterator<String> it = manifestElements.keySet().iterator();
-		
-		ContainerBuilder archive = null;
-		while(it.hasNext()) {
-			String name = it.next();
-			Object o = manifestElements.get(name);
-			if(o instanceof HashMap) {
-				@SuppressWarnings("unchecked")
-				HashMap<String,Object> hm = (HashMap<String,Object>)o;
-				ContainerBuilder subC = containerBuilder.makeSubContainer(name);
-				makePutHandlers2(subC, hm, "");
-			} else {
-				ManifestElement element = (ManifestElement) o;
-				if (archive == null)
-					archive = makeArchive();
-				containerBuilder.addArchiveItem(archive, name, name, element.getMimeTypeOverride(), element.getData());
-			}
-		}
-	}
-	
 	/**
 	 * @param containerBuilder
 	 * @param manifestElements
@@ -321,68 +315,6 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			}
 		}
 		return tmpSize;
-//		} else {
-//			// sub dirs does not fit into container, make each its own
-//			for(String name:keyset) {
-//				Object o = manifestElements.get(name);
-//				if (o instanceof HashMap) {
-//					@SuppressWarnings("unchecked")
-//					HashMap<String, Object> hm = (HashMap<String, Object>)o;
-//					
-//					containerBuilder.pushCurrentDir();
-//					containerBuilder.makeSubDirCD(name);
-//					makeEveryThingUnlimitedPutHandlers(containerBuilder, hm, prefix);
-//					containerBuilder.popCurrentDir();
-//				}
-//			}
-//			tmpSize = wholeSize.getSizeSubTreesNoLimit();
-//			
-//		
-//		}
-//
-//		// step four
-//		// the current plain dir is to big to fit into current container,
-//		// so each subdir goes into it own container
-//		System.out.println("PackStat2: plain dir to big, all subdirs are subcontainers");
-//		long tmpSize = 0;
-//		Set<String> keyset = manifestElements.keySet();
-//		for(String name:keyset) {
-//				Object o = md.get(name);
-//				if (o instanceof HashMap) {
-//					tmpSize += 512;
-//					tmpResult.put(name, innerContainerize((HashMap<String, Object>) o, replysender, identifier, DEFAULT_MAX_CONTAINERSIZE, true, name));
-//				}
-//			}
-//			for(String name:set) {
-//				Object o = md.get(name);
-//				if (o instanceof ManifestElement) {
-//					ManifestElement me = (ManifestElement)o;
-//					if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
-//						tmpResult.put(name, me);
-//						tmpSize += ContainerSizeEstimator.tarItemSize(me.getSize());
-//					} else {
-//						tmpSize += 512;
-//						//tmpResult.put(name, makeExtern(me, replysender, me.getMimeTypeOverride()));
-//						tmpResult.put(name, me);
-//					}
-//				}
-//			}
-//			if (doInsert) {
-//				return new ManifestElement(parentName, insertManifest(FreenetURI.EMPTY_CHK_URI, tmpResult, null, replysender, identifier), null);
-//			} else {
-//				return tmpResult;
-//			}
-//		}
-//		
-//		
-//		// nothing fit into current container
-//		System.out.println("PackStat2: nothing fit into current container, force into new");
-//		if (doInsert) {
-//			return new ManifestElement(parentName, insertManifest(FreenetURI.EMPTY_CHK_URI, tmpResult, null, replysender, identifier), null);
-//		} else {
-//			return innerContainerize(md, replysender, identifier, DEFAULT_MAX_CONTAINERSIZE, true, parentName);
-//		}
-		//throw new IllegalStateException("Pack logic sucks!");
 	}
 	
 	private void makeEveryThingUnlimitedPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String prefix) {
