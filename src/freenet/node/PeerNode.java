@@ -711,8 +711,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
 
-		totalInputSinceStartup = Long.parseLong(fs.get("totalInput"));
-		totalOutputSinceStartup = Long.parseLong(fs.get("totalOutput"));
+		totalInputSinceStartup = fs.getLong("totalInput", 0);
+		totalOutputSinceStartup = fs.getLong("totalOutput", 0);
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
