@@ -72,7 +72,7 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-
+ 
 /**
  * @author amphibian
  * 
@@ -236,9 +236,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Version of the node */
 	private String version;
  	/** Total input */
-	private long totalInputSinceSource;
+	private long totalInputSinceStartup;
 	/** Total output */
-	private long totalOutputSinceSource;
+	private long totalOutputSinceStartup;
 	/** Peer node crypto group; changing this means new noderef */
 	final DSAGroup peerCryptoGroup;
 
@@ -711,8 +711,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else
 			sendHandshakeTime = now;  // Be sure we're ready to handshake right away
 
-		totalInputSinceSource = Long.parseLong(fs.get("totalInput"));
-		totalOutputSinceSource = Long.parseLong(fs.get("totalOutput"));
+		totalInputSinceStartup = Long.parseLong(fs.get("totalInput"));
+		totalOutputSinceStartup = Long.parseLong(fs.get("totalOutput"));
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
@@ -2706,8 +2706,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		fs.put("opennet", isOpennet());
 		fs.put("seed", isSeed());
-		fs.put("totalInput", (getTotalInputSinceSource()+getTotalInputBytes()));
-		fs.put("totalOutput", (getTotalOutputSinceSource()+getTotalOutputBytes()));	
+		fs.put("totalInput", (getTotalInputSinceStartup()+getTotalInputBytes()));
+		fs.put("totalOutput", (getTotalOutputSinceStartup()+getTotalOutputBytes()));	
 		return fs;
 	}
 
@@ -3380,12 +3380,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return totalBytesOut;
 	}
 
-	public synchronized long getTotalInputSinceSource() {
-		return totalInputSinceSource;
+	public synchronized long getTotalInputSinceStartup() {
+		return totalInputSinceStartup;
 	}
-
-	public synchronized long getTotalOutputSinceSource() {
-		return totalOutputSinceSource;
+ 
+	public synchronized long getTotalOutputSinceStartup() { 
+		return totalOutputSinceStartup;
 	}
 
 	public boolean isSignatureVerificationSuccessfull() {
