@@ -12,7 +12,6 @@ import java.util.HashSet;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
-import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -21,7 +20,6 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -56,7 +54,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** If not null, Bucket to return a binary blob in */
 	final Bucket binaryBlobBucket;
 	/** If not null, HashSet to track keys already added for a binary blob */
-	final HashSet binaryBlobKeysAddedAlready;
+	final HashSet<Key> binaryBlobKeysAddedAlready;
 	private DataOutputStream binaryBlobStream;
 	private String expectedMIME;
 	private long expectedSize;
@@ -85,7 +83,7 @@ public class ClientGetter extends BaseClientGetter {
 		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
 		this.binaryBlobBucket = binaryBlobBucket;
 		if(binaryBlobBucket != null) {
-			binaryBlobKeysAddedAlready = new HashSet();
+			binaryBlobKeysAddedAlready = new HashSet<Key>();
 		} else
 			binaryBlobKeysAddedAlready = null;
 		archiveRestarts = 0;
