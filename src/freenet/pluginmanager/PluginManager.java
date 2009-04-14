@@ -983,10 +983,13 @@ public class PluginManager {
 		MessageDigest hash = null;
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
+		boolean wasFromDigest256Pool = false;
+		String result;
 
 		try {
 			if ("SHA-256".equals(digest)) {
 				hash = SHA256.getMessageDigest(); // grab digest from pool
+				wasFromDigest256Pool = true;
 			} else {
 				hash = MessageDigest.getInstance(digest);
 			}
@@ -999,13 +1002,16 @@ public class PluginManager {
 			while((len = bis.read(buffer)) > -1) {
 				hash.update(buffer, 0, len);
 			}
+			result = HexUtil.bytesToHex(hash.digest());
+			if (wasFromDigest256Pool)
+				SHA256.returnMessageDigest(hash);
 		} catch(Exception e) {
 			throw new PluginNotFoundException("Error while computing hash '"+digest+"' of the downloaded plugin: " + e, e);
 		} finally {
 			Closer.close(bis);
 			Closer.close(fis);
 		}
-		return HexUtil.bytesToHex(hash.digest());
+		return result;
 	}
 
 	Ticker getTicker() {
