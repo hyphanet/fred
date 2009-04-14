@@ -40,9 +40,6 @@ public class USKManager implements RequestClient {
 	
 	final LRUQueue temporaryBackgroundFetchersLRU;
 	
-	/** USKChecker's by USK. Deleted immediately on completion. */
-	final HashMap checkersByUSK;
-
 	final FetchContext backgroundFetchContext;
 	
 	final Executor executor;
@@ -55,7 +52,6 @@ public class USKManager implements RequestClient {
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
-		checkersByUSK = new HashMap();
 		backgroundFetchersByClearUSK = new HashMap();
 		temporaryBackgroundFetchersLRU = new LRUQueue();
 		executor = core.getExecutor();
