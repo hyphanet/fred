@@ -42,7 +42,16 @@ class FailureTableEntry implements TimedOutNodesList {
 	long[] requestedTimeouts;
 	short[] requestedTimeoutHTLs;
 	
-	static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	/** We remember that a node has asked us for a key for up to an hour; after that, we won't offer the key, and
 	 * if we receive an offer from that node, we will reject it */
@@ -57,7 +66,6 @@ class FailureTableEntry implements TimedOutNodesList {
 	FailureTableEntry(Key key) {
 		this.key = key;
 		if(key == null) throw new NullPointerException();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long now = System.currentTimeMillis();
 		creationTime = now;
 		receivedTime = -1;
