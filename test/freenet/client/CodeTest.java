@@ -53,18 +53,47 @@ public class CodeTest extends TestCase {
 		for (int i = 0; i < KK; i++)
 			index[i] = lim - i - 1;
 
-		System.out.println("Getting ready for benchmarking");
+		byte[] src = new byte[KK * PACKET_SIZE];
+		Util.rand.nextBytes(src);
+		Buffer[] srcBufs = new Buffer[KK];
+		for (int i = 0; i < srcBufs.length; i++)
+			srcBufs[i] = new Buffer(src, i * PACKET_SIZE, PACKET_SIZE);
+
+		byte[] repair = new byte[KK * PACKET_SIZE];
+		Buffer[] repairBufs = new Buffer[KK];
+		for (int i = 0; i < repairBufs.length; i++) {
+			repairBufs[i] = new Buffer(repair, i * PACKET_SIZE, PACKET_SIZE);
+		}
+
+		int[] indexBackup = new int[index.length];
+		System.arraycopy(index,0,indexBackup,0,index.length);
+
+		System.out.println("Getting ready for benchmarking encode()");
 		long t1 = System.currentTimeMillis();
-		encodeDecode(maybeNative, maybeNative, index);
+		maybeNative.encode(srcBufs, repairBufs, index);
 		long t2 = System.currentTimeMillis();
-		encodeDecode(pureCode, pureCode, index);
+		pureCode.encode(srcBufs, repairBufs, indexBackup);
 		long t3 = System.currentTimeMillis();
+
+		float dNativeEncode = t2 - t1;
+		float dPureEncode = t3 - t2;
+
+		Buffer[] repairBufs2 = repairBufs.clone();
+		System.arraycopy(repairBufs, 0, repairBufs2, 0, repairBufs.length);
+		System.out.println("Getting ready for benchmarking decode()");
+		t1 = System.currentTimeMillis();
+		maybeNative.decode(repairBufs, index);
+		t2 = System.currentTimeMillis();
+		pureCode.decode(repairBufs2, indexBackup);
+		t3 = System.currentTimeMillis();
+
+		float dNativeDecode = t2 - t1;
+		float dPureDecode = t3 - t2;
 
 		System.out.println(maybeNative);
 		System.out.println(pureCode);
-		long dNative = t2 - t1;
-		long dPure = t3 - t2;
-		System.out.println("Native code took "+dNative+"ms whereas java's code took "+dPure+"ms.");
+		System.out.println("Native code took "+dNativeEncode+"ms whereas java's code took "+dPureEncode+"ms to encode()");
+		System.out.println("Native code took "+dNativeDecode+"ms whereas java's code took "+dPureDecode+"ms to decode()");
 	}
 
 	public void testSimpleRev() {
