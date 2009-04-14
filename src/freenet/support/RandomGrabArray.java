@@ -8,7 +8,17 @@ import freenet.client.async.ClientContext;
  * An array which supports very fast remove-and-return-a-random-element.
  */
 public class RandomGrabArray implements RemoveRandom {
-
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	private class Block {
 		RandomGrabArrayItem[] reqs;
 	}
@@ -41,7 +51,6 @@ public class RandomGrabArray implements RemoveRandom {
 	
 	public void add(RandomGrabArrayItem req, ObjectContainer container) {
 		if(req.persistent() != persistent) throw new IllegalArgumentException("req.persistent()="+req.persistent()+" but array.persistent="+persistent+" item="+req+" array="+this);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(req.isEmpty(container)) {
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
@@ -124,7 +133,6 @@ public class RandomGrabArray implements RemoveRandom {
 	
 	public RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context) {
 		RandomGrabArrayItem ret, oret;
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "removeRandom() on "+this+" index="+index);
 		synchronized(this) {
 			int lastActiveBlock = -1;
@@ -359,7 +367,7 @@ public class RandomGrabArray implements RemoveRandom {
 	}
 
 	public void remove(RandomGrabArrayItem it, ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Removing "+it+" from "+this);
 		boolean matched = false;
 		boolean empty = false;
