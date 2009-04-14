@@ -75,6 +75,10 @@ public class PeerNodeStatus {
 	private long totalBytesIn;
 	
 	private long totalBytesOut;
+
+	private long totalBytesInSinceSource;
+		
+	private long totalBytesOutSinceSource;
 	
 	private double percentTimeRoutableConnection;
 	
@@ -138,6 +142,8 @@ public class PeerNodeStatus {
 		this.pReject = peerNode.getPRejected();
 		this.totalBytesIn = peerNode.getTotalInputBytes();
 		this.totalBytesOut = peerNode.getTotalOutputBytes();
+		this.totalBytesInSinceSource = peerNode.getTotalInputSinceSource();
+		this.totalBytesOutSinceSource = peerNode.getTotalOutputSinceSource();
 		this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
 		this.throttle = peerNode.getThrottle();
 		this.clockDelta = peerNode.getClockDelta();
@@ -358,6 +364,14 @@ public class PeerNodeStatus {
 	
 	public long getTotalOutputBytes() {
 		return totalBytesOut;
+	}
+
+	public long getTotalInputSinceSource() {
+		return totalBytesInSinceSource;
+	}
+	
+	public long getTotalOutputSinceSource() {
+		return totalBytesOutSinceSource;
 	}
 	
 	public double getPercentTimeRoutableConnection() {
