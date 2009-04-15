@@ -8,10 +8,9 @@ import java.net.MalformedURLException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
-import freenet.client.ClientMetadata;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetchContext;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
@@ -25,13 +24,15 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	/** Context for fetching data */
 	final FetchContext ctx;
 	final USKRetrieverCallback cb;
+	final USK origUSK;
 	
 	public USKRetriever(FetchContext fctx, short prio,  
-			RequestClient client, USKRetrieverCallback cb) {
+			RequestClient client, USKRetrieverCallback cb, USK origUSK) {
 		super(prio, client);
 		if(client.persistent()) throw new UnsupportedOperationException("USKRetriever cannot be persistent");
 		this.ctx = fctx;
 		this.cb = cb;
+		this.origUSK = origUSK;
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
@@ -59,10 +60,17 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
-		cb.onFound(state.getToken(), result);
+		cb.onFound(origUSK, state.getToken(), result);
+		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+		switch(e.mode) {
+		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
+		case FetchException.PERMANENT_REDIRECT:
+			context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
+			return;
+		}
 		Logger.error(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
 	}
 

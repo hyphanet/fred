@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import freenet.client.FetchResult;
+import freenet.keys.USK;
 
 /**
  * Interface implemented by USKRetriever clients.
@@ -15,7 +16,7 @@ public interface USKRetrieverCallback {
 	 * @param edition The USK edition number.
 	 * @param data The retrieved data.
 	 */
-	void onFound(long edition, FetchResult data);
+	void onFound(USK origUSK, long edition, FetchResult data);
 
 	/**
 	 * Priority at which the polling should run normally.

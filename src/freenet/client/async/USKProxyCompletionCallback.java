@@ -39,6 +39,11 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+		switch(e.mode) {
+		case FetchException.NOT_ENOUGH_PATH_COMPONENTS:
+		case FetchException.PERMANENT_REDIRECT:
+			context.uskManager.updateKnownGood(usk, usk.suggestedEdition, context);
+		}
 		if(persistent) {
 			container.activate(cb, 1);
 			container.activate(usk, 5);

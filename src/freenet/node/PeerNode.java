@@ -3321,7 +3321,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			om.dropExcessPeers();
 	}
 
-	public void onFound(long edition, FetchResult result) {
+	public void onFound(USK origUSK, long edition, FetchResult result) {
 		if(isConnected() || myARK.suggestedEdition > edition) {
 			result.asBucket().free();
 			return;

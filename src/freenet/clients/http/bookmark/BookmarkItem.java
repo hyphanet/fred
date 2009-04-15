@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.bookmark;
 
+import freenet.client.async.USKRetriever;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
@@ -26,6 +27,7 @@ public class BookmarkItem extends Bookmark {
     private final BookmarkUpdatedUserAlert alert;
     private final UserAlertManager alerts;
     protected String desc;
+	USKRetriever retriever;
 
     public BookmarkItem(FreenetURI k, String n, String d, boolean hasAnActivelink, UserAlertManager uam)
             throws MalformedURLException {

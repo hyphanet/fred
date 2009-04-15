@@ -15,8 +15,11 @@ import com.db4o.ObjectContainer;
 
 import java.util.List;
 
+import freenet.client.FetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
+import freenet.client.async.USKRetrieverCallback;
+import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
@@ -98,6 +101,11 @@ public class BookmarkManager implements RequestClient {
 	private class USKUpdatedCallback implements USKCallback {
 
 		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+			if(!newKnownGood) {
+				FreenetURI uri = key.copy(edition).getURI();
+				node.makeClient(PRIORITY).prefetch(uri, 60*60*1000, FProxyToadlet.MAX_LENGTH, null, PRIORITY);
+				return;
+			}
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
@@ -108,7 +116,7 @@ public class BookmarkManager implements RequestClient {
 					USK usk = USK.create(furi);
 
 					if(usk.equals(key, false)) {
-						items.get(i).setEdition(key.suggestedEdition, node);
+						items.get(i).setEdition(edition, node);
 						break;
 					}
 				} catch(MalformedURLException mue) {
@@ -118,11 +126,11 @@ public class BookmarkManager implements RequestClient {
 		}
 
 		public short getPollingPriorityNormal() {
-			return RequestStarter.PREFETCH_PRIORITY_CLASS;
+			return PRIORITY;
 		}
 
 		public short getPollingPriorityProgress() {
-			return RequestStarter.UPDATE_PRIORITY_CLASS;
+			return PRIORITY;
 		}
 	}
 
@@ -292,6 +300,8 @@ public class BookmarkManager implements RequestClient {
 	private void readBookmarks(BookmarkCategory category, SimpleFieldSet sfs) {
 		_innerReadBookmarks("", category, sfs);
 	}
+	
+	static final short PRIORITY = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	
 	private void subscribeToUSK(BookmarkItem item) {
 		if("USK".equals(item.getKeyType()))

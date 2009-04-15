@@ -36,8 +36,8 @@ public class SubscribeUSK implements USKCallback {
 			core.uskManager.unsubscribe(key, this, !dontPoll);
 			return;
 		}
-		if(newKnownGood && !newSlotToo) return;
-		FCPMessage msg = new SubscribedUSKUpdate(identifier, l, key);
+		//if(newKnownGood && !newSlotToo) return;
+		FCPMessage msg = new SubscribedUSKUpdate(identifier, l, key, newKnownGood, newSlotToo);
 		handler.outputHandler.queue(msg);
 	}
 
