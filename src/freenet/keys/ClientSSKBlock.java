@@ -110,13 +110,17 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		return compressionAlgorithm;
 	}
 	
+	public byte[] memoryDecode() throws KeyDecodeException {
+		return memoryDecode(false);
+	}
+	
     /**
      * Decode into RAM, if short.
      * @throws KeyDecodeException 
      */
-	public byte[] memoryDecode() throws KeyDecodeException {
+	public byte[] memoryDecode(boolean dontDecompress) throws KeyDecodeException {
 		try {
-			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, false);
+			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, dontDecompress);
 			return BucketTools.toByteArray(a); // FIXME
 		} catch (IOException e) {
 			throw new Error(e);

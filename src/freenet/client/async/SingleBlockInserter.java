@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -18,14 +19,17 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSK;
+import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.KeyDecodeException;
 import freenet.keys.KeyEncodeException;
+import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKEncodeException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
-import freenet.node.NullSendableRequestItem;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
@@ -461,10 +465,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 			public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
+				ClientKeyBlock b;
+				ClientKey key = null;
+				if(logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
+				BlockItem block = (BlockItem) req.token;
 				try {
-					if(logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
-					BlockItem block = (BlockItem) req.token;
-					ClientKeyBlock b;
 					try {
 						b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength);
 					} catch (CHKEncodeException e) {
@@ -477,21 +482,20 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
 					} catch (IOException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
-					} finally {
-						block.copyBucket.free();
 					}
 					if (b==null) {
 						Logger.error(this, "Asked to send empty block on "+SingleBlockInserter.this, new Exception("error"));
 						return false;
 					}
-					final ClientKey key = b.getClientKey();
+					key = b.getClientKey();
+					final ClientKey k = key;
 					if(block.persistent) {
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
 							if(!container.ext().isStored(SingleBlockInserter.this)) return;
 							container.activate(SingleBlockInserter.this, 1);
-							onEncode(key, container, context);
+							onEncode(k, container, context);
 							container.deactivate(SingleBlockInserter.this, 1);
 						}
 						
@@ -500,7 +504,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						context.mainExecutor.execute(new Runnable() {
 
 							public void run() {
-								onEncode(key, null, context);
+								onEncode(k, null, context);
 							}
 							
 						}, "Got URI");
@@ -508,9 +512,30 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					}
 					core.realPut(b, req.cacheLocalRequests);
 				} catch (LowLevelPutException e) {
+					if(e.code == LowLevelPutException.COLLISION) {
+						// Collision
+						try {
+							ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true);
+							byte[] data = collided.memoryDecode(true);
+							byte[] inserting = BucketTools.toByteArray(block.copyBucket);
+							if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
+								if(logMINOR) Logger.minor(this, "Collided with identical data: "+SingleBlockInserter.this);
+								req.onInsertSuccess(context);
+								return true;
+							}
+						} catch (KeyVerifyException e1) {
+							Logger.error(this, "Caught "+e1+" when checking collision!", e1);
+						} catch (KeyDecodeException e1) {
+							Logger.error(this, "Caught "+e1+" when checking collision!", e1);
+						} catch (IOException e1) {
+							Logger.error(this, "Caught "+e1+" when checking collision!", e1);
+						}
+					}
 					req.onFailure(e, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
 					return true;
+				} finally {
+					block.copyBucket.free();
 				}
 				if(logMINOR) Logger.minor(this, "Request succeeded: "+SingleBlockInserter.this);
 				req.onInsertSuccess(context);
