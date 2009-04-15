@@ -701,14 +701,32 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			blockNums.clear();
 			cancelled = true;
 		}
-		if(persistent) {
+		if(persistent && oldNums != null && oldNums.length > 0) {
 			for(Integer i : oldNums) container.delete(i);
-			container.delete(blockNums);
-			container.delete(this);
-			if(!dontDeactivateSeg)
-				container.deactivate(segment, 1);
-			// We do not need to call SendableGet as it has no internal data structures that need deleting.
 		}
+		if(persistent) removeFrom(container, context, dontDeactivateSeg);
+	}
+	
+	public void removeFrom(ObjectContainer container, ClientContext context, boolean dontDeactivateSeg) {
+		container.activate(this, 1);
+		container.activate(segment, 1);
+		container.activate(blockNums, 1);
+		synchronized(segment) {
+			if(!cancelled) {
+				Logger.error(this, "Removing when not cancelled! on "+this, new Exception("error"));
+				cancelled = true;
+			}
+			if(!blockNums.isEmpty()) {
+				Logger.error(this, "Removing when blockNums not empty! on "+this, new Exception("error"));
+				for(Integer i : blockNums) container.delete(i);
+				blockNums.clear();
+			}
+		}
+		container.delete(blockNums);
+		container.delete(this);
+		if(!dontDeactivateSeg)
+			container.deactivate(segment, 1);
+		// We do not need to call SendableGet as it has no internal data structures that need deleting.
 	}
 
 	@Override
