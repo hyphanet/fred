@@ -35,7 +35,7 @@ public class UpdatableSortedLinkedListWithForeignIndex<T extends IndexableUpdata
     @Override
 	public synchronized T remove(T item) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        map.remove(((IndexableUpdatableSortedLinkedListItem<?>)item).indexValue());
+        map.remove(item.indexValue());
         return super.remove(item);
     }
     
