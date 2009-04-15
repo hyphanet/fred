@@ -615,9 +615,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+		if(persistenceType != PERSIST_CONNECTION) {
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
 		client.queueClientRequestMessage(msg, 0, container);
+		}
 
 		freeData(container);
 		
