@@ -143,13 +143,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return blockNums.size();
 	}
 	
-	private SendableRequestItem[] convertIntegerToMySendableRequestItems(Integer[] nums) {
-		SendableRequestItem[] wrapped = new SendableRequestItem[nums.length];
-		for(int i=0;i<nums.length;i++)
-			wrapped[i] = new MySendableRequestItem(nums[i]);
-		return wrapped;
-	}
-
 	private void cleanBlockNums(ObjectContainer container) {
 		synchronized(segment) {
 			int initSize = blockNums.size();
