@@ -216,7 +216,7 @@ public class ContainerInserter implements ClientPutState {
 				HashMap<String,Object> manifest = new HashMap<String,Object>();
 				makeManifest(origMetadata, manifest, "/");
 				Metadata md = Metadata.mkRedirectionManifestWithMetadata(manifest);
-				bucket = context.tempBucketFactory.makeBucket(Metadata.MAX_SPLITFILE_PARAMS_LENGTH);
+				bucket = context.tempBucketFactory.makeBucket(-1);
 				byte[] buf = md.writeToByteArray();
 				OutputStream os = bucket.getOutputStream();
 				os.write(buf);
