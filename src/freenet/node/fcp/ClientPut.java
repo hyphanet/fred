@@ -440,9 +440,11 @@ public class ClientPut extends ClientPutBase {
 		return uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT;
 	}
 
-	public File getOrigFilename() {
+	public File getOrigFilename(ObjectContainer container) {
 		if(uploadFrom != ClientPutMessage.UPLOAD_FROM_DISK)
 			return null;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(origFilename, 5);
 		return origFilename;
 	}
 

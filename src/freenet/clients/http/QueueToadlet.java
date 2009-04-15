@@ -1318,9 +1318,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				} else if (column == LIST_FILENAME) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createFilenameCell(((ClientGet) clientRequest).getDestFilename()));
+						requestRow.addChild(createFilenameCell(((ClientGet) clientRequest).getDestFilename(container)));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createFilenameCell(((ClientPut) clientRequest).getOrigFilename()));
+						requestRow.addChild(createFilenameCell(((ClientPut) clientRequest).getOrigFilename(container)));
 					}
 				} else if (column == LIST_PRIORITY) {
 					requestRow.addChild(createPriorityCell(pageMaker, clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses, advancedModeEnabled));

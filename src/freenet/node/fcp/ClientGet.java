@@ -792,7 +792,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return null;
 	}
 
-	public File getDestFilename() {
+	public File getDestFilename(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(targetFile, 5);
 		return targetFile;
 	}
 
