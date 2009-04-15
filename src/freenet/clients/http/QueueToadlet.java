@@ -1162,7 +1162,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p, ObjectContainer container) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		downloadCell.addChild("a", "href", p.getURI(container).toString(), L10n.getString("QueueToadlet.download"));
+		FreenetURI uri = p.getURI(container);
+		if(uri == null)
+			Logger.error(this, "NO URI FOR "+p, new Exception("error"));
+		else
+			downloadCell.addChild("a", "href", uri.toString(), L10n.getString("QueueToadlet.download"));
 		return downloadCell;
 	}
 
