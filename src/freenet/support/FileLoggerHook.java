@@ -92,7 +92,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	protected boolean redirectStdErr = false;
 
 	/**
-	 * Something wierd happens when the disk gets full, also we don't want to
+	 * Something weird happens when the disk gets full, also we don't want to
 	 * block So run the actual write on another thread
 	 */
 	protected final LinkedList<byte[]> list = new LinkedList<byte[]>();
@@ -193,6 +193,35 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		if(compressed) buf.append(".gz");
 		return buf.toString();
 	}
+	
+	/**
+	 * The extra parameter int digit is to be used for creating a logfile name
+	 * when a log exists already with the same date.
+	 * @param c
+	 * @param digit
+	 * @param compressed
+	 * @return
+	 */
+	protected String getHourLogName(Calendar c, int digit, boolean compressed){
+		StringBuilder buf = new StringBuilder(50);
+		buf.append(baseFilename).append('-');
+		buf.append(Version.buildNumber());
+		buf.append('-');
+		buf.append(c.get(Calendar.YEAR)).append('-');
+		pad2digits(buf, c.get(Calendar.MONTH) + 1);
+		buf.append('-');
+		pad2digits(buf, c.get(Calendar.DAY_OF_MONTH));
+		buf.append('-');
+		pad2digits(buf, c.get(Calendar.HOUR_OF_DAY));
+		if (INTERVAL == Calendar.MINUTE) {
+			buf.append('-');
+			pad2digits(buf, c.get(Calendar.MINUTE));
+		}
+		buf.append(".log");
+		buf.append("." + digit);
+		if(compressed) buf.append(".gz");
+		return buf.toString();
+	}
 
 	private StringBuilder pad2digits(StringBuilder buf, int x) {
 		String s = Integer.toString(x);
@@ -245,7 +274,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 				currentFilename = new File(getHourLogName(gc, true));
 				synchronized(logFiles) {
-					if ((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
+					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
 					}
 				}
@@ -267,7 +296,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					if (baseFilename != null) {
 						if ((thisTime > nextHour) || switchedBaseFilename) {
 							currentFilename = rotateLog(currentFilename, lastTime, nextHour, gc);
-
+							
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 							lastTime = nextHour;
 							nextHour = gc.getTimeInMillis();
@@ -489,6 +518,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 
 	/** Initialize oldLogFiles */
 	public void findOldLogFiles() {
+		GregorianCalendar gc = new GregorianCalendar();
+		File currentFilename = new File(getHourLogName(gc, true));
+		File numericSameDateFilename;
 		int slashIndex = baseFilename.lastIndexOf(File.separatorChar);
 		File dir;
 		String prefix;
@@ -506,6 +538,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		File oldFile = null;
         if(latestFile.exists())
         	FileUtil.renameTo(latestFile, previousFile);
+        
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
@@ -547,7 +580,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					f.delete();
 					continue;
 				}
-				GregorianCalendar gc = new GregorianCalendar();
 				if(nums.length > 1)
 					gc.set(Calendar.YEAR, nums[1]);
 				if(nums.length > 2)
@@ -561,6 +593,16 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				gc.set(Calendar.SECOND, 0);
 				gc.set(Calendar.MILLISECOND, 0);
 				long startTime = gc.getTimeInMillis();
+				for(int a = 1; currentFilename != null && currentFilename.exists(); a++){
+					numericSameDateFilename = new File(getHourLogName(gc, a, true));
+					if(numericSameDateFilename != null && numericSameDateFilename.exists()){
+						currentFilename = numericSameDateFilename;
+					}
+					else{
+						FileUtil.renameTo(currentFilename, numericSameDateFilename);
+						currentFilename = numericSameDateFilename;
+					}
+				}
 				if(oldFile != null) {
 					long l = oldFile.length();
 					OldLogFile olf = new OldLogFile(oldFile, lastStartTime, startTime, l);
