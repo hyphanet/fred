@@ -509,6 +509,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 	}
     
 	public void schedule(ObjectContainer container, ClientContext context) {
+		updatePriorities();
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
 		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
