@@ -1498,22 +1498,22 @@ public class SplitFileFetcherSegment implements FECCallback {
 				fatal = new FetchException(FetchException.BLOCK_DECODE_ERROR, e);
 			}
 			if(cb != null) {
-			data = extract(cb, blockNum, container, context);
-			if(data == null) {
-				if(logMINOR)
-					Logger.minor(this, "Extract failed");
-				return false;
-			} else {
-			// This can be done safely inside the lock.
-			if(parent instanceof ClientGetter)
-				((ClientGetter)parent).addKeyToBinaryBlob(cb, container, context);
-			if(!cb.isMetadata()) {
-				// We MUST remove the keys before we exit the synchronized block,
-				// thus ensuring that the next call will return FALSE, and the keys
-				// will only be removed from the Bloom filter ONCE!
-				onSuccessResult = onSuccessInner(data, blockNum, cb, container, context, seg);
-			}
-			}
+				data = extract(cb, blockNum, container, context);
+				if(data == null) {
+					if(logMINOR)
+						Logger.minor(this, "Extract failed");
+					return false;
+				} else {
+					// This can be done safely inside the lock.
+					if(parent instanceof ClientGetter)
+						((ClientGetter)parent).addKeyToBinaryBlob(cb, container, context);
+					if(!cb.isMetadata()) {
+						// We MUST remove the keys before we exit the synchronized block,
+						// thus ensuring that the next call will return FALSE, and the keys
+						// will only be removed from the Bloom filter ONCE!
+						onSuccessResult = onSuccessInner(data, blockNum, cb, container, context, seg);
+					}
+				}
 			}
 		}
 		if(killSeg)
@@ -1524,14 +1524,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} else if(data == null) {
 			return false; // Extract failed
 		} else { // cb != null
-		if(!cb.isMetadata()) {
-			if(onSuccessResult != (short) -1)
-				finishOnSuccess(onSuccessResult, container, context);
-			return true;
-		} else {
-			onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, null, container, context);
-			return true;
-		}
+			if(!cb.isMetadata()) {
+				if(onSuccessResult != (short) -1)
+					finishOnSuccess(onSuccessResult, container, context);
+				return true;
+			} else {
+				onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, null, container, context);
+				return true;
+			}
 		}
 	}
 	
