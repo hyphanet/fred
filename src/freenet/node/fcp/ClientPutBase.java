@@ -200,6 +200,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+		if(persistenceType == PERSIST_CONNECTION)
+			origHandler.outputHandler.queue(msg);
+		else
 		client.queueClientRequestMessage(msg, 0, container);
 
 		freeData(container);
