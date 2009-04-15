@@ -257,11 +257,13 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 					insertedAllFiles = false;
 				}
 			}
-			if(oldState != null && oldState != state && persistent) {
-				container.activate(oldState, 1);
-				oldState.removeFrom(container, context);
-			} else if(state != null && persistent) {
-				state.removeFrom(container, context);
+			if (persistent) {
+				if(oldState != null && oldState != state) {
+					container.activate(oldState, 1);
+					oldState.removeFrom(container, context);
+				} else if(state != null) {
+					state.removeFrom(container, context);
+				}
 			}
 			if(insertedAllFiles)
 				insertedAllFiles(container, context);
@@ -1015,9 +1017,10 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				// Already activated
 				namesToByteArrays.put(name, subMap);
-				if(logMINOR)
-					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+container == null ? "null" : Boolean.toString(container.ext().isActive(o)));
-				Logger.minor(this, "Putting directory: "+name);
+				if(logMINOR) {
+					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+((container == null) ? "null" : Boolean.toString(container.ext().isActive(o))));
+					Logger.minor(this, "Putting directory: "+name);
+				}
 				namesToByteArrays((HashMap<String, Object>)o, subMap, container);
 			} else
 				throw new IllegalStateException();
@@ -1311,9 +1314,9 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 				}
 			}
 		}
-		if(token != baseMetadata)
-			token.removeFrom(container);
 		if(persistent()) {
+			if(token != baseMetadata)
+				token.removeFrom(container);
 			container.ext().store(metadataPuttersByMetadata, 2);
 			container.deactivate(metadataPuttersByMetadata, 1);
 			state.removeFrom(container, context);
