@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
@@ -31,6 +32,8 @@ public class SubscribeUSKMessage extends FCPMessage {
 	final USK key;
 	final boolean dontPoll;
 	final String identifier;
+	final short prio;
+	final short prioProgress;
 	
 	public SubscribeUSKMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		this.identifier = fs.get("Identifier");
@@ -47,6 +50,8 @@ public class SubscribeUSKMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Could not parse URI: "+e, identifier, false);
 		}
 		this.dontPoll = Fields.stringToBool(fs.get("DontPoll"), false);
+		prio = fs.getShort("PriorityClass", RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS);
+		prioProgress = fs.getShort("PriorityClassProgress", (short)Math.max(0, prio-1));
 	}
 
 	@Override
