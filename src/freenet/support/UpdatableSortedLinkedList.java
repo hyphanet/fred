@@ -220,6 +220,25 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
     }
 
     /**
+     * @return an array, in order, of the elements in the list
+     * @throws UpdatableSortedLinkedListKilledException 
+     */
+    @SuppressWarnings("unchecked")
+    public synchronized <E> E[] toArray(E[] array) throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
+        int size = list.size();
+        if(size < 0)
+        	throw new IllegalStateException("list.size() = "+size+" for "+this);
+        	
+        int i=0;
+        for(Enumeration<T> e = list.elements();e.hasMoreElements();) {
+            array[i++] = (E) e.nextElement();
+            //Logger.minor(this, "["+(i-1)+"] = "+output[i-1]);
+        }
+        return array;
+    }
+    
+    /**
      * @return Does the list contain that item?
      */
     public synchronized boolean contains(T item) {

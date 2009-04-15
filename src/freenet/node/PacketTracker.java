@@ -21,7 +21,6 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.ReceivedPacketNumbers;
 import freenet.support.TimeUtil;
-import freenet.support.UpdatableSortedLinkedListItem;
 import freenet.support.UpdatableSortedLinkedListKilledException;
 import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
 import freenet.support.WouldBlockException;
@@ -250,7 +249,8 @@ public class PacketTracker {
 			return next;
 		}
 
-		public final T setNext(Item<?> i) {
+		@SuppressWarnings("unchecked")
+        public final T setNext(Item<?> i) {
 			T old = next;
 			next = (T)i;
 			return old;
@@ -260,7 +260,8 @@ public class PacketTracker {
 			return prev;
 		}
 
-		public T setPrev(Item<?> i) {
+		@SuppressWarnings("unchecked")
+        public T setPrev(Item<?> i) {
 			T old = prev;
 			prev = (T)i;
 			return old;
@@ -808,18 +809,18 @@ public class PacketTracker {
 	 * @throws NotConnectedException If the peer is no longer connected.
 	 */
 	public int[] grabResendRequests() throws NotConnectedException {
-		UpdatableSortedLinkedListItem[] items;
+		QueuedResendRequest[] items;
 		int[] packetNumbers;
 		int realLength;
 		long now = System.currentTimeMillis();
 		try {
 			synchronized(resendRequestQueue) {
-				items = resendRequestQueue.toArray();
+				items = resendRequestQueue.toArray(new QueuedResendRequest[resendRequestQueue.size()]);
 				int length = items.length;
 				packetNumbers = new int[length];
 				realLength = 0;
 				for(int i = 0; i < length; i++) {
-					QueuedResendRequest qrr = (QueuedResendRequest) items[i];
+					QueuedResendRequest qrr = items[i];
 					if(packetNumbersReceived.contains(qrr.packetNumber)) {
 						if(logMINOR)
 							Logger.minor(this, "Have already seen " + qrr.packetNumber + ", removing from resend list");
@@ -844,7 +845,7 @@ public class PacketTracker {
 	}
 
 	public int[] grabAckRequests() throws NotConnectedException, StillNotAckedException {
-		UpdatableSortedLinkedListItem[] items;
+		QueuedAckRequest[] items;
 		int[] packetNumbers;
 		int realLength;
 		if(logMINOR)
@@ -852,12 +853,12 @@ public class PacketTracker {
 		try {
 			synchronized(ackRequestQueue) {
 				long now = System.currentTimeMillis();
-				items = ackRequestQueue.toArray();
+				items = ackRequestQueue.toArray(new QueuedAckRequest[ackRequestQueue.size()]);
 				int length = items.length;
 				packetNumbers = new int[length];
 				realLength = 0;
 				for(int i = 0; i < length; i++) {
-					QueuedAckRequest qr = (QueuedAckRequest) items[i];
+					QueuedAckRequest qr = items[i];
 					int packetNumber = qr.packetNumber;
 					if(qr.activeTime <= now) {
 						if(sentPacketsContents.get(packetNumber) == null) {
