@@ -907,18 +907,20 @@ public class PacketTracker {
 				earliestTime = qa.urgentTime;
 			}
 		}
+		PacketActionItem qr = null;
 		synchronized(resendRequestQueue) {
-			if(!resendRequestQueue.isEmpty()) {
-				QueuedResendRequest qr = resendRequestQueue.getLowest();
-				earliestTime = Math.min(earliestTime, qr.urgentTime);
-			}
+			if(!resendRequestQueue.isEmpty())
+				qr = resendRequestQueue.getLowest();
 		}
+		if (qr != null);
+			earliestTime = Math.min(earliestTime, qr.urgentTime);
+
 		synchronized(ackRequestQueue) {
-			if(!ackRequestQueue.isEmpty()) {
-				QueuedAckRequest qr = ackRequestQueue.getLowest();
-				earliestTime = Math.min(earliestTime, qr.urgentTime);
-			}
+			if(!ackRequestQueue.isEmpty())
+				qr = ackRequestQueue.getLowest();
 		}
+		if (qr != null);
+			earliestTime = Math.min(earliestTime, qr.urgentTime);
 		return earliestTime;
 	}
 
