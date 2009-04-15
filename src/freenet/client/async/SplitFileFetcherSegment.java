@@ -1170,7 +1170,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<deadSegs.length;i++) {
 			if(persistent)
 				container.activate(deadSegs[i], 1);
-			deadSegs[i].kill(container, context, true);
+			deadSegs[i].kill(container, context, true, false);
 			context.getChkFetchScheduler().removeFromStarterQueue(deadSegs[i], container, true);
 			if(persistent)
 				container.deactivate(deadSegs[i], 1);

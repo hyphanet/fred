@@ -629,8 +629,9 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				if(persistent) container.deactivate(blockNums, 1);
 				return;
 			}
+			cancelled = true;
 		}
-		kill(container, context, true);
+		kill(container, context, true, true);
 	}
 
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
@@ -684,7 +685,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * Terminate a subsegment. Called by the segment, which will have already removed the
 	 * subsegment from the list. Will delete the object from the database if persistent.
 	 */
-	public void kill(ObjectContainer container, ClientContext context, boolean dontDeactivateSeg) {
+	public void kill(ObjectContainer container, ClientContext context, boolean dontDeactivateSeg, boolean cancelledAlready) {
 		if(persistent) {
 			container.activate(segment, 1);
 			container.activate(blockNums, 1);
@@ -695,10 +696,20 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		unregister(container, context);
 		Integer[] oldNums = null;
 		synchronized(segment) {
+			if(cancelledAlready) {
+				if(!cancelled) {
+					Logger.error(this, "Should be cancelled already! "+this, new Exception("error"));
+					cancelled = true;
+				}
+				if(!blockNums.isEmpty())
+					Logger.error(this, "Block nums not empty! on "+this+" : "+blockNums, new Exception("error"));
+			} else {
+				if(cancelled) return;
+				cancelled = true;
+			}
 			if(persistent)
 				oldNums = blockNums.toArray(new Integer[blockNums.size()]);
 			blockNums.clear();
-			cancelled = true;
 		}
 		if(persistent && oldNums != null && oldNums.length > 0) {
 			for(Integer i : oldNums) container.delete(i);
