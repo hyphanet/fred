@@ -489,7 +489,7 @@ outerZIP:		while(true) {
 		Bucket bucket = null;
 		while(true) {
 			try {
-				bucket = tempBucketFactory.makeBucket(Metadata.MAX_SPLITFILE_PARAMS_LENGTH);
+				bucket = tempBucketFactory.makeBucket(-1);
 				byte[] buf = metadata.writeToByteArray();
 				OutputStream os = bucket.getOutputStream();
 				os.write(buf);
