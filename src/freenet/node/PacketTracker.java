@@ -912,14 +912,14 @@ public class PacketTracker {
 			if(!resendRequestQueue.isEmpty())
 				qr = resendRequestQueue.getLowest();
 		}
-		if (qr != null);
+		if (qr != null)
 			earliestTime = Math.min(earliestTime, qr.urgentTime);
 
 		synchronized(ackRequestQueue) {
 			if(!ackRequestQueue.isEmpty())
 				qr = ackRequestQueue.getLowest();
 		}
-		if (qr != null);
+		if (qr != null)
 			earliestTime = Math.min(earliestTime, qr.urgentTime);
 		return earliestTime;
 	}
