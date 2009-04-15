@@ -463,7 +463,7 @@ public class FCPClient {
 				toKill.add(req);
 			}
 			clientRequestsByIdentifier.clear();
-			if (container != null)
+			if (persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.ext().store(clientRequestsByIdentifier, 2);
 		}
 	}
