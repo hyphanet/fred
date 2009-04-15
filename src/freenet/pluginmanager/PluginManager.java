@@ -913,16 +913,13 @@ public class PluginManager {
 					OfficialPluginDescription desc = officialPlugins.get(name);
 					
 					long minVer = desc.minimumVersion;
-					System.err.println("Minimum version is: "+minVer);
 					long ver = -1;
 					
 					if(minVer != -1) {
-						
 						if(object instanceof FredPluginRealVersioned) {
 							ver = ((FredPluginRealVersioned)object).getRealVersion();
 						}
 					}
-					System.err.println("Actual version is: "+ver);
 					
 					if(ver < minVer) {
 						System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);

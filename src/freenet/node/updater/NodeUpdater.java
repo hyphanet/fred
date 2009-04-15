@@ -109,7 +109,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 
 			realAvailableVersion = found;
 			if(found > maxDeployVersion) {
-				System.err.println("Ignoring "+(extUpdate ? "freenet-ext.jar " : "") + "update edition "+l);
+				System.err.println("Ignoring "+(extUpdate ? "freenet-ext.jar " : "") + "update edition "+l+": version too new");
 				found = maxDeployVersion;
 			}
 			
@@ -124,14 +124,17 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 
 	private void finishOnFoundEdition(int found) {
 		ticker.queueTimedJob(new Runnable() {
-
 			public void run() {
 				maybeUpdate();
 			}
 		}, 60 * 1000); // leave some time in case we get later editions
 		// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
-		if(found > currentVersion)
-			manager.onStartFetching(extUpdate);
+		if(found <= currentVersion) {
+			System.err.println("Cancelling fetch for "+found+": not newer than current version "+currentVersion);
+			return;
+		}
+		manager.onStartFetching(extUpdate);
+		Logger.minor(this, "Fetching " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + found);
 	}
 
 	public void maybeUpdate() {
@@ -477,6 +480,11 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		return false;
 	}
 
+	/**
+	** Called by NodeUpdateManager to re-set the min/max versions for ext when
+	** a new freenet.jar has been downloaded. This is to try to avoid the node
+	** installing incompatible versions of main and ext.
+	*/
 	public void setMinMax(int requiredExt, int recommendedExt) {
 		int callFinishedFound = -1;
 		synchronized(this) {
@@ -486,13 +494,15 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 			if(requiredExt > -1) {
 				minDeployVersion = requiredExt;
 				if(realAvailableVersion != availableVersion && availableVersion < requiredExt && realAvailableVersion >= requiredExt) {
-					// We found a revision but didn't fetch it because it was after the old range.
-					System.err.println("Have found edition "+realAvailableVersion+" but ignored it because out of range, fetching as required by new jar");
+					// We found a revision but didn't fetch it because it wasn't within the range for the old jar.
+					// The new one requires it, however.
+					System.err.println("Previously out-of-range edition "+realAvailableVersion+" is now needed by the new jar; scheduling fetch.");
 					callFinishedFound = availableVersion = realAvailableVersion;
-				} else if(availableVersion < requiredExt) { // Including if it hasn't been found at all
+				} else if(availableVersion < requiredExt) {
+					// Including if it hasn't been found at all
 					// Just try it ...
 					callFinishedFound = availableVersion = requiredExt;
-					System.err.println("Need minimum edition "+requiredExt+" for new jar, have found "+availableVersion+", fetching...");
+					System.err.println("Need minimum edition "+requiredExt+" for new jar, found "+availableVersion+"; scheduling fetch.");
 				}
 			}
 		}
