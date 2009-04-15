@@ -217,8 +217,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			buf.append('-');
 			pad2digits(buf, c.get(Calendar.MINUTE));
 		}
-		buf.append(".log");
 		buf.append("." + digit);
+		buf.append(".log");
 		if(compressed) buf.append(".gz");
 		return buf.toString();
 	}
@@ -593,6 +593,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				gc.set(Calendar.SECOND, 0);
 				gc.set(Calendar.MILLISECOND, 0);
 				long startTime = gc.getTimeInMillis();
+				//If a compressed log file already exists for a given date,
+				//add a number to the end of the file that already exists
 				for(int a = 1; currentFilename != null && currentFilename.exists(); a++){
 					numericSameDateFilename = new File(getHourLogName(gc, a, true));
 					if(numericSameDateFilename != null && numericSameDateFilename.exists()){
