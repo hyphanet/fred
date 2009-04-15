@@ -1492,6 +1492,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			FreenetURI uri = ((ClientGet)req).getURI(container);
 			if(req.isPersistentForever() && uri != null)
 				container.activate(uri, 5);
+			if(uri == null) {
+				Logger.error(this, "No URI for supposedly finished request "+req);
+				return;
+			}
 			long size = ((ClientGet)req).getDataSize(container);
 			String name = uri.getPreferredFilename();
 			String title = l10n("downloadSucceededTitle", "filename", name);
