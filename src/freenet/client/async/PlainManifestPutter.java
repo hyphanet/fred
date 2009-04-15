@@ -4,9 +4,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import freenet.client.InsertContext;
-import freenet.client.async.ClientCallback;
-import freenet.client.async.ManifestElement;
-import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
@@ -16,7 +13,7 @@ import freenet.support.Logger;
  * plain/dumb manifest putter: every file item is a redirect (no containers at all)
  */
 
-public class PlainManifestPutter extends SimpleManifestPutter {
+public class PlainManifestPutter extends BaseManifestPutter {
 	
 	private static volatile boolean logDEBUG;
 	
