@@ -466,8 +466,6 @@ public class FCPClient {
 			if (persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.ext().store(clientRequestsByIdentifier, 2);
 		}
-		for (ClientRequest req : toKill)
-			req.cancel();
 	}
 
 	public ClientGet getCompletedRequest(FreenetURI key, ObjectContainer container) {
