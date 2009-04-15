@@ -47,7 +47,7 @@ public class FCPPluginMessage extends DataCarryingMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "FCPPluginMessage must contain a Identifier field", null, false);
 		pluginname = fs.get("PluginName");
 		if(pluginname == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "FCPPluginMessage must contain a PluginName field", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "FCPPluginMessage must contain a PluginName field", identifier, false);
 		
 		boolean havedata = "Data".equals(fs.getEndMarker());
 		
@@ -113,6 +113,7 @@ public class FCPPluginMessage extends DataCarryingMessage {
 
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
