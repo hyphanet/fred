@@ -107,6 +107,14 @@ public class USKFetcher implements ClientGetState, USKCallback {
 	private short lastCompressionCodec;
 	private boolean lastWasMetadata;
 	
+	/**
+	 * Callbacks are told when the USKFetcher finishes, and unless background poll is
+	 * enabled, they are only sent onFoundEdition *once*, on completion.
+	 * 
+	 * FIXME: Don't allow callbacks if backgroundPoll is enabled??
+	 * @param cb
+	 * @return
+	 */
 	public synchronized boolean addCallback(USKFetcherCallback cb) {
 		if(completed) return false; 
 		callbacks.add(cb);
@@ -550,6 +558,12 @@ public class USKFetcher implements ClientGetState, USKCallback {
 	 */
 	final HashSet<USKCallback> subscribers;
 	
+	/**
+	 * Add a subscriber. Subscribers are not directly sent onFoundEdition()'s by the
+	 * USKFetcher, we just use them to determine the priority of our requests and 
+	 * whether we should continue to request.
+	 * @param cb
+	 */
 	public void addSubscriber(USKCallback cb) {
 		synchronized(this) {
 			subscribers.add(cb);
