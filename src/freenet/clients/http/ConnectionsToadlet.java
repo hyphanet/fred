@@ -119,7 +119,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return compareLongs(total1, total2);
 			}else if(sortBy.equals("total_traffic_since_startup")){
 				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalInputSinceStartup();
-				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputSinceStartup();
+				long total2 = secondNode.getTotalOutputBytes()+secondNode.getTotalOutputSinceStartup();
 				return compareLongs(total1, total2);
 			}else if(sortBy.equals("selection_percentage")){
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
@@ -822,6 +822,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", (totalSelectionRate > 0 ? (peerSelectionPercentage+"%") : "N/A"));
 			// total traffic column
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes())+"/"+SizeUtil.formatSize(peerNodeStatus.getResendBytesSent()));
+			// total traffic column startup
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputSinceStartup())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputSinceStartup()));
 			// congestion control
 			PacketThrottle t = peerNodeStatus.getThrottle();
 			String val;
