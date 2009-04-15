@@ -100,4 +100,6 @@ public interface HighLevelSimpleClient {
 	 */
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes);
 
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio);
+	
 }

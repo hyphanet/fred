@@ -252,11 +252,15 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		}
 		
 	};
-	
+
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
+		prefetch(uri, timeout, maxSize, allowedTypes, RequestStarter.PREFETCH_PRIORITY_CLASS);
+	}
+	
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio) {
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
-		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, prio, this, new NullBucket(), null);
 		core.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
 				get.cancel(null, core.clientContext);
