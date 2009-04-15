@@ -97,7 +97,8 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		}
 	}
 	
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+		if(newKnownGood && !newSlotToo) return;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Found edition " + l);

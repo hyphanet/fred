@@ -179,7 +179,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		return pollingPriorityProgress;
 	}
 
-	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data) {
+	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data, final boolean newKnownGood, final boolean newSlotToo) {
 		synchronized(this) {
 			if(fetcher == null) {
 				Logger.error(this, "onFoundEdition but fetcher is null - isn't onFoundEdition() terminal for USKFetcherCallback's??", new Exception("debug"));
@@ -190,7 +190,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		if(persistent) {
 			if(container != null) {
 				container.activate(callback, 1);
-				callback.onFoundEdition(l, key, container, context, metadata, codec, data);
+				callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
 				container.deactivate(callback, 1);
 				removeFrom(container, context);
 			} else {
@@ -198,7 +198,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
-					callback.onFoundEdition(l, key, container, context, metadata, codec, data);
+					callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
 					container.deactivate(callback, 1);
 					removeFrom(container, context);
 				}
@@ -206,7 +206,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			}, NativeThread.HIGH_PRIORITY, false);
 			}
 		} else {
-			callback.onFoundEdition(l, key, container, context, metadata, codec, data);
+			callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
 		}
 	}
 

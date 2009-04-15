@@ -34,7 +34,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		this.cb = cb;
 	}
 
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(l < 0) {
 			Logger.error(this, "Found negative edition: "+l+" for "+key+" !!!");
 			return;

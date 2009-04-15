@@ -20,8 +20,15 @@ public interface USKCallback {
 	 *            The edition number.
 	 * @param key
 	 *            A copy of the key with new edition set
+	 * @param newKnownGood If the highest known good edition (which has actually been
+	 * fetched with what it pointed to) has increased. Otherwise, the highest known
+	 * SSK slot has been increased, from which searches will start, but we do not 
+	 * know whether it can actually be fetched successfully.
+	 * @param newSlotToo If newKnownGood is set, this indicates whether it is also a
+	 * new highest known SSK slot. If newKnownGood is not set, there is always a new
+	 * highest known SSK slot.
 	 */
-	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data);
+	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo);
 	
 	/**
 	 * Priority at which the polling should run normally.

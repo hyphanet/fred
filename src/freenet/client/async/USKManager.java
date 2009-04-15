@@ -25,8 +25,11 @@ import freenet.support.Logger;
  */
 public class USKManager implements RequestClient {
 
-	/** Latest version by blanked-edition-number USK */
-	final HashMap<USK, Long> latestVersionByClearUSK;
+	/** Latest version successfully fetched by blanked-edition-number USK */
+	final HashMap<USK, Long> latestKnownGoodByClearUSK;
+	
+	/** Latest SSK slot known to be by the author by blanked-edition-number USK */
+	final HashMap<USK, Long> latestSlotByClearUSK;
 	
 	/** Subscribers by clear USK */
 	final HashMap<USK, USKCallback[]> subscribersByClearUSK;
@@ -49,7 +52,8 @@ public class USKManager implements RequestClient {
 	public USKManager(NodeClientCore core) {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
 		backgroundFetchContext.followRedirects = false;
-		latestVersionByClearUSK = new HashMap<USK, Long>();
+		latestKnownGoodByClearUSK = new HashMap<USK, Long>();
+		latestSlotByClearUSK = new HashMap<USK, Long>();
 		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
 		fetchersByUSK = new HashMap<USK, USKFetcher>();
 		backgroundFetchersByClearUSK = new HashMap<USK, USKFetcher>();
@@ -63,11 +67,23 @@ public class USKManager implements RequestClient {
 	}
 	
 	/**
-	 * Look up the latest known version of the given USK.
+	 * Look up the latest known working version of the given USK.
 	 * @return The latest known edition number, or -1.
 	 */
-	public synchronized long lookup(USK usk) {
-		Long l = latestVersionByClearUSK.get(usk.clearCopy());
+	public synchronized long lookupKnownGood(USK usk) {
+		Long l = latestKnownGoodByClearUSK.get(usk.clearCopy());
+		if(l != null)
+			return l.longValue();
+		else return -1;
+	}
+
+	/**
+	 * Look up the latest SSK slot, whether the data it links to has been successfully
+	 * fetched or not, of the given USK.
+	 * @return The latest known edition number, or -1.
+	 */
+	public synchronized long lookupLatestSlot(USK usk) {
+		Long l = latestSlotByClearUSK.get(usk.clearCopy());
 		if(l != null)
 			return l.longValue();
 		else return -1;
@@ -139,19 +155,62 @@ public class USKManager implements RequestClient {
 		if(sched != null) sched.schedule(null, context);
 	}
 	
-	void update(final USK origUSK, final long number, final ClientContext context) {
+	void updateKnownGood(final USK origUSK, final long number, final ClientContext context) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
+		USK clear = origUSK.clearCopy();
+		final USKCallback[] callbacks;
+		boolean newSlot = false;
+		synchronized(this) {
+			Long l = latestKnownGoodByClearUSK.get(clear);
+			if(logMINOR) Logger.minor(this, "Old known good: "+l);
+			if((l == null) || (number > l.longValue())) {
+				l = Long.valueOf(number);
+				latestKnownGoodByClearUSK.put(clear, l);
+				if(logMINOR) Logger.minor(this, "Put "+number);
+			} else
+				return; // If it's in KnownGood, it will also be in Slot
+			
+			l = latestSlotByClearUSK.get(clear);
+			if(logMINOR) Logger.minor(this, "Old slot: "+l);
+			if((l == null) || (number > l.longValue())) {
+				l = Long.valueOf(number);
+				latestSlotByClearUSK.put(clear, l);
+				if(logMINOR) Logger.minor(this, "Put "+number);
+				newSlot = true;
+			} 
+			
+			callbacks = subscribersByClearUSK.get(clear);
+		}
+		if(callbacks != null) {
+			// Run off-thread, because of locking, and because client callbacks may take some time
+					final USK usk = origUSK.copy(number);
+					final boolean newSlotToo = newSlot;
+					for(final USKCallback callback : callbacks)
+						context.mainExecutor.execute(new Runnable() {
+							public void run() {
+								callback.onFoundEdition(number, usk, null, // non-persistent
+										context, false, (short)-1, null, true, newSlotToo);
+							}
+						}, "USKManager callback executor for " +callback);
+				}
+	}
+	
+	void updateSlot(final USK origUSK, final long number, final ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
 		final USKCallback[] callbacks;
 		synchronized(this) {
-			Long l = latestVersionByClearUSK.get(clear);
-			if(logMINOR) Logger.minor(this, "Old value: "+l);
+			Long l = latestSlotByClearUSK.get(clear);
+			if(logMINOR) Logger.minor(this, "Old slot: "+l);
 			if((l == null) || (number > l.longValue())) {
 				l = Long.valueOf(number);
-				latestVersionByClearUSK.put(clear, l);
+				latestSlotByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
-			} else return;
+			} else
+				return;
+			
 			callbacks = subscribersByClearUSK.get(clear);
 		}
 		if(callbacks != null) {
@@ -161,7 +220,7 @@ public class USKManager implements RequestClient {
 						context.mainExecutor.execute(new Runnable() {
 							public void run() {
 								callback.onFoundEdition(number, usk, null, // non-persistent
-										context, false, (short)-1, null);
+										context, false, (short)-1, null, false, false);
 							}
 						}, "USKManager callback executor for " +callback);
 				}
@@ -181,7 +240,9 @@ public class USKManager implements RequestClient {
 			ed = -ed;
 		}
 		long curEd;
-		curEd = lookup(origUSK);
+		curEd = lookupLatestSlot(origUSK);
+		long goodEd;
+		goodEd = lookupKnownGood(origUSK);
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = subscribersByClearUSK.get(clear);
@@ -206,8 +267,10 @@ public class USKManager implements RequestClient {
 				f.addSubscriber(cb);
 			}
 		}
-		if(curEd > ed)
-			cb.onFoundEdition(curEd, origUSK.copy(curEd), null, context, false, (short)-1, null);
+		if(goodEd > ed)
+			cb.onFoundEdition(goodEd, origUSK.copy(curEd), null, context, false, (short)-1, null, true, curEd > ed);
+		else if(curEd > ed)
+			cb.onFoundEdition(curEd, origUSK.copy(curEd), null, context, false, (short)-1, null, false, false);
 		final USKFetcher fetcher = sched;
 		if(fetcher != null) {
 			executor.execute(new Runnable() {

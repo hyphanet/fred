@@ -97,7 +97,7 @@ public class BookmarkManager implements RequestClient {
 
 	private class USKUpdatedCallback implements USKCallback {
 
-		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
+		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))

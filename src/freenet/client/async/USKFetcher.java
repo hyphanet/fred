@@ -251,7 +251,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 	void onDNF(USKAttempt att, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "DNF: "+att);
 		boolean finished = false;
-		long curLatest = uskManager.lookup(origUSK);
+		long curLatest = uskManager.lookupLatestSlot(origUSK);
 		synchronized(this) {
 			if(completed || cancelled) return;
 			lastFetchedEdition = Math.max(lastFetchedEdition, att.number);
@@ -270,7 +270,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 	
 	private void finishSuccess(ClientContext context) {
 		if(backgroundPoll) {
-			long valAtEnd = uskManager.lookup(origUSK);
+			long valAtEnd = uskManager.lookupLatestSlot(origUSK);
 			long end;
 			long now = System.currentTimeMillis();
 			synchronized(this) {
@@ -301,7 +301,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 			schedule(end-now, null, context);
 		} else {
 			uskManager.unsubscribe(origUSK, this, false);
-			long ed = uskManager.lookup(origUSK);
+			long ed = uskManager.lookupLatestSlot(origUSK);
 			USKFetcherCallback[] cb;
 			synchronized(this) {
 				completed = true;
@@ -320,7 +320,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 			}
 			for(int i=0;i<cb.length;i++) {
 				try {
-					cb[i].onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data);
+					cb[i].onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
 				} catch (Exception e) {
 					Logger.error(this, "An exception occured while dealing with a callback:"+cb[i].toString()+"\n"+e.getMessage(),e);
 				}
@@ -330,7 +330,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block, final ClientContext context) {
 		LinkedList<USKAttempt> l = null;
-		final long lastEd = uskManager.lookup(origUSK);
+		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		long curLatest;
 		boolean decode = false;
 		synchronized(this) {
@@ -376,7 +376,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 			}
 		}
 		if(!dontUpdate)
-			uskManager.update(origUSK, curLatest, context);
+			uskManager.updateSlot(origUSK, curLatest, context);
 		if(l == null) return;
 		final LinkedList<USKAttempt> toSched = l;
 		// If we schedule them here, we don't get icky recursion problems.
@@ -388,7 +388,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 						// We may be called recursively through onSuccess().
 						// So don't start obsolete requests.
 						USKAttempt a = i.next();
-						last = uskManager.lookup(origUSK);
+						last = uskManager.lookupLatestSlot(origUSK);
 						if((last <= a.number) && !a.cancelled)
 							a.schedule(null, context);
 						else {
@@ -503,7 +503,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 	public void schedule(ObjectContainer container, ClientContext context) {
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
 		USKAttempt[] attempts;
-		long lookedUp = uskManager.lookup(origUSK);
+		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp, valueAtSchedule);
 			if(cancelled) return;
@@ -516,7 +516,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 		if(!cancelled) {
 			for(int i=0;i<attempts.length;i++) {
 				// Race conditions happen here and waste a lot more time than this simple check.
-				long lastEd = uskManager.lookup(origUSK);
+				long lastEd = uskManager.lookupLatestSlot(origUSK);
 				if(keepLastData && lastEd == lookedUp)
 					lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
 				if(attempts[i].number > lastEd)
@@ -647,9 +647,10 @@ public class USKFetcher implements ClientGetState, USKCallback {
 		throw new UnsupportedOperationException();
 	}
 
-	public void onFoundEdition(long ed, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data) {
+	public void onFoundEdition(long ed, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+		if(newKnownGood && !newSlotToo) return; // Only interested in slots
 		LinkedList<USKAttempt> l = null;
-		final long lastEd = uskManager.lookup(origUSK);
+		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		boolean decode = false;
 		synchronized(this) {
 			if(completed || cancelled) return;
@@ -695,7 +696,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 						// We may be called recursively through onSuccess().
 						// So don't start obsolete requests.
 						USKAttempt a = i.next();
-						last = uskManager.lookup(origUSK);
+						last = uskManager.lookupLatestSlot(origUSK);
 						if((last <= a.number) && !a.cancelled)
 							a.schedule(null, context);
 						else {

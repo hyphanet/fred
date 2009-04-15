@@ -92,7 +92,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		fetcher.schedule(container, context);
 	}
 
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData, boolean newKnownGood, boolean newSlotToo) {
 		boolean alreadyInserted = false;
 		synchronized(this) {
 			edition = Math.max(l, edition);
@@ -142,7 +142,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	private void scheduleInsert(ObjectContainer container, ClientContext context) {
-		long edNo = Math.max(edition, context.uskManager.lookup(pubUSK)+1);
+		long edNo = Math.max(edition, context.uskManager.lookupLatestSlot(pubUSK)+1);
 		if(persistent) {
 			container.activate(privUSK, 5);
 			container.activate(pubUSK, 5);
@@ -187,7 +187,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		else {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
-			context.uskManager.update(pubUSK, edition, context);
+			context.uskManager.updateKnownGood(pubUSK, edition, context);
 		}
 		if(persistent) state.removeFrom(container, context);
 		if(freeData) {

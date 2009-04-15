@@ -27,7 +27,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 			container.activate(cb, 1);
 			container.activate(usk, 5);
 		}
-		context.uskManager.update(usk, usk.suggestedEdition, context);
+		context.uskManager.updateKnownGood(usk, usk.suggestedEdition, context);
 		cb.onSuccess(result, state, container, context);
 		if(persistent) removeFrom(container);
 	}

@@ -1075,11 +1075,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
-			long edition = context.uskManager.lookup(usk);
+			long edition = context.uskManager.lookupKnownGood(usk);
 			if(edition <= usk.suggestedEdition) {
 				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
 				context.uskManager.startTemporaryBackgroundFetcher(usk, context);
-				edition = context.uskManager.lookup(usk);
+				edition = context.uskManager.lookupKnownGood(usk);
 				if(edition > usk.suggestedEdition) {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, container, context);
@@ -1140,7 +1140,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.persistent = persistent;
 		}
 
-		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data) {
+		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(persistent)
 				container.activate(this, 2);
 			ClientSSK key = usk.getSSK(l);

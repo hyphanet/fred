@@ -31,11 +31,12 @@ public class SubscribeUSK implements USKCallback {
 		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient);
 	}
 
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(handler.isClosed()) {
 			core.uskManager.unsubscribe(key, this, !dontPoll);
 			return;
 		}
+		if(newKnownGood && !newSlotToo) return;
 		FCPMessage msg = new SubscribedUSKUpdate(identifier, l, key);
 		handler.outputHandler.queue(msg);
 	}
