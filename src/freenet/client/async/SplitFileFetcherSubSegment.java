@@ -487,20 +487,19 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return false;
 	}
 	
-	public void addAll(int blocks, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
+	public void addAll(int blocks, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		int[] list = new int[blocks];
 		for(int i=0;i<blocks;i++) list[i] = i;
-		addAll(list, dontSchedule, container, context, dontComplainOnDupes);
+		addAll(list, container, context, dontComplainOnDupes);
 	}
 
-	public void addAll(int[] blocks, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
+	public void addAll(int[] blocks, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
 //			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Adding "+blocks+" blocks to "+this+" dontSchedule="+dontSchedule);
-		boolean schedule = true;
+		if(logMINOR) Logger.minor(this, "Adding "+blocks+" blocks to "+this);
 		synchronized(segment) {
 			if(cancelled)
 				throw new IllegalStateException("Adding blocks to already cancelled "+this);
@@ -515,50 +514,22 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				} else {
 					blockNums.add(ii);
 				}
-				if(dontSchedule) schedule = false;
-				/**
-				 * Race condition:
-				 * 
-				 * Starter thread sees there is only one block on us, so removes us.
-				 * Another thread adds a block. We don't schedule as we now have two blocks.
-				 * Starter thread removes us.
-				 * Other blocks may be added later, but we are never rescheduled.
-				 * 
-				 * Fixing this by only removing the SendableRequest after we've removed the 
-				 * block is nontrivial with the current code.
-				 * So what we do here is simply check whether we are registered, instead of 
-				 * checking whether blockNums.size() > 1 as we used to.
-				 */
-				if(schedule && getParentGrabArray() != null) {
-					if(logMINOR) Logger.minor(this, "Already registered, not scheduling: "+blockNums.size()+" : "+blockNums);
-					schedule = false;
-				}
-
 			}
 		}
 		if(persistent)
 			container.store(blockNums);
-		if(schedule) {
-			// Only need to register once for all the blocks.
-			try {
-				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, container, null, true);
-			} catch (KeyListenerConstructionException e) {
-				Logger.error(this, "Impossible: "+e+" on "+this, e);
-			}
-		}
-
 	}
 	
 	/**
 	 * @return True if the caller should schedule.
 	 */
-	public boolean add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
+	public boolean add(int blockNo, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
 //			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
+		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this);
 		if(blockNo < 0) throw new IllegalArgumentException();
 		Integer i = Integer.valueOf(blockNo);
 		
@@ -594,15 +565,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		if(persistent)
 			container.store(blockNums);
-		if(schedule) {
-			if(dontSchedule) return true;
-			try {
-				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, container, null, true);
-			} catch (KeyListenerConstructionException e) {
-				Logger.error(this, "Impossible: "+e+" on "+this, e);
-			}
-		}
-		return false;
+		return schedule;
 	}
 
 	@Override

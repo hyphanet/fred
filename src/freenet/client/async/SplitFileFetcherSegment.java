@@ -960,7 +960,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.minor(this, "Added to cooldown queue: "+key+" for "+this+" was on segment "+seg+" now registered to "+sub);
 		} else {
 			// If we are here we are going to retry
-			mustSchedule = sub.add(blockNo, true, container, context, false);
+			mustSchedule = sub.add(blockNo, container, context, false);
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 		}
@@ -1069,7 +1069,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			SplitFileFetcherSubSegment seg = getSubSegment(0, container, false, null);
 			if(persistent)
 				container.activate(seg, 1);
-			seg.addAll(dataRetries.length+checkRetries.length, true, container, context, false);
+			seg.addAll(dataRetries.length+checkRetries.length, container, context, false);
 
 			if(logMINOR)
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
@@ -1218,7 +1218,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
 				// We always schedule. FIXME: only schedule if sub.add() returns true???
-				sub.add(i, true, container, context, true);
+				sub.add(i, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			} else {
@@ -1242,7 +1242,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
-				sub.add(i+dataKeys.length, true, container, context, true);
+				sub.add(i+dataKeys.length, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			} else {
