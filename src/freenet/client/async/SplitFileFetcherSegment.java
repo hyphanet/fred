@@ -1217,6 +1217,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
+				// We always schedule. FIXME: only schedule if sub.add() returns true???
 				sub.add(i, true, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
