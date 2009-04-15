@@ -686,7 +686,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 */
 	public void kill(ObjectContainer container, ClientContext context, boolean dontDeactivateSeg) {
 		if(persistent) {
-			container.activate(this, 1);
 			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
@@ -708,7 +707,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	public void removeFrom(ObjectContainer container, ClientContext context, boolean dontDeactivateSeg) {
-		container.activate(this, 1);
 		container.activate(segment, 1);
 		container.activate(blockNums, 1);
 		synchronized(segment) {
