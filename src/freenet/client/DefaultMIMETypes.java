@@ -19,20 +19,20 @@ public class DefaultMIMETypes {
 	public static final String DEFAULT_MIME_TYPE = "application/octet-stream";
 	
 	/** MIME types: number -> name */
-	private static Vector mimeTypesByNumber = new Vector();
+	private static Vector<String> mimeTypesByNumber = new Vector<String>();
 	
 	/** MIME types: name -> number */
-	private static HashMap mimeTypesByName = new HashMap();
+	private static HashMap<String, Short> mimeTypesByName = new HashMap<String, Short>();
 	
 	/** MIME types by extension. One extension maps to one MIME type, but not necessarily
 	 * the other way around. */
-	private static HashMap mimeTypesByExtension = new HashMap();
+	private static HashMap<String, Short> mimeTypesByExtension = new HashMap<String, Short>();
 	
 	/** Primary extension by MIME type number. */
-	private static HashMap primaryExtensionByMimeNumber = new HashMap();
+	private static HashMap<Short, String> primaryExtensionByMimeNumber = new HashMap<Short, String>();
 	
 	/** All extension (String[]) by MIME type number. */
-	private static HashMap allExtensionsByMimeNumber = new HashMap();
+	private static HashMap<Short, String[]> allExtensionsByMimeNumber = new HashMap<Short, String[]>();
 	
 	/**
 	 * Add a MIME type, without any extensions.
@@ -43,7 +43,7 @@ public class DefaultMIMETypes {
 	 */
 	protected static synchronized void addMIMEType(short number, String type) {
 		if(mimeTypesByNumber.size() > number) {
-			String s = (String) mimeTypesByNumber.get(number);
+			String s = mimeTypesByNumber.get(number);
 			if(s != null) throw new IllegalArgumentException("Already used: "+number);
 		} else {
 			mimeTypesByNumber.add(number, null);
@@ -69,7 +69,7 @@ public class DefaultMIMETypes {
 				String ext = extensions[i].toLowerCase();
 				if(mimeTypesByExtension.containsKey(ext)) {
 					// No big deal
-					Short s = (Short) mimeTypesByExtension.get(ext);
+					Short s = mimeTypesByExtension.get(ext);
 					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+ ':' +type);
 				} else {
 					// If only one, make it primary
@@ -108,7 +108,7 @@ public class DefaultMIMETypes {
 	public synchronized static String byNumber(short x) {
 		if((x > mimeTypesByNumber.size()) || (x < 0))
 			return null;
-		return (String) mimeTypesByNumber.get(x);
+		return mimeTypesByNumber.get(x);
 	}
 	
 	/**
@@ -116,7 +116,7 @@ public class DefaultMIMETypes {
 	 * types, in which case it will have to be sent uncompressed.
 	 */
 	public synchronized static short byName(String s) {
-		Short x = (Short) mimeTypesByName.get(s);
+		Short x = mimeTypesByName.get(s);
 		if(x != null) return x.shortValue();
 		else return -1;
 	}
@@ -754,23 +754,23 @@ public class DefaultMIMETypes {
 		if((x == -1) || (x == arg.length()-1))
 			return noDefault ? null : DEFAULT_MIME_TYPE;
 		String ext = arg.substring(x+1).toLowerCase();
-		Short mimeIndexOb = (Short) mimeTypesByExtension.get(ext);
+		Short mimeIndexOb = mimeTypesByExtension.get(ext);
 		if(mimeIndexOb != null) {
-			return (String) mimeTypesByNumber.get(mimeIndexOb.intValue());
+			return mimeTypesByNumber.get(mimeIndexOb.intValue());
 		} else return noDefault ? null : DEFAULT_MIME_TYPE;
 	}
 
 	public synchronized static String getExtension(String type) {
 		short typeNumber = byName(type);
 		if(typeNumber < 0) return null;
-		return (String) primaryExtensionByMimeNumber.get(typeNumber);
+		return primaryExtensionByMimeNumber.get(typeNumber);
 	}
 	
 	public synchronized static boolean isValidExt(String expectedMimeType, String oldExt) {
 		short typeNumber = byName(expectedMimeType);
 		if(typeNumber < 0) return false;
 		
-		String[] extensions = (String[]) allExtensionsByMimeNumber.get(typeNumber);
+		String[] extensions = allExtensionsByMimeNumber.get(typeNumber);
 		if(extensions == null) return false;
 		for(int i=0;i<extensions.length;i++)
 			if(oldExt.equals(extensions[i])) return true;
