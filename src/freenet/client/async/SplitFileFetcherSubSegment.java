@@ -610,7 +610,14 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+"),tempid="+objectHash(); 
 	}
 
-	public void possiblyRemoveFromParent(ObjectContainer container, ClientContext context) {
+	/**
+	 * If there are no more blocks, cancel the SubSegment, remove it from the segment,
+	 * and return true; the caller must call kill(,,true,true). Else return false.
+	 * @param container
+	 * @param context
+	 * @return
+	 */
+	public boolean possiblyRemoveFromParent(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -621,17 +628,17 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		synchronized(segment) {
 			if(!blockNums.isEmpty()) {
 				if(persistent) container.deactivate(blockNums, 1);
-				return;
+				return false;
 			}
 			if(logMINOR)
 				Logger.minor(this, "Definitely removing from parent: "+this);
 			if(!segment.maybeRemoveSeg(this, container)) {
 				if(persistent) container.deactivate(blockNums, 1);
-				return;
+				return false;
 			}
 			cancelled = true;
 		}
-		kill(container, context, true, true);
+		return true;
 	}
 
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {

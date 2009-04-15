@@ -848,8 +848,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.store(this);
 		if(allFailed)
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
-		else if(seg != null)
-			seg.possiblyRemoveFromParent(container, context);
+		else if(seg != null) {
+			if(seg.possiblyRemoveFromParent(container, context))
+				seg.kill(container, context, true, true);
+		}
 	}
 	
 	/** A request has failed non-fatally, so the block may be retried 
@@ -1454,11 +1456,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 	 * and then "NOT IN BLOOM FILTER" errors, or worse, false negatives.
 	 */
 	public boolean onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
-		ClientCHKBlock cb;
+		ClientCHKBlock cb = null;
 		int blockNum;
-		Bucket data;
+		Bucket data = null;
 		SplitFileFetcherSubSegment seg;
 		short onSuccessResult = (short) -1;
+		boolean killSeg = false;
+		FetchException fatal = null;
 		synchronized(this) {
 			if(finished || startedDecode || fetcherFinished) {
 				return false;
@@ -1474,7 +1478,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.activate(seg, 1);
 			if(seg != null) {
 				seg.removeBlockNum(blockNum, container, false);
-				seg.possiblyRemoveFromParent(container, context);
+				killSeg = seg.possiblyRemoveFromParent(container, context);
 			}
 			for(int i=0;i<subSegments.size();i++) {
 				SplitFileFetcherSubSegment checkSeg = subSegments.get(i);
@@ -1491,15 +1495,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 			try {
 				cb = new ClientCHKBlock((CHKBlock)block, ckey);
 			} catch (CHKVerifyException e) {
-				this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), blockNum, null, container, context);
-				return false;
+				fatal = new FetchException(FetchException.BLOCK_DECODE_ERROR, e);
 			}
+			if(cb != null) {
 			data = extract(cb, blockNum, container, context);
 			if(data == null) {
 				if(logMINOR)
 					Logger.minor(this, "Extract failed");
 				return false;
-			}
+			} else {
 			// This can be done safely inside the lock.
 			if(parent instanceof ClientGetter)
 				((ClientGetter)parent).addKeyToBinaryBlob(cb, container, context);
@@ -1509,7 +1513,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 				// will only be removed from the Bloom filter ONCE!
 				onSuccessResult = onSuccessInner(data, blockNum, cb, container, context, seg);
 			}
+			}
+			}
 		}
+		if(killSeg)
+			seg.kill(container, context, true, true);
+		if(fatal != null) {
+			this.onFatalFailure(fatal, blockNum, null, container, context);
+			return false;
+		} else if(data == null) {
+			return false; // Extract failed
+		} else { // cb != null
 		if(!cb.isMetadata()) {
 			if(onSuccessResult != (short) -1)
 				finishOnSuccess(onSuccessResult, container, context);
@@ -1517,6 +1531,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		} else {
 			onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, null, container, context);
 			return true;
+		}
 		}
 	}
 	
