@@ -64,7 +64,7 @@ import freenet.support.io.BucketTools;
  * - TUKs (when we have TUKs).
  * - Passive requests (when we have passive requests).
  */
-public class USKFetcher implements ClientGetState {
+public class USKFetcher implements ClientGetState, USKCallback {
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
 
@@ -300,6 +300,7 @@ public class USKFetcher implements ClientGetState {
 			}
 			schedule(end-now, null, context);
 		} else {
+			uskManager.unsubscribe(origUSK, this, false);
 			long ed = uskManager.lookup(origUSK);
 			USKFetcherCallback[] cb;
 			synchronized(this) {
@@ -500,6 +501,7 @@ public class USKFetcher implements ClientGetState {
 	}
     
 	public void schedule(ObjectContainer container, ClientContext context) {
+		uskManager.subscribe(origUSK, this, false, parent.getClient());
 		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookup(origUSK);
 		synchronized(this) {
@@ -529,6 +531,7 @@ public class USKFetcher implements ClientGetState {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
+		uskManager.unsubscribe(origUSK, this, false);
 		assert(container == null);
 		USKAttempt[] attempts;
 		synchronized(this) {
@@ -634,6 +637,76 @@ public class USKFetcher implements ClientGetState {
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing USKFetcher in database", new Exception("error"));
 		return false;
+	}
+
+	public short getPollingPriorityNormal() {
+		throw new UnsupportedOperationException();
+	}
+
+	public short getPollingPriorityProgress() {
+		throw new UnsupportedOperationException();
+	}
+
+	public void onFoundEdition(long ed, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data) {
+		LinkedList<USKAttempt> l = null;
+		final long lastEd = uskManager.lookup(origUSK);
+		boolean decode = false;
+		synchronized(this) {
+			if(completed || cancelled) return;
+			decode = lastEd >= ed && data != null;
+			ed = Math.max(lastEd, ed);
+			if(logMINOR) Logger.minor(this, "Latest: "+ed);
+			long addTo = ed + minFailures;
+			long addFrom = Math.max(lastAddedEdition + 1, ed + 1);
+			if(logMINOR) Logger.minor(this, "Adding from "+addFrom+" to "+addTo+" for "+origUSK);
+			if(addTo >= addFrom) {
+				l = new LinkedList<USKAttempt>();
+				for(long i=addFrom;i<=addTo;i++) {
+					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+					l.add(add(i));
+				}
+			}
+			cancelBefore(ed, context);
+		}
+		synchronized(this) {
+			if (decode) {
+					lastCompressionCodec = codec;
+					lastWasMetadata = metadata;
+					if(keepLastData) {
+						// FIXME inefficient to convert from bucket to byte[] to bucket
+						if(lastRequestData != null)
+							lastRequestData.free();
+						try {
+							lastRequestData = BucketTools.makeImmutableBucket(context.tempBucketFactory, data);
+						} catch (IOException e) {
+							Logger.error(this, "Caught "+e, e);
+						}
+					}
+			}
+		}
+		if(l == null) return;
+		final LinkedList<USKAttempt> toSched = l;
+		// If we schedule them here, we don't get icky recursion problems.
+		if(!cancelled) {
+			context.mainExecutor.execute(new Runnable() {
+				public void run() {
+					long last = lastEd;
+					for(Iterator<USKAttempt> i=toSched.iterator();i.hasNext();) {
+						// We may be called recursively through onSuccess().
+						// So don't start obsolete requests.
+						USKAttempt a = i.next();
+						last = uskManager.lookup(origUSK);
+						if((last <= a.number) && !a.cancelled)
+							a.schedule(null, context);
+						else {
+							synchronized(this) {
+								runningAttempts.remove(a);
+							}
+						}
+					}
+				}
+			}, "USK scheduler"); // Run on separate thread because otherwise can get loooong recursions
+		}
 	}
 
 }
