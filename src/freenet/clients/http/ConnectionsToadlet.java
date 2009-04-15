@@ -117,10 +117,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
-			}else if(sortBy.equals("total_traffic_since_startup")){
-				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalInputSinceStartup();
-				long total2 = secondNode.getTotalOutputBytes()+secondNode.getTotalOutputSinceStartup();
-				return compareLongs(total1, total2);
+				}else if(sortBy.equals("total_traffic_since_startup")){
+					long total1 = firstNode.getTotalInputSinceStartup()+firstNode.getTotalOutputSinceStartup();
+					long total2 = secondNode.getTotalInputSinceStartup()+secondNode.getTotalOutputSinceStartup();
+					return compareLongs(total1, total2);
 			}else if(sortBy.equals("selection_percentage")){
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
 			}else if(sortBy.equals("time_delta")){
