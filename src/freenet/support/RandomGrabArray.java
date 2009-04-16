@@ -58,7 +58,6 @@ public class RandomGrabArray implements RemoveRandom {
 		req.setParentGrabArray(this, container);
 		synchronized(this) {
 			int x = 0;
-			int size = 0;
 			if(blocks.length == 1 && index < BLOCK_SIZE) {
 				if(persistent) container.activate(blocks[0], 1);
 				for(int i=0;i<index;i++) {
