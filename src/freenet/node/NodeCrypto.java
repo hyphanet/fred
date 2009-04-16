@@ -551,6 +551,7 @@ public class NodeCrypto {
 	public long getNodeHandle(ObjectContainer setupContainer) {
 		// Ignore warnings, this is db4o magic.
 		ObjectSet<HandlePortTuple> result = setupContainer.query(new Predicate<HandlePortTuple>() {
+			@Override
 			public boolean match(HandlePortTuple tuple) {
 				return tuple.portNumber == portNumber;
 			}

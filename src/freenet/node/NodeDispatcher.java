@@ -44,6 +44,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);

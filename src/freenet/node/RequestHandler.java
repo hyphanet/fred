@@ -37,6 +37,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}

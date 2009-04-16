@@ -19,6 +19,7 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}

@@ -31,6 +31,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		this.hashCode = super.hashCode();
 	}
 	
+	@Override
 	public final int hashCode() {
 		return hashCode;
 	}

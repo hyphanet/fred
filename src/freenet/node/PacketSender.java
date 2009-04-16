@@ -35,6 +35,7 @@ public class PacketSender implements Runnable, Ticker {
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);

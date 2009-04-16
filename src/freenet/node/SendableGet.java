@@ -62,10 +62,12 @@ public abstract class SendableGet extends BaseSendableGet {
 	
 	static final SendableGetRequestSender sender = new SendableGetRequestSender();
 	
+	@Override
 	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
 		return sender;
 	}
 	
+	@Override
 	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
 			return context.getSskFetchScheduler();
@@ -101,6 +103,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 */
 	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context);
 
+	@Override
 	public final boolean isInsert() {
 		return false;
 	}

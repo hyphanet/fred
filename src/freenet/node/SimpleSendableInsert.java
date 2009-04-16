@@ -160,6 +160,7 @@ public class SimpleSendableInsert extends SendableInsert {
 			return NullSendableRequestItem.nullItem;
 	}
 
+	@Override
 	public boolean isSSK() {
 		return block instanceof SSKBlock;
 	}

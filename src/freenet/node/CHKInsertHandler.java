@@ -34,6 +34,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}

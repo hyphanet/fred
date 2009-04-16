@@ -144,6 +144,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}
@@ -880,6 +881,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		shutdownHook.addEarlyJob(new Thread() {
 			
+			@Override
 			public void run() {
 				System.err.println("Stopping database jobs...");
 				clientCore.killDatabase();
@@ -889,6 +891,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		shutdownHook.addLateJob(new Thread() {
 
+			@Override
 			public void run() {
 				System.err.println("Rolling back unfinished transactions...");
 				db.rollback();
