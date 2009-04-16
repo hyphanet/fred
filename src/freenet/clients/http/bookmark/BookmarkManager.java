@@ -15,10 +15,8 @@ import com.db4o.ObjectContainer;
 
 import java.util.List;
 
-import freenet.client.FetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
-import freenet.client.async.USKRetrieverCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
