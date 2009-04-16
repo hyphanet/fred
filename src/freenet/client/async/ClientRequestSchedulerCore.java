@@ -68,7 +68,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 * we'd move this to node but only track keys we are fetching at max HTL.
 	 * LOCKING: Always lock this LAST.
 	 */
-	private transient HashSet keysFetching;
+	private transient HashSet<Key> keysFetching;
 	
 	private static class RunningTransientInsert {
 		
@@ -156,7 +156,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		this.initTime = System.currentTimeMillis();
 		// We DO NOT want to rerun the query after consuming the initial set...
 		if(!isInsertScheduler) {
-			keysFetching = new HashSet();
+			keysFetching = new HashSet<Key>();
 			runningTransientInserts = null;
 			this.recentSuccesses = new ArrayList<RandomGrabArray>();
 		} else {
@@ -499,11 +499,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				 * Probably this is acceptable.
 				 */
 				if(!req.persistent() && !isInsertScheduler) {
-					List recent = schedTransient.recentSuccesses;
-					SendableRequest altReq = null;
+					List<BaseSendableGet> recent = schedTransient.recentSuccesses;
+					BaseSendableGet altReq = null;
 					if(!recent.isEmpty()) {
 						if(random.nextBoolean()) {
-							altReq = (BaseSendableGet) recent.remove(recent.size()-1);
+							altReq = recent.remove(recent.size()-1);
 						}
 					}
 					if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
