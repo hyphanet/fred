@@ -487,7 +487,7 @@ public class Metadata implements Cloneable {
 	 * @param dir A map of names (string) to either files (same string) or
 	 * directories (more HashMap's)
 	 */
-	Metadata(HashMap<?, ?> dir, String prefix) {
+	Metadata(HashMap<String, Object> dir, String prefix) {
 		hashCode = super.hashCode();
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
@@ -497,8 +497,8 @@ public class Metadata implements Cloneable {
 		clientMetadata = new ClientMetadata();
 		manifestEntries = new HashMap<String, Metadata>();
 		int count = 0;
-		for(Iterator<?> i = dir.keySet().iterator();i.hasNext();) {
-			String key = ((String) i.next()).intern();
+		for(Iterator<String> i = dir.keySet().iterator();i.hasNext();) {
+			String key = i.next().intern();
 			count++;
 			Object o = dir.get(key);
 			Metadata target;
@@ -507,7 +507,7 @@ public class Metadata implements Cloneable {
 				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
 					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
-				target = new Metadata((HashMap<?, ?>)o, prefix+key+"/");
+				target = new Metadata((HashMap<String, Object>)o, prefix+key+"/");
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
