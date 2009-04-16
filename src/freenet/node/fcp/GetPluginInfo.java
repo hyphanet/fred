@@ -55,6 +55,7 @@ public class GetPluginInfo extends FCPMessage {
 		}
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
