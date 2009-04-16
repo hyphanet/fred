@@ -33,6 +33,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
+	@Override
 	boolean persistent() {
 		return false;
 	}
@@ -41,6 +42,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		return null;
 	}
 
+	@Override
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		// Do nothing.
 		// FIXME: Keep a list of recently succeeded ClientRequester's.

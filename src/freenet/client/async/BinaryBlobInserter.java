@@ -123,6 +123,7 @@ public class BinaryBlobInserter implements ClientPutState {
 
 		// FIXME duplicated code from SingleBlockInserter
 		// FIXME combine it somehow
+		@Override
 		public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;

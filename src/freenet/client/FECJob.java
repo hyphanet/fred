@@ -35,6 +35,7 @@ public class FECJob {
 	private final int hashCode;
 	transient boolean running;
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
@@ -71,6 +72,7 @@ public class FECJob {
 		this.hashCode = super.hashCode();
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+":decode="+isADecodingJob+":callback="+callback+":persistent="+persistent;
 	}

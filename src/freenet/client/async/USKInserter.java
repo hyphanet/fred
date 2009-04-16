@@ -246,6 +246,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 	}
 
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

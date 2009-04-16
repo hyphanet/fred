@@ -302,6 +302,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return this;
 	}
 
+	@Override
 	public Key[] listKeys(ObjectContainer container) {
 		if(cancelled || finished)
 			return new Key[0];
@@ -341,6 +342,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return ret;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		super.removeFrom(container, context);
 		if(deleteFetchContext) {

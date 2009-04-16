@@ -215,6 +215,7 @@ public class FailureCodeTracker {
 		if(map != null) container.activate(map, 5);
 	}
 	
+	@Override
 	public FailureCodeTracker clone() {
 		FailureCodeTracker tracker = new FailureCodeTracker(insert);
 		tracker.merge(this);

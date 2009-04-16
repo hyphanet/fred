@@ -81,6 +81,7 @@ class SingleFileInserter implements ClientPutState {
 	
 	private final int hashCode;
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
@@ -510,6 +511,7 @@ class SingleFileInserter implements ClientPutState {
 		
 		private final int hashCode;
 		
+		@Override
 		public int hashCode() {
 			return hashCode;
 		}

@@ -13,6 +13,7 @@ public class USKManagerPersistent {
 	
 	static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
 		ObjectSet<USKFetcherTag> set = container.query(new Predicate<USKFetcherTag>() {
+			@Override
 			public boolean match(USKFetcherTag tag) {
 				if(tag.nodeDBHandle != context.nodeDBHandle) return false;
 				if(tag.isFinished()) return false;

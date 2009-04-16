@@ -72,6 +72,7 @@ public class SplitFileInserter implements ClientPutState {
 	
 	private final int hashCode;
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

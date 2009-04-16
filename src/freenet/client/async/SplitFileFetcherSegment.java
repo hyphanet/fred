@@ -117,6 +117,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private boolean fetcherFinished = false;
 	private boolean encoderFinished = false;
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

@@ -70,6 +70,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
+	@Override
 	protected void loadFEC() {
 		synchronized(this) {
 			if(fec != null) return;

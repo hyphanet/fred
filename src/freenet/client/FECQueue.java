@@ -51,6 +51,7 @@ public class FECQueue implements OOMHook {
     public static FECQueue create(final long nodeDBHandle, ObjectContainer container) {
     	@SuppressWarnings("serial")
 		ObjectSet<FECQueue> result = container.query(new Predicate<FECQueue>() {
+			@Override
 			public boolean match(FECQueue queue) {
 				if(queue.nodeDBHandle == nodeDBHandle) return true;
 				return false;

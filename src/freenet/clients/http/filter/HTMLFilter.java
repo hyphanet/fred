@@ -1324,6 +1324,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		abstract void processStyle(HTMLParseContext pc);
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1395,14 +1396,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray);
 		}
 
+		@Override
 		void setStyle(boolean b, HTMLParseContext pc) {
 			pc.inStyle = b;
 		}
 
+		@Override
 		boolean getStyle(HTMLParseContext pc) {
 			return pc.inStyle;
 		}
 
+		@Override
 		void processStyle(HTMLParseContext pc) {
 			try {
 				pc.currentStyleScriptChunk =
@@ -1432,6 +1436,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			 */
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> hn, ParsedTag p, HTMLParseContext pc)
 		        throws DataFilterException {
 			// Call parent so we swallow the scripting
@@ -1439,14 +1444,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return null; // Lose the tags
 		}
 
+		@Override
 		void setStyle(boolean b, HTMLParseContext pc) {
 			pc.inScript = b;
 		}
 
+		@Override
 		boolean getStyle(HTMLParseContext pc) {
 			return pc.inScript;
 		}
 
+		@Override
 		void processStyle(HTMLParseContext pc) {
 			pc.currentStyleScriptChunk =
 				sanitizeScripting(pc.currentStyleScriptChunk);
@@ -1462,6 +1470,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1553,6 +1562,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1582,6 +1592,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1662,6 +1673,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, null, eventAttrs);
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1718,6 +1730,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1737,6 +1750,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super("meta", new String[] { "id" });
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1844,6 +1858,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			DTDs.put("-//W3C//DTD HTML 3.2 Final//EN", new Object());
 		}
 
+		@Override
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
 			if (!((t.unparsedAttrs.length == 3) || (t.unparsedAttrs.length == 4)))
 				return null;
@@ -1869,6 +1884,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super("?xml", null);
 		}
 
+		@Override
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
 			if (t.unparsedAttrs.length != 2)
 				return null;
@@ -1891,6 +1907,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super("html", new String[] { "id", "version" });
 		}
 
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
@@ -1908,6 +1925,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(string, strings, strings2, null);
 		}
 		
+		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 				ParsedTag p,
 				HTMLParseContext pc) throws DataFilterException {

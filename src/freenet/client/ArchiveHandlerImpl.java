@@ -211,6 +211,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	/** Called from ArchiveManager.init() */
 	static void init(ObjectContainer container, ClientContext context, final long nodeDBHandle) {
 		ObjectSet<ArchiveExtractTag> set = container.query(new Predicate<ArchiveExtractTag>() {
+			@Override
 			public boolean match(ArchiveExtractTag tag) {
 				return tag.nodeDBHandle == nodeDBHandle;
 			}

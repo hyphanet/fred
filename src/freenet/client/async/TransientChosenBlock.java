@@ -39,14 +39,17 @@ public class TransientChosenBlock extends ChosenBlock {
 		return false;
 	}
 
+	@Override
 	public void onFailure(LowLevelPutException e, ClientContext context) {
 		((SendableInsert) request).onFailure(e, token, null, context);
 	}
 
+	@Override
 	public void onInsertSuccess(ClientContext context) {
 		((SendableInsert) request).onSuccess(token, null, context);
 	}
 
+	@Override
 	public void onFailure(LowLevelGetException e, ClientContext context) {
 		((SendableGet) request).onFailure(e, token, null, context);
 	}

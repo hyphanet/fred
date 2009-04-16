@@ -138,6 +138,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		// Ignore
 	}
 
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		super.cancel();
 	}

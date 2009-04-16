@@ -32,6 +32,7 @@ public class RegisterMe {
 		hashCode = hash;
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

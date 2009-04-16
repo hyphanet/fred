@@ -45,6 +45,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
@@ -217,6 +218,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return ((MySendableRequestItem) token).key;
 	}
 
+	@Override
 	public boolean isSSK() {
 		return isSSK;
 	}

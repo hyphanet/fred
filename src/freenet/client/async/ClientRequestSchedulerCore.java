@@ -80,10 +80,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			token = t;
 		}
 		
+		@Override
 		public int hashCode() {
 			return insert.hashCode() ^ token.hashCode();
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(!(o instanceof RunningTransientInsert)) return false;
 			RunningTransientInsert r = (RunningTransientInsert) o;
@@ -110,6 +112,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
 		final long nodeDBHandle = node.nodeDBHandle;
 		ObjectSet<ClientRequestSchedulerCore> results = selectorContainer.query(new Predicate<ClientRequestSchedulerCore>() {
+			@Override
 			public boolean match(ClientRequestSchedulerCore core) {
 				if(core.nodeDBHandle != nodeDBHandle) return false;
 				if(core.isInsertScheduler != forInserts) return false;
@@ -621,6 +624,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
 
+	@Override
 	boolean persistent() {
 		return true;
 	}
@@ -768,6 +772,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		startRegisterMeRunner(runner);
 	}
 	
+	@Override
 	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
 		long ret = super.countQueuedRequests(container, context);
 		long cooldown = persistentCooldownQueue.size(container);
@@ -805,6 +810,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 
+	@Override
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		RandomGrabArray array = succeeded.getParentGrabArray();
 		container.activate(array, 1);

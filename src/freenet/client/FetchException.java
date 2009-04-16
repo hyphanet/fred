@@ -434,6 +434,7 @@ public class FetchException extends Exception {
 		container.delete(this);
 	}
 	
+	@Override
 	public FetchException clone() {
 		return new FetchException(this);
 	}

@@ -203,6 +203,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return block;
 	}
 	
+	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		if(persistent) container.activate(parent, 1);
 		return parent.getPriorityClass(); // Not much point deactivating
@@ -359,6 +360,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
+	@Override
 	public boolean isSSK() {
 		return isSSK;
 	}
@@ -673,10 +675,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			copyBucket.free();
 		}
 		
+		@Override
 		public int hashCode() {
 			return hashCode;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof BlockItem) {
 				if(((BlockItem)o).parent == parent) return true;
@@ -699,10 +703,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return SingleBlockInserter.this;
 		}
 
+		@Override
 		public int hashCode() {
 			return SingleBlockInserter.this.hashCode();
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof BlockItem) {
 				if(((BlockItem)o).parent == SingleBlockInserter.this) return true;

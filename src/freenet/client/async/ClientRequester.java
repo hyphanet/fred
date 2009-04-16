@@ -70,6 +70,7 @@ public abstract class ClientRequester {
 	/**
 	 * We need a hash code that persists across restarts.
 	 */
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

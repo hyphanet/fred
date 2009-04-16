@@ -355,6 +355,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	// Translate it, then call the real onFailure
+	@Override
 	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+e+" , "+token+" on "+this);

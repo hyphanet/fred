@@ -178,11 +178,13 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		onFailure(e.getFetchException(), false, container, context);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		super.removeFrom(container, context);
 		// rcb is definitely not our responsibility.
 	}
 	
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		super.cancel(container, context);
 		if(persistent) container.activate(rcb, 1);

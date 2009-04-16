@@ -180,6 +180,7 @@ public class InsertException extends Exception {
 		return new InsertException(mode, errors, null);
 	}
 	
+	@Override
 	public InsertException clone() {
 		return new InsertException(this);
 	}

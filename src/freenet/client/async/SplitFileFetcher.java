@@ -86,6 +86,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	
 	private final int hashCode;
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

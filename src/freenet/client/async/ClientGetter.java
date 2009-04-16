@@ -261,6 +261,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * Cancel the request. This must result in onFailure() being called in order to
 	 * send the client a cancel FetchException, and to removeFrom() the state.
 	 */
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancelling "+this, new Exception("debug"));
 		ClientGetState s;
@@ -317,6 +318,7 @@ public class ClientGetter extends BaseClientGetter {
 		blockSetFinalized(container, context);
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		synchronized(this) {
 			if(currentState == oldState) {

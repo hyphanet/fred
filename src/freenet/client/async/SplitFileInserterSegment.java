@@ -954,10 +954,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			copyBucket.free();
 		}
 		
+		@Override
 		public int hashCode() {
 			return hashCode;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof BlockItem) {
 				if(((BlockItem)o).parent == parent && ((BlockItem)o).blockNum == blockNum) return true;
