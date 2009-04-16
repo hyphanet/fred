@@ -5,8 +5,6 @@ package freenet.support.io;
 
 import java.io.File;
 
-import freenet.support.api.Bucket;
-
 public class NullPersistentFileTracker implements PersistentFileTracker {
 	private static NullPersistentFileTracker instance;
 	

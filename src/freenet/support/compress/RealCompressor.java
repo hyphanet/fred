@@ -9,7 +9,6 @@ import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.NativeThread;
 import java.util.LinkedList;
 import java.util.concurrent.Semaphore;

@@ -11,10 +11,6 @@ import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ClientContext;
-import freenet.client.async.DBJob;
-import freenet.client.async.DBJobRunner;
-import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 

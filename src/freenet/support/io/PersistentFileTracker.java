@@ -5,8 +5,6 @@ package freenet.support.io;
 
 import java.io.File;
 
-import freenet.support.api.Bucket;
-
 public interface PersistentFileTracker {
 
 	public void register(File file);

@@ -3,13 +3,10 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
-import freenet.support.Logger;
 import java.io.IOException;
 
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.NativeThread;
-import java.util.concurrent.Semaphore;
 
 /**
  * A data compressor. Contains methods to get all data compressors.

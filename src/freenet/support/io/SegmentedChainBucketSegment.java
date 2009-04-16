@@ -6,7 +6,6 @@ import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
