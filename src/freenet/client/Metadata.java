@@ -441,13 +441,13 @@ public class Metadata implements Cloneable {
 	 * The map can contain either string -> Metadata, or string -> map, the latter
 	 * indicating subdirs. 
 	 */
-	public static Metadata mkRedirectionManifestWithMetadata(HashMap<?, ?> dir) {
+	public static Metadata mkRedirectionManifestWithMetadata(HashMap<String, Object> dir) {
 		Metadata ret = new Metadata();
 		ret.addRedirectionManifestWithMetadata(dir);
 		return ret;
 	}
 	
-	private void addRedirectionManifestWithMetadata(HashMap<?, ?> dir) {
+	private void addRedirectionManifestWithMetadata(HashMap<String, Object> dir) {
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
@@ -456,8 +456,8 @@ public class Metadata implements Cloneable {
 		//clientMetadata = new ClientMetadata(null);
 		manifestEntries = new HashMap<String, Metadata>();
 		int count = 0;
-		for(Iterator<?> i = dir.keySet().iterator();i.hasNext();) {
-			String key = ((String) i.next()).intern();
+		for(Iterator<String> i = dir.keySet().iterator();i.hasNext();) {
+			String key = i.next().intern();
 			if(key.indexOf('/') != -1)
 				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
 			count++;
@@ -470,7 +470,7 @@ public class Metadata implements Cloneable {
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
-				HashMap<?, ?> hm = (HashMap<?, ?>)o;
+				HashMap<String, Object> hm = (HashMap<String, Object>)o;
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Making metadata map for "+key);
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
