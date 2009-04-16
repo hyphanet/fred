@@ -24,6 +24,7 @@ public class PluginInfoMessage extends FCPMessage {
 	private final String classname;
 	private final String originuri;
 	private final long started;
+	private final boolean isTalkable;
 
 	
 	PluginInfoMessage(PluginInfoWrapper pi, String identifier, boolean detail) {
@@ -32,6 +33,7 @@ public class PluginInfoMessage extends FCPMessage {
 		classname = pi.getPluginClassName();
 		originuri = pi.getFilename();
 		started = pi.getStarted();
+		isTalkable = pi.isFCPPlugin();
 	}
 
 	@Override
@@ -40,6 +42,7 @@ public class PluginInfoMessage extends FCPMessage {
 		if(identifier != null) // is optional on these two only
 			sfs.putSingle("Identifier", identifier);
 		sfs.putSingle("PluginName", classname);
+		sfs.put("IsTalkable", isTalkable);
 		
 		if (detailed) {
 			sfs.putSingle("OriginUri", originuri);
@@ -59,6 +62,7 @@ public class PluginInfoMessage extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", null, false);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
