@@ -186,6 +186,7 @@ public class Metadata implements Cloneable {
 		this(new DataInputStream(new ByteArrayInputStream(data)), data.length);
 	}
 
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
