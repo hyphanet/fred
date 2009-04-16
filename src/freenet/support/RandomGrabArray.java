@@ -19,7 +19,7 @@ public class RandomGrabArray implements RemoveRandom {
 		});
 	}
 	
-	private class Block {
+	private static class Block {
 		RandomGrabArrayItem[] reqs;
 	}
 	
