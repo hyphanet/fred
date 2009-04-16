@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.LinkedList;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.FECQueue;

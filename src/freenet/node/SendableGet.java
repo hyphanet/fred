@@ -10,7 +10,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.ClientKey;
-import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.support.io.NativeThread;
 

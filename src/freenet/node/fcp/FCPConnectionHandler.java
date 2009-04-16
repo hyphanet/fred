@@ -13,7 +13,6 @@ import java.util.Random;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.support.HexUtil;

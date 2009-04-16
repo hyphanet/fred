@@ -23,7 +23,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
-import freenet.client.events.ClientEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;

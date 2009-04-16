@@ -12,8 +12,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.WeakHashMap;
 import java.util.zip.GZIPInputStream;
@@ -25,7 +23,6 @@ import com.db4o.ObjectContainer;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
-import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
 import freenet.client.TempFetchResult;
@@ -54,7 +51,6 @@ import freenet.support.api.StringCallback;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
-import freenet.support.io.FileUtil;
 
 /**
  * FCP server process.

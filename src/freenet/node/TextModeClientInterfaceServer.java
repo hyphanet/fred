@@ -9,8 +9,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
-
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;

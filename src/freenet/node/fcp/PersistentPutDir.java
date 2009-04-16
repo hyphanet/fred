@@ -4,8 +4,6 @@
 package freenet.node.fcp;
 
 import java.util.HashMap;
-import java.util.Iterator;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ManifestElement;

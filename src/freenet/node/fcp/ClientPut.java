@@ -25,7 +25,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
-import freenet.node.RequestClient;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
