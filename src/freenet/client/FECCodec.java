@@ -250,8 +250,6 @@ public abstract class FECCodec {
 		Bucket[] buckets = new Bucket[n];
 		DataInputStream[] readers = new DataInputStream[k];
 		OutputStream[] writers = new OutputStream[n - k];
-
-		Bucket toFree = null;
 		
 		try {
 
@@ -347,8 +345,6 @@ public abstract class FECCodec {
 				Closer.close(readers[i]);
 			for(int i = 0; i < n - k; i++)
 				Closer.close(writers[i]);
-			if(toFree != null)
-				toFree.free();
 		}
 		// Set new buckets only after have a successful decode.
 		for(int i = 0; i < checkBlockStatus.length; i++) {
