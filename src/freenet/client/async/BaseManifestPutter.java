@@ -565,7 +565,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			synchronized(this) {
 				oldSFI = origSFI;
 				oldState = currentState;
-				oldSFI = null;
+				origSFI = null;
 				currentState = null;
 			}
 			if(oldSFI != null) {
