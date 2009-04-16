@@ -114,19 +114,19 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	protected void abortFetches() {
 		Logger.debug(this, "Trying to stop all fetches");
 		if(mFetches != null) synchronized(mFetches) {
-				Iterator<ClientGetter> r = mFetches.iterator();
-				int rcounter = 0;
-				while (r.hasNext()) { r.next().cancel(null, mNode.clientCore.clientContext); r.remove(); ++rcounter; }
-				Logger.debug(this, "Stopped " + rcounter + " current requests");
+			Iterator<ClientGetter> r = mFetches.iterator();
+			int rcounter = 0;
+			while (r.hasNext()) { r.next().cancel(null, mNode.clientCore.clientContext); r.remove(); ++rcounter; }
+			Logger.debug(this, "Stopped " + rcounter + " current requests");
 		}
 	}
 	
 	protected void abortInserts() {
 		if(mInserts != null) synchronized(mInserts) {
-				Iterator<BaseClientPutter> i = mInserts.iterator();
-				int icounter = 0;
-				while (i.hasNext()) { i.next().cancel(null, mNode.clientCore.clientContext); i.remove(); ++icounter; }
-				Logger.debug(this, "Stopped " + icounter + " current inserts");
+			Iterator<BaseClientPutter> i = mInserts.iterator();
+			int icounter = 0;
+			while (i.hasNext()) { i.next().cancel(null, mNode.clientCore.clientContext); i.remove(); ++icounter; }
+			Logger.debug(this, "Stopped " + icounter + " current inserts");
 		}
 	}
 	
