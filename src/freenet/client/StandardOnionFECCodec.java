@@ -7,7 +7,6 @@ import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.fec.PureCode;
 
-import freenet.support.Executor;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 

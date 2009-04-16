@@ -1,6 +1,5 @@
 package freenet.client.async;
 
-import java.util.Arrays;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -9,7 +8,6 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 

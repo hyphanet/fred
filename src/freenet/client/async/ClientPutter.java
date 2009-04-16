@@ -16,7 +16,6 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;

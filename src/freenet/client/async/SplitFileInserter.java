@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -18,7 +17,6 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
-import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -26,7 +24,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 
 public class SplitFileInserter implements ClientPutState {
 

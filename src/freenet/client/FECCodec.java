@@ -11,11 +11,9 @@ import com.db4o.ObjectContainer;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
 
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 
 /**

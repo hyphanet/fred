@@ -17,7 +17,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableUSK;
 import freenet.keys.USK;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 

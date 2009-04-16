@@ -3,11 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-
 import com.db4o.ObjectContainer;
 
 import freenet.node.BaseSendableGet;

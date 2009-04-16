@@ -21,7 +21,6 @@ import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
-import freenet.support.Executor;
 import freenet.support.Logger;
 
 public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener {

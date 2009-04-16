@@ -6,7 +6,6 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;

@@ -18,7 +18,6 @@ import freenet.node.LowLevelPutException;
 import freenet.node.RequestClient;
 import freenet.node.SimpleSendableInsert;
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 public class BinaryBlobInserter implements ClientPutState {

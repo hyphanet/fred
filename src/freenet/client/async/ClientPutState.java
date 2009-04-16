@@ -6,7 +6,6 @@ package freenet.client.async;
 import com.db4o.ObjectContainer;
 
 import freenet.client.InsertException;
-import freenet.support.SimpleFieldSet;
 
 /**
  * ClientPutState

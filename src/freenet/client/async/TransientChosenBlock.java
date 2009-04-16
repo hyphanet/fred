@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import freenet.keys.ClientKey;
-import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
