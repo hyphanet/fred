@@ -1279,9 +1279,9 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 				}
 			}
 		}
-		if(token != baseMetadata)
-			token.removeFrom(container);
 		if(persistent()) {
+			if(token != baseMetadata)
+				token.removeFrom(container);
 			container.ext().store(metadataPuttersByMetadata, 2);
 			container.deactivate(metadataPuttersByMetadata, 1);
 			state.removeFrom(container, context);
