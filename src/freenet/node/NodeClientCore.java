@@ -1383,6 +1383,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 		}
 		
+		public int hashCode() {
+			return job == null ? 0 : job.hashCode(); 
+		}
+		
 		public boolean equals(Object o) {
 			if(!(o instanceof DBJobWrapper)) return false;
 			DBJobWrapper cmp = (DBJobWrapper) o;
