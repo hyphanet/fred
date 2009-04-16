@@ -234,15 +234,18 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		return key.isMetadata();
 	}
 
+	@Override
 	public boolean objectCanNew(ObjectContainer container) {
 		// Useful to be able to tell whether it's a CHKBlock or a ClientCHKBlock, so override here too.
 		throw new UnsupportedOperationException("ClientCHKBlock storage in database not supported");
 	}
 
+	@Override
 	public int hashCode() {
 		return key.hashCode;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof ClientCHKBlock)) return false;
 		ClientCHKBlock block = (ClientCHKBlock) o;

@@ -121,10 +121,12 @@ public class CHKBlock implements KeyBlock {
 		return getKey().getRoutingKey();
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof CHKBlock)) return false;
 		CHKBlock block = (CHKBlock) o;

@@ -190,18 +190,22 @@ public class ClientCHK extends ClientKey {
 		return compressionAlgorithm >= 0;
 	}
 
+	@Override
 	public ClientCHK cloneKey() {
 		return new ClientCHK(this);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof ClientCHK)) return false;
 		ClientCHK key = (ClientCHK) o;

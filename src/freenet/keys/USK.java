@@ -125,6 +125,7 @@ public class USK extends BaseClientKey {
 		return copy(0);
 	}
 	
+	@Override
 	public USK clone() {
 		return new USK(this);
 	}

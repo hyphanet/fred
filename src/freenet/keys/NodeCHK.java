@@ -37,7 +37,8 @@ public class NodeCHK extends Key {
     	this.cryptoAlgorithm = key.cryptoAlgorithm;
     }
     
-    public Key cloneKey() {
+    @Override
+	public Key cloneKey() {
     	return new NodeCHK(this);
     }
 
@@ -135,6 +136,7 @@ public class NodeCHK extends Key {
 		return Fields.compareBytes(routingKey, key.routingKey);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

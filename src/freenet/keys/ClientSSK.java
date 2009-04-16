@@ -163,6 +163,7 @@ public class ClientSSK extends ClientKey {
 		return "ClientSSK:"+getURI().toString();
 	}
 
+	@Override
 	public ClientKey cloneKey() {
 		return new ClientSSK(this);
 	}
@@ -172,10 +173,12 @@ public class ClientSSK extends ClientKey {
 		container.delete(this);
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof ClientSSK)) return false;
 		ClientSSK key = (ClientSSK) o;

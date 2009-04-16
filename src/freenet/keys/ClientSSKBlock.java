@@ -127,10 +127,12 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		}
 	}
 
+	@Override
 	public int hashCode() {
 		return super.hashCode() ^ key.hashCode();
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof ClientSSKBlock)) return false;
 		ClientSSKBlock block = (ClientSSKBlock) o;

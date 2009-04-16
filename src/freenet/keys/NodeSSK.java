@@ -82,7 +82,8 @@ public class NodeSSK extends Key {
     	this.hashCode = key.hashCode;
     }
     
-    public Key cloneKey() {
+    @Override
+	public Key cloneKey() {
     	return new NodeSSK(this);
     }
 
