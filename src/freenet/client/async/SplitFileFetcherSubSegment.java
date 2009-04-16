@@ -201,7 +201,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 	
-	private class MySendableRequestItem implements SendableRequestItem {
+	private static class MySendableRequestItem implements SendableRequestItem {
 		final int x;
 		MySendableRequestItem(int x) {
 			this.x = x;

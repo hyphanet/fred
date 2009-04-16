@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
  */
 public class BandwidthUsageHistory implements Iterable<BandwidthUsageHistory.BandwidthUsageSample> {
 
-	public class BandwidthUsageSample {
+	public static class BandwidthUsageSample {
 		private float value;
 		private long time;
 
