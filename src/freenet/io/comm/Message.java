@@ -285,6 +285,10 @@ public class Message {
 	public MessageType getSpec() {
 		return _spec;
 	}
+	
+	public int fieldCount() {
+		return _payload.size();
+	}
 
 	public boolean isSet(String fieldName) {
 		return _payload.containsKey(fieldName);

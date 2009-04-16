@@ -186,6 +186,9 @@ public final class MessageFilter {
 			return false;
 		}
 		synchronized (_fields) {
+			if(_fieldList.size() > m.fieldCount())
+				return false;
+			
 			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
 					return false;
