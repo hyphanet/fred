@@ -70,7 +70,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 */
 	private transient HashSet keysFetching;
 	
-	private class RunningTransientInsert {
+	private static class RunningTransientInsert {
 		
 		final SendableInsert insert;
 		final Object token;
