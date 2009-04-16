@@ -25,6 +25,7 @@ public class MedianMeanRunningAverage implements RunningAverage {
 		reports.addAll(average.reports);
 	}
 
+	@Override
 	public Object clone() {
 		synchronized (this) {
 			return new MedianMeanRunningAverage(this);
@@ -55,6 +56,7 @@ public class MedianMeanRunningAverage implements RunningAverage {
 		throw new UnsupportedOperationException();
 	}
 	
+	@Override
 	public synchronized String toString() {
 		return "Median "+currentValue()+" mean "+mean.currentValue();
 	}

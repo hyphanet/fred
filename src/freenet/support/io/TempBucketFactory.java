@@ -384,6 +384,7 @@ public class TempBucketFactory implements BucketFactory {
 			return weakRef;
 		}
 		
+		@Override
 		protected void finalize() {
 			if (!hasBeenFreed) {
 				Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this);

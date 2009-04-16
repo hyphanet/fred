@@ -64,6 +64,7 @@ public class PersistentTempFileBucket extends TempFileBucket {
 	/** Must override createShadow() so it creates a persistent bucket, which will have
 	 * deleteOnExit() = deleteOnFinalize() = false.
 	 */
+	@Override
 	public Bucket createShadow() throws IOException {
 		PersistentTempFileBucket ret = new PersistentTempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();

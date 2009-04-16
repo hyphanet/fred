@@ -45,6 +45,7 @@ public class RandomGrabArray implements RemoveRandom {
 		this.parent = parent;
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

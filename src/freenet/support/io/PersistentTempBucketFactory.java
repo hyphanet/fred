@@ -192,6 +192,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	@SuppressWarnings("serial")
 	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt, DBJobRunner jobRunner, Ticker ticker) throws IOException {
 		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
+			@Override
 			public boolean match(PersistentTempBucketFactory factory) {
 				if(factory.nodeDBHandle == nodeDBHandle) return true;
 				return false;

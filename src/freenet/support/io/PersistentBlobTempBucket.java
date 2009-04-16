@@ -31,6 +31,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	final PersistentBlobTempBucketTag tag;
 	private boolean shadow;
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
@@ -117,10 +118,12 @@ public class PersistentBlobTempBucket implements Bucket {
 				return read(buffer, 0, buffer.length);
 			}
 			
+			@Override
 			public int available() {
 				return (int) Math.min(blockSize - offset, Integer.MAX_VALUE);
 			}
 			
+			@Override
 			public void close() {
 				synchronized(PersistentBlobTempBucket.this) {
 					inputStreams--;
