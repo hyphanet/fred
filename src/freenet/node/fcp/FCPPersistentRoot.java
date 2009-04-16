@@ -28,6 +28,7 @@ public class FCPPersistentRoot {
 
 	public static FCPPersistentRoot create(final long nodeDBHandle, ObjectContainer container) {
 		ObjectSet<FCPPersistentRoot> set = container.query(new Predicate<FCPPersistentRoot>() {
+			@Override
 			public boolean match(FCPPersistentRoot root) {
 				return root.nodeDBHandle == nodeDBHandle;
 			}

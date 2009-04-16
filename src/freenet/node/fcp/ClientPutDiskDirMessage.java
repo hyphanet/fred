@@ -120,6 +120,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 		// Do nothing
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(dirname);
 		container.delete(this);

@@ -84,6 +84,7 @@ public class ModifyPeerNote extends FCPMessage {
 		handler.outputHandler.queue(new PeerNote(nodeIdentifier, noteText, peerNoteType, identifier));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}

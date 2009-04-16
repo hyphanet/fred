@@ -43,6 +43,7 @@ public class DiskDirPutFile extends DirPutFile {
 		return file;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(file);
 		container.delete(this);

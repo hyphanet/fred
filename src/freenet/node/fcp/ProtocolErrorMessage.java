@@ -176,6 +176,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 		return "ProtocolError";
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

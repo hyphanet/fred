@@ -183,6 +183,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		}
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		filesToRead.clear();
 		container.activate(filesByName, Integer.MAX_VALUE);

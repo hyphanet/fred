@@ -41,6 +41,7 @@ public class SSKKeypairMessage extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SSKKeypair goes from server to client not the other way around", identifier, false);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.activate(insertURI, 5);
 		insertURI.removeFrom(container);

@@ -347,6 +347,7 @@ public class ClientPut extends ClientPutBase {
 		
 	}
 
+	@Override
 	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this, false, container);

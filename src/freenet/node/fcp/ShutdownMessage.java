@@ -36,6 +36,7 @@ public class ShutdownMessage extends FCPMessage{
 		node.exit("Received FCP shutdown message");
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}	

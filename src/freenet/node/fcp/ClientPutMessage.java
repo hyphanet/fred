@@ -292,6 +292,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		return global;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		uri.removeFrom(container);
 		container.delete(origFilename);

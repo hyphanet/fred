@@ -62,6 +62,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		}, NativeThread.HIGH_PRIORITY-1, false);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

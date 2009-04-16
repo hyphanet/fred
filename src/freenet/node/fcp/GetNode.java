@@ -47,6 +47,7 @@ public class GetNode extends FCPMessage {
 		handler.outputHandler.queue(new NodeData(node, giveOpennetRef, withPrivate, withVolatile, identifier));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

@@ -38,6 +38,7 @@ public class RedirectDirPutFile extends DirPutFile {
 		return new ManifestElement(name, targetURI, getMIMEType());
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.activate(targetURI, 5);
 		targetURI.removeFrom(container);

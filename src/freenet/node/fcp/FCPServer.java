@@ -329,10 +329,12 @@ public class FCPServer implements Runnable {
 		
 		boolean enabled;
 		
+		@Override
 		public Boolean get() {
 			return enabled;
 		}
 		
+		@Override
 		public void set(Boolean set) throws InvalidConfigValueException {
 			// This option will be removed completely soon, so there is little
 			// point in translating it. FIXME remove.

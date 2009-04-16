@@ -69,6 +69,7 @@ public class AllDataMessage extends DataCarryingMessage {
 		return global;
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

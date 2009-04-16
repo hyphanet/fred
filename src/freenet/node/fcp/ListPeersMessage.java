@@ -49,6 +49,7 @@ public class ListPeersMessage extends FCPMessage {
 		handler.outputHandler.queue(new EndListPeersMessage(identifier));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

@@ -52,6 +52,7 @@ public class RemovePeer extends FCPMessage {
 		handler.outputHandler.queue(new PeerRemoved(identity, nodeIdentifier, identifier));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}

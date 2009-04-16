@@ -139,6 +139,7 @@ public class GetFailedMessage extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "GetFailed goes from server to client not the other way around", identifier, global);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		if(redirectURI != null) {
 			container.activate(redirectURI, 5);

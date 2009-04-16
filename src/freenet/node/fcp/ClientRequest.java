@@ -56,6 +56,7 @@ public abstract class ClientRequest {
 	protected final RequestClient lowLevelClient;
 	private final int hashCode; // for debugging it is good to have a persistent id
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

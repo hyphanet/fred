@@ -292,6 +292,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * Must be called just after construction, but within a transaction.
 	 * @throws IdentifierCollisionException If the identifier is already in use.
 	 */
+	@Override
 	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
 		if(client != null)
 			assert(this.persistenceType == client.persistenceType);

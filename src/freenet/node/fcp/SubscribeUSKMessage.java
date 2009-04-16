@@ -76,6 +76,7 @@ public class SubscribeUSKMessage extends FCPMessage {
 		handler.outputHandler.queue(reply);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}

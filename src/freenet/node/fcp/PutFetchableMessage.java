@@ -42,6 +42,7 @@ public class PutFetchableMessage extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFetchable goes from server to client not the other way around", identifier, global);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.activate(uri, 5);
 		uri.removeFrom(container);

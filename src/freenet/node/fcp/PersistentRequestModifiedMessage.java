@@ -54,6 +54,7 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
         throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentRequestModified goes from server to client not the other way around", ident, global);
     }
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

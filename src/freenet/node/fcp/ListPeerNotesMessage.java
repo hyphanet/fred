@@ -58,6 +58,7 @@ public class ListPeerNotesMessage extends FCPMessage {
 		handler.outputHandler.queue(new EndListPeerNotesMessage(nodeIdentifier, identifier));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}

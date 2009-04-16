@@ -51,6 +51,7 @@ public class ClientHelloMessage extends FCPMessage {
 		handler.setClientName(clientName);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

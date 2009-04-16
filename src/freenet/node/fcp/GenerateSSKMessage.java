@@ -42,6 +42,7 @@ public class GenerateSSKMessage extends FCPMessage {
     	handler.outputHandler.queue(msg);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

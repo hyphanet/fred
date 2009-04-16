@@ -36,6 +36,7 @@ public class EndListPeersMessage extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "EndListPeers goes from server to client not the other way around", null, false);
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

@@ -270,6 +270,7 @@ public class ClientGetMessage extends FCPMessage {
 		throw new IllegalArgumentException("Invalid or unsupported return type: "+returnTypeString(s));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		uri.removeFrom(container);
 		container.delete(diskFile);

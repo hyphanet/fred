@@ -106,6 +106,7 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
+	@Override
 	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this, false, container);
@@ -421,10 +422,12 @@ public class ClientPutDir extends ClientPutBase {
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
 	
+	@Override
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		super.onSuccess(state, container);
 	}
 	
+	@Override
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		super.onFailure(e, state, container);
 	}

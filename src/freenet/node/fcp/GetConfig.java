@@ -54,6 +54,7 @@ public class GetConfig extends FCPMessage {
 		handler.outputHandler.queue(new ConfigData(node, withCurrent, withDefaults, withSortOrder, withExpertFlag, withForceWriteFlag, withShortDescription, withLongDescription, withDataTypes, identifier));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}

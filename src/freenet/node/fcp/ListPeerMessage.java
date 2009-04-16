@@ -50,6 +50,7 @@ public class ListPeerMessage extends FCPMessage {
 		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
 	}
 
+	@Override
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
