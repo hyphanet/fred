@@ -60,7 +60,7 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 
-	private class ContainerElement {
+	private static class ContainerElement {
 		private final Bucket data;
 		private final String targetInArchive;
 		
