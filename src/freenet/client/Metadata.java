@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import com.db4o.ObjectContainer;
 
@@ -131,7 +132,7 @@ public class Metadata implements Cloneable {
 	
 	// Manifests
 	/** Manifest entries by name */
-	HashMap manifestEntries;
+	HashMap<String, Metadata> manifestEntries;
 	
 	/** ZIP internal redirect: name of file in ZIP */
 	String nameInArchive;
@@ -341,7 +342,7 @@ public class Metadata implements Cloneable {
 			if(manifestEntryCount < 0)
 				throw new MetadataParseException("Invalid manifest entry count: "+manifestEntryCount);
 			
-			manifestEntries = new HashMap();
+			manifestEntries = new HashMap<String, Metadata>();
 			
 			// Parse the sub-Manifest.
 			
@@ -395,18 +396,18 @@ public class Metadata implements Cloneable {
 	 * directories (more HashMap's)
 	 * @throws MalformedURLException One of the URI:s were malformed
 	 */
-	private void addRedirectionManifest(HashMap dir) throws MalformedURLException {
+	private void addRedirectionManifest(HashMap<String, Object> dir) throws MalformedURLException {
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
 		noMIME = true;
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
-		manifestEntries = new HashMap();
+		manifestEntries = new HashMap<String, Metadata>();
 		int count = 0;
-		for (Iterator i = dir.entrySet().iterator(); i.hasNext();) {
-			Map.Entry entry = (Map.Entry) i.next();
-			String key = ((String) entry.getKey()).intern();
+		for (Iterator<Entry<String, Object>> i = dir.entrySet().iterator(); i.hasNext();) {
+			Map.Entry<String, Object> entry = i.next();
+			String key = entry.getKey().intern();
 			count++;
 			Object o = entry.getValue();
 			Metadata target;
@@ -416,7 +417,7 @@ public class Metadata implements Cloneable {
 				target = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
 			} else if(o instanceof HashMap) {
 				target = new Metadata();
-				target.addRedirectionManifest((HashMap)o);
+				target.addRedirectionManifest((HashMap<String, Object>)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
@@ -429,7 +430,7 @@ public class Metadata implements Cloneable {
 	 * directories (more HashMap's)
 	 * @throws MalformedURLException One of the URI:s were malformed
 	 */
-	public static Metadata mkRedirectionManifest(HashMap dir) throws MalformedURLException {
+	public static Metadata mkRedirectionManifest(HashMap<String, Object> dir) throws MalformedURLException {
 		Metadata ret = new Metadata();
 		ret.addRedirectionManifest(dir);
 		return ret;
@@ -440,22 +441,22 @@ public class Metadata implements Cloneable {
 	 * The map can contain either string -> Metadata, or string -> map, the latter
 	 * indicating subdirs. 
 	 */
-	public static Metadata mkRedirectionManifestWithMetadata(HashMap dir) {
+	public static Metadata mkRedirectionManifestWithMetadata(HashMap<?, ?> dir) {
 		Metadata ret = new Metadata();
 		ret.addRedirectionManifestWithMetadata(dir);
 		return ret;
 	}
 	
-	private void addRedirectionManifestWithMetadata(HashMap dir) {
+	private void addRedirectionManifestWithMetadata(HashMap<?, ?> dir) {
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
 		noMIME = true;
 		//mimeType = null;
 		//clientMetadata = new ClientMetadata(null);
-		manifestEntries = new HashMap();
+		manifestEntries = new HashMap<String, Metadata>();
 		int count = 0;
-		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
+		for(Iterator<?> i = dir.keySet().iterator();i.hasNext();) {
 			String key = ((String) i.next()).intern();
 			if(key.indexOf('/') != -1)
 				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
@@ -469,7 +470,7 @@ public class Metadata implements Cloneable {
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
-				HashMap hm = (HashMap)o;
+				HashMap<?, ?> hm = (HashMap<?, ?>)o;
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Making metadata map for "+key);
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
@@ -486,7 +487,7 @@ public class Metadata implements Cloneable {
 	 * @param dir A map of names (string) to either files (same string) or
 	 * directories (more HashMap's)
 	 */
-	Metadata(HashMap dir, String prefix) {
+	Metadata(HashMap<?, ?> dir, String prefix) {
 		hashCode = super.hashCode();
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
@@ -494,9 +495,9 @@ public class Metadata implements Cloneable {
 		noMIME = true;
 		mimeType = null;
 		clientMetadata = new ClientMetadata();
-		manifestEntries = new HashMap();
+		manifestEntries = new HashMap<String, Metadata>();
 		int count = 0;
-		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
+		for(Iterator<?> i = dir.keySet().iterator();i.hasNext();) {
 			String key = ((String) i.next()).intern();
 			count++;
 			Object o = dir.get(key);
@@ -506,7 +507,7 @@ public class Metadata implements Cloneable {
 				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
 					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
-				target = new Metadata((HashMap)o, prefix+key+"/");
+				target = new Metadata((HashMap<?, ?>)o, prefix+key+"/");
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
@@ -687,7 +688,7 @@ public class Metadata implements Cloneable {
 	 * @throws MetadataParseException 
 	 */
 	public Metadata getDocument(String name) {
-		return (Metadata) manifestEntries.get(name);
+		return manifestEntries.get(name);
 	}
 	
 	/**
@@ -696,7 +697,7 @@ public class Metadata implements Cloneable {
 	 * removed, since it is being processed.
 	 */
 	public Metadata grabDocument(String name) {
-		return (Metadata) manifestEntries.remove(name);
+		return manifestEntries.remove(name);
 	}
 
 	/**
@@ -722,12 +723,12 @@ public class Metadata implements Cloneable {
      */
     public HashMap<String, Metadata> getDocuments() {
     	HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
-        Set s = manifestEntries.keySet();
-        Iterator i = s.iterator();
+        Set<String> s = manifestEntries.keySet();
+        Iterator<String> i = s.iterator();
         while (i.hasNext()) {
-        	String st = (String) i.next();
+        	String st = i.next();
         	if (st.length()>1)
-        		docs.put(st, (Metadata) manifestEntries.get(st));
+        		docs.put(st, manifestEntries.get(st));
         }
         return docs;
     }
@@ -881,14 +882,14 @@ public class Metadata implements Cloneable {
 		if(documentType == SIMPLE_MANIFEST) {
 			dos.writeInt(manifestEntries.size());
 			boolean kill = false;
-			LinkedList unresolvedMetadata = null;
-			for(Iterator i=manifestEntries.keySet().iterator();i.hasNext();) {
-				String name = (String) i.next();
+			LinkedList<Metadata> unresolvedMetadata = null;
+			for(Iterator<String> i=manifestEntries.keySet().iterator();i.hasNext();) {
+				String name = i.next();
 				byte[] nameData = name.getBytes("UTF-8");
 				if(nameData.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest name too long");
 				dos.writeShort(nameData.length);
 				dos.write(nameData);
-				Metadata meta = (Metadata) manifestEntries.get(name);
+				Metadata meta = manifestEntries.get(name);
 				try {
 					byte[] data = meta.writeToByteArray();
 					if(data.length > MAX_SIZE_IN_MANIFEST) {
@@ -899,7 +900,7 @@ public class Metadata implements Cloneable {
 						} else {
 							kill = true;
 							if(unresolvedMetadata == null)
-								unresolvedMetadata = new LinkedList();
+								unresolvedMetadata = new LinkedList<Metadata>();
 							unresolvedMetadata.addLast(meta);
 						}
 					}
@@ -908,7 +909,7 @@ public class Metadata implements Cloneable {
 				} catch (MetadataUnresolvedException e) {
 					Metadata[] m = e.mustResolve;
 					if(unresolvedMetadata == null)
-						unresolvedMetadata = new LinkedList();
+						unresolvedMetadata = new LinkedList<Metadata>();
 					for(int j=0;j<m.length;j++)
 						unresolvedMetadata.addFirst(m[j]);
 					kill = true;
@@ -916,7 +917,7 @@ public class Metadata implements Cloneable {
 			}
 			if(kill) {
 				Metadata[] meta = 
-					(Metadata[]) unresolvedMetadata.toArray(new Metadata[unresolvedMetadata.size()]);
+					unresolvedMetadata.toArray(new Metadata[unresolvedMetadata.size()]);
 				throw new MetadataUnresolvedException(meta, "Manifest data too long and not resolved");
 			}
 		}
