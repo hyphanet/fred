@@ -92,7 +92,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		throw new UnsupportedOperationException();
 	}
 
-	private class MySendableRequestItem implements SendableRequestItem {
+	private static class MySendableRequestItem implements SendableRequestItem {
 		final Key key;
 		MySendableRequestItem(Key key) {
 			this.key = key;
