@@ -103,6 +103,7 @@ public class RetrievalException extends Exception {
 		}
 	}
 	
+	@Override
 	public String getMessage() {
 		return toString();
 	}
