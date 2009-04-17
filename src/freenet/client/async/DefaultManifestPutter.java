@@ -126,14 +126,14 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		// have a look at all
 		if (wholeSize.getSizeTotalNoLimit() <= maxSize) {
 			// that was easy. the whole tree fits into current container (without externals!)
-			System.out.println("PackStat2: the whole tree (unlimited) fits into container (no externals");
+			System.out.println("PackStat2: the whole tree (unlimited) fits into container (no externals)");
 			makeEveryThingUnlimitedPutHandlers(containerBuilder, manifestElements, prefix);
 			return wholeSize.getSizeTotalNoLimit();
 		}
 
 		if (wholeSize.getSizeTotal() <= maxSize) {
 			// that was easy. the whole tree fits into current container (with externals)
-			System.out.println("PackStat2: the whole tree fits into container (with externals");
+			System.out.println("PackStat2: the whole tree fits into container (with externals)");
 			makeEveryThingPutHandlers(containerBuilder, manifestElements, prefix);
 			return wholeSize.getSizeTotal();
 		}
