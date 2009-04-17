@@ -133,6 +133,9 @@ public class InsertCompressor implements CompressJob {
 				result = comp.compress(origData, bucketFactory2, origSize, bestCompressedDataSize);
 				long resultSize = result.size();
 				if(resultSize < minSize) {
+					if(logMINOR)
+						Logger.minor(this, "New size "+resultSize+" smaller then minSize "+minSize);
+					
 					bestCodec = comp;
 					if(bestCompressedData != null && bestCompressedData != origData)
 						// Don't need to removeFrom() : we haven't stored it.
