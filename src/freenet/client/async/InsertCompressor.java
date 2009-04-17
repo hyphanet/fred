@@ -134,7 +134,7 @@ public class InsertCompressor implements CompressJob {
 				result = comp.compress(origData, bucketFactory2, origSize, bestCompressedDataSize);
 				long resultSize = result.size();
 				// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
-				if(resultSize < minSize) {
+				if(resultSize <= minSize) {
 					if(logMINOR)
 						Logger.minor(this, "New size "+resultSize+" smaller then minSize "+minSize);
 					
