@@ -133,6 +133,7 @@ public class InsertCompressor implements CompressJob {
 
 				result = comp.compress(origData, bucketFactory2, origSize, bestCompressedDataSize);
 				long resultSize = result.size();
+				// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
 				if(resultSize < minSize) {
 					if(logMINOR)
 						Logger.minor(this, "New size "+resultSize+" smaller then minSize "+minSize);
@@ -146,10 +147,7 @@ public class InsertCompressor implements CompressJob {
 					shouldFreeOnFinally = false;
 					break;
 				}
-				if(resultSize < bestCompressedDataSize && 
-						// If compressing to CHK, origSize will always be greater
-						// If compressing to SSK, we are not interested unless we can get it small enough to fit in the SSK itself
-						(origSize > CHKBlock.DATA_LENGTH || resultSize <= SSKBlock.DATA_LENGTH)) {
+				if(resultSize < bestCompressedDataSize) {
 					if(logMINOR)
 						Logger.minor(this, "New size "+resultSize+" better than old best "+bestCompressedDataSize);
 					if(bestCompressedData != null && bestCompressedData != origData)
