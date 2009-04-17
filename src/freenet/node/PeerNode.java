@@ -976,7 +976,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public int getIdentityHash() {
 		return hashCode;
 	}
-
+	
+	public int compareTo(PeerContext o) {
+		return Double.compare(getBootID(), o.getBootID());
+	}
 	/**
 	 * Returns true if the last-known build number for this peer is to old to allow traffic to be routed to it.
 	 * This does not give any indication as to the connection status of the peer.

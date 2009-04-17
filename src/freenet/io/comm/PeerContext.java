@@ -16,7 +16,7 @@ import freenet.node.SyncSendWaitedTooLongException;
  * Everything that is needed to send a message, including the Peer.
  * Implemented by PeerNode, for example.
  */
-public interface PeerContext {
+public interface PeerContext extends Comparable<PeerContext>{
     // Largely opaque interface for now
     Peer getPeer();
 
@@ -62,4 +62,6 @@ public interface PeerContext {
 	
 	/** Report a transfer failure */
 	void transferFailed(String reason);
+	
+    public abstract int compareTo(PeerContext o);
 }
