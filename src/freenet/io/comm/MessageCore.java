@@ -193,26 +193,20 @@ public class MessageCore {
 			if(list != null) {
 				for (ListIterator<MessageFilter> i = list.listIterator(); i.hasNext();) {
 					MessageFilter f = i.next();
-					if (f.matched()) {
-						Logger.error(this, "removed pre-matched message filter found in _filters: "+f);
-						try {
-							messageFiltersWriteLock.lock();
-							i.remove();
-						} finally {
-							messageFiltersWriteLock.unlock();
-						}
-						continue;
-					}
 					if (f.match(m, tStart)) {
-						matched = true;
+						if (f.matched()) {
+							Logger.error(this, "removed pre-matched message filter found in _filters: "+f);
+						} else {
+							matched = true;
+							match = f;
+							if(logMINOR) Logger.minor(this, "Matched: "+f);
+						}
 						try {
 							messageFiltersWriteLock.lock();
 							i.remove();
 						} finally {
 							messageFiltersWriteLock.unlock();
 						}
-						match = f;
-						if(logMINOR) Logger.minor(this, "Matched: "+f);
 						break; // Only one match permitted per message
 					}
 				}
