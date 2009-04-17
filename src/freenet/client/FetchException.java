@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 /**
@@ -14,6 +15,16 @@ import freenet.support.Logger;
  * these to tell the client.
  */
 public class FetchException extends Exception {
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	private static final long serialVersionUID = -1106716067841151962L;
 	
@@ -54,7 +65,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -69,7 +80,7 @@ public class FetchException extends Exception {
 		this.expectedMimeType = expectedMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
@@ -84,7 +95,7 @@ public class FetchException extends Exception {
 		this.expectedMimeType = expectedMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
@@ -98,7 +109,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -112,7 +123,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -126,7 +137,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this))
+		else if(logMINOR)
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -140,7 +151,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -154,7 +165,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -167,7 +178,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
@@ -180,7 +191,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -193,7 +204,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 	
@@ -206,7 +217,7 @@ public class FetchException extends Exception {
 		expectedSize = -1;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -221,7 +232,7 @@ public class FetchException extends Exception {
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -238,7 +249,7 @@ public class FetchException extends Exception {
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
@@ -254,7 +265,7 @@ public class FetchException extends Exception {
 		this.finalizedSizeAndMimeType = e.finalizedSizeAndMimeType;
 		if(mode == INTERNAL_ERROR)
 			Logger.error(this, "Internal error: "+this);
-		else if(Logger.shouldLog(Logger.MINOR, this)) 
+		else if(logMINOR) 
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
