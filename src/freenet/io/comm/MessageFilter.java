@@ -175,8 +175,8 @@ public final class MessageFilter {
 		return this;
 	}
 	
-	public boolean match(Message m) {
-		if ((_or != null) && (_or.match(m))) {
+	public boolean match(Message m, long now) {
+		if ((_or != null) && (_or.match(m, now))) {
 			return true;
 		}
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
@@ -198,7 +198,7 @@ public final class MessageFilter {
 				}
 			}
 		}
-		if(reallyTimedOut(System.currentTimeMillis())) return false;
+		if(reallyTimedOut(now)) return false;
 		return true;
 	}
 

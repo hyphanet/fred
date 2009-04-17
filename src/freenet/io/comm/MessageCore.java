@@ -174,7 +174,7 @@ public class MessageCore {
 					i.remove();
 					continue;
 				}
-				if (f.match(m)) {
+				if (f.match(m, tStart)) {
 					matched = true;
 					i.remove();
 					match = f;
@@ -334,7 +334,7 @@ public class MessageCore {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = i.next();
-				if (filter.match(m)) {
+				if (filter.match(m, now)) {
 					i.remove();
 					ret = m;
 					if(logMINOR) Logger.debug(this, "Matching from _unclaimed");
@@ -406,7 +406,7 @@ public class MessageCore {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = i.next();
-				if (filter.match(m)) {
+				if (filter.match(m,now)) {
 					i.remove();
 					ret = m;
 					if(logMINOR) Logger.minor(this, "Matching from _unclaimed");
