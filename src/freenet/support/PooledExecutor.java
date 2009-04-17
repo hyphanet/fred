@@ -137,7 +137,7 @@ public class PooledExecutor implements Executor {
 		return waitingThreadsCount;
 	}
 
-	class MyThread extends NativeThread {
+	private class MyThread extends NativeThread {
 
 		final String defaultName;
 		volatile boolean alive = true;
