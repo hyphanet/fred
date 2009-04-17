@@ -197,6 +197,9 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 
 	protected abstract long getSleepTime();
 	
+	/**
+	 * Called by the TransferThread after getStartupDelay() milliseconds for the first time and then after each getSleepTime() milliseconds.
+	 */
 	protected abstract void iterate();
 
 	
