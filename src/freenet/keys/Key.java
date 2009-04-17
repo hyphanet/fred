@@ -154,6 +154,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
             if(len > maxLength)
                 throw new TooBigException("Invalid precompressed size: "+len + " maxlength="+maxLength);
             COMPRESSOR_TYPE decompressor = COMPRESSOR_TYPE.getCompressorByMetadataID(compressionAlgorithm);
+            if (decompressor==null)
+            	throw new CHKDecodeException("Unknown compression algorithm: "+compressionAlgorithm);
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
             try {
 				return decompressor.decompress(inputBucket, bf, maxLength, -1, null);
