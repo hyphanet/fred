@@ -103,60 +103,60 @@ public class InsertCompressor implements CompressJob {
 				boolean shouldFreeOnFinally = true;
 				Bucket result = null;
 				try {
-				if(logMINOR)
-					Logger.minor(this, "Attempt to compress using " + comp);
-				// Only produce if we are compressing *the original data*
-				final int phase = comp.metadataID;
-				if(persistent) {
-					context.jobRunner.queue(new DBJob() {
+					if(logMINOR)
+						Logger.minor(this, "Attempt to compress using " + comp);
+					// Only produce if we are compressing *the original data*
+					final int phase = comp.metadataID;
+					if(persistent) {
+						context.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(inserter)) {
-								if(logMINOR) Logger.minor(this, "Already deleted (start compression): "+inserter+" for "+InsertCompressor.this);
-								return;
+							public void run(ObjectContainer container, ClientContext context) {
+								if(!container.ext().isStored(inserter)) {
+									if(logMINOR) Logger.minor(this, "Already deleted (start compression): "+inserter+" for "+InsertCompressor.this);
+									return;
+								}
+								if(container.ext().isActive(inserter))
+									Logger.error(this, "ALREADY ACTIVE in start compression callback: "+inserter);
+								container.activate(inserter, 1);
+								inserter.onStartCompression(comp, container, context);
+								container.deactivate(inserter, 1);
 							}
-							if(container.ext().isActive(inserter))
-								Logger.error(this, "ALREADY ACTIVE in start compression callback: "+inserter);
-							container.activate(inserter, 1);
-							inserter.onStartCompression(comp, container, context);
-							container.deactivate(inserter, 1);
-						}
-						
-					}, NativeThread.NORM_PRIORITY+1, false);
-				} else {
-					try {
-						inserter.onStartCompression(comp, null, context);
-					} catch (Throwable t) {
-						Logger.error(this, "Transient insert callback threw "+t, t);
-					}
-				}
 
-				result = comp.compress(origData, bucketFactory2, origSize, bestCompressedDataSize);
-				long resultSize = result.size();
-				// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
-				if(resultSize <= minSize) {
-					if(logMINOR)
-						Logger.minor(this, "New size "+resultSize+" smaller then minSize "+minSize);
-					
-					bestCodec = comp;
-					if(bestCompressedData != null && bestCompressedData != origData)
-						// Don't need to removeFrom() : we haven't stored it.
-						bestCompressedData.free();
-					bestCompressedData = result;
-					bestCompressedDataSize = resultSize;
-					shouldFreeOnFinally = false;
-					break;
-				}
-				if(resultSize < bestCompressedDataSize) {
-					if(logMINOR)
-						Logger.minor(this, "New size "+resultSize+" better than old best "+bestCompressedDataSize);
-					if(bestCompressedData != null && bestCompressedData != origData)
-						bestCompressedData.free();
-					bestCompressedData = result;
-					bestCompressedDataSize = resultSize;
-					bestCodec = comp;
-					shouldFreeOnFinally = false;
-				}
+						}, NativeThread.NORM_PRIORITY+1, false);
+					} else {
+						try {
+							inserter.onStartCompression(comp, null, context);
+						} catch (Throwable t) {
+							Logger.error(this, "Transient insert callback threw "+t, t);
+						}
+					}
+
+					result = comp.compress(origData, bucketFactory2, origSize, bestCompressedDataSize);
+					long resultSize = result.size();
+					// minSize is {SSKBlock,CHKBlock}.MAX_COMPRESSED_DATA_LENGTH
+					if(resultSize <= minSize) {
+						if(logMINOR)
+							Logger.minor(this, "New size "+resultSize+" smaller then minSize "+minSize);
+
+						bestCodec = comp;
+						if(bestCompressedData != null && bestCompressedData != origData)
+							// Don't need to removeFrom() : we haven't stored it.
+							bestCompressedData.free();
+						bestCompressedData = result;
+						bestCompressedDataSize = resultSize;
+						shouldFreeOnFinally = false;
+						break;
+					}
+					if(resultSize < bestCompressedDataSize) {
+						if(logMINOR)
+							Logger.minor(this, "New size "+resultSize+" better than old best "+bestCompressedDataSize);
+						if(bestCompressedData != null && bestCompressedData != origData)
+							bestCompressedData.free();
+						bestCompressedData = result;
+						bestCompressedDataSize = resultSize;
+						bestCodec = comp;
+						shouldFreeOnFinally = false;
+					}
 				} catch(CompressionOutputSizeException e) {
 					continue;       // try next compressor type
 				} finally {
