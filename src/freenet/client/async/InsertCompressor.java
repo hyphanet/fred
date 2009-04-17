@@ -9,6 +9,7 @@ import com.db4o.query.Query;
 import freenet.client.InsertException;
 import freenet.keys.CHKBlock;
 import freenet.keys.NodeCHK;
+import freenet.keys.SSKBlock;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -148,7 +149,7 @@ public class InsertCompressor implements CompressJob {
 				if(resultSize < bestCompressedDataSize && 
 						// If compressing to CHK, origSize will always be greater
 						// If compressing to SSK, we are not interested unless we can get it small enough to fit in the SSK itself
-						origSize > CHKBlock.DATA_LENGTH) {
+						(origSize > CHKBlock.DATA_LENGTH || resultSize <= SSKBlock.DATA_LENGTH)) {
 					if(logMINOR)
 						Logger.minor(this, "New size "+resultSize+" better than old best "+bestCompressedDataSize);
 					if(bestCompressedData != null && bestCompressedData != origData)
