@@ -194,23 +194,25 @@ public class MessageCore {
 				for (ListIterator<MessageFilter> i = list.listIterator(); i.hasNext();) {
 					MessageFilter f = i.next();
 					if (f.match(m, tStart)) {
-						if (f.matched()) {
-							Logger.error(this, "removed pre-matched message filter found in _filters: "+f);
-						} else {
-							matched = true;
-							match = f;
-							if(logMINOR) Logger.minor(this, "Matched: "+f);
-						}
 						try {
+							messageFiltersReadLock.unlock();
 							messageFiltersWriteLock.lock();
-							i.remove();
+							if (f.match(m, tStart)) {
+								if (f.matched()) {
+									Logger.error(this, "removed pre-matched message filter found in _filters: "+f);
+								} else {
+									matched = true;
+									match = f;
+									if(logMINOR) Logger.minor(this, "Matched: "+f);
+								}
+								i.remove();
+							}
+							break; // Only one match permitted per message
 						} finally {
 							messageFiltersWriteLock.unlock();
 						}
-						break; // Only one match permitted per message
 					}
 				}
-
 			}
 		} finally {
 			messageFiltersReadLock.unlock();
@@ -260,16 +262,19 @@ public class MessageCore {
 					for (ListIterator<MessageFilter> i = list.listIterator(); i.hasNext();) {
 						MessageFilter f = i.next();
 						if (f.match(m, tStart)) {
-							matched = true;
-							match = f;
 							try {
+								messageFiltersReadLock.unlock();
 								messageFiltersWriteLock.lock();
-								i.remove();
+								if (f.match(m, tStart)) {
+									matched = true;
+									match = f;
+									i.remove();
+									if(logMINOR) Logger.minor(this, "Matched: "+f);
+									break; // Only one match permitted per message
+								}
 							} finally {
 								messageFiltersWriteLock.unlock();
 							}
-							if(logMINOR) Logger.minor(this, "Matched: "+f);
-							break; // Only one match permitted per message
 						}
 					}
 				}
@@ -277,8 +282,10 @@ public class MessageCore {
 				    while (_unclaimed.size() > MAX_UNMATCHED_FIFO_SIZE) {
 				        Message removed = null;
 						try {
+							messageFiltersReadLock.unlock();
 							messageFiltersWriteLock.lock();
-							_unclaimed.removeFirst();
+							if(_unclaimed.size() > MAX_UNMATCHED_FIFO_SIZE)
+								_unclaimed.removeFirst();
 						} finally {
 							messageFiltersWriteLock.unlock();
 						}
@@ -291,6 +298,7 @@ public class MessageCore {
 				        }
 				    }
 					try {
+						messageFiltersReadLock.unlock();
 						messageFiltersWriteLock.lock();
 						_unclaimed.addLast(m);
 					} finally {
@@ -486,8 +494,11 @@ public class MessageCore {
 				Message m = i.next();
 				if (filter.match(m,now)) {
 					try {
+						messageFiltersReadLock.unlock();
 						messageFiltersWriteLock.lock();
-						i.remove();
+						if(filter.match(m,now)) {
+							i.remove();
+						}
 					} finally {
 						messageFiltersWriteLock.unlock();
 					}
@@ -496,6 +507,7 @@ public class MessageCore {
 					break;
 				} else if (m.localInstantiationTime < messageDropTime) {
 					try {
+						messageFiltersReadLock.unlock();
 						messageFiltersWriteLock.lock();
 						i.remove();
 					} finally {
@@ -517,6 +529,7 @@ public class MessageCore {
 					while (true) {
 						if (!i.hasNext()) {
 							try {
+								messageFiltersReadLock.unlock();
 								messageFiltersWriteLock.lock();
 								i.add(filter);
 							} finally {
@@ -528,9 +541,12 @@ public class MessageCore {
 						MessageFilter mf = i.next();
 						if (mf.getTimeout() > filter.getTimeout()) {
 							try {
+								messageFiltersReadLock.unlock();
 								messageFiltersWriteLock.lock();
-								i.previous();
-								i.add(filter);
+								if (mf.getTimeout() > filter.getTimeout()) {
+									i.previous();
+									i.add(filter);
+								}
 							} finally {
 								messageFiltersWriteLock.unlock();
 							}
@@ -582,8 +598,11 @@ public class MessageCore {
 				// Fortunately, it will be close to the beginning of the filters list, having
 				// just timed out. That is assuming it hasn't already been removed; in that
 				// case, this will be slower.
+				messageFiltersReadLock.unlock();
 				messageFiltersWriteLock.lock();
-				_filters.remove(filter);
+				if(!filter.matched()) {
+					_filters.remove(filter);
+				}
 			} finally {
 				messageFiltersWriteLock.unlock();
 			}
