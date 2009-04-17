@@ -52,10 +52,9 @@ public class MessageCore {
 	}
 
 	private Dispatcher _dispatcher;
-	/** lock serves as lock for both */
-	private final ReadWriteLock messageFiltersLock = new ReentrantReadWriteLock();
-	private final Lock messageFiltersReadLock = messageFiltersLock.readLock();
-	private final Lock messageFiltersWriteLock = messageFiltersLock.writeLock();
+	private final Lock messageFiltersReadLock;
+	private final Lock messageFiltersWriteLock;
+	/** messageFiltersLock serves as lock for both _filters and _unclaimed */
 	private final Map<PeerContext, LinkedList<MessageFilter>> _filters = new TreeMap<PeerContext,LinkedList<MessageFilter>>();
 	private final LinkedList<Message> _unclaimed = new LinkedList<Message>();
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
@@ -70,6 +69,9 @@ public class MessageCore {
 
 	public MessageCore() {
 		_timedOutFilters = new Vector<MessageFilter>(32);
+		ReadWriteLock messageFiltersLock = new ReentrantReadWriteLock(true);
+		messageFiltersReadLock = messageFiltersLock.readLock();
+		messageFiltersWriteLock = messageFiltersLock.writeLock();
 	}
 
 	/**
