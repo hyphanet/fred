@@ -96,6 +96,8 @@ public class InsertCompressor implements CompressJob {
 		// Try each algorithm, starting with the fastest and weakest.
 		// Stop when run out of algorithms, or the compressed data fits in a single block.
 		try {
+			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024);
+			
 			for(final COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
 				boolean shouldFreeOnFinally = true;
 				Bucket result = null;
@@ -127,8 +129,8 @@ public class InsertCompressor implements CompressJob {
 						Logger.error(this, "Transient insert callback threw "+t, t);
 					}
 				}
-				
-				result = comp.compress(origData, new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024), origSize, bestCompressedDataSize);
+
+				result = comp.compress(origData, bucketFactory2, origSize, bestCompressedDataSize);
 				long resultSize = result.size();
 				if(resultSize < minSize) {
 					bestCodec = comp;
