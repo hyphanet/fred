@@ -6,6 +6,7 @@ package freenet.support.io;
 
 import freenet.node.NodeStarter;
 import freenet.support.LibraryLoader;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 /**
@@ -15,6 +16,19 @@ import freenet.support.Logger;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class NativeThread extends Thread {
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+	
 	public static final boolean _loadNative;
 	private static boolean _disabled;
 	public static final int JAVA_PRIORITY_RANGE = Thread.MAX_PRIORITY - Thread.MIN_PRIORITY;
@@ -36,10 +50,10 @@ public class NativeThread extends Thread {
 	public static final int MAX_PRIORITY = 10;
 	
 	static {
-		Logger.minor(NativeThread.class, "Running init()");
+		if(logMINOR)Logger.minor(NativeThread.class, "Running init()");
 		// Loading the NativeThread library isn't useful on macos
 		boolean maybeLoadNative = ("Linux".equalsIgnoreCase(System.getProperty("os.name"))) && (NodeStarter.extBuildNumber > 18);
-		Logger.debug(NativeThread.class, "Run init(): should loadNative="+maybeLoadNative);
+		if(logDEBUG)Logger.debug(NativeThread.class, "Run init(): should loadNative="+maybeLoadNative);
 		if(maybeLoadNative && LibraryLoader.loadNative("/freenet/support/io/", "NativeThread")) {
 			NATIVE_PRIORITY_BASE = getLinuxPriority();
 			NATIVE_PRIORITY_RANGE = 20 - NATIVE_PRIORITY_BASE;
@@ -60,7 +74,7 @@ public class NativeThread extends Thread {
 			HAS_PLENTY_NICE_LEVELS = true;
 			_loadNative = false;
 		}
-		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
+		if(logMINOR)Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
 	
 	public NativeThread(String name, int priority, boolean dontCheckRenice) {
@@ -104,10 +118,10 @@ public class NativeThread extends Thread {
 	 * Rescale java priority and set linux priority.
 	 */
 	private boolean setNativePriority(int prio) {
-		Logger.minor(this, "setNativePriority("+prio+")");
+		if(logMINOR)Logger.minor(this, "setNativePriority("+prio+")");
 		setPriority(prio);
 		if(!_loadNative) {
-			Logger.minor(this, "_loadNative is false");
+			if(logMINOR)Logger.minor(this, "_loadNative is false");
 			return true;
 		}
 		int realPrio = getLinuxPriority();
@@ -135,7 +149,7 @@ public class NativeThread extends Thread {
 				" above the current value!! It's not possible if you aren't root" +
 				" and shouldn't ever occur in our code. (asked="+prio+':'+linuxPriority+" currentMax="+
 				+currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOUDLN'T HAPPEN, please report!");
-		Logger.minor(this, "Setting native priority to "+linuxPriority+" (base="+NATIVE_PRIORITY_BASE+") for "+this);
+		if(logMINOR)Logger.minor(this, "Setting native priority to "+linuxPriority+" (base="+NATIVE_PRIORITY_BASE+") for "+this);
 		return setLinuxPriority(linuxPriority);
 	}
 	
