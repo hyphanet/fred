@@ -9,7 +9,6 @@ import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
@@ -221,38 +220,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return new FreenetURI[] { key.getInsertURI(), key.getURI() };
 	}
 
-	private final ClientCallback nullCallback = new ClientCallback() {
-
-		public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-			// Ignore
-		}
-
-		public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-			// Impossible
-		}
-
-		public void onFetchable(BaseClientPutter state, ObjectContainer container) {
-			// Impossible
-		}
-
-		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-			// Impossible
-		}
-
-		public void onMajorProgress(ObjectContainer container) {
-			// Ignore
-		}
-
-		public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-			result.data.free();
-		}
-
-		public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-			// Impossible
-		}
-		
-	};
-
+	private final ClientCallback nullCallback = new NullClientCallback();
+	
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
 		prefetch(uri, timeout, maxSize, allowedTypes, RequestStarter.PREFETCH_PRIORITY_CLASS);
 	}
