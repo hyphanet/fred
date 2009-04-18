@@ -49,7 +49,7 @@ public class LRUHashtable<K, V> {
     /**
      *  @return Least recently pushed key.
      */
-    public final synchronized Object popKey() {
+    public final synchronized K popKey() {
         if ( list.size() > 0 ) {
 			return hash.remove(list.pop().obj).obj;
         } else {
@@ -60,7 +60,7 @@ public class LRUHashtable<K, V> {
     /**
      * @return Least recently pushed value.
      */
-    public final synchronized Object popValue() {
+    public final synchronized V popValue() {
         if ( list.size() > 0 ) {
 			return hash.remove(list.pop().obj).value;
         } else {
@@ -68,7 +68,7 @@ public class LRUHashtable<K, V> {
         }
     }
     
-	public final synchronized Object peekValue() {
+	public final synchronized V peekValue() {
         if ( list.size() > 0 ) {
 			return hash.get(list.tail().obj).value;
         } else {
