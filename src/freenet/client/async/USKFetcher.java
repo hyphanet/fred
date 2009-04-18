@@ -309,6 +309,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 			schedule(end-now, null, context);
 		} else {
 			uskManager.unsubscribe(origUSK, this);
+			uskManager.onFinished(this);
 			long ed = uskManager.lookupLatestSlot(origUSK);
 			USKFetcherCallback[] cb;
 			synchronized(this) {
@@ -543,13 +544,13 @@ public class USKFetcher implements ClientGetState, USKCallback {
 		uskManager.unsubscribe(origUSK, this);
 		assert(container == null);
 		USKAttempt[] attempts;
+		uskManager.onFinished(this);
 		synchronized(this) {
 			cancelled = true;
 			attempts = runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 		}
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel(container, context);
-		uskManager.onCancelled(this);
 	}
 
 	/** Set of interested USKCallbacks. Note that we don't actually

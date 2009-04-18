@@ -147,6 +147,7 @@ public class USKManager implements RequestClient {
 			if(prefetchContent) {
 				final long min = lookupKnownGood(usk);
 				f.addCallback(new USKFetcherCallback() {
+					
 					public void onCancelled(ObjectContainer container, ClientContext context) {
 						// Ok
 					}
@@ -363,14 +364,14 @@ public class USKManager implements RequestClient {
 			f = temporaryBackgroundFetchersLRU.get(clear);
 			if(f != null) {
 				f.removeCallback(cb);
-				if(f.isFinished() || !f.hasCallbacks()) {
+				if(!f.hasCallbacks()) {
 					if(toCancel != null) {
 						toCancelAlt = f;
 						Logger.error(this, "Subscribed in both backgroundFetchers and temporaryBackgroundFetchers???: "+cb+" for "+origUSK);
 					} else {
 						toCancel = f;
 					}
-						backgroundFetchersByClearUSK.remove(clear);
+						temporaryBackgroundFetchersLRU.removeKey(clear);
 				}
 			}
 			
@@ -427,13 +428,20 @@ public class USKManager implements RequestClient {
 		return temporaryBackgroundFetchersLRU.size();
 	}
 
-	public void onCancelled(USKFetcher fetcher) {
-		USK clear = fetcher.getOriginalUSK().clearCopy();
+	public void onFinished(USKFetcher fetcher) {
+		USK orig = fetcher.getOriginalUSK();
+		USK clear = orig.clearCopy();
 		synchronized(this) {
 			if(backgroundFetchersByClearUSK.get(clear) == fetcher) {
 				backgroundFetchersByClearUSK.remove(clear);
 				// This shouldn't happen, it's a sanity check: the only way we get cancelled is from USKManager, which removes us before calling cancel().
 				Logger.error(this, "onCancelled for "+fetcher+" - was still registered, how did this happen??", new Exception("debug"));
+			}
+			if(temporaryBackgroundFetchersLRU.get(clear) == fetcher) {
+				temporaryBackgroundFetchersLRU.removeKey(clear);
+			}
+			if(fetchersByUSK.get(orig) == fetcher) {
+				fetchersByUSK.remove(clear);
 			}
 		}
 	}
