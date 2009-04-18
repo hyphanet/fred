@@ -9,6 +9,11 @@ import java.util.Vector;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.client.FetchException;
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.NullClientCallback;
+import freenet.clients.http.FProxyToadlet;
+import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -16,6 +21,7 @@ import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.io.NullBucket;
 
 /**
  * Tracks the latest version of every known USK.
@@ -45,14 +51,20 @@ public class USKManager implements RequestClient {
 	final LRUQueue<USK> temporaryBackgroundFetchersLRU;
 	
 	final FetchContext backgroundFetchContext;
+	/** This one actually fetches data */
+	final FetchContext realFetchContext;
 	
 	final Executor executor;
 	
 	private ClientContext context;
 	
 	public USKManager(NodeClientCore core) {
-		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
+		HighLevelSimpleClient client = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS);
+		client.setMaxIntermediateLength(FProxyToadlet.MAX_LENGTH);
+		client.setMaxLength(FProxyToadlet.MAX_LENGTH);
+		backgroundFetchContext = client.getFetchContext();
 		backgroundFetchContext.followRedirects = false;
+		realFetchContext = client.getFetchContext();
 		latestKnownGoodByClearUSK = new HashMap<USK, Long>();
 		latestSlotByClearUSK = new HashMap<USK, Long>();
 		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
@@ -114,7 +126,7 @@ public class USKManager implements RequestClient {
 		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, true, container, context);
 	}
 
-	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context) {
+	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context, final FetchContext fctx, boolean prefetchContent) {
 		USK clear = usk.clearCopy();
 		USKFetcher sched = null;
 		Vector<USKFetcher> toCancel = null;
@@ -127,10 +139,41 @@ public class USKManager implements RequestClient {
 //			}
 			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, false, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, this), 3, false, false);
 				sched = f;
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
+			if(prefetchContent)
+				f.addCallback(new USKFetcherCallback() {
+
+					public void onCancelled(ObjectContainer container, ClientContext context) {
+						// Ok
+					}
+
+					public void onFailure(ObjectContainer container, ClientContext context) {
+						// Ok
+					}
+
+					public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+						FreenetURI uri = key.copy(l).getURI();
+						final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+						try {
+							get.start(null, context);
+						} catch (FetchException e) {
+							// Ignore
+						}
+					}
+
+					public short getPollingPriorityNormal() {
+						return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+					}
+
+					public short getPollingPriorityProgress() {
+						return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+					}
+					
+					
+				});
 			temporaryBackgroundFetchersLRU.push(clear);
 			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.maxBackgroundUSKFetchers) {
 				USK del = temporaryBackgroundFetchersLRU.pop();

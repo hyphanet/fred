@@ -1078,7 +1078,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			long edition = context.uskManager.lookupKnownGood(usk);
 			if(edition <= usk.suggestedEdition) {
 				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
-				context.uskManager.startTemporaryBackgroundFetcher(usk, context);
+				context.uskManager.startTemporaryBackgroundFetcher(usk, context, ctx, true);
 				edition = context.uskManager.lookupKnownGood(usk);
 				if(edition > usk.suggestedEdition) {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
