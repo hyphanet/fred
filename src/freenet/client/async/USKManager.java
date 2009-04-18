@@ -144,9 +144,9 @@ public class USKManager implements RequestClient {
 				sched = f;
 				temporaryBackgroundFetchersLRU.push(clear, f);
 			}
-			if(prefetchContent)
+			if(prefetchContent) {
+				final long min = lookupKnownGood(usk);
 				f.addCallback(new USKFetcherCallback() {
-
 					public void onCancelled(ObjectContainer container, ClientContext context) {
 						// Ok
 					}
@@ -156,6 +156,7 @@ public class USKManager implements RequestClient {
 					}
 
 					public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+						if(l <= min) return;
 						FreenetURI uri = key.copy(l).getURI();
 						final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
 						try {
@@ -175,6 +176,7 @@ public class USKManager implements RequestClient {
 					
 					
 				});
+			}
 			temporaryBackgroundFetchersLRU.push(clear, f);
 			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.maxBackgroundUSKFetchers) {
 				USKFetcher fetcher = temporaryBackgroundFetchersLRU.popValue();
