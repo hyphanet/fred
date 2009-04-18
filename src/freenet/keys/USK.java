@@ -77,6 +77,7 @@ public class USK extends BaseClientKey {
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
 
+	// FIXME: Be careful with this constructor! There must not be an edition in the ClientSSK!
 	public USK(ClientSSK ssk, long myARKNumber) {
 		this.pubKeyHash = ssk.pubKeyHash;
 		this.cryptoKey = ssk.cryptoKey;
