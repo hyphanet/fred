@@ -60,7 +60,7 @@ public class Message {
 	private final MessageType _spec;
 	private final WeakReference<? extends PeerContext> _sourceRef;
 	private final boolean _internal;
-	private final HashMap<String, Object> _payload = new HashMap<String, Object>(8, 1.0F); // REDFLAG at the moment memory is more of an issue than CPU so we use a high load factor
+	private final HashMap<String, Object> _payload = new HashMap<String, Object>(8);
 	private List<Message> _subMessages;
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
