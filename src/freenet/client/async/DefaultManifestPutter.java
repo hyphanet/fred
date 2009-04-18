@@ -61,10 +61,12 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		});
 	}
 	
-	public static final long DEFAULT_MAX_CONTAINERSIZE = (2038-64)*1024;
+	// the 'physical' limit for container size
+	public static final long DEFAULT_MAX_CONTAINERSIZE = 2048*1024;  
 	public static final long DEFAULT_MAX_CONTAINERITEMSIZE = 1024*1024;
 	// a container > (MAX_CONTAINERSIZE-CONTAINERSIZE_SPARE) is treated as 'full'
-	public static final long DEFAULT_CONTAINERSIZE_SPARE = 15*1024;
+	// this should prevent to big containers
+	public static final long DEFAULT_CONTAINERSIZE_SPARE = 196*1024;
 
 	public DefaultManifestPutter(ClientCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
 			RequestClient clientContext, boolean earlyEncode) {
