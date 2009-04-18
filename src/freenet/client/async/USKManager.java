@@ -41,6 +41,7 @@ public class USKManager implements RequestClient {
 	/** Backgrounded USKFetchers by USK. */
 	final HashMap<USK, USKFetcher> backgroundFetchersByClearUSK;
 	
+	/** These must be TEMPORARY, that is, they must NOT poll forever! */
 	final LRUQueue<USK> temporaryBackgroundFetchersLRU;
 	
 	final FetchContext backgroundFetchContext;
@@ -126,7 +127,7 @@ public class USKManager implements RequestClient {
 //			}
 			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, true, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, false, false);
 				sched = f;
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
