@@ -308,7 +308,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 			}
 			schedule(end-now, null, context);
 		} else {
-			uskManager.unsubscribe(origUSK, this, false);
+			uskManager.unsubscribe(origUSK, this);
 			long ed = uskManager.lookupLatestSlot(origUSK);
 			USKFetcherCallback[] cb;
 			synchronized(this) {
@@ -540,7 +540,7 @@ public class USKFetcher implements ClientGetState, USKCallback {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		uskManager.unsubscribe(origUSK, this, false);
+		uskManager.unsubscribe(origUSK, this);
 		assert(container == null);
 		USKAttempt[] attempts;
 		synchronized(this) {
@@ -608,11 +608,21 @@ public class USKFetcher implements ClientGetState, USKCallback {
 		return !subscribers.isEmpty();
 	}
 	
+	public synchronized boolean hasCallbacks() {
+		return !callbacks.isEmpty();
+	}
+	
 	public void removeSubscriber(USKCallback cb, ClientContext context) {
 		synchronized(this) {
 			subscribers.remove(cb);
 		}
 		updatePriorities();
+	}
+
+	public void removeCallback(USKCallback cb) {
+		synchronized(this) {
+			subscribers.remove(cb);
+		}
 	}
 
 	public synchronized boolean hasLastData() {

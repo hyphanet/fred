@@ -407,7 +407,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 			synchronized(this) {
 				isRunning = false;
 				USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
-				core.uskManager.unsubscribe(myUsk, this, true);
+				core.uskManager.unsubscribe(myUsk, this);
 				c = cg;
 				cg = null;
 			}

@@ -32,7 +32,7 @@ public class SubscribeUSK implements USKCallback {
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(handler.isClosed()) {
-			core.uskManager.unsubscribe(key, this, !dontPoll);
+			core.uskManager.unsubscribe(key, this);
 			return;
 		}
 		//if(newKnownGood && !newSlotToo) return;

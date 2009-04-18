@@ -325,8 +325,9 @@ public class USKManager implements RequestClient {
 		}
 	}
 	
-	public void unsubscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {
+	public void unsubscribe(USK origUSK, USKCallback cb) {
 		USKFetcher toCancel = null;
+		USKFetcher toCancelAlt = null;
 		synchronized(this) {
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = subscribersByClearUSK.get(clear);
@@ -349,23 +350,41 @@ public class USKManager implements RequestClient {
 				subscribersByClearUSK.remove(clear);
 				fetchersByUSK.remove(origUSK);
 			}
-			if(runBackgroundFetch) {
-				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
-				if(f == null) {
-					if(newCallbacks.length == 0)
-						Logger.minor(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed. No callbacks.", new Exception("debug"));
-					else
-						Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
-				} else {
-					f.removeSubscriber(cb, context);
-					if(!f.hasSubscribers()) {
-							toCancel = f;
-							backgroundFetchersByClearUSK.remove(clear);
-					}
+			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
+			if(f == null) {
+				if(newCallbacks.length == 0)
+					Logger.minor(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed. No callbacks.", new Exception("debug"));
+				else
+					Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
+			} else {
+				f.removeSubscriber(cb, context);
+				if(!f.hasSubscribers()) {
+						toCancel = f;
+						backgroundFetchersByClearUSK.remove(clear);
 				}
 			}
+			f = temporaryBackgroundFetchersLRU.get(clear);
+			if(f == null) {
+				if(newCallbacks.length == 0)
+					Logger.minor(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed. No callbacks.", new Exception("debug"));
+				else
+					Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
+			} else {
+				f.removeCallback(cb);
+				if(f.isFinished() || !f.hasCallbacks()) {
+					if(toCancel != null) {
+						toCancelAlt = f;
+						Logger.error(this, "Subscribed in both backgroundFetchers and temporaryBackgroundFetchers???: "+cb+" for "+origUSK);
+					} else {
+						toCancel = f;
+					}
+						backgroundFetchersByClearUSK.remove(clear);
+				}
+			}
+			
 		}
 		if(toCancel != null) toCancel.cancel(null, context);
+		if(toCancelAlt != null) toCancelAlt.cancel(null, context);
 	}
 	
 	/**
@@ -385,7 +404,7 @@ public class USKManager implements RequestClient {
 	}
 	
 	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
-		unsubscribe(origUSK, ret, runBackgroundFetch);
+		unsubscribe(origUSK, ret);
 	}
 	
 	// REMOVE: DO NOT Synchronize! ... debugging only.

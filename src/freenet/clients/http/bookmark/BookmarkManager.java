@@ -212,7 +212,7 @@ public class BookmarkManager implements RequestClient {
 			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
-					this.node.uskManager.unsubscribe(u, this.uskCB, true);
+					this.node.uskManager.unsubscribe(u, this.uskCB);
 				} catch(MalformedURLException mue) {
 				}
 
