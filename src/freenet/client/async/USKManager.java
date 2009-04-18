@@ -19,7 +19,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
-import freenet.support.LRUQueue;
+import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.io.NullBucket;
 
@@ -45,11 +45,14 @@ public class USKManager implements RequestClient {
 	 * USKFetcherTag's i.e. for /-<number/ searches. */
 	final HashMap<USK, USKFetcher> fetchersByUSK;
 	
-	/** Backgrounded USKFetchers by USK. */
+	/** Backgrounded USKFetchers by USK. These have pollForever=true and are only
+	 * created when subscribe(,true) is called. */
 	final HashMap<USK, USKFetcher> backgroundFetchersByClearUSK;
 	
-	/** These must be TEMPORARY, that is, they must NOT poll forever! */
-	final LRUQueue<USK> temporaryBackgroundFetchersLRU;
+	/** Temporary fetchers, started when a USK (with a positive edition number) is 
+	 * fetched. These have pollForever=false. Keyed by the clear USK, i.e. one per 
+	 * USK, not one per {USK, start edition}, unlike fetchersByUSK. */
+	final LRUHashtable<USK, USKFetcher> temporaryBackgroundFetchersLRU;
 	
 	final FetchContext backgroundFetchContext;
 	/** This one actually fetches data */
@@ -71,7 +74,7 @@ public class USKManager implements RequestClient {
 		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
 		fetchersByUSK = new HashMap<USK, USKFetcher>();
 		backgroundFetchersByClearUSK = new HashMap<USK, USKFetcher>();
-		temporaryBackgroundFetchersLRU = new LRUQueue<USK>();
+		temporaryBackgroundFetchersLRU = new LRUHashtable<USK, USKFetcher>();
 		executor = core.getExecutor();
 	}
 
@@ -111,9 +114,6 @@ public class USKManager implements RequestClient {
 	synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
 			ClientRequester requester, boolean keepLastData) {
 		USKFetcher f = fetchersByUSK.get(usk);
-		USK clear = usk.clearCopy();
-		if(temporaryBackgroundFetchersLRU.contains(clear))
-			temporaryBackgroundFetchersLRU.push(clear);
 		if(f != null) {
 			if((f.parent.priorityClass == requester.priorityClass) && f.ctx.equals(ctx) && f.keepLastData == keepLastData)
 				return f;
@@ -138,11 +138,11 @@ public class USKManager implements RequestClient {
 //				System.err.println("Fetcher "+x+": "+i.next());
 //				x++;
 //			}
-			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
+			USKFetcher f = temporaryBackgroundFetchersLRU.get(clear);
 			if(f == null) {
 				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, this), 3, false, false);
 				sched = f;
-				backgroundFetchersByClearUSK.put(clear, f);
+				temporaryBackgroundFetchersLRU.push(clear, f);
 			}
 			if(prefetchContent)
 				f.addCallback(new USKFetcherCallback() {
@@ -175,14 +175,12 @@ public class USKManager implements RequestClient {
 					
 					
 				});
-			temporaryBackgroundFetchersLRU.push(clear);
+			temporaryBackgroundFetchersLRU.push(clear, f);
 			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.maxBackgroundUSKFetchers) {
-				USK del = temporaryBackgroundFetchersLRU.pop();
-				USKFetcher fetcher = backgroundFetchersByClearUSK.get(del.clearCopy());
+				USKFetcher fetcher = temporaryBackgroundFetchersLRU.popValue();
 				if(!fetcher.hasSubscribers()) {
 					if(toCancel == null) toCancel = new Vector<USKFetcher>(2);
 					toCancel.add(fetcher);
-					backgroundFetchersByClearUSK.remove(del);
 				} else {
 					if(Logger.shouldLog(Logger.MINOR, this))
 						Logger.minor(this, "Allowing temporary background fetcher to continue as it has subscribers... "+fetcher);
@@ -361,10 +359,8 @@ public class USKManager implements RequestClient {
 				} else {
 					f.removeSubscriber(cb, context);
 					if(!f.hasSubscribers()) {
-						if(!temporaryBackgroundFetchersLRU.contains(clear)) {
 							toCancel = f;
 							backgroundFetchersByClearUSK.remove(clear);
-						}
 					}
 				}
 			}
