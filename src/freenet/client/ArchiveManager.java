@@ -627,7 +627,7 @@ outerZIP:		while(true) {
 					Logger.error(this, "storedData is empty but still over limit: cachedData="+cachedData+" / "+maxCachedData);
 					return;
 				}
-				item = (ArchiveStoreItem) storedData.popValue();
+				item = storedData.popValue();
 				long space = item.spaceUsed();
 				cachedData -= space;
 				// Hard limits = delete file within lock, soft limits = delete outside of lock

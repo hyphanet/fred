@@ -369,7 +369,7 @@ public class FailureTable implements OOMHook {
 	private synchronized void trimOffersList(long now) {
 		while(true) {
 			if(blockOfferListByKey.isEmpty()) return;
-			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.peekValue();
+			BlockOfferList bl = blockOfferListByKey.peekValue();
 			if(bl.isEmpty(now) || bl.expires() < now || blockOfferListByKey.size() > MAX_OFFERS) {
 				if(logMINOR) Logger.minor(this, "Removing block offer list "+bl+" list size now "+blockOfferListByKey.size());
 				blockOfferListByKey.popKey();

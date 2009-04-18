@@ -126,7 +126,7 @@ public class PrioritizedSerialExecutor implements Executor {
 					if(!jobs[i].isEmpty()) {
 						if(logMINOR)
 							Logger.minor(this, "Chosen job at priority "+i);
-						return (Runnable) jobs[i].removeFirst();
+						return jobs[i].removeFirst();
 					}
 				}
 			} else {
@@ -134,7 +134,7 @@ public class PrioritizedSerialExecutor implements Executor {
 					if(!jobs[i].isEmpty()) {
 						if(logMINOR)
 							Logger.minor(this, "Chosen job at priority "+i);
-						return (Runnable) jobs[i].removeFirst();
+						return jobs[i].removeFirst();
 					}
 				}
 			}

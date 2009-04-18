@@ -147,7 +147,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(decompressors.size() > 1) {
 			Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
 		}
-		this.clientMetadata = clientMetadata == null ? new ClientMetadata() : (ClientMetadata) clientMetadata.clone(); // copy it as in SingleFileFetcher
+		this.clientMetadata = clientMetadata == null ? new ClientMetadata() : clientMetadata.clone(); // copy it as in SingleFileFetcher
 		this.cb = rcb;
 		this.recursionLevel = recursionLevel + 1;
 		this.parent = parent2;

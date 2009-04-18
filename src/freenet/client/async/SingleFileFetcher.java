@@ -100,7 +100,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Always copy if persistent
 			this.metaStrings = new ArrayList<String>(metaStrings);
 		this.addedMetaStrings = addedMetaStrings;
-		this.clientMetadata = (metadata != null ? (ClientMetadata) metadata.clone() : new ClientMetadata());
+		this.clientMetadata = (metadata != null ? metadata.clone() : new ClientMetadata());
 		thisKey = key.getURI();
 		if(origURI == null) throw new NullPointerException();
 		this.uri = persistent ? origURI.clone() : origURI;
@@ -126,7 +126,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(persistent && ah != null) ah = ah.cloneHandler();
 		this.ah = fetcher.ah;
 		this.archiveMetadata = null;
-		this.clientMetadata = (fetcher.clientMetadata != null ? (ClientMetadata) fetcher.clientMetadata.clone() : new ClientMetadata());
+		this.clientMetadata = (fetcher.clientMetadata != null ? fetcher.clientMetadata.clone() : new ClientMetadata());
 		this.metadata = newMeta;
 		this.metaStrings = new ArrayList<String>();
 		this.addedMetaStrings = 0;
@@ -770,7 +770,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 
 	private String removeMetaString() {
-		String name = (String) metaStrings.remove(0);
+		String name = metaStrings.remove(0);
 		if(addedMetaStrings > 0) addedMetaStrings--;
 		return name;
 	}
