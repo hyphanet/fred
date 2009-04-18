@@ -131,7 +131,8 @@ public class USKManager implements RequestClient {
 	/**
 	 * A non-authoritative hint that a specific edition *might* exist. At the moment,
 	 * we just fetch the block. We do not fetch the contents, and it is possible that
-	 * USKFetcher's are also fetching the block.
+	 * USKFetcher's are also fetching the block. FIXME would it be more efficient to
+	 * pass it along to a USKFetcher?
 	 * @param usk
 	 * @param edition
 	 * @param context
@@ -150,7 +151,8 @@ public class USKManager implements RequestClient {
 	/**
 	 * A non-authoritative hint that a specific edition *might* exist. At the moment,
 	 * we just fetch the block. We do not fetch the contents, and it is possible that
-	 * USKFetcher's are also fetching the block.
+	 * USKFetcher's are also fetching the block. FIXME would it be more efficient to
+	 * pass it along to a USKFetcher?
 	 * @param context
 	 * @throws MalformedURLException If the uri passed in is not a USK.
 	 */
