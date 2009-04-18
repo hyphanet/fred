@@ -234,6 +234,7 @@ class FailureTableEntry implements TimedOutNodesList {
 				if(requestedNodes[i] == null || requestedNodes[i].get() == null) {
 					requestedNodes[i] = requestedFrom.myRef;
 					requestedLocs[i] = requestedFrom.getLocation();
+					requestedBootIDs[i] = requestedFrom.getBootID();
 					requestedTimes[i] = now;
 					requestedTimeouts[i] = -1;
 					requestedTimeoutHTLs[i] = (short) -1;
