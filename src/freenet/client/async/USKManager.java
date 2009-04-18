@@ -198,7 +198,7 @@ public class USKManager implements RequestClient {
 					public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 						if(l <= min) return;
 						FreenetURI uri = key.copy(l).getURI();
-						final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+						final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
 						try {
 							get.start(null, context);
 						} catch (FetchException e) {

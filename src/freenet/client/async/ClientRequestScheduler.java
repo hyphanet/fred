@@ -396,6 +396,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					for(int i=0;i<getters.length;i++) {
 						SendableGet getter = getters[i];
 						container.activate(getter, 1);
+						getter.preRegister(container, clientContext);
 						if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
 							wereAnyValid = true;
 							schedCore.innerRegister(getter, random, container, getters);
@@ -422,6 +423,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(container.ext().isActive(getter))
 								Logger.error(this, "ALREADY ACTIVE in delayed finishRegister: "+getter);
 							container.activate(getter, 1);
+							getter.preRegister(container, clientContext);
 							if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
 								wereAnyValid = true;
 								schedCore.innerRegister(getter, random, container, getters);
@@ -442,8 +444,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 			if(!anyValid) return;
 			// Register immediately.
-			for(int i=0;i<getters.length;i++)
+			for(int i=0;i<getters.length;i++) {
+				getters[i].preRegister(container, clientContext);
+				if(getters[i].isCancelled(null) || getters[i].isEmpty(null)) continue;
 				schedTransient.innerRegister(getters[i], random, null, getters);
+			}
 			starter.wakeUp();
 		}
 	}
