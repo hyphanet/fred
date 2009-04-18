@@ -41,7 +41,8 @@ public class USKManager implements RequestClient {
 	final HashMap<USK, USKCallback[]> subscribersByClearUSK;
 	
 	/** USKFetcher's by USK. USK includes suggested edition number, so there is one
-	 * USKFetcher for each {USK, edition number}. */
+	 * USKFetcher for each {USK, edition number}. These are the fetchers for 
+	 * USKFetcherTag's i.e. for /-<number/ searches. */
 	final HashMap<USK, USKFetcher> fetchersByUSK;
 	
 	/** Backgrounded USKFetchers by USK. */
