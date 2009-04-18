@@ -89,9 +89,9 @@ public class PrioritizedSerialExecutor implements Executor {
 							name = name.substring(0, name.indexOf('@'));
 						Long l = timeByJobClasses.get(name);
 						if(l != null) {
-							l = new Long(l.longValue() + (end-start));
+							l = Long.valueOf(l.longValue() + (end-start));
 						} else {
-							l = new Long(end-start);
+							l = Long.valueOf(end-start);
 						}
 						timeByJobClasses.put(name, l);
 						if(logMINOR) {

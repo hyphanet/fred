@@ -114,7 +114,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		public void run(ObjectContainer container, ClientContext context) {
 			Query query = container.query();
 			query.constrain(BackgroundBlockEncoderTag.class);
-			query.descend("nodeDBHandle").constrain(new Long(context.nodeDBHandle));
+			query.descend("nodeDBHandle").constrain(Long.valueOf(context.nodeDBHandle));
 			query.descend("priority").orderAscending();
 			query.descend("addedTime").orderAscending();
 			ObjectSet results = query.execute();

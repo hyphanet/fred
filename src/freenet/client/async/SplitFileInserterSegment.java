@@ -1080,7 +1080,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						checkFailed[checkNum] = true;
 						blocksCompleted++;
 						if(persistent) container.activate(blocks, 2);
-						blocks.remove(new Integer(blockNum));
+						blocks.remove(Integer.valueOf(blockNum));
 						if(persistent) container.store(blocks);
 						if(checkBlocks[checkNum] != null) {
 							if(persistent) container.activate(checkBlocks[checkNum], 1);
@@ -1103,7 +1103,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					blocksCompleted++;
 					blocksSucceeded++;
 					if(persistent) container.activate(blocks, 2);
-					blocks.remove(new Integer(blockNum));
+					blocks.remove(Integer.valueOf(blockNum));
 					if(persistent) container.store(blocks);
 					if(checkBlocks[checkNum] != null) {
 						if(persistent) container.activate(checkBlocks[checkNum], 1);
@@ -1144,7 +1144,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						dataFailed[blockNum] = true;
 						blocksCompleted++;
 						if(persistent) container.activate(blocks, 2);
-						blocks.remove(new Integer(blockNum));
+						blocks.remove(Integer.valueOf(blockNum));
 						if(persistent) container.store(blocks);
 						if(dataBlocks[blockNum] != null) {
 							if(persistent) container.activate(dataBlocks[blockNum], 1);
@@ -1167,7 +1167,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					blocksCompleted++;
 					blocksSucceeded++;
 					if(persistent) container.activate(blocks, 2);
-					blocks.remove(new Integer(blockNum));
+					blocks.remove(Integer.valueOf(blockNum));
 					if(persistent) container.store(blocks);
 					if(dataBlocks[blockNum] != null && encoded) {
 						if(persistent) container.activate(dataBlocks[blockNum], 1);
@@ -1222,7 +1222,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					blocksCompleted++;
 					blocksSucceeded++;
 					if(persistent) container.activate(blocks, 2);
-					blocks.remove(new Integer(blockNum));
+					blocks.remove(Integer.valueOf(blockNum));
 					if(persistent) container.store(blocks);
 				} else {
 					if(checkFailed[checkNum])
@@ -1247,7 +1247,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					blocksCompleted++;
 					blocksSucceeded++;
 					if(persistent) container.activate(blocks, 2);
-					blocks.remove(new Integer(blockNum));
+					blocks.remove(Integer.valueOf(blockNum));
 					if(persistent) container.store(blocks);
 				} else {
 					if(dataFailed[blockNum])

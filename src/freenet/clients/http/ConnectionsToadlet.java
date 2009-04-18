@@ -567,7 +567,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				PeerAdditionReturnCodes result=addNewNode(nodesToAdd[i].trim().concat("\nEnd"), privateComment);
 				//Store the result
 				if(results.containsKey(result)==false){
-					results.put(result, new Integer(0));
+					results.put(result, Integer.valueOf(0));
 				}
 				results.put(result, results.get(result)+1);
 			}

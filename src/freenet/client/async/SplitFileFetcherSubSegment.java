@@ -499,7 +499,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				throw new IllegalStateException("Adding blocks to already cancelled "+this);
 			for(int x=0;x<blocks.length;x++) {
 				int i = blocks[x];
-				Integer ii = new Integer(i);
+				Integer ii = Integer.valueOf(i);
 				if(blockNums.contains(ii)) {
 					if(!dontComplainOnDupes)
 						Logger.error(this, "Block numbers already contain block "+i);
