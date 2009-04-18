@@ -86,6 +86,8 @@ public abstract class FCPMessage {
 			return new ShutdownMessage();
 		if(name.equals(SubscribeUSKMessage.NAME))
 			return new SubscribeUSKMessage(fs);
+		if(name.equals(UnsubscribeUSKMessage.NAME))
+			return new UnsubscribeUSKMessage(fs);
 		if(name.equals(TestDDARequestMessage.NAME))
 			return new TestDDARequestMessage(fs);
 		if(name.equals(TestDDAResponseMessage.NAME))

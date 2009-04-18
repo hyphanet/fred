@@ -19,14 +19,17 @@ public class SubscribeUSK implements USKCallback {
 	final boolean dontPoll;
 	final short prio;
 	final short prioProgress;
+	final USK usk;
 	
-	public SubscribeUSK(SubscribeUSKMessage message, NodeClientCore core, FCPConnectionHandler handler) {
+	public SubscribeUSK(SubscribeUSKMessage message, NodeClientCore core, FCPConnectionHandler handler) throws IdentifierCollisionException {
 		this.handler = handler;
 		this.dontPoll = message.dontPoll;
 		this.identifier = message.identifier;
 		this.core = core;
+		this.usk = message.key;
 		prio = message.prio;
 		prioProgress = message.prioProgress;
+		handler.addSubscription(identifier, this);
 		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient);
 	}
 
@@ -46,6 +49,10 @@ public class SubscribeUSK implements USKCallback {
 
 	public short getPollingPriorityProgress() {
 		return prioProgress;
+	}
+
+	public void unsubscribe() {
+		core.uskManager.unsubscribe(usk, this);
 	}
 
 }

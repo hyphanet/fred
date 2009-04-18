@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
@@ -59,6 +60,7 @@ public class FCPConnectionHandler implements Closeable {
 	final FCPServer server;
 	final Socket sock;
 	final FCPConnectionInputHandler inputHandler;
+	final Map<String, SubscribeUSK> uskSubscriptions;
 	public final FCPConnectionOutputHandler outputHandler;
 	private boolean isClosed;
 	private boolean inputClosed;
@@ -92,6 +94,7 @@ public class FCPConnectionHandler implements Closeable {
 		isClosed = false;
 		this.bf = server.core.tempBucketFactory;
 		requestsByIdentifier = new HashMap<String, ClientRequest>();
+		uskSubscriptions = new HashMap<String, SubscribeUSK>();
 		this.inputHandler = new FCPConnectionInputHandler(this);
 		this.outputHandler = new FCPConnectionOutputHandler(this);
 		
@@ -112,14 +115,18 @@ public class FCPConnectionHandler implements Closeable {
 		if(foreverClient != null)
 			foreverClient.onLostConnection(this);
 		boolean dupe;
+		SubscribeUSK[] subscriptions;
 		synchronized(this) {
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
 			requests = requestsByIdentifier.values().toArray(requests);
+			subscriptions = uskSubscriptions.values().toArray(new SubscribeUSK[uskSubscriptions.size()]);
 			dupe = killedDupe;
 		}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection(null, server.core.clientContext);
+		for(SubscribeUSK sub : subscriptions)
+			sub.unsubscribe();
 		if(!dupe) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
@@ -140,6 +147,7 @@ public class FCPConnectionHandler implements Closeable {
 			
 		}, NativeThread.NORM_PRIORITY, false);
 		}
+		
 		outputHandler.onClosed();
 	}
 	
@@ -738,6 +746,19 @@ public class FCPConnectionHandler implements Closeable {
 		Logger.error(this, "Not storing FCPConnectionHandler in database", new Exception("error"));
 		return false;
 	}
-	
+
+	public synchronized void addSubscription(String identifier, SubscribeUSK subscribeUSK) throws IdentifierCollisionException {
+		if(uskSubscriptions.containsKey(identifier)) throw new IdentifierCollisionException();
+		uskSubscriptions.put(identifier, subscribeUSK);
+	}
+
+	public void unsubscribe(String identifier) throws MessageInvalidException {
+		SubscribeUSK sub;
+		synchronized(this) {
+			if(!uskSubscriptions.containsKey(identifier)) throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "No such identifier unsubscribing", identifier, false);
+			sub = uskSubscriptions.remove(identifier);
+		}
+		sub.unsubscribe();
+	}
 
 }

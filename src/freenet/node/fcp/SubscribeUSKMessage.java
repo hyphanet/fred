@@ -70,8 +70,12 @@ public class SubscribeUSKMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		new SubscribeUSK(this, node.clientCore, handler);
-		
+		try {
+			new SubscribeUSK(this, node.clientCore, handler);
+		} catch (IdentifierCollisionException e) {
+			handler.outputHandler.queue(new IdentifierCollisionMessage(identifier, false));
+			return;
+		}
 		SubscribedUSKMessage reply = new SubscribedUSKMessage(this);
 		handler.outputHandler.queue(reply);
 	}
