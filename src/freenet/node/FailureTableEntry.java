@@ -442,11 +442,16 @@ class FailureTableEntry implements TimedOutNodesList {
 		}
 		return -1; // not timed out
 	}
-
+	
 	public synchronized boolean cleanup() {
+		long now = System.currentTimeMillis(); // don't pass in as a pass over the whole FT may take a while. get it in the method.
+		
+		return cleanupRequestor(now) && cleanupRequested(now);
+	}
+
+	private boolean cleanupRequestor(long now) {
 		boolean empty = true;
 		int x = 0;
-		long now = System.currentTimeMillis(); // don't pass in as a pass over the whole FT may take a while. get it in the method.
 		for(int i=0;i<requestorNodes.length;i++) {
 			WeakReference<PeerNode> ref = requestorNodes[i];
 			if(ref == null) continue;
@@ -474,7 +479,13 @@ class FailureTableEntry implements TimedOutNodesList {
 			requestorTimes = newRequestorTimes;
 			requestorBootIDs = newRequestorBootIDs;
 		}
-		x = 0;
+		
+		return empty;
+	}
+	
+	private boolean cleanupRequested(long now) {
+		boolean empty = true;
+		int x = 0;
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference<PeerNode> ref = requestedNodes[i];
 			if(ref == null) continue;
