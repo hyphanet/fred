@@ -863,4 +863,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			throw new NullPointerException("Storing "+this+" but blockNums == null!");
 		return true;
 	}
+	
+	@Override
+	public void preRegister(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
 }

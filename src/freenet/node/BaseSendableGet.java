@@ -16,4 +16,7 @@ public abstract class BaseSendableGet extends SendableRequest {
 	
 	public abstract boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context);
 
+	/** Called after checking the datastore and before registering the request to be 
+	 * sent. Some gets may want to cancel here, some may want to send an event to FCP. */
+	public abstract void preRegister(ObjectContainer container, ClientContext context);
 }

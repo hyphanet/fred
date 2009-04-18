@@ -245,4 +245,9 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public void preRegister(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
 }

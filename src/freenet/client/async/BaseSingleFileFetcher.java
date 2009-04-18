@@ -352,4 +352,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		key.removeFrom(container);
 	}
 	
+	@Override
+	public void preRegister(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
 }
