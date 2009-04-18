@@ -21,7 +21,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 	private final ArrayList<SendableRequest> list;
 	
 	PersistentSendableRequestSet() {
-		list = new ArrayList();
+		list = new ArrayList<freenet.node.SendableRequest>();
 	}
 	
 	public synchronized boolean addRequest(SendableRequest req, ObjectContainer container) {

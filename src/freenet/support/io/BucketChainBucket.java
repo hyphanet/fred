@@ -39,7 +39,7 @@ public class BucketChainBucket implements Bucket {
 		readOnly = false;
 	}
 
-	private BucketChainBucket(Vector newBuckets, long bucketSize2, long size2, boolean readOnly, BucketFactory bf2) {
+	private BucketChainBucket(Vector<Bucket> newBuckets, long bucketSize2, long size2, boolean readOnly, BucketFactory bf2) {
 		this.buckets = newBuckets;
 		this.bucketSize = bucketSize2;
 		this.size = size2;
