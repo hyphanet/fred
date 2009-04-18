@@ -925,6 +925,10 @@ public class FreenetURI implements Cloneable {
 		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
 	}
 
+	public boolean isSSKForUSK() {
+		return keyType.equalsIgnoreCase("SSK") && docName.matches(".*\\-[0-9]+");
+	}
+	
 	public FreenetURI uskForSSK() {
 		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
 		if (!docName.matches(".*\\-[0-9]+"))

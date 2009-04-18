@@ -159,6 +159,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			Logger.error(this, "block is null! fromStore="+fromStore+", token="+token, new Exception("error"));
 			return;
 		}
+		if(key instanceof ClientSSK) {
+			try {
+				if(uri.isSSK() && uri.isSSKForUSK()) {
+					if(persistent) container.activate(uri, 5);
+					FreenetURI uu = uri.setMetaString(null).uskForSSK();
+					USK usk = USK.create(uu);
+					context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
+				}
+			} catch (MalformedURLException e) {
+				Logger.error(this, "Caught "+e, e);
+			} catch (Throwable t) {
+				// Don't let the USK hint cause us to not succeed on the block.
+				Logger.error(this, "Caught "+t, t);
+			}
+		}
 		Bucket data = extract(block, container, context);
 		if(data == null) {
 			if(logMINOR)
