@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -125,6 +126,42 @@ public class USKManager implements RequestClient {
 	
 	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
 		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, true, container, context);
+	}
+	
+	/**
+	 * A non-authoritative hint that a specific edition *might* exist. At the moment,
+	 * we just fetch the block. We do not fetch the contents, and it is possible that
+	 * USKFetcher's are also fetching the block.
+	 * @param usk
+	 * @param edition
+	 * @param context
+	 */
+	public void hintUpdate(USK usk, long edition, ClientContext context) {
+		if(edition < lookupLatestSlot(usk)) return;
+		FreenetURI uri = usk.copy(edition).getURI();
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+		try {
+			get.start(null, context);
+		} catch (FetchException e) {
+			// Ignore
+		}
+	}
+
+	/**
+	 * A non-authoritative hint that a specific edition *might* exist. At the moment,
+	 * we just fetch the block. We do not fetch the contents, and it is possible that
+	 * USKFetcher's are also fetching the block.
+	 * @param context
+	 * @throws MalformedURLException If the uri passed in is not a USK.
+	 */
+	public void hintUpdate(FreenetURI uri, ClientContext context) throws MalformedURLException {
+		if(uri.getSuggestedEdition() < lookupLatestSlot(USK.create(uri))) return;
+		final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+		try {
+			get.start(null, context);
+		} catch (FetchException e) {
+			// Ignore
+		}
 	}
 
 	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context, final FetchContext fctx, boolean prefetchContent) {
