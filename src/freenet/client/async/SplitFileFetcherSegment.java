@@ -1492,8 +1492,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					container.deactivate(checkSeg, 1);
 			}
-			if(persistent)
-				container.deactivate(seg, 1);
 			try {
 				cb = new ClientCHKBlock((CHKBlock)block, ckey);
 			} catch (CHKVerifyException e) {
@@ -1520,6 +1518,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(killSeg)
 			seg.kill(container, context, true, true);
+		if(persistent)
+			container.deactivate(seg, 1);
 		if(fatal != null) {
 			this.onFatalFailure(fatal, blockNum, null, container, context);
 			return false;
