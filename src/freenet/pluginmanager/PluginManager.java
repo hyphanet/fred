@@ -698,7 +698,7 @@ public class PluginManager {
 		addOfficialPlugin("ThawIndexBrowser", false, 1);
 		addOfficialPlugin("UPnP");
 		addOfficialPlugin("XMLLibrarian");
-		addOfficialPlugin("XMLSpider", false, 35);
+		addOfficialPlugin("XMLSpider", false, 36);
 	}
 	
 	static void addOfficialPlugin(String name) {
