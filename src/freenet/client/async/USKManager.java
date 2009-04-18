@@ -351,12 +351,7 @@ public class USKManager implements RequestClient {
 				fetchersByUSK.remove(origUSK);
 			}
 			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
-			if(f == null) {
-				if(newCallbacks.length == 0)
-					Logger.minor(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed. No callbacks.", new Exception("debug"));
-				else
-					Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
-			} else {
+			if(f != null) {
 				f.removeSubscriber(cb, context);
 				if(!f.hasSubscribers()) {
 						toCancel = f;
@@ -364,12 +359,7 @@ public class USKManager implements RequestClient {
 				}
 			}
 			f = temporaryBackgroundFetchersLRU.get(clear);
-			if(f == null) {
-				if(newCallbacks.length == 0)
-					Logger.minor(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed. No callbacks.", new Exception("debug"));
-				else
-					Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
-			} else {
+			if(f != null) {
 				f.removeCallback(cb);
 				if(f.isFinished() || !f.hasCallbacks()) {
 					if(toCancel != null) {
