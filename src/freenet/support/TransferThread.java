@@ -95,9 +95,11 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 			catch(RuntimeException e) {
 				Logger.error(this, "SHOULD NOT HAPPEN, please report this exception", e);
 			}
+			finally {
 			synchronized (this) {
 				shutdownFinished = true;
 				notify();
+			}
 			}
 		}
 	}
