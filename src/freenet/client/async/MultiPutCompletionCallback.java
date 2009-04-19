@@ -14,9 +14,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	// Vector's rather than HashSet's for memory reasons.
 	// This class will not be used with large sets, so O(n) is cheaper than O(1) -
 	// at least it is on memory!
-	private final Vector waitingFor;
-	private final Vector waitingForBlockSet;
-	private final Vector waitingForFetchable;
+	private final Vector<ClientPutState> waitingFor;
+	private final Vector<ClientPutState> waitingForBlockSet;
+	private final Vector<ClientPutState> waitingForFetchable;
 	private final PutCompletionCallback cb;
 	private ClientPutState generator;
 	private final BaseClientPutter parent;
@@ -35,9 +35,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent) {
 		this.cb = cb;
-		waitingFor = new Vector();
-		waitingForBlockSet = new Vector();
-		waitingForFetchable = new Vector();
+		waitingFor = new Vector<ClientPutState>();
+		waitingForBlockSet = new Vector<ClientPutState>();
+		waitingForFetchable = new Vector<ClientPutState>();
 		this.parent = parent;
 		this.token = token;
 		finished = false;
@@ -210,7 +210,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientPutState[] states = new ClientPutState[waitingFor.size()];
 		synchronized(this) {
-			states = (ClientPutState[]) waitingFor.toArray(states);
+			states = waitingFor.toArray(states);
 		}
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		for(int i=0;i<states.length;i++) {
