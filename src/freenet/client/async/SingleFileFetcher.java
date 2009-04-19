@@ -484,7 +484,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Fetch it from the archive
 				if(ah == null)
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
-				String filename = metadata.getZIPInternalName();
+				String filename = metadata.getArchiveInternalName();
 				if(logMINOR) Logger.minor(this, "Fetching "+filename);
 				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
 				if(dataBucket != null) {

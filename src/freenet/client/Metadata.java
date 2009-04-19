@@ -768,7 +768,7 @@ public class Metadata implements Cloneable {
 	 * Return the name of the document referred to in the archive,
 	 * if this is a archive internal redirect.
 	 */
-	public String getZIPInternalName() {
+	public String getArchiveInternalName() {
 		return nameInArchive;
 	}
 
