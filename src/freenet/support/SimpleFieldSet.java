@@ -304,8 +304,8 @@ public class SimpleFieldSet {
 				if(values.get(key) == null) {
 					values.put(key, value);
 				} else {
-				if(!allowMultiple) return false;
-				values.put(key, (values.get(key))+ MULTI_VALUE_CHAR +value);
+					if(!allowMultiple) return false;
+					values.put(key, (values.get(key))+ MULTI_VALUE_CHAR +value);
 				}
 			}
 		} else {
