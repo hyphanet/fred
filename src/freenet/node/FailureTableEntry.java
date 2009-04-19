@@ -447,7 +447,9 @@ class FailureTableEntry implements TimedOutNodesList {
 	public synchronized boolean cleanup() {
 		long now = System.currentTimeMillis(); // don't pass in as a pass over the whole FT may take a while. get it in the method.
 		
-		return cleanupRequestor(now) && cleanupRequested(now);
+		boolean empty = cleanupRequestor(now);
+		empty &= cleanupRequested(now);
+		return empty;
 	}
 
 	private boolean cleanupRequestor(long now) {
