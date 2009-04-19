@@ -84,6 +84,10 @@ public class USK extends BaseClientKey {
 		this.siteName = ssk.docName;
 		this.suggestedEdition = myARKNumber;
 		this.cryptoAlgorithm = ssk.cryptoAlgorithm;
+
+		if (siteName.matches(".*\\-[0-9]+(\\/.*)?$"))	// not error -- just "possible" bug
+			Logger.normal(this, "POSSIBLE BUG: edition in ClientSSK " + ssk, new Exception("debug"));
+
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
