@@ -5,6 +5,7 @@ package freenet.clients.http.filter;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -78,7 +79,7 @@ public class BMPFilter implements ContentDataFilter {
         if (result < 0)// end of file reached
             throw new EOFException();
 
-        int r2 = is.read();
+        int r2 = dis.read();
         if (r2 < 0)// end of file reached
             throw new EOFException();
 
