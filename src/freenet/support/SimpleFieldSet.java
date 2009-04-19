@@ -295,15 +295,18 @@ public class SimpleFieldSet {
 		int idx;
 		if(value == null) return true; // valid no-op
 		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
-		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
-			String x = values.get(key);
-			
+		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {		
 			if(!shortLived) key = key.intern();
-			if(x == null || overwrite) {
+			
+			if(overwrite) {
 				values.put(key, value);
 			} else {
+				if(values.get(key) == null) {
+					values.put(key, value);
+				} else {
 				if(!allowMultiple) return false;
 				values.put(key, (values.get(key))+ MULTI_VALUE_CHAR +value);
+				}
 			}
 		} else {
 			String before = key.substring(0, idx);
