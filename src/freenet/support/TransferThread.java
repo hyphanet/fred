@@ -89,7 +89,12 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 		}
 		
 		finally {
-			abortAllTransfers();
+			try {
+				abortAllTransfers();
+			}
+			catch(RuntimeException e) {
+				Logger.error(this, "SHOULD NOT HAPPEN, please report this exception", e);
+			}
 			synchronized (this) {
 				shutdownFinished = true;
 				notify();
