@@ -134,7 +134,7 @@ public class Metadata implements Cloneable {
 	/** Manifest entries by name */
 	HashMap<String, Metadata> manifestEntries;
 	
-	/** ZIP internal redirect: name of file in ZIP */
+	/** Archive internal redirect: name of file in archive */
 	String nameInArchive;
 
 	ClientMetadata clientMetadata;
@@ -373,7 +373,7 @@ public class Metadata implements Cloneable {
 		
 		if(documentType == ARCHIVE_INTERNAL_REDIRECT) {
 			int len = dis.readShort();
-			if(logMINOR) Logger.minor(this, "Reading zip internal redirect length "+len);
+			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
 			nameInArchive = new String(buf, "UTF-8");
@@ -398,7 +398,7 @@ public class Metadata implements Cloneable {
 	 */
 	private void addRedirectionManifest(HashMap<String, Object> dir) throws MalformedURLException {
 		// Simple manifest - contains actual redirects.
-		// Not zip manifest, which is basically a redirect.
+		// Not archive manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
 		noMIME = true;
 		//mimeType = null;
@@ -449,7 +449,7 @@ public class Metadata implements Cloneable {
 	
 	private void addRedirectionManifestWithMetadata(HashMap<String, Object> dir) {
 		// Simple manifest - contains actual redirects.
-		// Not zip manifest, which is basically a redirect.
+		// Not archive manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
 		noMIME = true;
 		//mimeType = null;
@@ -490,7 +490,7 @@ public class Metadata implements Cloneable {
 	Metadata(HashMap<String, Object> dir, String prefix) {
 		hashCode = super.hashCode();
 		// Simple manifest - contains actual redirects.
-		// Not zip manifest, which is basically a redirect.
+		// Not archive manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
 		noMIME = true;
 		mimeType = null;
@@ -503,7 +503,7 @@ public class Metadata implements Cloneable {
 			Object o = dir.get(key);
 			Metadata target;
 			if(o instanceof String) {
-				// Zip internal redirect
+				// Archive internal redirect
 				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
 					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
@@ -516,8 +516,8 @@ public class Metadata implements Cloneable {
 	/**
 	 * Create a really simple Metadata object.
 	 * @param docType The document type. Must be something that takes a single argument.
-	 * At the moment this means ZIP_INTERNAL_REDIRECT.
-	 * @param arg The argument; in the case of ZIP_INTERNAL_REDIRECT, the filename in
+	 * At the moment this means ARCHIVE_INTERNAL_REDIRECT.
+	 * @param arg The argument; in the case of ARCHIVE_INTERNAL_REDIRECT, the filename in
 	 * the archive to read from.
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
@@ -750,14 +750,14 @@ public class Metadata implements Cloneable {
 	}
 
 	/**
-	 * Is this a ZIP manifest?
+	 * Is this a Archive manifest?
 	 */
 	public boolean isArchiveManifest() {
 		return documentType == ARCHIVE_MANIFEST;
 	}
 
 	/**
-	 * Is this a ZIP internal redirect?
+	 * Is this a Archive internal redirect?
 	 * @return
 	 */
 	public boolean isArchiveInternalRedirect() {
@@ -766,7 +766,7 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Return the name of the document referred to in the archive,
-	 * if this is a zip internal redirect.
+	 * if this is a archive internal redirect.
 	 */
 	public String getZIPInternalName() {
 		return nameInArchive;
@@ -800,7 +800,7 @@ public class Metadata implements Cloneable {
 	}
 
 	/** Change the document type to a simple redirect. Used by the archive code
-	 * to fetch split ZIP manifests.
+	 * to fetch split Archive manifests.
 	 */
 	public void setSimpleRedirect() {
 		documentType = SIMPLE_REDIRECT;
@@ -924,7 +924,7 @@ public class Metadata implements Cloneable {
 		
 		if(documentType == ARCHIVE_INTERNAL_REDIRECT) {
 			byte[] data = nameInArchive.getBytes("UTF-8");
-			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Zip internal redirect name too long");
+			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Archive internal redirect name too long");
 			dos.writeShort(data.length);
 			dos.write(data);
 		}
