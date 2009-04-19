@@ -159,9 +159,11 @@ public class MessageCore {
 			((PeerNode)m.getSource()).addToLocalNodeReceivedMessagesFromStatistic(m);
 		}
 		boolean matched = false;
-		if (!(m.getSpec().equals(DMT.packetTransmit))) {
-			if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
-					+ m.getSource() + " : " + m);
+		if(logMINOR) {
+			if (!(m.getSpec().equals(DMT.packetTransmit))) {
+				Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
+						+ m.getSource() + " : " + m);
+			}
 		}
 		MessageFilter match = null;
 		synchronized (_filters) {
