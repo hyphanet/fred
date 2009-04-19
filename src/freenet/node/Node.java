@@ -873,9 +873,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					return; // Ignore
 				if(arg0 instanceof DiagnosticBase) {
 					DiagnosticBase d = (DiagnosticBase) arg0;
-					Logger.error(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
+					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
 				} else
-					Logger.error(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
+					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
 			}
 		});
 		
