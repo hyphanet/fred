@@ -272,6 +272,9 @@ public class SimpleFieldSet {
     
     /**
      * Set a key to a value, overwriting any existing value if present.
+     * This function is a little bit faster than putAppend() because it does not
+     * check whether the key already exists.
+     * 
      * @param key The key.
      * @param value The value.
      */
