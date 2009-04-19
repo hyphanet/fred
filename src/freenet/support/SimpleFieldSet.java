@@ -260,7 +260,10 @@ public class SimpleFieldSet {
     }
     
     /**
-     * Aggregating put. Set a key to a value, if the value already exists, append to it. 
+     * Aggregating put. Set a key to a value, if the value already exists, append to it.
+     * If you do not need this functionality please use putOverwrite for a minimal
+     * performance gain.
+     *  
      * @param key The key.
      * @param value The value.
      */
