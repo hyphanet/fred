@@ -593,18 +593,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				gc.set(Calendar.SECOND, 0);
 				gc.set(Calendar.MILLISECOND, 0);
 				long startTime = gc.getTimeInMillis();
-				//If a compressed log file already exists for a given date,
-				//add a number to the end of the file that already exists
-				for(int a = 1; currentFilename != null && currentFilename.exists(); a++){
-					numericSameDateFilename = new File(getHourLogName(gc, a, true));
-					if(numericSameDateFilename != null && numericSameDateFilename.exists()){
-						currentFilename = numericSameDateFilename;
-					}
-					else{
-						FileUtil.renameTo(currentFilename, numericSameDateFilename);
-						currentFilename = numericSameDateFilename;
-					}
-				}
 				if(oldFile != null) {
 					long l = oldFile.length();
 					OldLogFile olf = new OldLogFile(oldFile, lastStartTime, startTime, l);
@@ -620,6 +608,18 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			} else {
 				// Nothing to do with us
 				Logger.normal(this, "Unknown file: "+name+" in the log directory");
+			}
+		}
+		//If a compressed log file already exists for a given date,
+		//add a number to the end of the file that already exists
+		for(int a = 1; currentFilename != null && currentFilename.exists(); a++){
+			numericSameDateFilename = new File(getHourLogName(gc, a, true));
+			if(numericSameDateFilename != null && numericSameDateFilename.exists()){
+				currentFilename = numericSameDateFilename;
+			}
+			else{
+				FileUtil.renameTo(currentFilename, numericSameDateFilename);
+				currentFilename = numericSameDateFilename;
 			}
 		}
 		if(oldFile != null) {
