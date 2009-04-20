@@ -819,6 +819,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						// FIXME not sure this condition works, test it!
 						if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
 							lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+						if(attempts[i] == null) continue;
 						if(attempts[i].number > lastEd)
 							attempts[i].schedule(container, context);
 						else {
