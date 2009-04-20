@@ -816,20 +816,20 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					done = true;
 				}
 				if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
-					for(int i=0;i<attempts.length;i++) {
-						long lastEd = uskManager.lookupLatestSlot(origUSK);
-						// FIXME not sure this condition works, test it!
-						if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
-							lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
-						if(attempts[i] == null) continue;
-						if(attempts[i].number > lastEd)
-							attempts[i].schedule(container, context);
-						else {
-							synchronized(this) {
-								runningAttempts.remove(attempts[i]);
-							}
+				for(int i=0;i<attempts.length;i++) {
+					long lastEd = uskManager.lookupLatestSlot(origUSK);
+					// FIXME not sure this condition works, test it!
+					if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
+						lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+					if(attempts[i] == null) continue;
+					if(attempts[i].number > lastEd)
+						attempts[i].schedule(container, context);
+					else {
+						synchronized(this) {
+							runningAttempts.remove(attempts[i]);
 						}
 					}
+				}
 			}
 
 			@Override
