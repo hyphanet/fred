@@ -246,7 +246,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	}
 
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context) {
+	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 		// Ignore
 	}
 

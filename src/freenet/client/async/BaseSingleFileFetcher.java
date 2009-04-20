@@ -353,7 +353,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context) {
+	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 		// Ignore
 	}
 

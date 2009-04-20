@@ -865,7 +865,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	@Override
-	public void preRegister(ObjectContainer container, ClientContext context) {
+	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
 		// Ignore
 	}
 

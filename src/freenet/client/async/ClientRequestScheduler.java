@@ -396,11 +396,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 					for(int i=0;i<getters.length;i++) {
 						SendableGet getter = getters[i];
 						container.activate(getter, 1);
-						getter.preRegister(container, clientContext);
 						if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
 							wereAnyValid = true;
+							getter.preRegister(container, clientContext, true);
 							schedCore.innerRegister(getter, random, container, getters);
-						}
+						} else
+							getter.preRegister(container, clientContext, false);
+
 					}
 					if(!wereAnyValid) {
 						Logger.normal(this, "No requests valid: "+getters);
@@ -423,11 +425,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(container.ext().isActive(getter))
 								Logger.error(this, "ALREADY ACTIVE in delayed finishRegister: "+getter);
 							container.activate(getter, 1);
-							getter.preRegister(container, clientContext);
 							if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
 								wereAnyValid = true;
+								getter.preRegister(container, clientContext, true);
 								schedCore.innerRegister(getter, random, container, getters);
-							}
+							} else
+								getter.preRegister(container, clientContext, false);
 							container.deactivate(getter, 1);
 						}
 						if(!wereAnyValid) {
@@ -444,9 +447,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 			// Register immediately.
 			for(int i=0;i<getters.length;i++) {
-				getters[i].preRegister(container, clientContext);
-				if(!anyValid) continue; // Call preRegister anyway, some getters may be waiting for it
-				if(getters[i].isCancelled(null) || getters[i].isEmpty(null)) continue;
+				
+				if((!anyValid) || getters[i].isCancelled(null) || getters[i].isEmpty(null)) {
+					getters[i].preRegister(container, clientContext, false);
+					continue;
+				} else
+					getters[i].preRegister(container, clientContext, true);
 				schedTransient.innerRegister(getters[i], random, null, getters);
 			}
 			starter.wakeUp();
