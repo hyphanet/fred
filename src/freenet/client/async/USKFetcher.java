@@ -742,6 +742,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		for(int i=0;i<checkStore.length;i++) {
 			checkStore[i] = keysWatching.get(i+offset).getNodeKey();
 		}
+		assert(offset + checkStore.length == keysWatching.size());
+		assert(keysWatching.get(keysWatching.size()-1).getURI().uskForSSK().getSuggestedEdition() == lastCheck);
 		if(logMINOR) Logger.minor(this, "Checking from "+firstCheck+" to "+lastCheck+" for "+this+" : "+origUSK);
 		SendableGet storeChecker = new SendableGet(parent) {
 			
