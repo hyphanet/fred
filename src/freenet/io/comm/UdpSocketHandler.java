@@ -198,7 +198,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
-			throw new RuntimeException(e2);
+			if (!_active)	// closed, just return silently
+				return false;
+			else
+				throw new RuntimeException(e2);
 		}
 		if(logMINOR) Logger.minor(this, "Received packet");
 		return true;
@@ -299,9 +302,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 
     public void close() {
     	Logger.normal(this, "Closing.", new Exception("error"));
-		_sock.close();
 		synchronized (this) {
 			_active = false;
+			_sock.close();
+
 			if(!_started) return;
 			while (!_isDone) {
 				try {
