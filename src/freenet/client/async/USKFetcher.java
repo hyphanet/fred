@@ -125,7 +125,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	/** A list of keys which we are interested in. This a sequence of SSKs starting 
 	 * at the last known slot. */
 	private final ArrayList<ClientSSK> keysWatching;
-	private long checkedDatastoreUpTo;
+	private long checkedDatastoreUpTo = -1;
 	private final ArrayList<USKAttempt> attemptsToStart;
 	
 	private static final int WATCH_KEYS = 50;
@@ -735,6 +735,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(runningStoreChecker) return;
 		long firstCheck = Math.max(firstKeyWatching, checkedDatastoreUpTo + 1);
 		final long lastCheck = firstKeyWatching + keysWatching.size() - 1;
+		if(logMINOR) Logger.minor(this, "firstCheck="+firstCheck+" lastCheck="+lastCheck);
 		if(lastCheck < firstCheck) return;
 		int checkCount = (int) (lastCheck - firstCheck + 1);
 		int offset = (int) (firstCheck - firstKeyWatching);
@@ -814,6 +815,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
 					attemptsToStart.clear();
 					done = true;
+					checkedDatastoreUpTo = lastCheck;
 				}
 				if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
 				for(int i=0;i<attempts.length;i++) {
@@ -831,6 +833,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					}
 				}
 				long lastEd = uskManager.lookupLatestSlot(origUSK);
+				// Do not check beyond WATCH_KEYS after the current slot.
 				fillKeysWatching(lastEd, context);
 			}
 
@@ -851,9 +854,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 			@Override
 			public RequestClient getClient(ObjectContainer container) {
-				synchronized(USKFetcher.this) {
-					checkedDatastoreUpTo = lastCheck;
-				}
 				return USKFetcher.this.uskManager;
 			}
 
