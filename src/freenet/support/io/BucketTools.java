@@ -355,6 +355,7 @@ public class BucketTools {
 				Logger.error(BucketTools.class, "Asked to free data when splitting a FileBucket ?!?!? Not freeing as this would clobber the split result...");
 			}
 			Bucket[] buckets = ((FileBucket)origData).split(splitSize);
+			if(persistent)
 			for(Bucket bucket : buckets)
 				bucket.storeTo(container);
 			return buckets;
