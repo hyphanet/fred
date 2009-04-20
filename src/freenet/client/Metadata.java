@@ -55,6 +55,9 @@ public class Metadata implements Cloneable {
 	// URI at which this Metadata has been/will be inserted.
 	FreenetURI resolvedURI;
 	
+	// Name at which this Metadata has been/will be inside container.
+	String resolvedName;
+	
 	// Actual parsed data
 	
 	// document type
@@ -978,6 +981,10 @@ public class Metadata implements Cloneable {
 	public void resolve(FreenetURI uri) {
 		this.resolvedURI = uri;
 	}
+	
+	public void resolve(String name) {
+		this.resolvedName = name;
+	}
 
 	public Bucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
 		byte[] buf = writeToByteArray();
@@ -985,7 +992,7 @@ public class Metadata implements Cloneable {
 	}
 
 	public boolean isResolved() {
-		return resolvedURI != null;
+		return (resolvedURI != null) || (resolvedName != null);
 	}
 
 	public void setArchiveManifest() {
