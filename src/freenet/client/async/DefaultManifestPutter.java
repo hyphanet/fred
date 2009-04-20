@@ -333,8 +333,10 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			if(o instanceof HashMap) {
 				@SuppressWarnings("unchecked")
 				HashMap<String,Object> hm = (HashMap<String,Object>)o;
+				containerBuilder.pushCurrentDir();
 				containerBuilder.makeSubDirCD(name);
 				makeEveryThingUnlimitedPutHandlers(containerBuilder, hm, "");
+				containerBuilder.popCurrentDir();
 			}
 		}
 	}
@@ -357,8 +359,10 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			if(o instanceof HashMap) {
 				@SuppressWarnings("unchecked")
 				HashMap<String,Object> hm = (HashMap<String,Object>)o;
+				containerBuilder.pushCurrentDir();
 				containerBuilder.makeSubDirCD(name);
 				makeEveryThingPutHandlers(containerBuilder, hm, "");
+				containerBuilder.popCurrentDir();
 			}
 		}
 	}
