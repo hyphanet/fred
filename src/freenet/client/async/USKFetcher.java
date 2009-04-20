@@ -733,7 +733,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			firstKeyWatching = ed;
 //		}
 		if(runningStoreChecker) return;
-		long firstCheck = Math.max(firstKeyWatching, checkedDatastoreUpTo);
+		long firstCheck = Math.max(firstKeyWatching, checkedDatastoreUpTo + 1);
 		final long lastCheck = firstKeyWatching + keysWatching.size() - 1;
 		if(lastCheck < firstCheck) return;
 		int checkCount = (int) (lastCheck - firstCheck + 1);
