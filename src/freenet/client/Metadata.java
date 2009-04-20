@@ -773,6 +773,15 @@ public class Metadata implements Cloneable {
 	public boolean isArchiveManifest() {
 		return documentType == ARCHIVE_MANIFEST;
 	}
+	
+	/**
+	 * Is this a archive internal metadata redirect?
+	 * @return
+	 */
+	public boolean isArchiveMetadataRedirect() {
+		return documentType == ARCHIVE_METADATA_REDIRECT;
+	}
+
 
 	/**
 	 * Is this a Archive internal redirect?
