@@ -442,10 +442,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}, NativeThread.NORM_PRIORITY+1, false);
 			}
 		} else {
-			if(!anyValid) return;
 			// Register immediately.
 			for(int i=0;i<getters.length;i++) {
 				getters[i].preRegister(container, clientContext);
+				if(!anyValid) continue; // Call preRegister anyway, some getters may be waiting for it
 				if(getters[i].isCancelled(null) || getters[i].isEmpty(null)) continue;
 				schedTransient.innerRegister(getters[i], random, null, getters);
 			}
