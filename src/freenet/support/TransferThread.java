@@ -4,7 +4,6 @@
 package freenet.support;
 
 import java.util.Collection;
-import java.util.Iterator;
 
 import com.db4o.ObjectContainer;
 
@@ -52,7 +51,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	protected void start() {
 		mNode.executor.execute(this, mName);
-		Logger.debug(this, this.getClass().getSimpleName() + " started.");
+		Logger.debug(this, "Started.");
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
@@ -112,28 +111,38 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	}
 	
 	protected void abortAllTransfers() {
-		Logger.debug(this, "Trying to stop all requests & inserts");
+		Logger.debug(this, "Trying to stop all fetches & inserts...");
 		
 		abortFetches();
 		abortInserts();
 	}
 	
 	protected void abortFetches() {
-		Logger.debug(this, "Trying to stop all fetches");
+		Logger.debug(this, "Trying to stop all fetches...");
 		if(mFetches != null) synchronized(mFetches) {
-			Iterator<ClientGetter> r = mFetches.iterator();
-			int rcounter = 0;
-			while (r.hasNext()) { r.next().cancel(null, mNode.clientCore.clientContext); r.remove(); ++rcounter; }
-			Logger.debug(this, "Stopped " + rcounter + " current requests");
+			ClientGetter[] fetches = mFetches.toArray(new ClientGetter[mFetches.size()]);
+			int fcounter = 0;
+			for(ClientGetter fetch : fetches) {
+				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
+				fetch.cancel(null, mNode.clientCore.clientContext);
+				++fcounter;
+			}
+			
+			Logger.debug(this, "Stopped " + fcounter + " current fetches.");
 		}
 	}
 	
 	protected void abortInserts() {
+		Logger.debug(this, "Trying to stop all inserts...");
 		if(mInserts != null) synchronized(mInserts) {
-			Iterator<BaseClientPutter> i = mInserts.iterator();
+			BaseClientPutter[] inserts = mInserts.toArray(new BaseClientPutter[mInserts.size()]);
 			int icounter = 0;
-			while (i.hasNext()) { i.next().cancel(null, mNode.clientCore.clientContext); i.remove(); ++icounter; }
-			Logger.debug(this, "Stopped " + icounter + " current inserts");
+			for(BaseClientPutter insert : inserts) {
+				/* This calls onFailure which removes the fetch from mFetches on the same thread, therefore we need to copy to an array */
+				insert.cancel(null, mNode.clientCore.clientContext);
+				++icounter;
+			}
+			Logger.debug(this, "Stopped " + icounter + " current inserts.");
 		}
 	}
 	
@@ -145,7 +154,6 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	protected void removeFetch(ClientGetter g) {
 		synchronized(mFetches) {
-			//g.cancel(); /* FIXME: is this necessary ? */
 			mFetches.remove(g);
 		}
 		Logger.debug(this, "Removed request for " + g.getURI());
@@ -159,7 +167,6 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	protected void removeInsert(BaseClientPutter p) {
 		synchronized(mInserts) {
-			//p.cancel(); /* FIXME: is this necessary ? */
 			mInserts.remove(p);
 		}
 		Logger.debug(this, "Removed insert for " + p.getURI());
@@ -212,14 +219,26 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	/* Fetches */
 	
+	/**
+	 * You have to do "finally { removeFetch() }" when using this function.
+	 */
 	public abstract void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
 
+	/**
+	 * You have to do "finally { removeFetch() }" when using this function.
+	 */
 	public abstract void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
 
 	/* Inserts */
 	
+	/**
+	 * You have to do "finally { removeInsert() }" when using this function.
+	 */
 	public abstract void onSuccess(BaseClientPutter state, ObjectContainer container);
 
+	/**
+	 * You have to do "finally { removeInsert() }" when using this function.
+	 */
 	public abstract void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
 
 	public abstract void onFetchable(BaseClientPutter state, ObjectContainer container);
