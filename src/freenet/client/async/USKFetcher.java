@@ -830,6 +830,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						}
 					}
 				}
+				long lastEd = uskManager.lookupLatestSlot(origUSK);
+				fillKeysWatching(lastEd, context);
 			}
 
 			@Override
