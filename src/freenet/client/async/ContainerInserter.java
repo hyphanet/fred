@@ -1,6 +1,6 @@
-/**
- * 
- */
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
 import java.io.BufferedOutputStream;
@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -34,9 +33,6 @@ import freenet.support.io.BucketTools;
 /**
  * pack the container/archive, then hand it off to SimpleFileInserter
  *
- * TODO fix resolve metadata
- *     -how to format the redirects/submetadata?
- *     -the current metadataMap thingy s***s, invent a working one ;)
  * TODO persistence
  * TODO add a MAX_SIZE for the final container(file)
  * 
@@ -71,7 +67,6 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	private ArrayList<ContainerElement> containerItems;
-	private HashMap<Metadata, Entry<String, Object>> metadataMap;
 
 	private final BaseClientPutter parent;
 	private final PutCompletionCallback cb;
@@ -126,7 +121,6 @@ public class ContainerInserter implements ClientPutState {
 		dontCompress = dontCompress2;
 		reportMetadataOnly = reportMetadataOnly2;
 		containerItems = new ArrayList<ContainerElement>();
-		metadataMap = new HashMap<Metadata, Entry<String, Object>>();
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -211,11 +205,12 @@ public class ContainerInserter implements ClientPutState {
 		Bucket bucket = null;
 		int x = 0;
 		
+		HashMap<String,Object> manifest = new HashMap<String,Object>();
+		makeManifest(origMetadata, manifest, "/");
+		Metadata md = Metadata.mkRedirectionManifestWithMetadata(manifest);
+		
 		while(true) {
 			try {
-				HashMap<String,Object> manifest = new HashMap<String,Object>();
-				makeManifest(origMetadata, manifest, "/");
-				Metadata md = Metadata.mkRedirectionManifestWithMetadata(manifest);
 				bucket = context.tempBucketFactory.makeBucket(-1);
 				byte[] buf = md.writeToByteArray();
 				OutputStream os = bucket.getOutputStream();
@@ -248,8 +243,7 @@ public class ContainerInserter implements ClientPutState {
 				os.close();
 				String nameInArchive = ".metadata-"+(x++);
 				containerItems.add(new ContainerElement(bucket, nameInArchive));
-				Entry<String, Object> entry = metadataMap.get(m[i]);
-				entry.setValue(new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, nameInArchive, null));
+				m[i].resolve(nameInArchive);
 			} catch (MetadataUnresolvedException e1) {
 				x = resolve(e, x, bucket, key, element2, container, context);
 			}
@@ -349,9 +343,8 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	private void makeManifest(HashMap<String, Object> manifestElements, HashMap<String,Object> manifest, String archivePrefix) {
-		for (Entry<String, Object>entry:manifestElements.entrySet()) {
-			String name = entry.getKey();
-			Object o = entry.getValue();
+		for (String name:manifestElements.keySet()) {
+			Object o = manifestElements.get(name);
 			if(o instanceof HashMap) {
 				@SuppressWarnings("unchecked")
 				HashMap<String,Object> hm = (HashMap<String, Object>) o;
@@ -365,7 +358,6 @@ public class ContainerInserter implements ClientPutState {
 				//already Metadata, take as is
 				//System.out.println("Decompose: "+name+" (Metadata)");
 				manifest.put(name, o);
-				metadataMap.put((Metadata) o, entry);
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -384,7 +376,6 @@ public class ContainerInserter implements ClientPutState {
 					m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
 				}
 				manifest.put(name, m);
-				metadataMap.put(m, entry);
 			}
 		}
 	}
