@@ -14,6 +14,7 @@ import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.support.Executor;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -21,6 +22,18 @@ import freenet.support.io.NativeThread;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class DatastoreChecker implements PrioRunnable {
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	static final int MAX_PERSISTENT_KEYS = 1024;
 	
@@ -92,7 +105,6 @@ public class DatastoreChecker implements PrioRunnable {
 	};
 	
     public void loadPersistentRequests(ObjectContainer container, final ClientContext context) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		int totalSize = 0;
 		synchronized(this) {
 			for(int i=0;i<persistentKeys.length;i++) {
@@ -220,7 +232,7 @@ public class DatastoreChecker implements PrioRunnable {
 	}
 	
 	public void queueTransientRequest(SendableGet getter, BlockSet blocks) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Queueing transient request "+getter);
+		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter);
 		Key[] checkKeys = getter.listKeys(null);
 		short prio = getter.getPriorityClass(null);
 		// FIXME check using store.probablyInStore
@@ -290,7 +302,6 @@ public class DatastoreChecker implements PrioRunnable {
 	}
 
 	private void realRun() {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Key[] keys = null;
 		SendableGet getter = null;
 		boolean persistent = false;
@@ -329,7 +340,7 @@ public class DatastoreChecker implements PrioRunnable {
 						persistent = false;
 						item = null;
 						blocks = transientBlockSets[prio].remove(0);
-						if(Logger.shouldLog(Logger.MINOR, this))
+						if(logMINOR)
 							Logger.minor(this, "Checking transient request "+getter);
 						break;
 					} else if((!notPersistent) && (!persistentGetters[prio].isEmpty())) {
@@ -394,7 +405,7 @@ public class DatastoreChecker implements PrioRunnable {
 					}
 					if(!container.ext().isStored(get)) {
 						// Completed and deleted already.
-						if(Logger.shouldLog(Logger.MINOR, this)) 
+						if(logMINOR) 
 							Logger.minor(this, "Already deleted from database");
 						container.delete(it);
 						return;
