@@ -67,6 +67,7 @@ public class Metadata implements Cloneable {
 	static final byte SIMPLE_MANIFEST = 2;
 	public static final byte ARCHIVE_MANIFEST = 3;
 	public static final byte ARCHIVE_INTERNAL_REDIRECT = 4;
+	public static final byte ARCHIVE_METADATA_REDIRECT = 5;
 	
 	// 2 bytes of flags
 	/** Is a splitfile */
@@ -373,7 +374,7 @@ public class Metadata implements Cloneable {
 			if(logMINOR) Logger.minor(this, "End of manifest"); // Make it easy to search for it!
 		}
 		
-		if(documentType == ARCHIVE_INTERNAL_REDIRECT) {
+		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT)) {
 			int len = dis.readShort();
 			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
 			byte[] buf = new byte[len];
@@ -533,6 +534,21 @@ public class Metadata implements Cloneable {
 			if(cm != null)
 				this.setMIMEType(cm.getMIMEType());
 			nameInArchive = arg;
+		} else
+			throw new IllegalArgumentException();
+	}
+	
+	/**
+	 * Create a Metadata redircet object that points to resolved metadata inside container.
+	 * docType = ARCHIVE_METADATA_REDIRECT
+	 * @param name the filename in the archive to read from, must be ".metadata-N" scheme.
+	 */
+	private Metadata(byte docType, String name) {
+		hashCode = super.hashCode();
+		noMIME = true;
+		if(docType == ARCHIVE_METADATA_REDIRECT) {
+			documentType = docType;
+			nameInArchive = name;
 		} else
 			throw new IllegalArgumentException();
 	}
@@ -895,8 +911,12 @@ public class Metadata implements Cloneable {
 					byte[] data = meta.writeToByteArray();
 					if(data.length > MAX_SIZE_IN_MANIFEST) {
 						FreenetURI uri = meta.resolvedURI;
+						String n = meta.resolvedName;
 						if(uri != null) {
 							meta = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
+							data = meta.writeToByteArray();
+						} else if (n != null) {
+							meta = new Metadata(ARCHIVE_METADATA_REDIRECT, n);
 							data = meta.writeToByteArray();
 						} else {
 							kill = true;
@@ -923,7 +943,7 @@ public class Metadata implements Cloneable {
 			}
 		}
 		
-		if(documentType == ARCHIVE_INTERNAL_REDIRECT) {
+		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT)) {
 			byte[] data = nameInArchive.getBytes("UTF-8");
 			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Archive internal redirect name too long");
 			dos.writeShort(data.length);
@@ -936,7 +956,8 @@ public class Metadata implements Cloneable {
 	 */
 	public boolean haveFlags() {
 		return ((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
-				|| (documentType == ARCHIVE_MANIFEST) || (documentType == ARCHIVE_INTERNAL_REDIRECT));
+				|| (documentType == ARCHIVE_MANIFEST) || (documentType == ARCHIVE_INTERNAL_REDIRECT)
+				|| (documentType == ARCHIVE_METADATA_REDIRECT));
 	}
 
 	/**
