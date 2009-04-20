@@ -220,6 +220,7 @@ public class DatastoreChecker implements PrioRunnable {
 	}
 	
 	public void queueTransientRequest(SendableGet getter, BlockSet blocks) {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Queueing transient request "+getter);
 		Key[] checkKeys = getter.listKeys(null);
 		short prio = getter.getPriorityClass(null);
 		// FIXME check using store.probablyInStore
@@ -328,6 +329,8 @@ public class DatastoreChecker implements PrioRunnable {
 						persistent = false;
 						item = null;
 						blocks = transientBlockSets[prio].remove(0);
+						if(Logger.shouldLog(Logger.MINOR, this))
+							Logger.minor(this, "Checking transient request "+getter);
 						break;
 					} else if((!notPersistent) && (!persistentGetters[prio].isEmpty())) {
 						keys = persistentKeys[prio].remove(0);
