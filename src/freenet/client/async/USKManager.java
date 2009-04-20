@@ -179,7 +179,7 @@ public class USKManager implements RequestClient {
 //			}
 			USKFetcher f = temporaryBackgroundFetchersLRU.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, this), 3, false, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, false, false);
 				sched = f;
 				temporaryBackgroundFetchersLRU.push(clear, f);
 			}
@@ -198,7 +198,7 @@ public class USKManager implements RequestClient {
 					public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 						if(l <= min) return;
 						FreenetURI uri = key.copy(l).getURI();
-						final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+						final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
 						try {
 							get.start(null, context);
 						} catch (FetchException e) {
@@ -207,11 +207,11 @@ public class USKManager implements RequestClient {
 					}
 
 					public short getPollingPriorityNormal() {
-						return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+						return RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 					}
 
 					public short getPollingPriorityProgress() {
-						return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+						return RequestStarter.UPDATE_PRIORITY_CLASS;
 					}
 					
 					
