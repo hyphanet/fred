@@ -217,7 +217,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			buf.append('-');
 			pad2digits(buf, c.get(Calendar.MINUTE));
 		}
-		buf.append("-" + digit);
+		buf.append("-");
+		buf.append(digit);
 		buf.append(".log");
 		if(compressed) buf.append(".gz");
 		return buf.toString();
