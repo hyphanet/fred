@@ -137,6 +137,11 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
+	
+	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
 
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {

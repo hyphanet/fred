@@ -76,4 +76,9 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	public void cancel(ObjectContainer container, ClientContext context) {
 		super.cancel();
 	}
+
+	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
 }

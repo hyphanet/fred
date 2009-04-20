@@ -12,6 +12,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
+import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
@@ -318,6 +319,15 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 	
+	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(ctx, 1);
+			container.activate(ctx.eventProducer, 1);
+		}
+		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), container, context);
+	}
+
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set finished", new Exception("debug"));

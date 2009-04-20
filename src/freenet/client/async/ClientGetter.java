@@ -15,6 +15,7 @@ import freenet.client.ArchiveContext;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
@@ -310,6 +311,15 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(ctx.eventProducer, 1);
 		}
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
+	}
+	
+	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(ctx, 1);
+			container.activate(ctx.eventProducer, 1);
+		}
+		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), container, context);
 	}
 
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {

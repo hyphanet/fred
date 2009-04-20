@@ -123,4 +123,9 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		super.cancel();
 	}
 
+	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
 }

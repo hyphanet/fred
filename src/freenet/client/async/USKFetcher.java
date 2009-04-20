@@ -819,6 +819,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					checkedDatastoreUpTo = lastCheck;
 				}
 				if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
+				if(attempts.length > 0)
+					parent.toNetwork(container, context);
 				for(int i=0;i<attempts.length;i++) {
 					long lastEd = uskManager.lookupLatestSlot(origUSK);
 					// FIXME not sure this condition works, test it!

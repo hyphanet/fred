@@ -611,6 +611,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			return super.toString();
 		}
 
+		@Override
+		protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
 	}
 
 	// if true top level metadata is a container
@@ -1863,5 +1868,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			currentDir = dirStack.pop();
 		}
 	}
+	
+	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
 }
 

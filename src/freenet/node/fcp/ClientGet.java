@@ -22,6 +22,7 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
+import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
@@ -54,6 +55,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
+	private int VERBOSITY_SENT_TO_NETWORK = 2;
 
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
@@ -72,6 +74,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	/** Last progress message. Not persistent - FIXME this will be made persistent
 	 * when we have proper persistence at the ClientGetter level. */
 	private SimpleProgressMessage progressPending;
+	/** Have we received a SendingToNetworkEvent? */
+	private boolean sentToNetwork;
 
 	/**
 	 * Create one for a global-queued request not made by FCP.
@@ -499,10 +503,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		handler.queue(msg);
 	}
 
-	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
+	private void trySendProgress(FCPMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			FCPMessage oldProgress = progressPending;
-			progressPending = msg;
+			if(msg instanceof SimpleProgressMessage)
+				progressPending = (SimpleProgressMessage)msg;
+			else if(msg instanceof SendingToNetworkMessage)
+				sentToNetwork = true;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.store(this);
 				if(oldProgress != null) {
@@ -539,6 +546,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					container.activate(progressPending, 5);
 				handler.queue(progressPending);
 			}
+			if(sentToNetwork)
+				handler.queue(new SendingToNetworkMessage(identifier, global));
 			if(finished)
 				trySendDataFoundOrGetFailed(handler, container);
 		}
@@ -659,11 +668,18 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		// Don't need to lock, verbosity is final and finished is never unset.
 		if(finished) return;
-		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
-				(ce instanceof SplitfileProgressEvent)))
-			return;
-		final SimpleProgressMessage progress =
-			new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
+		final FCPMessage progress;
+		if(ce instanceof SplitfileProgressEvent) {
+			if(!((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS))
+				return;
+			progress =
+				new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
+		} else if(ce instanceof SendingToNetworkEvent) {
+			if(!((verbosity & VERBOSITY_SENT_TO_NETWORK) == VERBOSITY_SENT_TO_NETWORK))
+				return;
+			progress = new SendingToNetworkMessage(identifier, global);
+		}
+		else return; // Don't know what to do with event
 		// container may be null...
 		if(persistenceType == PERSIST_FOREVER && container == null) {
 			context.jobRunner.queue(new DBJob() {

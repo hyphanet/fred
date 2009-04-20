@@ -507,6 +507,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			return true;
 		}
 
+		@Override
+		protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
 	}
 
 	private HashMap<String,Object> putHandlersByName;
@@ -1771,5 +1776,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		putHandlersByName2.put(name, ph);
 	}
+	
+	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
 }
 

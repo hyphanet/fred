@@ -87,6 +87,7 @@ public abstract class ClientRequester {
 	protected int minSuccessBlocks;
 	/** Has totalBlocks stopped growing? */
 	protected boolean blockSetFinalized;
+	protected boolean sentToNetwork;
 
 	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
@@ -171,6 +172,17 @@ public abstract class ClientRequester {
 	}
 
 	public abstract void notifyClients(ObjectContainer container, ClientContext context);
+	
+	public void toNetwork(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(sentToNetwork) return;
+			sentToNetwork = true;
+			if(persistent()) container.store(this);
+		}
+		innerToNetwork(container, context);
+	}
+	
+	protected abstract void innerToNetwork(ObjectContainer container, ClientContext context);
 
 	/** Get client context object */
 	public RequestClient getClient() {
