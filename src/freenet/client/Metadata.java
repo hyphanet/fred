@@ -208,8 +208,7 @@ public class Metadata implements Cloneable {
 		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
 		
 		boolean compressed = false;
-		if((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
-				|| (documentType == ARCHIVE_MANIFEST) || (documentType == ARCHIVE_INTERNAL_REDIRECT)) {
+		if(haveFlags()) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
 			dbr = (flags & FLAGS_DBR) == FLAGS_DBR;
@@ -813,8 +812,7 @@ public class Metadata implements Cloneable {
 		dos.writeLong(FREENET_METADATA_MAGIC);
 		dos.writeShort(0); // version
 		dos.writeByte(documentType);
-		if((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
-				|| (documentType == ARCHIVE_MANIFEST) || (documentType == ARCHIVE_INTERNAL_REDIRECT)) {
+		if(haveFlags()) {
 			short flags = 0;
 			if(splitfile) flags |= FLAGS_SPLITFILE;
 			if(dbr) flags |= FLAGS_DBR;
@@ -928,6 +926,14 @@ public class Metadata implements Cloneable {
 			dos.writeShort(data.length);
 			dos.write(data);
 		}
+	}
+
+	/**
+	 * have this metadata flags?
+	 */
+	public boolean haveFlags() {
+		return ((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
+				|| (documentType == ARCHIVE_MANIFEST) || (documentType == ARCHIVE_INTERNAL_REDIRECT));
 	}
 
 	/**
