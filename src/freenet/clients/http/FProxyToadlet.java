@@ -554,7 +554,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			} else if(fe != null) throw fe;
 			
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+SizeUtil.formatSizeWithoutSpace(maxSize) : "", referer, true, ctx, core, fr != null);
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx, core, fr != null);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
