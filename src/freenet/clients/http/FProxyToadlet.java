@@ -512,29 +512,27 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				break;
 			} else {
 				// Still in progress
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
-				infobox.addChild("div", "class", "infobox-header", l10n("largeFile"));
+				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("p", "Filename: "+key.getPreferredFilename());
-				infoboxContent.addChild("p", "Key: "+key);
+				infoboxContent.addChild("#", "Filename: "+key.getPreferredFilename());
+				infoboxContent.addChild("br", "Key: "+key);
 				if(fr.mimeType != null) infoboxContent.addChild("p", "Content type: "+mimeType);
 				if(core.isAdvancedModeEnabled()) {
-					infoboxContent.addChild("p", "Blocks: need "+fr.requiredBlocks+" total "+fr.totalBlocks+" fetched "+fr.fetchedBlocks+" failed "+fr.failedBlocks+" fatally failed "+fr.fatallyFailedBlocks);
+					infoboxContent.addChild("br", "Blocks: need "+fr.requiredBlocks+" total "+fr.totalBlocks+" fetched "+fr.fetchedBlocks+" failed "+fr.failedBlocks+" fatally failed "+fr.fatallyFailedBlocks);
 				}
-				infoboxContent.addChild("p", "Time elapsed: "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
+				infoboxContent.addChild("br", "Time elapsed: "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
 				long eta = fr.eta;
 				if(eta > 0)
-					infoboxContent.addChild("p", "ETA: "+TimeUtil.formatTime(eta));
+					infoboxContent.addChild("br", "ETA: "+TimeUtil.formatTime(eta));
 				if(fr.goneToNetwork)
-					infoboxContent.addChild("p", "Your node is downloading this file from Freenet. This could take seconds or minutes depending on how big the file is and how popular.");
+					infoboxContent.addChild("p", "Your node is downloading this page or file from Freenet. This could take seconds or minutes depending on how big and how popular the page or file is.");
 				else
-					infoboxContent.addChild("p", "Your Freenet node is checking your local cache for this file. If it is not found in the cache, it will try to download it from Freenet.");
-				if(fr.finalizedBlocks)
-					infoboxContent.addChild("p", "The progress bar should be accurate.");
-				else
+					infoboxContent.addChild("p", "Your Freenet node is checking your local cache for this page or file. If it is not found in the cache, it will try to download it from Freenet.");
+				if(!fr.finalizedBlocks)
 					infoboxContent.addChild("p", "The progress bar is likely to jump around a lot as we have not downloaded enough blocks to know how big the file is.");
 				
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
@@ -567,6 +565,22 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 
 				}
+				
+				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
+				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageOptions"));
+				infoboxContent = infobox.addChild("div", "class", "infobox-content");
+
+				HTMLNode ul = infoboxContent.addChild("ul");
+				ul.addChild("li").addChild("p", "You can wait for the page. This page will be refreshed every 2 seconds until the file is fetched or Freenet gives up. Alternatively:");
+				HTMLNode optionForm = ctx.addFormChild(ul.addChild("li").addChild("p"), "/queue/", "tooBigQueueForm");
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
+
+				ul.addChild("li").addChild("p").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
+				
+				ul.addChild("li").addChild("p").addChild("a", new String[] { "href", "title" }, new String[] { "/", L10n.getString("Toadlet.homepage") }, l10n("abortToHomepage"));
 				
 				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
 				MultiValueTable<String, String> retHeaders = new MultiValueTable<String, String>();
