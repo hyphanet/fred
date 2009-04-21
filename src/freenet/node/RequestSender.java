@@ -581,15 +581,19 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	
                 MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
                 MessageFilter mfRF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRecentlyFailed);
-                MessageFilter mfDF = makeDataFoundFilter(next);
                 MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
                 MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
+                
                 MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
             	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
             	MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
             	MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
-                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfAltDFSSKHeaders.or(mfAltDFSSKData))))))));
-
+                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload)));
+                if(key instanceof NodeCHK) {
+                	mf = mfRealDFCHK.or(mf);
+                } else {
+                	mf = mfPubKey.or(mfAltDFSSKHeaders.or(mfAltDFSSKData.or(mf)));
+                }
                 
             	try {
             		msg = node.usm.waitFor(mf, this);
@@ -973,18 +977,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			finish(SUCCESS, next, true);
 			return false;
 		}
-	}
-
-    /**
-     * Note that this must be first on the list.
-     */
-	private MessageFilter makeDataFoundFilter(PeerNode next) {
-    	if(key instanceof NodeCHK)
-    		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
-    	else if(key instanceof NodeSSK) {
-    		return MessageFilter.nothing();
-    	}
-    	else throw new IllegalStateException("Unknown keytype: "+key);
 	}
 
 	private Message createDataRequest() {
