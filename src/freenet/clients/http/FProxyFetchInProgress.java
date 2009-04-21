@@ -76,6 +76,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 	private int failedBlocks;
 	/** Fatally failed blocks */
 	private int fatallyFailedBlocks;
+	private int fetchedBlocksPreNetwork;
 	/** Finalized the block set? */
 	private boolean finalizedBlocks;
 	/** Fetch failed */
@@ -110,10 +111,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		lastTouched = System.currentTimeMillis();
 		FProxyFetchResult res;
 		if(data != null)
-			res = new FProxyFetchResult(this, data, mimeType, timeStarted, goneToNetwork);
+			res = new FProxyFetchResult(this, data, mimeType, timeStarted, goneToNetwork, getETA());
 		else
 			res = new FProxyFetchResult(this, mimeType, size, timeStarted, goneToNetwork,
-					totalBlocks, requiredBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, finalizedBlocks, failed);
+					totalBlocks, requiredBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, finalizedBlocks, failed, getETA());
 		results.add(res);
 		return res;
 	}
@@ -151,6 +152,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 			synchronized(this) {
 				if(goneToNetwork) return;
 				goneToNetwork = true;
+				fetchedBlocksPreNetwork = fetchedBlocks;
 			}
 		} else return;
 		wakeWaiters(false);
@@ -262,5 +264,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 			if(!waiters.isEmpty()) return;
 		}
 		tracker.queueCancel(this);
+	}
+	
+	public synchronized long getETA() {
+		if(!goneToNetwork) return -1;
+		if(requiredBlocks <= 0) return -1;
+		if(fetchedBlocks >= requiredBlocks) return -1;
+		if(fetchedBlocks - fetchedBlocksPreNetwork < 5) return -1;
+		return (System.currentTimeMillis() - timeStarted) * ((requiredBlocks - fetchedBlocksPreNetwork) / (fetchedBlocks - fetchedBlocksPreNetwork));
 	}
 }

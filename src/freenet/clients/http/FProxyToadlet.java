@@ -527,6 +527,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infoboxContent.addChild("p", "Fatally blocks: "+fr.fatallyFailedBlocks);
 				infoboxContent.addChild("p", "Finalized: "+fr.finalizedBlocks);
 				infoboxContent.addChild("p", "Time elapsed: "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
+				long eta = fr.eta;
+				if(eta > 0)
+					infoboxContent.addChild("p", "ETA: "+TimeUtil.formatTime(eta));
 				if(fr.goneToNetwork)
 					infoboxContent.addChild("p", "Your node is downloading this file from Freenet. This could take seconds or minutes depending on how big the file is and how popular.");
 				else
