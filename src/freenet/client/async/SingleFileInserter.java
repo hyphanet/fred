@@ -58,7 +58,6 @@ class SingleFileInserter implements ClientPutState {
 	final PutCompletionCallback cb;
 	final boolean getCHKOnly;
 	final ARCHIVE_TYPE archiveType;
-	COMPRESSOR_TYPE compressorUsed;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
 	private final boolean reportMetadataOnly;

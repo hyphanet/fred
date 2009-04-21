@@ -22,7 +22,6 @@ public class BucketChainBucket implements Bucket {
 	private boolean freed;
 	private boolean readOnly;
 	private final BucketFactory bf;
-	boolean stored;
 
 	/**
 	 * @param bucketSize
