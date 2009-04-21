@@ -621,6 +621,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			else{
 				FileUtil.renameTo(currentFilename, numericSameDateFilename);
 				currentFilename = numericSameDateFilename;
+				break;
 			}
 		}
 		if(oldFile != null) {
