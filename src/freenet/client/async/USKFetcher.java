@@ -693,18 +693,18 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		finishCancelBefore(killAttempts, context);
 		synchronized(this) {
 			if (decode) {
-					lastCompressionCodec = codec;
-					lastWasMetadata = metadata;
-					if(keepLastData) {
-						// FIXME inefficient to convert from bucket to byte[] to bucket
-						if(lastRequestData != null)
-							lastRequestData.free();
-						try {
-							lastRequestData = BucketTools.makeImmutableBucket(context.tempBucketFactory, data);
-						} catch (IOException e) {
-							Logger.error(this, "Caught "+e, e);
-						}
+				lastCompressionCodec = codec;
+				lastWasMetadata = metadata;
+				if(keepLastData) {
+					// FIXME inefficient to convert from bucket to byte[] to bucket
+					if(lastRequestData != null)
+						lastRequestData.free();
+					try {
+						lastRequestData = BucketTools.makeImmutableBucket(context.tempBucketFactory, data);
+					} catch (IOException e) {
+						Logger.error(this, "Caught "+e, e);
 					}
+				}
 			}
 		}
 	}
