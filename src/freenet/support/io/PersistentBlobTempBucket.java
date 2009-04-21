@@ -88,6 +88,8 @@ public class PersistentBlobTempBucket implements Bucket {
 			
 			@Override
 			public int read() throws IOException {
+				if (closed) throw new IOException("closed");
+				
 				byte[] buf = new byte[1];
 				int res = read(buf);
 				if(res == -1) return -1;
@@ -96,6 +98,8 @@ public class PersistentBlobTempBucket implements Bucket {
 			
 			@Override
 			public int read(byte[] buffer, int bufOffset, int length) throws IOException {
+				if (closed) throw new IOException("closed");
+				
 				long max;
 				synchronized(PersistentBlobTempBucket.this) {
 					if(freed) throw new IOException("Bucket freed during read");
@@ -115,6 +119,7 @@ public class PersistentBlobTempBucket implements Bucket {
 			
 			@Override
 			public int read(byte[] buffer) throws IOException {
+				if (closed) throw new IOException("closed");
 				return read(buffer, 0, buffer.length);
 			}
 			
@@ -125,12 +130,13 @@ public class PersistentBlobTempBucket implements Bucket {
 			
 			@Override
 			public void close() {
+				closed = true;
+				
 				synchronized(PersistentBlobTempBucket.this) {
 					inputStreams--;
 				}
 				// Do nothing.
 			}
-			
 		};
 	}
 
