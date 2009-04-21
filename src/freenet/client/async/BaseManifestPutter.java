@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
 import java.io.IOException;
@@ -30,6 +33,20 @@ import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
+/**
+ * This class contains all the insert logic, but not any 'pack logic'.
+ * The pack logic have to be implement in a subclass in makePutHandlers.
+ * @see PlainManifestPutter and @see DefaultManifestPutter.
+ * 
+ * Internal container redirect URIs:
+ *  The internal container URIs should be always redirects to CHKs, not just include the metadata into manifest only.
+ *  The (assumend) default behaviour is the reuse of containers between editions,
+ *  also ArchiveManger want to have a URI given, not Metadata.
+ *  This rule also makes site update code/logic much more easier.
+ * 
+ * container mode: the metadata are inside the root container (the final URI points to an archive)
+ * freeform mode: the metadata are inserted separately.(the final URI points to a SimpleManifest)
+ */
 public abstract class BaseManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 
 	private static volatile boolean logMINOR;
