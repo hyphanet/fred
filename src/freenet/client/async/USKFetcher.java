@@ -367,6 +367,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		long curLatest;
 		boolean decode = false;
+		Vector<USKAttempt> killAttempts;
 		synchronized(this) {
 			runningAttempts.remove(att);
 			curLatest = att.number;
@@ -383,9 +384,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					attemptsToStart.add(add(i));
 				}
 			}
-			cancelBefore(curLatest, context);
+			killAttempts = cancelBefore(curLatest, context);
 			fillKeysWatching(curLatest+1, context);
 		}
+		finishCancelBefore(killAttempts, context);
 		Bucket data = null;
 		if(decode) {
 			try {
@@ -441,7 +443,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		onDNF(attempt, context);
 	}
 
-	private void cancelBefore(long curLatest, ClientContext context) {
+	private Vector<USKAttempt> cancelBefore(long curLatest, ClientContext context) {
 		Vector<USKAttempt> v = null;
 		int count = 0;
 		synchronized(this) {
@@ -455,6 +457,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				count++;
 			}
 		}
+		return v;
+	}
+	
+	private void finishCancelBefore(Vector<USKAttempt> v, ClientContext context) {
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
 				USKAttempt att = v.get(i);
@@ -666,6 +672,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(newKnownGood && !newSlotToo) return; // Only interested in slots
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		boolean decode = false;
+		Vector<USKAttempt> killAttempts;
 		synchronized(this) {
 			if(completed || cancelled) return;
 			decode = lastEd >= ed && data != null;
@@ -680,9 +687,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					attemptsToStart.add(add(i));
 				}
 			}
-			cancelBefore(ed, context);
+			killAttempts = cancelBefore(ed, context);
 			fillKeysWatching(ed+1, context);
 		}
+		finishCancelBefore(killAttempts, context);
 		synchronized(this) {
 			if (decode) {
 					lastCompressionCodec = codec;
