@@ -63,8 +63,6 @@ public class PacketSender implements Runnable, Ticker {
 	long lastClearedOldSwapChains;
 	long lastReportedNoPackets;
 	long lastReceivedPacketFromAnyNode;
-	/** For watchdog. 32-bit to avoid locking. */
-	volatile int lastTimeInSeconds;
 	private Vector<ResendPacketItem> rpiTemp;
 	private int[] rpiIntTemp;
 
@@ -104,7 +102,6 @@ public class PacketSender implements Runnable, Ticker {
 						}
 					}
 				}, transition - now);
-		lastTimeInSeconds = (int) (now / 1000);
 		myThread.start();
 	}
 
@@ -133,7 +130,6 @@ public class PacketSender implements Runnable, Ticker {
 
 	private int realRun(int brokeAt) {
 		long now = System.currentTimeMillis();
-		lastTimeInSeconds = (int) (now / 1000);
 		PeerManager pm = node.peers;
 		PeerNode[] nodes = pm.myPeers;
 		// Run the time sensitive status updater separately
@@ -297,7 +293,6 @@ public class PacketSender implements Runnable, Ticker {
 
 		// Send may have taken some time
 		now = System.currentTimeMillis();
-		lastTimeInSeconds = (int) (now / 1000);
 
 		if((now - oldNow) > (10 * 1000))
 			Logger.error(this, "now is more than 10 seconds past oldNow (" + (now - oldNow) + ") in PacketSender");
