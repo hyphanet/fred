@@ -286,15 +286,15 @@ public class PersistentChosenRequest {
 	}
 
 	public synchronized void pruneDuplicates(ClientRequestScheduler sched) {
-				for(int i=0;i<blocksNotStarted.size();i++) {
-					PersistentChosenBlock block = blocksNotStarted.get(i);
-					Key key = block.key;
-					if(key == null) continue;
-					if(sched.hasFetchingKey(key)) {
-						blocksNotStarted.remove(i);
-						if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
-						i--;
-					}
-				}
+		for(int i=0;i<blocksNotStarted.size();i++) {
+			PersistentChosenBlock block = blocksNotStarted.get(i);
+			Key key = block.key;
+			if(key == null) continue;
+			if(sched.hasFetchingKey(key)) {
+				blocksNotStarted.remove(i);
+				if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
+				i--;
+			}
+		}
 	}
 }
