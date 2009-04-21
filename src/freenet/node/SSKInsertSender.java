@@ -174,11 +174,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             try {
 				next.sendAsync(request, null, this);
-				if(RequestHandler.SEND_OLD_FORMAT_SSK) {
-					next.sendAsync(req, null, this);
-					// Not throttled, so report here.
-					sentPayload(data.length);
-				}
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;

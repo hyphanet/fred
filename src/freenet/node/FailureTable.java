@@ -449,10 +449,6 @@ public class FailureTable implements OOMHook {
 				
 			}, "Send offered SSK");
 			
-			if(RequestHandler.SEND_OLD_FORMAT_SSK) {
-				Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-				source.sendAsync(df, null, senderCounter);
-			}
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
 				source.sendAsync(pk, null, senderCounter);

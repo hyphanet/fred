@@ -59,7 +59,6 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         	System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
         }
         wd.mkdir();
-    	freenet.node.RequestHandler.SEND_OLD_FORMAT_SSK = false;
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");

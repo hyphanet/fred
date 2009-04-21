@@ -72,7 +72,6 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean ENABLE_FOAF = true;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
-    	freenet.node.RequestHandler.SEND_OLD_FORMAT_SSK = false;
         System.err.println("ULPR test");
         System.err.println();
     	String testName = "realNodeULPRTest";

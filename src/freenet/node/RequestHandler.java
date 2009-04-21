@@ -370,7 +370,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			unregisterRequestHandlerWithNode();
 		}
 	}
-	public static boolean SEND_OLD_FORMAT_SSK = false;
 
 	private void sendSSK(byte[] headers, final byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
@@ -401,12 +400,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			}
 		}, "Send throttled SSK data for " + RequestHandler.this);
 
-		if(SEND_OLD_FORMAT_SSK) {
-			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
-			source.sendAsync(df, null, this);
-			// Not throttled, so report payload here.
-			sentPayload(data.length);
-		}
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
 			source.sendAsync(pk, null, this);
@@ -426,12 +419,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			throw new Error(e);
 		}
 
-		if(SEND_OLD_FORMAT_SSK) {
-			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
-			source.sendAsync(df, null, ctr);
-			// Not throttled, so report payload here.
-			ctr.sentPayload(data.length);
-		}
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
 			source.sendAsync(pk, null, ctr);
