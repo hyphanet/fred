@@ -1260,7 +1260,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
-		}, false);
+		}, true);
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		if(obwLimit <= 0)
