@@ -757,7 +757,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 			@Override
 			public FetchContext getContext() {
-				return this.getContext();
+				return ctx;
 			}
 
 			@Override
