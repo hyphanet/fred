@@ -75,16 +75,14 @@ public class PersistentBlobTempBucket implements Bucket {
 	public InputStream getInputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		final FileChannel channel = factory.channel;
+		
+		synchronized(PersistentBlobTempBucket.this) {
+			inputStreams++;
+		}
+		
 		return new InputStream() {
-
 			private int offset;
 			private boolean closed;
-			
-			{
-				synchronized(PersistentBlobTempBucket.this) {
-					inputStreams++;
-				}
-			}
 			
 			@Override
 			public int read() throws IOException {
@@ -130,6 +128,7 @@ public class PersistentBlobTempBucket implements Bucket {
 			
 			@Override
 			public void close() {
+				if (closed) return;
 				closed = true;
 				
 				synchronized(PersistentBlobTempBucket.this) {
