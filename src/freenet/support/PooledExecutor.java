@@ -63,7 +63,7 @@ public class PooledExecutor implements Executor {
 			Logger.minor(this, "Executing " + runnable + " as " + jobName + " at prio " + prio);
 		if(prio < NativeThread.MIN_PRIORITY || prio > NativeThread.MAX_PRIORITY)
 			throw new IllegalArgumentException("Unreconized priority level : " + prio + '!');
-		
+
 		Job job = new Job(runnable, jobName);
 		while(true) {
 			MyThread t = null;
@@ -87,26 +87,26 @@ public class PooledExecutor implements Executor {
 					miss = true;
 				}
 			}
-			
+
 			// miss
 			if (miss) {
 				long threadNo = threadCounter[prio - 1].getAndIncrement();
 				// Will be coalesced by thread count listings if we use "@" or "for"
 				t = new MyThread("Pooled thread awaiting work @" + threadNo, job, threadNo, prio, !fromTicker);
 				t.setDaemon(true);
-				
+
 				synchronized(this) {
 					runningThreads[prio - 1].add(t);
 					jobMisses++;
-					
+
 					if(logMINOR)
 						Logger.minor(this, "Jobs: " + jobMisses + " misses of " + jobCount + " starting urgently " + jobName);
 				}
-				
+
 				t.start();
 				return;
 			}
-			
+
 			// use existing thread
 			synchronized(t) {
 				if(!t.alive)
@@ -115,16 +115,16 @@ public class PooledExecutor implements Executor {
 					continue;
 				t.nextJob = job;
 
-					// It is possible that we could get a wierd race condition with
-					// notify()/wait() signalling on a thread being used by higher
-					// level code. So we'd best use notifyAll().
-					t.notifyAll();
+				// It is possible that we could get a wierd race condition with
+				// notify()/wait() signalling on a thread being used by higher
+				// level code. So we'd best use notifyAll().
+				t.notifyAll();
 			}
-			
-				if(logMINOR)
-					synchronized(this) {
-						Logger.minor(this, "Not starting: Jobs: " + jobMisses + " misses of " + jobCount + " starting urgently " + jobName);
-					}
+
+			if(logMINOR)
+				synchronized(this) {
+					Logger.minor(this, "Not starting: Jobs: " + jobMisses + " misses of " + jobCount + " starting urgently " + jobName);
+				}
 			return;
 		}
 	}
@@ -194,21 +194,21 @@ public class PooledExecutor implements Executor {
 							try {
 								wait(TIMEOUT);
 							} catch(InterruptedException e) {
-							// Ignore
+								// Ignore
 							}
 						}
 					}
 					synchronized(PooledExecutor.this) {
 						if (waitingThreads[nativePriority - 1].remove(this))
 							waitingThreadsCount--;
-						
+
 						synchronized(this) {
 							job = nextJob;
 							nextJob = null;
 							if(job == null)
 								alive = false;
 						}
-						
+
 						if(!alive) {
 							runningThreads[nativePriority - 1].remove(this);
 							if(logMINOR)
