@@ -319,11 +319,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         		}
         	} else {
         		// Data, possibly followed by pubkey
-        		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFound);
         		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
         		Message reply;
 				try {
-					reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid.or(mfAltDF))), this);
+					reply = node.usm.waitFor(mfRO.or(mfGetInvalid.or(mfAltDF)), this);
 				} catch (DisconnectedException e) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
@@ -345,50 +344,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         				Logger.minor(this, "Node "+pn+" rejected FNPGetOfferedKey as invalid with reason "+reply.getShort(DMT.REASON));
         			offers.deleteLastOffer();
         			continue;
-        		} else if(reply.getSpec() == DMT.FNPSSKDataFound) {
-        			// Receive the data
-        			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
-        			sskData = ((ShortBuffer) reply.getObject(DMT.DATA)).getData();
-        			if(pubKey == null) {
-        				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
-        				Message pk;
-						try {
-							pk = node.usm.waitFor(mfPK, this);
-						} catch (DisconnectedException e) {
-							if(logMINOR)
-								Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
-							offers.deleteLastOffer();
-							continue;
-						}
-        				if(pk == null) {
-        					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
-        					offers.deleteLastOffer();
-        					continue;
-        				}
-        				try {
-							pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
-						} catch (CryptFormatException e) {
-							Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
-        					offers.deleteLastOffer();
-							continue;
-						}
-        			}
-        			
-        			try {
-						((NodeSSK)key).setPubKey(pubKey);
-					} catch (SSKVerifyException e) {
-						Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
-    					offers.deleteLastOffer();
-						continue;
-					}
-        			
-        			if(finishSSKFromGetOffer(pn)) {
-        				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
-        				return;
-        			} else {
-                		offers.deleteLastOffer();
-        				continue;
-        			}
         		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
         			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
         			// Wait for the data
@@ -631,10 +586,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
                 MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
             	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
-            	MessageFilter mfRealDFSSK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
             	MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
             	MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
-                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfRealDFSSK.or(mfAltDFSSKHeaders.or(mfAltDFSSKData)))))))));
+                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfAltDFSSKHeaders.or(mfAltDFSSKData))))))));
 
                 
             	try {
@@ -922,28 +876,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     				}
     				continue;
             	}
-            	
-            	if(msg.getSpec() == DMT.FNPSSKDataFound) {
-
-            		if(logMINOR) Logger.minor(this, "Got data and headers on "+uid);
-            		
-            		if(!(key instanceof NodeSSK)) {
-            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
-                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
-            			break;
-            		}
-            		
-                	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
-            		
-                	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
-                	
-                	if(pubKey != null) {
-                		finishSSK(next);
-                		return;
-                	}
-                	continue;
-            	}
-            	
+            	            	
             	if(msg.getSpec() == DMT.FNPSSKDataFoundData) {
             		
             		if(logMINOR) Logger.minor(this, "Got data on "+uid);
@@ -1049,7 +982,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	if(key instanceof NodeCHK)
     		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
     	else if(key instanceof NodeSSK) {
-    		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
+    		return MessageFilter.nothing();
     	}
     	else throw new IllegalStateException("Unknown keytype: "+key);
 	}

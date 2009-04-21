@@ -51,13 +51,24 @@ public final class MessageFilter {
     private long _oldBootID;
     private AsyncMessageFilterCallback _callback;
     private boolean _setTimeout = false;
+    private final boolean nothing; 
 
     private MessageFilter() {
         _timeoutFromWait = true;
+        nothing = true;
     }
-
+    
+    private MessageFilter(boolean noop) {
+        _timeoutFromWait = true;
+        this.nothing = noop; 
+    }
+    
     public static MessageFilter create() {
         return new MessageFilter();
+    }
+    
+    public static MessageFilter nothing() {
+        return new MessageFilter(true);
     }
 
     void onStartWaiting(boolean waitFor) {
@@ -179,6 +190,8 @@ public final class MessageFilter {
 		if ((_or != null) && (_or.match(m))) {
 			return true;
 		}
+		if (nothing)
+			return false;
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
 			return false;
 		}

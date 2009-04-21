@@ -310,9 +310,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             mfRejectedOverload.clearOr();
             MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPDataInsertRejected);
-            MessageFilter mfDataFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
             
-            mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataFound.or(mfDataInsertRejected))));
+            mf = mfRouteNotFound.or(mfInsertReply.or(mfRejectedOverload.or(mfDataInsertRejected)));
             
             while (true) {
 				try {
@@ -372,60 +371,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					Logger.error(this, "SSK insert rejected! Reason="
 							+ DMT.getDataInsertRejectedReason(reason));
 					break; // What else can we do?
-				}
-				
-				if (msg.getSpec() == DMT.FNPSSKDataFound) {
-					/**
-					 * Data was already on node, and was NOT equal to what we sent. COLLISION!
-					 * 
-					 * We can either accept the old data or the new data.
-					 * OLD DATA:
-					 * - KSK-based stuff is usable. Well, somewhat; a node could spoof KSKs on
-					 * receiving an insert, (if it knows them in advance), but it cannot just 
-					 * start inserts to overwrite old SSKs.
-					 * - You cannot "update" an SSK.
-					 * NEW DATA:
-					 * - KSK-based stuff not usable. (Some people think this is a good idea!).
-					 * - Illusion of updatability. (VERY BAD IMHO, because it's not really
-					 * updatable... FIXME implement TUKs; would determine latest version based
-					 * on version number, and propagate on request with a certain probability or
-					 * according to time. However there are good arguments to do updating at a
-					 * higher level (e.g. key bottleneck argument), and TUKs should probably be 
-					 * distinct from SSKs.
-					 * 
-					 * For now, accept the "old" i.e. preexisting data.
-					 */
-					Logger.normal(this, "Got collision on "+myKey+" ("+uid+") sending to "+next.getPeer());
-					
-					// FNPSSKDataFound == FNPInsertRequest
-					
-					// Lets assume the pubkeys are the same (otherwise SHA-256 has been broken
-					// and we're completely screwed anyway).
-					
-					byte[] newData = ((ShortBuffer) msg.getObject(DMT.DATA)).getData();
-					byte[] newHeaders = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
-					if(Arrays.equals(newData, data) && Arrays.equals(newHeaders, headers)) {
-						Logger.error(this, "Node sent us collision but data and headers are identical!! from "+next+" on "+uid);
-						// Try next node, this one is evil!
-						break;
-					}
-					
-					try {
-						block = new SSKBlock(newData, newHeaders, myKey, false);
-					} catch (SSKVerifyException e) {
-						Logger.error(this, "Node sent us collision but got corrupt SSK!! from "+next+" on "+uid);
-						// Try next node, no way to tell this one about its mistake as it's stopped listening. FIXME should it?
-						break;
-					}
-					
-					data = newData;
-					headers = newHeaders;
-					synchronized(this) {
-						hasRecentlyCollided = true;
-						hasCollided = true;
-						notifyAll();
-					}
-					continue;
 				}
 				
 				if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {

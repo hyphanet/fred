@@ -675,20 +675,6 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPSSKDataFound = new MessageType("FNPSSKDataFound", PRIORITY_LOW) {{
-		addField(UID, Long.class);
-		addField(BLOCK_HEADERS, ShortBuffer.class);
-		addField(DATA, ShortBuffer.class);
-	}};
-	
-	public static Message createFNPSSKDataFound(long uid, byte[] headers, byte[] data) {
-		Message msg = new Message(FNPSSKDataFound);
-		msg.set(UID, uid);
-		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
-		msg.set(DATA, new ShortBuffer(data));
-		return msg;
-	}
-	
 	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
