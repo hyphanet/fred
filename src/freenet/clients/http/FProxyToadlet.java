@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.NumberFormat;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -37,6 +38,7 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
 import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -515,15 +517,56 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
 				infobox.addChild("div", "class", "infobox-header", l10n("largeFile"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addChild("p", "Filename: "+key.getPreferredFilename());
+				infoboxContent.addChild("p", "Key: "+key);
+				if(fr.mimeType != null) infoboxContent.addChild("p", "Content type: "+mimeType);
 				infoboxContent.addChild("p", "Total blocks: "+fr.totalBlocks);
 				infoboxContent.addChild("p", "Required blocks: "+fr.requiredBlocks);
 				infoboxContent.addChild("p", "Fetched blocks: "+fr.fetchedBlocks);
 				infoboxContent.addChild("p", "Failed blocks: "+fr.failedBlocks);
 				infoboxContent.addChild("p", "Fatally blocks: "+fr.fatallyFailedBlocks);
 				infoboxContent.addChild("p", "Finalized: "+fr.finalizedBlocks);
-				infoboxContent.addChild("p", "Gone to network: "+fr.goneToNetwork);
-				if(fr.mimeType != null) infoboxContent.addChild("p", "Content type: "+mimeType);
+				infoboxContent.addChild("p", "Time elapsed: "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
+				if(fr.goneToNetwork)
+					infoboxContent.addChild("p", "Your node is downloading this file from Freenet. This could take seconds or minutes depending on how big the file is and how popular.");
+				else
+					infoboxContent.addChild("p", "Your Freenet node is checking your local cache for this file. If it is not found in the cache, it will try to download it from Freenet.");
+				if(fr.finalizedBlocks)
+					infoboxContent.addChild("p", "The progress bar should be accurate.");
+				else
+					infoboxContent.addChild("p", "The progress bar is likely to jump around a lot as we have not downloaded enough blocks to know how big the file is.");
+				
+				HTMLNode table = infoboxContent.addChild("table", "border", "0");
+				HTMLNode progressCell = table.addChild("tr").addChild("td", "class", "request-progress");
+				if(fr.totalBlocks <= 0)
+					progressCell.addChild("#", L10n.getString("QueueToadlet.unknown"));
+				else {
+					int total = fr.requiredBlocks;
+					int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
+					int failedPercent = (int) (fr.failedBlocks / (double) total * 100);
+					int fatallyFailedPercent = (int) (fr.fatallyFailedBlocks / (double) total * 100);
+					HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
+					progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
 
+					if (fr.failedBlocks > 0)
+						progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
+					if (fr.fatallyFailedBlocks > 0)
+						progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
+					
+					NumberFormat nf = NumberFormat.getInstance();
+					nf.setMaximumFractionDigits(1);
+					String prefix = '('+Integer.toString(fr.fetchedBlocks) + "/ " + Integer.toString(total)+"): ";
+					if (fr.finalizedBlocks) {
+						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + L10n.getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0) + '%');
+					} else {
+						String text = nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0)+ '%';
+						if(!fr.finalizedBlocks)
+							text = "" + fr.fetchedBlocks + " ("+text+"??)";
+						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString("QueueToadlet.progressbarNotAccurate") }, text);
+					}
+
+				}
+				
 				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
 				MultiValueTable<String, String> retHeaders = new MultiValueTable<String, String>();
 				retHeaders.put("Refresh", "2; url="+location);
