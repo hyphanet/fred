@@ -468,7 +468,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			synchronized(this) {
 				oldSFI = origSFI;
 				oldState = currentState;
-				oldSFI = null;
+				origSFI = null;
 				currentState = null;
 			}
 			if(oldSFI != null) {
