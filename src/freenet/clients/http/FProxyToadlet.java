@@ -491,6 +491,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String mimeType = null;
 		String referer = sanitizeReferer(ctx);
 		FetchException fe = null;
+		
 
 		MultiValueTable<String,String> headers = ctx.getHeaders();
 		String ua = headers.get("user-agent");
@@ -520,12 +521,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infoboxContent.addChild("p", "Filename: "+key.getPreferredFilename());
 				infoboxContent.addChild("p", "Key: "+key);
 				if(fr.mimeType != null) infoboxContent.addChild("p", "Content type: "+mimeType);
-				infoboxContent.addChild("p", "Total blocks: "+fr.totalBlocks);
-				infoboxContent.addChild("p", "Required blocks: "+fr.requiredBlocks);
-				infoboxContent.addChild("p", "Fetched blocks: "+fr.fetchedBlocks);
-				infoboxContent.addChild("p", "Failed blocks: "+fr.failedBlocks);
-				infoboxContent.addChild("p", "Fatally blocks: "+fr.fatallyFailedBlocks);
-				infoboxContent.addChild("p", "Finalized: "+fr.finalizedBlocks);
+				if(core.isAdvancedModeEnabled()) {
+					infoboxContent.addChild("p", "Blocks: need "+fr.requiredBlocks+" total "+fr.totalBlocks+" fetched "+fr.fetchedBlocks+" failed "+fr.failedBlocks+" fatally failed "+fr.fatallyFailedBlocks);
+				}
 				infoboxContent.addChild("p", "Time elapsed: "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
 				long eta = fr.eta;
 				if(eta > 0)
