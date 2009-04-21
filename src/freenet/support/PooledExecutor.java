@@ -63,8 +63,7 @@ public class PooledExecutor implements Executor {
 		if(prio < NativeThread.MIN_PRIORITY || prio > NativeThread.MAX_PRIORITY)
 			throw new IllegalArgumentException("Unreconized priority level : " + prio + '!');
 		while(true) {
-			MyThread t;
-			boolean mustStart = false;
+			MyThread t = null;
 			boolean miss = false;
 			synchronized(this) {
 				jobCount++;
@@ -80,37 +79,44 @@ public class PooledExecutor implements Executor {
 						ticker.queueTimedJob(job, jobName, 0, true);
 						return;
 					}
-					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @" + (threadCounter[prio - 1]), threadCounter[prio - 1], prio, !fromTicker);
-					threadCounter[prio - 1]++;
-					t.setDaemon(true);
-					mustStart = true;
 					miss = true;
 				}
 			}
+			
+			// miss
+			if (miss) {
+				synchronized(this) {
+					// Will be coalesced by thread count listings if we use "@" or "for"
+					t = new MyThread("Pooled thread awaiting work @" + (threadCounter[prio - 1]), job, threadCounter[prio - 1], prio, !fromTicker);
+					threadCounter[prio - 1]++;
+					runningThreads[prio - 1].add(t);
+					t.setDaemon(true);
+					t.setName(jobName + "(" + t.threadNo + ")");
+					jobMisses++;
+					
+					if(logMINOR)
+						Logger.minor(this, "Jobs: " + jobMisses + " misses of " + jobCount + " starting urgently " + jobName);
+				}
+				
+				t.start();
+				return;
+			}
+			
+			// use existing thread
 			synchronized(t) {
 				if(!t.alive)
 					continue;
 				if(t.nextJob != null)
 					continue;
 				t.nextJob = job;
-				if(!mustStart)
+				
 					// It is possible that we could get a wierd race condition with
 					// notify()/wait() signalling on a thread being used by higher
 					// level code. So we'd best use notifyAll().
 					t.notifyAll();
 			}
 			t.setName(jobName + "(" + t.threadNo + ")");
-			if(mustStart) {
-				t.start();
-				synchronized(this) {
-					runningThreads[prio - 1].add(t);
-					if(miss)
-						jobMisses++;
-					if(logMINOR)
-						Logger.minor(this, "Jobs: " + jobMisses + " misses of " + jobCount + " starting urgently " + jobName);
-				}
-			} else
+			
 				if(logMINOR)
 					synchronized(this) {
 						Logger.minor(this, "Not starting: Jobs: " + jobMisses + " misses of " + jobCount + " starting urgently " + jobName);
@@ -144,10 +150,11 @@ public class PooledExecutor implements Executor {
 		Runnable nextJob;
 		final long threadNo;
 
-		public MyThread(String defaultName, long threadCounter, int prio, boolean dontCheckRenice) {
+		public MyThread(String defaultName, Runnable firstJob, long threadCounter, int prio, boolean dontCheckRenice) {
 			super(defaultName, prio, dontCheckRenice);
 			this.defaultName = defaultName;
 			threadNo = threadCounter;
+			nextJob = firstJob;
 		}
 
 		@Override
