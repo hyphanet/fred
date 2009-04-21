@@ -4,6 +4,7 @@
 package freenet.support;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 import freenet.node.PrioRunnable;
 import freenet.node.Ticker;
@@ -23,7 +24,7 @@ public class PooledExecutor implements Executor {
 	@SuppressWarnings("unchecked")
 	private final ArrayList<MyThread>[] waitingThreads = new ArrayList[runningThreads.length];
 	private volatile int waitingThreadsCount;
-	long[] threadCounter = new long[runningThreads.length];
+	AtomicLong[] threadCounter = new AtomicLong[runningThreads.length];
 	private long jobCount;
 	private long jobMisses;
 	private static boolean logMINOR;
@@ -38,7 +39,7 @@ public class PooledExecutor implements Executor {
 		for(int i = 0; i < runningThreads.length; i++) {
 			runningThreads[i] = new ArrayList<MyThread>();
 			waitingThreads[i] = new ArrayList<MyThread>();
-			threadCounter[i] = 0;
+			threadCounter[i] = new AtomicLong();
 		}
 		waitingThreadsCount = 0;
 	}
@@ -85,13 +86,14 @@ public class PooledExecutor implements Executor {
 			
 			// miss
 			if (miss) {
+				long threadNo = threadCounter[prio - 1].getAndIncrement();
+				// Will be coalesced by thread count listings if we use "@" or "for"
+				t = new MyThread("Pooled thread awaiting work @" + threadNo, job, threadNo, prio, !fromTicker);
+				t.setDaemon(true);
+				t.setName(jobName + "(" + threadNo + ")");
+				
 				synchronized(this) {
-					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @" + (threadCounter[prio - 1]), job, threadCounter[prio - 1], prio, !fromTicker);
-					threadCounter[prio - 1]++;
 					runningThreads[prio - 1].add(t);
-					t.setDaemon(true);
-					t.setName(jobName + "(" + t.threadNo + ")");
 					jobMisses++;
 					
 					if(logMINOR)
