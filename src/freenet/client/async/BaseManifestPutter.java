@@ -40,7 +40,7 @@ import freenet.support.io.NativeThread;
  * 
  * Internal container redirect URIs:
  *  The internal container URIs should be always redirects to CHKs, not just include the metadata into manifest only.
- *  The (assumend) default behaviour is the reuse of containers between editions,
+ *  The (assumed) default behavior is the reuse of containers between editions,
  *  also ArchiveManger want to have a URI given, not Metadata.
  *  This rule also makes site update code/logic much more easier.
  * 
@@ -84,17 +84,13 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			isArchive = isContainer = false;
 		}
 		
-		//protected PutHandler(final SimpleManifestPutter smp, String name, HashMap<String, Object> data, ClientMetadata cm, boolean getCHKOnly) {
-		//	this(smp, null, name, data, cm, getCHKOnly);
-		//}
-				
-		protected PutHandler(final BaseManifestPutter smp, PutHandler parent, String name, HashMap<String, Object> data, ClientMetadata cm, boolean getCHKOnly, boolean isArchive2) {
+		protected PutHandler(final BaseManifestPutter smp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, ClientMetadata cm, boolean getCHKOnly, boolean isArchive2) {
 			super(smp.priorityClass, smp.client);
 			this.persistent = BaseManifestPutter.this.persistent();
 			this.cm = cm;
 			this.name = name;
 			this.origSFI =
-				new ContainerInserter(this, this, data, (persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI), ctx, false, getCHKOnly, !isArchive2, null, ARCHIVE_TYPE.TAR, false, earlyEncode);
+				new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode);
 			metadata = null;
 			parentContainerHandle = parent;
 			isContainer = true;
@@ -651,7 +647,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 	private HashSet<PutHandler> waitingForBlockSets;
 	private HashSet<PutHandler> putHandlersWaitingForFetchable;
 	private FreenetURI finalURI;
-	private FreenetURI targetURI;
+	private final FreenetURI targetURI;
 	private boolean finished;
 	private final InsertContext ctx;
 	final ClientCallback cb;
@@ -1800,7 +1796,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			}
 			dirStack = new Stack<HashMap<String, Object>>();
 			rootDir = new HashMap<String, Object>();
-			selfHandle = new PutHandler(BaseManifestPutter.this, parent, name, rootDir, null, getCHKOnly, isArchive);
+			selfHandle = new PutHandler(BaseManifestPutter.this, parent, name, rootDir, (isRoot?BaseManifestPutter.this.targetURI:FreenetURI.EMPTY_CHK_URI), null, getCHKOnly, isArchive);
 			currentDir = rootDir;
 			if (isRoot) {
 				rootContainerPutHandler = selfHandle;
