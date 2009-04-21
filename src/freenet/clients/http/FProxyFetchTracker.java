@@ -9,11 +9,24 @@ import freenet.client.FetchException;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 
 public class FProxyFetchTracker implements Runnable {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers;
 	final ClientContext context;
 	private long fetchIdentifiers;
@@ -60,7 +73,7 @@ public class FProxyFetchTracker implements Runnable {
 	}
 
 	public void queueCancel(FProxyFetchInProgress progress) {
-		Logger.error(this, "Queueing removal of old FProxyFetchInProgress's");
+		if(logMINOR) Logger.minor(this, "Queueing removal of old FProxyFetchInProgress's");
 		synchronized(this) {
 			if(queuedJob) {
 				requeue = true;
@@ -72,7 +85,7 @@ public class FProxyFetchTracker implements Runnable {
 	}
 
 	public void run() {
-		Logger.error(this, "Removing old FProxyFetchInProgress's");
+		if(logMINOR) Logger.minor(this, "Removing old FProxyFetchInProgress's");
 		ArrayList<FProxyFetchInProgress> toRemove = null;
 		boolean needRequeue = false;
 		synchronized(fetchers) {

@@ -19,6 +19,7 @@ import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -28,6 +29,18 @@ import freenet.support.api.Bucket;
  * LOCKING: The lock on this object is always taken last.
  */
 public class FProxyFetchInProgress implements ClientEventListener, ClientCallback {
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	/** The key we are fetching */
 	final FreenetURI uri;
@@ -217,15 +230,15 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		if(!waiters.isEmpty()) return false;
 		if(!results.isEmpty()) return false;
 		if(lastTouched + LIFETIME >= System.currentTimeMillis()) {
-			Logger.error(this, "Not able to cancel for "+this+" : "+uri+" : "+maxSize);
+			if(logMINOR) Logger.minor(this, "Not able to cancel for "+this+" : "+uri+" : "+maxSize);
 			return false;
 		}
-		Logger.error(this, "Can cancel for "+this+" : "+uri+" : "+maxSize);
+		if(logMINOR) Logger.minor(this, "Can cancel for "+this+" : "+uri+" : "+maxSize);
 		return true;
 	}
 	
 	public void finishCancel() {
-		Logger.error(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
+		if(logMINOR) Logger.minor(this, "Finishing cancel for "+this+" : "+uri+" : "+maxSize);
 		if(data != null) {
 			try {
 				data.free();
