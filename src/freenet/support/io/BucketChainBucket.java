@@ -298,8 +298,6 @@ public class BucketChainBucket implements Bucket {
 		}
 		return bucket.getOutputStream();
 	}
-
-	private int storedTo = 0;
 	
 	public boolean isReadOnly() {
 		return readOnly;

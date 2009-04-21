@@ -285,10 +285,7 @@ public class PersistentChosenRequest {
 		}
 	}
 
-	public void pruneDuplicates(ClientRequestScheduler sched) {
-		ArrayList<PersistentChosenBlock> dumped = null;
-		try {
-			synchronized(this) {
+	public synchronized void pruneDuplicates(ClientRequestScheduler sched) {
 				for(int i=0;i<blocksNotStarted.size();i++) {
 					PersistentChosenBlock block = blocksNotStarted.get(i);
 					Key key = block.key;
@@ -299,12 +296,5 @@ public class PersistentChosenRequest {
 						i--;
 					}
 				}
-			}
-		} finally {
-			if(dumped != null) {
-				for(PersistentChosenBlock block : dumped)
-					block.onDumped();
-			}
-		}
 	}
 }
