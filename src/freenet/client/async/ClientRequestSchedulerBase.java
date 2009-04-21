@@ -223,7 +223,8 @@ abstract class ClientRequestSchedulerBase {
 		synchronized (this) {
 			keyListeners.add(listener);
 		}
-		Logger.normal(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
+		if (logMINOR)
+			Logger.minor(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
 	}
 	
 	public boolean removePendingKeys(KeyListener listener) {
@@ -232,7 +233,8 @@ abstract class ClientRequestSchedulerBase {
 			ret = keyListeners.remove(listener);
 			listener.onRemove();
 		}
-		Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
+		if (logMINOR)
+			Logger.minor(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 		return ret;
 	}
 	
