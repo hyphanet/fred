@@ -329,7 +329,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 				} else if("addItem".equals(action) || "addCat".equals(action)) {
 
-					Bookmark newBookmark;
+					Bookmark newBookmark = null;
 					if("addItem".equals(action)) {
 						FreenetURI key = new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH));
 						/* TODO:
@@ -339,13 +339,24 @@ public class BookmarkEditorToadlet extends Toadlet {
 						 * - values as "on", "true", "yes" should be accepted.
 						 */
 						boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
-						newBookmark = new BookmarkItem(key, name, req.getPartAsString("descB", MAX_KEY_LENGTH), hasAnActivelink, core.alerts);
+						if (name.contains("/")) {
+							HTMLNode errorBox = content.addChild(pageMaker.getInfobox("infobox-error", L10n.getString("BookmarkEditorToadlet.invalidNameTitle")));
+							pageMaker.getContentNode(errorBox).addChild("#", L10n.getString("BookmarkEditorToadlet.invalidName"));
+						} else
+							newBookmark = new BookmarkItem(key, name, req.getPartAsString("descB", MAX_KEY_LENGTH), hasAnActivelink, core.alerts);
 					} else
-						newBookmark = new BookmarkCategory(name);
-					bookmarkManager.addBookmark(bookmarkPath, newBookmark);
-					bookmarkManager.storeBookmarks();
-					HTMLNode successBox = content.addChild(pageMaker.getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.addedNewBookmarkTitle")));
-					pageMaker.getContentNode(successBox).addChild("p", L10n.getString("BookmarkEditorToadlet.addedNewBookmark"));
+						if (name.contains("/")) {
+							HTMLNode errorBox = content.addChild(pageMaker.getInfobox("infobox-error", L10n.getString("BookmarkEditorToadlet.invalidNameTitle")));
+							pageMaker.getContentNode(errorBox).addChild("#", L10n.getString("BookmarkEditorToadlet.invalidName"));
+						} else
+							newBookmark = new BookmarkCategory(name);
+					
+					if (newBookmark != null) {
+						bookmarkManager.addBookmark(bookmarkPath, newBookmark);
+						bookmarkManager.storeBookmarks();
+						HTMLNode successBox = content.addChild(pageMaker.getInfobox("infobox-success", L10n.getString("BookmarkEditorToadlet.addedNewBookmarkTitle")));
+						pageMaker.getContentNode(successBox).addChild("p", L10n.getString("BookmarkEditorToadlet.addedNewBookmark"));
+					}
 				}
 			}
 		} catch(MalformedURLException mue) {
