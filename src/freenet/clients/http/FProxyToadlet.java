@@ -518,23 +518,25 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("#", "Filename: ");
+				infoboxContent.addChild("#", l10n("filenameLabel")+ " ");
 				infoboxContent.addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
-				if(fr.mimeType != null) infoboxContent.addChild("br", "Content type: "+fr.mimeType);
+				if(fr.mimeType != null) infoboxContent.addChild("br", l10n("contentTypeLabel")+" "+fr.mimeType);
 				if(fr.size > 0) infoboxContent.addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
 				if(core.isAdvancedModeEnabled()) {
-					infoboxContent.addChild("br", "Blocks: " +fr.fetchedBlocks+" / "+fr.requiredBlocks+" (total "+fr.totalBlocks+" failed "+fr.failedBlocks+" fatally failed "+fr.fatallyFailedBlocks+")");
+					infoboxContent.addChild("br", l10n("blocksDetail", 
+							new String[] { "fetched", "required", "total", "failed", "fatallyfailed" },
+							new String[] { Integer.toString(fr.fetchedBlocks), Integer.toString(fr.requiredBlocks), Integer.toString(fr.totalBlocks), Integer.toString(fr.failedBlocks), Integer.toString(fr.fatallyFailedBlocks) }));
 				}
-				infoboxContent.addChild("br", "Time elapsed: "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
+				infoboxContent.addChild("br", l10n("timeElapsedLabel")+" "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
 				long eta = fr.eta;
 				if(eta > 0)
 					infoboxContent.addChild("br", "ETA: "+TimeUtil.formatTime(eta));
 				if(fr.goneToNetwork)
-					infoboxContent.addChild("p", "Your node is downloading this page or file from Freenet. This could take seconds or minutes depending on how big and how popular the page or file is.");
+					infoboxContent.addChild("p", l10n("progressDownloading"));
 				else
-					infoboxContent.addChild("p", "Your Freenet node is checking your local cache for this page or file. If it is not found in the cache, it will try to download it from Freenet.");
+					infoboxContent.addChild("p", l10n("progressCheckingStore"));
 				if(!fr.finalizedBlocks)
-					infoboxContent.addChild("p", "The progress bar is likely to jump around a lot as we have not downloaded enough blocks to know how big the file is.");
+					infoboxContent.addChild("p", l10n("progressNotFinalized"));
 				
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
 				HTMLNode progressCell = table.addChild("tr").addChild("td", "class", "request-progress");
@@ -572,7 +574,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 
 				HTMLNode ul = infoboxContent.addChild("ul");
-				ul.addChild("li").addChild("p", "You can wait for the page. This page will be refreshed every 2 seconds until the file is fetched or Freenet gives up. Alternatively:");
+				ul.addChild("li").addChild("p", l10n("progressOptionZero"));
 				HTMLNode optionForm = ctx.addFormChild(ul.addChild("li").addChild("p"), "/queue/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
@@ -770,6 +772,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("FProxyToadlet."+key, new String[] { pattern }, new String[] { value });
+	}
+	
+	private String l10n(String key, String[] pattern, String[] value) {
+		return L10n.getString("FProxyToadlet."+key, pattern, value);
 	}
 
 	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force, 
