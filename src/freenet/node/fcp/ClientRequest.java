@@ -422,7 +422,10 @@ public abstract class ClientRequest {
 
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
-			getClientRequest().setPriorityClass(priorityClass, server.core.clientContext, container);
+			ClientRequester r = getClientRequest();
+			container.activate(r, 1);
+			r.setPriorityClass(priorityClass, server.core.clientContext, container);
+			container.deactivate(r, 1);
 			priorityClassChanged = true;
 		}
 
