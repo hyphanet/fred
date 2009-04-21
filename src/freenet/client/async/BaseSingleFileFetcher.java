@@ -354,6 +354,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	
 	@Override
 	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+		if(!toNetwork) return;
 		boolean deactivate = false;
 		if(persistent) {
 			deactivate = !container.ext().isActive(parent);

@@ -866,6 +866,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	
 	@Override
 	public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+		if(!toNetwork) return;
 		boolean deactivate = false;
 		if(persistent) {
 			deactivate = !container.ext().isActive(parent);
