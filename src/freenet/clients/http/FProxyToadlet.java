@@ -523,7 +523,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(fr.mimeType != null) infoboxContent.addChild("br", "Content type: "+fr.mimeType);
 				if(fr.size > 0) infoboxContent.addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
 				if(core.isAdvancedModeEnabled()) {
-					infoboxContent.addChild("br", "Blocks: need "+fr.requiredBlocks+" total "+fr.totalBlocks+" fetched "+fr.fetchedBlocks+" failed "+fr.failedBlocks+" fatally failed "+fr.fatallyFailedBlocks);
+					infoboxContent.addChild("br", "Blocks: " +fr.fetchedBlocks+" / "+fr.requiredBlocks+" (total "+fr.totalBlocks+" failed "+fr.failedBlocks+" fatally failed "+fr.fatallyFailedBlocks+")");
 				}
 				infoboxContent.addChild("br", "Time elapsed: "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
 				long eta = fr.eta;
