@@ -55,7 +55,7 @@ public final class MessageFilter {
 
     private MessageFilter() {
         _timeoutFromWait = true;
-        nothing = true;
+        nothing = false;
     }
     
     private MessageFilter(boolean noop) {
