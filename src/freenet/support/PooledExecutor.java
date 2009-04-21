@@ -54,15 +54,17 @@ public class PooledExecutor implements Executor {
 		execute(job, jobName, false);
 	}
 
-	public void execute(Runnable job, String jobName, boolean fromTicker) {
+	public void execute(Runnable runnable, String jobName, boolean fromTicker) {
 		int prio = NativeThread.NORM_PRIORITY;
-		if(job instanceof PrioRunnable)
-			prio = ((PrioRunnable) job).getPriority();
+		if(runnable instanceof PrioRunnable)
+			prio = ((PrioRunnable) runnable).getPriority();
 
 		if(logMINOR)
-			Logger.minor(this, "Executing " + job + " as " + jobName + " at prio " + prio);
+			Logger.minor(this, "Executing " + runnable + " as " + jobName + " at prio " + prio);
 		if(prio < NativeThread.MIN_PRIORITY || prio > NativeThread.MAX_PRIORITY)
 			throw new IllegalArgumentException("Unreconized priority level : " + prio + '!');
+		
+		Job job = new Job(runnable, jobName);
 		while(true) {
 			MyThread t = null;
 			boolean miss = false;
@@ -70,6 +72,8 @@ public class PooledExecutor implements Executor {
 				jobCount++;
 				if(!waitingThreads[prio - 1].isEmpty()) {
 					t = waitingThreads[prio - 1].remove(waitingThreads[prio - 1].size() - 1);
+					if (t != null)
+						waitingThreadsCount--;
 					if(logMINOR)
 						Logger.minor(this, "Reusing thread " + t);
 				} else {
@@ -77,7 +81,7 @@ public class PooledExecutor implements Executor {
 					if((!fromTicker) && NativeThread.usingNativeCode() && prio > Thread.currentThread().getPriority()) {
 						// Run on ticker
 						// j16sdiz (22-Dec-2008): should we queue it? the ticker is "PacketSender", but it keep busying on non-packet related works
-						ticker.queueTimedJob(job, jobName, 0, true);
+						ticker.queueTimedJob(runnable, jobName, 0, true);
 						return;
 					}
 					miss = true;
@@ -90,7 +94,6 @@ public class PooledExecutor implements Executor {
 				// Will be coalesced by thread count listings if we use "@" or "for"
 				t = new MyThread("Pooled thread awaiting work @" + threadNo, job, threadNo, prio, !fromTicker);
 				t.setDaemon(true);
-				t.setName(jobName + "(" + threadNo + ")");
 				
 				synchronized(this) {
 					runningThreads[prio - 1].add(t);
@@ -111,13 +114,12 @@ public class PooledExecutor implements Executor {
 				if(t.nextJob != null)
 					continue;
 				t.nextJob = job;
-				
+
 					// It is possible that we could get a wierd race condition with
 					// notify()/wait() signalling on a thread being used by higher
 					// level code. So we'd best use notifyAll().
 					t.notifyAll();
 			}
-			t.setName(jobName + "(" + t.threadNo + ")");
 			
 				if(logMINOR)
 					synchronized(this) {
@@ -144,15 +146,24 @@ public class PooledExecutor implements Executor {
 	public int getWaitingThreadsCount() {
 		return waitingThreadsCount;
 	}
+	
+	private static class Job {
+		private Runnable runnable;
+		private String name;
+
+		Job(Runnable runnable, String name) {
+			this.runnable = runnable;
+			this.name = name;
+		}
+	}
 
 	private class MyThread extends NativeThread {
-
 		final String defaultName;
 		volatile boolean alive = true;
-		Runnable nextJob;
+		Job nextJob;
 		final long threadNo;
 
-		public MyThread(String defaultName, Runnable firstJob, long threadCounter, int prio, boolean dontCheckRenice) {
+		public MyThread(String defaultName, Job firstJob, long threadCounter, int prio, boolean dontCheckRenice) {
 			super(defaultName, prio, dontCheckRenice);
 			this.defaultName = defaultName;
 			threadNo = threadCounter;
@@ -165,7 +176,7 @@ public class PooledExecutor implements Executor {
 			long ranJobs = 0;
 			int nativePriority = getNativePriority();
 			while(true) {
-				Runnable job;
+				Job job;
 
 				synchronized(this) {
 					job = nextJob;
@@ -186,14 +197,18 @@ public class PooledExecutor implements Executor {
 							// Ignore
 							}
 						}
-						job = nextJob;
-						nextJob = null;
-						if(job == null)
-							alive = false;
 					}
 					synchronized(PooledExecutor.this) {
-						waitingThreads[nativePriority - 1].remove(this);
-						waitingThreadsCount--;
+						if (waitingThreads[nativePriority - 1].remove(this))
+							waitingThreadsCount--;
+						
+						synchronized(this) {
+							job = nextJob;
+							nextJob = null;
+							if(job == null)
+								alive = false;
+						}
+						
 						if(!alive) {
 							runningThreads[nativePriority - 1].remove(this);
 							if(logMINOR)
@@ -205,7 +220,8 @@ public class PooledExecutor implements Executor {
 
 				// Run the job
 				try {
-					job.run();
+					setName(job.name + "(" + threadNo + ")");
+					job.runnable.run();
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 				} catch(Throwable t) {
