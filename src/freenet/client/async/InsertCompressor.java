@@ -293,12 +293,3 @@ public class InsertCompressor implements CompressJob {
 	}
 
 }
-
-class CompressionOutput {
-	public CompressionOutput(Bucket bestCompressedData, COMPRESSOR_TYPE bestCodec2) {
-		this.data = bestCompressedData;
-		this.bestCodec = bestCodec2;
-	}
-	final Bucket data;
-	final COMPRESSOR_TYPE bestCodec;
-}
