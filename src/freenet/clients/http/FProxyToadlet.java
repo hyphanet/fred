@@ -49,8 +49,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	private static byte[] random;
 	final NodeClientCore core;
 	final ClientContext context;
-	final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers;
-	private long fetchIdentifiers;
+	final FProxyFetchTracker fetchTracker;
 	
 	private static FoundURICallback prefetchHook;
 	static final Set<String> prefetchAllowedTypes = new HashSet<String>();
@@ -99,7 +98,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				
 			};
-		fetchers = new MultiValueTable<FreenetURI, FProxyFetchInProgress>();
+		fetchTracker = new FProxyFetchTracker(context, getClientImpl().getFetchContext(), this);
 	}
 	
 	@Override
@@ -493,17 +492,20 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 		MultiValueTable<String,String> headers = ctx.getHeaders();
 		String ua = headers.get("user-agent");
+		String accept = headers.get("accept");
 		FProxyFetchResult fr = null;
-		if(isBrowser(ua)) {
-			FProxyFetchInProgress fetch = makeFetcher(key, maxSize);
+		if(isBrowser(ua) && accept == null || accept.indexOf("text/html") > -1) {
+			FProxyFetchWaiter fetch = fetchTracker.makeFetcher(key, maxSize);
 			while(true) {
 			fr = fetch.getResult();
 			if(fr.hasData()) {
 				data = fr.data;
 				mimeType = fr.mimeType;
+				fetch.close(); // Not waiting any more, but still locked the results until sent
 				break;
 			} else if(fr.failed != null) {
 				fe = fr.failed;
+				fetch.close(); // Not waiting any more, but still locked the results until sent
 				break;
 			} else {
 				// Still in progress
@@ -527,6 +529,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				retHeaders.put("Refresh", "2; url="+location);
 				writeHTMLReply(ctx, 200, "OK", retHeaders, pageNode.generate());
 				fr.close();
+				fetch.close();
 				return;
 			}
 			}
@@ -672,32 +675,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(fr == null && data != null) data.free();
 			if(fr != null) fr.close();
 		}
-	}
-
-	private FProxyFetchInProgress makeFetcher(FreenetURI key, long maxSize) {
-		FProxyFetchInProgress progress;
-		synchronized(fetchers) {
-			if(fetchers.containsKey(key)) {
-				Object[] check = fetchers.getArray(key);
-				for(int i=0;i<check.length;i++) {
-					progress = (FProxyFetchInProgress) check[i];
-					if(progress.maxSize == maxSize 
-							|| progress.hasData()) return progress;
-				}
-			}
-			progress = new FProxyFetchInProgress(key, maxSize, fetchIdentifiers++, context, getClientImpl(), this);
-			fetchers.put(key, progress);
-		}
-		try {
-			progress.start(context);
-		} catch (FetchException e) {
-			synchronized(fetchers) {
-				fetchers.removeElement(key, progress);
-			}
-		}
-		return progress;
-		// FIXME promote a fetcher when it is re-used
-		// FIXME get rid of fetchers over some age
 	}
 
 	private boolean isBrowser(String ua) {
