@@ -17,6 +17,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
@@ -43,10 +44,13 @@ import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-public final class FProxyToadlet extends Toadlet {
+public final class FProxyToadlet extends Toadlet implements RequestClient {
 	
 	private static byte[] random;
 	final NodeClientCore core;
+	final ClientContext context;
+	final MultiValueTable<FreenetURI, FProxyFetchInProgress> fetchers;
+	private long fetchIdentifiers;
 	
 	private static FoundURICallback prefetchHook;
 	static final Set<String> prefetchAllowedTypes = new HashSet<String>();
@@ -63,6 +67,7 @@ public final class FProxyToadlet extends Toadlet {
 	public static long MAX_LENGTH = 2*1024*1024; // 2MB
 	
 	static final URI welcome;
+	public static final short PRIORITY = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 	static {
 		try {
 			welcome = new URI("/welcome/");
@@ -76,6 +81,7 @@ public final class FProxyToadlet extends Toadlet {
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
 		this.core = core;
+		this.context = core.clientContext;
 		prefetchHook = new FoundURICallback() {
 
 				public void foundURI(FreenetURI uri) {
@@ -93,6 +99,7 @@ public final class FProxyToadlet extends Toadlet {
 				}
 				
 			};
+		fetchers = new MultiValueTable<FreenetURI, FProxyFetchInProgress>();
 	}
 	
 	@Override
@@ -113,7 +120,7 @@ public final class FProxyToadlet extends Toadlet {
 		}		
 	}
 
-	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core) throws ToadletContextClosedException, IOException {
+	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData) throws ToadletContextClosedException, IOException {
 		ToadletContainer container = context.getContainer();
 		if(Logger.shouldLog(Logger.MINOR, FProxyToadlet.class))
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
@@ -293,7 +300,7 @@ public final class FProxyToadlet extends Toadlet {
 		} catch (HTTPRangeException e) {
 			ctx.sendReplyHeaders(416, "Requested Range Not Satisfiable", null, null, 0);
 		} finally {
-			if(toFree != null) toFree.free();
+			if(toFree != null && !dontFreeData) toFree.free();
 			if(tmpRange != null) tmpRange.free();
 		}
 	}
@@ -478,10 +485,57 @@ public final class FProxyToadlet extends Toadlet {
 			if(override.length() == 0) override = "?forcedownload";
 			else override = override+"&forcedownload";
 		}
+
 		Bucket data = null;
+		String mimeType = null;
+		String referer = sanitizeReferer(ctx);
+		FetchException fe = null;
+
+		MultiValueTable<String,String> headers = ctx.getHeaders();
+		String ua = headers.get("user-agent");
+		FProxyFetchResult fr = null;
+		if(isBrowser(ua)) {
+			FProxyFetchInProgress fetch = makeFetcher(key, maxSize);
+			while(true) {
+			fr = fetch.getResult();
+			if(fr.hasData()) {
+				data = fr.data;
+				mimeType = fr.mimeType;
+				break;
+			} else if(fr.failed != null) {
+				fe = fr.failed;
+				break;
+			} else {
+				// Still in progress
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				
+				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
+				infobox.addChild("div", "class", "infobox-header", l10n("largeFile"));
+				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addChild("p", "Total blocks: "+fr.totalBlocks);
+				infoboxContent.addChild("p", "Required blocks: "+fr.requiredBlocks);
+				infoboxContent.addChild("p", "Fetched blocks: "+fr.fetchedBlocks);
+				infoboxContent.addChild("p", "Failed blocks: "+fr.failedBlocks);
+				infoboxContent.addChild("p", "Fatally blocks: "+fr.fatallyFailedBlocks);
+				infoboxContent.addChild("p", "Finalized: "+fr.finalizedBlocks);
+				infoboxContent.addChild("p", "Gone to network: "+fr.goneToNetwork);
+				if(fr.mimeType != null) infoboxContent.addChild("p", "Content type: "+mimeType);
+
+				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
+				MultiValueTable<String, String> retHeaders = new MultiValueTable<String, String>();
+				retHeaders.put("Refresh", "2; url="+location);
+				writeHTMLReply(ctx, 200, "OK", retHeaders, pageNode.generate());
+				fr.close();
+				return;
+			}
+			}
+		}
+		
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
+			if(data == null) {
 			FetchResult result = fetch(key, maxSize, new RequestClient() {
 				public boolean persistent() {
 					return false;
@@ -493,12 +547,11 @@ public final class FProxyToadlet extends Toadlet {
 			// Now, is it safe?
 			
 			data = result.asBucket();
-			String mimeType = result.getMimeType();
+			mimeType = result.getMimeType();
+			} else if(fe != null) throw fe;
 			
-			String referer = sanitizeReferer(ctx);
 			
-			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+SizeUtil.formatSizeWithoutSpace(maxSize) : "", referer, true, ctx, core);
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+SizeUtil.formatSizeWithoutSpace(maxSize) : "", referer, true, ctx, core, fr != null);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
@@ -616,8 +669,42 @@ public final class FProxyToadlet extends Toadlet {
 		} catch (Throwable t) {
 			writeInternalError(t, ctx);
 		} finally {
-			if(data != null) data.free();
+			if(fr == null && data != null) data.free();
+			if(fr != null) fr.close();
 		}
+	}
+
+	private FProxyFetchInProgress makeFetcher(FreenetURI key, long maxSize) {
+		FProxyFetchInProgress progress;
+		synchronized(fetchers) {
+			if(fetchers.containsKey(key)) {
+				Object[] check = fetchers.getArray(key);
+				for(int i=0;i<check.length;i++) {
+					progress = (FProxyFetchInProgress) check[i];
+					if(progress.maxSize == maxSize 
+							|| progress.hasData()) return progress;
+				}
+			}
+			progress = new FProxyFetchInProgress(key, maxSize, fetchIdentifiers++, context, getClientImpl(), this);
+			fetchers.put(key, progress);
+		}
+		try {
+			progress.start(context);
+		} catch (FetchException e) {
+			synchronized(fetchers) {
+				fetchers.removeElement(key, progress);
+			}
+		}
+		return progress;
+		// FIXME promote a fetcher when it is re-used
+		// FIXME get rid of fetchers over some age
+	}
+
+	private boolean isBrowser(String ua) {
+		if(ua == null) return false;
+		if(ua.indexOf("Mozilla/") > -1) return true;
+		if(ua.indexOf("Opera/") > -1) return true;
+		return false;
 	}
 
 	private static String writeSizeAndMIME(HTMLNode fileInformationList, FetchException e) {
@@ -827,6 +914,14 @@ public final class FProxyToadlet extends Toadlet {
 			throw new HTTPRangeException(ioobe);
 		}
 		return result;
+	}
+
+	public boolean persistent() {
+		return false;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 	
 }
