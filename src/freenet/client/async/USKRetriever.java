@@ -98,11 +98,11 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
-	public void onExpectedMIME(String mime, ObjectContainer container) {
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
-	public void onExpectedSize(long size, ObjectContainer container) {
+	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

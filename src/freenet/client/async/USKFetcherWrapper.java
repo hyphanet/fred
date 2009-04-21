@@ -60,11 +60,11 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		return super.toString()+ ':' +usk;
 	}
 
-	public void onExpectedMIME(String mime, ObjectContainer container) {
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
-	public void onExpectedSize(long size, ObjectContainer container) {
+	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

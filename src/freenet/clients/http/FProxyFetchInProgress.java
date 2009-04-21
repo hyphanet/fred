@@ -15,6 +15,8 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
+import freenet.client.events.ExpectedFileSizeEvent;
+import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
@@ -153,6 +155,14 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 				if(goneToNetwork) return;
 				goneToNetwork = true;
 				fetchedBlocksPreNetwork = fetchedBlocks;
+			}
+		} else if(ce instanceof ExpectedMIMEEvent) {
+			synchronized(this) {
+				this.mimeType = ((ExpectedMIMEEvent)ce).expectedMIMEType;
+			}
+		} else if(ce instanceof ExpectedFileSizeEvent) {
+			synchronized(this) {
+				this.size = ((ExpectedFileSizeEvent)ce).expectedSize;
 			}
 		} else return;
 		wakeWaiters(false);

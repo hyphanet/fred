@@ -25,9 +25,9 @@ public interface GetCompletionCallback {
 
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
 
-	public void onExpectedSize(long size, ObjectContainer container);
+	public void onExpectedSize(long size, ObjectContainer container, ClientContext context);
 	
-	public void onExpectedMIME(String mime, ObjectContainer container);
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context);
 	
 	public void onFinalizedMetadata(ObjectContainer container);
 	

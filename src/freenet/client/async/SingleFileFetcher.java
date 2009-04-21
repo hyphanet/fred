@@ -553,7 +553,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container);
+				if(mime != null) rcb.onExpectedMIME(mime, container, context);
 				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(clientMetadata.getMIMETypeNoParams())) {
 					throw new FetchException(FetchException.WRONG_MIME_TYPE, -1, false, clientMetadata.getMIMEType());
@@ -660,7 +660,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container);
+				if(mime != null) rcb.onExpectedMIME(mime, container, context);
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -732,7 +732,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
-				if(mime != null) rcb.onExpectedMIME(mime, container);
+				if(mime != null) rcb.onExpectedMIME(mime, container, context);
 				
 				String mimeType = clientMetadata.getMIMETypeNoParams();
 				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
@@ -1024,11 +1024,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onExpectedMIME(String mime, ObjectContainer container) {
+		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
-		public void onExpectedSize(long size, ObjectContainer container) {
+		public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			if(persistent) {
 				wasActive = container.ext().isActive(SingleFileFetcher.this);
@@ -1037,7 +1037,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			if(persistent)
 				container.activate(rcb, 1);
-			rcb.onExpectedSize(size, container);
+			rcb.onExpectedSize(size, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
 		}
@@ -1119,11 +1119,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Ignore
 		}
 
-		public void onExpectedMIME(String mime, ObjectContainer container) {
+		public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 			// Ignore
 		}
 
-		public void onExpectedSize(long size, ObjectContainer container) {
+		public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 			boolean wasActive = true;
 			boolean cbWasActive = true;
 			if(persistent) {
@@ -1132,7 +1132,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				cbWasActive = container.ext().isActive(rcb);
 				container.activate(rcb, 1);
 			}
-			rcb.onExpectedSize(size, container);
+			rcb.onExpectedSize(size, container, context);
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
 			if(!cbWasActive)

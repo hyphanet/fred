@@ -518,9 +518,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild("#", "Filename: "+key.getPreferredFilename());
-				infoboxContent.addChild("br", "Key: "+key);
-				if(fr.mimeType != null) infoboxContent.addChild("p", "Content type: "+mimeType);
+				infoboxContent.addChild("#", "Filename: ");
+				infoboxContent.addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
+				if(fr.mimeType != null) infoboxContent.addChild("br", "Content type: "+fr.mimeType);
+				if(fr.size > 0) infoboxContent.addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
 				if(core.isAdvancedModeEnabled()) {
 					infoboxContent.addChild("br", "Blocks: need "+fr.requiredBlocks+" total "+fr.totalBlocks+" fetched "+fr.fetchedBlocks+" failed "+fr.failedBlocks+" fatally failed "+fr.fatallyFailedBlocks);
 				}
@@ -596,7 +597,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
-			if(data == null) {
+			if(data == null && fe == null) {
 			FetchResult result = fetch(key, maxSize, new RequestClient() {
 				public boolean persistent() {
 					return false;

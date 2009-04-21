@@ -15,6 +15,8 @@ import freenet.client.ArchiveContext;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.events.ExpectedFileSizeEvent;
+import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKeyBlock;
@@ -438,18 +440,27 @@ public class ClientGetter extends BaseClientGetter {
 		return binaryBlobBucket != null;
 	}
 
-	public void onExpectedMIME(String mime, ObjectContainer container) {
+	public void onExpectedMIME(String mime, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
 		expectedMIME = mime;
-		if(persistent())
+		if(persistent()) {
 			container.store(this);
+			container.activate(ctx, 1);
+			container.activate(ctx.eventProducer, 1);
+		}
+		ctx.eventProducer.produceEvent(new ExpectedMIMEEvent(mime), container, context);
+
 	}
 
-	public void onExpectedSize(long size, ObjectContainer container) {
+	public void onExpectedSize(long size, ObjectContainer container, ClientContext context) {
 		if(finalizedMetadata) return;
 		expectedSize = size;
-		if(persistent())
+		if(persistent()) {
 			container.store(this);
+			container.activate(ctx, 1);
+			container.activate(ctx.eventProducer, 1);
+		}
+		ctx.eventProducer.produceEvent(new ExpectedFileSizeEvent(size), container, context);
 	}
 
 	public void onFinalizedMetadata(ObjectContainer container) {
