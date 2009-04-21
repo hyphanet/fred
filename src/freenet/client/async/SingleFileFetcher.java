@@ -836,7 +836,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 	
 	private void continueWithNewMetadata(Metadata newMetadata, GetCompletionCallback callback, ObjectContainer container, ClientContext context) throws FetchException {
-		final SingleFileFetcher f = new SingleFileFetcher(this, persistent, false, newMetadata, metaStrings, callback, ctx, container, context);
+		final SingleFileFetcher f = new SingleFileFetcher(this, persistent, false, newMetadata, new ArrayList<String>(metaStrings), callback, ctx, container, context);
 		// Clear our own metadata so it can be garbage collected, it will be replaced by whatever is fetched.
 		// The new fetcher has our metadata so we don't need to removeMetadata().
 		metadata = null;
