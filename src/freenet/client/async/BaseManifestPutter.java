@@ -80,7 +80,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			this.origSFI =
 				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode);
 			metadata = null;
-			parentContainerHandle = parent;
+			parentPutHandler = parent;
 			isArchive = isContainer = false;
 		}
 		
@@ -92,7 +92,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			this.origSFI =
 				new ContainerInserter(this, this, data, (persistent ? insertURI.clone() : insertURI), ctx, false, getCHKOnly, false, null, ARCHIVE_TYPE.TAR, false, earlyEncode);
 			metadata = null;
-			parentContainerHandle = parent;
+			parentPutHandler = parent;
 			isContainer = true;
 			isArchive = isArchive2;
 		}
@@ -110,7 +110,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			metadata = m;
 			if(logMINOR) Logger.minor(this, "Simple redirect metadata: "+m);
 			origSFI = null;
-			parentContainerHandle = parent;
+			parentPutHandler = parent;
 			isArchive = isContainer = false;
 			targetInArchive = targetInArchive2;
 		}
@@ -122,7 +122,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 		private String targetInArchive;
 		private final String name;
 		private final boolean persistent;
-		private final PutHandler parentContainerHandle;
+		private final PutHandler parentPutHandler;
 		private final boolean isContainer;
 		private final boolean isArchive;
 		
@@ -192,12 +192,12 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 				Vector<PutHandler> phv = putHandlersArchiveTransformMap.get(this);
 				for (PutHandler ph: phv) {
 //					
-					perContainerPutHandlersWaitingForFetchable.get(ph.parentContainerHandle).remove(this);
+					perContainerPutHandlersWaitingForFetchable.get(ph.parentPutHandler).remove(this);
 //					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, archiveURI.setDocName(targetInArchive), cm);
 //					hm.put(ph.name, m);
 //					putHandlersTransformMap.remove(ph);
 					try {
-						maybeStartParentContainer(ph.parentContainerHandle, container, context);
+						maybeStartParentContainer(ph.parentPutHandler, container, context);
 					} catch (InsertException e) {
 						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 						return;
@@ -317,7 +317,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 				for (PutHandler ph: phv) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(ph);
 					
-					perContainerPutHandlersWaitingForFetchable.get(ph.parentContainerHandle).remove(this);
+					perContainerPutHandlersWaitingForFetchable.get(ph.parentPutHandler).remove(this);
 					if (ph.targetInArchive == null) throw new NullPointerException();
 					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, archiveURI.setMetaString(new String[]{ph.targetInArchive}), cm);
 					hm.put(ph.name, m);
@@ -374,14 +374,14 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			}
 			metadata = m;
 			
-			if (parentContainerHandle != null) {
+			if (parentPutHandler != null) {
 				// it is a subcontainer/archive, but not the root container
-				perContainerPutHandlersWaitingForMetadata.get(parentContainerHandle).remove(this);
+				perContainerPutHandlersWaitingForMetadata.get(parentPutHandler).remove(this);
 				HashMap<String, Object> hm = putHandlersTransformMap.get(this);
 				hm.put(name, m);
 				putHandlersTransformMap.remove(this);
 				try {
-					maybeStartParentContainer(parentContainerHandle, container, context);
+					maybeStartParentContainer(parentPutHandler, container, context);
 				} catch (InsertException e) {
 					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 				}
