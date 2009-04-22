@@ -666,7 +666,6 @@ public class LocationManager implements ByteCounter {
     public static int swapsRejectedAlreadyLocked;
     public static int swapsRejectedNowhereToGo;
     public static int swapsRejectedRateLimit;
-    public static int swapsRejectedLoop;
     public static int swapsRejectedRecognizedID;
     
     long lockedTime;

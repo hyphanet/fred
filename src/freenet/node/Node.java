@@ -3714,10 +3714,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return LocationManager.swapsRejectedAlreadyLocked;
 	}
 
-	public int getSwapsRejectedLoop() {
-		return LocationManager.swapsRejectedLoop;
-	}
-
 	public int getSwapsRejectedNowhereToGo() {
 		return LocationManager.swapsRejectedNowhereToGo;
 	}

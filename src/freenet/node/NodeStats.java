@@ -1156,7 +1156,6 @@ public class NodeStats implements Persistable {
 		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
 		int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
 		int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
-		int swapsRejectedLoop = node.getSwapsRejectedLoop();
 		int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
 		double locationChangePerSession = node.getLocationChangeSession();
 		double locationChangePerSwap = 0.0;
@@ -1191,7 +1190,6 @@ public class NodeStats implements Persistable {
 		fs.put("swapsRejectedAlreadyLocked", swapsRejectedAlreadyLocked);
 		fs.put("swapsRejectedNowhereToGo", swapsRejectedNowhereToGo);
 		fs.put("swapsRejectedRateLimit", swapsRejectedRateLimit);
-		fs.put("swapsRejectedLoop", swapsRejectedLoop);
 		fs.put("swapsRejectedRecognizedID", swapsRejectedRecognizedID);
 		long fix32kb = 32 * 1024;
 		long cachedKeys = node.getChkDatacache().keyCount();

@@ -651,7 +651,6 @@ public class StatisticsToadlet extends Toadlet {
 		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
 		int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
 		int swapsRejectedRateLimit = node.getSwapsRejectedRateLimit();
-		int swapsRejectedLoop = node.getSwapsRejectedLoop();
 		int swapsRejectedRecognizedID = node.getSwapsRejectedRecognizedID();
 		double locChangeSession = node.getLocationChangeSession();
 		int averageSwapTime = node.getAverageOutgoingSwapTime();
@@ -693,9 +692,6 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		if (swapsRejectedRateLimit > 0) {
 			locationSwapList.addChild("li", "swapsRejectedRateLimit:\u00a0" + swapsRejectedRateLimit);
-		}
-		if (swapsRejectedLoop > 0) {
-			locationSwapList.addChild("li", "swapsRejectedLoop:\u00a0" + swapsRejectedLoop);
 		}
 		if (swapsRejectedRecognizedID > 0) {
 			locationSwapList.addChild("li", "swapsRejectedRecognizedID:\u00a0" + swapsRejectedRecognizedID);
