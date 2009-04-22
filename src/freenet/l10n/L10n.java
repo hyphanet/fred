@@ -28,7 +28,7 @@ import freenet.support.io.FileUtil;
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
 	
-	/** @see http://www.omniglot.com/language/names.htm */
+	/** @see "http://www.omniglot.com/language/names.htm" */
 	public enum LANGUAGE {
 		ENGLISH("en", "English", "eng"),
 		SPANISH("es", "Español", "spa"),
@@ -250,7 +250,7 @@ public class L10n {
 	
 	/**
 	* You probably don't want to use that one directly
-	* @see getString(String)
+	* @see #getString(String)
 	*/
 	public static String getString(String key, boolean returnNullIfNotFound) {
 		String result = null;
@@ -370,7 +370,7 @@ public class L10n {
 	/**
 	* Load a translation file depending on the given name and using the prefix
 	*
-	* @param name
+	* @param lang The chosen language.
 	* @return the Properties object or null if not found
 	*/
 	public static SimpleFieldSet loadTranslation(LANGUAGE lang) {
