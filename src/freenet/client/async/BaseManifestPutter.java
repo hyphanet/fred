@@ -1548,6 +1548,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 	}
 
 	@Override
+	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
+		// Ignore
+	}
+
+	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		if(putHandlersByName != null) {
 			Logger.error(this, "Put handlers list still present in removeFrom() on "+this);
@@ -1801,10 +1806,5 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 		}
 	}
 	
-	@Override
-	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
-		// Ignore
-	}
-
 }
 
