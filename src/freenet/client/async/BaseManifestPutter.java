@@ -1735,9 +1735,8 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 		public ContainerBuilder makeSubContainer(String name) {
 			ContainerBuilder subCon = new ContainerBuilder(selfHandle, name);
 			currentDir.put(name , subCon.selfHandle);
-			perContainerPutHandlersWaitingForMetadata.get(selfHandle).add(subCon.selfHandle);
 			putHandlersTransformMap.put(subCon.selfHandle, currentDir);
-			//perContainerPutHandlersWaitingForFetchable.get(selfHandle).add(subCon.selfHandle);
+			perContainerPutHandlersWaitingForFetchable.get(selfHandle).add(subCon.selfHandle);
 			return subCon;
 		}
 		
