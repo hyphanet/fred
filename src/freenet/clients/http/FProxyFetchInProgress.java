@@ -281,7 +281,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		if(requiredBlocks <= 0) return -1;
 		if(fetchedBlocks >= requiredBlocks) return -1;
 		if(fetchedBlocks - fetchedBlocksPreNetwork < 5) return -1;
-		return (System.currentTimeMillis() - timeStarted) * ((requiredBlocks - fetchedBlocksPreNetwork) / (fetchedBlocks - fetchedBlocksPreNetwork));
+		return ((System.currentTimeMillis() - timeStarted) * (requiredBlocks - fetchedBlocksPreNetwork)) / (fetchedBlocks - fetchedBlocksPreNetwork);
 	}
 
 	public synchronized boolean notFinishedOrFatallyFinished() {
