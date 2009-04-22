@@ -34,18 +34,6 @@ public final class BootstrappingDecayingRunningAverage implements
     private double currentValue;
     private long reports;
     private int maxReports;
-    // FIXME: debugging!
-    private long zeros;
-    private long ones;
-    
-    @Override
-	public synchronized String toString() {
-        return super.toString() + ": min="+min+", max="+max+", currentValue="+
-        	currentValue+", reports="+reports+", maxReports="+maxReports
-        	// FIXME
-        	+", zeros: "+zeros+", ones: "+ones
-        	;
-    }
     
 	/**
 	 * Constructor
@@ -71,9 +59,6 @@ public final class BootstrappingDecayingRunningAverage implements
         if(fs != null) {
         	currentValue = fs.getDouble("CurrentValue", currentValue);
         	reports = fs.getLong("Reports", reports);
-        	zeros = fs.getLong("Zeros", 0);
-        	ones = fs.getLong("Ones", 0);
-        	if(reports == 0) zeros = ones = 0;
         }
     }
     
@@ -116,8 +101,6 @@ public final class BootstrappingDecayingRunningAverage implements
         double decayFactor = 1.0 / (Math.min(reports, maxReports));
         currentValue = (d * decayFactor) + 
         	(currentValue * (1-decayFactor));
-        if((d < 0.1) && (d >= 0.0)) zeros++;
-        if((d > 0.9) && (d <= 1.0)) ones++;
     }
 
 	/**
@@ -163,8 +146,6 @@ public final class BootstrappingDecayingRunningAverage implements
 			this.maxReports = a.maxReports;
 			this.min = a.min;
 			this.reports = a.reports;
-			this.zeros = a.zeros;
-			this.ones = a.ones;
 		}
 	}
 
@@ -186,8 +167,6 @@ public final class BootstrappingDecayingRunningAverage implements
 		fs.putSingle("Type", "BootstrappingDecayingRunningAverage");
 		fs.put("CurrentValue", currentValue);
 		fs.put("Reports", reports);
-		fs.put("Zeros", zeros);
-		fs.put("Ones", ones);
 		return fs;
 	}
 }
