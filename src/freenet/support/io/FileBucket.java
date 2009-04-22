@@ -137,7 +137,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 //	}
 //	
 	public Bucket createShadow() throws IOException {
-		String fnam = new String(file.getPath());
+		String fnam = file.getPath();
 		File newFile = new File(fnam);
 		return new FileBucket(newFile, true, false, false, false, false);
 	}
