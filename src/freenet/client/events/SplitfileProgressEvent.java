@@ -9,7 +9,7 @@ import freenet.support.Logger;
 
 public class SplitfileProgressEvent implements ClientEvent {
 
-	public static int code = 0x07;
+	public final static int CODE = 0x07;
 	
 	public final int totalBlocks;
 	public final int succeedBlocks;
@@ -62,7 +62,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 	}
 
 	public int getCode() {
-		return code;
+		return CODE;
 	}
 
 	public void removeFrom(ObjectContainer container) {
