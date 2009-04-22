@@ -876,7 +876,7 @@ public class TextModeClientInterface implements Runnable {
 				}
         	};
         	outsb.append("Probing keyspace around "+d+" ...");
-        	n.dispatcher.startProbe(d, cb, NodeDispatcher.PROBE_TYPE_RESETTING_HTL);
+        	n.dispatcher.startProbe(d, cb);
         	synchronized(this) {
         		while(!doneSomething) {
         			try {
@@ -888,13 +888,7 @@ public class TextModeClientInterface implements Runnable {
         		doneSomething = false;
         	}
         } else if(uline.startsWith("PROBEALL")) {
-        	uline = uline.substring("PROBEALL".length());
-        	if(uline.startsWith(":")) uline = uline.substring(1);
-        	if(uline.length() == 0) {
-        		probeAll(NodeDispatcher.PROBE_TYPE_RESETTING_HTL);
-        	} else {
-        		probeAll(Fields.parseInt(uline, NodeDispatcher.PROBE_TYPE_RESETTING_HTL));
-        	}
+        	probeAll();
         } else if(uline.startsWith("PLUGLOAD")) {
         	if(uline.startsWith("PLUGLOAD:O:")) {
         		String name = line.substring("PLUGLOAD:O:".length()).trim();
@@ -978,8 +972,8 @@ public class TextModeClientInterface implements Runnable {
         return false;
     }
 
-    private void probeAll(int probeType) {
-    	GlobalProbe p = new GlobalProbe(n, probeType);
+    private void probeAll() {
+    	GlobalProbe p = new GlobalProbe(n);
     	n.executor.execute(p, "GlobalProbe");
 	}
 

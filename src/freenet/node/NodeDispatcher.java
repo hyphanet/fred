@@ -800,9 +800,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	// FIXME
 	public static final int PROBE_TYPE_RESETTING_HTL = 0;
 	
-	public void startProbe(final double target, final ProbeCallback cb, int probeType) {
+	public void startProbe(final double target, final ProbeCallback cb) {
 		final long uid = node.random.nextLong();
-		if(probeType == PROBE_TYPE_RESETTING_HTL) {
+		
 			ResettingHTLProbeRequestSender rs = new ResettingHTLProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), true, null, 2.0);
 			rs.addListener(new ResettingHTLProbeRequestSender.Listener() {
 
@@ -828,9 +828,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				
 			});
 			rs.start();
-		} else {
-			throw new IllegalArgumentException("Unknown probe request type");
-		}
 	}
 
 	public void setHook(NodeDispatcherCallback cb) {

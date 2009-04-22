@@ -16,11 +16,9 @@ public class GlobalProbe implements Runnable {
 	final ProbeCallback cb;
 	final Node node;
 	int ctr;
-	final int probeType;
 	
-	public GlobalProbe(Node n, int probeType) {
+	public GlobalProbe(Node n) {
 		this.node = n;
-		this.probeType = probeType;
     	cb = new ProbeCallback() {
 			public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short uniqueCount, short linearCount) {
 				String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+linearCount+" hops"+uniqueCount+" unique nodes) in "+(System.currentTimeMillis() - lastTime)+", id "+id+"\r\n";
@@ -53,7 +51,7 @@ public class GlobalProbe implements Runnable {
 			while(true) {
 				doneSomething = false;
 				lastTime = System.currentTimeMillis();
-	    		node.dispatcher.startProbe(lastLocation, cb, probeType);
+	    		node.dispatcher.startProbe(lastLocation, cb);
 	    		for(int i=0;i<20 && !doneSomething;i++) {
 	    			try {
 						wait(1000*10);
