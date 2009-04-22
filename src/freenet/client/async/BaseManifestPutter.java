@@ -1011,10 +1011,9 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 	}
 
 	private void namesToByteArrays(HashMap<String, Object> putHandlersByName, HashMap<String,Object> namesToByteArrays, ObjectContainer container) {
-		Iterator<String> i = putHandlersByName.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
-			Object o = putHandlersByName.get(name);
+		for(Map.Entry<String, Object> me : putHandlersByName.entrySet()) {
+			String name = me.getKey();
+			Object o = me.getValue();
 			if(o instanceof PutHandler) {
 				PutHandler ph = (PutHandler) o;
 				if(persistent())
@@ -1467,12 +1466,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 	 */
 	public static HashMap<String, Object> bucketsByNameToManifestEntries(HashMap<String,Object> bucketsByName) {
 		HashMap<String,Object> manifestEntries = new HashMap<String,Object>();
-		Iterator<String> i = bucketsByName.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
-			Object o = bucketsByName.get(name);
+		for (Map.Entry<String, Object> e : bucketsByName.entrySet()) {
+			String name = e.getKey();
+			Object o = e.getValue();
 			if(o instanceof Bucket) {
-				Bucket data = (Bucket) bucketsByName.get(name);
+				Bucket data = (Bucket) o;
 				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
 			} else if(o instanceof HashMap) {
 				manifestEntries.put(name, bucketsByNameToManifestEntries((HashMap<String, Object>)o));
@@ -1493,11 +1491,10 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 	}
 
 	public static void flatten(HashMap<String,Object> manifestElements, Vector<ManifestElement> v, String prefix) {
-		Iterator<String> i = manifestElements.keySet().iterator();
-		while(i.hasNext()) {
-			String name = i.next();
+		for(Map.Entry<String, Object> e : manifestElements.entrySet()) {
+			String name = e.getKey();
 			String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
-			Object o = manifestElements.get(name);
+			Object o = e.getValue();
 			if(o instanceof HashMap) {
 				flatten((HashMap<String, Object>)o, v, fullName);
 			} else if(o instanceof ManifestElement) {

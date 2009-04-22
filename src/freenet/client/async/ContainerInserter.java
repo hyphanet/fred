@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -343,8 +344,9 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	private void makeManifest(HashMap<String, Object> manifestElements, HashMap<String,Object> manifest, String archivePrefix) {
-		for (String name:manifestElements.keySet()) {
-			Object o = manifestElements.get(name);
+		for (Map.Entry<String, Object> me : manifestElements.entrySet()) {
+			String name = me.getKey();
+			Object o = me.getValue();
 			if(o instanceof HashMap) {
 				@SuppressWarnings("unchecked")
 				HashMap<String,Object> hm = (HashMap<String, Object>) o;
