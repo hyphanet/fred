@@ -84,6 +84,7 @@ public class HMAC {
 		try {
 			s = new HMAC(MessageDigest.getInstance("SHA1"));
 		} catch(NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
 		}
 		byte[] key = new byte[20];
 		System.err.println("20x0b, 'Hi There':");

@@ -1045,7 +1045,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
 		
 		BlockCipher c = null;
-		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
+		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 		
 		final int expectedLength =	
 			NONCE_SIZE*2 + // Ni, Nr
@@ -1197,7 +1197,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.receivedPacket(true, false);
 		
 		BlockCipher cs = null;
-		try { cs = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
+		try { cs = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 		cs.initialize(Ks);
 		
 		// Promote if necessary
@@ -1305,7 +1305,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.error(this, error);
 		}
 		BlockCipher c = null;
-		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
+		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 		
 		final int expectedLength =
 			HASH_LENGTH + // HMAC of the cyphertext
@@ -1484,7 +1484,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
 		long t1=System.currentTimeMillis();
 		BlockCipher c = null;
-		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
+		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) { throw new RuntimeException(e); }
 		DiffieHellmanLightContext ctx = (DiffieHellmanLightContext) pn.getKeyAgreementSchemeContext();
 		if(ctx == null) return;
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
