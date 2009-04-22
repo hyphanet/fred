@@ -53,7 +53,7 @@ public class FProxyFetchTracker implements Runnable {
 				Object[] check = fetchers.getArray(key);
 				for(int i=0;i<check.length;i++) {
 					progress = (FProxyFetchInProgress) check[i];
-					if(progress.maxSize == maxSize 
+					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
 							|| progress.hasData()) return progress.getWaiter();
 				}
 			}

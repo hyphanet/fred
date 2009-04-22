@@ -36,15 +36,17 @@ public class FProxyFetchResult {
 	/** Finalized blocks? */
 	final boolean finalizedBlocks;
 	
+	
 	/** Failed */
 	final FetchException failed;
 	
 	final FProxyFetchInProgress progress;
+	final boolean hasWaited;
 
 	final long eta;
 
 	/** Constructor when we are returning the data */
-	FProxyFetchResult(FProxyFetchInProgress parent, Bucket data, String mimeType, long timeStarted, boolean goneToNetwork, long eta) {
+	FProxyFetchResult(FProxyFetchInProgress parent, Bucket data, String mimeType, long timeStarted, boolean goneToNetwork, long eta, boolean hasWaited) {
 		this.data = data;
 		this.mimeType = mimeType;
 		this.size = data.size();
@@ -55,10 +57,11 @@ public class FProxyFetchResult {
 		failed = null;
 		this.progress = parent;
 		this.eta = eta;
+		this.hasWaited = hasWaited;
 	}
 
 	/** Constructor when we are not returning the data, because it is still running or it failed */
-	FProxyFetchResult(FProxyFetchInProgress parent, String mimeType, long size, long timeStarted, boolean goneToNetwork, int totalBlocks, int requiredBlocks, int fetchedBlocks, int failedBlocks, int fatallyFailedBlocks, boolean finalizedBlocks, FetchException failed, long eta) {
+	FProxyFetchResult(FProxyFetchInProgress parent, String mimeType, long size, long timeStarted, boolean goneToNetwork, int totalBlocks, int requiredBlocks, int fetchedBlocks, int failedBlocks, int fatallyFailedBlocks, boolean finalizedBlocks, FetchException failed, long eta, boolean hasWaited) {
 		this.data = null;
 		this.mimeType = mimeType;
 		this.size = size;
@@ -73,6 +76,7 @@ public class FProxyFetchResult {
 		this.failed = failed;
 		this.progress = parent;
 		this.eta = eta;
+		this.hasWaited = hasWaited;
 	}
 	
 	/** Must be called when fproxy has finished with the data */
@@ -82,6 +86,10 @@ public class FProxyFetchResult {
 
 	public boolean hasData() {
 		return data != null;
+	}
+
+	public boolean hasWaited() {
+		return hasWaited;
 	}
 	
 }

@@ -109,14 +109,14 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		return waiter;
 	}
 
-	synchronized FProxyFetchResult innerGetResult() {
+	synchronized FProxyFetchResult innerGetResult(boolean hasWaited) {
 		lastTouched = System.currentTimeMillis();
 		FProxyFetchResult res;
 		if(data != null)
-			res = new FProxyFetchResult(this, data, mimeType, timeStarted, goneToNetwork, getETA());
+			res = new FProxyFetchResult(this, data, mimeType, timeStarted, goneToNetwork, getETA(), hasWaited);
 		else
 			res = new FProxyFetchResult(this, mimeType, size, timeStarted, goneToNetwork,
-					totalBlocks, requiredBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, finalizedBlocks, failed, getETA());
+					totalBlocks, requiredBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, finalizedBlocks, failed, getETA(), hasWaited);
 		results.add(res);
 		return res;
 	}
@@ -282,5 +282,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		if(fetchedBlocks >= requiredBlocks) return -1;
 		if(fetchedBlocks - fetchedBlocksPreNetwork < 5) return -1;
 		return (System.currentTimeMillis() - timeStarted) * ((requiredBlocks - fetchedBlocksPreNetwork) / (fetchedBlocks - fetchedBlocksPreNetwork));
+	}
+
+	public synchronized boolean notFinishedOrFatallyFinished() {
+		if(data == null && failed == null) return true;
+		if(failed != null && failed.isFatal()) return true;
+		return false;
 	}
 }

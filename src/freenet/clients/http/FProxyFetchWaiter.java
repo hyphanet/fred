@@ -15,6 +15,7 @@ public class FProxyFetchWaiter {
 	private boolean awoken;
 	
 	public FProxyFetchResult getResult() {
+		boolean waited;
 		synchronized(this) {
 			if(!(finished || hasWaited || awoken)) {
 				awoken = false;
@@ -23,9 +24,11 @@ public class FProxyFetchWaiter {
 				} catch (InterruptedException e) { 
 					// Not likely
 				};
+				hasWaited = true;
 			}
+			waited = hasWaited;
 		}
-		return progress.innerGetResult();
+		return progress.innerGetResult(waited);
 	}
 
 	public void close() {
