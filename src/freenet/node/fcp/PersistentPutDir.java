@@ -66,6 +66,10 @@ public class PersistentPutDir extends FCPMessage {
 		SimpleFieldSet files = new SimpleFieldSet(false);
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.
+		// FIXME/RESOLVE: The new BaseManifestPutter's container mode does not hold the origin data,
+		//                 after composing the PutHandlers (done in BaseManifestPutter), they are 'lost':
+		//                 A resumed half done container put can not get the complete file list from BaseManifestPutter.
+		//                 Is it really necessary to include the file list here?
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
 		fs.putSingle("DefaultName", defaultName);
 		for(int i=0;i<elements.length;i++) {
