@@ -624,39 +624,6 @@ public class PeerManager {
 			return locPairs;
 	}
 
-	public PeerNode getRandomPeerInSwappingNetworkOf(PeerNode exclude) {
-		if(exclude == null || exclude.networkGroup == null || NetworkIDManager.disableSwapSegregation)
-			return getRandomPeer(exclude);
-		synchronized(this) {
-			if(connectedPeers.length == 0)
-				return null;
-			for(int i = 0; i < 5; i++) {
-				PeerNode pn = connectedPeers[node.random.nextInt(connectedPeers.length)];
-				if(pn == exclude)
-					continue;
-				if(node.netid.inSeparateNetworks(pn, exclude))
-					continue;
-				if(pn.isRoutable())
-					return pn;
-			}
-			//could not easily find a good random one... filter the ones which are acceptable
-			ArrayList<PeerNode> l = new ArrayList<PeerNode>();
-			for(PeerNode pn : connectedPeers) {
-				if(pn == exclude)
-					continue;
-				if(node.netid.inSeparateNetworks(pn, exclude))
-					continue;
-				if(!pn.isRoutable())
-					continue;
-				l.add(pn);
-			}
-			//Are there any acceptable peers?
-			if(l.size() == 0)
-				return null;
-			return l.get(node.random.nextInt(l.size()));
-		}
-	}
-
 	/**
 	 * @return A random routable connected peer.
 	 * FIXME: should this take performance into account?

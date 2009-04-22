@@ -936,7 +936,7 @@ public class LocationManager implements ByteCounter {
             if(logMINOR) Logger.minor(this, "Forwarding... "+oldID);
             while(true) {
                 // Forward
-                PeerNode randomPeer = node.peers.getRandomPeerInSwappingNetworkOf(pn);
+                PeerNode randomPeer = node.peers.getRandomPeer(pn);
                 if(randomPeer == null) {
                 	if(logMINOR) Logger.minor(this, "Late reject "+oldID);
                     Message reject = DMT.createFNPSwapRejected(oldID);
