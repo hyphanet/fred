@@ -5,6 +5,7 @@ public class FProxyFetchWaiter {
 	
 	public FProxyFetchWaiter(FProxyFetchInProgress progress2) {
 		this.progress = progress2;
+		if(progress.finished()) finished = true;
 	}
 
 	private final FProxyFetchInProgress progress;
