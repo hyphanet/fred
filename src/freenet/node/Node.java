@@ -3919,13 +3919,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		// FIXME: perhaps this should throw OpennetDisabledExcemption rather than returing false?
 		if(opennet == null) return null;
-		try {
-			return opennet.addNewOpennetNode(fs);
-		} catch (Throwable t) {
-			// Don't break the code flow in the caller which is normally a request. 
-			Logger.error(this, "Caught "+t+" adding opennet node from fieldset", t);
-			return null;
-		}
+		return opennet.addNewOpennetNode(fs);
 	}
 	
 	public byte[] getOpennetIdentity() {

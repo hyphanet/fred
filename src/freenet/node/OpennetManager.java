@@ -246,6 +246,7 @@ public class OpennetManager {
 	}
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
 			if(logMINOR) Logger.minor(this, "Not adding self as opennet peer");
@@ -258,6 +259,12 @@ public class OpennetManager {
 		if(wantPeer(pn, true, false, false)) return pn;
 		else return null;
 		// Start at bottom. Node must prove itself.
+		} catch (Throwable t) {
+			// Don't break the code flow in the caller which is normally a request. 
+			Logger.error(this, "Caught "+t+" adding opennet node from fieldset", t);
+			return null;
+		}
+		
 	}
 
 	/** When did we last offer our noderef to some other node? */
