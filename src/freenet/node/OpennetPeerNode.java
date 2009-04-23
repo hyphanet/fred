@@ -13,7 +13,7 @@ public class OpennetPeerNode extends PeerNode {
 	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
 		try {
-		timeLastSuccess = fs.getLong("timeLastSuccess");
+			timeLastSuccess = fs.getLong("timeLastSuccess");
 		} catch(FSParseException e) {
 			Logger.error(this, "Parse error", e);
 			timeLastSuccess = 0;
