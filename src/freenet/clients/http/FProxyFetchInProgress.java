@@ -84,6 +84,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 	/** Fetch failed */
 	private FetchException failed;
 	private boolean hasWaited;
+	private boolean hasNotifiedFailure;
 	/** Last time the fetch was accessed from the fproxy end */
 	private long lastTouched;
 	final FProxyFetchTracker tracker;
@@ -114,9 +115,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		FProxyFetchResult res;
 		if(data != null)
 			res = new FProxyFetchResult(this, data, mimeType, timeStarted, goneToNetwork, getETA(), hasWaited);
-		else
+		else {
 			res = new FProxyFetchResult(this, mimeType, size, timeStarted, goneToNetwork,
 					totalBlocks, requiredBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, finalizedBlocks, failed, getETA(), hasWaited);
+		}
 		results.add(res);
 		return res;
 	}
@@ -287,6 +289,14 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 	public synchronized boolean notFinishedOrFatallyFinished() {
 		if(data == null && failed == null) return true;
 		if(failed != null && failed.isFatal()) return true;
+		if(failed != null && !hasNotifiedFailure) {
+			hasNotifiedFailure = true;
+			return true;
+		}
 		return false;
+	}
+	
+	public synchronized boolean hasNotifiedFailure() {
+		return true;
 	}
 }
