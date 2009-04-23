@@ -150,16 +150,7 @@ public class PeerMessageQueue {
 			return length;
 		}
 
-		/**
-		 * @param size
-		 * @param minSize
-		 * @param maxSize
-		 * @param now
-		 * @param messages
-		 * @return The new size of the packet, multiplied by -1 iff there are more
-		 * messages but they don't fit.
-		 */
-		public int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
+		private int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, boolean isUrgent) {
 			int lists = 0;
 			if(itemsNoID != null)
 				lists++;
@@ -179,93 +170,12 @@ public class PeerMessageQueue {
 					listNum = l;
 					list = itemsWithID.get(l);
 				}
-				
+
 				while(true) {
 					if(list.isEmpty()) break;
 					MessageItem item = list.getFirst();
-					if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
-						int thisSize = item.getLength();
-						if(size + 2 + thisSize > maxSize) {
-							if(size == minSize) {
-								// Send it anyway, nothing else to send.
-								size += 2 + thisSize;
-								list.removeFirst();
-								if(list.isEmpty()) {
-									if(list == itemsNoID) {
-										itemsNoID = null;
-										lists--;
-									}
-									else {
-										Long id = itemsIDs.get(listNum);
-										itemsWithID.remove(listNum);
-										itemsIDs.remove(listNum);
-										itemsByID.remove(id);
-										lists--;
-									}
-								}
-								messages.add(item);
-								roundRobinCounter = i;
-								return size;
-							}
-							return -size;
-						}
-						size += 2 + thisSize;
-						list.removeFirst();
-						if(list.isEmpty()) {
-							if(list == itemsNoID) {
-								itemsNoID = null;
-								lists--;
-							} else {
-								Long id = itemsIDs.get(listNum);
-								itemsWithID.remove(listNum);
-								itemsIDs.remove(listNum);
-								itemsByID.remove(id);
-								lists--;
-							}
-						}
-						messages.add(item);
-						roundRobinCounter = i;
-					} else {
-						break;
-					}
-				}
-			}
-			return size;
-		}
-		
-		/**
-		 * @param size
-		 * @param minSize
-		 * @param maxSize
-		 * @param now
-		 * @param messages
-		 * @return The new size of the packet, multiplied by -1 iff there are more
-		 * messages but they don't fit.
-		 */
-		public int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
-			int lists = 0;
-			if(itemsNoID != null)
-				lists++;
-			if(itemsWithID != null)
-				lists += itemsWithID.size();
-			for(int i=0;i<lists;i++) {
-				LinkedList<MessageItem> list;
-				int l = (i + roundRobinCounter + 1) % lists;
-				int listNum = -1;
-				if(itemsNoID != null) {
-					if(l == 0) list = itemsNoID;
-					else {
-						listNum = l-1;
-						list = itemsWithID.get(listNum);
-					}
-				} else {
-					listNum = l;
-					list = itemsWithID.get(l);
-				}
-				
-				while(true) {
-					if(list.isEmpty()) break;
-					MessageItem item = list.getFirst();
+					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
+					
 					int thisSize = item.getLength();
 					if(size + 2 + thisSize > maxSize) {
 						if(size == minSize) {
@@ -276,7 +186,8 @@ public class PeerMessageQueue {
 								if(list == itemsNoID) {
 									itemsNoID = null;
 									lists--;
-								} else {
+								}
+								else {
 									Long id = itemsIDs.get(listNum);
 									itemsWithID.remove(listNum);
 									itemsIDs.remove(listNum);
@@ -309,6 +220,32 @@ public class PeerMessageQueue {
 				}
 			}
 			return size;
+		}
+		
+		/**
+		 * @param size
+		 * @param minSize
+		 * @param maxSize
+		 * @param now
+		 * @param messages
+		 * @return The new size of the packet, multiplied by -1 iff there are more
+		 * messages but they don't fit.
+		 */
+		public int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
+			return addMessages(size, minSize, maxSize, now, messages, true);
+		}
+		
+		/**
+		 * @param size
+		 * @param minSize
+		 * @param maxSize
+		 * @param now
+		 * @param messages
+		 * @return The new size of the packet, multiplied by -1 iff there are more
+		 * messages but they don't fit.
+		 */
+		public int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
+			return addMessages(size, minSize, maxSize, now, messages, false);
 		}
 
 		public void clear() {
