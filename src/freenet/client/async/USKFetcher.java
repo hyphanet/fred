@@ -676,7 +676,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		Vector<USKAttempt> killAttempts;
 		synchronized(this) {
 			if(completed || cancelled) return;
-			decode = lastEd >= ed && data != null;
+			decode = lastEd == ed && data != null;
 			ed = Math.max(lastEd, ed);
 			if(logMINOR) Logger.minor(this, "Latest: "+ed);
 			long addTo = ed + minFailures;
