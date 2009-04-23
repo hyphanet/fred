@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
@@ -162,6 +163,11 @@ public class NodeStats implements Persistable {
 	private long nextNodeIOStatsUpdateTime = -1;
 	/** Node I/O stats update interval (milliseconds) */
 	private static final long nodeIOStatsUpdateInterval = 2000;
+
+	private BandwidthUsageHistory inputBandwidthUsageHistory;
+	private BandwidthUsageHistory outputBandwidthUsageHistory; 
+	private int bandwidthUsageHistoryMinutes;
+	private final Object bandwidthUsageSync = new Object();
 	
 	/** Token bucket for output bandwidth used by requests */
 	final TokenBucket requestOutputThrottle;
@@ -227,6 +233,39 @@ public class NodeStats implements Persistable {
 		last_input_stat = 0;
 		last_output_stat = 0;
 		last_io_stat_time = 3;
+		
+//		statsConfig.register("bandwidthGraphMinutes", 60, sortOrder++, true, true, "NodeStat.bandwidthGraphMinutes", "NodeStat.bandwidthGraphMinutesLong",
+//				new IntCallback() {
+//					@Override
+//					public Integer get() {
+//						return bandwidthUsageHistoryMinutes;
+//					}
+//					@Override
+//					public void set(Integer val) throws InvalidConfigValueException {
+//						if(get().equals(val))
+//							return;
+//						if(val < 1)
+//							throw new InvalidConfigValueException(l10n("valueTooLow"));
+//						bandwidthUsageHistoryMinutes = val;
+//						int numberOfBandwidthHistorySamples = (bandwidthUsageHistoryMinutes * 60) / ((int)nodeIOStatsUpdateInterval/1000);
+//						synchronized(bandwidthUsageSync) {
+//							if(inputBandwidthUsageHistory != null)
+//								inputBandwidthUsageHistory = inputBandwidthUsageHistory.clone(numberOfBandwidthHistorySamples);
+//							if(outputBandwidthUsageHistory != null)
+//								outputBandwidthUsageHistory = outputBandwidthUsageHistory.clone(numberOfBandwidthHistorySamples);
+//						}
+//					}
+//				}
+//		);
+//		
+//		bandwidthUsageHistoryMinutes = statsConfig.getInt("bandwidthGraphMinutes");
+//		
+//		int numberOfBandwidthHistorySamples = (bandwidthUsageHistoryMinutes * 60) / ((int)nodeIOStatsUpdateInterval/1000);
+//
+//		synchronized(bandwidthUsageSync) {
+//			inputBandwidthUsageHistory = new BandwidthUsageHistory(numberOfBandwidthHistorySamples);
+//			outputBandwidthUsageHistory = new BandwidthUsageHistory(numberOfBandwidthHistorySamples);
+//		}
 
 		statsConfig.register("threadLimit", 500, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
@@ -1002,6 +1041,14 @@ public class NodeStats implements Persistable {
 				outdiff = last_output_stat - previous_output_stat;
 				indiff = last_input_stat - previous_input_stat;
 			}
+
+			
+//			long delta_seconds = (last_io_stat_time - previous_io_stat_time) / 1000;
+//			if(delta_seconds > 0) {
+//				inputBandwidthUsageHistory.putValue((last_input_stat - previous_input_stat) / delta_seconds, previous_io_stat_time + (nodeIOStatsUpdateInterval/2) );
+//				outputBandwidthUsageHistory.putValue((last_output_stat - previous_output_stat) / delta_seconds, previous_io_stat_time + + (nodeIOStatsUpdateInterval/2));
+//			}
+				
 			if(logMINOR)
 				Logger.minor(this, "Last 2 seconds: input: "+indiff+" output: "+outdiff);
 			nextNodeIOStatsUpdateTime = now + nodeIOStatsUpdateInterval;
@@ -1021,6 +1068,19 @@ public class NodeStats implements Persistable {
 		return result;
 	}
 
+	public BandwidthUsageHistory getInputBandwidthUsageHistory() {
+		synchronized (bandwidthUsageSync) {
+			return inputBandwidthUsageHistory;
+		}
+	}
+	
+	public BandwidthUsageHistory getOutputBandwidthUsageHistory() {
+		synchronized (bandwidthUsageSync) {
+			return outputBandwidthUsageHistory;
+		}
+	}
+	
+	
 	public void waitUntilNotOverloaded(boolean isInsert) {
 		while(threadLimit < getActiveThreadCount()){
 			try{
