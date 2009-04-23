@@ -2,7 +2,6 @@ package freenet.node;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class OpennetPeerNode extends PeerNode {
@@ -12,12 +11,10 @@ public class OpennetPeerNode extends PeerNode {
 	
 	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
-		try {
-			timeLastSuccess = fs.getLong("timeLastSuccess");
-		} catch(FSParseException e) {
-			// silent - some old noderef don't have this
-			timeLastSuccess = 0;
-		}
+
+		SimpleFieldSet metadata = fs.subset("metadata");
+		timeLastSuccess = metadata.getLong("timeLastSuccess", 0);
+		
 		this.opennet = opennet;
 	}
 
