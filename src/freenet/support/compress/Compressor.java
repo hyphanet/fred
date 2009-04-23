@@ -42,22 +42,54 @@ public interface Compressor {
 		}
 
 		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+			if(compressor == null) {
+				// DB4O VOODOO! See below.
+				if(name != null) return getOfficial().compress(data, bf, maxReadLength, maxWriteLength);
+			}
 			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
 		public Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, long maxEstimateSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
-			if(compressor == null)
-				Logger.error(this, "IMPOSSIBLE: compressor="+compressor+" name="+name+" metadataID="+metadataID+" for "+this);
+			if(compressor == null) {
+				// DB4O VOODOO! See below.
+				if(name != null) return getOfficial().decompress(data, bucketFactory, maxLength, maxEstimateSizeLength, preferred);
+			}
 			return compressor.decompress(data, bucketFactory, maxLength, maxEstimateSizeLength, preferred);
 		}
 
 		public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
+			if(compressor == null) {
+				// DB4O VOODOO! See below.
+				if(name != null) return getOfficial().decompress(dbuf, i, j, output);
+			}
 			return compressor.decompress(dbuf, i, j, output);
 		}
 		
+		// DB4O VOODOO!
+		// Copies of the static fields get stored into the database.
+		// Really the solution is probably to store the codes only.
+		
+		private Compressor getOfficial() {
+			if(name.equals("GZIP")) return GZIP;
+			if(name.equals("BZIP2")) return BZIP2;
+			if(name.equals("LZMA")) return LZMA;
+			return null;
+		}
+
 		public boolean objectCanDeactivate(ObjectContainer container) {
-			Logger.error(this, "Tried to deactivate "+this, new Exception("error"));
-			return false;
+			// Do not deactivate the official COMPRESSOR_TYPE's.
+			if(isOfficial()) return false;
+			return true;
+		}
+		
+		public boolean objectCanActivate(ObjectContainer container) {
+			// Do not activate the official COMPRESSOR_TYPE's.
+			if(isOfficial()) return false;
+			return true;
+		}
+		
+		public boolean isOfficial() {
+			return this == GZIP || this == BZIP2 || this == LZMA;
 		}
 		
 	}
