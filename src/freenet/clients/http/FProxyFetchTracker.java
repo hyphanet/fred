@@ -108,10 +108,12 @@ public class FProxyFetchTracker implements Runnable {
 						toRemove.add(f);
 					}
 			}
+			if(toRemove != null)
 			for(FProxyFetchInProgress r : toRemove) {
 				fetchers.removeElement(r.uri, r);
 			}
 		}
+		if(toRemove != null)
 		for(FProxyFetchInProgress r : toRemove)
 			r.finishCancel();
 		if(needRequeue)
