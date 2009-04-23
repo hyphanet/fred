@@ -497,7 +497,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String ua = headers.get("user-agent");
 		String accept = headers.get("accept");
 		FProxyFetchResult fr = null;
-		if(isBrowser(ua) && accept == null || accept.indexOf("text/html") > -1) {
+		if(logMINOR) Logger.minor(this, "UA = "+ua+" accept = "+accept);
+		if(isBrowser(ua) && (accept == null || accept.indexOf("text/html") > -1)) {
 			FProxyFetchWaiter fetch = fetchTracker.makeFetcher(key, maxSize);
 			while(true) {
 			fr = fetch.getResult();
