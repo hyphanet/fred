@@ -670,13 +670,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	public void onFoundEdition(long ed, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 		if(newKnownGood && !newSlotToo) return; // Only interested in slots
-		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		boolean decode = false;
 		Vector<USKAttempt> killAttempts;
 		synchronized(this) {
 			if(completed || cancelled) return;
-			decode = lastEd >= ed && data != null;
-			ed = Math.max(lastEd, ed);
+			decode = data != null;
 			if(logMINOR) Logger.minor(this, "Latest: "+ed);
 			long addTo = ed + minFailures;
 			long addFrom = Math.max(lastAddedEdition + 1, ed + 1);
