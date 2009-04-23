@@ -46,6 +46,8 @@ public interface Compressor {
 		}
 
 		public Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, long maxEstimateSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
+			if(compressor == null)
+				Logger.error(this, "IMPOSSIBLE: compressor="+compressor+" name="+name+" metadataID="+metadataID+" for "+this);
 			return compressor.decompress(data, bucketFactory, maxLength, maxEstimateSizeLength, preferred);
 		}
 
