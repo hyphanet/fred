@@ -20,7 +20,7 @@ public class FProxyFetchWaiter {
 			if(!(finished || hasWaited || awoken)) {
 				awoken = false;
 				try {
-					wait(2000);
+					wait(5000);
 				} catch (InterruptedException e) { 
 					// Not likely
 				};
