@@ -15,7 +15,7 @@ public class OpennetPeerNode extends PeerNode {
 		try {
 			timeLastSuccess = fs.getLong("timeLastSuccess");
 		} catch(FSParseException e) {
-			Logger.error(this, "Parse error", e);
+			// silent - some old noderef don't have this
 			timeLastSuccess = 0;
 		}
 		this.opennet = opennet;
