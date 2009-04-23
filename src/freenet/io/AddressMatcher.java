@@ -17,15 +17,12 @@
 package freenet.io;
 
 import java.net.InetAddress;
-import freenet.io.AddressIdentifier.AddressType;
 
 /**
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
 public interface AddressMatcher {
-	public AddressType getAddressType();
-
 	public boolean matches(InetAddress address);
 
 	/** Get the human-readable version of the Matcher */

@@ -81,6 +81,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 	}
 
 	public boolean matches(InetAddress address) {
+		if (!(address instanceof Inet6Address)) return false;
 		byte[] addressBytes = address.getAddress();
 		for (int index = 0; index < 16; index++) {
 			if ((addressBytes[index] & netmask[index]) != (this.address[index] & netmask[index])) {
@@ -90,7 +91,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 		return true;
 	}
 
-	public static boolean matches(String pattern, Inet6Address address) {
+	public static boolean matches(String pattern, InetAddress address) {
 		return new Inet6AddressMatcher(pattern).matches(address);
 	}
 

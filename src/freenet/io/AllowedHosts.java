@@ -55,8 +55,7 @@ public class AllowedHosts {
 			} else if (addressType == AddressType.IPv6) {
 				newAddressMatchers.add(new Inet6AddressMatcher(allowedHost));
 			} else if (allowedHost.equals("*")) {
-				newAddressMatchers.add(new EverythingMatcher(AddressIdentifier.AddressType.IPv4));
-				newAddressMatchers.add(new EverythingMatcher(AddressIdentifier.AddressType.IPv6));
+				newAddressMatchers.add(new EverythingMatcher());
 			} else {
 				Logger.error(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);
 			}
@@ -74,9 +73,7 @@ public class AllowedHosts {
 
 	public synchronized boolean allowed(AddressType clientAddressType, InetAddress clientAddress) {
 		for(AddressMatcher matcher: addressMatchers) {
-			if (clientAddressType == matcher.getAddressType()) {
-				if(matcher.matches(clientAddress)) return true;
-			}
+			if(matcher.matches(clientAddress)) return true;
 		}
 		return false;
 	}

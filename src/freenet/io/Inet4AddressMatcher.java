@@ -20,8 +20,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.StringTokenizer;
 
-import freenet.io.AddressIdentifier.AddressType;
-
 /**
  * Matcher for IPv4 network addresses. It works like the regex matcher in
  * {@link java.util.regex.Matcher}, i.e. you create a new Inet4AddressMatcher
@@ -38,10 +36,6 @@ import freenet.io.AddressIdentifier.AddressType;
  * @version $Id$
  */
 public class Inet4AddressMatcher implements AddressMatcher {
-	public AddressType getAddressType() {
-		return AddressType.IPv4;
-	}
-
 	/** The address of this matcher */
 	private int address;
 
@@ -103,6 +97,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	 *         specification of this matcher, <code>false</code> otherwise
 	 */
 	public boolean matches(InetAddress inetAddress) {
+		if (!(inetAddress instanceof Inet4Address)) return false;
 		int matchAddress = convertToBytes(inetAddress.getHostAddress());
 		return (matchAddress & networkMask) == (address & networkMask);
 	}
@@ -119,9 +114,9 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	 *         specification in <code>cidrHostname</code>, <code>false</code>
 	 *         otherwise
 	 * @see #Inet4AddressMatcher(String)
-	 * @see #matches(Inet4Address)
+	 * @see #matches(InetAddress)
 	 */
-	public static boolean matches(String cidrHostname, Inet4Address address) {
+	public static boolean matches(String cidrHostname, InetAddress address) {
 		return new Inet4AddressMatcher(cidrHostname).matches(address);
 	}
 
