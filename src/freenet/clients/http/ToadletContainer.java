@@ -64,4 +64,6 @@ public interface ToadletContainer {
 	public boolean publicGatewayMode();
 
 	public boolean enableActivelinks();
+	
+	public boolean isFProxyJavascriptEnabled();
 }

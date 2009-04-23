@@ -513,12 +513,26 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				break;
 			} else {
 				// Still in progress
+				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled();
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
+				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
+				HTMLNode headNode=ctx.getPageMaker().getHeadNode(pageNode);
+				if(isJsEnabled){
+					//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
+					//And the script file
+					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
+					HTMLNode scriptNode=headNode.addChild("script","//abc");
+					scriptNode.addAttribute("type", "text/javascript");
+					scriptNode.addAttribute("src", "/static/js/progresspage.js");
+				}else{
+					//If he disabled it, we just put the http refresh meta, without the noscript
+					headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
+				}
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addAttribute("id", "infoContent");
 				infoboxContent.addChild("#", l10n("filenameLabel")+ " ");
 				infoboxContent.addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
 				if(fr.mimeType != null) infoboxContent.addChild("br", l10n("contentTypeLabel")+" "+fr.mimeType);
@@ -586,9 +600,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				ul.addChild("li").addChild("p").addChild("a", new String[] { "href", "title" }, new String[] { "/", L10n.getString("Toadlet.homepage") }, l10n("abortToHomepage"));
 				
-				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
 				MultiValueTable<String, String> retHeaders = new MultiValueTable<String, String>();
-				retHeaders.put("Refresh", "2; url="+location);
+				//retHeaders.put("Refresh", "2; url="+location);
 				writeHTMLReply(ctx, 200, "OK", retHeaders, pageNode.generate());
 				fr.close();
 				fetch.close();
