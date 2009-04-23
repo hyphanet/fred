@@ -540,39 +540,15 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 		if(removeOnEncode) {
 			if(logMINOR) Logger.minor(this, "Removing on encode: "+this);
-			for(int i=0;i<dataBuckets.length;i++) {
-				if(dataBuckets[i] == null) continue;
-				dataBuckets[i].free();
-				if(persistent)
-					dataBuckets[i].removeFrom(container);
-				dataBuckets[i] = null;
-			}
-			for(int i=0;i<checkBuckets.length;i++) {
-				if(checkBuckets[i] == null) continue;
-				checkBuckets[i].free();
-				if(persistent)
-					checkBuckets[i].removeFrom(container);
-				checkBuckets[i] = null;
-			}
+			freeBucketsArray(container, dataBuckets);
+			freeBucketsArray(container, checkBuckets);
 			removeFrom(container, context);
 			return;
 		}
 		if(fin) {
 			Logger.error(this, "Encoded segment even though segment finished! Freeing buckets...");
-			for(int i=0;i<dataBuckets.length;i++) {
-				if(dataBuckets[i] == null) continue;
-				dataBuckets[i].free();
-				if(persistent)
-					dataBuckets[i].removeFrom(container);
-				dataBuckets[i] = null;
-			}
-			for(int i=0;i<checkBuckets.length;i++) {
-				if(checkBuckets[i] == null) continue;
-				checkBuckets[i].free();
-				if(persistent)
-					checkBuckets[i].removeFrom(container);
-				checkBuckets[i] = null;
-			}
+			freeBucketsArray(container, dataBuckets);
+			freeBucketsArray(container, checkBuckets);
 			return;
 		}
 		// Start the inserts
@@ -622,16 +598,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		parent.encodedSegment(this, container, context);
 
 		synchronized (this) {
-			for (int i = 0; i < dataBlocks.length; i++) {
-				if (dataFinished[i] && dataBlocks[i] != null) {
-					if(logMINOR) Logger.minor(this, "Freeing data block "+i+" delayed for encode");
-					if(persistent) container.activate(dataBlocks[i], 1);
-					dataBlocks[i].free();
-					if(persistent)
-						dataBlocks[i].removeFrom(container);
-					dataBlocks[i] = null;
-				}
-			}
+			freeBucketsArray(container, dataBlocks);
 		}
 		
 		if(persistent) {
@@ -662,20 +629,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.store(this);
 		}
 		parent.segmentFinished(this, container, context);
-		for(int i=0;i<dataBlocks.length;i++) {
-			if(dataBlocks[i] == null) continue;
-			container.activate(dataBlocks[i], 1);
-			dataBlocks[i].free();
-			dataBlocks[i].removeFrom(container);
-			dataBlocks[i] = null;
-		}
-		for(int i=0;i<checkBlocks.length;i++) {
-			if(checkBlocks[i] == null) continue;
-			container.activate(checkBlocks[i], 1);
-			checkBlocks[i].free();
-			checkBlocks[i].removeFrom(container);
-			checkBlocks[i] = null;
-		}
+
+		freeBucketsArray(container, dataBlocks);
+		freeBucketsArray(container, checkBlocks);
 	}
 
 	/**
@@ -701,20 +657,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 		unregister(container, context);
 		parent.segmentFinished(this, container, context);
-		for(int i=0;i<dataBlocks.length;i++) {
-			if(dataBlocks[i] == null) continue;
-			container.activate(dataBlocks[i], 1);
-			dataBlocks[i].free();
-			dataBlocks[i].removeFrom(container);
-			dataBlocks[i] = null;
-		}
-		for(int i=0;i<checkBlocks.length;i++) {
-			if(checkBlocks[i] == null) continue;
-			container.activate(checkBlocks[i], 1);
-			checkBlocks[i].free();
-			checkBlocks[i].removeFrom(container);
-			checkBlocks[i] = null;
-		}
+
+		freeBucketsArray(container, dataBlocks);
+		freeBucketsArray(container, checkBlocks);
 	}
 
 	private void onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
@@ -817,20 +762,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.activate(parent, 1);
 		}
 		parent.segmentFinished(this, container, context);
-		for(int i=0;i<dataBlocks.length;i++) {
-			if(dataBlocks[i] == null) continue;
-			if(persistent) container.activate(dataBlocks[i], 1);
-			dataBlocks[i].free();
-			if(persistent) dataBlocks[i].removeFrom(container);
-			dataBlocks[i] = null;
-		}
-		for(int i=0;i<checkBlocks.length;i++) {
-			if(checkBlocks[i] == null) continue;
-			if(persistent) container.activate(checkBlocks[i], 1);
-			checkBlocks[i].free();
-			if(persistent) checkBlocks[i].removeFrom(container);
-			checkBlocks[i] = null;
-		}
+		freeBucketsArray(container, dataBlocks);
+		freeBucketsArray(container, checkBlocks);
 	}
 
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
@@ -1501,20 +1434,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			encodeJob = null;
 		}
 		// parent, putter can deal with themselves
-		for(int i=0;i<dataBlocks.length;i++) {
-			if(dataBlocks[i] == null) continue;
-			container.activate(dataBlocks[i], 1);
-			dataBlocks[i].free();
-			dataBlocks[i].removeFrom(container);
-			dataBlocks[i] = null;
-		}
-		for(int i=0;i<checkBlocks.length;i++) {
-			if(checkBlocks[i] == null) continue;
-			container.activate(checkBlocks[i], 1);
-			checkBlocks[i].free();
-			checkBlocks[i].removeFrom(container);
-			checkBlocks[i] = null;
-		}
+		freeBucketsArray(container, dataBlocks);
+		freeBucketsArray(container, checkBlocks);
 		for(ClientCHK chk : dataURIs) {
 			if(chk != null) {
 				if(logMINOR) Logger.minor(this, "dataURI is null on "+this);
@@ -1569,4 +1490,15 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return true;
 	}
 
+	private void freeBucketsArray(ObjectContainer container, Bucket[] buckets) {
+		for(int i=0;i<buckets.length;i++) {
+			if(buckets[i] == null) continue;
+			if(persistent)
+				container.activate(buckets[i], 1);
+			buckets[i].free();
+			if(persistent)
+				buckets[i].removeFrom(container);
+			buckets[i] = null;
+		}
+	}
 }
