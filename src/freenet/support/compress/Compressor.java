@@ -5,6 +5,9 @@ package freenet.support.compress;
 
 import java.io.IOException;
 
+import com.db4o.ObjectContainer;
+
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -48,6 +51,11 @@ public interface Compressor {
 
 		public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 			return compressor.decompress(dbuf, i, j, output);
+		}
+		
+		public boolean objectCanDeactivate(ObjectContainer container) {
+			Logger.error(this, "Tried to deactivate "+this, new Exception("error"));
+			return false;
 		}
 		
 	}
