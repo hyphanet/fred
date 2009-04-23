@@ -372,33 +372,10 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			}
 			metadata = m;
 			
-			if (parentPutHandler != null) {
-				// it is a subcontainer/archive, but not the root container
-				perContainerPutHandlersWaitingForMetadata.get(parentPutHandler).remove(this);
-				HashMap<String, Object> hm = putHandlersTransformMap.get(this);
-				hm.put(name, m);
-				putHandlersTransformMap.remove(this);
-				try {
-					maybeStartParentContainer(parentPutHandler, container, context);
-				} catch (InsertException e) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
-				}
-				return;
-			}
-			
-			if (this==rootContainerPutHandler) {
-				baseMetadata = m;
-				resolveAndStartBase(container, context);
-				return;
-			}
-			
-			if (containerMode) {
-				try {
-					rootContainerPutHandler.start(container, context);
-				} catch (InsertException e) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
-				}
-				return;
+			if (isContainer) {
+				// containers are inserted with reportMetadataOnly=false,
+				// so it can never reach here
+				throw new IllegalStateException();
 			}
 			
 			if(persistent) {
