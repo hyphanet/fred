@@ -375,8 +375,6 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (RedirectException re) {
 						uri = re.newuri;
 						redirect = true;
-					} catch(Exception e){
-						Logger.error(ToadletContextImpl.class, "Caught exception",e);
 					} finally {
 						req.freeParts();
 					}
