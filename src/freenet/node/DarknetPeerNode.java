@@ -943,25 +943,7 @@ public class DarknetPeerNode extends PeerNode {
 							new String[] { filename, getName() }));
 					
 					// Descriptive table
-					
-					HTMLNode table = div.addChild("table", "border", "0");
-					HTMLNode row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("fileLabel"));
-					row.addChild("td").addChild("#", filename);
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("sizeLabel"));
-					row.addChild("td").addChild("#", SizeUtil.formatSize(size));
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("mimeLabel"));
-					row.addChild("td").addChild("#", mimeType);
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("senderLabel"));
-					row.addChild("td").addChild("#", getName());
-					row = table.addChild("tr");
-					if(comment != null && comment.length() > 0) {
-						row.addChild("td").addChild("#", l10n("commentLabel"));
-						addComment(row.addChild("td"));
-					}
+					describeFile(div);
 					
 					return div;
 				}
@@ -1056,25 +1038,7 @@ public class DarknetPeerNode extends PeerNode {
 							new String[] { filename, getName() }));
 					
 					// Descriptive table
-					
-					HTMLNode table = div.addChild("table", "border", "0");
-					HTMLNode row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("fileLabel"));
-					row.addChild("td").addChild("#", filename);
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("sizeLabel"));
-					row.addChild("td").addChild("#", SizeUtil.formatSize(size));
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("mimeLabel"));
-					row.addChild("td").addChild("#", mimeType);
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("senderLabel"));
-					row.addChild("td").addChild("#", getName());
-					row = table.addChild("tr");
-					if(comment != null && comment.length() > 0) {
-						row.addChild("td").addChild("#", l10n("commentLabel"));
-						addComment(row.addChild("td"));
-					}
+					describeFile(div);
 					
 					return div;
 				}
@@ -1152,7 +1116,6 @@ public class DarknetPeerNode extends PeerNode {
 			node.clientCore.alerts.register(alert);
 		}
 
-		
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
 		public UserAlert askUserUserAlert() {
 			return new AbstractUserAlert() {
@@ -1167,25 +1130,7 @@ public class DarknetPeerNode extends PeerNode {
 					div.addChild("p", l10n("offeredFileHeader", "name", getName()));
 					
 					// Descriptive table
-					
-					HTMLNode table = div.addChild("table", "border", "0");
-					HTMLNode row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("fileLabel"));
-					row.addChild("td").addChild("#", filename);
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("sizeLabel"));
-					row.addChild("td").addChild("#", SizeUtil.formatSize(size));
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("mimeLabel"));
-					row.addChild("td").addChild("#", mimeType);
-					row = table.addChild("tr");
-					row.addChild("td").addChild("#", l10n("senderLabel"));
-					row.addChild("td").addChild("#", getName());
-					row = table.addChild("tr");
-					if(comment != null && comment.length() > 0) {
-						row.addChild("td").addChild("#", l10n("commentLabel"));
-						addComment(row.addChild("td"));
-					}
+					describeFile(div);
 					
 					// Accept/reject form
 					
@@ -1293,6 +1238,28 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		private String l10n(String key, String[] pattern, String[] value) {
 			return L10n.getString("FileOffer."+key, pattern, value);
+		}
+
+
+		private void describeFile(HTMLNode div) {
+			HTMLNode table = div.addChild("table", "border", "0");
+			HTMLNode row = table.addChild("tr");
+			row.addChild("td").addChild("#", l10n("fileLabel"));
+			row.addChild("td").addChild("#", filename);
+			row = table.addChild("tr");
+			row.addChild("td").addChild("#", l10n("sizeLabel"));
+			row.addChild("td").addChild("#", SizeUtil.formatSize(size));
+			row = table.addChild("tr");
+			row.addChild("td").addChild("#", l10n("mimeLabel"));
+			row.addChild("td").addChild("#", mimeType);
+			row = table.addChild("tr");
+			row.addChild("td").addChild("#", l10n("senderLabel"));
+			row.addChild("td").addChild("#", getName());
+			row = table.addChild("tr");
+			if(comment != null && comment.length() > 0) {
+				row.addChild("td").addChild("#", l10n("commentLabel"));
+				addComment(row.addChild("td"));
+			}
 		}
 	}
 
