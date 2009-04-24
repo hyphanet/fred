@@ -112,14 +112,6 @@ public class BufferTest extends TestCase {
 		String longString = buffer.toString();
 		assertEquals("Buffer {" + buffer.getLength() + "}", longString);
 	}
-
-	public void testShortBufferToString() {
-		String shortString = "feep";
-		Buffer shortBuffer = new Buffer(shortString.getBytes());
-		
-		String outString = shortBuffer.toString();
-		assertEquals(outString, "{4:102 101 101 112 "); // FIXME: final brace?
-	}
 	
 	public void testEquals() {
 		
