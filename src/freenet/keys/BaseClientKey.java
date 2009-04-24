@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
  * Base class of ClientKey; non-ClientKey subclasses are things like USKs, which
  * don't directly translate to a routing key.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class BaseClientKey {
 
 	public static BaseClientKey getBaseKey(FreenetURI origURI) throws MalformedURLException {

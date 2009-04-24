@@ -20,6 +20,7 @@ import freenet.support.Logger;
  * - Site name.
  * - Site edition number.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class USK extends BaseClientKey {
 
 	/* The character to separate the site name from the edition number in its SSK form.

@@ -11,6 +11,7 @@ import freenet.support.api.Bucket;
 /**
  * Class to contain everything needed for an insert.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class InsertBlock {
 
 	private Bucket data;

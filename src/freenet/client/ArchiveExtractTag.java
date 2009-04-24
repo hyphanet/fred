@@ -18,6 +18,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class ArchiveExtractTag {
 	
 	final ArchiveHandlerImpl handler;

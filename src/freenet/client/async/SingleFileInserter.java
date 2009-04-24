@@ -35,6 +35,7 @@ import freenet.support.io.SegmentedBucketChainBucket;
  * Attempt to compress the file. Off-thread if it will take a while.
  * Then hand it off to SimpleFileInserter.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class SingleFileInserter implements ClientPutState {
 
 	private static volatile boolean logMINOR;

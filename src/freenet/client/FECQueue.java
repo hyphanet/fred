@@ -33,6 +33,7 @@ import freenet.support.io.NativeThread;
  * on their referring to it.
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FECQueue implements OOMHook {
 	
 	private transient LinkedList<FECJob>[] transientQueue;

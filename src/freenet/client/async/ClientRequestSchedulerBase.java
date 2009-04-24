@@ -34,6 +34,7 @@ import freenet.support.SortedVectorByNumber;
  * the methods that deal primarily with pendingKeys.
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 abstract class ClientRequestSchedulerBase {
 	
 	private static volatile boolean logMINOR;

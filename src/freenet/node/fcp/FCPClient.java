@@ -24,6 +24,7 @@ import freenet.support.NullObject;
  * Note that anything that modifies a non-transient field on a PERSISTENCE_FOREVER client should be called in a transaction. 
  * Hence the addition of the ObjectContainer parameter to all such methods.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FCPClient {
 	
 	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, ObjectContainer container) {
@@ -39,6 +40,7 @@ public class FCPClient {
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		lowLevelClient = new RequestClient() {
+			// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 			public boolean persistent() {
 				return forever;
 			}

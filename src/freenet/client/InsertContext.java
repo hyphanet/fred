@@ -12,6 +12,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentFileTracker;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class InsertContext {
 
 	public final BucketFactory persistentBucketFactory;

@@ -18,6 +18,7 @@ import freenet.support.api.BucketFactory;
 public interface Compressor {
 
 	public enum COMPRESSOR_TYPE implements Compressor {
+		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 		// They will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),

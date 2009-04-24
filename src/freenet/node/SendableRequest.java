@@ -20,6 +20,7 @@ import freenet.support.RandomGrabArrayItem;
  * (see e.g. SplitFileFetcherSubSegment), if we do take the lock we need to do it last i.e.
  * not call any subclass methods inside it.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	// Since we put these into Set's etc, hashCode must be persistent.

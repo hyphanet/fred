@@ -15,6 +15,7 @@ import freenet.support.api.Bucket;
  * A persistent temp bucket stored as a blob in a PersistentBlobTempBucketFactory.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentBlobTempBucket implements Bucket {
 	
 	public final long blockSize;

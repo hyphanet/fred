@@ -39,6 +39,7 @@ import freenet.support.io.NativeThread;
  * Does not refer to any non-persistable classes as member variables: Node must always 
  * be passed in if we need to use it!
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements KeysFetchingLocally {
 	
 	/** Identifier in the database for the node we are attached to */

@@ -7,6 +7,7 @@ import freenet.client.async.ClientContext;
 /**
  * An array which supports very fast remove-and-return-a-random-element.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 public class RandomGrabArray implements RemoveRandom {
 	private static volatile boolean logMINOR;
 	
@@ -20,6 +21,7 @@ public class RandomGrabArray implements RemoveRandom {
 	}
 	
 	private static class Block {
+		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 		RandomGrabArrayItem[] reqs;
 	}
 	

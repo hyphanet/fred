@@ -16,6 +16,7 @@ import freenet.support.io.NativeThread;
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class SendableGet extends BaseSendableGet {
 
 	/** Parent BaseClientGetter. Required for schedulers. */

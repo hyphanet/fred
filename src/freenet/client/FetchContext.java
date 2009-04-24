@@ -13,6 +13,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FetchContext implements Cloneable {
 
 	public static final int IDENTICAL_MASK = 0;

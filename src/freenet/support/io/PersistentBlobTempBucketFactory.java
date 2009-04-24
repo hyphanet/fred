@@ -33,6 +33,7 @@ import freenet.support.api.Bucket;
  * filesystems, the node will have to fall back once we reach 2GB of temp files.
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentBlobTempBucketFactory {
 	
 	public final long blockSize;

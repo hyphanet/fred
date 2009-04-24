@@ -16,6 +16,7 @@ import freenet.keys.FreenetURI;
  * Used, at present, for detecting archive fetch loops, hence the
  * name.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ArchiveContext {
 
 	HashSet soFar = new HashSet();

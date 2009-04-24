@@ -16,6 +16,7 @@ import freenet.support.Logger;
  * Persistent root object for FCP.
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FCPPersistentRoot {
 
 	final long nodeDBHandle;

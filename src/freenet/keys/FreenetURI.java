@@ -76,6 +76,7 @@ import freenet.support.io.FileUtil;
  * REDFLAG: Old code has a FieldSet, and the ability to put arbitrary metadata
  * in through name/value pairs. Do we want this?
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FreenetURI implements Cloneable {
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;

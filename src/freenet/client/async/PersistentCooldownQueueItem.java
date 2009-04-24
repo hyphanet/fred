@@ -9,6 +9,7 @@ import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.HexUtil;
 
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentCooldownQueueItem {
 	final SendableGet client;
 	final Key key;

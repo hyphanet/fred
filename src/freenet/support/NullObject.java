@@ -8,6 +8,7 @@ package freenet.support;
  * See http://tracker.db4o.com/browse/COR-1314
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 public class NullObject {
 	
 	// Nothing

@@ -11,7 +11,7 @@ import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
-
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class BackgroundBlockEncoderTag {
 	final Encodeable inserter;
 	final long nodeDBHandle;

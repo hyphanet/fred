@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 /**
  * Stores the metadata that the client might actually be interested in.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ClientMetadata implements Cloneable {
 	
 	/** The document MIME type */

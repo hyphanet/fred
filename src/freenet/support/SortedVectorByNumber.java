@@ -9,6 +9,7 @@ import com.db4o.ObjectContainer;
  * Map of an integer to an element, based on a sorted Vector.
  * Note that we have to shuffle data around, so this is slowish if it gets big.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 public class SortedVectorByNumber {
 
 	private IntNumberedItem[] data;

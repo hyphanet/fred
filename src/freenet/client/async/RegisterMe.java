@@ -7,6 +7,7 @@ import freenet.node.SendableRequest;
  * See DatastoreCheckerItem: this class only handles inserts.
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class RegisterMe {
 	final SendableRequest nonGetRequest;
 	final ClientRequestSchedulerCore core;

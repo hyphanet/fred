@@ -14,6 +14,7 @@ import freenet.client.async.DBJobRunner;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class NodeRestartJobsQueue {
 	
 	private final long nodeDBHandle;

@@ -48,6 +48,7 @@ public class ArchiveManager {
 	private static boolean logMINOR;
 
 	public enum ARCHIVE_TYPE {
+		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 		ZIP((short)0, new String[] { "application/zip", "application/x-zip" }), 	/* eventually get rid of ZIP support at some point */
 		TAR((short)1, new String[] { "application/x-tar" });
 		

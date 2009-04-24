@@ -16,6 +16,7 @@ import freenet.support.Logger;
  * we have followed all the redirects etc, or have an error. Can be
  * retried.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class ClientRequester {
 	private static volatile boolean logMINOR;
 	

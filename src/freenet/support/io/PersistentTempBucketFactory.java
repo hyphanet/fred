@@ -32,6 +32,7 @@ import freenet.support.api.BucketFactory;
  * Once startup is completed, any unclaimed temp buckets which match the 
  * temporary file pattern will be deleted.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 public class PersistentTempBucketFactory implements BucketFactory, PersistentFileTracker {
 
 	/** Original contents of directory */

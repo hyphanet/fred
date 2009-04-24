@@ -26,6 +26,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class InsertCompressor implements CompressJob {
 	
 	/** Database handle to identify which node it belongs to in the database */

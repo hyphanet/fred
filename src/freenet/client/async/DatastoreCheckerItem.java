@@ -8,6 +8,7 @@ import freenet.node.SendableGet;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  *
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class DatastoreCheckerItem {
 	
 	final long nodeDBHandle;

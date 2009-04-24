@@ -10,6 +10,7 @@ import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import java.util.Random;
 
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FilenameGenerator {
 
     private transient Random random;

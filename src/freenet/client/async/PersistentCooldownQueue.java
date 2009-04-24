@@ -24,6 +24,7 @@ import freenet.support.Logger;
  * out of the database.
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentCooldownQueue implements CooldownQueue {
 	
 	private long cooldownTime;

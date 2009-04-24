@@ -31,6 +31,7 @@ import freenet.support.io.BucketTools;
  * 
  * Base class for node keys.
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public abstract class Key implements WritableToDataOutputStream, Comparable {
 
     final int hash;

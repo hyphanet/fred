@@ -15,6 +15,7 @@ import freenet.support.io.NativeThread;
  * restarted, but this remains the same: the actual USKFetcher's are always transient.
  * @author toad
  */
+// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	/** For persistence */
