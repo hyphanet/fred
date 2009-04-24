@@ -139,19 +139,3 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	};
 	
 }
-
-class BackgroundBlockEncoderTag {
-	final Encodeable inserter;
-	final long nodeDBHandle;
-	/** For implementing FIFO ordering */
-	final long addedTime;
-	/** For implementing priority ordering */
-	final short priority;
-	
-	BackgroundBlockEncoderTag(Encodeable inserter, short prio, ClientContext context) {
-		this.inserter = inserter;
-		this.nodeDBHandle = context.nodeDBHandle;
-		this.addedTime = System.currentTimeMillis();
-		this.priority = prio;
-	}
-}
