@@ -80,6 +80,8 @@ public class BufferTest extends TestCase {
 		} catch(IllegalArgumentException e) {
 			// expect this
 		}
+		new Buffer(new byte[1], 1, 0);
+		new Buffer(new byte[1], 0, 1);
 	}
 	
 	public void testDataInputStreamBuffer() {
