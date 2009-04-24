@@ -61,6 +61,26 @@ public class BufferTest extends TestCase {
 		doTestBuffer(dataSub, buffer);
 	}
 
+	public void testBadLength() {
+		try{
+			new Buffer(new byte[0], 0, -1);
+			fail();
+		} catch(IllegalArgumentException e) {
+			// expect this
+		}
+		try{
+			new Buffer(new byte[0], 0, 1);
+			fail();
+		} catch(IllegalArgumentException e) {
+			// expect this
+		}
+		try{
+			new Buffer(new byte[0], 1, 0);
+			fail();
+		} catch(IllegalArgumentException e) {
+			// expect this
+		}
+	}
 	
 	public void testDataInputStreamBuffer() {
 		

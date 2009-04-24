@@ -62,6 +62,32 @@ public class ShortBufferTest extends TestCase {
 		doTestShortBuffer(dataSub, buffer);
 	}
 
+	public void testBadLength() {
+		try{
+			new ShortBuffer(new byte[0], 0, -1);
+			fail();
+		} catch(IllegalArgumentException e) {
+			// expect this
+		}
+		try{
+			new ShortBuffer(new byte[0], 0, 1);
+			fail();
+		} catch(IllegalArgumentException e) {
+			// expect this
+		}
+		try{
+			new ShortBuffer(new byte[0], 1, 0);
+			fail();
+		} catch(IllegalArgumentException e) {
+			// expect this
+		}
+		try{
+			new ShortBuffer(new byte[32768], 0, 32768);
+			fail();
+		} catch(IllegalArgumentException e) {
+			// expect this
+		}
+	}
 	
 	public void testDataInputStreamShortBuffer() {
 		

@@ -48,8 +48,11 @@ public class Buffer implements WritableToDataOutputStream {
 	 * @throws IOException
 	 */
 	public Buffer(DataInput dis) throws IOException {
-		_data = new byte[dis.readInt()];
-		_length = _data.length;
+		_length = dis.readInt();
+		if(_length < 0)
+			throw new IllegalArgumentException("Negative Length: "+_length);
+
+		_data = new byte[_length];
 		_start = 0;
 		dis.readFully(_data);
 	}
@@ -66,10 +69,10 @@ public class Buffer implements WritableToDataOutputStream {
 	}
 
 	public Buffer(byte[] data, int start, int length) {
+		if(length < 0 || start < 0 || start + length >= data.length)
+		    throw new IllegalArgumentException("Invalid Length: start=" + start + ", length=" + length);
 		_start = start;
 		_data = data;
-		if(length < 0)
-		    throw new IllegalArgumentException();
 		_length = length;
 	}
 
