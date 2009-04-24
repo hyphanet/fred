@@ -173,32 +173,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 
 	}
-
-	protected String getHourLogName(Calendar c, boolean compressed) {
-		StringBuilder buf = new StringBuilder(50);
-		buf.append(baseFilename).append('-');
-		buf.append(Version.buildNumber());
-		buf.append('-');
-		buf.append(c.get(Calendar.YEAR)).append('-');
-		pad2digits(buf, c.get(Calendar.MONTH) + 1);
-		buf.append('-');
-		pad2digits(buf, c.get(Calendar.DAY_OF_MONTH));
-		buf.append('-');
-		pad2digits(buf, c.get(Calendar.HOUR_OF_DAY));
-		if (INTERVAL == Calendar.MINUTE) {
-			buf.append('-');
-			pad2digits(buf, c.get(Calendar.MINUTE));
-		}
-		buf.append(".log");
-		if(compressed) buf.append(".gz");
-		return buf.toString();
-	}
 	
 	/**
 	 * The extra parameter int digit is to be used for creating a logfile name
 	 * when a log exists already with the same date.
 	 * @param c
 	 * @param digit
+	 *			log file name suffix. ignored if this is {@code < 0}
 	 * @param compressed
 	 * @return
 	 */
@@ -217,8 +198,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			buf.append('-');
 			pad2digits(buf, c.get(Calendar.MINUTE));
 		}
-		buf.append("-");
-		buf.append(digit);
+		if (digit > 0) {
+			buf.append("-");
+			buf.append(digit);
+		}
 		buf.append(".log");
 		if(compressed) buf.append(".gz");
 		return buf.toString();
@@ -273,7 +256,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					int x = gc.get(INTERVAL);
 					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
 				}
-				currentFilename = new File(getHourLogName(gc, true));
+				currentFilename = new File(getHourLogName(gc, -1, true));
 				synchronized(logFiles) {
 					if((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
@@ -368,7 +351,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	        oldLogFilesDiskSpaceUsage += length;
 	        trimOldLogFiles();
 	        // Rotate primary log stream
-	        currentFilename = new File(getHourLogName(gc, true));
+	        currentFilename = new File(getHourLogName(gc, -1, true));
 	        logStream = openNewLogFile(currentFilename, true);
 	        if(latestFile != null) {
 	        	try {
@@ -520,7 +503,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	/** Initialize oldLogFiles */
 	public void findOldLogFiles() {
 		GregorianCalendar gc = new GregorianCalendar();
-		File currentFilename = new File(getHourLogName(gc, true));
+		File currentFilename = new File(getHourLogName(gc, -1, true));
 		File numericSameDateFilename;
 		int slashIndex = baseFilename.lastIndexOf(File.separatorChar);
 		File dir;

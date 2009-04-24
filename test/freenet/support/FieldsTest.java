@@ -229,9 +229,9 @@ public class FieldsTest extends TestCase {
 		byte[] b2 = new byte[] { 2, 2, 3, 3, 4, 4 };
 		byte[] b3 = new byte[] { 1, 1, 2, 2, 3, 3 };
 		
-		Long l1 = new Long(Fields.longHashCode(b1));
-		Long l2 = new Long(Fields.longHashCode(b2));
-		Long l3 = new Long(Fields.longHashCode(b3));
+		Long l1 = Fields.longHashCode(b1);
+		Long l2 = Fields.longHashCode(b2);
+		Long l3 = Fields.longHashCode(b3);
 
 		assertFalse(l1.equals(l2));
 		assertFalse(l2.equals(l3));
