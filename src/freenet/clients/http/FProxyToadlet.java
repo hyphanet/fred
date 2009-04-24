@@ -503,15 +503,18 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			while(true) {
 			fr = fetch.getResult();
 			if(fr.hasData()) {
+				if(logMINOR) Logger.minor(this, "Found data");
 				data = fr.data;
 				mimeType = fr.mimeType;
 				fetch.close(); // Not waiting any more, but still locked the results until sent
 				break;
 			} else if(fr.failed != null) {
+				if(logMINOR) Logger.minor(this, "Request failed");
 				fe = fr.failed;
 				fetch.close(); // Not waiting any more, but still locked the results until sent
 				break;
 			} else {
+				if(logMINOR) Logger.minor(this, "Still in progress");
 				// Still in progress
 				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled();
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);

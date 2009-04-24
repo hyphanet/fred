@@ -42,7 +42,7 @@ public class FProxyFetchTracker implements Runnable {
 		this.rc = rc;
 	}
 	
-	FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) {
+	FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) throws FetchException {
 		FProxyFetchInProgress progress;
 		/* LOCKING:
 		 * Call getWaiter() inside the fetchers lock, since we will purge old 
@@ -66,7 +66,9 @@ public class FProxyFetchTracker implements Runnable {
 			synchronized(fetchers) {
 				fetchers.removeElement(key, progress);
 			}
+			throw e;
 		}
+		if(logMINOR) Logger.minor(this, "Created new fetcher: "+progress);
 		return progress.getWaiter();
 		// FIXME promote a fetcher when it is re-used
 		// FIXME get rid of fetchers over some age
