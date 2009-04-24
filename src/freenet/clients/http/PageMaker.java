@@ -128,6 +128,14 @@ public final class PageMaker {
 		navigationLinks.remove(name);
 	}
 	
+	@Deprecated
+	public void removeAllNavigationLinks() {
+		navigationLinkTexts.clear();
+		navigationLinkTextsNonFull.clear();
+		navigationLinkTitles.clear();
+		navigationLinks.clear();
+	}
+	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
 		String referer = toadletContext.getHeaders().get("referer");
 		if (referer != null) {
