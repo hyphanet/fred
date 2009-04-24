@@ -68,6 +68,8 @@ public class Buffer implements WritableToDataOutputStream {
 	public Buffer(byte[] data, int start, int length) {
 		_start = start;
 		_data = data;
+		if(length < 0)
+		    throw new IllegalArgumentException();
 		_length = length;
 	}
 

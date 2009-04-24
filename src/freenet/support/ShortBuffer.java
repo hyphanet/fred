@@ -64,7 +64,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	public ShortBuffer(byte[] data, int start, int length) {
 		_start = start;
 		_data = data;
-		if(length > Short.MAX_VALUE)
+		if(length > Short.MAX_VALUE || length < 0)
 		    throw new IllegalArgumentException();
 		_length = (short)length;
 	}
