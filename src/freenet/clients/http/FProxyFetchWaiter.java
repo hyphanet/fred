@@ -6,6 +6,7 @@ public class FProxyFetchWaiter {
 	public FProxyFetchWaiter(FProxyFetchInProgress progress2) {
 		this.progress = progress2;
 		if(progress.finished()) finished = true;
+		hasWaited = progress.hasWaited();
 	}
 
 	private final FProxyFetchInProgress progress;
@@ -28,6 +29,7 @@ public class FProxyFetchWaiter {
 			}
 			waited = hasWaited;
 		}
+		progress.setHasWaited();
 		return progress.innerGetResult(waited);
 	}
 

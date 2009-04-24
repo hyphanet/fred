@@ -299,4 +299,12 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 	public synchronized boolean hasNotifiedFailure() {
 		return true;
 	}
+
+	public synchronized boolean hasWaited() {
+		return hasWaited;
+	}
+
+	public synchronized void setHasWaited() {
+		hasWaited = true;
+	}
 }
