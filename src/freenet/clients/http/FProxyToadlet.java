@@ -499,7 +499,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		FProxyFetchResult fr = null;
 		if(logMINOR) Logger.minor(this, "UA = "+ua+" accept = "+accept);
 		if(isBrowser(ua) && (accept == null || accept.indexOf("text/html") > -1)) {
-			FProxyFetchWaiter fetch = fetchTracker.makeFetcher(key, maxSize);
+			FProxyFetchWaiter fetch = null;
+			try {
+				fetch = fetchTracker.makeFetcher(key, maxSize);
+			} catch (FetchException e) {
+				fe = fr.failed;
+			}
+			if(fetch != null)
 			while(true) {
 			fr = fetch.getResult();
 			if(fr.hasData()) {
