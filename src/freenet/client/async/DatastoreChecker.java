@@ -341,7 +341,7 @@ public class DatastoreChecker implements PrioRunnable {
 						item = null;
 						blocks = transientBlockSets[prio].remove(0);
 						if(logMINOR)
-							Logger.minor(this, "Checking transient request "+getter);
+							Logger.minor(this, "Checking transient request "+getter+" prio "+prio);
 						break;
 					} else if((!notPersistent) && (!persistentGetters[prio].isEmpty())) {
 						keys = persistentKeys[prio].remove(0);
@@ -355,6 +355,7 @@ public class DatastoreChecker implements PrioRunnable {
 					}
 				}
 				if(keys == null) {
+					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
 					context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
 					try {
 						wait(100*1000);
