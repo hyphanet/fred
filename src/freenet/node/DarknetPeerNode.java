@@ -1050,32 +1050,10 @@ public class DarknetPeerNode extends PeerNode {
 
 				@Override
 				public String getText() {
-					StringBuilder sb = new StringBuilder();
-					sb.append(l10n("succeededReceiveHeader", new String[] { "filename", "node" },
-							new String[] { filename, getName() }));
-					sb.append('\n');
-					sb.append(l10n("fileLabel"));
-					sb.append(' ');
-					sb.append(filename);
-					sb.append('\n');
-					sb.append(l10n("sizeLabel"));
-					sb.append(' ');
-					sb.append(SizeUtil.formatSize(size));
-					sb.append('\n');
-					sb.append(l10n("mimeLabel"));
-					sb.append(' ');
-					sb.append(mimeType);
-					sb.append('\n');
-					sb.append(l10n("senderLabel"));
-					sb.append(' ');
-					sb.append(userToString());
-					sb.append('\n');
-					if(comment != null && comment.length() > 0) {
-						sb.append(l10n("commentLabel"));
-						sb.append(' ');
-						sb.append(comment);
-					}
-					return sb.toString();
+					String header = l10n("succeededReceiveHeader", new String[] { "filename", "node" },
+							new String[] { filename, getName() });
+					
+					return describeFileText(header);
 				}
 
 				@Override
@@ -1158,32 +1136,10 @@ public class DarknetPeerNode extends PeerNode {
 				}
 				@Override
 				public String getText() {
-					StringBuilder sb = new StringBuilder();
-					sb.append(l10n("offeredFileHeader", "name", getName()));
-					sb.append('\n');
-					sb.append(l10n("fileLabel"));
-					sb.append(' ');
-					sb.append(filename);
-					sb.append('\n');
-					sb.append(l10n("sizeLabel"));
-					sb.append(' ');
-					sb.append(SizeUtil.formatSize(size));
-					sb.append('\n');
-					sb.append(l10n("mimeLabel"));
-					sb.append(' ');
-					sb.append(mimeType);
-					sb.append('\n');
-					sb.append(l10n("senderLabel"));
-					sb.append(' ');
-					sb.append(userToString());
-					sb.append('\n');
-					if(comment != null && comment.length() > 0) {
-						sb.append(l10n("commentLabel"));
-						sb.append(' ');
-						sb.append(comment);
-					}
-					return sb.toString();
+					String header = l10n("offeredFileHeader", "name", getName());
+					return describeFileText(header);
 				}
+				
 				@Override
 				public String getTitle() {
 					return l10n("askUserTitle");
@@ -1240,7 +1196,34 @@ public class DarknetPeerNode extends PeerNode {
 			return L10n.getString("FileOffer."+key, pattern, value);
 		}
 
-
+		private String describeFileText(String header) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(header);
+			sb.append('\n');
+			sb.append(l10n("fileLabel"));
+			sb.append(' ');
+			sb.append(filename);
+			sb.append('\n');
+			sb.append(l10n("sizeLabel"));
+			sb.append(' ');
+			sb.append(SizeUtil.formatSize(size));
+			sb.append('\n');
+			sb.append(l10n("mimeLabel"));
+			sb.append(' ');
+			sb.append(mimeType);
+			sb.append('\n');
+			sb.append(l10n("senderLabel"));
+			sb.append(' ');
+			sb.append(userToString());
+			sb.append('\n');
+			if(comment != null && comment.length() > 0) {
+				sb.append(l10n("commentLabel"));
+				sb.append(' ');
+				sb.append(comment);
+			}
+			return sb.toString();
+		}
+		
 		private void describeFile(HTMLNode div) {
 			HTMLNode table = div.addChild("table", "border", "0");
 			HTMLNode row = table.addChild("tr");
