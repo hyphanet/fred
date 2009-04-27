@@ -34,6 +34,11 @@ public class BootstrapPushPullTest {
 	public static int EXIT_FETCH_FAILED = 260;
 	public static int EXIT_THREW_SOMETHING = 261;
 	
+	public static int DARKNET_PORT1 = 5000;
+	public static int OPENNET_PORT1 = 5001;
+	public static int DARKNET_PORT2 = 5002;
+	public static int OPENNET_PORT2 = 5003;
+	
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
 		Node node = null;
 		Node secondNode = null;
@@ -49,14 +54,14 @@ public class BootstrapPushPullTest {
         	System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
         	System.exit(EXIT_NO_SEEDNODES);
         }
-        File innerDir = new File(dir, "5000");
+        File innerDir = new File(dir, Integer.toString(DARKNET_PORT1));
         innerDir.mkdir();
         FileInputStream fis = new FileInputStream(seednodes);
         FileUtil.writeTo(fis, new File(innerDir, "seednodes.fref"));
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        node = NodeStarter.createTestNode(5000, 5001, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
+        node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging
@@ -92,13 +97,13 @@ public class BootstrapPushPullTest {
         node.park();
 		
         // Bootstrap a second node.
-        File secondInnerDir = new File(dir, "5002");
+        File secondInnerDir = new File(dir, Integer.toString(DARKNET_PORT2));
         secondInnerDir.mkdir();
         fis = new FileInputStream(seednodes);
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
         executor = new PooledExecutor();
-        secondNode = NodeStarter.createTestNode(5002, 5003, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
+        secondNode = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
         waitForTenNodes(secondNode);
         

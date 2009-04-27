@@ -45,6 +45,8 @@ public class RealNodeSecretPingTest {
 	static final int SECRETPONG_TIMEOUT=5000;
 	static final long storeSize = 1024*1024;
 	
+	public static int DARKNET_PORT_BASE = 5001;
+	
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
         //Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         System.out.println("SecretPing (CRAM) test using real nodes:");
@@ -66,7 +68,7 @@ public class RealNodeSecretPingTest {
 		
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, true, true, 0, true, false, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, true, true, 0, true, false, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");

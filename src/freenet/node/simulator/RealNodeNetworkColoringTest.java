@@ -44,6 +44,8 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 	
 	static final long storeSize = 1024*1024;
 	
+	static final int DARKNET_PORT_BASE = 5001;
+	
 	//Use something shorter than 'freenet.node.simulator.RealNodeNetworkColoringTest' !
 	private static final Object log = new Object();
 	
@@ -79,21 +81,21 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetA[i] = 
-            	NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'A' node "+totalNodes);
         }
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetB[i] = 
-			NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
+			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'B' node "+totalNodes);
         }
 		for(int i=0;i<BRIDGES;i++) {
 			allNodes[totalNodes] =
             bridges[i] = 
-			NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0,ENABLE_FOAF, false, null);
+			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0,ENABLE_FOAF, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created bridge node "+totalNodes);
         }

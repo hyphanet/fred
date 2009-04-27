@@ -22,6 +22,9 @@ public class BootstrapSeedTest {
 	public static int EXIT_FAILED_TARGET = 258;
 	public static int EXIT_THREW_SOMETHING = 259;
 	
+	public static int DARKNET_PORT = 5000;
+	public static int OPENNET_PORT = 5001;
+	
 	/**
 	 * @param args
 	 * @throws InvalidThresholdException 
@@ -43,14 +46,14 @@ public class BootstrapSeedTest {
         	System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
         	System.exit(EXIT_NO_SEEDNODES);
         }
-        File innerDir = new File(dir, "5000");
+        File innerDir = new File(dir, Integer.toString(DARKNET_PORT));
         innerDir.mkdir();
         FileInputStream fis = new FileInputStream(seednodes);
         FileUtil.writeTo(fis, new File(innerDir, "seednodes.fref"));
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        node = NodeStarter.createTestNode(5000, 5001, "bootstrap-test", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
+        node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "bootstrap-test", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging

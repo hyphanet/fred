@@ -71,6 +71,8 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = true;
     static final boolean ENABLE_FOAF = true;
     
+    public static final int DARKNET_PORT_BASE = 5000;
+    
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
         System.err.println("ULPR test");
         System.err.println();
@@ -92,7 +94,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5000+i, 0, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 1024*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0, ENABLE_FOAF, false, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 1024*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0, ENABLE_FOAF, false, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
