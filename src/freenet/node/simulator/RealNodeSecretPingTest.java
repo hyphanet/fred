@@ -45,7 +45,8 @@ public class RealNodeSecretPingTest {
 	static final int SECRETPONG_TIMEOUT=5000;
 	static final long storeSize = 1024*1024;
 	
-	public static int DARKNET_PORT_BASE = 5001;
+	public static int DARKNET_PORT_BASE = RealNodeRoutingTest.DARKNET_PORT_END;
+	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 	
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
         //Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);

@@ -53,7 +53,8 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
     
-    static final int DARKNET_PORT_BASE = 5001;
+    static final int DARKNET_PORT_BASE = 5008;
+    static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, UnsupportedEncodingException, CHKVerifyException, CHKDecodeException {
         String name = "realNodeRequestInsertTest";

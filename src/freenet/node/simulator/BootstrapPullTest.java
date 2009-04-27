@@ -44,8 +44,8 @@ public class BootstrapPullTest {
 	public static int EXIT_INSERTER_PROBLEM = 261;
 	public static int EXIT_THREW_SOMETHING = 262;
 	
-	public static int DARKNET_PORT = 5004;
-	public static int OPENNET_PORT = 5005;
+	public static int DARKNET_PORT = 5000;
+	public static int OPENNET_PORT = 5001;
 	
 	/**
 	 * @param args

@@ -29,8 +29,8 @@ import freenet.support.LoggerHook.InvalidThresholdException;
  */
 public class RealNodePingTest {
 	
-	public static final int DARKNET_PORT1 = 5001;
-	public static final int DARKNET_PORT2 = 5002;
+	public static final int DARKNET_PORT1 = RealNodeNetworkColoringTest.DARKNET_PORT_END;
+	public static final int DARKNET_PORT2 = RealNodeNetworkColoringTest.DARKNET_PORT_END+1;
 
     public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
         RandomSource random = NodeStarter.globalTestInit("pingtest", false, Logger.ERROR, "", true);

@@ -71,7 +71,8 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = true;
     static final boolean ENABLE_FOAF = true;
     
-    public static final int DARKNET_PORT_BASE = 5000;
+    public static final int DARKNET_PORT_BASE = RealNodeSecretPingTest.DARKNET_PORT_END;
+    public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
         System.err.println("ULPR test");

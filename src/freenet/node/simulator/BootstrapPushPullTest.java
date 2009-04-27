@@ -34,10 +34,10 @@ public class BootstrapPushPullTest {
 	public static int EXIT_FETCH_FAILED = 260;
 	public static int EXIT_THREW_SOMETHING = 261;
 	
-	public static int DARKNET_PORT1 = 5000;
-	public static int OPENNET_PORT1 = 5001;
-	public static int DARKNET_PORT2 = 5002;
-	public static int OPENNET_PORT2 = 5003;
+	public static int DARKNET_PORT1 = 5002;
+	public static int OPENNET_PORT1 = 5003;
+	public static int DARKNET_PORT2 = 5004;
+	public static int OPENNET_PORT2 = 5005;
 	
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
 		Node node = null;

@@ -22,8 +22,8 @@ public class BootstrapSeedTest {
 	public static int EXIT_FAILED_TARGET = 258;
 	public static int EXIT_THREW_SOMETHING = 259;
 	
-	public static int DARKNET_PORT = 5000;
-	public static int OPENNET_PORT = 5001;
+	public static int DARKNET_PORT = 5006;
+	public static int OPENNET_PORT = 5007;
 	
 	/**
 	 * @param args

@@ -42,7 +42,7 @@ public class SeednodePingTest extends RealNodeTest {
 
 	static File STATUS_DIR = new File("/var/www/freenet/tests/seednodes/status/");
 	static final long COUNT_SUCCESSES_PERIOD = 7*24*60*60*1000; // 1 week
-
+	
     public static void main(String[] args) throws FSParseException, IOException, OpennetDisabledException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
     	Node node = null;
     	try {

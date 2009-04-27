@@ -44,7 +44,9 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 	
 	static final long storeSize = 1024*1024;
 	
-	static final int DARKNET_PORT_BASE = 5001;
+	static final int DARKNET_PORT_BASE = RealNodeBusyNetworkTest.DARKNET_PORT_END;
+	static final int TOTAL_NODES = NUMBER_OF_NODES * 2 + BRIDGES;
+	static final int DARKNET_PORT_END = DARKNET_PORT_BASE + TOTAL_NODES;
 	
 	//Use something shorter than 'freenet.node.simulator.RealNodeNetworkColoringTest' !
 	private static final Object log = new Object();

@@ -51,7 +51,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
     
-    public static final int DARKNET_PORT_BASE = 5001;
+    public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
+    public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
         String name = "realNodeRequestInsertTest";
