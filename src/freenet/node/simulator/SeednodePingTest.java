@@ -42,6 +42,9 @@ public class SeednodePingTest extends RealNodeTest {
 
 	static File STATUS_DIR = new File("/var/www/freenet/tests/seednodes/status/");
 	static final long COUNT_SUCCESSES_PERIOD = 7*24*60*60*1000; // 1 week
+
+	static final int DARKNET_PORT = RealNodeULPRTest.DARKNET_PORT_END;
+	static final int OPENNET_PORT = DARKNET_PORT+1;
 	
     public static void main(String[] args) throws FSParseException, IOException, OpennetDisabledException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
     	Node node = null;
@@ -51,7 +54,7 @@ public class SeednodePingTest extends RealNodeTest {
         RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, Logger.ERROR, "", false);
         // Create one node
         Executor executor = new PooledExecutor();
-	node = NodeStarter.createTestNode(6000, 6001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, null);
+	node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, null);
 	// Connect & ping
 	List<SeedServerTestPeerNode> seedNodes = new ArrayList<SeedServerTestPeerNode>();
 	List<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/"));
