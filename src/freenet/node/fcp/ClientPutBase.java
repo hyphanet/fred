@@ -6,8 +6,8 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.*;
 import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientPutCallback;
 import freenet.client.async.DBJob;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
@@ -26,7 +26,7 @@ import freenet.support.io.NativeThread;
  * Base class for ClientPut and ClientPutDir.
  * Any code which can be shared between the two goes here.
  */
-public abstract class ClientPutBase extends ClientRequest implements ClientCallback, ClientEventListener {
+public abstract class ClientPutBase extends ClientRequest implements ClientPutCallback, ClientEventListener {
 
 	/** Created new for each ClientPutBase, so we have to delete it in requestWasRemoved() */
 	final InsertContext ctx;

@@ -8,11 +8,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InsertException;
-import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
@@ -24,7 +21,7 @@ import freenet.support.io.FileUtil;
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
  * be immediately fed to the NodeUpdateManager.
  */
-public class RevocationChecker implements ClientCallback, RequestClient {
+public class RevocationChecker implements ClientGetCallback, RequestClient {
 
 	public final static int REVOCATION_DNF_MIN = 3;
 	
@@ -214,28 +211,8 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 		else
 			start(wasAggressive, false);
 	}
-
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
-
+	
 	public void onMajorProgress(ObjectContainer container) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}

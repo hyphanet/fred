@@ -523,7 +523,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private FreenetURI targetURI;
 	private boolean finished;
 	private final InsertContext ctx;
-	final ClientCallback cb;
+	final ClientPutCallback cb;
 	private final boolean getCHKOnly;
 	private boolean insertedAllFiles;
 	private boolean insertedManifest;
@@ -542,7 +542,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private boolean fetchable;
 	private final boolean earlyEncode;
 	
-	public SimpleManifestPutter(ClientCallback cb, 
+	public SimpleManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, 
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) {
 		super(prioClass, clientContext);

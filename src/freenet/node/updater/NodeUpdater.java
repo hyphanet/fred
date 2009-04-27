@@ -17,10 +17,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InsertException;
-import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
@@ -37,7 +35,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
-public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
+public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
 
 	static private boolean logMINOR;
 	private FetchContext ctx;
@@ -384,18 +382,6 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		}
 	}
 
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		// Impossible
-	}
-
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		// Impossible
-	}
-
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		// Impossible
-	}
-
 	/** Called before kill(). Don't do anything that will involve taking locks. */
 	public void preKill() {
 		isRunning = false;
@@ -427,10 +413,6 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 
 	public synchronized boolean canUpdateNow() {
 		return fetchedVersion > currentVersion;
-	}
-
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
-		// Ignore, we don't insert
 	}
 
 	/** Called when the fetch URI has changed. No major locks are held by caller. 
