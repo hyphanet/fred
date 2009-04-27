@@ -912,7 +912,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = db.queryByExample(new Object());
 		Map<String,Integer> map = new HashMap<String, Integer>();
-		Iterator i = contents.iterator();
+		Iterator<Object> i = contents.iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
 			String name = o.getClass().getName();
