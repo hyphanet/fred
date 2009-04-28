@@ -30,7 +30,7 @@ public class FetchContext implements Cloneable {
 	public int maxSplitfileThreads;
 	public int maxSplitfileBlockRetries;
 	public int maxNonSplitfileRetries;
-	public int maxUSKRetries;
+	public final int maxUSKRetries;
 	public boolean allowSplitfiles;
 	public boolean followRedirects;
 	public boolean localRequestOnly;
@@ -98,79 +98,40 @@ public class FetchContext implements Cloneable {
 			this.blocks = blocks;
 		else
 			this.blocks = ctx.blocks;
+
 		this.allowedMIMETypes = ctx.allowedMIMETypes;
 		this.maxUSKRetries = ctx.maxUSKRetries;
-		if(maskID == IDENTICAL_MASK) {
-			this.maxOutputLength = ctx.maxOutputLength;
-			this.maxMetadataSize = ctx.maxMetadataSize;
-			this.maxTempLength = ctx.maxTempLength;
-			this.maxRecursionLevel = ctx.maxRecursionLevel;
-			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
-			this.maxArchiveLevels = ctx.maxArchiveLevels;
-			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
-			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
-			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
-			this.allowSplitfiles = ctx.allowSplitfiles;
-			this.followRedirects = ctx.followRedirects;
-			this.localRequestOnly = ctx.localRequestOnly;
-			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
-			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.cacheLocalRequests = ctx.cacheLocalRequests;
-			this.returnZIPManifests = ctx.returnZIPManifests;
+		this.cacheLocalRequests = ctx.cacheLocalRequests;
+		this.localRequestOnly = ctx.localRequestOnly;
+		this.maxArchiveLevels = ctx.maxArchiveLevels;
+		this.maxMetadataSize = ctx.maxMetadataSize;
+		this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+		this.maxOutputLength = ctx.maxOutputLength;
+		this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
+		this.maxTempLength = ctx.maxTempLength;
+		this.allowSplitfiles = ctx.allowSplitfiles;
+		this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
+		this.followRedirects = ctx.followRedirects;
+		this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+		this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
+		this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+		this.maxRecursionLevel = ctx.maxRecursionLevel;
+		this.maxSplitfileThreads = ctx.maxSplitfileThreads;
+		this.returnZIPManifests = ctx.returnZIPManifests;
+
+		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
+			// DEFAULT
 		} else if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
-			this.maxOutputLength = ctx.maxOutputLength;
-			this.maxMetadataSize = ctx.maxMetadataSize;
-			this.maxTempLength = ctx.maxTempLength;
 			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
-			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = true;
 			this.maxSplitfileThreads = 0;
-			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
-			this.maxNonSplitfileRetries = ctx.maxSplitfileBlockRetries;
 			this.allowSplitfiles = false;
 			this.followRedirects = false;
-			this.localRequestOnly = ctx.localRequestOnly;
 			this.maxDataBlocksPerSegment = 0;
 			this.maxCheckBlocksPerSegment = 0;
-			this.cacheLocalRequests = ctx.cacheLocalRequests;
 			this.returnZIPManifests = false;
-		} else if(maskID == SPLITFILE_DEFAULT_MASK) {
-			this.maxOutputLength = ctx.maxOutputLength;
-			this.maxTempLength = ctx.maxTempLength;
-			this.maxMetadataSize = ctx.maxMetadataSize;
-			this.maxRecursionLevel = ctx.maxRecursionLevel;
-			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
-			this.maxArchiveLevels = ctx.maxArchiveLevels;
-			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
-			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
-			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
-			this.allowSplitfiles = ctx.allowSplitfiles;
-			this.followRedirects = ctx.followRedirects;
-			this.localRequestOnly = ctx.localRequestOnly;
-			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
-			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.cacheLocalRequests = ctx.cacheLocalRequests;
-			this.returnZIPManifests = ctx.returnZIPManifests;
 		} else if (maskID == SET_RETURN_ARCHIVES) {
-			this.maxOutputLength = ctx.maxOutputLength;
-			this.maxMetadataSize = ctx.maxMetadataSize;
-			this.maxTempLength = ctx.maxTempLength;
-			this.maxRecursionLevel = ctx.maxRecursionLevel;
-			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
-			this.maxArchiveLevels = ctx.maxArchiveLevels;
-			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
-			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
-			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
-			this.allowSplitfiles = ctx.allowSplitfiles;
-			this.followRedirects = ctx.followRedirects;
-			this.localRequestOnly = ctx.localRequestOnly;
-			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
-			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.cacheLocalRequests = ctx.cacheLocalRequests;
 			this.returnZIPManifests = true;
 		}
 		else throw new IllegalArgumentException();
