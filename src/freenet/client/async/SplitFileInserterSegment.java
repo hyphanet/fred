@@ -1385,6 +1385,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			SendableRequestItem item;
 			try {
 				item = getBlockItem(container, context, blockNumber);
+				if(item == null) continue;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				return null;
