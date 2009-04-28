@@ -539,7 +539,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				} finally {
 					block.copyBucket.free();
 				}
-				if(logMINOR) Logger.minor(this, "Request succeeded: "+SingleBlockInserter.this);
+				if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded: "+SingleBlockInserter.this);
 				req.onInsertSuccess(context);
 				return true;
 			}
