@@ -598,7 +598,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		parent.encodedSegment(this, container, context);
 
 		synchronized (this) {
-			freeBucketsArray(container, dataBlocks);
+			freeFinishedDataBlocks(container);
 		}
 		
 		if(persistent) {
@@ -1501,4 +1501,25 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			buckets[i] = null;
 		}
 	}
+	
+	/**
+	 * Free only those data blocks which have finished already, because they were
+	 * not freed when they finished because we hadn't completed FEC encoding and 
+	 * thus needed to keep them until we encoded.
+	 * @param container
+	 */
+	private void freeFinishedDataBlocks(ObjectContainer container) {
+		for(int i=0;i<dataBlocks.length;i++) {
+			if(dataFinished[i] && dataBlocks[i] != null) {
+				if(logMINOR) Logger.minor(this, "Freeing data block "+i+" delayed for encode");
+				if(persistent) container.activate(dataBlocks[i], 1);
+				dataBlocks[i].free();
+				if(persistent)
+					dataBlocks[i].removeFrom(container);
+				dataBlocks[i] = null;
+			}
+		}
+	}
+
+
 }
