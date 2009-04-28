@@ -159,8 +159,8 @@ public class MessageCore {
 			((PeerNode)m.getSource()).addToLocalNodeReceivedMessagesFromStatistic(m);
 		}
 		boolean matched = false;
-		if (!(m.getSpec().equals(DMT.packetTransmit))) {
-			if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
+		if (logMINOR && !(m.getSpec().equals(DMT.packetTransmit))) {
+			Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
 					+ m.getSource() + " : " + m);
 		}
 		MessageFilter match = null;
@@ -250,11 +250,12 @@ public class MessageCore {
 			}
 		}
 		long tEnd = System.currentTimeMillis();
-		if(tEnd - tStart > 50) {
-			if(tEnd - tStart > 3000)
-				Logger.error(this, "checkFilters took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+		long dT = tEnd - tStart;
+		if(dT > 50) {
+			if(dT > 3000)
+				Logger.error(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
 			else
-				if(logMINOR) Logger.minor(this, "checkFilters took "+(tEnd-tStart)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
+				if(logMINOR) Logger.minor(this, "checkFilters took "+(dT)+"ms with unclaimedFIFOSize of "+_unclaimed.size()+" for matched: "+matched);
 		}
 	}
 	
