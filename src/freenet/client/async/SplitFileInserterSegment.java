@@ -1295,7 +1295,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				// Ignore keyNum, key, since we're only sending one block.
 				try {
 					BlockItem block = (BlockItem) req.token;
-					if(logMINOR) Logger.minor(this, "Starting request: "+SplitFileInserterSegment.this+" block number "+block.blockNum);
+					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: "+SplitFileInserterSegment.this+" block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
 						b = encodeBucket(block.copyBucket);
@@ -1338,10 +1338,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					core.realPut(b, req.cacheLocalRequests);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
-					if(logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
+					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
 					return true;
 				}
-				if(logMINOR) Logger.minor(this, "Request succeeded: "+SplitFileInserterSegment.this);
+				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded: "+SplitFileInserterSegment.this);
 				req.onInsertSuccess(context);
 				return true;
 			}

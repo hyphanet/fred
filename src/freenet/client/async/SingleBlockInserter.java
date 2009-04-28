@@ -469,7 +469,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				// Ignore keyNum, key, since we're only sending one block.
 				ClientKeyBlock b;
 				ClientKey key = null;
-				if(logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
+				if(SingleBlockInserter.logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
 				BlockItem block = (BlockItem) req.token;
 				try {
 					try {
@@ -521,7 +521,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 							byte[] data = collided.memoryDecode(true);
 							byte[] inserting = BucketTools.toByteArray(block.copyBucket);
 							if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
-								if(logMINOR) Logger.minor(this, "Collided with identical data: "+SingleBlockInserter.this);
+								if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data: "+SingleBlockInserter.this);
 								req.onInsertSuccess(context);
 								return true;
 							}
@@ -534,7 +534,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 						}
 					}
 					req.onFailure(e, context);
-					if(logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
+					if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
 					return true;
 				} finally {
 					block.copyBucket.free();
