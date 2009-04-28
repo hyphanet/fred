@@ -1542,7 +1542,4 @@ public class DMT {
 		
 		return msg;
 	}
-	
-	public static void init() { }
-
 }

@@ -38,10 +38,6 @@ public class MessageType {
 	private final HashMap<String, Class<?>> _linkedListTypes = new HashMap<String, Class<?>>();
 	private final boolean internalOnly;
 	private final short priority;
-	
-	static {
-		DMT.init();
-	}
 
 	public MessageType(String name, short priority) {
 	    this(name, priority, false);
