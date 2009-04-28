@@ -34,7 +34,10 @@ class FailureTableEntry implements TimedOutNodesList {
 	// have the terminal time for the request.
 	/** WeakReference's to PeerNode's we have requested it from */
 	WeakReference<PeerNode>[] requestedNodes;
-	/** Their locations when we requested it */
+	/** Their locations when we requested it. This may be needed in the future to
+	 * determine whether to let a request through that we would otherwise have
+	 * failed with RecentlyFailed, because the node we would route it to is closer
+	 * to the target than any we've routed to in the past. */
 	double[] requestedLocs;
 	long[] requestedBootIDs;
 	long[] requestedTimes;
