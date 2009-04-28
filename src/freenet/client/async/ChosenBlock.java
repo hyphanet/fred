@@ -28,6 +28,7 @@ public abstract class ChosenBlock {
 	
 	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean cacheLocalRequests, boolean ignoreStore, RequestScheduler sched) {
 		this.token = token;
+		if(token == null) throw new NullPointerException();
 		this.key = key;
 		this.ckey = ckey;
 		this.localRequestOnly = localRequestOnly;
