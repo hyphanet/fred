@@ -21,6 +21,7 @@ import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.LRUHashtable;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.io.NullBucket;
 
@@ -32,6 +33,18 @@ import freenet.support.io.NullBucket;
  */
 public class USKManager implements RequestClient {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+	
 	/** Latest version successfully fetched by blanked-edition-number USK */
 	final HashMap<USK, Long> latestKnownGoodByClearUSK;
 	
@@ -224,7 +237,7 @@ public class USKManager implements RequestClient {
 					if(toCancel == null) toCancel = new Vector<USKFetcher>(2);
 					toCancel.add(fetcher);
 				} else {
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Allowing temporary background fetcher to continue as it has subscribers... "+fetcher);
 					// It will burn itself out anyway as it's a temp fetcher, so no big harm here.
 					fetcher.killOnLoseSubscribers();
@@ -241,7 +254,6 @@ public class USKManager implements RequestClient {
 	}
 	
 	void updateKnownGood(final USK origUSK, final long number, final ClientContext context) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
 		final USKCallback[] callbacks;
@@ -282,7 +294,6 @@ public class USKManager implements RequestClient {
 	}
 	
 	void updateSlot(final USK origUSK, final long number, final ClientContext context) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
 		final USKCallback[] callbacks;
@@ -317,7 +328,7 @@ public class USKManager implements RequestClient {
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
 	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
+		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
 		if(client.persistent()) throw new UnsupportedOperationException("USKManager subscriptions cannot be persistent");
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
