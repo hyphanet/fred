@@ -610,14 +610,14 @@ public class FailureTable implements OOMHook {
 				entriesByKey.valuesToArray(entries);
 			}
 			for(int i=0;i<entries.length;i++) {
-				synchronized(entries[i]) {
 				if(entries[i].cleanup()) {
 					synchronized(FailureTable.this) {
+						synchronized(entries[i]) {
 						if(entries[i].isEmpty()) {
 							entriesByKey.removeKey(entries[i].key);
 						}
+						}
 					}
-				}
 				}
 			}
 			long endTime = System.currentTimeMillis();
