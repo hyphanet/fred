@@ -16,20 +16,13 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
 
-/*
- * FIXME:
- * Either we need this to have its own decrementHTL probabilities etc, and have a separate
- * non-resetting-HTL probe request type, OR we need to just rename this and delete the 
- * resetting-HTL logic.
- */
-
 /**
  * Probe request sender.
  * Uses the resetting-HTL algorithm used by Freenet 0.7 for a long while invented by me and
  * ian.
  * @author toad
  */
-public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter {
+public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
@@ -63,7 +56,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
      * @param key The key to request. Its public key should have been looked up
      * already; RequestSender will not look it up.
      */
-    public ResettingHTLProbeRequestSender(double target, short htl, long uid, Node n, double nearestLoc, boolean resetNearestLoc, 
+    public ProbeRequestSender(double target, short htl, long uid, Node n, double nearestLoc, boolean resetNearestLoc, 
             PeerNode source, double best) {
         this.htl = htl;
         this.uid = uid;

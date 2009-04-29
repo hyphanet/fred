@@ -10,17 +10,15 @@ import freenet.support.ShortBuffer;
 
 /**
  * Handler for probe requests.
- * Uses the resetting-HTL algorithm used by Freenet 0.7 for a long while invented by me and
- * ian.
  * @author toad
  */
-public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequestSender.Listener {
+public class ProbeRequestHandler implements ProbeRequestSender.Listener {
 
 	final PeerNode source;
 	final long uid;
-	final ResettingHTLProbeRequestSender sender;
+	final ProbeRequestSender sender;
 	
-	ResettingHTLProbeRequestHandler(PeerNode source, long uid, ResettingHTLProbeRequestSender sender) {
+	ProbeRequestHandler(PeerNode source, long uid, ProbeRequestSender sender) {
 		this.source = source;
 		this.uid = uid;
 		this.sender = sender;
@@ -31,13 +29,12 @@ public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequest
 		double nearestLoc = m.getDouble(DMT.NEAREST_LOCATION);
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		short htl = m.getShort(DMT.HTL);
-		if(htl > n.maxHTL()) htl = n.maxHTL();
 		boolean resetNearestLoc = false;
-		ResettingHTLProbeRequestSender sender =
-			new ResettingHTLProbeRequestSender(target, htl, uid, n, nearestLoc, resetNearestLoc,
+		ProbeRequestSender sender =
+			new ProbeRequestSender(target, htl, uid, n, nearestLoc, resetNearestLoc,
 					source, best);
-		ResettingHTLProbeRequestHandler handler = 
-			new ResettingHTLProbeRequestHandler(source, uid, sender);
+		ProbeRequestHandler handler = 
+			new ProbeRequestHandler(source, uid, sender);
 		sender.addListener(handler);
 		PeerNode[] peers = n.peers.connectedPeers;
 		Message accepted = DMT.createFNPAccepted(uid);

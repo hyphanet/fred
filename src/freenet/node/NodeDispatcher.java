@@ -498,7 +498,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		ResettingHTLProbeRequestHandler.start(m, source, node, target);
+		ProbeRequestHandler.start(m, source, node, target);
 		return true;
 	}
 
@@ -803,8 +803,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	public void startProbe(final double target, final ProbeCallback cb) {
 		final long uid = node.random.nextLong();
 		
-			ResettingHTLProbeRequestSender rs = new ResettingHTLProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), true, null, 2.0);
-			rs.addListener(new ResettingHTLProbeRequestSender.Listener() {
+			ProbeRequestSender rs = new ProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), true, null, 2.0);
+			rs.addListener(new ProbeRequestSender.Listener() {
 
 				public void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
 					cb.onCompleted("completed", target, best, nearest, uid, counter, uniqueCounter, linearCounter);
