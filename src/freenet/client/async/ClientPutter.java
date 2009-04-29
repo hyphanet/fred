@@ -23,7 +23,7 @@ import freenet.support.api.Bucket;
 
 public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
 
-	final ClientPutCallback client;
+	final ClientCallback client;
 	final Bucket data;
 	final FreenetURI targetURI;
 	final ClientMetadata cm;
@@ -56,7 +56,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * is an error reading this in, we will restart from scratch.
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
-	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
+	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly, 
 			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
 		super(priorityClass, clientContext);

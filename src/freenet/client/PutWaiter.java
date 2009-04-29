@@ -3,16 +3,25 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientPutCallback;
+import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
-public class PutWaiter implements ClientPutCallback {
+public class PutWaiter implements ClientCallback {
 
 	private boolean finished;
 	private boolean succeeded;
 	private FreenetURI uri;
 	private InsertException error;
+	
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+		// Ignore
+	}
+
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+		// Ignore
+	}
 
 	public synchronized void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		succeeded = true;

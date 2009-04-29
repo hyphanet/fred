@@ -25,10 +25,8 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobFormatException;
-import freenet.client.async.ClientBaseCallback;
-import freenet.client.async.ClientGetCallback;
+import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.SimpleBlockSet;
 import freenet.io.comm.AsyncMessageCallback;
@@ -947,7 +945,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final FileBucket cleanedBlob = b;
 		final File cleanedBlobFile = f;
 
-		ClientGetCallback myCallback = new ClientGetCallback() {
+		ClientCallback myCallback = new ClientCallback() {
 
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
@@ -974,6 +972,19 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					}
 				}
 			}
+
+			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
+			}
+
+			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
+				// Irrelevant
+			}
+
+			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
+			}
+
 			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
@@ -983,6 +994,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
 				temp.delete();
 				insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
+			}
+
+			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
 			}
 		};
 
@@ -1000,8 +1015,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	protected void insertBlob(final File blob, final String type) {
-		ClientPutCallback callback = new ClientPutCallback() {
+		ClientCallback callback = new ClientCallback() {
 
+			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+				// Ignore, can't happen
+			}
+			
 			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 				Logger.error(this, "Failed to insert "+type+" binary blob: " + e, e);
 			}
@@ -1016,6 +1035,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			
 			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
+			}
+			
+			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+				// Ignore, can't happen
 			}
 			
 			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
@@ -1420,7 +1443,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final FileBucket cleanedBlob = b;
 		final File cleanedBlobFile = f;
 
-		ClientGetCallback myCallback = new ClientGetCallback() {
+		ClientCallback myCallback = new ClientCallback() {
 
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
@@ -1437,6 +1460,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to fetch main jar " + version + " from blob from " + source.userToString());
 					System.err.println("Failed to fetch main jar " + version + " from blob from " + source.userToString());
 				}
+			}
+
+			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
+			}
+
+			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
+				// Irrelevant
+			}
+
+			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
 			}
 
 			public void onMajorProgress(ObjectContainer container) {
@@ -1458,6 +1493,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
 				insertBlob(mainUpdater.getBlobFile(version), "main jar");
+			}
+
+			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
 			}
 		};
 
@@ -1525,7 +1564,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final FileBucket cleanedBlob = b;
 		final File cleanedBlobFile = f;
 
-		ClientGetCallback myCallback = new ClientGetCallback() {
+		ClientCallback myCallback = new ClientCallback() {
 
 			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
@@ -1542,6 +1581,18 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to fetch ext jar " + version + " from blob from " + source.userToString());
 					System.err.println("Failed to fetch ext jar " + version + " from blob from " + source.userToString());
 				}
+			}
+
+			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
+			}
+
+			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
+				// Irrelevant
+			}
+
+			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
 			}
 
 			public void onMajorProgress(ObjectContainer container) {
@@ -1563,6 +1614,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				extUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
 				insertBlob(extUpdater.getBlobFile(version), "ext jar");
+			}
+
+			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
+				// Ignore, not possible
 			}
 		};
 

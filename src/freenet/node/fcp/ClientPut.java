@@ -14,11 +14,14 @@ import java.util.Arrays;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -490,7 +493,11 @@ public class ClientPut extends ClientPutBase {
 			return false;
 		}
 	}
-	
+
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
+
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
+
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}

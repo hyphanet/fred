@@ -6,10 +6,8 @@ package freenet.client;
 import java.util.HashMap;
 import java.util.Set;
 
-import freenet.client.async.ClientBaseCallback;
-import freenet.client.async.ClientGetCallback;
+import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
@@ -46,7 +44,7 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
 	 */
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
+	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientCallback callback, FetchContext fctx) throws FetchException;
 	
 	/**
 	 * Blocking insert.
@@ -58,7 +56,7 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Non-blocking insert.
 	 */
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException;
+	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException;
 	
 	/**
 	 * Blocking insert of a redirect.

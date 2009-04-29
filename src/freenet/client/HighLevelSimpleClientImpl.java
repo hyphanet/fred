@@ -9,9 +9,8 @@ import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ClientGetCallback;
+import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.client.events.ClientEventListener;
@@ -129,7 +128,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return fw.waitForCompletion();
 	}
 	
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
+	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientCallback callback, FetchContext fctx) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, uri, fctx, priorityClass, clientContext, null, null);
 		core.clientContext.start(get);
@@ -143,16 +142,16 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata) throws InsertException {
 		InsertContext context = getInsertContext(true);
 		PutWaiter pw = new PutWaiter();
-		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
-				context, priorityClass,
+		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata, 
+				context, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
 		core.clientContext.start(put, false);
 		return pw.waitForCompletion();
 	}
 	
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
-		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
-				ctx, priorityClass,
+	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
+		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata, 
+				ctx, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
 		core.clientContext.start(put, false);
 		return put;
@@ -221,7 +220,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return new FreenetURI[] { key.getInsertURI(), key.getURI() };
 	}
 
-	private final ClientGetCallback nullCallback = new NullClientCallback();
+	private final ClientCallback nullCallback = new NullClientCallback();
 	
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
 		prefetch(uri, timeout, maxSize, allowedTypes, RequestStarter.PREFETCH_PRIORITY_CLASS);
