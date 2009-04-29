@@ -621,7 +621,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
-			if((data == null && fe == null) || fr.hasWaited()) {
+			if(data == null && fe == null) {
 			FetchResult result = fetch(key, maxSize, new RequestClient() {
 				public boolean persistent() {
 					return false;
