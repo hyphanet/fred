@@ -33,9 +33,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	final boolean getCHKOnly;
 
 	// Verbosity bitmasks
-	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
-	private int VERBOSITY_PUT_FETCHABLE = 256;
-	private int VERBOSITY_COMPRESSION_START_END = 512;
+	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
+	private static final int VERBOSITY_PUT_FETCHABLE = 256;
+	private static final int VERBOSITY_COMPRESSION_START_END = 512;
 
 	// Stuff waiting for reconnection
 	/** Has the request succeeded? */

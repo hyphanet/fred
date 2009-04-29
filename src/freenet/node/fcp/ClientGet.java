@@ -54,8 +54,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final boolean binaryBlob;
 
 	// Verbosity bitmasks
-	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
-	private int VERBOSITY_SENT_TO_NETWORK = 2;
+	private static final int VERBOSITY_SPLITFILE_PROGRESS = 1;
+	private static final int VERBOSITY_SENT_TO_NETWORK = 2;
 
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
