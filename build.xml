@@ -18,7 +18,6 @@
 	<property name="lib"	location="lib"/>
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="javadoc" location="javadoc"/>
-	<property name="svn.revision" value="@custom@"/>
 	<property name="minExtVersion" value="-1"/>
 	<property name="recommendedExtVersion" value="-1"/>
 	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
@@ -31,6 +30,22 @@
 	<assertions>
 		<enable/>
 	</assertions>
+
+	<exec executable="git"
+		failifexecutionfails="false"
+		errorProperty="git.errror"
+		outputproperty="git.describe"
+		resultproperty="git.result">
+		<arg value="describe" />
+		<arg value="--always" />
+		<arg value="--abbrev=4" />
+	</exec>
+	<condition property="git.revision" value="${git.describe}" else="@unknown@">
+		<and>
+			<equals arg1="${git.result}" arg2="0" />
+			<isset property="git.describe" />
+		</and>
+	</condition>
 
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
@@ -72,7 +87,7 @@
 		<!-- Update the Version file -->
 
 		<replace file="${src}/freenet/node/Version.java">
-			<replacefilter token="@custom@" value="${svn.revision}"/>
+			<replacefilter token="@custom@" value="${git.revision}"/>
 		</replace>
 
 		<!-- Create the build directory structure used by compile -->
@@ -101,6 +116,11 @@
 				<include name="freenet.l10n.*.properties"/>
 			</fileset>
 		</copy>
+
+		<!-- Reset the Version file -->
+		<replace file="${src}/freenet/node/Version.java">
+			<replacefilter token="${git.revision}" value="@custom@"/>
+		</replace>
 	</target>
 
 
@@ -120,7 +140,7 @@
 					<attribute name="Specification-Version" value="0.7pre"/>
 					<attribute name="Specification-Vendor" value="freenetproject.org"/>
 					<attribute name="Implementation-Title" value="Freenet"/>
-					<attribute name="Implementation-Version" value="0.7pre ${TODAY} ${svn.revision}"/> 
+					<attribute name="Implementation-Version" value="0.7pre ${TODAY} ${git.revision}"/> 
 					<attribute name="Implementation-Vendor" value="Freenetproject.org"/>
 				</section>
 			</manifest>
