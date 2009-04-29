@@ -586,8 +586,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + L10n.getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0) + '%');
 					} else {
 						String text = nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0)+ '%';
-						if(!fr.finalizedBlocks)
-							text = "" + fr.fetchedBlocks + " ("+text+"??)";
+						text = "" + fr.fetchedBlocks + " ("+text+"??)";
 						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString("QueueToadlet.progressbarNotAccurate") }, text);
 					}
 
