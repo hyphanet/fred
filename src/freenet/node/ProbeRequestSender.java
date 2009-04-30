@@ -56,7 +56,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
      * @param key The key to request. Its public key should have been looked up
      * already; RequestSender will not look it up.
      */
-    public ProbeRequestSender(double target, short htl, long uid, Node n, double nearestLoc, boolean resetNearestLoc, 
+    public ProbeRequestSender(double target, short htl, long uid, Node n, double nearestLoc, 
             PeerNode source, double best) {
         this.htl = htl;
         this.uid = uid;

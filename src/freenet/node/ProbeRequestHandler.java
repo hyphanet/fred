@@ -29,9 +29,8 @@ public class ProbeRequestHandler implements ProbeRequestSender.Listener {
 		double nearestLoc = m.getDouble(DMT.NEAREST_LOCATION);
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		short htl = m.getShort(DMT.HTL);
-		boolean resetNearestLoc = false;
 		ProbeRequestSender sender =
-			new ProbeRequestSender(target, htl, uid, n, nearestLoc, resetNearestLoc,
+			new ProbeRequestSender(target, htl, uid, n, nearestLoc, 
 					source, best);
 		ProbeRequestHandler handler = 
 			new ProbeRequestHandler(source, uid, sender);

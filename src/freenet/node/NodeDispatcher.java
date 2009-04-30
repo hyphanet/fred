@@ -803,7 +803,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	public void startProbe(final double target, final ProbeCallback cb) {
 		final long uid = node.random.nextLong();
 		
-			ProbeRequestSender rs = new ProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), true, null, 2.0);
+			ProbeRequestSender rs = new ProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), null, 2.0);
 			rs.addListener(new ProbeRequestSender.Listener() {
 
 				public void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
