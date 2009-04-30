@@ -88,6 +88,9 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 	/** Last time the fetch was accessed from the fproxy end */
 	private long lastTouched;
 	final FProxyFetchTracker tracker;
+	/** Show even non-fatal failures for 5 seconds. Necessary for javascript to work,
+	 * because it fetches the page and then reloads it if it isn't a progress update. */
+	private long timeFailed;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
 		this.tracker = tracker;
@@ -186,6 +189,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		synchronized(this) {
 			this.failed = e;
 			this.finished = true;
+			this.timeFailed = System.currentTimeMillis();
 		}
 		wakeWaiters(true);
 	}
@@ -295,6 +299,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 			hasNotifiedFailure = true;
 			return true;
 		}
+		if(failed != null && System.currentTimeMillis() - timeFailed < 5000)
+			return true;
 		return false;
 	}
 	
