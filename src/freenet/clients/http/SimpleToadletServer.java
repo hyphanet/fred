@@ -352,6 +352,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					}
 		});
 		fproxyHasCompletedWizard = fproxyConfig.getBoolean("hasCompletedWizard");
+		fProxyJavascriptEnabled = fproxyConfig.getBoolean("javascriptEnabled");
 		
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
