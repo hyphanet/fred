@@ -48,7 +48,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		NAME_SELECTION,
 		BANDWIDTH,
 		DATASTORE_SIZE,
-		MEMORY,
 		CONGRATZ,
 		FINAL;
 	}
@@ -231,7 +230,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else if(currentStep == WIZARD_STEP.DATASTORE_SIZE) {
 			// Attempt to skip one step if possible
 			if(canAutoconfigureDatastoreSize()) {
-				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
+				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
 				return;
 			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
@@ -270,36 +269,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == WIZARD_STEP.MEMORY) {
-			// FIXME: Get rid of it when the db4o branch is merged or auto-detect it (be careful of classpath's bug @see <freenet.Node>)
-			// Attempt to skip one step if possible
-			if(!WrapperConfig.canChangeProperties()) {
-				super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
-				return;
-			}
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), false, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			
-			HTMLNode memoryInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode memoryInfoboxHeader = memoryInfobox.addChild("div", "class", "infobox-header");
-			HTMLNode memoryInfoboxContent = memoryInfobox.addChild("div", "class", "infobox-content");
-			
-			memoryInfoboxHeader.addChild("#", l10n("memoryLimit"));
-			memoryInfoboxContent.addChild("#", l10n("memoryLimitLong"));
-			
-			HTMLNode bandwidthForm = ctx.addFormChild(memoryInfoboxContent, ".", "memoryForm");
-			HTMLNode result = bandwidthForm.addChild("select", "name", "memory");
-			result.addChild("option", "value", "64", l10n("memory.64M"));
-			result.addChild("option", "value", "128", l10n("memory.128M"));
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "192", "selected" }, l10n("memory.192M"));
-			result.addChild("option", "value", "256", l10n("memory.256M"));
-			result.addChild("option", "value", "512", l10n("memory.512M"));
-
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "memoryF", L10n.getString("FirstTimeWizardToadlet.continue")});
-			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-
 		}else if(currentStep == WIZARD_STEP.CONGRATZ) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -485,7 +454,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		} else if(request.isPartSet("dsF")) {
 			_setDatastoreSize(request.getPartAsString("ds", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
 			return;
 		} else if(request.isPartSet("memoryF")) {
 			String selectedMemorySize = request.getPartAsString("memoryF", 6);
