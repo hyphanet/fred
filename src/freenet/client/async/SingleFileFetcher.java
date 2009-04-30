@@ -508,7 +508,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							if(persistent) {
 								container.activate(SingleFileFetcher.this, 1);
-								container.activate(parent, 1);
 							}
 							if(logMINOR) Logger.minor(this, "Returning data");
 							final Metadata newMetadata;
@@ -532,7 +531,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							}
 							if(persistent) {
 								container.deactivate(SingleFileFetcher.this, 1);
-								container.deactivate(parent, 1);
 							}
 						}
 						public void notInArchive(ObjectContainer container, ClientContext context) {
