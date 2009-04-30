@@ -559,7 +559,7 @@ public class FCPServer implements Runnable {
 			} else
 				throw new IOException("File empty"); // If it's empty, try the temp file.
 		} catch (IOException e) {
-			Logger.error(this, "IOE : " + e.getMessage(), e);
+			Logger.normal(this, "IOE : " + e.getMessage(), e);
 			File file = new File(persistentDownloadsTempFile+".gz");
 			Logger.normal(this, "Let's try to load "+file+" then.");
 			Closer.close(bis);
