@@ -5,12 +5,10 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
-import freenet.keys.FreenetURI;
 
-public class FetchWaiter implements ClientCallback {
+public class FetchWaiter implements ClientGetCallback {
 
 	private FetchResult result;
 	private FetchException error;
@@ -30,18 +28,6 @@ public class FetchWaiter implements ClientCallback {
 		notifyAll();
 	}
 
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		throw new UnsupportedOperationException();
-	}
-
 	public synchronized FetchResult waitForCompletion() throws FetchException {
 		while(!finished) {
 			try {
@@ -56,10 +42,6 @@ public class FetchWaiter implements ClientCallback {
 	}
 
 	public void onMajorProgress(ObjectContainer container) {
-		// Ignore
-	}
-
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore
 	}
 }

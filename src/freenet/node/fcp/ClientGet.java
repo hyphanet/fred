@@ -12,11 +12,9 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.InsertException;
-import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
@@ -40,7 +38,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
  * A simple client fetch. This can of course fetch arbitrarily large
  * files, including splitfiles, redirects, etc.
  */
-public class ClientGet extends ClientRequest implements ClientCallback, ClientEventListener {
+public class ClientGet extends ClientRequest implements ClientGetCallback, ClientEventListener {
 
 	/** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
 	 * can safely delete it in requestWasRemoved(). */
@@ -599,18 +597,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.store(this);
 	}
 
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		// Ignore
-	}
-
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		// Ignore
-	}
-
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		// Ignore
-	}
-
 	@Override
 	public void requestWasRemoved(ObjectContainer container, ClientContext context) {
 		// if request is still running, send a GetFailed with code=cancelled
@@ -919,10 +905,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				}
 			} else return returnBucket;
 		}
-	}
-
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
-		// Ignore, we don't insert
 	}
 
 	@Override

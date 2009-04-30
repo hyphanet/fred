@@ -45,7 +45,7 @@ public class ClientGetter extends BaseClientGetter {
 		});
 	}
 	
-	final ClientCallback clientCallback;
+	final ClientGetCallback clientCallback;
 	FreenetURI uri;
 	final FetchContext ctx;
 	final ArchiveContext actx;
@@ -63,6 +63,12 @@ public class ClientGetter extends BaseClientGetter {
 	private long expectedSize;
 	private boolean finalizedMetadata;
 	
+	@Deprecated
+	public ClientGetter(ClientCallback client,
+			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
+		this((ClientGetCallback) client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobBucket);
+	}
+
 	/**
 	 * Fetch a key.
 	 * @param client
@@ -75,7 +81,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
 	 */
-	public ClientGetter(ClientCallback client, 
+	public ClientGetter(ClientGetCallback client,
 			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
@@ -481,7 +487,7 @@ public class ClientGetter extends BaseClientGetter {
 		return expectedSize;
 	}
 
-	public ClientCallback getClientCallback() {
+	public ClientGetCallback getClientCallback() {
 		return clientCallback;
 	}
 	

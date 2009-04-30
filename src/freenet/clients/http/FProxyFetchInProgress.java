@@ -7,11 +7,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertException;
-import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
@@ -30,7 +27,7 @@ import freenet.support.api.Bucket;
  * 
  * LOCKING: The lock on this object is always taken last.
  */
-public class FProxyFetchInProgress implements ClientEventListener, ClientCallback {
+public class FProxyFetchInProgress implements ClientEventListener, ClientGetCallback {
 	
 	private static volatile boolean logMINOR;
 	
@@ -194,18 +191,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 		wakeWaiters(true);
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		// Impossible
-	}
-
-	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
-		// Impossible
-	}
-
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		// Impossible
-	}
-
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
@@ -217,10 +202,6 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientCallbac
 			this.finished = true;
 		}
 		wakeWaiters(true);
-	}
-
-	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		// Ignore
 	}
 
 	public boolean hasData() {

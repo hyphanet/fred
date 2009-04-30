@@ -9,12 +9,9 @@ import java.net.UnknownHostException;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ClientMetadata;
-import freenet.client.FetchException;
-import freenet.client.FetchResult;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
-import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -25,7 +22,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
 
-public class NodeARKInserter implements ClientCallback, RequestClient {
+public class NodeARKInserter implements ClientPutCallback, RequestClient {
 
 	/**
 	 * 
@@ -187,15 +184,7 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 			onFailure(e, inserter, null);	
 		}
 	}
-
-	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		// Impossible
-	}
-
-	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		// Impossible
-	}
-
+	
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		FreenetURI uri = state.getURI();
 		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert succeeded: " + uri);

@@ -23,7 +23,7 @@ import freenet.support.api.Bucket;
 
 public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
 
-	final ClientCallback client;
+	final ClientPutCallback client;
 	final Bucket data;
 	final FreenetURI targetURI;
 	final ClientMetadata cm;
@@ -39,6 +39,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
 	private SimpleFieldSet oldProgress;
+
+	@Deprecated
+	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
+			short priorityClass, boolean getCHKOnly, 
+			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
+		this((ClientPutCallback) client, data, targetURI, cm, ctx, priorityClass, getCHKOnly, isMetadata, clientContext, stored, targetFilename, binaryBlob);
+	}
 
 	/**
 	 * @param client The object to call back when we complete, or don't.
@@ -56,7 +63,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * is an error reading this in, we will restart from scratch.
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
-	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
+	public ClientPutter(ClientPutCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			short priorityClass, boolean getCHKOnly, 
 			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
 		super(priorityClass, clientContext);
