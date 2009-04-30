@@ -38,7 +38,7 @@
 		resultproperty="git.result">
 		<arg value="describe" />
 		<arg value="--always" />
-		<arg value="--abbrev=40" />
+		<arg value="--abbrev=4" />
 	</exec>
 	<condition property="git.revision" value="${git.describe}" else="@unknown@">
 		<and>
