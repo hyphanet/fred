@@ -23,6 +23,8 @@ public interface Bucket {
     /**
      * Returns an InputStream that reads data from this Bucket. If there is
      * no data in this bucket, null is returned.
+     * 
+     * You have to call Closer.close(inputStream) on the obtained stream to prevent resource leakage.
      */
     public InputStream getInputStream() throws IOException;
 

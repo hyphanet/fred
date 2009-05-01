@@ -53,7 +53,11 @@ public class FetchResult {
 		return BucketTools.toByteArray(data);
 	}
 	
-	/** Get the result as a Bucket */
+	/**
+	 * Get the result as a Bucket.
+	 * 
+	 * You have to call Closer.close(bucket) to free() the obtained Bucket to prevent resource leakage!
+	 */
 	public Bucket asBucket() {
 		return data;
 	}
