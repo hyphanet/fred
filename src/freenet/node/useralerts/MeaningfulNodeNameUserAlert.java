@@ -13,7 +13,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 	private final Node node;
 
 	public MeaningfulNodeNameUserAlert(Node n) {
-		super(true, null, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), false, null);
+		super(true, null, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), true, null);
 		this.node = n;
 	}
 	
