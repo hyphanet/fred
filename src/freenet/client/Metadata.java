@@ -38,13 +38,7 @@ public class Metadata implements Cloneable {
     private static volatile boolean logMINOR;
 
     static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-
-            @Override
-            public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
-            }
-        });
+		Logger.registerClass(Metadata.class);
     }
 
 	static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;

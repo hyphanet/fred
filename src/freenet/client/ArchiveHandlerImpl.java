@@ -24,13 +24,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	private static volatile boolean logMINOR;
 	
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			}
-		});
+		Logger.registerClass(ArchiveHandlerImpl.class);
 	}
 	
 	private final FreenetURI key;
