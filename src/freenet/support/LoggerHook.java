@@ -244,6 +244,23 @@ public abstract class LoggerHook extends Logger {
 		// Call the new callback to avoid code duplication
 		ltc.shouldUpdate();
 	}
+	
+	@Override
+	public synchronized final void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc) {
+		LogThresholdCallback[] newLTC = new LogThresholdCallback[thresholdsCallbacks.length-1];
+		int i = 0;
+		boolean found = false;
+		
+		for (LogThresholdCallback l : thresholdsCallbacks) {
+			if (l == ltc)
+				found = true;
+			else
+				newLTC[i++] = l;
+		}
+		
+		if (found)
+			thresholdsCallbacks = newLTC;
+	}
 
 	private synchronized final void notifyLogThresholdCallbacks() {
 		for(LogThresholdCallback ltc : thresholdsCallbacks)

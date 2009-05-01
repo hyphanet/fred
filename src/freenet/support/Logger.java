@@ -393,6 +393,15 @@ public abstract class Logger {
 	public abstract void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc);
 
 	/**
+	 * Register a LogThresholdCallback; this callback will be called after registration
+	 */
+	public static void unregisterLogThresholdCallback(LogThresholdCallback ltc) {
+		logger.instanceUnregisterLogThresholdCallback(ltc);
+	}
+	
+	public abstract void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc);
+	
+	/**
 	 * Report a fatal error and exit.
 	 * @param cause the object or class involved
 	 * @param retcode the return code
