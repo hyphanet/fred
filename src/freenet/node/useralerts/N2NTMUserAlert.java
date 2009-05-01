@@ -42,7 +42,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		return 
 			l10n("header", new String[] { "from", "composed", "sent", "received" },
 					new String[] { sourceNodename, DateFormat.getInstance().format(new Date(composedTime)), 
-					DateFormat.getInstance().format(new Date(sentTime)), DateFormat.getInstance().format(new Date(receivedTime)) }) + "\n" +
+					DateFormat.getInstance().format(new Date(sentTime)), DateFormat.getInstance().format(new Date(receivedTime)) }) + ": " +
 			messageText;
 	}
 
