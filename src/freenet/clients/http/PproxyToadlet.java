@@ -349,9 +349,11 @@ public class PproxyToadlet extends Toadlet {
 					plugin = path.substring(0, to);
 				}
 
+                // Table to store headers in
+                MultiValueTable<String, String> headers = null;
 				// Plugin may need to know where it was accessed from, so it can e.g. produce relative URLs.
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
-				writeHTMLReply(ctx, 200, "OK", pm.handleHTTPGet(plugin, request));				
+				writeHTMLReply(ctx, 200, "OK", headers, pm.handleHTTPGet(plugin, request, headers));				
 			}
 
 			//FetchResult result = fetch(key);
