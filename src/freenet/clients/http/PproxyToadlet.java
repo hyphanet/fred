@@ -88,7 +88,9 @@ public class PproxyToadlet extends Toadlet {
 					plugin = path.substring(0, to);
 				}
 
-				writeHTMLReply(ctx, 200, "OK", pm.handleHTTPPost(plugin, request));
+				// Plugin may need to know where it was accessed from, so it can e.g. produce relative URLs.
+				//writeHTMLReply(ctx, 200, "OK", pm.handleHTTPPost(plugin, request));
+				writeHTMLReply(ctx, 200, "OK", headers, pm.handleHTTPPost(plugin, request, headers));	
 			}
 			catch (RedirectPluginHTTPException e) {
 				writeTemporaryRedirect(ctx, e.message, e.newLocation);
@@ -350,7 +352,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 
                 // Table to store headers in
-                MultiValueTable<String, String> headers = null;
+                MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				// Plugin may need to know where it was accessed from, so it can e.g. produce relative URLs.
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
 				writeHTMLReply(ctx, 200, "OK", headers, pm.handleHTTPGet(plugin, request, headers));				

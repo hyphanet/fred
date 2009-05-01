@@ -622,8 +622,13 @@ public class PluginManager {
 
 		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
+    
+    // Have changed PProxyToadlet to use headered handleHTTPPost below, in case anything else calls this:
+   	public String handleHTTPPost(String plugin, HTTPRequest request) throws PluginHTTPException {
+        return handleHTTPPost(plugin, request, null);
+    }
 
-	public String handleHTTPPost(String plugin, HTTPRequest request) throws PluginHTTPException {
+	public String handleHTTPPost(String plugin, HTTPRequest request, MultiValueTable<String, String> headers) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized(toadletList) {
 			handler = toadletList.get(plugin);
@@ -635,7 +640,9 @@ public class PluginManager {
 		ClassLoader pluginClassLoader = handler.getClass().getClassLoader();
 		Thread.currentThread().setContextClassLoader(pluginClassLoader);
 		try {
-		if(handler instanceof FredPluginHTTP)
+		if(handler instanceof FredPluginHTTPAdvanced)
+            return ((FredPluginHTTPAdvanced) handler).handleHTTPPost(request, headers);
+        else if(handler instanceof FredPluginHTTP)
 			return ((FredPluginHTTP) handler).handleHTTPPost(request);
 		} finally {
 			Thread.currentThread().setContextClassLoader(oldClassLoader);
