@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.regex.PatternSyntaxException;
 
 import freenet.support.LoggerHook.InvalidThresholdException;
@@ -400,6 +403,46 @@ public abstract class Logger {
 	}
 	
 	public abstract void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc);
+	
+	public static void registerClass(final Class<?> clazz) {
+		LogThresholdCallback ltc = new LogThresholdCallback() {
+			WeakReference<Class<?>> ref = new WeakReference<Class<?>> (clazz);
+
+			public void shouldUpdate() {
+				Class<?> clazz = ref.get();
+				if (clazz == null) {	// class unloaded
+					unregisterLogThresholdCallback(this);
+					return;
+				}
+
+				try {
+					Field logMINOR_Field = clazz.getDeclaredField("logMINOR");
+					if ((logMINOR_Field.getModifiers() & Modifier.STATIC) != 0) {
+						logMINOR_Field.setAccessible(true);
+						logMINOR_Field.set(null, shouldLog(MINOR, clazz));
+					}
+				} catch (SecurityException e) {
+				} catch (NoSuchFieldException e) { 
+				} catch (IllegalArgumentException e) {
+                } catch (IllegalAccessException e) {
+                }
+
+				try {
+					Field logDEBUG_Field = clazz.getDeclaredField("logDEBUG");
+					if ((logDEBUG_Field.getModifiers() & Modifier.STATIC) != 0) {
+						logDEBUG_Field.setAccessible(true);
+						logDEBUG_Field.set(null, shouldLog(DEBUG, clazz));
+					}
+				} catch (SecurityException e) {
+				} catch (NoSuchFieldException e) { 
+				} catch (IllegalArgumentException e) {
+                } catch (IllegalAccessException e) {
+                }
+			}
+		};
+
+		registerLogThresholdCallback(ltc);
+	}
 	
 	/**
 	 * Report a fatal error and exit.
