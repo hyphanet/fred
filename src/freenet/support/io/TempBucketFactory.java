@@ -64,6 +64,8 @@ public class TempBucketFactory implements BucketFactory {
 	/** How many times the maxRAMBucketSize can a RAMBucket be before it gets migrated? */
 	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	
+	final static boolean TRACE_BUCKET_LEAKS = false;
+	
 	public class TempBucket implements Bucket {
 		/** The underlying bucket itself */
 		private Bucket currentBucket;
@@ -81,9 +83,15 @@ public class TempBucketFactory implements BucketFactory {
 		public final long creationTime;
 		private boolean hasBeenFreed = false;
 		
+		private final Throwable tracer;
+		
 		public TempBucket(long now, Bucket cur) {
 			if(cur == null)
 				throw new NullPointerException();
+			if (TRACE_BUCKET_LEAKS)
+				tracer = new Throwable();
+			else
+				tracer = null;
 			this.currentBucket = cur;
 			this.creationTime = now;
 			this.osIndex = 0;
@@ -387,7 +395,8 @@ public class TempBucketFactory implements BucketFactory {
 		@Override
 		protected void finalize() {
 			if (!hasBeenFreed) {
-				Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this);
+				if (TRACE_BUCKET_LEAKS)
+					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
 				free();
 			}
 		}
