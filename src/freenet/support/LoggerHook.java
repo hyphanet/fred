@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.l10n.L10n;
 
@@ -27,7 +28,7 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	public DetailedThreshold[] detailedThresholds = new DetailedThreshold[0];
-	private LogThresholdCallback[] thresholdsCallbacks = new LogThresholdCallback[0];
+	private CopyOnWriteArrayList<LogThresholdCallback> thresholdsCallbacks = new CopyOnWriteArrayList<LogThresholdCallback>();
 
 	/**
 	 * Log a message
@@ -235,34 +236,19 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	@Override
-	public synchronized final void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc) {
-		LogThresholdCallback[] newLTC = new LogThresholdCallback[thresholdsCallbacks.length+1];
-		newLTC[0] = ltc;
-		System.arraycopy(thresholdsCallbacks, 0, newLTC, 1, thresholdsCallbacks.length);
-		thresholdsCallbacks = newLTC;
+	public final void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc) {
+		thresholdsCallbacks.add(ltc);
 
 		// Call the new callback to avoid code duplication
 		ltc.shouldUpdate();
 	}
 	
 	@Override
-	public synchronized final void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc) {
-		LogThresholdCallback[] newLTC = new LogThresholdCallback[thresholdsCallbacks.length-1];
-		int i = 0;
-		boolean found = false;
-		
-		for (LogThresholdCallback l : thresholdsCallbacks) {
-			if (l == ltc)
-				found = true;
-			else
-				newLTC[i++] = l;
-		}
-		
-		if (found)
-			thresholdsCallbacks = newLTC;
+	public final void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc) {
+		thresholdsCallbacks.remove(ltc);
 	}
 
-	private synchronized final void notifyLogThresholdCallbacks() {
+	private final void notifyLogThresholdCallbacks() {
 		for(LogThresholdCallback ltc : thresholdsCallbacks)
 			ltc.shouldUpdate();
 	}
