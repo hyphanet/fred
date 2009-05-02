@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.lang.ref.WeakReference;
+
 import freenet.node.Node;
 import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Logger;
@@ -20,13 +22,13 @@ public class PluginTalker {
 
 	protected int access;
 
-	protected FredPluginFCP plugin;
+	protected WeakReference<FredPluginFCP> pluginRef;
 	protected String pluginName;
 
 	public PluginTalker(FredPluginTalker fpt, Node node2, String pluginname2, String connectionIdentifier) throws PluginNotFoundException {
 		node = node2;
 		pluginName = pluginname2;
-		plugin = findPlugin(pluginname2);
+		pluginRef = findPlugin(pluginname2);
 		access = FredPluginFCP.ACCESS_DIRECT;
 		replysender = new PluginReplySenderDirect(node2, fpt, pluginname2, connectionIdentifier);
 	}
@@ -34,12 +36,12 @@ public class PluginTalker {
 	public PluginTalker(Node node2, FCPConnectionHandler handler, String pluginname2, String connectionIdentifier, boolean access2) throws PluginNotFoundException {
 		node = node2;
 		pluginName = pluginname2;
-		plugin = findPlugin(pluginname2);
+		pluginRef = findPlugin(pluginname2);
 		access = access2 ? FredPluginFCP.ACCESS_FCP_FULL : FredPluginFCP.ACCESS_FCP_RESTRICTED;
 		replysender = new PluginReplySenderFCP(handler, pluginname2, connectionIdentifier);
 	}
 	
-	protected FredPluginFCP findPlugin(String pluginname2) throws PluginNotFoundException {
+	protected WeakReference<FredPluginFCP> findPlugin(String pluginname2) throws PluginNotFoundException {
 
 		Logger.normal(this, "Searching fcp plugin: " + pluginname2);
 		FredPluginFCP plug = node.pluginManager.getFCPPlugin(pluginname2);
@@ -48,7 +50,7 @@ public class PluginTalker {
 			throw new PluginNotFoundException();
 		}
 		Logger.normal(this, "Found fcp plugin: " + pluginname2);
-		return plug;
+		return new WeakReference<FredPluginFCP>(plug);
 
 	}
 
@@ -60,7 +62,11 @@ public class PluginTalker {
 			public void run() {
 
 				try {
-					plugin.handle(replysender, plugparams, data2, access);
+					FredPluginFCP plug = pluginRef.get();
+					if (plug==null) {
+						// throw new PluginNotFoundException(How to get this out to surrounding send(..)?);
+					}
+					plug.handle(replysender, plugparams, data2, access);
 				} catch (ThreadDeath td) {
 					throw td;  // Fatal, thread is stop()'ed
 				} catch (VirtualMachineError vme) {
