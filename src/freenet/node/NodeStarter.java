@@ -332,18 +332,16 @@ public class NodeStarter implements WrapperListener {
 	 * @param port The node port number. Each test node must have a different port
 	 * number.
 	 * @param testName The test name.
-	 * @param doClient Boot up the client layer?
-	 * @param doSwapping Allow swapping?
 	 * @throws NodeInitException If the node cannot start up for some reason, most
 	 * likely a config problem.
 	 */
-	public static Node createTestNode(int port, int opennetPort, String testName, boolean doClient,
-		boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
-		int dropProb, RandomSource random, Executor executor, int threadLimit,
-		long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs,
-		boolean enableULPRs, boolean enablePerNodeFailureTables,
+	public static Node createTestNode(int port, int opennetPort, String testName, boolean disableProbabilisticHTLs,
+		short maxHTL, int dropProb, RandomSource random,
+		Executor executor, int threadLimit, long storeSize, boolean ramStore,
+		boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
-		int outputBandwidthLimit, boolean enableFOAF, boolean connectToSeednodes, String ipAddressOverride) throws NodeInitException {
+		int outputBandwidthLimit, boolean enableFOAF,
+		boolean connectToSeednodes, String ipAddressOverride) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
