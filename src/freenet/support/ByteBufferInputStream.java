@@ -145,7 +145,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 
 	public int readUnsignedByte() throws IOException {
 		try {
-			return buf.get() & Integer.MAX_VALUE;
+			return buf.get() & 0xFF;
 		} catch (BufferUnderflowException e) {
 			EOFException ioe = new EOFException();
 			ioe.initCause(e);
@@ -155,7 +155,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 
 	public int readUnsignedShort() throws IOException {
 		try {
-			return buf.getShort() & Integer.MAX_VALUE;
+			return buf.getShort() & 0xFFFF;
 		} catch (BufferUnderflowException e) {
 			EOFException ioe = new EOFException();
 			ioe.initCause(e);
