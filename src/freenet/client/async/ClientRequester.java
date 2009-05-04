@@ -21,12 +21,7 @@ public abstract class ClientRequester {
 	private static volatile boolean logMINOR;
 	
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			}
-		});
+		Logger.registerClass(ClientRequester.class);
 	}
 
 	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);

@@ -51,14 +51,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 	private static volatile boolean logDEBUG;
 	
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-			}
-		});
+		Logger.registerClass(BaseManifestPutter.class);
 	}
 	
 	// Only implements PutCompletionCallback for the final metadata insert

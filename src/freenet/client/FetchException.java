@@ -18,12 +18,7 @@ public class FetchException extends Exception {
 	private static volatile boolean logMINOR;
 	
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			}
-		});
+		Logger.registerClass(FetchException.class);
 	}
 
 	private static final long serialVersionUID = -1106716067841151962L;
