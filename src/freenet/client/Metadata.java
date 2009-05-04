@@ -826,6 +826,27 @@ public class Metadata implements Cloneable {
 	public void setSimpleRedirect() {
 		documentType = SIMPLE_REDIRECT;
 	}
+	
+	/** Is this a simple redirect?
+	 * (for KeyExplorer)
+	 */
+	public boolean isSimpleRedirect() {
+		return documentType == SIMPLE_REDIRECT;
+	}
+
+	/** Is noMime enabled?
+	 * (for KeyExplorer)
+	 */
+	public boolean isNoMimeEnabled() {
+		return noMIME;
+	}
+
+	/** get the resolved name (".metada-N")
+	 * (for KeyExplorer)
+	 */
+	public String getResolvedName() {
+		return resolvedName;
+	}
 
 	/** Write the metadata as binary. 
 	 * @throws IOException If an I/O error occurred while writing the data. 
