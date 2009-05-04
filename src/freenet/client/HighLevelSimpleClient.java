@@ -87,9 +87,18 @@ public interface HighLevelSimpleClient {
 	public InsertContext getInsertContext(boolean forceNonPersistent);
 	
 	/**
+     * Add a ClientEventListener.
+     * This name is misleading -- this hook not for the global queue.
+     * Use {@link NodeClientCore#getFCPServer()} for the global queue.
+     * 
+     * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
+     */
+    public void addGlobalHook(ClientEventListener listener);
+
+	/**
 	 * Add a ClientEventListener.
 	 */
-	public void addGlobalHook(ClientEventListener listener);
+	public void addEventHook(ClientEventListener listener);
 
 	/**
 	 * Generates a new key pair, consisting of the insert URI at index 0 and the

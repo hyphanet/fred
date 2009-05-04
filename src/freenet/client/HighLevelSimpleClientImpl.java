@@ -42,7 +42,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private final PersistentFileTracker persistentFileTracker;
 	private final NodeClientCore core;
 	/** One CEP for all requests and inserts */
-	private final ClientEventProducer globalEventProducer;
+	private final ClientEventProducer eventProducer;
 	private long curMaxLength;
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
@@ -88,8 +88,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		bucketFactory = bf;
 		this.persistentFileTracker = node.persistentTempBucketFactory;
 		random = r;
-		this.globalEventProducer = new SimpleEventProducer();
-		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR, false));
+		this.eventProducer = new SimpleEventProducer();
+		eventProducer.addEventListener(new EventLogger(Logger.MINOR, false));
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
@@ -194,8 +194,15 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return pw.waitForCompletion();
 	}
 	
-	public void addGlobalHook(ClientEventListener listener) {
-		globalEventProducer.addEventListener(listener);
+	/**
+     * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
+     */
+    public void addGlobalHook(ClientEventListener listener) {
+        addEventHook(listener);
+    }
+
+	public void addEventHook(ClientEventListener listener) {
+		eventProducer.addEventListener(listener);
 	}
 
 	public FetchContext getFetchContext() {
@@ -215,7 +222,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				bucketFactory, globalEventProducer, 
+				bucketFactory, eventProducer, 
 				cacheLocalRequests, false);
 	}
 
@@ -224,7 +231,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				globalEventProducer, cacheLocalRequests);
+				eventProducer, cacheLocalRequests);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {
