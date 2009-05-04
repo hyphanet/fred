@@ -383,7 +383,7 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.load.threadLimit", threadLimit);
 		if(ramStore)
 			configFS.putSingle("node.storeType", "ram");
-		configFS.put("storeSize", storeSize);
+		configFS.put("node.storeSize", storeSize);
 		configFS.put("node.disableHangCheckers", true);
 		configFS.put("node.enableSwapping", enableSwapping);
 		configFS.put("node.enableSwapQueueing", enableSwapQueueing);
