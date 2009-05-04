@@ -46,6 +46,7 @@ public class Closer {
 			try {
 				closable.close();
 			} catch (IOException e) {
+				Logger.error(Closer.class, "Error during close().", e);
 			}
 		}
 	}
@@ -59,7 +60,7 @@ public class Closer {
 			try { 
 				bucket.free();
 			} catch(RuntimeException e) {
-				Logger.error(bucket, "Error during free().");
+				Logger.error(Closer.class, "Error during free().", e);
 			}
 		}
 	}
@@ -75,6 +76,7 @@ public class Closer {
 			try {
 				zipFile.close();
 			} catch (IOException e) {
+				Logger.error(Closer.class, "Error during close().", e);
 			}
 		}
 	}
