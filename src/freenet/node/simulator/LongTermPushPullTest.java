@@ -176,7 +176,6 @@ public class LongTermPushPullTest {
 					csvLine.add("N/A");
 				}
 			}
-			System.exit(0);
 		} catch (Throwable t) {
 			t.printStackTrace();
 			System.exit(EXIT_THREW_SOMETHING);
@@ -206,6 +205,7 @@ public class LongTermPushPullTest {
 				System.exit(EXIT_THREW_SOMETHING);
 			}
 		}
+		System.exit(0);
 	}
 
 	private static Bucket randomData(Node node) throws IOException {
