@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Node;
 import freenet.support.*;
 import freenet.support.io.NativeThread;
@@ -49,21 +50,26 @@ public class RemovePersistentRequest extends FCPMessage {
 			req = handler.removeRequestByIdentifier(identifier, true);
 		}
 		if(req == null) {
-			handler.server.core.clientContext.jobRunner.queue(new DBJob() {
+			try {
+				handler.server.core.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					try {
-						ClientRequest req = handler.removePersistentForeverRequest(global, identifier, container);
-						if(req == null) {
-				    		Logger.error(this, "Huh ? the request is null!");
+					public void run(ObjectContainer container, ClientContext context) {
+						try {
+							ClientRequest req = handler.removePersistentForeverRequest(global, identifier, container);
+							if(req == null) {
+					    		Logger.error(this, "Huh ? the request is null!");
+							}
+						} catch (MessageInvalidException e) {
+							FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
+							handler.outputHandler.queue(err);
 						}
-					} catch (MessageInvalidException e) {
-						FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
-						handler.outputHandler.queue(err);
 					}
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
+					
+				}, NativeThread.HIGH_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled and non-persistent request not found", identifier, global);
+				handler.outputHandler.queue(err);
+			}
 		}
 	}
 

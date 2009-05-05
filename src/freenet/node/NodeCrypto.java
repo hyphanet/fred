@@ -549,6 +549,7 @@ public class NodeCrypto {
 	}
 
 	public long getNodeHandle(ObjectContainer setupContainer) {
+		if(setupContainer == null) return random.nextLong();
 		// Ignore warnings, this is db4o magic.
 		ObjectSet<HandlePortTuple> result = setupContainer.query(new Predicate<HandlePortTuple>() {
 			@Override

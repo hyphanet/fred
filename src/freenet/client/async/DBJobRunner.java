@@ -11,12 +11,12 @@ import com.db4o.ObjectContainer;
  */
 public interface DBJobRunner {
 	
-	public void queue(DBJob job, int priority, boolean checkDupes);
+	public void queue(DBJob job, int priority, boolean checkDupes) throws DatabaseDisabledException;
 	
 	/** Run this database job blocking. If we are already on the database thread, 
 	 * run it inline, otherwise schedule it at the specified priority and wait for 
 	 * it to finish. */
-	public void runBlocking(DBJob job, int priority);
+	public void runBlocking(DBJob job, int priority) throws DatabaseDisabledException;
 
 	public boolean onDatabaseThread();
 
@@ -26,9 +26,11 @@ public interface DBJobRunner {
 	 * @param early If true, the job will be run just after startup, at HIGH priority; the priority
 	 * given determines the order of such jobs. If false, it will be queued to the database job 
 	 * scheduler at the given priority. Late jobs are responsible for removing themselves! */
-	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early);
+	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) throws DatabaseDisabledException;
 	
 	/** Remove a queued on-restart database job. */
-	public void removeRestartJob(DBJob job, int priority, ObjectContainer container);
+	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) throws DatabaseDisabledException;
+
+	public boolean killedDatabase();
 	
 }

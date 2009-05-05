@@ -126,13 +126,18 @@ public class PersistentChosenRequest {
 			}
 		}
 		// All finished.
-		context.jobRunner.queue(new DBJob() {
+		try {
+			context.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				finish(container, context, false, false);
-			}
-			
-		}, NativeThread.NORM_PRIORITY + 1, false);
+				public void run(ObjectContainer container, ClientContext context) {
+					finish(container, context, false, false);
+				}
+				
+			}, NativeThread.NORM_PRIORITY + 1, false);
+		} catch (DatabaseDisabledException e) {
+			// Impossible.
+			// Can't do anything, haven't lost anything.
+		}
 	}
 
 	private void finish(ObjectContainer container, ClientContext context, boolean dumping, boolean alreadyActive) {

@@ -68,7 +68,6 @@ public class ClientContext {
 		this.random = strongRandom;
 		this.archiveManager = archiveManager;
 		this.persistentBucketFactory = ptbf;
-		if(persistentBucketFactory == null) throw new NullPointerException();
 		this.tempBucketFactory = tbf;
 		if(tempBucketFactory == null) throw new NullPointerException();
 		this.healingQueue = hq;
@@ -103,7 +102,7 @@ public class ClientContext {
 		return chkInsertScheduler;
 	}
 	
-	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException {
+	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException, DatabaseDisabledException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
@@ -123,7 +122,7 @@ public class ClientContext {
 		}
 	}
 
-	public void start(final ClientGetter getter) throws FetchException {
+	public void start(final ClientGetter getter) throws FetchException, DatabaseDisabledException {
 		if(getter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
@@ -143,7 +142,7 @@ public class ClientContext {
 		}
 	}
 
-	public void start(final SimpleManifestPutter inserter) throws InsertException {
+	public void start(final SimpleManifestPutter inserter) throws InsertException, DatabaseDisabledException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
@@ -163,7 +162,7 @@ public class ClientContext {
 		}
 	}
 
-	public void start(final BaseManifestPutter inserter) throws InsertException {
+	public void start(final BaseManifestPutter inserter) throws InsertException, DatabaseDisabledException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				

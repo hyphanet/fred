@@ -28,6 +28,7 @@ import freenet.client.InsertContext;
 import freenet.client.TempFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -57,7 +58,7 @@ import freenet.support.io.NativeThread;
  */
 public class FCPServer implements Runnable {
 
-	final FCPPersistentRoot persistentRoot;
+	FCPPersistentRoot persistentRoot;
 	private static boolean logMINOR;
 	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
@@ -71,7 +72,7 @@ public class FCPServer implements Runnable {
 	AllowedHosts allowedHostsFullAccess;
 	final WeakHashMap<String, FCPClient> rebootClientsByName;
 	final FCPClient globalRebootClient;
-	final FCPClient globalForeverClient;
+	FCPClient globalForeverClient;
 	private boolean enablePersistentDownloads;
 	private File persistentDownloadsFile;
 	private File persistentDownloadsTempFile;
@@ -111,6 +112,9 @@ public class FCPServer implements Runnable {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
+	}
+	
+	public void load(ObjectContainer container) {
 		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, container);
 		globalForeverClient = persistentRoot.globalForeverClient;
 		
@@ -607,7 +611,8 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public ClientRequest[] getGlobalRequests(ObjectContainer container) {
+	public ClientRequest[] getGlobalRequests(ObjectContainer container) throws DatabaseDisabledException {
+		if(core.killedDatabase()) throw new DatabaseDisabledException();
 		List<ClientRequest> v = new ArrayList<ClientRequest>();
 		globalRebootClient.addPersistentRequests(v, false, null);
 		if(!container.ext().isActive(globalForeverClient)) {
@@ -618,7 +623,7 @@ public class FCPServer implements Runnable {
 		return v.toArray(new ClientRequest[v.size()]);
 	}
 
-	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException {
+	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException, DatabaseDisabledException {
 		if(!globalRebootClient.removeByIdentifier(identifier, true, this, null, core.clientContext)) {
 			final Object sync = new Object();
 			final MutableBoolean done = new MutableBoolean();
@@ -655,7 +660,7 @@ public class FCPServer implements Runnable {
 		} else return true;
 	}
 	
-	public boolean removeAllGlobalRequestsBlocking() {
+	public boolean removeAllGlobalRequestsBlocking() throws DatabaseDisabledException {
 		globalRebootClient.removeAll(null, core.clientContext);
 		
 		final Object sync = new Object();
@@ -696,7 +701,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final String expectedMimeType, final String persistenceTypeString, final String returnTypeString) throws NotAllowedException, IOException {
+	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final String expectedMimeType, final String persistenceTypeString, final String returnTypeString) throws NotAllowedException, IOException, DatabaseDisabledException {
 		class OutputWrapper {
 			NotAllowedException ne;
 			IOException ioe;
@@ -747,7 +752,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	public boolean modifyGlobalRequestBlocking(final String identifier, final String newToken, final short newPriority) {
+	public boolean modifyGlobalRequestBlocking(final String identifier, final String newToken, final short newPriority) throws DatabaseDisabledException {
 		ClientRequest req = this.globalRebootClient.getRequest(identifier, null);
 		if(req != null) {
 			req.modifyRequest(newToken, newPriority, this, null);
@@ -958,13 +963,13 @@ public class FCPServer implements Runnable {
 	}
 	
 	public void setCompletionCallback(RequestCompletionCallback cb) {
-		if(globalForeverClient.setRequestCompletionCallback(cb) != null)
+		if(globalForeverClient != null && globalForeverClient.setRequestCompletionCallback(cb) != null)
 			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
 		if(globalRebootClient.setRequestCompletionCallback(cb) != null)
 			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
 	}
 
-	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException {
+	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, DatabaseDisabledException {
 		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
 			req.start(null, core.clientContext);
 		} else {
@@ -1018,7 +1023,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	public boolean restartBlocking(final String identifier) {
+	public boolean restartBlocking(final String identifier) throws DatabaseDisabledException {
 		ClientRequest req = globalRebootClient.getRequest(identifier, null);
 		if(req != null) {
 			req.restart(null, core.clientContext);
@@ -1039,6 +1044,8 @@ public class FCPServer implements Runnable {
 							req.restart(container, context);
 							success = true;
 						}
+					} catch (DatabaseDisabledException e) {
+						success = false;
 					} finally {
 						synchronized(ow) {
 							ow.success = success;
@@ -1065,7 +1072,7 @@ public class FCPServer implements Runnable {
 
 
 
-	public TempFetchResult getCompletedRequestBlocking(final FreenetURI key) {
+	public TempFetchResult getCompletedRequestBlocking(final FreenetURI key) throws DatabaseDisabledException {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 		if(get != null) {
 			// FIXME race condition with free() - arrange refcounting for the data to prevent this

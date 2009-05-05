@@ -16,6 +16,7 @@ import com.db4o.query.Query;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
@@ -69,7 +70,7 @@ public class FECQueue implements OOMHook {
 		}
 	}
 	
-	private FECQueue(long nodeDBHandle) {
+	public FECQueue(long nodeDBHandle) {
 		this.nodeDBHandle = nodeDBHandle;
 	}
 
@@ -95,7 +96,11 @@ public class FECQueue implements OOMHook {
 	}
 	
 	private void queueCacheFiller() {
-		databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY, false);
+		try {
+			databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY, false);
+		} catch (DatabaseDisabledException e) {
+			// Ok.
+		}
 	}
 
 	public void addToQueue(FECJob job, FECCodec codec, ObjectContainer container) {

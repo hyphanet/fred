@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -88,8 +89,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					segment.removeFrom(container);
 					synchronized(this) {
 						if(!segments.isEmpty()) {
-							dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY, true);
-							dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY, container, false);
+							try {
+								dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY, true);
+								dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY, container, false);
+							} catch (DatabaseDisabledException e) {
+								// Impossible
+							}
 							container.store(this);
 							return;
 						}
@@ -101,7 +106,13 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				synchronized(SegmentedBucketChainBucket.this) {
 					if(killMe == null) return;
 				}
-				dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+				try {
+					dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+				} catch (DatabaseDisabledException e) {
+					// Impossible
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				container.delete(killMe);
 			}
 			
@@ -110,7 +121,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		// Must be run blocking so that if we are on the database thread, the job is
 		// added before committing. If we are not on the database thread, it doesn't
 		// matter.
-		dbJobRunner.runBlocking(freeJob, NativeThread.HIGH_PRIORITY);
+		try {
+			dbJobRunner.runBlocking(freeJob, NativeThread.HIGH_PRIORITY);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+			Logger.error(this, "Unable to free "+this+" because database is disabled!");
+		}
 	}
 
 	public InputStream getInputStream() throws IOException {
@@ -154,7 +170,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 						segmentNo++;
 						seg = getSegment(segmentNo);
 						if(seg == null) return -1;
-						buckets = getBuckets(seg);
+						try {
+							buckets = getBuckets(seg);
+						} catch (DatabaseDisabledException e) {
+							throw new IOException("Database disabled during read!");
+						}
 					}
 					if(bucketNo >= buckets.length) {
 						synchronized(SegmentedBucketChainBucket.this) {
@@ -162,7 +182,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 								// No more data
 								return -1;
 						}
-						buckets = getBuckets(seg);
+						try {
+							buckets = getBuckets(seg);
+						} catch (DatabaseDisabledException e) {
+							throw new IOException("Database disabled during read!");
+						}
 						if(bucketNo >= buckets.length)
 							return -1;
 					}
@@ -191,7 +215,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		return segments.get(i);
 	}
 
-	protected Bucket[] getBuckets(final SegmentedChainBucketSegment seg) {
+	protected Bucket[] getBuckets(final SegmentedChainBucketSegment seg) throws DatabaseDisabledException {
 		final BucketArrayWrapper baw = new BucketArrayWrapper();
 		dbJobRunner.runBlocking(new DBJob() {
 
@@ -225,15 +249,19 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		for(int i=0;i<segs.length;i++)
 			segs[i].free();
 		if(segs.length > 0) {
-			dbJobRunner.runBlocking(new DBJob() {
+			try {
+				dbJobRunner.runBlocking(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					for(int i=0;i<segs.length;i++) {
-						segs[i].removeFrom(container);
+					public void run(ObjectContainer container, ClientContext context) {
+						for(int i=0;i<segs.length;i++) {
+							segs[i].removeFrom(container);
+						}
 					}
-				}
-				
-			}, NativeThread.HIGH_PRIORITY);
+					
+				}, NativeThread.HIGH_PRIORITY);
+			} catch (DatabaseDisabledException e) {
+				throw new IOException("Database disabled");
+			}
 		}
 		return new OutputStream() {
 			
@@ -299,29 +327,37 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				cur = null;
 				final SegmentedChainBucketSegment oldSeg = seg;
 				seg = null;
-				dbJobRunner.runBlocking(new DBJob() {
-					
-					public void run(ObjectContainer container, ClientContext context) {
-						if(container.ext().isStored(oldSeg)) {
-							if(!container.ext().isActive(oldSeg)) {
-								Logger.error(this, "OLD SEGMENT STORED BUT NOT ACTIVE: "+oldSeg, new Exception("error"));
-								container.activate(oldSeg, 1);
+				try {
+					dbJobRunner.runBlocking(new DBJob() {
+						
+						public void run(ObjectContainer container, ClientContext context) {
+							if(container.ext().isStored(oldSeg)) {
+								if(!container.ext().isActive(oldSeg)) {
+									Logger.error(this, "OLD SEGMENT STORED BUT NOT ACTIVE: "+oldSeg, new Exception("error"));
+									container.activate(oldSeg, 1);
+								}
+							}
+							oldSeg.storeTo(container);
+							container.ext().store(segments, 1);
+							container.ext().store(SegmentedBucketChainBucket.this, 1);
+							container.deactivate(oldSeg, 1);
+							// If there is only one segment, we didn't add a killMe.
+							// Add one now.
+							synchronized(SegmentedBucketChainBucket.this) {
+								if(killMe != null) return;
+								killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
+							}
+							try {
+								killMe.scheduleRestart(container, context);
+							} catch (DatabaseDisabledException e) {
+								// Impossible.
 							}
 						}
-						oldSeg.storeTo(container);
-						container.ext().store(segments, 1);
-						container.ext().store(SegmentedBucketChainBucket.this, 1);
-						container.deactivate(oldSeg, 1);
-						// If there is only one segment, we didn't add a killMe.
-						// Add one now.
-						synchronized(SegmentedBucketChainBucket.this) {
-							if(killMe != null) return;
-							killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
-						}
-						killMe.scheduleRestart(container, context);
-					}
-					
-				}, NativeThread.HIGH_PRIORITY);
+						
+					}, NativeThread.HIGH_PRIORITY);
+				} catch (DatabaseDisabledException e) {
+					throw new IOException("Database disabled");
+				}
 			}
 		};
 	}
@@ -359,6 +395,8 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 							killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
 						}
 						killMe.scheduleRestart(container, context);
+					} catch (DatabaseDisabledException e) {
+						// Impossible.
 					} finally {
 						synchronized(SegmentedBucketChainBucket.this) {
 							runningSegStore = false;
@@ -412,13 +450,18 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	
 	public Bucket[] getBuckets() {
 		final BucketArrayWrapper baw = new BucketArrayWrapper();
-		dbJobRunner.runBlocking(new DBJob() {
+		try {
+			dbJobRunner.runBlocking(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				baw.buckets = getBuckets(container);
-			}
-			
-		}, NativeThread.HIGH_PRIORITY);
+				public void run(ObjectContainer container, ClientContext context) {
+					baw.buckets = getBuckets(container);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY);
+		} catch (DatabaseDisabledException e) {
+			// Impossible.
+			return null;
+		}
 		return baw.buckets;
 	}
 
@@ -472,8 +515,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					segment.clear(container);
 					synchronized(this) {
 						if(!segments.isEmpty()) {
-							dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY-1, true);
-							dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY-1, container, false);
+							try {
+								dbJobRunner.queue(this, NativeThread.HIGH_PRIORITY-1, true);
+								dbJobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY-1, container, false);
+							} catch (DatabaseDisabledException e) {
+								// Impossible.
+							}
 							container.store(segments);
 							container.store(SegmentedBucketChainBucket.this);
 							return;
@@ -486,7 +533,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				synchronized(SegmentedBucketChainBucket.this) {
 					if(killMe == null) return;
 				}
-				dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+				try {
+					dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+				} catch (DatabaseDisabledException e) {
+					// Impossible.
+					// It will be re-run, no big deal.
+				}
 				container.delete(killMe);
 			}
 
@@ -494,7 +546,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		// Must be run blocking so that if we are on the database thread, the job is
 		// added before committing. If we are not on the database thread, it doesn't
 		// matter.
-		dbJobRunner.runBlocking(clearJob, NativeThread.HIGH_PRIORITY-1);
+		try {
+			dbJobRunner.runBlocking(clearJob, NativeThread.HIGH_PRIORITY-1);
+		} catch (DatabaseDisabledException e) {
+			Logger.error(this, "Unable to clear() on "+this+" because database is disabled");
+		}
 	}
 
 	/**

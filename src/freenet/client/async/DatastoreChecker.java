@@ -356,7 +356,11 @@ public class DatastoreChecker implements PrioRunnable {
 				}
 				if(keys == null) {
 					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
-					context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
+					try {
+						context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
+					} catch (DatabaseDisabledException e1) {
+						// Ignore
+					}
 					try {
 						wait(100*1000);
 					} catch (InterruptedException e) {
@@ -392,32 +396,40 @@ public class DatastoreChecker implements PrioRunnable {
 //			}
 		}
 		if(persistent)
-			context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
+			try {
+				context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
+			} catch (DatabaseDisabledException e) {
+				// Ignore
+			}
 		if(persistent) {
 			final SendableGet get = getter;
 			final ClientRequestScheduler scheduler = sched;
 			final boolean valid = anyValid;
 			final DatastoreCheckerItem it = item;
-			context.jobRunner.queue(new DBJob() {
+			try {
+				context.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					if(container.ext().isActive(get)) {
-						Logger.error(this, "ALREADY ACTIVATED: "+get);
+					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(get)) {
+							Logger.error(this, "ALREADY ACTIVATED: "+get);
+						}
+						if(!container.ext().isStored(get)) {
+							// Completed and deleted already.
+							if(logMINOR) 
+								Logger.minor(this, "Already deleted from database");
+							container.delete(it);
+							return;
+						}
+						container.activate(get, 1);
+						scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
+						container.deactivate(get, 1);
+						loader.run(container, context);
 					}
-					if(!container.ext().isStored(get)) {
-						// Completed and deleted already.
-						if(logMINOR) 
-							Logger.minor(this, "Already deleted from database");
-						container.delete(it);
-						return;
-					}
-					container.activate(get, 1);
-					scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
-					container.deactivate(get, 1);
-					loader.run(container, context);
-				}
-				
-			}, NativeThread.NORM_PRIORITY, false);
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Impossible
+			}
 		} else {
 			sched.finishRegister(new SendableGet[] { getter }, false, null, anyValid, item);
 		}
@@ -428,7 +440,11 @@ public class DatastoreChecker implements PrioRunnable {
 	}
 
 	public void start(Executor executor, String name) {
-		context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY-1, true);
+		try {
+			context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY-1, true);
+		} catch (DatabaseDisabledException e) {
+			// Ignore
+		}
 		executor.execute(this, name);
 	}
 

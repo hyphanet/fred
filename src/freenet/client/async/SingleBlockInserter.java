@@ -536,6 +536,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					req.onFailure(e, context);
 					if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
 					return true;
+				} catch (DatabaseDisabledException e) {
+					// Impossible, and nothing to do.
+					Logger.error(this, "Running persistent insert but database is disabled!");
 				} finally {
 					block.copyBucket.free();
 				}

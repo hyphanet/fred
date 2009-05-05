@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
@@ -48,16 +49,21 @@ public class WatchGlobal extends FCPMessage {
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		handler.getRebootClient().setWatchGlobal(enabled, verbosityMask, node.clientCore.getFCPServer(), null);
-		handler.server.core.clientContext.jobRunner.queue(new DBJob() {
+		try {
+			handler.server.core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				FCPClient client = handler.getForeverClient(container);
-				container.activate(client, 1);
-				client.setWatchGlobal(enabled, verbosityMask, handler.server, container);
-				container.deactivate(client, 1);
-			}
-			
-		}, NativeThread.HIGH_PRIORITY, false);
+				public void run(ObjectContainer container, ClientContext context) {
+					FCPClient client = handler.getForeverClient(container);
+					container.activate(client, 1);
+					client.setWatchGlobal(enabled, verbosityMask, handler.server, container);
+					container.deactivate(client, 1);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		} catch (DatabaseDisabledException e) {
+			FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence disabled", null, true);
+			handler.outputHandler.queue(err);
+		}
 		
 	}
 

@@ -9,6 +9,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
@@ -245,15 +246,19 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		if(persistenceType == PERSIST_FOREVER && container == null) {
-			context.jobRunner.queue(new DBJob() {
+			try {
+				context.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(ClientPutBase.this, 1);
-					receive(ce, container, context);
-					container.deactivate(ClientPutBase.this, 1);
-				}
-				
-			}, NativeThread.NORM_PRIORITY, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(ClientPutBase.this, 1);
+						receive(ce, container, context);
+						container.deactivate(ClientPutBase.this, 1);
+					}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Impossible, not much we can do.
+			}
 			return;
 		}
 		if(ce instanceof SplitfileProgressEvent) {
@@ -359,15 +364,19 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				container.store(this);
 			} else {
 				final FCPConnectionOutputHandler h = handler;
-				context.jobRunner.queue(new DBJob() {
+				try {
+					context.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
-						container.activate(ClientPutBase.this, 1);
-						trySendProgressMessage(msg, verbosity, h, container, context);
-						container.deactivate(ClientPutBase.this, 1);
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
+						public void run(ObjectContainer container, ClientContext context) {
+							container.activate(ClientPutBase.this, 1);
+							trySendProgressMessage(msg, verbosity, h, container, context);
+							container.deactivate(ClientPutBase.this, 1);
+						}
+						
+					}, NativeThread.NORM_PRIORITY, false);
+				} catch (DatabaseDisabledException e) {
+					// Impossible.
+				}
 				return;
 			}
 		} else {

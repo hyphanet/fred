@@ -35,6 +35,7 @@ import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
 import com.db4o.diagnostic.DiagnosticListener;
+import com.db4o.ext.Db4oException;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -884,6 +885,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			@Override
 			public void run() {
 				System.err.println("Stopping database jobs...");
+				if(clientCore == null) return;
 				clientCore.killDatabase();
 			}
 			
@@ -893,6 +895,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 			@Override
 			public void run() {
+				if(db == null) return;
 				System.err.println("Rolling back unfinished transactions...");
 				db.rollback();
 				System.err.println("Closing database...");
@@ -903,12 +906,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
-		db = Db4o.openFile(dbConfig, new File(nodeDir, "node.db4o").toString());
-		
-		System.err.println("Opened database");
+		ObjectContainer database;
+		try {
+			database = Db4o.openFile(dbConfig, new File(nodeDir, "node.db4o").toString());
+			System.err.println("Opened database");
+		} catch (Db4oException e) {
+			database = null;
+		}
+		db = database;
 		
 		// DUMP DATABASE CONTENTS
-		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class)) {
+		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class) && db != null) {
 		System.err.println("DUMPING DATABASE CONTENTS:");
 		ObjectSet<Object> contents = db.queryByExample(new Object());
 		Map<String,Integer> map = new HashMap<String, Integer>();
@@ -1217,8 +1225,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeDBHandle = darknetCrypto.getNodeHandle(db);
 		
-		db.commit();
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+		if(db != null) {
+			db.commit();
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+		}
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);

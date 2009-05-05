@@ -10,6 +10,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
@@ -120,6 +121,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		} catch (FetchException e) {
 			Logger.error(this, "Not able to start the revocation fetcher.");
 			manager.blow("Cannot fetch the auto-update URI");
+		} catch (DatabaseDisabledException e) {
+			// Impossible
 		}
 	}
 

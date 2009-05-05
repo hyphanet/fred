@@ -18,6 +18,7 @@ import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SendingToNetworkEvent;
@@ -668,13 +669,17 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		else return; // Don't know what to do with event
 		// container may be null...
 		if(persistenceType == PERSIST_FOREVER && container == null) {
-			context.jobRunner.queue(new DBJob() {
+			try {
+				context.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					trySendProgress(progress, null, container);
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						trySendProgress(progress, null, container);
+					}
+					
+				}, NativeThread.HIGH_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Not much we can do
+			}
 		} else {
 			trySendProgress(progress, null, container);
 		}

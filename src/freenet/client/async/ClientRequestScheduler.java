@@ -207,22 +207,26 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR)
 						Logger.minor(this, "Added insert RegisterMe: "+regme);
 					if(!queueFull) {
-					jobRunner.queue(new DBJob() {
-						
-						public void run(ObjectContainer container, ClientContext context) {
-							container.delete(regme);
-							if(req.isCancelled(container)) {
-								if(logMINOR) Logger.minor(this, "Request already cancelled");
-								return;
+					try {
+						jobRunner.queue(new DBJob() {
+							
+							public void run(ObjectContainer container, ClientContext context) {
+								container.delete(regme);
+								if(req.isCancelled(container)) {
+									if(logMINOR) Logger.minor(this, "Request already cancelled");
+									return;
+								}
+								if(container.ext().isActive(req))
+									Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
+								container.activate(req, 1);
+								registerInsert(req, true, false, container);
+								container.deactivate(req, 1);
 							}
-							if(container.ext().isActive(req))
-								Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
-							container.activate(req, 1);
-							registerInsert(req, true, false, container);
-							container.deactivate(req, 1);
-						}
-						
-					}, NativeThread.NORM_PRIORITY, false);
+							
+						}, NativeThread.NORM_PRIORITY, false);
+					} catch (DatabaseDisabledException e) {
+						// Impossible, we are already on the database thread.
+					}
 					} else {
 						schedCore.rerunRegisterMeRunner(jobRunner);
 					}
@@ -516,7 +520,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return;
 		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
 			return;
-		jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
+		try {
+			jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
+		} catch (DatabaseDisabledException e) {
+			// Ok, do what we can
+			moveKeysFromCooldownQueue(transientCooldownQueue, false, null);
+		}
 	}
 
 	private int starterQueueLength() {
@@ -833,17 +842,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public synchronized void succeeded(final BaseSendableGet succeeded, boolean persistent) {
 		if(persistent) {
-			jobRunner.queue(new DBJob() {
+			try {
+				jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					if(container.ext().isActive(succeeded))
-						Logger.error(this, "ALREADY ACTIVE in succeeded(): "+succeeded);
-					container.activate(succeeded, 1);
-					schedCore.succeeded(succeeded, container);
-					container.deactivate(succeeded, 1);
-				}
-				
-			}, TRIP_PENDING_PRIORITY, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(succeeded))
+							Logger.error(this, "ALREADY ACTIVE in succeeded(): "+succeeded);
+						container.activate(succeeded, 1);
+						schedCore.succeeded(succeeded, container);
+						container.deactivate(succeeded, 1);
+					}
+					
+				}, TRIP_PENDING_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				Logger.error(this, "succeeded() on a persistent request but database disabled", new Exception("error"));
+			}
 			// Boost the priority so the PersistentChosenRequest gets deleted reasonably quickly.
 		} else
 			schedTransient.succeeded(succeeded, null);
@@ -860,13 +873,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final Key key = block.getKey();
 		schedTransient.tripPendingKey(key, block, null, clientContext);
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {
-			jobRunner.queue(new DBJob() {
+			try {
+				jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
-					schedCore.tripPendingKey(key, block, container, clientContext);
-				}
-			}, TRIP_PENDING_PRIORITY, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
+						schedCore.tripPendingKey(key, block, container, clientContext);
+					}
+				}, TRIP_PENDING_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Nothing to do
+			}
 		} else schedCore.countNegative();
 	}
 
@@ -887,17 +904,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		final short oldPrio = priority;
 		
-		jobRunner.queue(new DBJob() {
+		try {
+			jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				// Don't activate/deactivate the key, because it's not persistent in the first place!!
-				short priority = schedCore.getKeyPrio(key, oldPrio, container, context);
-				if(priority >= oldPrio) return; // already on list at >= priority
-				offeredKeys[priority].queueKey(key.cloneKey());
-				starter.wakeUp();
-			}
-			
-		}, NativeThread.NORM_PRIORITY, false);
+				public void run(ObjectContainer container, ClientContext context) {
+					// Don't activate/deactivate the key, because it's not persistent in the first place!!
+					short priority = schedCore.getKeyPrio(key, oldPrio, container, context);
+					if(priority >= oldPrio) return; // already on list at >= priority
+					offeredKeys[priority].queueKey(key.cloneKey());
+					starter.wakeUp();
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
+		} catch (DatabaseDisabledException e) {
+			// Nothing more to do
+		}
 	}
 
 	public void dequeueOfferedKey(Key key) {
@@ -958,7 +979,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			SendableGet[] reqs = schedCore.requestsForKey(key, container, clientContext);
+			SendableGet[] reqs = container == null ? null : schedCore.requestsForKey(key, container, clientContext);
 			SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
 			if(reqs == null && transientReqs == null) {
 				// Not an error as this can happen due to race conditions etc.
@@ -1003,17 +1024,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(!persistent) {
 			get.onFailure(e, null, null, clientContext);
 		} else {
-			jobRunner.queue(new DBJob() {
+			try {
+				jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					if(container.ext().isActive(get))
-						Logger.error(this, "ALREADY ACTIVE: "+get+" in callFailure(request)");
-					container.activate(get, 1);
-					get.onFailure(e, null, container, clientContext);
-					container.deactivate(get, 1);
-				}
-				
-			}, prio, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(get))
+							Logger.error(this, "ALREADY ACTIVE: "+get+" in callFailure(request)");
+						container.activate(get, 1);
+						get.onFailure(e, null, container, clientContext);
+						container.deactivate(get, 1);
+					}
+					
+				}, prio, false);
+			} catch (DatabaseDisabledException e1) {
+				Logger.error(this, "callFailure() on a persistent request but database disabled", new Exception("error"));
+			}
 		}
 	}
 	
@@ -1021,17 +1046,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(!persistent) {
 			insert.onFailure(e, null, null, clientContext);
 		} else {
-			jobRunner.queue(new DBJob() {
+			try {
+				jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					if(container.ext().isActive(insert))
-						Logger.error(this, "ALREADY ACTIVE: "+insert+" in callFailure(insert)");
-					container.activate(insert, 1);
-					insert.onFailure(e, null, container, context);
-					container.deactivate(insert, 1);
-				}
-				
-			}, prio, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(insert))
+							Logger.error(this, "ALREADY ACTIVE: "+insert+" in callFailure(insert)");
+						container.activate(insert, 1);
+						insert.onFailure(e, null, container, context);
+						container.deactivate(insert, 1);
+					}
+					
+				}, prio, false);
+			} catch (DatabaseDisabledException e1) {
+				Logger.error(this, "callFailure() on a persistent request but database disabled", new Exception("error"));
+			}
 		}
 	}
 	

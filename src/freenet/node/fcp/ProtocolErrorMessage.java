@@ -55,7 +55,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int DUPLICATE_PEER_REF = 29;
 	static final int OPENNET_DISABLED = 30;
 	static final int DARKNET_ONLY = 31;
-	static final int NO_SUCH_PLUGIN = 32;  
+	static final int NO_SUCH_PLUGIN = 32;
+	static final int PERSISTENCE_DISABLED = 33;
 	
 	final int code;
 	final String extra;

@@ -767,7 +767,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 	private final DBJob runGotAllMetadata = new DBJob() {
 
 		public void run(ObjectContainer container, ClientContext context) {
-			context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
+			try {
+				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
+			} catch (DatabaseDisabledException e) {
+				// Impossible, we are already on the database thread
+			}
 			container.activate(BaseManifestPutter.this, 1);
 			innerGotAllMetadata(container, context);
 			container.deactivate(BaseManifestPutter.this, 1);
@@ -788,8 +792,12 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 		// and maximise the opportunities for garbage collection.
 		if(persistent()) {
 			container.activate(runGotAllMetadata, 1); // need to activate .this!
-			context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container, false);
-			context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
+			try {
+				context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container, false);
+				context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Impossible, we are already on the database thread
+			}
 		} else {
 			innerGotAllMetadata(null, context);
 		}

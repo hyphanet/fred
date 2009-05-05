@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
@@ -41,22 +42,26 @@ public class GetRequestStatusMessage extends FCPMessage {
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
-		if(req == null) {
-			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+		if(req == null && !node.clientCore.killedDatabase()) {
+			try {
+				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
-					container.activate(req, 1);
-					if(req == null) {
-						ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-						handler.outputHandler.queue(msg);
-					} else {
-						req.sendPendingMessages(handler.outputHandler, true, true, onlyData, container);
+					public void run(ObjectContainer container, ClientContext context) {
+						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
+						container.activate(req, 1);
+						if(req == null) {
+							ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+							handler.outputHandler.queue(msg);
+						} else {
+							req.sendPendingMessages(handler.outputHandler, true, true, onlyData, container);
+						}
+						container.deactivate(req, 1);
 					}
-					container.deactivate(req, 1);
-				}
-				
-			}, NativeThread.NORM_PRIORITY, false);
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Ok
+			}
 		} else {
 			req.sendPendingMessages(handler.outputHandler, true, true, onlyData, null);
 		}

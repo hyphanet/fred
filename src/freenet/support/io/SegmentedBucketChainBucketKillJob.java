@@ -4,6 +4,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
 
 public class SegmentedBucketChainBucketKillJob implements DBJob {
@@ -24,18 +25,31 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 		if(bcb.removeContents(container)) {
 			// More work needs to be done.
 			// We will have already been removed, so re-add, in case we crash soon.
-			scheduleRestart(container, context);
+			try {
+				scheduleRestart(container, context);
+			} catch (DatabaseDisabledException e1) {
+				// Impossible.
+				return;
+			}
 			context.persistentBucketFactory.addBlobFreeCallback(this);
 			// But try to sort it out now ...
-			context.jobRunner.queue(this, NativeThread.NORM_PRIORITY, true);
+			try {
+				context.jobRunner.queue(this, NativeThread.NORM_PRIORITY, true);
+			} catch (DatabaseDisabledException e) {
+				// Impossible.
+			}
 		} else {
-			context.jobRunner.removeRestartJob(this, RESTART_PRIO, container);
+			try {
+				context.jobRunner.removeRestartJob(this, RESTART_PRIO, container);
+			} catch (DatabaseDisabledException e) {
+				// Impossible.
+			}
 			container.delete(this);
 			context.persistentBucketFactory.removeBlobFreeCallback(this);
 		}
 	}
 	
-	public void scheduleRestart(ObjectContainer container, ClientContext context) {
+	public void scheduleRestart(ObjectContainer container, ClientContext context) throws DatabaseDisabledException {
 		context.jobRunner.queueRestartJob(this, RESTART_PRIO, container, true);
 	}
 	

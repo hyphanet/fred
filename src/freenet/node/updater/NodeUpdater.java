@@ -20,6 +20,7 @@ import freenet.client.FetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -197,6 +198,8 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 				synchronized(this) {
 					isFetching = false;
 				}
+			} catch (DatabaseDisabledException e) {
+				// Impossible
 			}
 		if(cancelled != null)
 			cancelled.cancel(null, core.clientContext);

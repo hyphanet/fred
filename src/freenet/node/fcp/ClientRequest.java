@@ -18,6 +18,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.support.io.NativeThread;
 
 /**
@@ -264,7 +265,11 @@ public abstract class ClientRequest {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						cp.start(container, context);
-						context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+						try {
+							context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+						} catch (DatabaseDisabledException e) {
+							// Impossible.
+						}
 					}
 					
 				};
@@ -278,7 +283,11 @@ public abstract class ClientRequest {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						cp.start(container, context);
-						context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+						try {
+							context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+						} catch (DatabaseDisabledException e) {
+							// Impossible.
+						}
 					}
 					
 				};
@@ -394,7 +403,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart(ObjectContainer container, ClientContext context);
+	public abstract boolean restart(ObjectContainer container, ClientContext context) throws DatabaseDisabledException;
 
 	protected abstract FCPMessage persistentTagMessage(ObjectContainer container);
 
@@ -459,7 +468,7 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync(final FCPServer server) {
+	public void restartAsync(final FCPServer server) throws DatabaseDisabledException {
 		synchronized(this) {
 			this.started = false;
 		}
@@ -468,7 +477,11 @@ public abstract class ClientRequest {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(ClientRequest.this, 1);
-				restart(container, context);
+				try {
+					restart(container, context);
+				} catch (DatabaseDisabledException e) {
+					// Impossible
+				}
 				container.deactivate(ClientRequest.this, 1);
 			}
 			
@@ -481,7 +494,11 @@ public abstract class ClientRequest {
 				}
 
 				public void run() {
-					restart(null, server.core.clientContext);
+					try {
+						restart(null, server.core.clientContext);
+					} catch (DatabaseDisabledException e) {
+						// Impossible
+					}
 				}
 				
 			}, "Restart request");

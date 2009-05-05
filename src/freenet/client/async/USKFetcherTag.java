@@ -130,16 +130,20 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			// If cancelled externally, and this function is called from USKFetcher,
 			// container may be null even though we are running on the database thread,
 			// resulting in a database leak.
-			context.jobRunner.runBlocking(new DBJob() {
+			try {
+				context.jobRunner.runBlocking(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(callback, 1);
-					callback.onCancelled(container, context);
-					removeFrom(container, context);
-					container.deactivate(callback, 1);
-				}
-				
-			}, NativeThread.HIGH_PRIORITY);
+					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(callback, 1);
+						callback.onCancelled(container, context);
+						removeFrom(container, context);
+						container.deactivate(callback, 1);
+					}
+					
+				}, NativeThread.HIGH_PRIORITY);
+			} catch (DatabaseDisabledException e) {
+				// Impossible.
+			}
 		} else {
 			callback.onCancelled(container, context);
 		}
@@ -156,16 +160,20 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				container.deactivate(callback, 1);
 				removeFrom(container, context);
 			} else {
-			context.jobRunner.queue(new DBJob() {
+			try {
+				context.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(callback, 1);
-					callback.onFailure(container, context);
-					container.deactivate(callback, 1);
-					removeFrom(container, context);
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(callback, 1);
+						callback.onFailure(container, context);
+						container.deactivate(callback, 1);
+						removeFrom(container, context);
+					}
+					
+				}, NativeThread.HIGH_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Impossible.
+			}
 			}
 		} else {
 			callback.onFailure(container, context);
@@ -195,16 +203,20 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				container.deactivate(callback, 1);
 				removeFrom(container, context);
 			} else {
-			context.jobRunner.queue(new DBJob() {
+			try {
+				context.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(callback, 1);
-					callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
-					container.deactivate(callback, 1);
-					removeFrom(container, context);
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
+					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(callback, 1);
+						callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
+						container.deactivate(callback, 1);
+						removeFrom(container, context);
+					}
+					
+				}, NativeThread.HIGH_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Impossible.
+			}
 			}
 		} else {
 			callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);

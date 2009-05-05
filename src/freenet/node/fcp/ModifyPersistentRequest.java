@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
@@ -77,23 +78,28 @@ public class ModifyPersistentRequest extends FCPMessage {
 		
 		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
 		if(req == null) {
-			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+			try {
+				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
-					ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
-					container.activate(req, 1);
-					if(req==null){
-						Logger.error(this, "Huh ? the request is null!");
-						ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-						handler.outputHandler.queue(msg);
-						return;
-					} else {
-						req.modifyRequest(clientToken, priorityClass, handler.server, container);
+					public void run(ObjectContainer container, ClientContext context) {
+						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
+						container.activate(req, 1);
+						if(req==null){
+							Logger.error(this, "Huh ? the request is null!");
+							ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+							handler.outputHandler.queue(msg);
+							return;
+						} else {
+							req.modifyRequest(clientToken, priorityClass, handler.server, container);
+						}
+						container.deactivate(req, 1);
 					}
-					container.deactivate(req, 1);
-				}
-				
-			}, NativeThread.NORM_PRIORITY, false);
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else {
 			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer(), null);
 		}

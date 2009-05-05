@@ -1340,6 +1340,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
 					return true;
+				} catch (DatabaseDisabledException e) {
+					// Impossible, and nothing to do.
+					Logger.error(this, "Running persistent insert but database is disabled!");
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded: "+SplitFileInserterSegment.this);
 				req.onInsertSuccess(context);

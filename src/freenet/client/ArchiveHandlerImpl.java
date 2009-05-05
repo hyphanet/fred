@@ -9,6 +9,7 @@ import com.db4o.query.Predicate;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.keys.FreenetURI;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -165,38 +166,48 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					
 				} catch (final ArchiveFailureException e) {
 					
-					context.jobRunner.queue(new DBJob() {
+					try {
+						context.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
-							container.activate(tag.callback, 1);
-							tag.callback.onFailed(e, container, context);
-							tag.callback.removeFrom(container);
-							if(tag.freeBucket) {
-								tag.data.free();
-								tag.data.removeFrom(container);
+							public void run(ObjectContainer container, ClientContext context) {
+								container.activate(tag.callback, 1);
+								tag.callback.onFailed(e, container, context);
+								tag.callback.removeFrom(container);
+								if(tag.freeBucket) {
+									tag.data.free();
+									tag.data.removeFrom(container);
+								}
+								container.delete(tag);
 							}
-							container.delete(tag);
-						}
-						
-					}, NativeThread.NORM_PRIORITY, false);
+							
+						}, NativeThread.NORM_PRIORITY, false);
+					} catch (DatabaseDisabledException e1) {
+						Logger.error(this, "Extracting off thread but persistence is disabled");
+					}
 					
 				} catch (final ArchiveRestartException e) {
 					
-					context.jobRunner.queue(new DBJob() {
+					try {
+						context.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
-							container.activate(tag.callback, 1);
-							tag.callback.onFailed(e, container, context);
-							tag.callback.removeFrom(container);
-							if(tag.freeBucket) {
-								tag.data.free();
-								tag.data.removeFrom(container);
+							public void run(ObjectContainer container, ClientContext context) {
+								container.activate(tag.callback, 1);
+								tag.callback.onFailed(e, container, context);
+								tag.callback.removeFrom(container);
+								if(tag.freeBucket) {
+									tag.data.free();
+									tag.data.removeFrom(container);
+								}
+								container.delete(tag);
 							}
-							container.delete(tag);
-						}
-						
-					}, NativeThread.NORM_PRIORITY, false);
+							
+						}, NativeThread.NORM_PRIORITY, false);
+					} catch (DatabaseDisabledException e1) {
+						Logger.error(this, "Extracting off thread but persistence is disabled");
+					}
 					
+				} catch (DatabaseDisabledException e) {
+					Logger.error(this, "Extracting off thread but persistence is disabled");
 				}
 			}
 			

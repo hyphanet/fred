@@ -111,6 +111,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 */
 	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
 		final long nodeDBHandle = node.nodeDBHandle;
+		if(selectorContainer == null) {
+			ClientRequestSchedulerCore core;
+			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
+			core.onStarted(selectorContainer, cooldownTime, sched, context);
+			return core;
+		}
 		ObjectSet<ClientRequestSchedulerCore> results = selectorContainer.query(new Predicate<ClientRequestSchedulerCore>() {
 			@Override
 			public boolean match(ClientRequestSchedulerCore core) {
@@ -244,7 +250,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //					Logger.minor(this, "RegisterMe query returned: "+registerMeSet.size());
 				boolean boost = ClientRequestSchedulerCore.this.sched.isQueueAlmostEmpty();
 
-				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
+				try {
+					context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
+				} catch (DatabaseDisabledException e) {
+					// Do nothing, persistence is disabled
+				}
 			}
 			
 		};
@@ -260,7 +270,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	private final void startRegisterMeRunner(DBJobRunner runner) {
 		if(isInsertScheduler)
-			runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+			try {
+				runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+			} catch (DatabaseDisabledException e) {
+				// Persistence is disabled
+			}
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
@@ -639,7 +653,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(sched.databaseExecutor.getQueueSize(NativeThread.NORM_PRIORITY) > 100) {
 				// If the queue isn't empty, reschedule at NORM-1, wait for the backlog to clear
 				if(!sched.isQueueAlmostEmpty()) {
-					context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, false);
+					try {
+						context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, false);
+					} catch (DatabaseDisabledException e) {
+						// Impossible
+					}
 					return;
 				}
 			}
@@ -654,13 +672,21 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				} catch (NullPointerException t) {
 					Logger.error(this, "DB4O thew NPE in hasNext(): "+t, t);
 					// FIXME find some way to get a reproducible test case... I suspect it won't be easy :<
-					context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+					try {
+						context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+					} catch (DatabaseDisabledException e) {
+						// Impossible
+					}
 					return;
 				} catch (ClassCastException t) {
 					// WTF?!?!?!?!?!
 					Logger.error(this, "DB4O thew ClassCastException in hasNext(): "+t, t);
 					// FIXME find some way to get a reproducible test case... I suspect it won't be easy :<
-					context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+					try {
+						context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+					} catch (DatabaseDisabledException e) {
+						// Impossible
+					}
 					return;
 				}
 				long startNext = System.currentTimeMillis();
@@ -718,7 +744,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			boolean boost = sched.isQueueAlmostEmpty();
 			if(registerMeSet.hasNext())
-				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
+				try {
+					context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
+				} catch (DatabaseDisabledException e) {
+					// Impossible
+				}
 			else {
 				if(logMINOR) Logger.minor(this, "RegisterMeRunner finished");
 				synchronized(ClientRequestSchedulerCore.this) {

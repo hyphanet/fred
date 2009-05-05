@@ -16,6 +16,7 @@ import com.db4o.query.Predicate;
 
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
 import freenet.node.Ticker;
@@ -138,7 +139,11 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		if(size == BLOB_SIZE) {
 			// No need for a DelayedFreeBucket, we handle this internally (and more efficiently) for blobs.
 			mustWrap = false;
-			rawBucket = blobFactory.makeBucket();
+			try {
+				rawBucket = blobFactory.makeBucket();
+			} catch (DatabaseDisabledException e) {
+				throw new IOException("Database disabled, persistent buckets not available");
+			}
 		}
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);

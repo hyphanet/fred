@@ -16,6 +16,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -128,24 +129,28 @@ public class FCPConnectionHandler implements Closeable {
 		for(SubscribeUSK sub : subscriptions)
 			sub.unsubscribe();
 		if(!dupe) {
-		server.core.clientContext.jobRunner.queue(new DBJob() {
+		try {
+			server.core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
-					server.unregisterClient(rebootClient, null);
-				if(foreverClient != null) {
-					if(!container.ext().isStored(foreverClient)) {
-						Logger.normal(this, "foreverClient is not stored in the database in lost connection non-dupe callback; not deleting it");
-						return;
+				public void run(ObjectContainer container, ClientContext context) {
+					if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
+						server.unregisterClient(rebootClient, null);
+					if(foreverClient != null) {
+						if(!container.ext().isStored(foreverClient)) {
+							Logger.normal(this, "foreverClient is not stored in the database in lost connection non-dupe callback; not deleting it");
+							return;
+						}
+						container.activate(foreverClient, 1);
+						if(!foreverClient.hasPersistentRequests(container))
+							server.unregisterClient(foreverClient, container);
+						container.deactivate(foreverClient, 1);
 					}
-					container.activate(foreverClient, 1);
-					if(!foreverClient.hasPersistentRequests(container))
-						server.unregisterClient(foreverClient, container);
-					container.deactivate(foreverClient, 1);
 				}
-			}
-			
-		}, NativeThread.NORM_PRIORITY, false);
+				
+			}, NativeThread.NORM_PRIORITY, false);
+		} catch (DatabaseDisabledException e) {
+			// Ignore
+		}
 		}
 		
 		outputHandler.onClosed();
@@ -197,22 +202,27 @@ public class FCPConnectionHandler implements Closeable {
 		this.clientName = name;
 		rebootClient = server.registerRebootClient(name, server.core, this);
 		rebootClient.queuePendingMessagesOnConnectionRestart(outputHandler, null);
-		server.core.clientContext.jobRunner.queue(new DBJob() {
+		if(!server.core.killedDatabase())
+			try {
+				server.core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				try {
-					createForeverClient(name, container);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" creating persistent client for "+name, t);
-					failedGetForever = true;
-					synchronized(FCPConnectionHandler.this) {
-						failedGetForever = true;
-						FCPConnectionHandler.this.notifyAll();
+					public void run(ObjectContainer container, ClientContext context) {
+						try {
+							createForeverClient(name, container);
+						} catch (Throwable t) {
+							Logger.error(this, "Caught "+t+" creating persistent client for "+name, t);
+							failedGetForever = true;
+							synchronized(FCPConnectionHandler.this) {
+								failedGetForever = true;
+								FCPConnectionHandler.this.notifyAll();
+							}
+						}
 					}
-				}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Impossible??
 			}
-			
-		}, NativeThread.NORM_PRIORITY, false);
 		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
 	}
@@ -260,35 +270,40 @@ public class FCPConnectionHandler implements Closeable {
 						cg = new ClientGet(this, message, server, null);
 						requestsByIdentifier.put(id, cg);
 					} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
-						server.core.clientContext.jobRunner.queue(new DBJob() {
+						try {
+							server.core.clientContext.jobRunner.queue(new DBJob() {
 
-							public void run(ObjectContainer container, ClientContext context) {
-								ClientGet getter;
-								try {
-									getter = new ClientGet(FCPConnectionHandler.this, message, server, container);
-								} catch (IdentifierCollisionException e1) {
-									Logger.normal(this, "Identifier collision on "+this);
-									FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
-									outputHandler.queue(msg);
-									return;
-								} catch (MessageInvalidException e1) {
-									outputHandler.queue(new ProtocolErrorMessage(e1.protocolCode, false, e1.getMessage(), e1.ident, e1.global));
-									return;
+								public void run(ObjectContainer container, ClientContext context) {
+									ClientGet getter;
+									try {
+										getter = new ClientGet(FCPConnectionHandler.this, message, server, container);
+									} catch (IdentifierCollisionException e1) {
+										Logger.normal(this, "Identifier collision on "+this);
+										FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
+										outputHandler.queue(msg);
+										return;
+									} catch (MessageInvalidException e1) {
+										outputHandler.queue(new ProtocolErrorMessage(e1.protocolCode, false, e1.getMessage(), e1.ident, e1.global));
+										return;
+									}
+									try {
+										getter.register(container, false, false);
+										container.store(getter);
+									} catch (IdentifierCollisionException e) {
+										Logger.normal(this, "Identifier collision on "+this);
+										FCPMessage msg = new IdentifierCollisionMessage(id, global);
+										outputHandler.queue(msg);
+										return;
+									}
+									getter.start(container, context);
+									container.deactivate(getter, 1);
 								}
-								try {
-									getter.register(container, false, false);
-									container.store(getter);
-								} catch (IdentifierCollisionException e) {
-									Logger.normal(this, "Identifier collision on "+this);
-									FCPMessage msg = new IdentifierCollisionMessage(id, global);
-									outputHandler.queue(msg);
-									return;
-								}
-								getter.start(container, context);
-								container.deactivate(getter, 1);
-							}
-							
-						}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
+								
+							}, NativeThread.HIGH_PRIORITY-1, false);
+						} catch (DatabaseDisabledException e) {
+							outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence is disabled", id, global));
+							return;
+						} // user wants a response soon... but doesn't want it to block the queue page etc
 						return; // Don't run the start() below
 					} else {
 						cg = new ClientGet(this, message, server, null);
@@ -347,38 +362,42 @@ public class FCPConnectionHandler implements Closeable {
 					}
 					requestsByIdentifier.put(id, cp);
 				} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
-					server.core.clientContext.jobRunner.queue(new DBJob() {
+					try {
+						server.core.clientContext.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
-							ClientPut putter;
-							try {
-								putter = new ClientPut(FCPConnectionHandler.this, message, server, container);
-							} catch (IdentifierCollisionException e) {
-								Logger.normal(this, "Identifier collision on "+this);
-								FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
-								outputHandler.queue(msg);
-								return;
-							} catch (MessageInvalidException e) {
-								outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global));
-								return;
-							} catch (MalformedURLException e) {
-								outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
-								return;
+							public void run(ObjectContainer container, ClientContext context) {
+								ClientPut putter;
+								try {
+									putter = new ClientPut(FCPConnectionHandler.this, message, server, container);
+								} catch (IdentifierCollisionException e) {
+									Logger.normal(this, "Identifier collision on "+this);
+									FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
+									outputHandler.queue(msg);
+									return;
+								} catch (MessageInvalidException e) {
+									outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global));
+									return;
+								} catch (MalformedURLException e) {
+									outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
+									return;
+								}
+								try {
+									putter.register(container, false, false);
+									container.store(putter);
+								} catch (IdentifierCollisionException e) {
+									Logger.normal(this, "Identifier collision on "+this);
+									FCPMessage msg = new IdentifierCollisionMessage(id, global);
+									outputHandler.queue(msg);
+									return;
+								}
+								putter.start(container, context);
+								container.deactivate(putter, 1);
 							}
-							try {
-								putter.register(container, false, false);
-								container.store(putter);
-							} catch (IdentifierCollisionException e) {
-								Logger.normal(this, "Identifier collision on "+this);
-								FCPMessage msg = new IdentifierCollisionMessage(id, global);
-								outputHandler.queue(msg);
-								return;
-							}
-							putter.start(container, context);
-							container.deactivate(putter, 1);
-						}
-						
-					}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
+							
+						}, NativeThread.HIGH_PRIORITY-1, false);
+					} catch (DatabaseDisabledException e) {
+						outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence is disabled", id, global));
+					} // user wants a response soon... but doesn't want it to block the queue page etc
 					return; // Don't run the start() below
 				} else {
 					try {
@@ -409,16 +428,20 @@ public class FCPConnectionHandler implements Closeable {
 			if(persistent && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				final ClientPut c = cp;
 				// Run on the database thread if persistent because it will try to activate stuff...
-				server.core.clientContext.jobRunner.queue(new DBJob() {
+				try {
+					server.core.clientContext.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
-						if(c != null)
-							c.freeData(container);
-						else
-							message.freeData(container);
-					}
-					
-				}, NativeThread.HIGH_PRIORITY-1, false);
+						public void run(ObjectContainer container, ClientContext context) {
+							if(c != null)
+								c.freeData(container);
+							else
+								message.freeData(container);
+						}
+						
+					}, NativeThread.HIGH_PRIORITY-1, false);
+				} catch (DatabaseDisabledException e) {
+					Logger.error(this, "Unable to free data for insert because database disabled: "+e, e);
+				}
 			} else {
 				if(cp != null)
 					cp.freeData(null);
@@ -463,35 +486,39 @@ public class FCPConnectionHandler implements Closeable {
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
 			} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
-				server.core.clientContext.jobRunner.queue(new DBJob() {
+				try {
+					server.core.clientContext.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
-						ClientPutDir putter;
-						try {
-							putter = new ClientPutDir(FCPConnectionHandler.this, message, buckets, wasDiskPut, server, container);
-						} catch (IdentifierCollisionException e) {
-							Logger.normal(this, "Identifier collision on "+this);
-							FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
-							outputHandler.queue(msg);
-							return;
-						} catch (MalformedURLException e) {
-							outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
-							return;
+						public void run(ObjectContainer container, ClientContext context) {
+							ClientPutDir putter;
+							try {
+								putter = new ClientPutDir(FCPConnectionHandler.this, message, buckets, wasDiskPut, server, container);
+							} catch (IdentifierCollisionException e) {
+								Logger.normal(this, "Identifier collision on "+this);
+								FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
+								outputHandler.queue(msg);
+								return;
+							} catch (MalformedURLException e) {
+								outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
+								return;
+							}
+							try {
+								putter.register(container, false, false);
+								container.store(putter);
+							} catch (IdentifierCollisionException e) {
+								Logger.normal(this, "Identifier collision on "+this);
+								FCPMessage msg = new IdentifierCollisionMessage(id, global);
+								outputHandler.queue(msg);
+								return;
+							}
+							putter.start(container, context);
+							container.deactivate(putter, 1);
 						}
-						try {
-							putter.register(container, false, false);
-							container.store(putter);
-						} catch (IdentifierCollisionException e) {
-							Logger.normal(this, "Identifier collision on "+this);
-							FCPMessage msg = new IdentifierCollisionMessage(id, global);
-							outputHandler.queue(msg);
-							return;
-						}
-						putter.start(container, context);
-						container.deactivate(putter, 1);
-					}
-					
-				}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
+						
+					}, NativeThread.HIGH_PRIORITY-1, false);
+				} catch (DatabaseDisabledException e) {
+					outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.PERSISTENCE_DISABLED, false, "Persistence is disabled", id, global));
+				} // user wants a response soon... but doesn't want it to block the queue page etc
 				return; // Don't run the start() below
 				
 			} else {

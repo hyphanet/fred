@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
@@ -43,23 +44,27 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 			globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
 		}
 		
-		node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+		try {
+			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				FCPClient foreverClient = handler.getForeverClient(container);
-				container.activate(foreverClient, 1);
-				foreverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
-				foreverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
-				if(handler.getRebootClient().watchGlobal) {
-					FCPClient globalForeverClient = handler.server.globalForeverClient;
-					globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
-					globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
+				public void run(ObjectContainer container, ClientContext context) {
+					FCPClient foreverClient = handler.getForeverClient(container);
+					container.activate(foreverClient, 1);
+					foreverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
+					foreverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
+					if(handler.getRebootClient().watchGlobal) {
+						FCPClient globalForeverClient = handler.server.globalForeverClient;
+						globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
+						globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
+					}
+					handler.outputHandler.queue(new EndListPersistentRequestsMessage());
+					container.deactivate(foreverClient, 1);
 				}
-				handler.outputHandler.queue(new EndListPersistentRequestsMessage());
-				container.deactivate(foreverClient, 1);
-			}
-			
-		}, NativeThread.HIGH_PRIORITY-1, false);
+				
+			}, NativeThread.HIGH_PRIORITY-1, false);
+		} catch (DatabaseDisabledException e) {
+			handler.outputHandler.queue(new EndListPersistentRequestsMessage());
+		}
 	}
 
 	@Override

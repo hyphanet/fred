@@ -14,6 +14,7 @@ import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
@@ -113,7 +114,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		FetchContext context = getFetchContext();
 		FetchWaiter fw = new FetchWaiter();
 		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, this, null, null);
-		core.clientContext.start(get);
+		try {
+			core.clientContext.start(get);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
 		return fw.waitForCompletion();
 	}
 
@@ -126,7 +131,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		FetchWaiter fw = new FetchWaiter();
 		FetchContext context = getFetchContext(overrideMaxSize);
 		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, clientContext, null, null);
-		core.clientContext.start(get);
+		try {
+			core.clientContext.start(get);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
 		return fw.waitForCompletion();
 	}
 	
@@ -138,7 +147,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, uri, fctx, priorityClass, clientContext, null, null);
-		core.clientContext.start(get);
+		try {
+			core.clientContext.start(get);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
 		return get;
 	}
 	
@@ -152,7 +165,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				context, priorityClass,
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
-		core.clientContext.start(put, false);
+		try {
+			core.clientContext.start(put, false);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
 		return pw.waitForCompletion();
 	}
 
@@ -165,7 +182,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priorityClass,
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
-		core.clientContext.start(put, false);
+		try {
+			core.clientContext.start(put, false);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
 		return put;
 	}
 
@@ -190,7 +211,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
 			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false);
-		core.clientContext.start(putter);
+		try {
+			core.clientContext.start(putter);
+		} catch (DatabaseDisabledException e) {
+			// Impossible
+		}
 		return pw.waitForCompletion();
 	}
 	
@@ -259,6 +284,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			core.clientContext.start(get);
 		} catch (FetchException e) {
 			// Ignore
+		} catch (DatabaseDisabledException e) {
+			// Impossible
 		}
 	}
 

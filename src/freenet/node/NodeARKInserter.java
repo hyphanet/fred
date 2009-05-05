@@ -13,6 +13,7 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientPutter;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
@@ -182,6 +183,8 @@ public class NodeARKInserter implements ClientPutCallback, RequestClient {
 			}
 		} catch (InsertException e) {
 			onFailure(e, inserter, null);	
+		} catch (DatabaseDisabledException e) {
+			// Impossible
 		}
 	}
 	

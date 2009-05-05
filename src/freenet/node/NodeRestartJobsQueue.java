@@ -11,6 +11,7 @@ import com.db4o.query.Predicate;
 
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -157,7 +158,7 @@ public class NodeRestartJobsQueue {
 		return list.toArray(new RestartDBJob[list.size()]);
 	}
 	
-	void addLateRestartDatabaseJobs(DBJobRunner runner, ObjectContainer container) {
+	void addLateRestartDatabaseJobs(DBJobRunner runner, ObjectContainer container) throws DatabaseDisabledException {
 		for(int i=dbJobsEarly.length-1;i>=0;i--) {
 			container.activate(dbJobs[i], 1);
 			if(!dbJobs[i].isEmpty())

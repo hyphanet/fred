@@ -18,6 +18,7 @@ import com.db4o.query.Query;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Ticker;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -329,8 +330,9 @@ public class PersistentBlobTempBucketFactory {
 	
 	/**
 	 * @return A bucket, or null in various failure cases.
+	 * @throws DatabaseDisabledException 
 	 */
-	public PersistentBlobTempBucket makeBucket() {
+	public PersistentBlobTempBucket makeBucket() throws DatabaseDisabledException {
 		// Find a free slot.
 		synchronized(this) {
 			if(!freeSlots.isEmpty()) {
@@ -558,13 +560,17 @@ public class PersistentBlobTempBucketFactory {
 		ticker.queueTimedJob(new Runnable() {
 
 			public void run() {
-				jobRunner.queue(new DBJob() {
+				try {
+					jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
-						maybeShrink(container);
-					}
-					
-				}, NativeThread.NORM_PRIORITY-1, true);
+						public void run(ObjectContainer container, ClientContext context) {
+							maybeShrink(container);
+						}
+						
+					}, NativeThread.NORM_PRIORITY-1, true);
+				} catch (DatabaseDisabledException e) {
+					// Not much we can do
+				}
 			}
 			
 		}, 61*1000);

@@ -7,6 +7,7 @@ import java.net.URI;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ext.Db4oException;
 
 import freenet.client.ArchiveManager;
 import freenet.client.FECQueue;
@@ -18,6 +19,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.DatastoreChecker;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.InsertCompressor;
@@ -150,12 +152,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	private static final int FEC_QUEUE_CACHE_SIZE = 20;
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
+	private File persistentTempDir;
 	
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
-		fecQueue = FECQueue.create(node.nodeDBHandle, container);
+		killedDatabase = container == null;
+		FECQueue q = null;
+		try {
+			if(!killedDatabase) q = FECQueue.create(node.nodeDBHandle, container);
+			else q = new FECQueue(node.nodeDBHandle);
+		} catch (Db4oException e) {
+			killedDatabase = true;
+			q = new FECQueue(node.nodeDBHandle);
+		}
+		fecQueue = q;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true);
 		storeChecker = new DatastoreChecker(node);
@@ -164,12 +176,39 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		compressor = new RealCompressor(node.executor);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
-		restartJobsQueue = NodeRestartJobsQueue.init(node.nodeDBHandle, container);
-		startupDatabaseJobs = restartJobsQueue.getEarlyRestartDatabaseJobs(container);
+		NodeRestartJobsQueue rq = null;
+		try {
+			if(!killedDatabase) rq = container == null ? null : NodeRestartJobsQueue.init(node.nodeDBHandle, container);
+		} catch (Db4oException e) {
+			killedDatabase = true;
+		}
+		restartJobsQueue = rq;
+		RestartDBJob[] startupJobs = null;
+		try {
+			if(!killedDatabase)
+				startupJobs = restartJobsQueue.getEarlyRestartDatabaseJobs(container);
+		} catch (Db4oException e) {
+			killedDatabase = true; 
+		}
+		startupDatabaseJobs = startupJobs;
 		if(startupDatabaseJobs != null &&
-				startupDatabaseJobs.length > 0)
-			queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
-		restartJobsQueue.addLateRestartDatabaseJobs(this, container);
+				startupDatabaseJobs.length > 0) {
+			try {
+				queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
+			} catch (DatabaseDisabledException e1) {
+				// Impossible
+			}
+		}
+		if(!killedDatabase) {
+			try {
+				restartJobsQueue.addLateRestartDatabaseJobs(this, container);
+			} catch (Db4oException e) {
+				killedDatabase = true;
+			} catch (DatabaseDisabledException e) {
+				// addLateRestartDatabaseJobs only modifies the database in case of a job being deleted without being removed.
+				// So it is safe to just ignore this.
+			}
+		}
 
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
 			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ps, nodeDir);
@@ -241,7 +280,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 
 				@Override
 				public String get() {
-					return persistentTempBucketFactory.getDir().toString();
+					return persistentTempDir.toString();
 				}
 
 				@Override
@@ -257,16 +296,29 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				        return true;
 			        }
 			});
+		PersistentTempBucketFactory ptbf = null;
+		FilenameGenerator pfg = null;
+		persistentTempDir = new File(nodeConfig.getString("persistentTempDir"));
 		try {
-			File dir = new File(nodeConfig.getString("persistentTempDir"));
 			String prefix = "freenet-temp-";
-			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this, node.getTicker());
-			persistentTempBucketFactory.init(dir, prefix, random, node.fastWeakRandom);
-			persistentFilenameGenerator = persistentTempBucketFactory.fg;
+			if(!killedDatabase) {
+				ptbf = PersistentTempBucketFactory.load(persistentTempDir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this, node.getTicker());
+				ptbf.init(persistentTempDir, prefix, random, node.fastWeakRandom);
+				pfg = ptbf.fg;
+			}
 		} catch(IOException e2) {
 			String msg = "Could not find or create persistent temporary directory: "+e2;
 			e2.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
+		} catch (Db4oException e) {
+			killedDatabase = true;
+		}
+		if(killedDatabase) {
+			persistentTempBucketFactory = null;
+			persistentFilenameGenerator = null;
+		} else {
+			persistentTempBucketFactory = ptbf;
+			persistentFilenameGenerator = pfg;
 		}
 
 		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
@@ -327,8 +379,20 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
 		clientContext.init(requestStarters);
-		ClientRequestScheduler.loadKeyListeners(container, clientContext);
-		InsertCompressor.load(container, clientContext);
+		if(!killedDatabase) {
+			try {
+				ClientRequestScheduler.loadKeyListeners(container, clientContext);
+			} catch (Db4oException e) {
+				killedDatabase = true;
+			}
+		}
+		if(!killedDatabase) {
+			try {
+				InsertCompressor.load(container, clientContext);
+			} catch (Db4oException e) {
+				killedDatabase = true;
+			}
+		}
 
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
@@ -430,7 +494,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
-		uskManager.init(container, clientContext);
+		try {
+			uskManager.init(killedDatabase ? null : container, clientContext);
+		} catch (Db4oException e) {
+			killedDatabase = true;
+		}
 
 		nodeConfig.register("maxBackgroundUSKFetchers", "64", sortOrder++, true, false, "NodeClientCore.maxUSKFetchers",
 			"NodeClientCore.maxUSKFetchersLong", new IntCallback() {
@@ -465,6 +533,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
 			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
+			if(!killedDatabase)
+				fcpServer.load(container);
 		} catch(IOException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: " + e);
 		} catch(InvalidConfigValueException e) {
@@ -474,9 +544,29 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
 		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), l10n("startingUpShort"), UserAlert.MINOR));
+		this.alerts.register(new SimpleUserAlert(true, L10n.getString("QueueToadlet.persistenceBrokenTitle"),
+				L10n.getString("QueueToadlet.persistenceBroken",
+						new String[]{ "TEMPDIR", "DBFILE" },
+						new String[]{ FileUtil.getCanonicalFile(getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(node.getNodeDir())+File.separator+"node.db4o" }
+				), L10n.getString("QueueToadlet.persistenceBrokenShortAlert"), UserAlert.CRITICAL_ERROR)
+				{
+			public boolean isValid() {
+				synchronized(NodeClientCore.this) {
+					if(!killedDatabase) return false;
+				}
+				if(NodeClientCore.this.node.isStopping()) return false;
+				return true;
+			}
+			
+			public boolean userCanDismiss() {
+				return false;
+			}
+			
+		});
 		toadletContainer = toadlets;
 		toadletContainer.setCore(this);
 		toadletContainer.setBucketFactory(tempBucketFactory);
+		if(fecQueue == null) throw new NullPointerException();
 		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
 		OOMHandler.addOOMHook(this);
 	}
@@ -529,13 +619,17 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	public void start(Config config) throws NodeInitException {
 		backgroundBlockEncoder.setContext(clientContext);
 		node.executor.execute(backgroundBlockEncoder, "Background block encoder");
-		clientContext.jobRunner.queue(new DBJob() {
-			
-			public void run(ObjectContainer container, ClientContext context) {
-				ArchiveManager.init(container, context, context.nodeDBHandle);
-			}
-			
-		}, NativeThread.MAX_PRIORITY, false);
+		try {
+			clientContext.jobRunner.queue(new DBJob() {
+				
+				public void run(ObjectContainer container, ClientContext context) {
+					ArchiveManager.init(container, context, context.nodeDBHandle);
+				}
+				
+			}, NativeThread.MAX_PRIORITY, false);
+		} catch (DatabaseDisabledException e) {
+			// Safe to ignore
+		}
 		persister.start();
 		
 		storeChecker.start(node.executor, "Datastore checker");
@@ -553,7 +647,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				// Call it anyway; if we are not lazy, it won't have to start any requests
 				// But it does other things too
 				fcpServer.finishStart();
-				persistentTempBucketFactory.completedInit();
+				if(persistentTempBucketFactory != null)
+					persistentTempBucketFactory.completedInit();
 				node.pluginManager.start(node.config);
 				node.ipDetector.ipDetectorManager.start();
 				// FIXME most of the work is done after this point on splitfile starter threads.
@@ -593,7 +688,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			if(startupDatabaseJobsDone == startupDatabaseJobs.length)
 				startupDatabaseJobs = null;
 			else
-				context.jobRunner.queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
+				try {
+					context.jobRunner.queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
+				} catch (DatabaseDisabledException e) {
+					// Do nothing
+				}
 		}
 		
 	};
@@ -1288,7 +1387,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	}
 
 	public File getPersistentTempDir() {
-		return persistentTempBucketFactory.getDir();
+		return persistentTempDir;
 	}
 
 	public File getTempDir() {
@@ -1321,7 +1420,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		return requestStarters.countTransientQueuedRequests();
 	}
 	
-	public void queue(final DBJob job, int priority, boolean checkDupes) {
+	public void queue(final DBJob job, int priority, boolean checkDupes) throws DatabaseDisabledException{
+		synchronized(this) {
+			if(killedDatabase) throw new DatabaseDisabledException();
+		}
 		if(checkDupes)
 			this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, ""+job);
 		else
@@ -1426,15 +1528,21 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	/**
 	 * Queue a job to be run soon after startup. The job must delete itself.
 	 */
-	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) {
+	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) throws DatabaseDisabledException {
+		synchronized(this) {
+			if(killedDatabase) throw new DatabaseDisabledException();
+		}
 		restartJobsQueue.queueRestartJob(job, priority, container, early);
 	}
 
-	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) {
+	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) throws DatabaseDisabledException {
+		synchronized(this) {
+			if(killedDatabase) throw new DatabaseDisabledException();
+		}
 		restartJobsQueue.removeRestartJob(job, priority, container);
 	}
 
-	public void runBlocking(final DBJob job, int priority) {
+	public void runBlocking(final DBJob job, int priority) throws DatabaseDisabledException {
 		if(clientDatabaseExecutor.onThread()) {
 			job.run(node.db, clientContext);
 		} else {
@@ -1472,6 +1580,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 
 	public synchronized void killDatabase() {
 		killedDatabase = true;
+	}
+	
+	public synchronized boolean killedDatabase() {
+		return killedDatabase;
 	}
 	
 }
