@@ -198,12 +198,14 @@ final public class FileUtil {
             if(!orig.exists()) {
             	throw new IllegalArgumentException("Original doesn't exist!");
             }
-    		if(dest.exists() && overwrite)
+            if(dest.exists()) {
+    		if(overwrite)
     			dest.delete();
     		else {
     			System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
     			return false;
     		}
+            }
     		if(!orig.renameTo(dest)) {
     			// Copy the data
     			InputStream is = null;
