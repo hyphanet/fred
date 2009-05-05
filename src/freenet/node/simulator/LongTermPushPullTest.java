@@ -79,6 +79,7 @@ public class LongTermPushPullTest {
 		System.out.println("Version:" + Version.buildNumber());
 		csvLine.add(String.valueOf(Version.buildNumber()));
 
+		int exitCode = 0;
 		Node node = null;
 		Node node2 = null;
 		try {
@@ -106,7 +107,11 @@ public class LongTermPushPullTest {
 			// Start it
 			node.start(true);
 			long t1 = System.currentTimeMillis();
-			waitForTenNodes(node);
+			if (!waitForTenNodes(node)) {
+				exitCode = EXIT_FAILED_TARGET;
+				return;
+			}
+				
 			long t2 = System.currentTimeMillis();
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
@@ -148,7 +153,10 @@ public class LongTermPushPullTest {
 			node2.start(true);
 
 			t1 = System.currentTimeMillis();
-			waitForTenNodes(node2);
+			if (!waitForTenNodes(node2)) {
+				exitCode = EXIT_FAILED_TARGET;
+				return;
+			}
 			t2 = System.currentTimeMillis();
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
@@ -178,7 +186,7 @@ public class LongTermPushPullTest {
 			}
 		} catch (Throwable t) {
 			t.printStackTrace();
-			System.exit(EXIT_THREW_SOMETHING);
+			exitCode = EXIT_THREW_SOMETHING;
 		} finally {
 			try {
 				if (node != null)
@@ -202,10 +210,11 @@ public class LongTermPushPullTest {
 				fos.close();
 			} catch (IOException e) {
 				e.printStackTrace();
-				System.exit(EXIT_THREW_SOMETHING);
+				exitCode = EXIT_THREW_SOMETHING;
 			}
+			
+			System.exit(exitCode);
 		}
-		System.exit(0);
 	}
 
 	private static Bucket randomData(Node node) throws IOException {
@@ -222,7 +231,7 @@ public class LongTermPushPullTest {
 		return data;
 	}
 
-	private static void waitForTenNodes(Node node) throws InterruptedException {
+	private static boolean waitForTenNodes(Node node) throws InterruptedException {
 		// Wait until we have 10 connected nodes...
 		int seconds = 0;
 		boolean success = false;
@@ -240,9 +249,8 @@ public class LongTermPushPullTest {
 				break;
 			}
 		}
-		if (!success) {
+		if (!success)
 			System.err.println("Failed to reach target peers count " + TARGET_PEERS + " in 10 minutes.");
-			System.exit(EXIT_FAILED_TARGET);
-		}
+		return success;
 	}
 }
