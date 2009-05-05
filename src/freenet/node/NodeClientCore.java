@@ -159,6 +159,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		killedDatabase = container == null;
+		if(killedDatabase)
+			System.err.println("Database corrupted (before entering NodeClientCore)!");
 		FECQueue q = null;
 		try {
 			if(!killedDatabase) q = FECQueue.create(node.nodeDBHandle, container);
@@ -569,6 +571,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		if(fecQueue == null) throw new NullPointerException();
 		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
 		OOMHandler.addOOMHook(this);
+		if(killedDatabase)
+			System.err.println("Database corrupted (leaving NodeClientCore)!");
 	}
 
 	private static String l10n(String key) {

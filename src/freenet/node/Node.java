@@ -912,6 +912,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			System.err.println("Opened database");
 		} catch (Db4oException e) {
 			database = null;
+			System.err.println("Failed to open database: "+e);
+			e.printStackTrace();
 		}
 		db = database;
 		
