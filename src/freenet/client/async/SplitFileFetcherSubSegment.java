@@ -757,7 +757,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	public void reschedule(ObjectContainer container, ClientContext context) {
 		try {
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, container, segment.blockFetchContext.blocks, true);
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, segment.blockFetchContext.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}

@@ -191,17 +191,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		choosenPriorityScheduler = val;
 	}
 	
-	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, ObjectContainer container) {
-		registerInsert(req, persistent, regmeOnly, databaseExecutor.onThread(), container);
-	}
-
 	static final int QUEUE_THRESHOLD = 100;
 	
-	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, boolean onDatabaseThread, ObjectContainer container) {
+	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, ObjectContainer container) {
 		if(!isInsertScheduler)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
 		if(persistent) {
-			if(onDatabaseThread) {
 				if(regmeOnly) {
 					long bootID = 0;
 					boolean queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) >= QUEUE_THRESHOLD;
@@ -223,7 +218,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(container.ext().isActive(req))
 								Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
 							container.activate(req, 1);
-							registerInsert(req, true, false, true, container);
+							registerInsert(req, true, false, container);
 							container.deactivate(req, 1);
 						}
 						
@@ -236,19 +231,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				schedCore.innerRegister(req, random, container, null);
 				starter.wakeUp();
-			} else {
-				jobRunner.queue(new DBJob() {
-
-					public void run(ObjectContainer container, ClientContext context) {
-						if(container.ext().isActive(req))
-							Logger.error(this, "ALREADY ACTIVE: "+req+" in off-thread insert register");
-						container.activate(req, 1);
-						schedCore.innerRegister(req, random, container, null);
-						container.deactivate(req, 1);
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-			}
 		} else {
 			schedTransient.innerRegister(req, random, null, null);
 			starter.wakeUp();
@@ -267,7 +249,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * register the listener once.
 	 * @throws FetchException 
 	 */
-	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, boolean onDatabaseThread, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
+	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, ObjectContainer container, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
 		if(logMINOR)
 			Logger.minor(this, "register("+persistent+","+hasListener+","+getters);
 		if(isInsertScheduler) {
@@ -275,40 +257,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			throw e;
 		}
 		if(persistent) {
-			if(onDatabaseThread) {
 				innerRegister(hasListener, getters, blocks, noCheckStore, container);
-			} else {
-				jobRunner.queue(new DBJob() {
-
-					public void run(ObjectContainer container, ClientContext context) {
-						// registerOffThread would be pointless because this is a separate job.
-						if(hasListener != null) {
-							if(container.ext().isActive(hasListener))
-								Logger.error(this, "ALREADY ACTIVE in delayed register: "+hasListener);
-							container.activate(hasListener, 1);
-						}
-						if(getters != null) {
-							for(int i=0;i<getters.length;i++) {
-								if(container.ext().isActive(getters[i]))
-									Logger.error(this, "ALREADY ACTIVE in delayed register: "+getters[i]);
-								container.activate(getters[i], 1);
-							}
-						}
-						try {
-							innerRegister(hasListener, getters, blocks, noCheckStore, container);
-						} catch (KeyListenerConstructionException e) {
-							Logger.error(this, "Registration failed to create Bloom filters: "+e+" on "+hasListener, e);
-						}
-						if(hasListener != null)
-							container.deactivate(hasListener, 1);
-						if(getters != null) {
-							for(int i=0;i<getters.length;i++)
-								container.deactivate(getters[i], 1);
-						}
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-			}
 		} else {
 			final KeyListener listener;
 			if(hasListener != null) {
@@ -328,7 +277,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(!(getters[i].isCancelled(null) || getters[i].isEmpty(null)))
 						anyValid = true;
 				}
-				finishRegister(getters, false, onDatabaseThread, container, anyValid, null);
+				finishRegister(getters, false, container, anyValid, null);
 			}
 		}
 	}
@@ -363,27 +312,22 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 		} else {
 			// We have already checked the datastore, this is a retry, the listener hasn't been unregistered.
-			this.finishRegister(getters, true, true, container, true, null);
+			this.finishRegister(getters, true, container, true, null);
 		}
 	}
 
-	void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
+	void finishRegister(final SendableGet[] getters, boolean persistent, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
-			if(onDatabaseThread || !persistent) {
+			if(!persistent) {
 				for(int i=0;i<getters.length;i++) {
-					if(persistent)
-						container.activate(getters[i], 1);
 					getters[i].internalError(e, this, container, clientContext, persistent);
-					if(persistent)
-						container.deactivate(getters[i], 1);
 				}
 			}
 			throw e;
 		}
 		if(persistent) {
 			// Add to the persistent registration queue
-			if(onDatabaseThread) {
 				if(!databaseExecutor.onThread()) {
 					throw new IllegalStateException("Not on database thread!");
 				}
@@ -414,36 +358,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 					container.delete(reg);
 				maybeFillStarterQueue(container, clientContext, getters);
 				starter.wakeUp();
-			} else {
-				jobRunner.queue(new DBJob() {
-
-					public void run(ObjectContainer container, ClientContext context) {
-						if(logMINOR)
-							Logger.minor(this, "finishRegister() for "+getters);
-						boolean wereAnyValid = false;
-						for(SendableGet getter : getters) {
-							if(container.ext().isActive(getter))
-								Logger.error(this, "ALREADY ACTIVE in delayed finishRegister: "+getter);
-							container.activate(getter, 1);
-							if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
-								wereAnyValid = true;
-								getter.preRegister(container, clientContext, true);
-								schedCore.innerRegister(getter, random, container, getters);
-							} else
-								getter.preRegister(container, clientContext, false);
-							container.deactivate(getter, 1);
-						}
-						if(!wereAnyValid) {
-							Logger.normal(this, "No requests valid: "+getters);
-						}
-						if(reg != null)
-							container.delete(reg);
-						maybeFillStarterQueue(container, context, getters);
-						starter.wakeUp();
-					}
-					
-				}, NativeThread.NORM_PRIORITY+1, false);
-			}
 		} else {
 			// Register immediately.
 			for(int i=0;i<getters.length;i++) {

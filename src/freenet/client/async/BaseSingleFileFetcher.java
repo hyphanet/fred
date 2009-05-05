@@ -278,7 +278,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				container.activate(ctx.blocks, 5);
 		}
 		try {
-			getScheduler(context).register(this, new SendableGet[] { this }, persistent, true, container, ctx.blocks, false);
+			getScheduler(context).register(this, new SendableGet[] { this }, persistent, container, ctx.blocks, false);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
@@ -291,7 +291,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				container.activate(ctx.blocks, 5);
 		}
 		try {
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, container, ctx.blocks, true);
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, ctx.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}

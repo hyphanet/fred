@@ -906,7 +906,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		};
 		runningStoreChecker = true;
 		try {
-			context.getSskFetchScheduler().register(null, new SendableGet[] { storeChecker } , false, false, null, null, false);
+			context.getSskFetchScheduler().register(null, new SendableGet[] { storeChecker } , false, null, null, false);
 		} catch (KeyListenerConstructionException e1) {
 			// Impossible
 			runningStoreChecker = false;

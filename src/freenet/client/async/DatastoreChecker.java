@@ -412,14 +412,14 @@ public class DatastoreChecker implements PrioRunnable {
 						return;
 					}
 					container.activate(get, 1);
-					scheduler.finishRegister(new SendableGet[] { get }, true, true, container, valid, it);
+					scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
 					container.deactivate(get, 1);
 					loader.run(container, context);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
 		} else {
-			sched.finishRegister(new SendableGet[] { getter }, false, false, null, anyValid, item);
+			sched.finishRegister(new SendableGet[] { getter }, false, null, anyValid, item);
 		}
 	}
 	
