@@ -596,7 +596,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(lastBlock.size() != CHKBlock.DATA_LENGTH) {
 				try {
 					dataBuckets[dataBuckets.length-1].data =
-						BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.persistentBucketFactory, (int) lastBlock.size());
+						BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), (int) lastBlock.size());
 					lastBlock.free();
 					if(persistent) {
 						lastBlock.removeFrom(container);
