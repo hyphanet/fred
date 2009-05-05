@@ -574,17 +574,17 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	
 	private void sendPersistenceDisabledError(ToadletContext ctx) {
 		try {
-			if(core.node.isStopping()) {
+			if(core.node.isStopping())
 				sendErrorPage(ctx, 200,
 						L10n.getString("QueueToadlet.shuttingDownTitle"),
 						L10n.getString("QueueToadlet.shuttingDown"));
-			}
-			sendErrorPage(ctx, 200, 
-					L10n.getString("QueueToadlet.persistenceBrokenTitle"),
-					L10n.getString("QueueToadlet.persistenceBroken",
-							new String[]{ "TEMPDIR", "DBFILE" },
-							new String[]{ FileUtil.getCanonicalFile(core.getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(core.node.getNodeDir())+File.separator+"node.db4o" }
-					));
+			else
+				sendErrorPage(ctx, 200, 
+						L10n.getString("QueueToadlet.persistenceBrokenTitle"),
+						L10n.getString("QueueToadlet.persistenceBroken",
+								new String[]{ "TEMPDIR", "DBFILE" },
+								new String[]{ FileUtil.getCanonicalFile(core.getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(core.node.getNodeDir())+File.separator+"node.db4o" }
+						));
 		} catch (ToadletContextClosedException e) {
 			// Ignore
 		} catch (IOException e) {
