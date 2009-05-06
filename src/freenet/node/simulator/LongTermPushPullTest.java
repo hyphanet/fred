@@ -55,10 +55,10 @@ public class LongTermPushPullTest {
 	private static final int EXIT_FAILED_TARGET = 258;
 	private static final int EXIT_THREW_SOMETHING = 261;
 
-	private static final int DARKNET_PORT1 = 5002;
-	private static final int OPENNET_PORT1 = 5003;
-	private static final int DARKNET_PORT2 = 5004;
-	private static final int OPENNET_PORT2 = 5005;
+	private static final int DARKNET_PORT1 = 5010;
+	private static final int OPENNET_PORT1 = 5011;
+	private static final int DARKNET_PORT2 = 5012;
+	private static final int OPENNET_PORT2 = 5013;
 
 	private static final int MAX_N = 8;
 
