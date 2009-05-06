@@ -2512,6 +2512,50 @@ public class Node implements TimeSkewDetectorCallback {
 		return m.getInt(DMT.COUNTER) - initialX;
 	}
 
+	private KeyBlock makeRequestLocal(Key key, long uid, boolean promoteCache) {
+		KeyBlock kb = null;
+
+		if (key instanceof NodeCHK) {
+			kb = fetch((NodeCHK) key, !promoteCache);
+		} else if (key instanceof NodeSSK) {
+			NodeSSK sskKey = (NodeSSK) key;
+			DSAPublicKey pubKey = sskKey.getPubKey();
+			if (pubKey == null) {
+				pubKey = getPubKey.getKey(sskKey.getPubKeyHash());
+				if (logMINOR)
+					Logger.minor(this, "Fetched pubkey: " + pubKey);
+				try {
+					sskKey.setPubKey(pubKey);
+				} catch (SSKVerifyException e) {
+					Logger.error(this, "Error setting pubkey: " + e, e);
+				}
+			}
+			if (pubKey != null) {
+				if (logMINOR)
+					Logger.minor(this, "Got pubkey: " + pubKey);
+				kb = fetch(sskKey, !promoteCache);
+			} else {
+				if (logMINOR)
+					Logger.minor(this, "Not found because no pubkey: " + uid);
+			}
+		} else
+			throw new IllegalStateException("Unknown key type: " + key.getClass());
+		
+		if (kb != null) {
+			// Probably somebody waiting for it. Trip it.
+			if (clientCore != null && clientCore.requestStarters != null) {
+				if (kb instanceof CHKBlock)
+					clientCore.requestStarters.chkFetchScheduler.tripPendingKey(kb);
+				else
+					clientCore.requestStarters.sskFetchScheduler.tripPendingKey(kb);
+			}
+			failureTable.onFound(kb);
+			return kb;
+		}
+
+		return null;
+	}
+	
 	/**
 	 * Check the datastore, then if the key is not in the store,
 	 * check whether another node is requesting the same key at
@@ -2526,41 +2570,10 @@ public class Node implements TimeSkewDetectorCallback {
 	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly) {
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
-		KeyBlock chk = null;
 		if(!ignoreStore) {
-			if(key instanceof NodeCHK) {
-				chk = fetch((NodeCHK)key, !cache);
-			} else if(key instanceof NodeSSK) {
-				NodeSSK k = (NodeSSK)key;
-				DSAPublicKey pubKey = k.getPubKey();
-				if(pubKey == null) {
-					pubKey = getPubKey.getKey(k.getPubKeyHash());
-					if(logMINOR) Logger.minor(this, "Fetched pubkey: "+pubKey);
-					try {
-						k.setPubKey(pubKey);
-					} catch (SSKVerifyException e) {
-						Logger.error(this, "Error setting pubkey: "+e, e);
-					}
-				}
-				if(pubKey != null) {
-					if(logMINOR) Logger.minor(this, "Got pubkey: "+pubKey);
-					chk = fetch((NodeSSK)key, !cache);
-				} else {
-					if(logMINOR) Logger.minor(this, "Not found because no pubkey: "+uid);
-				}
-			} else
-				throw new IllegalStateException("Unknown key type: "+key.getClass());
-			if(chk != null) {
-				// Probably somebody waiting for it. Trip it.
-				if(clientCore != null && clientCore.requestStarters != null) {
-					if(chk instanceof CHKBlock)
-						clientCore.requestStarters.chkFetchScheduler.tripPendingKey(chk);
-					else
-						clientCore.requestStarters.sskFetchScheduler.tripPendingKey(chk);
-				}
-				failureTable.onFound(chk);
-				return chk;
-			}
+			KeyBlock kb = makeRequestLocal(key, uid, cache);
+			if (kb != null)
+				return kb;
 		}
 		if(localOnly) return null;
 		if(logMINOR) Logger.minor(this, "Not in store locally");
