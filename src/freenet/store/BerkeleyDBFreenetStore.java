@@ -53,7 +53,7 @@ import freenet.support.SortedLongSet;
  * @author tubbie
  * @author amphibian
  */
-public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
+public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetStore<T>, OOMHook {
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -87,7 +87,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private final SortedLongSet freeBlocks;
 	private final String name;
 	/** Callback which translates records to blocks and back, specifies the size of blocks etc. */
-	private final StoreCallback callback;
+	private final StoreCallback<T> callback;
 	private final boolean collisionPossible;
 	
 	private long lastRecentlyUsed;
@@ -106,9 +106,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		return new File(baseStoreDir, newStoreFileName);
 	}
 	
-	public static FreenetStore construct(File baseStoreDir, boolean isStore, String suffix, long maxStoreKeys,
+	public static <T extends StorableBlock> FreenetStore<T> construct(File baseStoreDir, boolean isStore, String suffix, long maxStoreKeys,
 	        StoreType type, Environment storeEnvironment, SemiOrderedShutdownHook storeShutdownHook,
-	        File reconstructFile, StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
+	        File reconstructFile, StoreCallback<T> callback, RandomSource random) throws DatabaseException, IOException {
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
@@ -129,12 +129,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				reconstructFile, callback, random);
 	}
 
-	private static FreenetStore openStore(Environment storeEnvironment, String newDBPrefix, File newStoreFile, File lruFile,
+	private static <T extends StorableBlock> FreenetStore<T> openStore(Environment storeEnvironment, String newDBPrefix, File newStoreFile, File lruFile,
 			File keysFile, File newFixSecondaryFile, long maxStoreKeys, SemiOrderedShutdownHook storeShutdownHook, 
-			File reconstructFile, StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
+			File reconstructFile, StoreCallback<T> callback, RandomSource random) throws DatabaseException, IOException {
 		try {
 			// First try just opening it.
-			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
+			return new BerkeleyDBFreenetStore<T>(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
 					maxStoreKeys, false, storeShutdownHook, reconstructFile, 
 					callback, random);
 		} catch (DatabaseException e) {
@@ -149,7 +149,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			
 			// Reconstruct
 			
-			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
+			return new BerkeleyDBFreenetStore<T>(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
 					maxStoreKeys, storeShutdownHook, reconstructFile, callback, random);
 		}
 	}
@@ -193,7 +193,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
 			File fixSecondaryFile, long maxChkBlocks, boolean wipe, SemiOrderedShutdownHook storeShutdownHook,
 			File reconstructFile,
-			StoreCallback callback, RandomSource random) throws IOException, DatabaseException {
+			StoreCallback<T> callback, RandomSource random) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		
@@ -870,7 +870,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	 */
 	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
 			File fixSecondaryFile, long maxChkBlocks, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile,
-			StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
+			StoreCallback<T> callback, RandomSource random) throws DatabaseException, IOException {
 		this(env, prefix, storeFile, lruFile, keysFile, fixSecondaryFile, maxChkBlocks, true, storeShutdownHook,
 				reconstructFile, callback, random);
 	}
@@ -1159,7 +1159,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	/**
 	 * {@inheritDoc}
 	 */
-	public StorableBlock fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote) throws IOException {
+	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote) throws IOException {
 		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		int running;
@@ -1199,7 +1199,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 
 			StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(blockDBE);
 						
-			StorableBlock block = null;
+			T block = null;
 			
 			if(logMINOR) Logger.minor(this, "Reading block "+storeBlock.offset+"...");
 			try {
@@ -1278,7 +1278,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				}
 				
 				if(!dontPromote) {
-					storeBlock.updateRecentlyUsed();
+					storeBlock.updateRecentlyUsed(this);
 					DatabaseEntry updateDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
 					c.putCurrent(updateDBE);
@@ -1731,11 +1731,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		return -1;
 	}
 
-	private class StoreBlock {
+	private static class StoreBlock {
 		private long recentlyUsed;
 		private long offset;
 		
-		public StoreBlock(final BerkeleyDBFreenetStore bdbfs, long offset) {
+		public StoreBlock(final BerkeleyDBFreenetStore<?> bdbfs, long offset) {
 			this(offset, bdbfs.getNewRecentlyUsed());
 		}
 		
@@ -1753,8 +1753,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			recentlyUsed = 0;
 		}
 		
-		public void updateRecentlyUsed() {
-			recentlyUsed = getNewRecentlyUsed();
+		public void updateRecentlyUsed(BerkeleyDBFreenetStore<?> bdbfs) {
+			recentlyUsed = bdbfs.getNewRecentlyUsed();
 		}
 		
 		public long getOffset() {
