@@ -12,8 +12,6 @@ import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -55,7 +53,6 @@ import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
-import freenet.crypt.SHA256;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -109,14 +106,12 @@ import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
-import freenet.support.ByteArrayWrapper;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -139,7 +134,7 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 /**
  * @author amphibian
  */
-public class Node implements TimeSkewDetectorCallback, GetPubkey {
+public class Node implements TimeSkewDetectorCallback {
 
 	private static volatile boolean logMINOR;
 
@@ -369,6 +364,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** The public key datacache (by hash). Short term cache which stores 
 	 * everything that passes through this node. */
 	private PubkeyStore pubKeyDatacache;
+
+	private GetPubkey getPubKey = new GetPubkey();
+	
 	/** RequestSender's currently running, by KeyHTLPair */
 	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
 	/** RequestSender's currently transferring, by key */
@@ -437,8 +435,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
-	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
-	final LRUHashtable<ByteArrayWrapper, DSAPublicKey> cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	public final TokenBucket outputThrottle;
@@ -514,9 +510,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private boolean hasStarted;
 	private boolean isStopping = false;
 	
-	// Debugging stuff
-	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
-
 	/**
 	 * Minimum uptime for us to consider a node an acceptable place to store a key. We store a key
 	 * to the datastore only if it's from an insert, and we are a sink, but when calculating whether
@@ -761,7 +754,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue<Long>();
 		this.config = config;
-		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
 		lm = new LocationManager(random, this);
 
 		try {
@@ -1886,13 +1878,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
 			pubKeyDatacache = new PubkeyStore();
 			new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			sskDatastore = new SSKStore(this);
+			sskDatastore = new SSKStore(getPubKey);
 			new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-			sskDatacache = new SSKStore(this);
+			sskDatacache = new SSKStore(getPubKey);
 			new RAMFreenetStore(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
 			envMutableConfig = null;
 			this.storeEnvironment = null;
 		}
+		getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
 		
@@ -2086,12 +2079,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
-			sskDatastore = new SSKStore(this);
+			sskDatastore = new SSKStore(getPubKey);
 			SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store", sskDatastore,
 			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
-			sskDatacache = new SSKStore(this);
+			sskDatacache = new SSKStore(getPubKey);
 			SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache", sskDatacache,
 			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
 
@@ -2236,12 +2229,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
-			sskDatastore = new SSKStore(this);
+			sskDatastore = new SSKStore(getPubKey);
 			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, StoreType.SSK, 
 					storeEnvironment, shutdownHook, reconstructFile, sskDatastore, random);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
-			sskDatacache = new SSKStore(this);
+			sskDatacache = new SSKStore(getPubKey);
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxStoreKeys, StoreType.SSK, 
 					storeEnvironment, shutdownHook, reconstructFile, sskDatacache, random);
 		} catch (final FileNotFoundException e1) {
@@ -2541,7 +2534,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				NodeSSK k = (NodeSSK)key;
 				DSAPublicKey pubKey = k.getPubKey();
 				if(pubKey == null) {
-					pubKey = getKey(k.getPubKeyHash());
+					pubKey = getPubKey.getKey(k.getPubKeyHash());
 					if(logMINOR) Logger.minor(this, "Fetched pubkey: "+pubKey);
 					try {
 						k.setPubKey(pubKey);
@@ -2835,7 +2828,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep);
+			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep);
 			if(deep) {
 				sskDatastore.put(block, false);
 			}
@@ -2995,7 +2988,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
 		if(cache)
-			cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY));
+			getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY));
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
@@ -3332,89 +3325,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see freenet.node.GetPubkey#getKey(byte[])
-	 */
-	public DSAPublicKey getKey(byte[] hash) {
-		ByteArrayWrapper w = new ByteArrayWrapper(hash);
-		if(logMINOR) Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
-		if(USE_RAM_PUBKEYS_CACHE) {
-			synchronized(cachedPubKeys) {
-				DSAPublicKey key = cachedPubKeys.get(w);
-				if(key != null) {
-					cachedPubKeys.push(w, key);
-					if(logMINOR) Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
-					return key;
-				}
-			}
-		}
-		try {
-			DSAPublicKey key;
-			key = pubKeyDatastore.fetch(hash, false);
-			if(key == null)
-				key = pubKeyDatacache.fetch(hash, false);
-			if(key != null) {
-				cacheKey(hash, key, false);
-				if(logMINOR) Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
-			}
-			return key;
-		} catch (IOException e) {
-			// FIXME deal with disk full, access perms etc; tell user about it.
-			Logger.error(this, "Error accessing pubkey store: "+e, e);
-			return null;
-		}
-	}
-	
-	/**
-	 * Cache a public key
-	 */
-	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep) {
-		if(logMINOR) Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
-		ByteArrayWrapper w = new ByteArrayWrapper(hash);
-		synchronized(cachedPubKeys) {
-			DSAPublicKey key2 = cachedPubKeys.get(w);
-			if((key2 != null) && !key2.equals(key)) {
-				// FIXME is this test really needed?
-				// SHA-256 inside synchronized{} is a bad idea
-				MessageDigest md256 = SHA256.getMessageDigest();
-				try {
-				byte[] hashCheck = md256.digest(key.asBytes());
-				if(Arrays.equals(hashCheck, hash)) {
-					Logger.error(this, "Hash is correct!!!");
-					// Verify the old key
-					byte[] oldHash = md256.digest(key2.asBytes());
-					if(Arrays.equals(oldHash, hash)) {
-						Logger.error(this, "Old hash is correct too!! - Bug in DSAPublicKey.equals() or SHA-256 collision!");
-					} else {
-						Logger.error(this, "Old hash is wrong!");
-						cachedPubKeys.removeKey(w);
-						cacheKey(hash, key, deep);
-					}
-				} else {
-					Logger.error(this, "New hash is wrong");
-				}
-				} finally {
-					SHA256.returnMessageDigest(md256);
-				}
-				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
-			}
-			cachedPubKeys.push(w, key);
-			while(cachedPubKeys.size() > MAX_MEMORY_CACHED_PUBKEYS)
-				cachedPubKeys.popKey();
-		}
-		try {
-			if(deep) {
-				pubKeyDatastore.put(hash, key);
-				pubKeyDatastore.fetch(hash, true);
-			}
-			pubKeyDatacache.put(hash, key);
-			pubKeyDatacache.fetch(hash, true);
-		} catch (IOException e) {
-			// FIXME deal with disk full, access perms etc; tell user about it.
-			Logger.error(this, "Error accessing pubkey store: "+e, e);
-		}
-	}
-
 	public boolean isTestnetEnabled() {
 		return testnetEnabled;
 	}
@@ -3431,7 +3341,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public ClientKeyBlock fetch(ClientSSK clientSSK, boolean dontPromote) throws SSKVerifyException {
 		DSAPublicKey key = clientSSK.getPubKey();
 		if(key == null) {
-			key = getKey(clientSSK.pubKeyHash);
+			key = getPubKey.getKey(clientSSK.pubKeyHash);
 		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
@@ -3443,7 +3353,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
-		cacheKey(clientSSK.pubKeyHash, key, false);
+		getPubKey.cacheKey(clientSSK.pubKeyHash, key, false);
 		return ClientSSKBlock.construct(block, clientSSK);
 	}
 
