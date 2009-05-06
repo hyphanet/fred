@@ -82,7 +82,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	this.source = source;
     	this.htl = htl;
     	this.uid = uid;
-    	myKey = (NodeSSK) block.getKey();
+    	myKey = block.getKey();
     	data = block.getRawData();
     	headers = block.getRawHeaders();
     	target = myKey.toNormalizedDouble();

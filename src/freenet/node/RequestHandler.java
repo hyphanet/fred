@@ -309,7 +309,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					return;
 				case RequestSender.SUCCESS:
 					if(key instanceof NodeSSK)
-						sendSSK(rs.getHeaders(), rs.getSSKData(), needsPubKey, ((NodeSSK) rs.getSSKBlock().getKey()).getPubKey());
+						sendSSK(rs.getHeaders(), rs.getSSKData(), needsPubKey, (rs.getSSKBlock().getKey()).getPubKey());
 					else
 						if(bt == null && !disconnected) {
 							// Bug! This is impossible!

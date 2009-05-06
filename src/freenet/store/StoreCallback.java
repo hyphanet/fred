@@ -12,7 +12,7 @@ import freenet.keys.KeyVerifyException;
 /**
  * @author toad
  */
-public abstract class StoreCallback {
+public abstract class StoreCallback<T extends StorableBlock> {
 	
 	/** Length of a data block. Fixed for lifetime of the store. */
 	public abstract int dataLength();
@@ -35,14 +35,14 @@ public abstract class StoreCallback {
 	/** Can the same key be valid for two different StorableBlocks? */
 	public abstract boolean collisionPossible();
 	
-	protected FreenetStore store;
+	protected FreenetStore<T> store;
 	
 	/** Called once when first connecting to a FreenetStore. Package-local. */
-	public void setStore(FreenetStore store) {
+	public void setStore(FreenetStore<T> store) {
 		this.store = store;
 	}
 	
-	public FreenetStore getStore() {
+	public FreenetStore<T> getStore() {
 		return store;
 	}
 	
@@ -52,7 +52,7 @@ public abstract class StoreCallback {
 	 * IMPORTANT: Using the full key or routing key is OPTIONAL, and if we don't use them, WE DON'T
 	 * CHECK THEM EITHER! Caller MUST check that the key is the one expected.
 	 * @throws KeyVerifyException */
-	public abstract StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey)
+	public abstract T construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey)
 	        throws KeyVerifyException;
 	
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {

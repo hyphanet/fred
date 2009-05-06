@@ -8,7 +8,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 
-public class CHKStore extends StoreCallback {
+public class CHKStore extends StoreCallback<CHKBlock> {
 
 	@Override
 	public boolean collisionPossible() {
@@ -16,14 +16,14 @@ public class CHKStore extends StoreCallback {
 	}
 
 	@Override
-	public StorableBlock construct(byte[] data, byte[] headers,
+	public CHKBlock construct(byte[] data, byte[] headers,
 			byte[] routingKey, byte[] fullKey) throws KeyVerifyException {
 		if(data == null || headers == null) throw new CHKVerifyException("Need either data and headers");
 		return CHKBlock.construct(data, headers);
 	}
 
 	public CHKBlock fetch(NodeCHK chk, boolean dontPromote) throws IOException {
-		return (CHKBlock) store.fetch(chk.getRoutingKey(), null, dontPromote);
+		return store.fetch(chk.getRoutingKey(), null, dontPromote);
 	}
 	
 	public void put(CHKBlock b) throws IOException {

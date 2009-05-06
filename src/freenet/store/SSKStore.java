@@ -7,7 +7,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.GetPubkey;
 
-public class SSKStore extends StoreCallback {
+public class SSKStore extends StoreCallback<SSKBlock> {
 
 	private final GetPubkey pubkeyCache;
 	
@@ -16,7 +16,7 @@ public class SSKStore extends StoreCallback {
 	}
 	
 	@Override
-	public StorableBlock construct(byte[] data, byte[] headers,
+	public SSKBlock construct(byte[] data, byte[] headers,
 			byte[] routingKey, byte[] fullKey) throws SSKVerifyException {
 		if(data == null || headers == null) throw new SSKVerifyException("Need data and headers");
 		if(fullKey == null) throw new SSKVerifyException("Need full key to reconstruct an SSK");
@@ -29,7 +29,7 @@ public class SSKStore extends StoreCallback {
 	}
 	
 	public SSKBlock fetch(NodeSSK chk, boolean dontPromote) throws IOException {
-		return (SSKBlock) store.fetch(chk.getRoutingKey(), chk.getFullKey(), dontPromote);
+		return store.fetch(chk.getRoutingKey(), chk.getFullKey(), dontPromote);
 	}
 
 	public void put(SSKBlock b, boolean overwrite) throws IOException, KeyCollisionException {

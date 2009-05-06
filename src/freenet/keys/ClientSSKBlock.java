@@ -102,7 +102,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		return isMetadata;
 	}
 
-	public ClientKey getClientKey() {
+	public ClientSSK getClientKey() {
 		return key;
 	}
 

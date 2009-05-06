@@ -8,7 +8,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.keys.PubkeyVerifyException;
 import freenet.support.Logger;
 
-public class PubkeyStore extends StoreCallback {
+public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 
 	@Override
 	public boolean collisionPossible() {
@@ -16,7 +16,7 @@ public class PubkeyStore extends StoreCallback {
 	}
 
 	@Override
-	public StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey,
+	public DSAPublicKey construct(byte[] data, byte[] headers, byte[] routingKey,
 			byte[] fullKey) throws KeyVerifyException {
 		if(data == null) throw new PubkeyVerifyException("Need data to construct pubkey");
 		try {
@@ -27,7 +27,7 @@ public class PubkeyStore extends StoreCallback {
 	}
 
 	public DSAPublicKey fetch(byte[] hash, boolean dontPromote) throws IOException {
-		return (DSAPublicKey) store.fetch(hash, null, dontPromote);
+		return store.fetch(hash, null, dontPromote);
 	}
 	
 	final private static byte[] empty = new byte[0];

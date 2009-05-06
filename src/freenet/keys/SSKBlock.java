@@ -154,7 +154,7 @@ public class SSKBlock implements KeyBlock {
 		hashCode = Fields.hashCode(data) ^ Fields.hashCode(headers) ^ nodeKey.hashCode() ^ pubKey.hashCode() ^ hashIdentifier;
 	}
 
-	public Key getKey() {
+	public NodeSSK getKey() {
 		return nodeKey;
 	}
 

@@ -2835,7 +2835,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
+			cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep);
 			if(deep) {
 				sskDatastore.put(block, false);
 			}
@@ -2990,7 +2990,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
 			boolean fromStore, boolean cache) {
-		NodeSSK key = (NodeSSK) block.getKey();
+		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}

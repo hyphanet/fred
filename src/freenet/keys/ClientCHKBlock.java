@@ -226,7 +226,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 		}
     }
 
-    public ClientKey getClientKey() {
+    public ClientCHK getClientKey() {
         return key;
     }
 

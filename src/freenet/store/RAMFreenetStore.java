@@ -14,7 +14,7 @@ import freenet.support.LRUHashtable;
  * 
  * For debugging / simulation only
  */
-public class RAMFreenetStore implements FreenetStore {
+public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
 
 	private final static class Block {
 		byte[] header;
@@ -24,7 +24,7 @@ public class RAMFreenetStore implements FreenetStore {
 	
 	private final LRUHashtable<ByteArrayWrapper, Block> blocksByRoutingKey;
 	
-	private final StoreCallback callback;
+	private final StoreCallback<T> callback;
 	
 	private int maxKeys;
 	
@@ -32,14 +32,14 @@ public class RAMFreenetStore implements FreenetStore {
 	private long misses;
 	private long writes;
 	
-	public RAMFreenetStore(StoreCallback callback, int maxKeys) {
+	public RAMFreenetStore(StoreCallback<T> callback, int maxKeys) {
 		this.callback = callback;
 		this.blocksByRoutingKey = new LRUHashtable<ByteArrayWrapper, Block>();
 		this.maxKeys = maxKeys;
 		callback.setStore(this);
 	}
 	
-	public synchronized StorableBlock fetch(byte[] routingKey, byte[] fullKey,
+	public synchronized T fetch(byte[] routingKey, byte[] fullKey,
 			boolean dontPromote) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		Block block = blocksByRoutingKey.get(key);
@@ -48,7 +48,7 @@ public class RAMFreenetStore implements FreenetStore {
 			return null;
 		}
 		try {
-			StorableBlock ret =
+			T ret =
 				callback.construct(block.data, block.header, routingKey, block.fullKey);
 			hits++;
 			if(!dontPromote)
@@ -77,7 +77,7 @@ public class RAMFreenetStore implements FreenetStore {
 		return misses;
 	}
 
-	public synchronized void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException {
+	public synchronized void put(T block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException {
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		

@@ -97,7 +97,7 @@ public class CHKBlock implements KeyBlock {
         hashCode = chk.hashCode() ^ Fields.hashCode(data) ^ Fields.hashCode(headers) ^ cryptoAlgorithm;
     }
 
-	public Key getKey() {
+	public NodeCHK getKey() {
         return chk;
     }
 

@@ -7,7 +7,7 @@ import com.sleepycat.je.DatabaseException;
 /**
  * Datastore interface
  */
-public interface FreenetStore {
+public interface FreenetStore<T extends StorableBlock> {
 	public enum StoreType {
 		CHK, PUBKEY, SSK
 	};
@@ -19,7 +19,7 @@ public interface FreenetStore {
 	 * @return A StorableBlock, or null if the key cannot be found.
 	 * @throws IOException If a disk I/O error occurs.
 	 */
-	StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote) throws IOException;
+	T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote) throws IOException;
 	
 	/**
 	 * Store a block.
@@ -31,7 +31,7 @@ public interface FreenetStore {
 	 *            If true, overwrite old content rather than throwing a
 	 *            <code>KeyCollisionException</code>.
 	 */
-    public void put(StorableBlock block, byte[] data, byte[] header, 
+    public void put(T block, byte[] data, byte[] header, 
     		boolean overwrite) throws IOException, KeyCollisionException;
     
     /**
