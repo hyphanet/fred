@@ -107,7 +107,7 @@ public class LongTermPushPullTest {
 			// Start it
 			node.start(true);
 			long t1 = System.currentTimeMillis();
-			if (!waitForTenNodes(node)) {
+			if (!TestUtil.waitForNodes(node, TARGET_PEERS)) {
 				exitCode = EXIT_FAILED_TARGET;
 				return;
 			}
@@ -153,7 +153,7 @@ public class LongTermPushPullTest {
 			node2.start(true);
 
 			t1 = System.currentTimeMillis();
-			if (!waitForTenNodes(node2)) {
+			if (!TestUtil.waitForNodes(node2, TARGET_PEERS)) {
 				exitCode = EXIT_FAILED_TARGET;
 				return;
 			}
@@ -229,28 +229,5 @@ public class LongTermPushPullTest {
 		}
 		os.close();
 		return data;
-	}
-
-	private static boolean waitForTenNodes(Node node) throws InterruptedException {
-		// Wait until we have 10 connected nodes...
-		int seconds = 0;
-		boolean success = false;
-		while (seconds < 600) {
-			Thread.sleep(1000);
-			int seeds = node.peers.countSeednodes();
-			int seedConns = node.peers.getConnectedSeedServerPeersVector(null).size();
-			int opennetPeers = node.peers.countValidPeers();
-			int opennetConns = node.peers.countConnectedOpennetPeers();
-			System.err.println("" + seconds + " : seeds: " + seeds + ", connected: " + seedConns + " opennet: peers: "
-			        + opennetPeers + ", connected: " + opennetConns);
-			seconds++;
-			if (opennetConns >= TARGET_PEERS) {
-				success = true;
-				break;
-			}
-		}
-		if (!success)
-			System.err.println("Failed to reach target peers count " + TARGET_PEERS + " in 10 minutes.");
-		return success;
 	}
 }

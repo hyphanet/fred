@@ -102,7 +102,11 @@ public class BootstrapPullTest {
         PooledExecutor executor = new PooledExecutor();
         secondNode = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
-        waitForTenNodes(secondNode);
+
+		if (!TestUtil.waitForNodes(secondNode, TARGET_PEERS)) {
+			secondNode.park();
+			System.exit(EXIT_FAILED_TARGET);
+		}
         
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
@@ -177,34 +181,4 @@ public class BootstrapPullTest {
        		}
        	}
 	}
-	
-	private static void waitForTenNodes(Node node) throws InterruptedException {
-    	long startTime = System.currentTimeMillis();
-        // Wait until we have 10 connected nodes...
-        int seconds = 0;
-        boolean success = false;
-        while(seconds < 600) {
-        	Thread.sleep(1000);
-        	int seeds = node.peers.countSeednodes();
-        	int seedConns = node.peers.getConnectedSeedServerPeersVector(null).size();
-        	int opennetPeers = node.peers.countValidPeers();
-        	int opennetConns = node.peers.countConnectedOpennetPeers();
-        	System.err.println(""+seconds+" : seeds: "+seeds+", connected: "+seedConns
-        			+" opennet: peers: "+opennetPeers+", connected: "+opennetConns);
-        	seconds++;
-        	if(opennetConns >= TARGET_PEERS) {
-        		long timeTaken = System.currentTimeMillis()-startTime;
-        		System.out.println("RESULT: Completed bootstrap ("+TARGET_PEERS+" peers) in "+timeTaken+"ms ("+TimeUtil.formatTime(timeTaken)+")");
-        		success = true;
-        		break;
-        	}
-        }
-        if(!success) {
-        	System.err.println("Failed to reach target peers count "+TARGET_PEERS+" in 10 minutes.");
-        	node.park();
-        	System.exit(EXIT_FAILED_TARGET);
-        }
-	}
-
-
 }
