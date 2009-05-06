@@ -31,7 +31,7 @@ public interface FreenetStore {
 	 *            If true, overwrite old content rather than throwing a
 	 *            <code>KeyCollisionException</code>.
 	 */
-    public void put(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header, 
+    public void put(StorableBlock block, byte[] data, byte[] header, 
     		boolean overwrite) throws IOException, KeyCollisionException;
     
     /**

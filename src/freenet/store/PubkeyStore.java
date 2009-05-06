@@ -34,7 +34,7 @@ public class PubkeyStore extends StoreCallback {
 	
 	public void put(byte[] hash, DSAPublicKey key) throws IOException {
 		try {
-			store.put(key, key.getRoutingKey(), key.getFullKey(), key.asPaddedBytes(), empty, false);
+			store.put(key, key.asPaddedBytes(), empty, false);
 		} catch (KeyCollisionException e) {
 			Logger.error(this, "Impossible for PubkeyStore: "+e, e);
 		}

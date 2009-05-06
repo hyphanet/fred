@@ -77,9 +77,10 @@ public class RAMFreenetStore implements FreenetStore {
 		return misses;
 	}
 
-	public synchronized void put(StorableBlock block, byte[] routingkey, byte[] fullKey,
-			byte[] data, byte[] header, boolean overwrite) throws IOException,
-			KeyCollisionException {
+	public synchronized void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException {
+		byte[] routingkey = block.getRoutingKey();
+		byte[] fullKey = block.getFullKey();
+		
 		writes++;
 		ByteArrayWrapper key = new ByteArrayWrapper(routingkey);
 		Block oldBlock = blocksByRoutingKey.get(key);

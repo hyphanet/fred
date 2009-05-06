@@ -281,8 +281,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return null;
 	}
 
-	public void put(StorableBlock block, byte[] routingKey, byte[] fullKey, byte[] data, byte[] header,
-	        boolean overwrite) throws IOException, KeyCollisionException {
+	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws IOException, KeyCollisionException {
+		byte[] routingKey = block.getRoutingKey();
+		byte[] fullKey = block.getFullKey();
+		
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
 
@@ -1739,7 +1741,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				try {
 					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null);
-					put(b, b.getRoutingKey(), b.getFullKey(), data, header, true);
+					put(b, data, header, true);
 				} catch (KeyVerifyException e) {
 					System.out.println("kve at block " + l);
 				} catch (KeyCollisionException e) {

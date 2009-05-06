@@ -1395,8 +1395,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	/**
 	 * {@inheritDoc}
 	 */
-	public void put(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header, 
-			boolean overwrite) throws KeyCollisionException, IOException {
+	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException, IOException {
+		byte[] routingkey = block.getRoutingKey();
+		byte[] fullKey = block.getFullKey();
+		
 		if(logMINOR)
 			Logger.minor(this, "Putting "+HexUtil.bytesToHex(routingkey)+" for "+callback);
 		StorableBlock oldBlock = fetch(routingkey, fullKey, false);
