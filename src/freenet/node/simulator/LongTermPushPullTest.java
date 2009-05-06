@@ -181,7 +181,7 @@ public class LongTermPushPullTest {
 					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
 					        && e.getMode() != FetchException.DATA_NOT_FOUND)
 						e.printStackTrace();
-					csvLine.add("N/A");
+					csvLine.add(FetchException.getShortMessage(e.getMode()));
 				}
 			}
 		} catch (Throwable t) {
