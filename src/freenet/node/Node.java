@@ -2526,7 +2526,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * RequestSender for the key/htl.
 	 * @param closestLocation The closest location to the key so far.
 	 * @param localOnly If true, only check the datastore.
-	 * @return A CHKBlock if the data is in the store, otherwise
+	 * @return A KeyBlock if the data is in the store, otherwise
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
