@@ -130,6 +130,11 @@ public class FilenameGenerator {
 		File newDir = FileUtil.getCanonicalFile(dir);
 		System.err.println("Old: "+oldDir+" prefix "+this.prefix+" from "+tmpDir+" old path "+tmpDir.getPath()+" old parent "+tmpDir.getParent());
 		System.err.println("New: "+newDir+" prefix "+prefix+" from "+dir);
+		if(newDir.exists() && newDir.isDirectory() && newDir.canWrite() && newDir.canRead() && !oldDir.exists()) {
+			System.err.println("Assuming the user has moved the data from "+oldDir+" to "+newDir);
+			tmpDir = newDir;
+			return;
+		}
 		if(oldDir.equals(newDir) && this.prefix.equals(prefix)) {
 			Logger.normal(this, "Initialised FilenameGenerator successfully - no change in dir and prefix: dir="+dir+" prefix="+prefix);
 		} else if((!oldDir.equals(newDir)) && this.prefix.equals(prefix)) {
