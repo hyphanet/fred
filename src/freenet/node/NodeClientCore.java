@@ -1215,6 +1215,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			if(is.hasCollided()) {
 				// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 				try {
+					// XXX we have collided, yet we are storing. why? 
+					// wouldn't this give a illusion of "updating" ssk?
 					node.storeInsert(is.getBlock());
 				} catch(KeyCollisionException e) {
 					// Impossible

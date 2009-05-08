@@ -411,6 +411,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     					Logger.error(this, "Got headers but not data for datareply for insert from "+this);
     					break;
 					}
+					// collided, overwrite data with remote data
+					// XXX only data is updated, getBlock() still give the old block 
 					data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 					
 					synchronized(this) {
