@@ -155,8 +155,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
-            Message req = DMT.createFNPSSKInsertRequest(uid, htl, myKey, headers, data, pubKeyHash);
-            
             Message request = DMT.createFNPSSKInsertRequestNew(uid, htl, myKey);
             
             // Wait for ack or reject... will come before even a locally generated DataReply
