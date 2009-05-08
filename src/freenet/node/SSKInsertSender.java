@@ -575,4 +575,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 		return NativeThread.HIGH_PRIORITY;
 	}
 
+	@Override
+	public String toString() {
+		return "SSKInsertSender:" + myKey;
+	}
 }

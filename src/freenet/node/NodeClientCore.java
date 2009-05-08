@@ -1219,7 +1219,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					// wouldn't this give a illusion of "updating" ssk?
 					node.storeInsert(is.getBlock());
 				} catch(KeyCollisionException e) {
-					// Impossible
+					// collision race?
+					// should be impossible.
+					Logger.normal(this, "collision race? is="+is, e);
 				}
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			} else
