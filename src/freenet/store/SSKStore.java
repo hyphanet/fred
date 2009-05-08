@@ -33,7 +33,7 @@ public class SSKStore extends StoreCallback<SSKBlock> {
 	}
 
 	public void put(SSKBlock b, boolean overwrite) throws IOException, KeyCollisionException {
-		store.put(b, b.getRawData(), b.getRawHeaders(), overwrite);
+		store.put(b, b.getRawData(), b.getRawHeaders());
 	}
 	
 	@Override

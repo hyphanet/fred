@@ -1395,7 +1395,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
-	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException, IOException {
+	public void put(StorableBlock block, byte[] data, byte[] header) throws KeyCollisionException, IOException {
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		
@@ -1405,73 +1405,11 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		if(oldBlock != null) {
 			if(!collisionPossible) return;
 			if(!block.equals(oldBlock)) {
-				if(!overwrite)
-					throw new KeyCollisionException();
-				else
-					overwriteKeyUnchanged(routingkey, fullKey, data, header);
+				throw new KeyCollisionException();
 			} // else return; // already in store
 		} else {
 			innerPut(block, routingkey, fullKey, data, header);
 		}
-	}
-	
-	/**
-	 * Overwrite a block with a new block which has the same key.
-	 */
-	private boolean overwriteKeyUnchanged(byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
-		synchronized(this) {
-			if(closed)
-				return false;
-		}
-		
-		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
-		DatabaseEntry blockDBE = new DatabaseEntry();
-		Cursor c = null;
-		Transaction t = null;
-		try {
-			t = environment.beginTransaction(null,null);
-			c = keysDB.openCursor(t,null);
-
-			// Lock the record.
-			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
-					!=OperationStatus.SUCCESS) {
-				c.close();
-				c = null;
-				t.abort();
-				t = null;
-				return false;
-			}
-
-			StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(blockDBE);
-						
-			fcWriteStore(storeBlock.offset, header, data);
-			if (keysRAF != null) {
-				fcWriteKey(storeBlock.offset, fullKey);
-			}
-			
-			// Unlock record.
-			c.close();
-			c = null;
-			t.commit();
-			t = null;
-			
-		} catch(Throwable ex) {  // FIXME: ugly
-			checkSecondaryDatabaseError(ex);
-			Logger.error(this, "Caught "+ex, ex);
-			ex.printStackTrace();
-			throw new IOException(ex.getMessage());
-		} finally {
-			if(c!=null) {
-				try{c.close();}catch(DatabaseException ex2){}
-			
-			}
-			if(t!=null) {
-				try{t.abort();}catch(DatabaseException ex2){}
-			}
-			
-		}
-			
-		return true;
 	}
 	
 	private void innerPut(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
