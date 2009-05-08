@@ -365,7 +365,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * everything that passes through this node. */
 	private PubkeyStore pubKeyDatacache;
 
-	private GetPubkey getPubKey = new GetPubkey();
+	GetPubkey getPubKey = new GetPubkey();
 	
 	/** RequestSender's currently running, by KeyHTLPair */
 	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
