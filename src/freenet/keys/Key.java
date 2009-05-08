@@ -123,8 +123,18 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
         cachedNormalizedDouble = ((double)asLong)/((double)Long.MAX_VALUE);
         return cachedNormalizedDouble;
     }
-    
-    public abstract short getType();
+
+	/**
+	 * Get key type
+	 * <ul>
+	 * <li>
+	 * High 8 bit (<tt>(type >> 8) & 0xFF</tt>) is the base type ({@link NodeCHK#BASE_TYPE} or
+	 * {@link NodeSSK#BASE_TYPE}).
+	 * <li>Low 8 bit (<tt>type & 0xFF</tt>) is the crypto algorithm. (Currently only
+	 * {@link #ALGO_AES_PCFB_256_SHA256} is supported).
+	 * </ul>
+	 */
+	public abstract short getType();
     
 	@Override
     public int hashCode() {

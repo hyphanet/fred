@@ -89,7 +89,7 @@ public class NodeCHK extends Key {
     
 	@Override
 	public short getType() {
-		return (short) (0x100 + (cryptoAlgorithm & 0xFF));
+		return (short) ((BASE_TYPE << 8) + (cryptoAlgorithm & 0xFF));
 	}
     
     @Override

@@ -121,7 +121,7 @@ public class NodeSSK extends Key {
 
 	@Override
 	public short getType() {
-		return (short) (0x0200 + (cryptoAlgorithm & 0xff));
+		return (short) ((BASE_TYPE << 8) + (cryptoAlgorithm & 0xff));
 	}
 
 	public void writeToDataOutputStream(DataOutputStream stream) throws IOException {
