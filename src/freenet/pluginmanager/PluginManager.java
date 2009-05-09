@@ -51,7 +51,6 @@ import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
-import freenet.support.MultiValueTable;
 
 public class PluginManager {
 
@@ -593,13 +592,8 @@ public class PluginManager {
 		}
 		return false;
 	}
-    
-    // Have changed PProxyToadlet to use headered handleHTTPGet below, in case anything else calls this:
-   	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
-        return handleHTTPGet(plugin, request, null);
-    }
 
-	public String handleHTTPGet(String plugin, HTTPRequest request, MultiValueTable<String, String> headers) throws PluginHTTPException {
+	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized(toadletList) {
 			handler = toadletList.get(plugin);
@@ -612,10 +606,8 @@ public class PluginManager {
 		ClassLoader pluginClassLoader = handler.getClass().getClassLoader();
 		Thread.currentThread().setContextClassLoader(pluginClassLoader);
 		try {
-            if(handler instanceof FredPluginHTTPAdvanced)
-                return ((FredPluginHTTPAdvanced) handler).handleHTTPGet(request, headers);
-            else if(handler instanceof FredPluginHTTP)
-                return ((FredPluginHTTP) handler).handleHTTPGet(request);
+		if(handler instanceof FredPluginHTTP)
+			return ((FredPluginHTTP) handler).handleHTTPGet(request);
 		} finally {
 			Thread.currentThread().setContextClassLoader(oldClassLoader);
 		}
