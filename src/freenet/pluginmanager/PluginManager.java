@@ -696,7 +696,7 @@ public class PluginManager {
 		addOfficialPlugin("SNMP");
 		addOfficialPlugin("TestGallery");
 		addOfficialPlugin("ThawIndexBrowser", false, 1);
-		addOfficialPlugin("UPnP");
+		addOfficialPlugin("UPnP", true, -1);
 		addOfficialPlugin("XMLLibrarian", false, 22);
 		addOfficialPlugin("XMLSpider", false, 36);
 	}
