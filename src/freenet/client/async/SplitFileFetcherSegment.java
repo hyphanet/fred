@@ -554,14 +554,30 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
 			if(persistent) container.store(this);
+			if(persistent) {
+				boolean fin;
+				synchronized(this) {
+					fin = fetcherFinished;
+				}
+				if(fin) {
+					encoderFinished(container, context);
+					return;
+				}
+			}
 			if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob())
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			// Leave active before queueing
 		} catch (IOException e) {
 			Logger.normal(this, "Caught bucket error?: "+e, e);
+			boolean fin;
 			synchronized(this) {
 				finished = true;
 				failureException = new FetchException(FetchException.BUCKET_ERROR);
+				fin = fetcherFinished;
+			}
+			if(persistent && fin) {
+				encoderFinished(container, context);
+				return;
 			}
 			if(persistent) container.store(this);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
