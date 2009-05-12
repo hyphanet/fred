@@ -77,7 +77,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		return misses;
 	}
 
-	public synchronized void put(T block, byte[] data, byte[] header) throws KeyCollisionException {
+	public synchronized void put(T block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException {
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		
@@ -91,7 +91,15 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 					Arrays.equals(oldBlock.header, header) &&
 					(storeFullKeys ? Arrays.equals(oldBlock.fullKey, fullKey) : true);
 				if(equals) return;
-				throw new KeyCollisionException();
+				if(overwrite) {
+					oldBlock.data = data;
+					oldBlock.header = header;
+					if(storeFullKeys)
+						oldBlock.fullKey = fullKey;
+				} else {
+					throw new KeyCollisionException();
+				}
+				return;
 			} else {
 				return;
 			}

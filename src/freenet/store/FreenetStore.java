@@ -27,8 +27,12 @@ public interface FreenetStore<T extends StorableBlock> {
 	 * @throws KeyCollisionException
 	 *             If the key already exists and <code>callback.collisionPossible()</code> is
 	 *             <code>true</code>.
+	 * @param overwrite
+	 *            If true, overwrite old content rather than throwing a
+	 *            <code>KeyCollisionException</code>.
 	 */
-    public void put(T block, byte[] data, byte[] header) throws IOException, KeyCollisionException;
+    public void put(T block, byte[] data, byte[] header, 
+    		boolean overwrite) throws IOException, KeyCollisionException;
     
     /**
      * Change the store size.

@@ -281,7 +281,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return null;
 	}
 
-	public void put(StorableBlock block, byte[] data, byte[] header) throws IOException, KeyCollisionException {
+	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws IOException, KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		
@@ -322,7 +322,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
 						if (block.equals(oldBlock)) {
 							return; // already in store
-						} else {
+						} else if (!overwrite) {
 							throw new KeyCollisionException();
 						}
 					} catch (KeyVerifyException e) {
@@ -1741,7 +1741,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				try {
 					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null);
-					put(b, data, header);
+					put(b, data, header, true);
 				} catch (KeyVerifyException e) {
 					System.out.println("kve at block " + l);
 				} catch (KeyCollisionException e) {
