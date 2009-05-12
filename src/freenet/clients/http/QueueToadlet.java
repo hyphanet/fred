@@ -743,7 +743,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		else {
 			if(core.killedDatabase())
 				sendPersistenceDisabledError(ctx);
-			this.writeError("Internal error", "Internal error", ctx);
+			else
+				this.writeError("Internal error", "Internal error", ctx);
 		}
 
 	}
