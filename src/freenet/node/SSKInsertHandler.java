@@ -330,7 +330,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     	
     	if(canCommit) {
     		try {
-				node.store(block, block.getKey().toNormalizedDouble());
+				node.store(block, block.getKey().toNormalizedDouble(), false);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

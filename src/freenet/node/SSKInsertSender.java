@@ -410,13 +410,18 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     					break;
 					}
 					// collided, overwrite data with remote data
-					// XXX only data is updated, getBlock() still give the old block 
-					data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
-					
-					synchronized(this) {
-						hasRecentlyCollided = true;
-						hasCollided = true;
-						notifyAll();
+					try {
+						data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
+						block = new SSKBlock(data, block.getRawHeaders(), block.getKey(), false);
+						
+						synchronized(this) {
+							hasRecentlyCollided = true;
+							hasCollided = true;
+							notifyAll();
+						}
+					} catch (SSKVerifyException e) {
+    					Logger.error(this, "Invalid SSK from remote on collusion: " + this + ":" +block);
+						finish(INTERNAL_ERROR, next);
 					}
 					continue; // The node will now propagate the new data. There is no need to move to the next node yet.
         		}

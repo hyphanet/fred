@@ -2827,8 +2827,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	/** Store the block if this is a sink. Call for inserts. */
-	public void storeInsert(SSKBlock block) throws KeyCollisionException {
-		store(block, block.getKey().toNormalizedDouble());
+	public void storeInsert(SSKBlock block, boolean overwrite) throws KeyCollisionException {
+		store(block, block.getKey().toNormalizedDouble(), true);
 	}
 
 	/** Store only to the cache, and not the store. Called by requests,
@@ -2837,15 +2837,15 @@ public class Node implements TimeSkewDetectorCallback {
 		store(block, false);
 	}
 	
-	public void store(SSKBlock block, boolean deep) throws KeyCollisionException {
+	public void store(SSKBlock block, boolean deep, boolean overwrite) throws KeyCollisionException {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
 			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep);
 			if(deep) {
-				sskDatastore.put(block, false);
+				sskDatastore.put(block, overwrite);
 			}
-			sskDatacache.put(block, false);
+			sskDatacache.put(block, overwrite);
 			failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
@@ -2868,9 +2868,9 @@ public class Node implements TimeSkewDetectorCallback {
 	 * this to true unless the store results from an insert, and this node is the
 	 * closest node to the target; see the description of chkDatastore.
 	 */
-	public void store(SSKBlock block, double loc) throws KeyCollisionException {
+	public void store(SSKBlock block, double loc, boolean overwrite) throws KeyCollisionException {
 		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
-		store(block, deep);
+		store(block, deep, overwrite);
 	}
 	
 	/**
