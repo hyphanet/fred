@@ -244,6 +244,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
+					
+					// trim leading/trailing space
+					currentKey = currentKey.trim();
+					if (currentKey.length() == 0)
+						continue;
+					
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
 						fcp.makePersistentGlobalRequestBlocking(fetchURI, null, "forever", "disk");
