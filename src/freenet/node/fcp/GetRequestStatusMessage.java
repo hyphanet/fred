@@ -60,7 +60,8 @@ public class GetRequestStatusMessage extends FCPMessage {
 					
 				}, NativeThread.NORM_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
-				// Ok
+				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+				handler.outputHandler.queue(msg);
 			}
 		} else {
 			req.sendPendingMessages(handler.outputHandler, true, true, onlyData, null);
