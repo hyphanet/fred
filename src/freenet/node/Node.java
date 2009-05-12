@@ -2799,7 +2799,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(block instanceof CHKBlock)
 			store((CHKBlock)block, deep);
 		else if(block instanceof SSKBlock)
-			store((SSKBlock)block, deep);
+			store((SSKBlock)block, deep, false);
 		else throw new IllegalArgumentException("Unknown keytype ");
 	}
 	
