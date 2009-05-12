@@ -110,8 +110,6 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
 				} catch (DatabaseDisabledException e) {
 					// Impossible
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 				container.delete(killMe);
 			}
