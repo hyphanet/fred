@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
 /**
@@ -29,6 +30,7 @@ public abstract class SendableInsert extends SendableRequest {
 
 	@Override
 	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+		Logger.error(this, "Internal error on "+this+" : "+t, t);
 		sched.callFailure(this, new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
 
