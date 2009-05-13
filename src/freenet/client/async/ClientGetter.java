@@ -129,10 +129,7 @@ public class ClientGetter extends BaseClientGetter {
 						binaryBlobStream = new DataOutputStream(new BufferedOutputStream(binaryBlobBucket.getOutputStream()));
 						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null, container, context);
-						if(persistent())
-							container.store(this);
-						return false;
+						throw new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e);
 					}
 				}
 				currentState.schedule(container, context);
