@@ -210,7 +210,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata = Metadata.construct(data);
 				if(persistent)
 					container.store(this);
-				wrapHandleMetadata(false, container, context);
+				innerWrapHandleMetadata(false, container, context);
 				data.free();
 				if(persistent) data.removeFrom(container);
 			} catch (MetadataParseException e) {
@@ -428,7 +428,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								metadata = Metadata.construct(data);
 								data.free();
 								if(persistent) data.removeFrom(container);
-								wrapHandleMetadata(true, container, context);
+								innerWrapHandleMetadata(true, container, context);
 							} catch (MetadataParseException e) {
 								// Invalid metadata
 								onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
@@ -521,7 +521,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 									container.store(newMetadata);
 									container.store(SingleFileFetcher.this);
 								}
-								wrapHandleMetadata(true, container, context);
+								innerWrapHandleMetadata(true, container, context);
 							} catch (IOException e) {
 								onFailure(new FetchException(FetchException.BUCKET_ERROR), false, container, context);
 							} catch (MetadataParseException e) {
@@ -676,7 +676,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// We must transition to the sub-fetcher so that if the request is cancelled, it will get deleted.
 				parent.onTransition(this, f, container);
 				
-				f.wrapHandleMetadata(true, container, context);
+				f.innerWrapHandleMetadata(true, container, context);
 				if(persistent) container.deactivate(f, 1);
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
@@ -893,37 +893,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(persistent) container.activate(parent, 1);
 		parent.onTransition(this, f, container);
 		
-		f.wrapHandleMetadata(true, container, context);
+		f.innerWrapHandleMetadata(true, container, context);
 		if(persistent) container.deactivate(f, 1);
 	}
 
-	/**
-	 * Call handleMetadata(), and deal with any resulting exceptions
-	 */
-	private void wrapHandleMetadata(final boolean notFinalizedSize, ObjectContainer container, final ClientContext context) {
-		if(!persistent)
-			innerWrapHandleMetadata(notFinalizedSize, container, context);
-		else {
-			if(!context.jobRunner.onDatabaseThread())
-				try {
-					context.jobRunner.queue(new DBJob() {
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(container.ext().isActive(SingleFileFetcher.this))
-								Logger.error(this, "ALREADY ACTIVE in SFF callback: "+SingleFileFetcher.this);
-							container.activate(SingleFileFetcher.this, 1);
-							innerWrapHandleMetadata(notFinalizedSize, container, context);
-							container.deactivate(SingleFileFetcher.this, 1);
-							return false;
-						}
-					}, parent.getPriorityClass(), false);
-				} catch (DatabaseDisabledException e) {
-					// Impossible
-				}
-			else
-				innerWrapHandleMetadata(notFinalizedSize, container, context);
-		}
-	}
-	
 	protected void innerWrapHandleMetadata(boolean notFinalizedSize, ObjectContainer container, ClientContext context) {
 		try {
 			handleMetadata(container, context);
@@ -995,7 +968,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent) result.asBucket().removeFrom(container);
 			}
 			if(callback != null) return;
-			wrapHandleMetadata(true, container, context);
+			innerWrapHandleMetadata(true, container, context);
 		}
 
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
@@ -1087,7 +1060,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					container.store(meta);
 					container.store(SingleFileFetcher.this);
 				}
-				wrapHandleMetadata(true, container, context);
+				innerWrapHandleMetadata(true, container, context);
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 			} catch (IOException e) {
