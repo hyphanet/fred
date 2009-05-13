@@ -352,6 +352,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	private void encodeMetadata(ObjectContainer container, ClientContext context, SplitFileInserterSegment dontDeactivateSegment) {
+		context.jobRunner.setCommitThisTransaction();
 		boolean missingURIs;
 		Metadata m = null;
 		ClientCHK[] dataURIs = new ClientCHK[countDataBlocks];
