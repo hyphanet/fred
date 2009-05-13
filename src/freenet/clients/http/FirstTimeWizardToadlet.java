@@ -224,6 +224,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			bandwidthInfoboxContent.addChild("#", l10n("bandwidthLimitAfter"));
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.DATASTORE_SIZE) {
