@@ -188,10 +188,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {
 			// Attempt to skip one step if possible
-			if(canAutoconfigureBandwidth()){
-				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
-				return;
-			}
+			int autodetectedLimit = canAutoconfigureBandwidth();
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -209,13 +206,15 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if(!sizeOption.isDefault()) {
 				int current = sizeOption.getValue();
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
-			}
+			} else if(autodetectedLimit != -1)
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedLimit), "on" }, l10n("autodetectedSuggestedLimit")+" "+SizeUtil.formatSize(autodetectedLimit)+"/s");
 
 			// don't forget to update handlePost too if you change that!
-			result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
+			if(autodetectedLimit != 8192)
+				result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
 			// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
 			result.addChild("option", "value", "12K", "512+/128 kbps (12KB/s)");
-			if(!sizeOption.isDefault())
+			if(autodetectedLimit != -1 || !sizeOption.isDefault())
 				result.addChild("option", "value", "16K", "1024+/256 kbps (16KB/s)");
 			else
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { "16K", "selected" }, "1024+/256 kbps (16KB/s)");
@@ -506,12 +505,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		}
 	}
 	
-	private boolean canAutoconfigureBandwidth() {
+	private int canAutoconfigureBandwidth() {
 		if(!config.get("node").getOption("outputBandwidthLimit").isDefault())
-			return false;
+			return -1;
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
 		if(bwIndicator == null)
-			return false;
+			return -1;
 		
 		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
 		if(downstreamBWLimit > 0) {
@@ -525,12 +524,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
 		if(upstreamBWLimit > 0) {
 			int bytes = (upstreamBWLimit / 8) - 1;
-			String upstreamBWLimitString = (bytes < 16384 ? "8K" : SizeUtil.formatSize(bytes / 2));
-			_setUpstreamBandwidthLimit(upstreamBWLimitString);
-			Logger.normal(this, "The node has a bandwidthIndicator: it has reported upstream=" + upstreamBWLimit + "bits/sec... we will use " + upstreamBWLimitString + " and skip the bandwidth selection step of the wizard.");
-			return true;
+			if(bytes < 16384) return 8192;
+			return bytes / 2;
 		}else
-			return false;
+			return -1;
 	}
 	
 	private long canAutoconfigureDatastoreSize() {
