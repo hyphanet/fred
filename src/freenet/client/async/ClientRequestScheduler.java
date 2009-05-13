@@ -223,6 +223,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 								container.deactivate(req, 1);
 							}
 							
+							public String toString() {
+								return super.toString() + "(registerInsert)";
+							}
+							
 						}, NativeThread.NORM_PRIORITY, false);
 					} catch (DatabaseDisabledException e) {
 						// Impossible, we are already on the database thread.
@@ -607,6 +611,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		public void run(ObjectContainer container, ClientContext context) {
 			fillRequestStarterQueue(container, context, null);
 		}
+		public String toString() {
+			return super.toString()+"(fillRequestStarterQueue)";
+		}
 	};
 	
 	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
@@ -854,6 +861,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 						schedCore.succeeded(succeeded, container);
 						container.deactivate(succeeded, 1);
 					}
+					public String toString() {
+						return super.toString()+"(succeeded)";
+					}
 					
 				}, TRIP_PENDING_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
@@ -881,6 +891,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 					public void run(ObjectContainer container, ClientContext context) {
 						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
 						schedCore.tripPendingKey(key, block, container, clientContext);
+					}
+					public String toString() {
+						return super.toString()+"(tripkey)";
 					}
 				}, TRIP_PENDING_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
@@ -915,6 +928,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(priority >= oldPrio) return; // already on list at >= priority
 					offeredKeys[priority].queueKey(key.cloneKey());
 					starter.wakeUp();
+				}
+				public String toString() {
+					return super.toString()+"(maybequeueofferedkey)";
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
@@ -1036,6 +1052,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 						get.onFailure(e, null, container, clientContext);
 						container.deactivate(get, 1);
 					}
+					public String toString() {
+						return super.toString()+"(callfailureget)";
+					}
 					
 				}, prio, false);
 			} catch (DatabaseDisabledException e1) {
@@ -1057,6 +1076,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.activate(insert, 1);
 						insert.onFailure(e, null, container, context);
 						container.deactivate(insert, 1);
+					}
+					public String toString() {
+						return super.toString()+"(callfailureput)";
 					}
 					
 				}, prio, false);
