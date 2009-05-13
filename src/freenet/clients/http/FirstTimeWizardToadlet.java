@@ -229,10 +229,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		} else if(currentStep == WIZARD_STEP.DATASTORE_SIZE) {
 			// Attempt to skip one step if possible
-			if(canAutoconfigureDatastoreSize()) {
-				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
-				return;
-			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -245,25 +241,29 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
+			long autodetectedSize = canAutoconfigureDatastoreSize();
+			
 			@SuppressWarnings("unchecked")
 			Option<Long> sizeOption = (Option<Long>) config.get("node").getOption("storeSize");
 			if(!sizeOption.isDefault()) {
 				long current = sizeOption.getValue();
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
-			}
-			result.addChild("option", "value", "512M", "512MiB");
-			result.addChild("option", "value", "1G", "1GiB");
-			if(!sizeOption.isDefault())
-				result.addChild("option", "value", "2G", "2GiB");
+			} else if(autodetectedSize != -1)
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
+			if(autodetectedSize != 512*1024*1024 && sizeOption.isDefault())
+				result.addChild("option", "value", "512M", "512 MiB");
+			result.addChild("option", "value", "1G", "1 GiB");
+			if(autodetectedSize != -1 || !sizeOption.isDefault())
+				result.addChild("option", "value", "2G", "2 GiB");
 			else
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
-			result.addChild("option", "value", "3G", "3GiB");
-			result.addChild("option", "value", "5G", "5GiB");
-			result.addChild("option", "value", "10G", "10GiB");
-			result.addChild("option", "value", "20G", "20GiB");
-			result.addChild("option", "value", "30G", "30GiB");
-			result.addChild("option", "value", "50G", "50GiB");
-			result.addChild("option", "value", "100G", "100GiB");
+			result.addChild("option", "value", "3G", "3 GiB");
+			result.addChild("option", "value", "5G", "5 GiB");
+			result.addChild("option", "value", "10G", "10 GiB");
+			result.addChild("option", "value", "20G", "20 GiB");
+			result.addChild("option", "value", "30G", "30 GiB");
+			result.addChild("option", "value", "50G", "50 GiB");
+			result.addChild("option", "value", "100G", "100 GiB");
 			
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dsF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
@@ -533,9 +533,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return false;
 	}
 	
-	private boolean canAutoconfigureDatastoreSize() {
+	private long canAutoconfigureDatastoreSize() {
 		if(!config.get("node").getOption("storeSize").isDefault())
-			return false;
+			return -1;
 		// Use JNI to find out the free space on this partition.
 		long freeSpace = -1;
 		File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
@@ -558,24 +558,23 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		}
 		
 		if(freeSpace <= 0)
-			return false;
+			return -1;
 		else {
-			String shortSize = null;
+			long shortSize = -1;
 			if(freeSpace / 20 > 1024 * 1024 * 1024) { // 20GB+ => 5%, limit 256GB
 				// If 20GB+ free, 5% of available disk space.
 				// Maximum of 256GB. That's a 128MB bloom filter.
-				shortSize = SizeUtil.formatSize(Math.min(freeSpace / 20, 256*1024*1024*1024L));
+				shortSize = Math.min(freeSpace / 20, 256*1024*1024*1024L);
 			}else if(freeSpace / 10 > 1024 * 1024 * 1024) { // 10GB+ => 10%
 				// If 10GB+ free, 10% of available disk space.
-				shortSize = SizeUtil.formatSize(freeSpace / 10);
+				shortSize = freeSpace / 10;
 			}else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
 				// If 5GB+ free, default to 512MB
-				shortSize = "512MB";
+				shortSize = 512*1024*1024;
 			}else // <5GB => 256MB
-				shortSize = "256MB";
+				shortSize = 256*1024*1024;
 			
-			_setDatastoreSize(shortSize);
-			return true;
+			return shortSize;
 		}
 	}
 }
