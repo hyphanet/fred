@@ -766,7 +766,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 
 	private final DBJob runGotAllMetadata = new DBJob() {
 
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			try {
 				context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
 			} catch (DatabaseDisabledException e) {
@@ -775,6 +775,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter implements Put
 			container.activate(BaseManifestPutter.this, 1);
 			innerGotAllMetadata(container, context);
 			container.deactivate(BaseManifestPutter.this, 1);
+			return true;
 		}
 		
 	};

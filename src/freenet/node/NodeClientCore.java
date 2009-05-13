@@ -33,6 +33,7 @@ import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
@@ -153,6 +154,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	private UserAlert startingUpAlert;
 	private RestartDBJob[] startupDatabaseJobs;
 	private File persistentTempDir;
+	private boolean alwaysCommit;
 	
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, ObjectContainer container) throws NodeInitException {
 		this.node = node;
@@ -573,6 +575,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		OOMHandler.addOOMHook(this);
 		if(killedDatabase)
 			System.err.println("Database corrupted (leaving NodeClientCore)!");
+		
+		nodeConfig.register("alwaysCommit", false, sortOrder++, true, false, "NodeClientCore.alwaysCommit", "NodeClientCore.alwaysCommitLong", 
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return alwaysCommit;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						alwaysCommit = val;
+					}
+			
+		});
+		alwaysCommit = nodeConfig.getBoolean("alwaysCommit");
 	}
 
 	private static String l10n(String key) {
@@ -626,8 +644,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		try {
 			clientContext.jobRunner.queue(new DBJob() {
 				
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					ArchiveManager.init(container, context, context.nodeDBHandle);
+					return false;
 				}
 				
 			}, NativeThread.MAX_PRIORITY, false);
@@ -674,7 +693,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	
 	private DBJob startupJobRunner = new DBJob() {
 
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
 			try {
 				container.activate(job.job, 1);
@@ -697,6 +716,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				} catch (DatabaseDisabledException e) {
 					// Do nothing
 				}
+			return true;
 		}
 		
 	};
@@ -1438,6 +1458,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	
 	private boolean killedDatabase = false;
 	
+	private long lastCommitted = System.currentTimeMillis();
+	
+	static final int MAX_COMMIT_INTERVAL = 30*1000;
+	
 	class DBJobWrapper implements Runnable {
 		
 		DBJobWrapper(DBJob job) {
@@ -1458,20 +1482,32 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				}
 				if(job == null) throw new NullPointerException();
 				if(node == null) throw new NullPointerException();
-				job.run(node.db, clientContext);
+				boolean commit = job.run(node.db, clientContext);
 				boolean killed;
 				synchronized(NodeClientCore.this) {
 					killed = killedDatabase;
+					if(!killed) {
+						long now = System.currentTimeMillis();
+						if(now - lastCommitted > MAX_COMMIT_INTERVAL) {
+							lastCommitted = now;
+							commit = true;
+						}
+						if(alwaysCommit)
+							commit = true;
+					}
 				}
 				if(killed) {
 					node.db.rollback();
 					return;
-				} else {
+				} else if(commit) {
 					persistentTempBucketFactory.preCommit(node.db);
 					node.db.commit();
+					synchronized(NodeClientCore.this) {
+						lastCommitted = System.currentTimeMillis();
+					}
+					if(logMINOR) Logger.minor(this, "COMMITTED");
+					persistentTempBucketFactory.postCommit(node.db);
 				}
-				if(logMINOR) Logger.minor(this, "COMMITTED");
-				persistentTempBucketFactory.postCommit(node.db);
 			} catch (Throwable t) {
 				if(t instanceof OutOfMemoryError) {
 					synchronized(NodeClientCore.this) {
@@ -1555,9 +1591,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			final MutableBoolean finished = new MutableBoolean();
 			queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					try {
-						job.run(container, context);
+						return job.run(container, context);
 					} finally {
 						synchronized(finished) {
 							finished.value = true;

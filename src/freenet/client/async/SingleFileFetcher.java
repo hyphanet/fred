@@ -907,12 +907,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(!context.jobRunner.onDatabaseThread())
 				try {
 					context.jobRunner.queue(new DBJob() {
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							if(container.ext().isActive(SingleFileFetcher.this))
 								Logger.error(this, "ALREADY ACTIVE in SFF callback: "+SingleFileFetcher.this);
 							container.activate(SingleFileFetcher.this, 1);
 							innerWrapHandleMetadata(notFinalizedSize, container, context);
 							container.deactivate(SingleFileFetcher.this, 1);
+							return false;
 						}
 					}, parent.getPriorityClass(), false);
 				} catch (DatabaseDisabledException e) {

@@ -210,17 +210,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 					try {
 						jobRunner.queue(new DBJob() {
 							
-							public void run(ObjectContainer container, ClientContext context) {
+							public boolean run(ObjectContainer container, ClientContext context) {
 								container.delete(regme);
 								if(req.isCancelled(container)) {
 									if(logMINOR) Logger.minor(this, "Request already cancelled");
-									return;
+									return false;
 								}
 								if(container.ext().isActive(req))
 									Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
 								container.activate(req, 1);
 								registerInsert(req, true, false, container);
 								container.deactivate(req, 1);
+								return true;
 							}
 							
 							public String toString() {
@@ -608,8 +609,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private DBJob requestStarterQueueFiller = new DBJob() {
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			fillRequestStarterQueue(container, context, null);
+			return false;
 		}
 		public String toString() {
 			return super.toString()+"(fillRequestStarterQueue)";
@@ -854,12 +856,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(succeeded))
 							Logger.error(this, "ALREADY ACTIVE in succeeded(): "+succeeded);
 						container.activate(succeeded, 1);
 						schedCore.succeeded(succeeded, container);
 						container.deactivate(succeeded, 1);
+						return false;
 					}
 					public String toString() {
 						return super.toString()+"(succeeded)";
@@ -888,9 +891,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
 						schedCore.tripPendingKey(key, block, container, clientContext);
+						return false;
 					}
 					public String toString() {
 						return super.toString()+"(tripkey)";
@@ -922,12 +926,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 		try {
 			jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					// Don't activate/deactivate the key, because it's not persistent in the first place!!
 					short priority = schedCore.getKeyPrio(key, oldPrio, container, context);
-					if(priority >= oldPrio) return; // already on list at >= priority
+					if(priority >= oldPrio) return false; // already on list at >= priority
 					offeredKeys[priority].queueKey(key.cloneKey());
 					starter.wakeUp();
+					return false;
 				}
 				public String toString() {
 					return super.toString()+"(maybequeueofferedkey)";
@@ -1045,12 +1050,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(get))
 							Logger.error(this, "ALREADY ACTIVE: "+get+" in callFailure(request)");
 						container.activate(get, 1);
 						get.onFailure(e, null, container, clientContext);
 						container.deactivate(get, 1);
+						return false;
 					}
 					public String toString() {
 						return super.toString()+"(callfailureget)";
@@ -1070,12 +1076,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 			try {
 				jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(insert))
 							Logger.error(this, "ALREADY ACTIVE: "+insert+" in callFailure(insert)");
 						container.activate(insert, 1);
 						insert.onFailure(e, null, container, context);
 						container.deactivate(insert, 1);
+						return false;
 					}
 					public String toString() {
 						return super.toString()+"(callfailureput)";

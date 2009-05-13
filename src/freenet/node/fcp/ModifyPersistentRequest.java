@@ -81,18 +81,19 @@ public class ModifyPersistentRequest extends FCPMessage {
 			try {
 				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
 						container.activate(req, 1);
 						if(req==null){
 							Logger.error(this, "Huh ? the request is null!");
 							ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
 							handler.outputHandler.queue(msg);
-							return;
+							return false;
 						} else {
 							req.modifyRequest(clientToken, priorityClass, handler.server, container);
 						}
 						container.deactivate(req, 1);
+						return true;
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);

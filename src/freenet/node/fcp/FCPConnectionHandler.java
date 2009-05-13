@@ -132,19 +132,20 @@ public class FCPConnectionHandler implements Closeable {
 		try {
 			server.core.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
 						server.unregisterClient(rebootClient, null);
 					if(foreverClient != null) {
 						if(!container.ext().isStored(foreverClient)) {
 							Logger.normal(this, "foreverClient is not stored in the database in lost connection non-dupe callback; not deleting it");
-							return;
+							return false;
 						}
 						container.activate(foreverClient, 1);
 						if(!foreverClient.hasPersistentRequests(container))
 							server.unregisterClient(foreverClient, container);
 						container.deactivate(foreverClient, 1);
 					}
+					return false;
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
@@ -206,7 +207,7 @@ public class FCPConnectionHandler implements Closeable {
 			try {
 				server.core.clientContext.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						try {
 							createForeverClient(name, container);
 						} catch (Throwable t) {
@@ -217,6 +218,7 @@ public class FCPConnectionHandler implements Closeable {
 								FCPConnectionHandler.this.notifyAll();
 							}
 						}
+						return false;
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -273,7 +275,7 @@ public class FCPConnectionHandler implements Closeable {
 						try {
 							server.core.clientContext.jobRunner.queue(new DBJob() {
 
-								public void run(ObjectContainer container, ClientContext context) {
+								public boolean run(ObjectContainer container, ClientContext context) {
 									ClientGet getter;
 									try {
 										getter = new ClientGet(FCPConnectionHandler.this, message, server, container);
@@ -281,10 +283,10 @@ public class FCPConnectionHandler implements Closeable {
 										Logger.normal(this, "Identifier collision on "+this);
 										FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 										outputHandler.queue(msg);
-										return;
+										return false;
 									} catch (MessageInvalidException e1) {
 										outputHandler.queue(new ProtocolErrorMessage(e1.protocolCode, false, e1.getMessage(), e1.ident, e1.global));
-										return;
+										return false;
 									}
 									try {
 										getter.register(container, false, false);
@@ -293,10 +295,11 @@ public class FCPConnectionHandler implements Closeable {
 										Logger.normal(this, "Identifier collision on "+this);
 										FCPMessage msg = new IdentifierCollisionMessage(id, global);
 										outputHandler.queue(msg);
-										return;
+										return false;
 									}
 									getter.start(container, context);
 									container.deactivate(getter, 1);
+									return true;
 								}
 								
 							}, NativeThread.HIGH_PRIORITY-1, false);
@@ -365,7 +368,7 @@ public class FCPConnectionHandler implements Closeable {
 					try {
 						server.core.clientContext.jobRunner.queue(new DBJob() {
 
-							public void run(ObjectContainer container, ClientContext context) {
+							public boolean run(ObjectContainer container, ClientContext context) {
 								ClientPut putter;
 								try {
 									putter = new ClientPut(FCPConnectionHandler.this, message, server, container);
@@ -373,13 +376,13 @@ public class FCPConnectionHandler implements Closeable {
 									Logger.normal(this, "Identifier collision on "+this);
 									FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 									outputHandler.queue(msg);
-									return;
+									return false;
 								} catch (MessageInvalidException e) {
 									outputHandler.queue(new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global));
-									return;
+									return false;
 								} catch (MalformedURLException e) {
 									outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
-									return;
+									return false;
 								}
 								try {
 									putter.register(container, false, false);
@@ -388,10 +391,11 @@ public class FCPConnectionHandler implements Closeable {
 									Logger.normal(this, "Identifier collision on "+this);
 									FCPMessage msg = new IdentifierCollisionMessage(id, global);
 									outputHandler.queue(msg);
-									return;
+									return false;
 								}
 								putter.start(container, context);
 								container.deactivate(putter, 1);
+								return true;
 							}
 							
 						}, NativeThread.HIGH_PRIORITY-1, false);
@@ -431,11 +435,12 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							if(c != null)
 								c.freeData(container);
 							else
 								message.freeData(container);
+							return true;
 						}
 						
 					}, NativeThread.HIGH_PRIORITY-1, false);
@@ -489,7 +494,7 @@ public class FCPConnectionHandler implements Closeable {
 				try {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							ClientPutDir putter;
 							try {
 								putter = new ClientPutDir(FCPConnectionHandler.this, message, buckets, wasDiskPut, server, container);
@@ -497,10 +502,10 @@ public class FCPConnectionHandler implements Closeable {
 								Logger.normal(this, "Identifier collision on "+this);
 								FCPMessage msg = new IdentifierCollisionMessage(id, message.global);
 								outputHandler.queue(msg);
-								return;
+								return false;
 							} catch (MalformedURLException e) {
 								outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global));
-								return;
+								return false;
 							}
 							try {
 								putter.register(container, false, false);
@@ -509,10 +514,11 @@ public class FCPConnectionHandler implements Closeable {
 								Logger.normal(this, "Identifier collision on "+this);
 								FCPMessage msg = new IdentifierCollisionMessage(id, global);
 								outputHandler.queue(msg);
-								return;
+								return false;
 							}
 							putter.start(container, context);
 							container.deactivate(putter, 1);
+							return true;
 						}
 						
 					}, NativeThread.HIGH_PRIORITY-1, false);

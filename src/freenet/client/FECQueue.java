@@ -216,7 +216,7 @@ public class FECQueue implements OOMHook {
 								prio--;
 							databaseJobRunner.queue(new DBJob() {
 
-								public void run(ObjectContainer container, ClientContext context) {
+								public boolean run(ObjectContainer container, ClientContext context) {
 									job.storeBlockStatuses(container);
 									// Don't activate the job itself.
 									// It MUST already be activated, because it is carrying the status blocks.
@@ -239,6 +239,7 @@ public class FECQueue implements OOMHook {
 									}
 									if(container.ext().isStored(job.callback))
 										container.deactivate(job.callback, 1);
+									return true;
 								}
 								
 							}, prio, false);
@@ -270,7 +271,7 @@ public class FECQueue implements OOMHook {
 	private void initCacheFillerJob() {
 		cacheFillerJob = new DBJob() {
 
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Running FEC cache filler job");
@@ -281,7 +282,7 @@ public class FECQueue implements OOMHook {
 					int grab = 0;
 					synchronized(FECQueue.this) {
 						int newCached = totalCached + persistentQueueCache[prio].size();
-						if(newCached >= maxPersistentQueueCacheSize) return;
+						if(newCached >= maxPersistentQueueCacheSize) return false;
 						grab = maxPersistentQueueCacheSize - newCached;
 						totalCached = newCached;
 					}
@@ -335,7 +336,7 @@ public class FECQueue implements OOMHook {
 					if(logMINOR)
 						Logger.minor(this, "No more jobs to add");
 					// Don't notify, let it sleep until more jobs are added.
-					return;
+					return false;
 				} else {
 					synchronized(FECQueue.this) {
 						int maxRunningThreads = maxRunningFECThreads;

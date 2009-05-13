@@ -263,12 +263,14 @@ public abstract class ClientRequest {
 				client.register(cp, false, container);
 				DBJob start = new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						cp.start(container, context);
 						try {
 							context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+							return true;
 						} catch (DatabaseDisabledException e) {
 							// Impossible.
+							return false;
 						}
 					}
 					
@@ -281,12 +283,14 @@ public abstract class ClientRequest {
 				client.register(cp, false, container);
 				DBJob start = new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						cp.start(container, context);
 						try {
 							context.jobRunner.removeRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+							return true;
 						} catch (DatabaseDisabledException e) {
 							// Impossible.
+							return false;
 						}
 					}
 					
@@ -475,7 +479,7 @@ public abstract class ClientRequest {
 		if(persistenceType == PERSIST_FOREVER) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				container.activate(ClientRequest.this, 1);
 				try {
 					restart(container, context);
@@ -483,6 +487,7 @@ public abstract class ClientRequest {
 					// Impossible
 				}
 				container.deactivate(ClientRequest.this, 1);
+				return true;
 			}
 			
 		}, NativeThread.HIGH_PRIORITY, false);

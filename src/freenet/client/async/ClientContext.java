@@ -106,7 +106,7 @@ public class ClientContext {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(inserter, 1);
 					try {
 						inserter.start(earlyEncode, false, container, context);
@@ -114,6 +114,7 @@ public class ClientContext {
 						inserter.client.onFailure(e, inserter, container);
 					}
 					container.deactivate(inserter, 1);
+					return true;
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
@@ -126,7 +127,7 @@ public class ClientContext {
 		if(getter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(getter, 1);
 					try {
 						getter.start(container, context);
@@ -134,6 +135,7 @@ public class ClientContext {
 						getter.clientCallback.onFailure(e, getter, container);
 					}
 					container.deactivate(getter, 1);
+					return true;
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
@@ -146,7 +148,7 @@ public class ClientContext {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(inserter, 1);
 					try {
 						inserter.start(container, context);
@@ -154,6 +156,7 @@ public class ClientContext {
 						inserter.cb.onFailure(e, inserter, container);
 					}
 					container.deactivate(inserter, 1);
+					return true;
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
@@ -166,7 +169,7 @@ public class ClientContext {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {
 				
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					container.activate(inserter, 1);
 					try {
 						inserter.start(container, context);
@@ -174,6 +177,7 @@ public class ClientContext {
 						inserter.cb.onFailure(e, inserter, container);
 					}
 					container.deactivate(inserter, 1);
+					return true;
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);

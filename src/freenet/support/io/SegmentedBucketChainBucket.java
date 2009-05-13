@@ -69,12 +69,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		// Due to memory issues, we cannot complete the cleanup before returning, especially if we are already on the database thread...
 		DBJob freeJob = new DBJob() {
 			
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				SegmentedChainBucketSegment segment = null;
 				if(!container.ext().isStored(SegmentedBucketChainBucket.this)) {
 					Logger.error(this, "Bucket not stored in freeJob, already deleted???");
 					container.delete(this);
-					return;
+					return true;
 				}
 				synchronized(this) {
 					if(!segments.isEmpty())
@@ -96,7 +96,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 								// Impossible
 							}
 							container.store(this);
-							return;
+							return true;
 						}
 					}
 				}
@@ -104,7 +104,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				container.delete(SegmentedBucketChainBucket.this);
 				container.delete(this);
 				synchronized(SegmentedBucketChainBucket.this) {
-					if(killMe == null) return;
+					if(killMe == null) return true;
 				}
 				try {
 					dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
@@ -112,6 +112,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					// Impossible
 				}
 				container.delete(killMe);
+				return true;
 			}
 			
 		};
@@ -217,12 +218,13 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		final BucketArrayWrapper baw = new BucketArrayWrapper();
 		dbJobRunner.runBlocking(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				container.activate(seg, 1);
 				synchronized(baw) {
 					baw.buckets = seg.shallowCopyBuckets();
 				}
 				container.deactivate(seg, 1);
+				return false;
 			}
 			
 		}, NativeThread.HIGH_PRIORITY);
@@ -250,10 +252,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			try {
 				dbJobRunner.runBlocking(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						for(int i=0;i<segs.length;i++) {
 							segs[i].removeFrom(container);
 						}
+						return true;
 					}
 					
 				}, NativeThread.HIGH_PRIORITY);
@@ -328,7 +331,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				try {
 					dbJobRunner.runBlocking(new DBJob() {
 						
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							if(container.ext().isStored(oldSeg)) {
 								if(!container.ext().isActive(oldSeg)) {
 									Logger.error(this, "OLD SEGMENT STORED BUT NOT ACTIVE: "+oldSeg, new Exception("error"));
@@ -342,7 +345,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 							// If there is only one segment, we didn't add a killMe.
 							// Add one now.
 							synchronized(SegmentedBucketChainBucket.this) {
-								if(killMe != null) return;
+								if(killMe != null) return true;
 								killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
 							}
 							try {
@@ -350,6 +353,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 							} catch (DatabaseDisabledException e) {
 								// Impossible.
 							}
+							return true;
 						}
 						
 					}, NativeThread.HIGH_PRIORITY);
@@ -382,14 +386,14 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 			try {
 			dbJobRunner.runBlocking(new DBJob() {
 				
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					try {
 						oldSeg.storeTo(container);
 						container.ext().store(segments, 1);
 						container.ext().store(SegmentedBucketChainBucket.this, 1);
 						container.deactivate(oldSeg, 1);
 						synchronized(SegmentedBucketChainBucket.this) {
-							if(killMe != null) return;
+							if(killMe != null) return true;
 							killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
 						}
 						killMe.scheduleRestart(container, context);
@@ -401,6 +405,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 							SegmentedBucketChainBucket.this.notifyAll();
 						}
 					}
+					return true;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY-1);
@@ -451,8 +456,9 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		try {
 			dbJobRunner.runBlocking(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					baw.buckets = getBuckets(container);
+					return false;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY);
@@ -495,11 +501,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		}
 		DBJob clearJob = new DBJob() {
 			
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				if(!container.ext().isStored(SegmentedBucketChainBucket.this)) {
 					Logger.error(this, "Bucket not stored in clearJob, already deleted???");
 					container.delete(this);
-					return;
+					return false;
 				}
 				SegmentedChainBucketSegment segment = null;
 				synchronized(this) {
@@ -521,7 +527,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 							}
 							container.store(segments);
 							container.store(SegmentedBucketChainBucket.this);
-							return;
+							return true;
 						}
 					}
 				}
@@ -529,7 +535,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				container.delete(SegmentedBucketChainBucket.this);
 				container.delete(this);
 				synchronized(SegmentedBucketChainBucket.this) {
-					if(killMe == null) return;
+					if(killMe == null) return true;
 				}
 				try {
 					dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
@@ -538,6 +544,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 					// It will be re-run, no big deal.
 				}
 				container.delete(killMe);
+				return true;
 			}
 
 		};

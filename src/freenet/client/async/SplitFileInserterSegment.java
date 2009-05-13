@@ -662,19 +662,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		freeBucketsArray(container, checkBlocks);
 	}
 
-	private void onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
+	private boolean onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Encoded block "+x+" on "+this);
 		synchronized (this) {
 			if (finished)
-				return;
+				return false;
 			if (x >= dataBlocks.length) {
 				if (checkURIs[x - dataBlocks.length] != null) {
-					return;
+					return false;
 				}
 				checkURIs[x - dataBlocks.length] = key;
 			} else {
 				if (dataURIs[x] != null) {
-					return;
+					return false;
 				}
 				dataURIs[x] = key;
 			}
@@ -684,18 +684,18 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if(logMINOR)
 				Logger.minor(this, "Blocks got URI: "+blocksGotURI+" of "+(dataBlocks.length + checkBlocks.length));
 			if (blocksGotURI != dataBlocks.length + checkBlocks.length)
-				return;
+				return false;
 			// Double check
 			for (int i = 0; i < checkURIs.length; i++) {
 				if (checkURIs[i] == null) {
 					Logger.error(this, "Check URI " + i + " is null");
-					return;
+					return false;
 				}
 			}
 			for (int i = 0; i < dataURIs.length; i++) {
 				if (dataURIs[i] == null) {
 					Logger.error(this, "Data URI " + i + " is null");
-					return;
+					return false;
 				}
 			}
 			hasURIs = true;
@@ -707,6 +707,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		parent.segmentHasURIs(this, container, context);
 		if(persistent)
 			container.deactivate(parent, 1);
+		return true;
 	}
 
 	public synchronized boolean isFinished() {
@@ -1317,11 +1318,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					if(block.persistent) {
 					context.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(SplitFileInserterSegment.this)) return;
+						public boolean run(ObjectContainer container, ClientContext context) {
+							if(!container.ext().isStored(SplitFileInserterSegment.this)) return false;
 							container.activate(SplitFileInserterSegment.this, 1);
-							onEncode(num, key, container, context);
+							boolean retval = onEncode(num, key, container, context);
 							container.deactivate(SplitFileInserterSegment.this, 1);
+							return retval;
 						}
 
 					}, NativeThread.NORM_PRIORITY+1, false);

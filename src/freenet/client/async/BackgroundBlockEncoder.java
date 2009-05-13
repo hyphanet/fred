@@ -115,7 +115,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	
 	private DBJob runner = new DBJob() {
 
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			Query query = container.query();
 			query.constrain(BackgroundBlockEncoderTag.class);
 			query.descend("nodeDBHandle").constrain(Long.valueOf(context.nodeDBHandle));
@@ -138,6 +138,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			}
 			if(results.hasNext())
 				runPersistentQueue(context);
+			return true;
 		}
 		
 	};

@@ -129,8 +129,9 @@ public class PersistentChosenRequest {
 		try {
 			context.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					finish(container, context, false, false);
+					return true;
 				}
 				
 			}, NativeThread.NORM_PRIORITY + 1, false);

@@ -111,16 +111,17 @@ public class InsertCompressor implements CompressJob {
 					if(persistent) {
 						context.jobRunner.queue(new DBJob() {
 
-							public void run(ObjectContainer container, ClientContext context) {
+							public boolean run(ObjectContainer container, ClientContext context) {
 								if(!container.ext().isStored(inserter)) {
 									if(logMINOR) Logger.minor(this, "Already deleted (start compression): "+inserter+" for "+InsertCompressor.this);
-									return;
+									return false;
 								}
 								if(container.ext().isActive(inserter))
 									Logger.error(this, "ALREADY ACTIVE in start compression callback: "+inserter);
 								container.activate(inserter, 1);
 								inserter.onStartCompression(comp, container, context);
 								container.deactivate(inserter, 1);
+								return false;
 							}
 
 						}, NativeThread.NORM_PRIORITY+1, false);
@@ -177,11 +178,11 @@ public class InsertCompressor implements CompressJob {
 			
 				context.jobRunner.queue(new DBJob() {
 					
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						if(!container.ext().isStored(inserter)) {
 							if(logMINOR) Logger.minor(this, "Already deleted: "+inserter+" for "+InsertCompressor.this);
 							container.delete(InsertCompressor.this);
-							return;
+							return false;
 						}
 						if(container.ext().isActive(inserter))
 							Logger.error(this, "ALREADY ACTIVE in compressed callback: "+inserter);
@@ -189,6 +190,7 @@ public class InsertCompressor implements CompressJob {
 						inserter.onCompressed(output, container, context);
 						container.deactivate(inserter, 1);
 						container.delete(InsertCompressor.this);
+						return true;
 					}
 					
 				}, NativeThread.NORM_PRIORITY+1, false);
@@ -216,11 +218,11 @@ public class InsertCompressor implements CompressJob {
 				try {
 					context.jobRunner.queue(new DBJob() {
 						
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							if(!container.ext().isStored(inserter)) {
 								if(logMINOR) Logger.minor(this, "Already deleted (on failed): "+inserter+" for "+InsertCompressor.this);
 								container.delete(InsertCompressor.this);
-								return;
+								return false;
 							}
 							if(container.ext().isActive(inserter))
 								Logger.error(this, "ALREADY ACTIVE in compress failure callback: "+inserter);
@@ -230,6 +232,7 @@ public class InsertCompressor implements CompressJob {
 							container.deactivate(inserter.cb, 1);
 							container.deactivate(inserter, 1);
 							container.delete(InsertCompressor.this);
+							return true;
 						}
 						
 					}, NativeThread.NORM_PRIORITY+1, false);
@@ -291,7 +294,7 @@ public class InsertCompressor implements CompressJob {
 			try {
 				context.jobRunner.queue(new DBJob() {
 					
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(inserter))
 							Logger.error(this, "ALREADY ACTIVE in compress failure callback: "+inserter);
 						container.activate(inserter, 1);
@@ -300,6 +303,7 @@ public class InsertCompressor implements CompressJob {
 						container.deactivate(inserter.cb, 1);
 						container.deactivate(inserter, 1);
 						container.delete(InsertCompressor.this);
+						return true;
 					}
 					
 				}, NativeThread.NORM_PRIORITY+1, false);

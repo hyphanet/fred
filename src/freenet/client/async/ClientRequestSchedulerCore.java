@@ -175,9 +175,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		if(isInsertScheduler) {
 		preRegisterMeRunner = new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				synchronized(ClientRequestSchedulerCore.this) {
-					if(registerMeSet != null) return;
+					if(registerMeSet != null) return false;
 				}
 				long tStart = System.currentTimeMillis();
 				// FIXME REDFLAG EVIL DB4O BUG!!!
@@ -212,7 +212,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					} else results = null;
 				}
 				if(results == null)
-					return;
+					return false;
 				// This throws NotSupported.
 //				query.descend("core").constrain(this).identity().
 //					and(query.descend("key").descend("addedTime").constrain(new Long(initTime)).smaller());
@@ -255,8 +255,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				} catch (DatabaseDisabledException e) {
 					// Do nothing, persistence is disabled
 				}
+				return false;
 			}
-			
 		};
 		registerMeRunner = new RegisterMeRunner();
 		}
@@ -649,7 +649,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	class RegisterMeRunner implements DBJob {
 
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			if(sched.databaseExecutor.getQueueSize(NativeThread.NORM_PRIORITY) > 100) {
 				// If the queue isn't empty, reschedule at NORM-1, wait for the backlog to clear
 				if(!sched.isQueueAlmostEmpty()) {
@@ -658,13 +658,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					} catch (DatabaseDisabledException e) {
 						// Impossible
 					}
-					return;
+					return false;
 				}
 			}
 			long deadline = System.currentTimeMillis() + 10*1000;
 			if(registerMeSet == null) {
 				Logger.error(this, "registerMeSet is null for "+ClientRequestSchedulerCore.this+" ( "+this+" )");
-				return;
+				return false;
 			}
 			for(int i=0;i < 1000; i++) {
 				try {
@@ -677,7 +677,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					} catch (DatabaseDisabledException e) {
 						// Impossible
 					}
-					return;
+					return true;
 				} catch (ClassCastException t) {
 					// WTF?!?!?!?!?!
 					Logger.error(this, "DB4O thew ClassCastException in hasNext(): "+t, t);
@@ -687,7 +687,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					} catch (DatabaseDisabledException e) {
 						// Impossible
 					}
-					return;
+					return true;
 				}
 				long startNext = System.currentTimeMillis();
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
@@ -757,6 +757,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				// Always re-run the query. If there is nothing to register, it won't call back to us.
 				preRegisterMeRunner.run(container, context);
 			}
+			return true;
 		}
 		
 	}

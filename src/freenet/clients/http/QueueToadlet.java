@@ -341,7 +341,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					core.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							try {
 							final ClientPut clientPut;
 							try {
@@ -352,30 +352,31 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									} catch (IdentifierCollisionException e) {
 										Logger.error(this, "Cannot put same file twice in same millisecond");
 										writePermanentRedirect(ctx, "Done", "/queue/");
-										return;
+										return false;
 									}
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return true;
 							} catch (IdentifierCollisionException e) {
 								Logger.error(this, "Cannot put same file twice in same millisecond");
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return false;
 							} catch (NotAllowedException e) {
 								writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
-								return;
+								return false;
 							} catch (FileNotFoundException e) {
 								writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
-								return;
+								return false;
 							} catch (MalformedURLException mue1) {
 								writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
-								return;
+								return false;
 							} catch (MetadataUnresolvedException e) {
 								Logger.error(this, "Unresolved metadata in starting insert from data uploaded from browser: "+e, e);
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return false;
 								// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
 							} catch (Throwable t) {
 								writeInternalError(t, ctx);
+								return false;
 							} finally {
 								synchronized(done) {
 									done.value = true;
@@ -384,8 +385,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							}
 							} catch (IOException e) {
 								// Ignore
+								return false;
 							} catch (ToadletContextClosedException e) {
 								// Ignore
+								return false;
 							}
 						}
 						
@@ -430,7 +433,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					core.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							final ClientPut clientPut;
 							try {
 							try {
@@ -442,29 +445,29 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									} catch (IdentifierCollisionException e) {
 										Logger.error(this, "Cannot put same file twice in same millisecond");
 										writePermanentRedirect(ctx, "Done", "/queue/");
-										return;
+										return false;
 									} catch (DatabaseDisabledException e) {
 										// Impossible???
 									}
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return true;
 							} catch (IdentifierCollisionException e) {
 								Logger.error(this, "Cannot put same file twice in same millisecond");
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return false;
 							} catch (MalformedURLException e) {
 								writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
-								return;
+								return false;
 							} catch (FileNotFoundException e) {
 								writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ target }), ctx);
-								return;
+								return false;
 							} catch (NotAllowedException e) {
 								writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
-								return;
+								return false;
 							} catch (MetadataUnresolvedException e) {
 								Logger.error(this, "Unresolved metadata in starting insert from data from file: "+e, e);
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return false;
 								// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
 							} finally {
 								synchronized(done) {
@@ -474,8 +477,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							}
 							} catch (IOException e) {
 								// Ignore
+								return false;
 							} catch (ToadletContextClosedException e) {
 								// Ignore
+								return false;
 							}
 						}
 						
@@ -514,7 +519,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				try {
 					core.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							ClientPutDir clientPutDir;
 							try {
 							try {
@@ -527,23 +532,23 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									} catch (IdentifierCollisionException e) {
 										Logger.error(this, "Cannot put same file twice in same millisecond");
 										writePermanentRedirect(ctx, "Done", "/queue/");
-										return;
+										return false;
 									} catch (DatabaseDisabledException e) {
 										sendPersistenceDisabledError(ctx);
-										return;
+										return false;
 									}
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return true;
 							} catch (IdentifierCollisionException e) {
 								Logger.error(this, "Cannot put same directory twice in same millisecond");
 								writePermanentRedirect(ctx, "Done", "/queue/");
-								return;
+								return false;
 							} catch (MalformedURLException e) {
 								writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
-								return;
+								return false;
 							} catch (FileNotFoundException e) {
 								writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
-								return;
+								return false;
 							} finally {
 								synchronized(done) {
 									done.value = true;
@@ -552,8 +557,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							}
 							} catch (IOException e) {
 								// Ignore
+								return false;
 							} catch (ToadletContextClosedException e) {
 								// Ignore
+								return false;
 							}
 						}
 						
@@ -682,7 +689,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		try {
 			core.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					HTMLNode pageNode = null;
 					try {
 						if(count) {
@@ -699,13 +706,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
-							return;
+							return false;
 						} else {
 							try {
 								pageNode = handleGetInner(pageMaker, container, context, request, ctx);
 							} catch (DatabaseDisabledException e) {
 								pageNode = null;
 							}
+							return false;
 						}
 					} finally {
 						synchronized(ow) {
@@ -1462,7 +1470,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				String[] identifiers;
 				synchronized(completedRequestIdentifiers) {
 					identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
@@ -1477,6 +1485,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 					registerAlert(req, container);
 				}
+				return false;
 			}
 			
 		}, NativeThread.HIGH_PRIORITY, false);

@@ -53,15 +53,18 @@ public class RemovePersistentRequest extends FCPMessage {
 			try {
 				handler.server.core.clientContext.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						try {
 							ClientRequest req = handler.removePersistentForeverRequest(global, identifier, container);
 							if(req == null) {
 					    		Logger.error(this, "Huh ? the request is null!");
+					    		return false;
 							}
+							return true;
 						} catch (MessageInvalidException e) {
 							FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);
 							handler.outputHandler.queue(err);
+							return false;
 						}
 					}
 					

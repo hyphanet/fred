@@ -98,8 +98,9 @@ public class DatastoreChecker implements PrioRunnable {
 	
 	private final DBJob loader =  new DBJob() {
 
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			loadPersistentRequests(container, context);
+			return false;
 		}
 		
 	};
@@ -409,7 +410,7 @@ public class DatastoreChecker implements PrioRunnable {
 			try {
 				context.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(get)) {
 							Logger.error(this, "ALREADY ACTIVATED: "+get);
 						}
@@ -418,12 +419,13 @@ public class DatastoreChecker implements PrioRunnable {
 							if(logMINOR) 
 								Logger.minor(this, "Already deleted from database");
 							container.delete(it);
-							return;
+							return false;
 						}
 						container.activate(get, 1);
 						scheduler.finishRegister(new SendableGet[] { get }, true, container, valid, it);
 						container.deactivate(get, 1);
 						loader.run(container, context);
+						return false;
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);

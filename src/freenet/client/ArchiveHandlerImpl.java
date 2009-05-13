@@ -145,7 +145,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					}
 					context.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							if(logMINOR)
 								Logger.minor(this, "Calling callback for "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
 							container.activate(tag.callback, 1);
@@ -160,6 +160,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 							}
 							container.deactivate(tag.callback, 1);
 							container.delete(tag);
+							return false;
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
@@ -169,7 +170,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					try {
 						context.jobRunner.queue(new DBJob() {
 
-							public void run(ObjectContainer container, ClientContext context) {
+							public boolean run(ObjectContainer container, ClientContext context) {
 								container.activate(tag.callback, 1);
 								tag.callback.onFailed(e, container, context);
 								tag.callback.removeFrom(container);
@@ -178,6 +179,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 									tag.data.removeFrom(container);
 								}
 								container.delete(tag);
+								return false;
 							}
 							
 						}, NativeThread.NORM_PRIORITY, false);
@@ -190,7 +192,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					try {
 						context.jobRunner.queue(new DBJob() {
 
-							public void run(ObjectContainer container, ClientContext context) {
+							public boolean run(ObjectContainer container, ClientContext context) {
 								container.activate(tag.callback, 1);
 								tag.callback.onFailed(e, container, context);
 								tag.callback.removeFrom(container);
@@ -199,6 +201,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 									tag.data.removeFrom(container);
 								}
 								container.delete(tag);
+								return false;
 							}
 							
 						}, NativeThread.NORM_PRIORITY, false);

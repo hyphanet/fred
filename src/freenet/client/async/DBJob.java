@@ -12,6 +12,8 @@ import com.db4o.ObjectContainer;
  */
 public interface DBJob {
 	
-	void run(ObjectContainer container, ClientContext context);
+	/** @return True if we must commit the transaction immediately e.g. due to it
+	 * likely using lots of memory. */
+	boolean run(ObjectContainer container, ClientContext context);
 
 }

@@ -47,7 +47,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		try {
 			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					FCPClient foreverClient = handler.getForeverClient(container);
 					container.activate(foreverClient, 1);
 					foreverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
@@ -59,6 +59,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					}
 					handler.outputHandler.queue(new EndListPersistentRequestsMessage());
 					container.deactivate(foreverClient, 1);
+					return false;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY-1, false);

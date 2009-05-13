@@ -167,25 +167,26 @@ public class PersistentBlobTempBucketFactory {
 	
 	private final DBJob slotFinder = new DBJob() {
 		
-		public void run(ObjectContainer container, ClientContext context) {
+		public boolean run(ObjectContainer container, ClientContext context) {
 			int added = 0;
 			
 			while(true) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			synchronized(PersistentBlobTempBucketFactory.this) {
-				if(freeSlots.size() > MAX_FREE) return;
+				if(freeSlots.size() > MAX_FREE) return false;
 			}
 			long size;
 			try {
 				size = channel.size();
 			} catch (IOException e1) {
 				Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
-				return;
+				return false;
 			}
 			size -= size % blockSize;
 			long blocks = size / blockSize;
 			long ptr = blocks - 1;
 
+			boolean changedTags = false;
 			for(long l = 0; l < blockSize + 16383; l += 16384) {
 			Query query = container.query();
 			query.constrain(PersistentBlobTempBucketTag.class);
@@ -200,6 +201,7 @@ public class PersistentBlobTempBucketFactory {
 						if(tag.bucket == null) {
 							Logger.error(this, "Tag flagged non-free yet has no bucket for index "+tag.index);
 							tag.isFree = true;
+							changedTags = true;
 						} else continue;
 					}
 					if(tag.bucket != null) {
@@ -217,7 +219,7 @@ public class PersistentBlobTempBucketFactory {
 					if(logMINOR) Logger.minor(this, "Adding slot "+tag.index+" to freeSlots (has a free tag and no taken tag)");
 					freeSlots.put(tag.index, tag);
 					added++;
-					if(added > MAX_FREE) return;
+					if(added > MAX_FREE) return changedTags;
 				}
 			}
 			}
@@ -258,7 +260,8 @@ public class PersistentBlobTempBucketFactory {
 						freeSlots.put(ptr, tag);
 					}
 					added++;
-					if(added > MAX_FREE) return;
+					changedTags = true;
+					if(added > MAX_FREE) return true;
 				}
 			}
 			
@@ -316,13 +319,14 @@ public class PersistentBlobTempBucketFactory {
 				if(taken != null && taken.contains(ptr)) continue;
 				PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, ptr);
 				container.store(tag);
+				changedTags = true;
 				synchronized(PersistentBlobTempBucketFactory.this) {
 					if(logMINOR)
 						Logger.minor(this, "Adding slot "+ptr+" to freeSlots while extending storage file");
 					freeSlots.put(ptr, tag);
 				}
 			}
-			return;
+			return changedTags;
 		}
 		}
 		
@@ -440,7 +444,7 @@ public class PersistentBlobTempBucketFactory {
 		maybeShrink(container);
 	}
 	
-	void maybeShrink(ObjectContainer container) {
+	boolean maybeShrink(ObjectContainer container) {
 		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
@@ -458,7 +462,7 @@ public class PersistentBlobTempBucketFactory {
 				size = channel.size();
 			} catch (IOException e1) {
 				Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
-				return;
+				return false;
 			}
 			size -= size % blockSize;
 			long blocks = size / blockSize;
@@ -466,7 +470,7 @@ public class PersistentBlobTempBucketFactory {
 				if(logMINOR) Logger.minor(this, "Not shrinking, blob file not larger than a megabyte");
 				lastCheckedEnd = now;
 				queueMaybeShrink();
-				return;
+				return false;
 			}
 			long lastNotCommitted = notCommittedBlobs.isEmpty() ? 0 : notCommittedBlobs.lastKey();
 			long lastAlmostFreed = almostFreeSlots.isEmpty() ? 0 : almostFreeSlots.lastKey();
@@ -479,7 +483,7 @@ public class PersistentBlobTempBucketFactory {
 				if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
 				lastCheckedEnd = now;
 				queueMaybeShrink();
-				return;
+				return false;
 			}
 			/*
 			 * Query for the non-free tag with the highest value.
@@ -515,7 +519,7 @@ public class PersistentBlobTempBucketFactory {
 				if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
 				lastCheckedEnd = now;
 				queueMaybeShrink();
-				return;
+				return false;
 			}
 			long lastBlock = Math.max(lastCommitted, lastNotCommitted);
 			// Must be 10% free at end
@@ -525,7 +529,7 @@ public class PersistentBlobTempBucketFactory {
 				if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from "+blocks+" to "+newBlocks);
 				lastCheckedEnd = now;
 				queueMaybeShrink();
-				return;
+				return false;
 			}
 			System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
 			for(long l = newBlocks; l <= blocks; l++) {
@@ -538,7 +542,7 @@ public class PersistentBlobTempBucketFactory {
 			}
 			lastCheckedEnd = now;
 			queueMaybeShrink();
-		} else return;
+		} else return false;
 		}
 		try {
 			channel.truncate(newBlocks * blockSize);
@@ -553,6 +557,7 @@ public class PersistentBlobTempBucketFactory {
 		query.descend("index").constrain(newBlocks).greater();
 		ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
 		while(tags.hasNext()) container.delete(tags.next());
+		return true;
 		
 	}
 
@@ -563,8 +568,8 @@ public class PersistentBlobTempBucketFactory {
 				try {
 					jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
-							maybeShrink(container);
+						public boolean run(ObjectContainer container, ClientContext context) {
+							return maybeShrink(container);
 						}
 						
 					}, NativeThread.NORM_PRIORITY-1, true);

@@ -324,11 +324,11 @@ public class SplitFileInserter implements ClientPutState {
 		}
 	}
 	
-	public void segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
+	public boolean segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
-				return;
+				return false;
 			}
 			
 			for(int i=0;i<segments.length;i++) {
@@ -339,13 +339,14 @@ public class SplitFileInserter implements ClientPutState {
 					container.deactivate(segments[i], 1);
 				if(!hasURIs) {
 					if(logMINOR) Logger.minor(this, "Segment does not have URIs: "+segments[i]);
-					return;
+					return false;
 				}
 			}
 		}
 		
 		if(logMINOR) Logger.minor(this, "Have URIs from all segments");
 		encodeMetadata(container, context, segment);
+		return true;
 	}
 	
 	private void encodeMetadata(ObjectContainer container, ClientContext context, SplitFileInserterSegment dontDeactivateSegment) {

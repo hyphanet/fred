@@ -133,11 +133,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			try {
 				context.jobRunner.runBlocking(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(callback, 1);
 						callback.onCancelled(container, context);
 						removeFrom(container, context);
 						container.deactivate(callback, 1);
+						return false;
 					}
 					
 				}, NativeThread.HIGH_PRIORITY);
@@ -163,11 +164,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			try {
 				context.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(callback, 1);
 						callback.onFailure(container, context);
 						container.deactivate(callback, 1);
 						removeFrom(container, context);
+						return true;
 					}
 					
 				}, NativeThread.HIGH_PRIORITY, false);
@@ -206,11 +208,12 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			try {
 				context.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(callback, 1);
 						callback.onFoundEdition(l, key, container, context, metadata, codec, data, newKnownGood, newSlotToo);
 						container.deactivate(callback, 1);
 						removeFrom(container, context);
+						return false;
 					}
 					
 				}, NativeThread.HIGH_PRIORITY, false);

@@ -249,10 +249,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			try {
 				context.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						container.activate(ClientPutBase.this, 1);
 						receive(ce, container, context);
 						container.deactivate(ClientPutBase.this, 1);
+						return false;
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -367,10 +368,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				try {
 					context.jobRunner.queue(new DBJob() {
 
-						public void run(ObjectContainer container, ClientContext context) {
+						public boolean run(ObjectContainer container, ClientContext context) {
 							container.activate(ClientPutBase.this, 1);
 							trySendProgressMessage(msg, verbosity, h, container, context);
 							container.deactivate(ClientPutBase.this, 1);
+							return false;
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);

@@ -46,7 +46,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 			try {
 				node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
 						container.activate(req, 1);
 						if(req == null) {
@@ -56,6 +56,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 							req.sendPendingMessages(handler.outputHandler, true, true, onlyData, container);
 						}
 						container.deactivate(req, 1);
+						return false;
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);

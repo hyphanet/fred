@@ -52,11 +52,12 @@ public class WatchGlobal extends FCPMessage {
 		try {
 			handler.server.core.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					FCPClient client = handler.getForeverClient(container);
 					container.activate(client, 1);
 					client.setWatchGlobal(enabled, verbosityMask, handler.server, container);
 					container.deactivate(client, 1);
+					return false;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);

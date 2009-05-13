@@ -631,7 +631,7 @@ public class FCPServer implements Runnable {
 			done.value = false;
 			core.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean succeeded = false;
 					try {
 						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container, core.clientContext);
@@ -644,6 +644,7 @@ public class FCPServer implements Runnable {
 							sync.notifyAll();
 						}
 					}
+					return true;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -669,7 +670,7 @@ public class FCPServer implements Runnable {
 		done.value = false;
 		core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				boolean succeeded = false;
 				try {
 					globalForeverClient.removeAll(container, core.clientContext);
@@ -686,6 +687,7 @@ public class FCPServer implements Runnable {
 						sync.notifyAll();
 					}
 				}
+				return true;
 			}
 			
 		}, NativeThread.HIGH_PRIORITY, false);
@@ -711,18 +713,22 @@ public class FCPServer implements Runnable {
 		final OutputWrapper ow = new OutputWrapper();
 		core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				NotAllowedException ne = null;
 				IOException ioe = null;
 				try {
 					makePersistentGlobalRequest(fetchURI, expectedMimeType, persistenceTypeString, returnTypeString, container);
+					return true;
 				} catch (NotAllowedException e) {
 					ne = e;
+					return false;
 				} catch (IOException e) {
 					ioe = e;
+					return false;
 				} catch (Throwable t) {
 					// Unexpected and severe, might even be OOM, just log it.
 					Logger.error(this, "Failed to make persistent request: "+t, t);
+					return false;
 				} finally {
 					synchronized(ow) {
 						ow.ne = ne;
@@ -765,7 +771,7 @@ public class FCPServer implements Runnable {
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
 					try {
 						ClientRequest req = globalForeverClient.getRequest(identifier, container);
@@ -781,6 +787,7 @@ public class FCPServer implements Runnable {
 							ow.notifyAll();
 						}
 					}
+					return true;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -986,7 +993,7 @@ public class FCPServer implements Runnable {
 				final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 				
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					// Don't activate, it may not be stored yet.
 					try {
 						req.register(container, false, false);
@@ -1000,6 +1007,7 @@ public class FCPServer implements Runnable {
 						}
 					}
 					container.deactivate(req, 1);
+					return true;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -1036,7 +1044,7 @@ public class FCPServer implements Runnable {
 			final OutputWrapper ow = new OutputWrapper();
 			core.clientContext.jobRunner.queue(new DBJob() {
 
-				public void run(ObjectContainer container, ClientContext context) {
+				public boolean run(ObjectContainer container, ClientContext context) {
 					boolean success = false;
 					try {
 						ClientRequest req = globalForeverClient.getRequest(identifier, container);
@@ -1053,6 +1061,7 @@ public class FCPServer implements Runnable {
 							ow.notifyAll();
 						}
 					}
+					return true;
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -1088,7 +1097,7 @@ public class FCPServer implements Runnable {
 		
 		core.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
+			public boolean run(ObjectContainer container, ClientContext context) {
 				TempFetchResult result = null;
 				try {
 					ClientGet get = globalForeverClient.getCompletedRequest(key, container);
@@ -1111,7 +1120,7 @@ public class FCPServer implements Runnable {
 							} catch (IOException e) {
 								Logger.error(this, "Unable to copy data: "+e, e);
 								result = null;
-								return;
+								return false;
 							}
 							copied = true;
 						}
@@ -1125,6 +1134,7 @@ public class FCPServer implements Runnable {
 						ow.notifyAll();
 					}
 				}
+				return false;
 			}
 			
 		}, NativeThread.HIGH_PRIORITY, false);

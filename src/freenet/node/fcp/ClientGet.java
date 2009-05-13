@@ -672,8 +672,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			try {
 				context.jobRunner.queue(new DBJob() {
 
-					public void run(ObjectContainer container, ClientContext context) {
+					public boolean run(ObjectContainer container, ClientContext context) {
 						trySendProgress(progress, null, container);
+						return false;
 					}
 					
 				}, NativeThread.HIGH_PRIORITY, false);
