@@ -82,7 +82,7 @@ public class PersistentBlobTempBucketFactory {
 					" for same file "+storageFile);
 		if(!(oldFile.equals(newFile) || 
 				(File.separatorChar == '\\' ? oldFile.getPath().toLowerCase().equals(newFile.getPath().toLowerCase()) : oldFile.getPath().equals(newFile.getPath())))) {
-			if(!FileUtil.moveTo(storageFile, storageFile2, false))
+			if(storageFile.exists() && !FileUtil.moveTo(storageFile, storageFile2, false))
 				throw new IOException("Unable to move temp blob file from "+storageFile+" to "+storageFile2);
 		}
 		raf = new RandomAccessFile(storageFile, "rw");
