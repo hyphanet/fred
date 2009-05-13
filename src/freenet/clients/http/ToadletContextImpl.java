@@ -478,4 +478,8 @@ public class ToadletContextImpl implements ToadletContext {
 	public ToadletContainer getContainer() {
 		return container;
 	}
+
+	public boolean disableProgressPage() {
+		return container.disableProgressPage();
+	}
 }

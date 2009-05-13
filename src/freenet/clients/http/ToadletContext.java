@@ -85,5 +85,7 @@ public interface ToadletContext {
 	boolean doRobots();
 
 	ToadletContainer getContainer();
+
+	boolean disableProgressPage();
 }
 

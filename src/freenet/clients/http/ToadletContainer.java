@@ -66,4 +66,6 @@ public interface ToadletContainer {
 	public boolean enableActivelinks();
 	
 	public boolean isFProxyJavascriptEnabled();
+
+	public boolean disableProgressPage();
 }

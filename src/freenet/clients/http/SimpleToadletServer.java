@@ -89,6 +89,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	public BookmarkManager bookmarkManager;				// move to WelcomeToadlet / BookmarkEditorToadlet ?
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
+	private volatile boolean disableProgressPage;
 	
 	// Config Callbacks
 	private class FProxySSLCallback extends BooleanCallback  {
@@ -350,6 +351,20 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 						if(get().equals(val)) return;
 						fproxyHasCompletedWizard = val;
 					}
+		});
+		fproxyConfig.register("disableProgressPage", false, configItemOrder++, true, false, "SimpleToadletServer.disableProgressPage", "SimpleToadletServer.disableProgressPageLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return disableProgressPage;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						disableProgressPage = val;
+					}
+			
 		});
 		fproxyHasCompletedWizard = fproxyConfig.getBoolean("hasCompletedWizard");
 		fProxyJavascriptEnabled = fproxyConfig.getBoolean("javascriptEnabled");
@@ -767,6 +782,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public boolean enableActivelinks() {
 		return enableActivelinks;
+	}
+
+
+
+	public boolean disableProgressPage() {
+		return disableProgressPage;
 	}
 
 }
