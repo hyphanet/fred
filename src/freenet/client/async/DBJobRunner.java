@@ -33,4 +33,8 @@ public interface DBJobRunner {
 
 	public boolean killedDatabase();
 	
+	/** Tell the job runner that this transaction needs to be committed, even if the
+	 * DBJob returns false. */
+	public void setCommitThisTransaction();
+	
 }

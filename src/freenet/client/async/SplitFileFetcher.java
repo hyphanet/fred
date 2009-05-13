@@ -474,6 +474,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				}
 				finished = true;
 			}
+			context.jobRunner.setCommitThisTransaction();
 			if(persistent)
 				container.store(this);
 			Bucket data = finalStatus(container, context);

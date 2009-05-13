@@ -1495,6 +1495,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						}
 						if(alwaysCommit)
 							commit = true;
+						if(commitThisTransaction) {
+							commit = true;
+							commitThisTransaction = false;
+						}
 					}
 				}
 				if(killed) {
@@ -1640,6 +1644,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 		if(logMINOR) Logger.minor(this, "COMMITTED");
 		persistentTempBucketFactory.postCommit(node.db);
+	}
+
+	private boolean commitThisTransaction;
+	
+	public synchronized void setCommitThisTransaction() {
+		commitThisTransaction = true;
 	}
 	
 }

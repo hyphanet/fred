@@ -89,6 +89,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.decompressedLength = decompressedLength;
 		this.dataLength = data.size();
 		Bucket[] dataBuckets;
+		context.jobRunner.setCommitThisTransaction();
 		try {
 			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, persistent ? ctx.persistentBucketFactory : context.tempBucketFactory, freeData, persistent, container);
 				if(dataBuckets[dataBuckets.length-1].size() < CHKBlock.DATA_LENGTH) {
@@ -153,6 +154,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.cb = cb;
 		this.ctx = ctx;
 		this.persistent = parent.persistent();
+		context.jobRunner.setCommitThisTransaction();
 		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
 		if(length == null) throw new ResumeException("No DataLength");
