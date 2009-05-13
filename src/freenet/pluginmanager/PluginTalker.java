@@ -42,7 +42,6 @@ public class PluginTalker {
 	}
 	
 	protected WeakReference<FredPluginFCP> findPlugin(String pluginname2) throws PluginNotFoundException {
-
 		Logger.normal(this, "Searching fcp plugin: " + pluginname2);
 		FredPluginFCP plug = node.pluginManager.getFCPPlugin(pluginname2);
 		if (plug == null) {
@@ -51,20 +50,20 @@ public class PluginTalker {
 		}
 		Logger.normal(this, "Found fcp plugin: " + pluginname2);
 		return new WeakReference<FredPluginFCP>(plug);
-
 	}
-
 
 	public void send(final SimpleFieldSet plugparams, final Bucket data2) {
 
 		node.executor.execute(new Runnable() {
 
 			public void run() {
-
 				try {
 					FredPluginFCP plug = pluginRef.get();
 					if (plug==null) {
+						// FIXME How to get this out to surrounding send(..)?
 						// throw new PluginNotFoundException(How to get this out to surrounding send(..)?);
+						Logger.error(this, "Connection to plugin '"+pluginName+"' lost.", new Exception("FIXME"));
+						return;
 					}
 					plug.handle(replysender, plugparams, data2, access);
 				} catch (ThreadDeath td) {
@@ -74,10 +73,7 @@ public class PluginTalker {
 				} catch (Throwable t) {
 					Logger.error(this, "Cought error while execute fcp plugin handler for '"+pluginName+"', report it to the plugin author: " + t.getMessage(), t);
 				}
-
 			}
 		}, "FCPPlugin talk runner for " + this);
-
 	}
-
 }
