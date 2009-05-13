@@ -30,6 +30,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	private String name;
 	private Executor realExecutor;
 	private boolean running;
+	private final ExecutorIdleCallback callback;
 	
 	private static final int DEFAULT_JOB_TIMEOUT = 5*60*1000;
 	private final int jobTimeout;
@@ -151,7 +152,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param defaultPriority
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
-	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout) {
+	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback) {
 		jobs = new LinkedList[internalPriorityCount];
 		for(int i=0;i<jobs.length;i++)
 			jobs[i] = new LinkedList<Runnable>();
@@ -159,10 +160,11 @@ public class PrioritizedSerialExecutor implements Executor {
 		this.defaultPriority = defaultPriority;
 		this.invertOrder = invertOrder;
 		this.jobTimeout = jobTimeout;
+		this.callback = callback;
 	}
 	
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder) {
-		this(priority, internalPriorityCount, defaultPriority, invertOrder, DEFAULT_JOB_TIMEOUT);
+		this(priority, internalPriorityCount, defaultPriority, invertOrder, DEFAULT_JOB_TIMEOUT, null);
 	}
 	
 	public void start(Executor realExecutor, String name) {

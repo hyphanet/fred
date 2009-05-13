@@ -63,6 +63,7 @@ import freenet.node.useralerts.UserAlertManager;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
+import freenet.support.ExecutorIdleCallback;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
@@ -85,7 +86,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
+public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, ExecutorIdleCallback {
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -173,7 +174,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		}
 		fecQueue = q;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, 30*1000);
+		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, 30*1000, this);
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -1626,6 +1627,19 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	
 	public synchronized boolean killedDatabase() {
 		return killedDatabase;
+	}
+
+	public void onIdle() {
+		synchronized(NodeClientCore.this) {
+			if(killedDatabase) return;
+		}
+		persistentTempBucketFactory.preCommit(node.db);
+		node.db.commit();
+		synchronized(NodeClientCore.this) {
+			lastCommitted = System.currentTimeMillis();
+		}
+		if(logMINOR) Logger.minor(this, "COMMITTED");
+		persistentTempBucketFactory.postCommit(node.db);
 	}
 	
 }
