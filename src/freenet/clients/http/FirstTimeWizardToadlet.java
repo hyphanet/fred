@@ -48,6 +48,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		NAME_SELECTION,
 		BANDWIDTH,
 		DATASTORE_SIZE,
+		MISC,
 		CONGRATZ,
 		FINAL;
 	}
@@ -269,6 +270,38 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
+		} else if(currentStep == WIZARD_STEP.MISC) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("stepMiscTitle"), true, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode form = ctx.addFormChild(contentNode, ".", "miscForm");
+			
+			HTMLNode miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
+			
+			miscInfoboxHeader.addChild("#", l10n("autoUpdate"));
+			miscInfoboxContent.addChild("p", l10n("autoUpdateLong"));
+			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
+					new String[] { "radio", "on", "autodeploy", "true" }, l10n("autoUpdateAutodeploy"));
+			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "name", "value" },
+					new String[] { "radio", "autodeploy", "false" }, l10n("autoUpdateNoAutodeploy"));
+			
+			miscInfobox = form.addChild("div", "class", "infobox infobox-normal");
+			miscInfoboxHeader = miscInfobox.addChild("div", "class", "infobox-header");
+			miscInfoboxContent = miscInfobox.addChild("div", "class", "infobox-content");
+			
+			miscInfoboxHeader.addChild("#", l10n("plugins"));
+			miscInfoboxContent.addChild("p", l10n("pluginsLong"));
+			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
+					new String[] { "checkbox", "on", "upnp", "true" }, l10n("enableUPnP"));
+			miscInfoboxContent.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" },
+					new String[] { "checkbox", "on", "jstun", "true" }, l10n("enableJSTUN"));
+			
+			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "miscF", L10n.getString("FirstTimeWizardToadlet.continue")});
+			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
 		}else if(currentStep == WIZARD_STEP.CONGRATZ) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -454,7 +487,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		} else if(request.isPartSet("dsF")) {
 			_setDatastoreSize(request.getPartAsString("ds", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MISC);
 			return;
 		} else if(request.isPartSet("memoryF")) {
 			String selectedMemorySize = request.getPartAsString("memoryF", 6);
@@ -463,8 +496,31 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if(memorySize >= 0) {
 				WrapperConfig.setWrapperProperty("wrapper.java.maxmemory", selectedMemorySize);
 			}
-			super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
+			super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.MISC);
 			return;
+		} else if(request.isPartSet("miscF")) {
+			try {
+				config.get("node.updater").set("autoupdate", Boolean.parseBoolean(request.getPartAsString("autodeploy", 10)));
+			} catch (ConfigException e) {
+				Logger.error(this, "Should not happen, please report!" + e, e);
+			}
+			boolean enableUPnP = request.isPartSet("upnp");
+			boolean enableJSTUN = request.isPartSet("jstun");
+			if(enableUPnP != core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
+				if(enableUPnP)
+					core.node.pluginManager.startPluginOfficial("UPnP", true);
+				else
+					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
+			}
+			if(enableJSTUN != core.node.pluginManager.isPluginLoaded("plugins.JSTUN.JSTUN")) {
+				if(enableJSTUN)
+					core.node.pluginManager.startPluginOfficial("JSTUN", true);
+				else
+					core.node.pluginManager.killPluginByClass("plugins.JSTUN.JSTUN", 5000);
+			}
+			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
+			return;
+				
 		}
 		
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
