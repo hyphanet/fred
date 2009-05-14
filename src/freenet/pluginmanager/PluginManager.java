@@ -651,6 +651,22 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime);
 	}
 
+	public void killPluginByClass(String name, int maxWaitTime) {
+		PluginInfoWrapper pi = null;
+		boolean found = false;
+		synchronized(pluginWrappers) {
+			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
+				pi = pluginWrappers.get(i);
+				if(pi.getPluginClassName().equals(name)) {
+					found = true;
+					break;
+				}
+			}
+		}
+		if(found)
+			pi.stopPlugin(this, maxWaitTime);
+	}
+
 	public void killPlugin(FredPlugin plugin, int maxWaitTime) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
@@ -839,11 +855,6 @@ public class PluginManager {
 		
 		// we do quite a lot inside the lock, use a dedicated one
 		synchronized (pluginLoadSyncObject) {
-			if(this.isPluginLoaded(filename)) {
-				Logger.error(this, "Plugin already loaded: "+filename);
-				return null;
-			}
-
 			/* now get the manifest file. */
 			JarFile pluginJarFile = null;
 			String pluginMainClassName = null;
@@ -867,6 +878,11 @@ public class PluginManager {
 					pluginFile.delete();
 					throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
 				}
+				if(this.isPluginLoaded(pluginMainClassName)) {
+					Logger.error(this, "Plugin already loaded: "+filename);
+					return null;
+				}
+
 			} catch(JarException je1) {
 				Logger.error(this, "could not process jar file", je1);
 				pluginFile.delete();
