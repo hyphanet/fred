@@ -46,6 +46,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     private byte[] headers;
     private boolean canCommit;
     final InsertTag tag;
+
+	private boolean collided = false;
     
     SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
         this.node = node;
@@ -238,6 +240,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             	// Forward collision
             	data = sender.getData();
             	headers = sender.getHeaders();
+            	collided = true;
         		try {
 					block = new SSKBlock(data, headers, key, true);
 				} catch (SSKVerifyException e1) {
@@ -330,7 +333,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     	
     	if(canCommit) {
     		try {
-				node.store(block, block.getKey().toNormalizedDouble(), false);
+				node.store(block, block.getKey().toNormalizedDouble(), collided);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}
