@@ -225,6 +225,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public InputStream getInputStream() throws IOException {
+		if(bucket == null)
+			throw new NullPointerException("No underlying bucket on "+super.toString());
 		return new PaddedEphemerallyEncryptedInputStream(bucket.getInputStream());
 	}
 
@@ -335,6 +337,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	@Override
 	public String toString() {
+		if(bucket == null)
+			throw new NullPointerException("No underlying bucket on "+super.toString());
 		return super.toString()+ ':' +bucket.toString();
 	}
 	

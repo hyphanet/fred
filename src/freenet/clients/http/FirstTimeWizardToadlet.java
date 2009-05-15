@@ -251,7 +251,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
 			} else if(autodetectedSize != -1)
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
-			if(autodetectedSize != 512*1024*1024 && sizeOption.isDefault())
+			if(autodetectedSize != 512*1024*1024)
 				result.addChild("option", "value", "512M", "512 MiB");
 			result.addChild("option", "value", "1G", "1 GiB");
 			if(autodetectedSize != -1 || !sizeOption.isDefault())
