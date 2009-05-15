@@ -83,7 +83,8 @@ public class PersistentPutDir extends FCPMessage {
 				subset.putSingle("UploadFrom", "redirect");
 				subset.putSingle("TargetURI", tempURI.toString());
 			} else {
-				Bucket data = e.getData();
+				Bucket origData = e.getData();
+				Bucket data = origData;
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
 					container.activate(data, 1);
 				if(data instanceof DelayedFreeBucket) {
@@ -105,7 +106,7 @@ public class PersistentPutDir extends FCPMessage {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					container.deactivate(data, 1);
+					container.deactivate(origData, 1);
 			}
 			files.put(num, subset);
 		}
