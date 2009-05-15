@@ -103,6 +103,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private final PutHandler containerHandle;
 		
 		public void start(ObjectContainer container, ClientContext context) throws InsertException {
+			if(logMINOR) {
+				boolean deactivate = false;
+				if(persistent && data != null)
+					deactivate = container.ext().isActive(data);
+				if(deactivate) container.activate(data, 1);
+				Logger.minor(this, "Starting "+this+" target="+targetInArchive+" data "+data);
+				if(deactivate) container.deactivate(data, 1);
+			}
 			if (origSFI == null) {
 				 Logger.error(this, "origSFI is null on start(), should be impossible", new Exception("debug"));
 				 return;
