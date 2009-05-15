@@ -55,9 +55,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	// Only implements PutCompletionCallback for the final metadata insert
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 		
-		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) {
+		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
 			super(smp.priorityClass, smp.client);
-			this.persistent = SimpleManifestPutter.this.persistent();
+			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
 			InsertBlock block = 
@@ -68,9 +68,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			containerHandle = null;
 		}
 
-		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm) {
+		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm, boolean persistent) {
 			super(smp.getPriorityClass(), smp.client);
-			this.persistent = SimpleManifestPutter.this.persistent();
+			this.persistent = persistent;
 			this.cm = cm;
 			this.data = null;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, target, cm);
@@ -80,9 +80,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			containerHandle = null;
 		}
 		
-		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data) {
+		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data, boolean persistent) {
 			super(smp.getPriorityClass(), smp.client);
-			this.persistent = SimpleManifestPutter.this.persistent();
+			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
 			this.targetInArchive = targetInArchive;
@@ -572,7 +572,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		metadataPuttersByMetadata = new HashMap<Metadata,ClientPutState>();
 		metadataPuttersUnfetchable = new HashMap<Metadata,ClientPutState>();
 		elementsToPutInArchive = new ArrayList<PutHandler>();
-		makePutHandlers(manifestElements, putHandlersByName);
+		makePutHandlers(manifestElements, putHandlersByName, client.persistent());
 		checkZips();
 	}
 
@@ -624,11 +624,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	protected void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName) {
-		makePutHandlers(manifestElements, putHandlersByName, "/");
+	protected void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, boolean persistent) {
+		makePutHandlers(manifestElements, putHandlersByName, "/", persistent);
 	}
 	
-	private void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, String ZipPrefix) {
+	private void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, String ZipPrefix, boolean persistent) {
 		Iterator<String> it = manifestElements.keySet().iterator();
 		while(it.hasNext()) {
 			String name = it.next();
@@ -636,7 +636,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				putHandlersByName.put(name, subMap);
-				makePutHandlers((HashMap<String, Object>)o, subMap, ZipPrefix+name+ '/');
+				makePutHandlers((HashMap<String, Object>)o, subMap, ZipPrefix+name+ '/', persistent);
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
 			} else {
@@ -652,7 +652,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				PutHandler ph;
 				Bucket data = element.data;
 				if(element.targetURI != null) {
-					ph = new PutHandler(this, name, element.targetURI, cm);
+					ph = new PutHandler(this, name, element.targetURI, cm, persistent);
 					// Just a placeholder, don't actually run it
 				} else {
 					// Decide whether to put it in the ZIP.
@@ -673,14 +673,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						// Put it in the zip.
 						if(logMINOR)
 							Logger.minor(this, "Putting into ZIP: "+name);
-						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data);
+						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data, persistent);
 						if(logMINOR)
 							Logger.minor(this, "Putting file into container: "+element.fullName+" : "+ph);
 						elementsToPutInArchive.add(ph);
 						numberOfFiles++;
 						totalSize += data.size();
 					} else {
-							ph = new PutHandler(this,name, data, cm, getCHKOnly);
+							ph = new PutHandler(this,name, data, cm, getCHKOnly, persistent);
 						runningPutHandlers.add(ph);
 						putHandlersWaitingForMetadata.add(ph);
 						putHandlersWaitingForFetchable.add(ph);
@@ -1783,10 +1783,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		PutHandler ph;
 		Bucket data = me.data;
 		if(me.targetURI != null) {
-			ph = new PutHandler(this, name, me.targetURI, cm);
+			ph = new PutHandler(this, name, me.targetURI, cm, persistent());
 			// Just a placeholder, don't actually run it
 		} else {
-			ph = new PutHandler(this, name, data, cm, getCHKOnly);
+			ph = new PutHandler(this, name, data, cm, getCHKOnly, persistent());
 			runningPutHandlers.add(ph);
 			putHandlersWaitingForMetadata.add(ph);
 			putHandlersWaitingForFetchable.add(ph);
