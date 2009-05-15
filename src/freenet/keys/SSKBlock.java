@@ -105,7 +105,6 @@ public class SSKBlock implements KeyBlock {
 		this.pubKey = nodeKey.getPubKey();
 		if(pubKey == null)
 			throw new SSKVerifyException("PubKey was null from "+nodeKey);
-        MessageDigest md = SHA256.getMessageDigest();
         // Now verify it
         hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
         if(hashIdentifier != HASH_SHA256)
@@ -120,18 +119,19 @@ public class SSKBlock implements KeyBlock {
 		headersOffset = x; // is index to start of encrypted headers
 		x += ENCRYPTED_HEADERS_LENGTH;
 		// Extract the signature
-		byte[] bufR = new byte[SIG_R_LENGTH];
-		byte[] bufS = new byte[SIG_S_LENGTH];
 		if(x+SIG_R_LENGTH+SIG_S_LENGTH > headers.length)
 			throw new SSKVerifyException("Headers too short: "+headers.length+" should be at least "+x+SIG_R_LENGTH+SIG_S_LENGTH);
-		if(!dontVerify)
-			System.arraycopy(headers, x, bufR, 0, SIG_R_LENGTH);
 		x+=SIG_R_LENGTH;
-		if(!dontVerify)
-			System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
 		x+=SIG_S_LENGTH;
 		// Compute the hash on the data
 		if(!dontVerify) {
+			byte[] bufR = new byte[SIG_R_LENGTH];
+			byte[] bufS = new byte[SIG_S_LENGTH];
+			
+			System.arraycopy(headers, x, bufR, 0, SIG_R_LENGTH);
+			System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
+
+	        MessageDigest md = SHA256.getMessageDigest();
 			md.update(data);
 			byte[] dataHash = md.digest();
 			// All headers up to and not including the signature
@@ -140,6 +140,8 @@ public class SSKBlock implements KeyBlock {
 			md.update(dataHash);
 			// Makes the implicit overall hash
 			byte[] overallHash = md.digest();
+			SHA256.returnMessageDigest(md);
+			
 			// Now verify it
 			NativeBigInteger r = new NativeBigInteger(1, bufR);
 			NativeBigInteger s = new NativeBigInteger(1, bufS);
@@ -150,7 +152,6 @@ public class SSKBlock implements KeyBlock {
 		}
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: "+HexUtil.bytesToHex(ehDocname)+"\nfrom key:     "+HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
-		SHA256.returnMessageDigest(md);
 		hashCode = Fields.hashCode(data) ^ Fields.hashCode(headers) ^ nodeKey.hashCode() ^ pubKey.hashCode() ^ hashIdentifier;
 	}
 
