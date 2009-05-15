@@ -15,12 +15,19 @@ import freenet.crypt.DSASignature;
 import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 /**
  * SSKBlock. Contains a full fetched key. Can do a node-level verification. Can 
  * decode original data when fed a ClientSSK.
  */
 public class SSKBlock implements KeyBlock {
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerClass(SSKBlock.class);
+	}
+	
 	// how much of the headers we compare in order to consider two
 	// SSKBlocks equal - necessary because the last 64 bytes need not
 	// be the same for the same data and the same key (see comments below)
@@ -124,7 +131,7 @@ public class SSKBlock implements KeyBlock {
 		x+=SIG_R_LENGTH;
 		x+=SIG_S_LENGTH;
 		// Compute the hash on the data
-		if(!dontVerify) {
+		if(!dontVerify || logMINOR) {	// force verify on log minor
 			byte[] bufR = new byte[SIG_R_LENGTH];
 			byte[] bufS = new byte[SIG_S_LENGTH];
 			
@@ -147,6 +154,8 @@ public class SSKBlock implements KeyBlock {
 			NativeBigInteger s = new NativeBigInteger(1, bufS);
 			if(!(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), false) ||
 					(DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash), true)))) {
+				if (dontVerify)
+					Logger.error(this, "DSA verification failed with dontVerify!!!!");
 				throw new SSKVerifyException("Signature verification failed for node-level SSK");
 			}
 		}
