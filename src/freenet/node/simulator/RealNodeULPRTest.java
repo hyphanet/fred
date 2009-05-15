@@ -188,7 +188,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 						(isSSK && m.getSpec() == DMT.FNPSSKDataRequest)) {
 					Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
 					if(key.equals(nodeKey)) {
-						visited[n.getDarknetPortNumber() - 5000] = true;
+						visited[n.getDarknetPortNumber() - DARKNET_PORT_BASE] = true;
 					}
 				}
 			}
