@@ -1037,7 +1037,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Send a message, off-thread, to this node.
 	* @param msg The message to be sent.
 	* @param cb The callback to be called when the packet has been sent, or null.
-	* @param alreadyReportedBytes The number of bytes already reported to the throttle
+	* @param ctr The number of bytes already reported to the throttle
 	* relating to this packet (normally set when we have delayed a packet in order to
 	* throttle it).
 	*/
