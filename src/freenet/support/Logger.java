@@ -415,12 +415,14 @@ public abstract class Logger {
 					return;
 				}
 
+				boolean done = false;
 				try {
 					Field logMINOR_Field = clazz.getDeclaredField("logMINOR");
 					if ((logMINOR_Field.getModifiers() & Modifier.STATIC) != 0) {
 						logMINOR_Field.setAccessible(true);
 						logMINOR_Field.set(null, shouldLog(MINOR, clazz));
 					}
+					done = true;
 				} catch (SecurityException e) {
 				} catch (NoSuchFieldException e) { 
 				} catch (IllegalArgumentException e) {
@@ -433,11 +435,15 @@ public abstract class Logger {
 						logDEBUG_Field.setAccessible(true);
 						logDEBUG_Field.set(null, shouldLog(DEBUG, clazz));
 					}
+					done = true;
 				} catch (SecurityException e) {
 				} catch (NoSuchFieldException e) { 
 				} catch (IllegalArgumentException e) {
                 } catch (IllegalAccessException e) {
                 }
+                
+                if (!done)
+                	Logger.error(this,	"No log level field for " + clazz);
 			}
 		};
 
