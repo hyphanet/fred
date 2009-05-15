@@ -5,4 +5,7 @@
 /junitvmwatcher*
 /lib
 *.swp
+*.iml
+*.ipr
+*.iws
 .*
