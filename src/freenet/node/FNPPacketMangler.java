@@ -1581,6 +1581,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(!maybeResetTransientKey())
 				authenticatorCache.put(new ByteArrayWrapper(authenticator),message3);
 		}
+		final long timeSent = System.currentTimeMillis();
 		if(unknownInitiator)
 			sendAnonAuthPacket(1, negType, 2, setupType, message3, pn, replyTo, pn.anonymousInitiatorSetupCipher);
 		else
@@ -1589,7 +1590,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		/* Re-send the packet after 5sec if we don't get any reply */
 		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
-				if(!pn.isConnected()) {
+				if(pn.timeLastConnectionCompleted() < timeSent) {
 					if(logMINOR) Logger.minor(this, "Resending JFK(3) to "+pn+" for "+node.getDarknetPortNumber());
 					if(unknownInitiator)
 						sendAnonAuthPacket(1, negType, 2, setupType, message3, pn, replyTo, pn.anonymousInitiatorSetupCipher);
