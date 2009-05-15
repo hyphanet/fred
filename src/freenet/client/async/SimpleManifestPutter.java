@@ -107,7 +107,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				boolean deactivate = false;
 				if(persistent && data != null)
 					deactivate = container.ext().isActive(data);
-				if(deactivate) container.activate(data, 1);
+				if(persistent) container.activate(data, 1); // activate anyway, maybe problems with lower levels
 				Logger.minor(this, "Starting "+this+" target="+targetInArchive+" data "+data);
 				if(deactivate) container.deactivate(data, 1);
 			}
