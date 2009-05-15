@@ -231,7 +231,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
   		}
 		if (_dropProbability > 0) {
 			if (dropRandom.nextInt() % _dropProbability == 0) {
-				if(logMINOR) Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort());
+				Logger.normal(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort());
 				return;
 			}
 		}
