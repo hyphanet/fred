@@ -103,6 +103,7 @@ class SingleFileInserter implements ClientPutState {
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.token = token;
+		if(parent == null) throw new NullPointerException();
 		this.parent = parent;
 		this.block = block;
 		this.ctx = ctx;
