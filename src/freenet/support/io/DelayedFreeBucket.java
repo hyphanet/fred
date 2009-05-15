@@ -164,20 +164,20 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 //	}
 	
 	public boolean objectCanNew(ObjectContainer container) {
-		if(bucket == null) throw new NullPointerException("objectCanNew but bucket is null for "+super.toString());
 		if(reallyRemoved) {
 			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
 			return false;
 		}
+		if(bucket == null) throw new NullPointerException("objectCanNew but bucket is null for "+super.toString());
 		return true;
 	}
 	
 	public boolean objectCanUpdate(ObjectContainer container) {
-		if(bucket == null) throw new NullPointerException("objectCanUpdate but bucket is null"+" for "+super.toString());
 		if(reallyRemoved) {
 			Logger.error(this, "objectCanUpdate() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
 			return false;
 		}
+		if(bucket == null) throw new NullPointerException("objectCanUpdate but bucket is null"+" for "+super.toString());
 		return true;
 	}
 
