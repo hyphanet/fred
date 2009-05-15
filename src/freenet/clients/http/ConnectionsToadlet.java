@@ -31,6 +31,7 @@ import freenet.node.PeerManager;
 import freenet.node.PeerNode;
 import freenet.node.PeerNodeStatus;
 import freenet.node.Version;
+import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -615,7 +616,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		SimpleFieldSet fs;
 		
 		try {
-			fs = new SimpleFieldSet(nodeReference.toString(), false, true);
+			nodeReference = Fields.trimLines(nodeReference);
+			fs = new SimpleFieldSet(nodeReference, false, true);
 			if(!fs.getEndMarker().endsWith("End")) {
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
 			}

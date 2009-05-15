@@ -380,4 +380,16 @@ public class FieldsTest extends TestCase {
 		assertEquals(outBytes.length, inBytes.length);
 	}
 
+	public void testTrimLines() {
+		assertEquals("", Fields.trimLines(""));
+		assertEquals("", Fields.trimLines("\n"));
+		assertEquals("a\n", Fields.trimLines("a"));
+		assertEquals("a\n", Fields.trimLines("a\n"));
+		assertEquals("a\n", Fields.trimLines(" a\n"));
+		assertEquals("a\n", Fields.trimLines(" a \n"));
+		assertEquals("a\n", Fields.trimLines(" a\n"));
+		assertEquals("a\n", Fields.trimLines("\na"));
+		assertEquals("a\n", Fields.trimLines("\na\n"));
+		assertEquals("a\nb\n", Fields.trimLines("a\nb"));
+	}
 }

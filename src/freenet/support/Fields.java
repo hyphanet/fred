@@ -777,4 +777,22 @@ public abstract class Fields {
 				begin = middle + 1;
 		}
 	}
+
+	/**
+	 * Remove empty lines and trim head/trailing space
+	 *
+	 * @param str string to be trimmed
+	 * @return result string
+	 */
+	public static String trimLines(String str) {
+		StringBuilder r = new StringBuilder(str.length());
+		for (String line : str.split("\n")) {
+			line = line.trim();
+			if (line.length() == 0) continue;
+
+			r.append(line);
+			r.append('\n');
+		}
+		return r.toString();
+	}
 }
