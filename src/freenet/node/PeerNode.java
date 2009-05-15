@@ -1897,6 +1897,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		MessageItem[] messagesTellDisconnected = null;
 		PacketTracker packets = null;
 		synchronized(this) {
+			if(currentTracker != null) {
+				if(Arrays.equals(encKey, currentTracker.sessionKey)) {
+					Logger.error(this, "completedHandshake() with identical key to current, maybe replayed JFK(4)?");
+					return -1;
+				}
+			}
+			if(previousTracker != null) {
+				if(Arrays.equals(encKey, previousTracker.sessionKey)) {
+					Logger.error(this, "completedHandshake() with identical key to previous, maybe replayed JFK(4)?");
+					return -1;
+				}
+			}
+			if(unverifiedTracker != null) {
+				if(Arrays.equals(encKey, unverifiedTracker.sessionKey)) {
+					Logger.error(this, "completedHandshake() with identical key to unverified, maybe replayed JFK(4)?");
+					return -1;
+				}
+			}
 			handshakeCount = 0;
 			bogusNoderef = false;
 			// Don't reset the uptime if we rekey
