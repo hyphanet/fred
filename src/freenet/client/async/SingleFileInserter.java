@@ -416,8 +416,15 @@ class SingleFileInserter implements ClientPutState {
 		int oneBlockCompressedSize;
 		boolean dontCompress = ctx.dontCompress;
 		
+		/* VOODOO:
+		 * Activate to depth 2.
+		 * I have no idea how the bottom layer (PaddedEphemerallyEncryptedBucket and below) 
+		 * could be deactivated while the top layer is activated, but it appears that
+		 * objectOnActivate() is only called when the object is activated for the first time.
+		 * When this happened, it was on a SimpleManifestPutter, large, added via FCP,
+		 * NPEs around here, called by PutHandler.start. */
 		if(persistent)
-			container.activate(data, 1);
+			container.activate(data, 2);
 		long origSize = data.size();
 		if(persistent)
 			container.activate(block.desiredURI, 5);
