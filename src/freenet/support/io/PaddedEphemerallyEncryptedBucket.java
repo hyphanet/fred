@@ -411,6 +411,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		// Cascading activation of dependancies
 		container.activate(bucket, 1);
 	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		Logger.minor(this, "Deactivating "+this, new Exception("debug"));
+		return true;
+	}
 
 	public Bucket createShadow() throws IOException {
 		Bucket newUnderlying = bucket.createShadow();
