@@ -106,6 +106,8 @@ public class PersistentPutDir extends FCPMessage {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					// Deactivate the top, not the middle.
+					// Deactivating the middle can cause big problems.
 					container.deactivate(origData, 1);
 			}
 			files.put(num, subset);
