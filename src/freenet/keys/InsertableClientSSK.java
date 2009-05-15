@@ -180,7 +180,7 @@ public class InsertableClientSSK extends ClientSSK {
 			if (x != SSKBlock.TOTAL_HEADERS_LENGTH)
 				throw new IllegalStateException("Too long");
 			try {
-				return new ClientSSKBlock(data, headers, this, false); // FIXME set last arg to true to not verify
+				return new ClientSSKBlock(data, headers, this, true);
 			} catch (SSKVerifyException e) {
 				IllegalStateException exception = new IllegalStateException("Impossible encoding error: "
 						+ e.getMessage());
