@@ -239,7 +239,7 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(ctx.eventProducer, 1);
 			}
 			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.metadataID, origSize, data.size()), container, context);
-			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
+			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this+" data = "+data);
 		}
 		
 		// Insert it...
@@ -434,6 +434,7 @@ class SingleFileInserter implements ClientPutState {
 		if(tryCompress) {
 			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent);
 		} else {
+			if(logMINOR) Logger.minor(this, "Not compressing "+origData+" size = "+origSize+" block size = "+blockSize);
 			CompressionOutput output = new CompressionOutput(data, null);
 			onCompressed(output, container, context);
 		}
