@@ -416,6 +416,8 @@ class SingleFileInserter implements ClientPutState {
 		int oneBlockCompressedSize;
 		boolean dontCompress = ctx.dontCompress;
 		
+		if(persistent)
+			container.activate(data, 1);
 		long origSize = data.size();
 		if(persistent)
 			container.activate(block.desiredURI, 5);
