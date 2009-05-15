@@ -128,15 +128,15 @@ public class SSKBlock implements KeyBlock {
 		// Extract the signature
 		if(x+SIG_R_LENGTH+SIG_S_LENGTH > headers.length)
 			throw new SSKVerifyException("Headers too short: "+headers.length+" should be at least "+x+SIG_R_LENGTH+SIG_S_LENGTH);
-		x+=SIG_R_LENGTH;
-		x+=SIG_S_LENGTH;
 		// Compute the hash on the data
 		if(!dontVerify || logMINOR) {	// force verify on log minor
 			byte[] bufR = new byte[SIG_R_LENGTH];
 			byte[] bufS = new byte[SIG_S_LENGTH];
 			
 			System.arraycopy(headers, x, bufR, 0, SIG_R_LENGTH);
+			x+=SIG_R_LENGTH;
 			System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
+			x+=SIG_S_LENGTH;
 
 	        MessageDigest md = SHA256.getMessageDigest();
 			md.update(data);
@@ -158,7 +158,7 @@ public class SSKBlock implements KeyBlock {
 					Logger.error(this, "DSA verification failed with dontVerify!!!!");
 				throw new SSKVerifyException("Signature verification failed for node-level SSK");
 			}
-		}
+		} // x isn't verified otherwise so no need to += SIG_R_LENGTH + SIG_S_LENGTH
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: "+HexUtil.bytesToHex(ehDocname)+"\nfrom key:     "+HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
 		hashCode = Fields.hashCode(data) ^ Fields.hashCode(headers) ^ nodeKey.hashCode() ^ pubKey.hashCode() ^ hashIdentifier;
