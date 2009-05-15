@@ -27,6 +27,10 @@ public class RealNodeTest {
 	static final int EXIT_REQUEST_FAILED = EXIT_BASE + 6;
 	static final int EXIT_BAD_DATA = EXIT_BASE + 7;
 	
+	/* Because we start a whole bunch of nodes at once, we will get many "Not reusing
+	 * tracker, so wiping old trackers" messages. This is normal, all the nodes start
+	 * handshaking straight off, they all send JFK(1)s, and we get race conditions. */
+	
 	/*
 	 Borrowed from mrogers simulation code (February 6, 2008)
 	 --
