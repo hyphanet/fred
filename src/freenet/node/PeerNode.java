@@ -1023,10 +1023,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public boolean isConnected() {
-		long now = System.currentTimeMillis();
-		synchronized(this) {
+        synchronized(this) {
 			if(isConnected && currentTracker != null && !currentTracker.packets.isDeprecated()) {
-				timeLastConnected = now;
+				timeLastConnected = System.currentTimeMillis();
 				return true;
 			}
 			return false;
