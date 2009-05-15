@@ -399,7 +399,7 @@ public class FailureTable implements OOMHook {
 					// Too bad.
 				} catch (Throwable t) {
 					node.unlockUID(uid, isSSK, false, false, true, false, tag);
-					Logger.error(this, "Caught "+t+" sending offered key");
+					Logger.error(this, "Caught "+t+" sending offered key", t);
 				}
 			}
 		}, "sendOfferedKey");
