@@ -594,6 +594,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			boolean persistent = persistent(); // this might get deactivated ...
 			for (int i = 0; i < running.length; i++) {
+				if(logMINOR) Logger.minor(this, "Starting "+running[i]);
 				running[i].start(container, context);
 				if(persistent && !container.ext().isActive(this))
 					container.activate(this, 1);
