@@ -83,9 +83,14 @@ public class PersistentPutDir extends FCPMessage {
 				subset.putSingle("UploadFrom", "redirect");
 				subset.putSingle("TargetURI", tempURI.toString());
 			} else {
+				// Deactivate the top, not the middle.
+				// Deactivating the middle can cause big problems.
 				Bucket origData = e.getData();
 				Bucket data = origData;
+				boolean deactivate = false;
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					deactivate = !container.ext().isActive(data);
+				if(deactivate)
 					container.activate(data, 1);
 				if(data instanceof DelayedFreeBucket) {
 					data = ((DelayedFreeBucket)data).getUnderlying();
@@ -105,9 +110,7 @@ public class PersistentPutDir extends FCPMessage {
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
-					// Deactivate the top, not the middle.
-					// Deactivating the middle can cause big problems.
+				if(deactivate)
 					container.deactivate(origData, 1);
 			}
 			files.put(num, subset);
