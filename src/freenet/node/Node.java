@@ -907,12 +907,11 @@ public class Node implements TimeSkewDetectorCallback {
 			System.err.println("Failed to open database: "+e);
 			e.printStackTrace();
 		}
-		db = database;
-		
 		// DUMP DATABASE CONTENTS
-		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class) && db != null) {
+		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class) && database != null) {
+		try {
 		System.err.println("DUMPING DATABASE CONTENTS:");
-		ObjectSet<Object> contents = db.queryByExample(new Object());
+		ObjectSet<Object> contents = database.queryByExample(new Object());
 		Map<String,Integer> map = new HashMap<String, Integer>();
 		Iterator<Object> i = contents.iterator();
 		while(i.hasNext()) {
@@ -925,11 +924,11 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			// Activated to depth 1
 			try {
-				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+db.ext().getID(o));
+				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+database.ext().getID(o));
 			} catch (Throwable t) {
 				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
 			}
-			db.deactivate(o, 1);
+			database.deactivate(o, 1);
 		}
 		int total = 0;
 		for(Map.Entry<String,Integer> entry : map.entrySet()) {
@@ -945,8 +944,32 @@ public class Node implements TimeSkewDetectorCallback {
 		System.gc();
 		System.runFinalization();
 		System.err.println("END DATABASE DUMP: "+total+" objects");
+		} catch (Db4oException e) {
+			System.err.println("Unable to dump database contents. Treating as corrupt database.");
+			e.printStackTrace();
+			try {
+				database.rollback();
+			} catch (Throwable t) {} // ignore, closing
+			try {
+				database.close();
+			} catch (Throwable t) {} // ignore, closing
+			database = null;
+		} catch (IllegalArgumentException e) {
+			// Urrrrgh!
+			System.err.println("Unable to dump database contents. Treating as corrupt database.");
+			e.printStackTrace();
+			try {
+				database.rollback();
+			} catch (Throwable t) {} // ignore, closing
+			try {
+				database.close();
+			} catch (Throwable t) {} // ignore, closing
+			database = null;
+		}
 		}
 
+		db = database;
+		
 		// Boot ID
 		bootID = random.nextLong();
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
