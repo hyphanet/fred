@@ -1808,7 +1808,7 @@ public class Node implements TimeSkewDetectorCallback {
 		 * default for now, on all systems. The datastore can be read but mostly not 
 		 * written while the random data is being written.
 		 */
-		nodeConfig.register("storePreallocate", true, sortOrder++, true, false, "Node.storePreallocate", "Node.storePreallocateLong", 
+		nodeConfig.register("storePreallocate", true, sortOrder++, true, true, "Node.storePreallocate", "Node.storePreallocateLong", 
 				new BooleanCallback() {
 					@Override
                     public Boolean get() {
