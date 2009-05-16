@@ -51,8 +51,6 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 
 	public InputStream getInputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
-		if(bucket == null)
-			throw new NullPointerException("Bucket is null on "+super.toString());
 		return bucket.getInputStream();
 	}
 
@@ -143,11 +141,6 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		container.activate(bucket, 1);
 	}
 
-	public boolean objectCanDeactivate(ObjectContainer container) {
-		Logger.minor(this, "Deactivating "+this, new Exception("debug"));
-		return true;
-	}
-	
 	public Bucket createShadow() throws IOException {
 		return bucket.createShadow();
 	}
@@ -166,16 +159,12 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		container.delete(this);
 	}
 	
-//	public void objectOnDeactivate(ObjectContainer container) {
-//		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating "+super.toString()+" : "+bucket, new Exception("debug"));
-//	}
-	
 	public boolean objectCanNew(ObjectContainer container) {
 		if(reallyRemoved) {
 			Logger.error(this, "objectCanNew() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
 			return false;
 		}
-		if(bucket == null) throw new NullPointerException("objectCanNew but bucket is null for "+super.toString());
+		assert(bucket != null);
 		return true;
 	}
 	
@@ -184,7 +173,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 			Logger.error(this, "objectCanUpdate() on "+this+" but really removed = "+reallyRemoved+" already freed="+freed+" removed="+removed, new Exception("debug"));
 			return false;
 		}
-		if(bucket == null) throw new NullPointerException("objectCanUpdate but bucket is null"+" for "+super.toString());
+		assert(bucket != null);
 		return true;
 	}
 

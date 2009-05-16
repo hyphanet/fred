@@ -103,7 +103,6 @@ class SingleFileInserter implements ClientPutState {
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.token = token;
-		if(parent == null) throw new NullPointerException();
 		this.parent = parent;
 		this.block = block;
 		this.ctx = ctx;
@@ -342,14 +341,6 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			if(parent == null) {
-				String msg = "Parent is null on "+this;
-				if(persistent) {
-					msg += "active: "+container.ext().isActive(this);
-					msg += " stored: "+container.ext().isStored(this);
-				}
-				throw new NullPointerException(msg);
-			}
 			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context);
 			if(logMINOR)
 				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+this);

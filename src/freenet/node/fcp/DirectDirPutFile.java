@@ -6,7 +6,6 @@ import java.io.OutputStream;
 
 import com.db4o.ObjectContainer;
 
-import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -39,7 +38,6 @@ public class DirectDirPutFile extends DirPutFile {
 		} catch (IOException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Internal error: could not allocate temp bucket: "+e.toString(), identifier, global);
 		}
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Created "+this+" : name "+name+" bucket "+data);
 	}
 
 	public long bytesToRead() {
