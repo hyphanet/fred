@@ -1898,6 +1898,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		MessageItem[] messagesTellDisconnected = null;
 		PacketTracker packets = null;
 		synchronized(this) {
+			// FIXME this shouldn't happen, does it?
 			if(currentTracker != null) {
 				if(Arrays.equals(encKey, currentTracker.sessionKey)) {
 					Logger.error(this, "completedHandshake() with identical key to current, maybe replayed JFK(4)?");
