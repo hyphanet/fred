@@ -1119,6 +1119,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(finished) return;
 			finished = true;
 		}
+		if(persistent()) container.store(this);
 		cancelAndFinish(container, context);
 		if(persistent()) removePutHandlers(container, context);
 		
