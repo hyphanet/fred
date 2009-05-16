@@ -203,6 +203,7 @@ public class PersistentBlobTempBucketFactory {
 						if(tag.bucket == null) {
 							Logger.error(this, "Tag flagged non-free yet has no bucket for index "+tag.index);
 							tag.isFree = true;
+							container.store(tag);
 							changedTags = true;
 						} else continue;
 					}
