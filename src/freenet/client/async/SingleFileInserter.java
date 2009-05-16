@@ -343,10 +343,12 @@ class SingleFileInserter implements ClientPutState {
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
 			if(parent == null) {
+				String msg = "Parent is null on "+this;
 				if(persistent) {
-					Logger.error(this, "active: "+container.ext().isActive(this));
+					msg += "active: "+container.ext().isActive(this);
+					msg += " stored: "+container.ext().isStored(this);
 				}
-				throw new NullPointerException("Parent is null");
+				throw new NullPointerException(msg);
 			}
 			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData, persistent, container, context);
 			if(logMINOR)
