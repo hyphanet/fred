@@ -51,6 +51,8 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 
 	public InputStream getInputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
+		if(bucket == null)
+			throw new NullPointerException("Bucket is null on "+super.toString());
 		return bucket.getInputStream();
 	}
 
@@ -141,6 +143,11 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		container.activate(bucket, 1);
 	}
 
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		Logger.minor(this, "Deactivating "+this, new Exception("debug"));
+		return true;
+	}
+	
 	public Bucket createShadow() throws IOException {
 		return bucket.createShadow();
 	}
