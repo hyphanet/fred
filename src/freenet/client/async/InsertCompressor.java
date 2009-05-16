@@ -89,7 +89,7 @@ public class InsertCompressor implements CompressJob {
 			scheduled = true;
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Compressing "+this+" : origData.size="+origData.size()+" for "+inserter);
+			Logger.minor(this, "Compressing "+this+" : origData.size="+origData.size()+" for "+inserter+" origData="+origData);
 		ctx.rc.enqueueNewJob(this);
 	}
 
