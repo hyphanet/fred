@@ -11,6 +11,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.SSKBlock;
 import freenet.node.PrioRunnable;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -42,7 +43,17 @@ public class InsertCompressor implements CompressJob {
 	public final BucketFactory bucketFactory;
 	public final boolean persistent;
 	private transient boolean scheduled;
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	public InsertCompressor(long nodeDBHandle2, SingleFileInserter inserter2, Bucket origData2, int minSize2, BucketFactory bf, boolean persistent) {
 		this.nodeDBHandle = nodeDBHandle2;
@@ -54,7 +65,6 @@ public class InsertCompressor implements CompressJob {
 	}
 
 	public void init(ObjectContainer container, final ClientContext ctx) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(persistent) {
 			container.activate(inserter, 1);
 			/* VOODOO:
@@ -94,7 +104,6 @@ public class InsertCompressor implements CompressJob {
 	}
 
 	public void tryCompress(final ClientContext context) throws InsertException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long origSize = origData.size();
 		COMPRESSOR_TYPE bestCodec = null;
 		Bucket bestCompressedData = origData;
@@ -120,7 +129,7 @@ public class InsertCompressor implements CompressJob {
 
 							public boolean run(ObjectContainer container, ClientContext context) {
 								if(!container.ext().isStored(inserter)) {
-									if(logMINOR) Logger.minor(this, "Already deleted (start compression): "+inserter+" for "+InsertCompressor.this);
+									if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (start compression): "+inserter+" for "+InsertCompressor.this);
 									return false;
 								}
 								if(container.ext().isActive(inserter))
@@ -187,7 +196,7 @@ public class InsertCompressor implements CompressJob {
 					
 					public boolean run(ObjectContainer container, ClientContext context) {
 						if(!container.ext().isStored(inserter)) {
-							if(logMINOR) Logger.minor(this, "Already deleted: "+inserter+" for "+InsertCompressor.this);
+							if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted: "+inserter+" for "+InsertCompressor.this);
 							container.delete(InsertCompressor.this);
 							return false;
 						}
@@ -227,7 +236,7 @@ public class InsertCompressor implements CompressJob {
 						
 						public boolean run(ObjectContainer container, ClientContext context) {
 							if(!container.ext().isStored(inserter)) {
-								if(logMINOR) Logger.minor(this, "Already deleted (on failed): "+inserter+" for "+InsertCompressor.this);
+								if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (on failed): "+inserter+" for "+InsertCompressor.this);
 								container.delete(InsertCompressor.this);
 								return false;
 							}
