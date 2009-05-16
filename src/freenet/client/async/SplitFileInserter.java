@@ -76,6 +76,7 @@ public class SplitFileInserter implements ClientPutState {
 
 	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
 		hashCode = super.hashCode();
+		if(put == null) throw new NullPointerException();
 		this.parent = put;
 		this.archiveType = archiveType;
 		this.compressionCodec = bestCodec;
