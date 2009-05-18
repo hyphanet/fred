@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Vector;
+import java.util.LinkedList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -56,6 +56,7 @@ public class SHA256 {
 	private static final int HASH_SIZE = 32;
 
 	private static final int MESSAGE_DIGESTS_TO_CACHE = 64;
+	private static final LinkedList<MessageDigest> digests = new LinkedList<MessageDigest>();
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -78,17 +79,14 @@ public class SHA256 {
 		}
 	}
 
-	static private final Vector<MessageDigest> digests = new Vector<MessageDigest>();
-
 	/**
 	 * Create a new SHA-256 MessageDigest
 	 * Either succeed or stop the node.
 	 */
 	public synchronized static MessageDigest getMessageDigest() {
 		try {
-			if(!digests.isEmpty())
-				return digests.remove(digests.size() - 1);
-			return MessageDigest.getInstance("SHA-256");
+			MessageDigest md = digests.removeFirst();
+			return (md != null ? md : MessageDigest.getInstance("SHA-256"));
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
 			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
@@ -112,7 +110,7 @@ public class SHA256 {
 		if (digests.size() > MESSAGE_DIGESTS_TO_CACHE || noCache) // don't cache too many of them
 			return;
 		md256.reset();
-		digests.add(md256);
+		digests.addLast(md256);
 	}
 
 	public static byte[] digest(byte[] data) {
