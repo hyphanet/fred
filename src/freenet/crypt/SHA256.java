@@ -55,6 +55,8 @@ public class SHA256 {
 	/** Size (in bytes) of this hash */
 	private static final int HASH_SIZE = 32;
 
+	private static final int MESSAGE_DIGESTS_TO_CACHE = 64;
+
 	/**
 	 * It won't reset the Message Digest for you!
 	 * @param InputStream
@@ -107,7 +109,7 @@ public class SHA256 {
 		String algo = md256.getAlgorithm();
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
-		if (digests.size() > 16 || noCache) // don't cache too many of them
+		if (digests.size() > MESSAGE_DIGESTS_TO_CACHE || noCache) // don't cache too many of them
 			return;
 		md256.reset();
 		digests.add(md256);
