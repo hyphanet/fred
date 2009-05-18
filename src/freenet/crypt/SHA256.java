@@ -83,9 +83,12 @@ public class SHA256 {
 	 * Create a new SHA-256 MessageDigest
 	 * Either succeed or stop the node.
 	 */
-	public synchronized static MessageDigest getMessageDigest() {
+	public static MessageDigest getMessageDigest() {
 		try {
-			MessageDigest md = digests.removeFirst();
+			MessageDigest md = null;
+			synchronized(digests) {
+				digests.removeFirst();
+			}
 			return (md != null ? md : MessageDigest.getInstance("SHA-256"));
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
@@ -101,16 +104,18 @@ public class SHA256 {
 	 * Return a MessageDigest to the pool.
 	 * Must be SHA-256 !
 	 */
-	public synchronized static void returnMessageDigest(MessageDigest md256) {
+	public static void returnMessageDigest(MessageDigest md256) {
 		if(md256 == null)
 			return;
 		String algo = md256.getAlgorithm();
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
-		if (digests.size() > MESSAGE_DIGESTS_TO_CACHE || noCache) // don't cache too many of them
-			return;
 		md256.reset();
-		digests.addLast(md256);
+		synchronized (digests) {
+			if (digests.size() > MESSAGE_DIGESTS_TO_CACHE || noCache) // don't cache too many of them
+				return;
+			digests.addLast(md256);
+		}
 	}
 
 	public static byte[] digest(byte[] data) {
@@ -129,12 +134,16 @@ public class SHA256 {
 	static {
 		OOMHandler.addOOMHook(new OOMHook() {
 			public void handleLowMemory() throws Exception {
-				digests.clear();
+				synchronized(digests) {
+					digests.clear();
+				}
 				noCache = true;
 			}
 
 			public void handleOutOfMemory() throws Exception {
-				digests.clear();
+				synchronized(digests) {
+					digests.clear();
+				}
 				noCache = true;
 			}
 		});
