@@ -102,6 +102,12 @@ public class PersistentBlobTempBucketFactory {
 		
 		// Diagnostics
 		
+		if(Logger.shouldLog(Logger.MINOR, this))
+			initRangeDump(container);
+	}
+	
+	private void initRangeDump(ObjectContainer container) {
+		
 		long size;
 		try {
 			size = channel.size();
