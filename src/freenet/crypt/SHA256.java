@@ -114,7 +114,7 @@ public class SHA256 {
 		synchronized (digests) {
 			if (digests.size() > MESSAGE_DIGESTS_TO_CACHE || noCache) // don't cache too many of them
 				return;
-			digests.addLast(md256);
+			digests.addFirst(md256);
 		}
 	}
 
