@@ -20,6 +20,7 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.node.Ticker;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -36,6 +37,18 @@ import freenet.support.api.Bucket;
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentBlobTempBucketFactory {
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	public final long blockSize;
 	private File storageFile;
@@ -102,7 +115,7 @@ public class PersistentBlobTempBucketFactory {
 		
 		// Diagnostics
 		
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			initRangeDump(container);
 	}
 	
@@ -176,7 +189,6 @@ public class PersistentBlobTempBucketFactory {
 			int added = 0;
 			
 			while(true) {
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				if(freeSlots.size() > MAX_FREE) return false;
 			}
@@ -281,7 +293,7 @@ public class PersistentBlobTempBucketFactory {
 			if(freeJob != null) {
 				container.activate(freeJob, 1);
 				System.err.println("Freeing some space by running "+freeJob);
-				Logger.minor(this, "Freeing some space by running "+freeJob);
+				if(logMINOR) Logger.minor(this, "Freeing some space by running "+freeJob);
 				freeJob.run(container, context);
 				continue;
 			}
@@ -354,7 +366,7 @@ public class PersistentBlobTempBucketFactory {
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
 				notCommittedBlobs.put(slot, bucket);
-				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Using slot "+slot+" for "+bucket);
+				if(logMINOR) Logger.minor(this, "Using slot "+slot+" for "+bucket);
 				return bucket;
 			}
 		}
@@ -369,7 +381,7 @@ public class PersistentBlobTempBucketFactory {
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag, false);
 				notCommittedBlobs.put(slot, bucket);
-				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Using slot "+slot+" for "+bucket+" (after waiting)");
+				if(logMINOR) Logger.minor(this, "Using slot "+slot+" for "+bucket+" (after waiting)");
 				return bucket;
 			}
 		}
@@ -378,7 +390,7 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public synchronized void freeBucket(long index, PersistentBlobTempBucket bucket) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Freeing index "+index+" for "+bucket, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Freeing index "+index+" for "+bucket, new Exception("debug"));
 		notCommittedBlobs.remove(index);
 		bucket.onFree();
 		if(!bucket.persisted()) {
@@ -394,7 +406,7 @@ public class PersistentBlobTempBucketFactory {
 	private long lastCheckedEnd = -1;
 	
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database", new Exception("debug"));
 		long index = bucket.index;
 		PersistentBlobTempBucketTag tag = bucket.tag;
@@ -452,7 +464,6 @@ public class PersistentBlobTempBucketFactory {
 	
 	boolean maybeShrink(ObjectContainer container) {
 		
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
 		long now = System.currentTimeMillis();
 		
@@ -588,7 +599,7 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public void store(PersistentBlobTempBucket bucket, ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Storing bucket "+bucket+" for slot "+bucket.index+" to database");
 		long index = bucket.index;
 		PersistentBlobTempBucketTag tag = bucket.tag;
