@@ -38,12 +38,14 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.io.Closer;
@@ -52,6 +54,17 @@ import freenet.support.io.Closer;
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
  */
 public class SHA256 {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+
 	/** Size (in bytes) of this hash */
 	private static final int HASH_SIZE = 32;
 
@@ -86,10 +99,14 @@ public class SHA256 {
 	public static MessageDigest getMessageDigest() {
 		try {
 			MessageDigest md = null;
-			synchronized(digests) {
-				digests.removeFirst();
+			try {
+				synchronized(digests) {
+					md = digests.removeFirst();
+				}
+			} catch (NoSuchElementException e) {
+				md = MessageDigest.getInstance("SHA-256");
 			}
-			return (md != null ? md : MessageDigest.getInstance("SHA-256"));
+			return md;
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
 			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
@@ -112,8 +129,11 @@ public class SHA256 {
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
 		md256.reset();
 		synchronized (digests) {
-			if (digests.size() > MESSAGE_DIGESTS_TO_CACHE || noCache) // don't cache too many of them
+			int mdPoolSize = digests.size();
+			if (mdPoolSize > MESSAGE_DIGESTS_TO_CACHE || noCache) { // don't cache too many of them
+				if(logMINOR) Logger.normal(SHA256.class, "Throwing away a SHA256 MessageDigest ("+mdPoolSize+'>'+MESSAGE_DIGESTS_TO_CACHE+')');
 				return;
+			}
 			digests.addFirst(md256);
 		}
 	}
