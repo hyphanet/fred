@@ -157,9 +157,6 @@ public class PersistentBlobTempBucketFactory {
 			Logger.error(this, "FOUND EMPTY SLOT: "+l+" when scanning the blob file because tags in database < length of file");
 			PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, l);
 			container.store(tag);
-			synchronized(this) {
-				freeSlots.put(ptr, tag);
-			}
 		}
 		if(rangeStart != Long.MIN_VALUE) {
 			System.out.println("Range: "+rangeStart+" to "+(ptr-1));
