@@ -15,6 +15,7 @@ import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * Persistable implementation of CooldownQueue. Much simpler than RequestCooldownQueue,
@@ -27,6 +28,17 @@ import freenet.support.Logger;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentCooldownQueue implements CooldownQueue {
 	
+	private transient static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+
 	private long cooldownTime;
 
 	void setCooldownTime(long time) {
@@ -110,7 +122,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			if(tEnd - tStart > 1000)
 				Logger.error(this, "Query took "+(tEnd-tStart));
 			else
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Query took "+(tEnd-tStart));
 			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
@@ -150,7 +162,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			if(tEnd - tStart > 1000)
 				Logger.error(this, "Query took "+(tEnd-tStart));
 			else
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "Query took "+(tEnd-tStart));
 			return null;
 		}
