@@ -742,15 +742,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	/**
 	 * Change on disk store file size
 	 * 
-	 * @param storeFileSize
+	 * @param storeMaxEntries
 	 */
-	private void setStoreFileSize(long storeFileSize, boolean starting) {
+	private void setStoreFileSize(long storeMaxEntries, boolean starting) {
 		try {
 			long oldMetaLen = metaRAF.length();
 			long currentHdLen = hdRAF.length();
 
-			final long newMetaLen = Entry.METADATA_LENGTH * storeFileSize;
-			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeFileSize;
+			final long newMetaLen = Entry.METADATA_LENGTH * storeMaxEntries;
+			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
 			if (preallocate) {
 				/*
@@ -804,7 +804,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					storeFileOffsetReady = currentHdLen / (headerBlockLength + dataBlockLength + hdPadding);
 				}
 			}
-			storeFileOffsetReady = 1 + storeFileSize;
+			storeFileOffsetReady = 1 + storeMaxEntries;
 
 			metaRAF.setLength(newMetaLen);
 			hdRAF.setLength(newHdLen);
