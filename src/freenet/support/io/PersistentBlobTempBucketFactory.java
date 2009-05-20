@@ -407,15 +407,15 @@ public class PersistentBlobTempBucketFactory {
 	
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database", new Exception("debug"));
-		long index = bucket.index;
+			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.getIndex()+" from database", new Exception("debug"));
+		long index = bucket.getIndex();
 		PersistentBlobTempBucketTag tag = bucket.tag;
 		if(tag == null) {
 			if(!container.ext().isActive(bucket)) {
 				Logger.error(this, "BUCKET NOT ACTIVE IN REMOVE: "+bucket, new Exception("error"));
 				container.activate(bucket, 1);
 				tag = bucket.tag;
-				index = bucket.index;
+				index = bucket.getIndex();
 			} else {
 				// THIS IS IMPOSSIBLE, yet saces has seen it in practice ... lets get some detail...
 				Logger.error(this, "NO TAG ON BUCKET REMOVING: "+bucket+" index "+index, new Exception("error"));
@@ -448,7 +448,7 @@ public class PersistentBlobTempBucketFactory {
 			return;
 		}
 		if(!bucket.freed()) {
-			Logger.error(this, "Removing bucket "+bucket+" for slot "+bucket.index+" but not freed!", new Exception("debug"));
+			Logger.error(this, "Removing bucket "+bucket+" for slot "+index+" but not freed!", new Exception("debug"));
 			notCommittedBlobs.put(index, bucket);
 		} else {
 			almostFreeSlots.put(index, tag);
@@ -600,8 +600,8 @@ public class PersistentBlobTempBucketFactory {
 
 	public void store(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
-			Logger.minor(this, "Storing bucket "+bucket+" for slot "+bucket.index+" to database");
-		long index = bucket.index;
+			Logger.minor(this, "Storing bucket "+bucket+" for slot "+bucket.getIndex()+" to database");
+		long index = bucket.getIndex();
 		PersistentBlobTempBucketTag tag = bucket.tag;
 		container.activate(tag, 1);
 		if(tag.bucket != null && tag.bucket != bucket) {
@@ -633,7 +633,7 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public Bucket createShadow(PersistentBlobTempBucket bucket) {
-		long index = bucket.index;
+		long index = bucket.getIndex();
 		Long i = index;
 		synchronized(this) {
 			if(shadows.containsKey(i)) return null;

@@ -22,7 +22,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	long size;
 	public final PersistentBlobTempBucketFactory factory;
 	/** The index into the blob file of this specific bucket */
-	final long index;
+	private long index;
 	private boolean freed;
 	private boolean readOnly;
 	/** Has this bucket been persisted? If not, it will be only on the temporary
@@ -253,6 +253,11 @@ public class PersistentBlobTempBucket implements Bucket {
 	
 	synchronized void onRemove() {
 		persisted = false;
+	}
+
+	/** Always called on the database thread to avoid race conditions */
+	public synchronized long getIndex() {
+		return index;
 	}
 	
 }
