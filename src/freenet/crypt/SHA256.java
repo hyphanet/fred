@@ -55,7 +55,7 @@ public class SHA256 {
 	/** Size (in bytes) of this hash */
 	private static final int HASH_SIZE = 32;
 
-	private static final int MESSAGE_DIGESTS_TO_CACHE = 64;
+	private static final int MESSAGE_DIGESTS_TO_CACHE = 16;
 	private static final LinkedList<MessageDigest> digests = new LinkedList<MessageDigest>();
 
 	/**
