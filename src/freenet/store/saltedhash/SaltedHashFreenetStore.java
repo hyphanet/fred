@@ -342,7 +342,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				long[] offset = entry.getOffset();
 
 				for (int i = 0; i < offset.length; i++) {
-					if (offset[i] >= storeFileSizeReady && isFree(offset[i])) {
+					if (offset[i] < storeFileOffsetReady && isFree(offset[i])) {
 						// write to free block
 						if (logDEBUG)
 							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
@@ -582,7 +582,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
-	private volatile long storeFileSizeReady = 0;
+	private volatile long storeFileOffsetReady = -1;
 
 	/**
 	 * Open all store files
@@ -773,6 +773,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (oldHdLen % 4096 != 0)
 					oldHdLen += 4096 - (oldHdLen % 4096);
 
+				storeFileOffsetReady = -1;
+				
 				// this may write excess the size, the setLength() would fix it
 				while (oldMetaLen < newMetaLen) {
 					// never write random byte to meta data!
@@ -799,10 +801,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 								System.err.println("Preallocating space for " + name + ": " + oldHdLen + "/" + newHdLen);
 						}
 					}
-					storeFileSizeReady = oldHdLen / (headerBlockLength + dataBlockLength + hdPadding);
+					storeFileOffsetReady = oldHdLen / (headerBlockLength + dataBlockLength + hdPadding);
 				}
 			}
-			storeFileSizeReady = storeFileSize;
+			storeFileOffsetReady = 1 + storeFileSize;
 
 			metaRAF.setLength(newMetaLen);
 			hdRAF.setLength(newHdLen);
