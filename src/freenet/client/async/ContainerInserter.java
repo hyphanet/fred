@@ -26,7 +26,6 @@ import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.keys.FreenetURI;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -46,16 +45,8 @@ public class ContainerInserter implements ClientPutState {
 	private static volatile boolean logDEBUG;
 
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-			}
-		});
+		Logger.registerClass(ContainerInserter.class);
 	}
-
 
 	private static class ContainerElement {
 		private final Bucket data;
