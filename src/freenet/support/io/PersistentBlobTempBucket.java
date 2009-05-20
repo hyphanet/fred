@@ -265,5 +265,9 @@ public class PersistentBlobTempBucket implements Bucket {
 	public synchronized long getIndex() {
 		return index;
 	}
-	
+
+	synchronized void setIndex(long index2) {
+		this.index = index2;
+	}
+
 }

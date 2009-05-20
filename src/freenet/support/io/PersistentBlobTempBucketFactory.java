@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -87,6 +88,7 @@ public class PersistentBlobTempBucketFactory {
 
 	void onInit(ObjectContainer container, DBJobRunner jobRunner2, Random fastWeakRandom, File storageFile2, long blockSize2, Ticker ticker) throws IOException {
 		container.activate(storageFile, 100);
+		initSlotFinder();
 		File oldFile = FileUtil.getCanonicalFile(new File(storageFile.getPath())); // db4o argh
 		File newFile = FileUtil.getCanonicalFile(new File(storageFile2.getPath()));
 		if(blockSize != blockSize2)
@@ -183,7 +185,10 @@ public class PersistentBlobTempBucketFactory {
 	
 	static final int MAX_FREE = 2048;
 	
-	private final DBJob slotFinder = new DBJob() {
+	private transient DBJob slotFinder;
+	
+	private void initSlotFinder() {
+		slotFinder = new DBJob() {
 		
 		public boolean run(ObjectContainer container, ClientContext context) {
 			int added = 0;
@@ -349,6 +354,7 @@ public class PersistentBlobTempBucketFactory {
 		}
 		
 	};
+	}
 	
 	/**
 	 * @return A bucket, or null in various failure cases.
@@ -404,6 +410,7 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	private long lastCheckedEnd = -1;
+	private long lastCheckedFrag = -1;
 	
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
@@ -509,34 +516,96 @@ public class PersistentBlobTempBucketFactory {
 			 * In the meantime, lets try from the end, going backwards by a manageable number of slots at a time...
 			 */
 			long lastCommitted = -1;
+			PersistentBlobTempBucketTag lastTag = null;
+			PersistentBlobTempBucket lastBucket = null;
+			ObjectSet<PersistentBlobTempBucketTag> tags = null;
+			Query query = null;
 			for(long threshold = blocks - 4096; threshold >= -4095; threshold -= 4096) {
-				Query query = container.query();
+				query = container.query();
 				query.constrain(PersistentBlobTempBucketTag.class);
 				query.descend("isFree").constrain(false);
 				query.descend("index").orderDescending();
 				query.descend("index").constrain(threshold).greater();
-				ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
-				if(tags.isEmpty()) {
-					// No used slots after threshold.
-					continue;
-				} else {
-					lastCommitted = tags.next().index;
-					Logger.normal(this, "Last committed block is "+lastCommitted);
-					break;
+				tags = query.execute();
+				lastTag = null;
+				while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
+					Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
+					lastTag.isFree = true;
+					container.store(lastTag);
 				}
+				if(lastTag == null) continue;
+				lastBucket = lastTag.bucket;
+				lastCommitted = lastTag.index;
+				Logger.normal(this, "Last committed block is "+lastCommitted);
+				
+				break;
 			}
 			if(lastCommitted == -1) {
 				// No used slots at all?!
 				// There may be some not committed though
 				Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
 				lastCommitted = 0;
+				query = null;
 			}
 			full = (double) lastCommitted / (double) blocks;
 			if(full > 0.8) {
 				if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
 				lastCheckedEnd = now;
 				queueMaybeShrink();
-				return false;
+				int blocksMoved = 0;
+				while(true) {
+					if(freeSlots.isEmpty()) {
+						try {
+							jobRunner.queue(slotFinder, NativeThread.LOW_PRIORITY, false);
+						} catch (DatabaseDisabledException e) {
+							// Doh
+						}
+						queueMaybeShrink();
+						return false;
+					}
+					Long lFirstSlot = freeSlots.firstKey();
+					long firstSlot = lFirstSlot;
+					if(firstSlot < lastCommitted) {
+						// There is some degree of fragmentation.
+						// Move one key.
+						PersistentBlobTempBucketTag newTag = freeSlots.remove(lFirstSlot);
+						
+						// Synchronize on the target.
+						synchronized(lastBucket) {
+							// Do the move.
+							System.err.println("Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
+							try {
+								byte[] blob = readSlot(lastTag.index);
+								writeSlot(newTag.index, blob);
+							} catch (IOException e) {
+								System.err.println("Failed to move bucket in defrag: "+e);
+								e.printStackTrace();
+								Logger.error(this, "Failed to move bucket in defrag: "+e, e);
+								queueMaybeShrink();
+								return false;
+							}
+							lastBucket.setIndex(newTag.index);
+							newTag.bucket = lastBucket;
+							lastTag.bucket = null;
+							lastTag.isFree = true;
+							container.store(newTag);
+							container.store(lastTag);
+							container.store(lastBucket);
+						}
+					}
+					if(blocksMoved++ < 10) {
+						while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
+							Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
+							lastTag.isFree = true;
+							container.store(lastTag);
+						}
+						if(lastTag == null) continue;
+						lastBucket = lastTag.bucket;
+						lastCommitted = lastTag.index;
+						Logger.normal(this, "Last committed block is now "+lastCommitted);
+					} else break;
+				}
+				query = null;
 			}
 			long lastBlock = Math.max(lastCommitted, lastNotCommitted);
 			// Must be 10% free at end
@@ -663,5 +732,29 @@ public class PersistentBlobTempBucketFactory {
 			freeJobs.remove(job);
 		}
 	}
+	
+	private byte[] readSlot(long index) throws IOException {
+		if(blockSize > Integer.MAX_VALUE) throw new IOException("Block size over Integer.MAX_VALUE, unable to defragment!");
+		byte[] data = new byte[(int)blockSize];
+		ByteBuffer buf = ByteBuffer.wrap(data);
+		int offset = 0;
+		while(offset < blockSize) {
+			int read = channel.read(buf, blockSize * index + offset);
+			if(read < 0) throw new EOFException();
+			if(read > 0) offset += read;
+		}
+		return data;
+	}
+	
+	private void writeSlot(long index, byte[] blob) throws IOException {
+		ByteBuffer buf = ByteBuffer.wrap(blob);
+		int written = 0;
+		while(written < blockSize) {
+			int w = channel.write(buf, blockSize * index + written);
+			written += w;
+		}
+	}
+
+
 
 }
