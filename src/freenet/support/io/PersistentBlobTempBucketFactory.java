@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.SyncFailedException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashSet;
@@ -604,6 +605,16 @@ public class PersistentBlobTempBucketFactory {
 						lastCommitted = lastTag.index;
 						Logger.normal(this, "Last committed block is now "+lastCommitted);
 					} else break;
+				}
+				try {
+					raf.getFD().sync();
+					System.err.println("Moved "+blocksMoved+" in defrag and synced to disk");
+				} catch (SyncFailedException e) {
+					System.err.println("Failed to sync to disk after defragging: "+e);
+					e.printStackTrace();
+				} catch (IOException e) {
+					System.err.println("Failed to sync to disk after defragging: "+e);
+					e.printStackTrace();
 				}
 				query = null;
 			}
