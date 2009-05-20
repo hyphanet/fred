@@ -1437,7 +1437,7 @@ public class PeerManager {
 				statusSet = statuses.get(peerNodeStatus);
 				if(statusSet.contains(peerNode)) {
 					if(!noLog)
-						Logger.error(this, "addPeerNodeStatus(): node already in peerNodeStatuses: " + peerNode + " status " + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()));
+						Logger.error(this, "addPeerNodeStatus(): node already in peerNodeStatuses: " + peerNode + " status " + PeerNode.getPeerNodeStatusString(peerNodeStatus.intValue()), new Exception("debug"));
 					return;
 				}
 				statuses.remove(peerNodeStatus);
