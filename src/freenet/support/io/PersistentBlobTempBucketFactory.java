@@ -555,7 +555,9 @@ public class PersistentBlobTempBucketFactory {
 				queueMaybeShrink();
 				int blocksMoved = 0;
 				while(true) {
-					container.activate(lastBucket, 1);
+					boolean deactivateLastBucket = !container.ext().isActive(lastBucket);
+					if(deactivateLastBucket)
+						container.activate(lastBucket, 1);
 					if(freeSlots.isEmpty()) {
 						try {
 							jobRunner.queue(slotFinder, NativeThread.LOW_PRIORITY, false);
@@ -596,7 +598,8 @@ public class PersistentBlobTempBucketFactory {
 							container.store(lastBucket);
 						}
 					}
-					container.deactivate(lastBucket, 1);
+					if(deactivateLastBucket)
+						container.deactivate(lastBucket, 1);
 					if(blocksMoved++ < 10) {
 						while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
 							Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
