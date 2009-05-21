@@ -73,6 +73,11 @@ public class InsertCompressor implements CompressJob {
 			if(inserter == null || inserter.cancelled()) {
 				container.delete(this);
 				return; // Inserter was cancelled, we weren't told.
+			} else if(inserter.parent == null) {
+				// Botched insert removal
+				Logger.error(this, "InsertCompressor for "+inserter+" has no parent! Not compressing...");
+				container.delete(this);
+				return;
 			} else if(inserter.started()) {
 				Logger.error(this, "Inserter started already, but we are about to attempt to compress the data!");
 				container.delete(this);
