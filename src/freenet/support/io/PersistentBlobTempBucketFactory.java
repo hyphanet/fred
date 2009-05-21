@@ -591,6 +591,7 @@ public class PersistentBlobTempBucketFactory {
 							lastBucket.setIndex(newTag.index);
 							lastBucket.setTag(newTag);
 							newTag.bucket = lastBucket;
+							newTag.isFree = false;
 							lastTag.bucket = null;
 							lastTag.isFree = true;
 							container.store(newTag);
