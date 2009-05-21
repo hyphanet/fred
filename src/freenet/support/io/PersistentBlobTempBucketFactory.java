@@ -607,7 +607,7 @@ public class PersistentBlobTempBucketFactory {
 							lastTag.isFree = true;
 							container.store(lastTag);
 						}
-						if(lastTag == null) continue;
+						if(lastTag == null) break;
 						lastBucket = lastTag.bucket;
 						lastCommitted = lastTag.index;
 						Logger.normal(this, "Last committed block is now "+lastCommitted);
