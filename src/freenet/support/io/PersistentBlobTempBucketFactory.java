@@ -402,7 +402,7 @@ public class PersistentBlobTempBucketFactory {
 		bucket.onFree();
 		if(!bucket.persisted()) {
 			// If it hasn't been written to the database, it doesn't need to be removed, so removeFrom() won't be called.
-			freeSlots.put(index, bucket.tag);
+			freeSlots.put(index, bucket.getTag());
 		}
 		PersistentBlobTempBucket shadow = shadows.get(index);
 		if(shadow != null) {
@@ -417,12 +417,12 @@ public class PersistentBlobTempBucketFactory {
 		if(logMINOR)
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.getIndex()+" from database", new Exception("debug"));
 		long index = bucket.getIndex();
-		PersistentBlobTempBucketTag tag = bucket.tag;
+		PersistentBlobTempBucketTag tag = bucket.getTag();
 		if(tag == null) {
 			if(!container.ext().isActive(bucket)) {
 				Logger.error(this, "BUCKET NOT ACTIVE IN REMOVE: "+bucket, new Exception("error"));
 				container.activate(bucket, 1);
-				tag = bucket.tag;
+				tag = bucket.getTag();
 				index = bucket.getIndex();
 			} else {
 				// THIS IS IMPOSSIBLE, yet saces has seen it in practice ... lets get some detail...
@@ -555,6 +555,7 @@ public class PersistentBlobTempBucketFactory {
 				queueMaybeShrink();
 				int blocksMoved = 0;
 				while(true) {
+					container.activate(lastBucket, 1);
 					if(freeSlots.isEmpty()) {
 						try {
 							jobRunner.queue(slotFinder, NativeThread.LOW_PRIORITY, false);
@@ -586,6 +587,7 @@ public class PersistentBlobTempBucketFactory {
 								return false;
 							}
 							lastBucket.setIndex(newTag.index);
+							lastBucket.setTag(newTag);
 							newTag.bucket = lastBucket;
 							lastTag.bucket = null;
 							lastTag.isFree = true;
@@ -594,6 +596,7 @@ public class PersistentBlobTempBucketFactory {
 							container.store(lastBucket);
 						}
 					}
+					container.deactivate(lastBucket, 1);
 					if(blocksMoved++ < 10) {
 						while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
 							Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
@@ -682,7 +685,7 @@ public class PersistentBlobTempBucketFactory {
 		if(logMINOR)
 			Logger.minor(this, "Storing bucket "+bucket+" for slot "+bucket.getIndex()+" to database");
 		long index = bucket.getIndex();
-		PersistentBlobTempBucketTag tag = bucket.tag;
+		PersistentBlobTempBucketTag tag = bucket.getTag();
 		container.activate(tag, 1);
 		if(tag.bucket != null && tag.bucket != bucket) {
 			Logger.error(this, "Slot "+index+" already occupied!: "+tag.bucket+" for "+tag.index);

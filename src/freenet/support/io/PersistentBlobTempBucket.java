@@ -29,7 +29,7 @@ public class PersistentBlobTempBucket implements Bucket {
 	 * map in the factory. */
 	private boolean persisted;
 	private final int hashCode;
-	final PersistentBlobTempBucketTag tag;
+	private PersistentBlobTempBucketTag tag;
 	private boolean shadow;
 	
 	@Override
@@ -268,6 +268,14 @@ public class PersistentBlobTempBucket implements Bucket {
 
 	synchronized void setIndex(long index2) {
 		this.index = index2;
+	}
+
+	synchronized void setTag(PersistentBlobTempBucketTag newTag) {
+		this.tag = newTag;
+	}
+
+	public synchronized PersistentBlobTempBucketTag getTag() {
+		return tag;
 	}
 
 }
