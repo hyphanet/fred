@@ -622,6 +622,7 @@ public class PersistentBlobTempBucketFactory {
 					System.err.println("Failed to sync to disk after defragging: "+e);
 					e.printStackTrace();
 				}
+				jobRunner.setCommitThisTransaction();
 				query = null;
 			}
 			long lastBlock = Math.max(lastCommitted, lastNotCommitted);
