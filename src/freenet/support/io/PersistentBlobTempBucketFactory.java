@@ -411,7 +411,6 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	private long lastCheckedEnd = -1;
-	private long lastCheckedFrag = -1;
 	
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR)
