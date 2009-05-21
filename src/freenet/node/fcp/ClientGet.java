@@ -504,10 +504,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	private void trySendProgress(FCPMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			FCPMessage oldProgress = progressPending;
-			if(msg instanceof SimpleProgressMessage)
+			FCPMessage oldProgress = null;
+			if(msg instanceof SimpleProgressMessage) {
 				progressPending = (SimpleProgressMessage)msg;
-			else if(msg instanceof SendingToNetworkMessage)
+				oldProgress = progressPending;
+			} else if(msg instanceof SendingToNetworkMessage)
 				sentToNetwork = true;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.store(this);
