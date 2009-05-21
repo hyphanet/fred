@@ -569,6 +569,7 @@ public class PersistentBlobTempBucketFactory {
 					Long lFirstSlot = freeSlots.firstKey();
 					long firstSlot = lFirstSlot;
 					if(firstSlot < lastCommitted) {
+						blocksMoved++;
 						// There is some degree of fragmentation.
 						// Move one key.
 						PersistentBlobTempBucketTag newTag = freeSlots.remove(lFirstSlot);
@@ -599,7 +600,7 @@ public class PersistentBlobTempBucketFactory {
 					}
 					if(deactivateLastBucket)
 						container.deactivate(lastBucket, 1);
-					if(blocksMoved++ < 9) {
+					if(blocksMoved < 10) {
 						while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
 							Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
 							lastTag.isFree = true;
@@ -611,17 +612,19 @@ public class PersistentBlobTempBucketFactory {
 						Logger.normal(this, "Last committed block is now "+lastCommitted);
 					} else break;
 				}
-				try {
-					raf.getFD().sync();
-					System.err.println("Moved "+blocksMoved+" in defrag and synced to disk");
-				} catch (SyncFailedException e) {
-					System.err.println("Failed to sync to disk after defragging: "+e);
-					e.printStackTrace();
-				} catch (IOException e) {
-					System.err.println("Failed to sync to disk after defragging: "+e);
-					e.printStackTrace();
+				if(blocksMoved > 0) {
+					try {
+						raf.getFD().sync();
+						System.err.println("Moved "+blocksMoved+" in defrag and synced to disk");
+					} catch (SyncFailedException e) {
+						System.err.println("Failed to sync to disk after defragging: "+e);
+						e.printStackTrace();
+					} catch (IOException e) {
+						System.err.println("Failed to sync to disk after defragging: "+e);
+						e.printStackTrace();
+					}
+					jobRunner.setCommitThisTransaction();
 				}
-				jobRunner.setCommitThisTransaction();
 				query = null;
 			}
 			long lastBlock = Math.max(lastCommitted, lastNotCommitted);
