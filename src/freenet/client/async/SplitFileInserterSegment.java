@@ -1428,6 +1428,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	private boolean removeOnEncode;
 	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.activate(encodeJob, 1);
 		if(encodeJob != null) {
 			if(!encodeJob.cancel(container, context)) {
 				synchronized(this) {
