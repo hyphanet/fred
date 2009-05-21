@@ -15,16 +15,16 @@ import freenet.client.async.ManifestElement;
  *
  */
 public final class ContainerSizeEstimator {
-	
+
 	public static final ARCHIVE_TYPE DEFAULT_ARCHIVE_TYPE = ARCHIVE_TYPE.TAR;
-	
+
 	public final static class ContainerSize {
-		
+
 		private long _sizeFiles;
 		private long _sizeFilesNoLimit;
 		private long _sizeSubTrees;
 		private long _sizeSubTreesNoLimit;
-		
+
 		private ContainerSize() {
 			_sizeFiles = 0;
 			_sizeFilesNoLimit = 0;
@@ -35,7 +35,7 @@ public final class ContainerSizeEstimator {
 		public long getSizeTotal() {
 			return _sizeFiles+_sizeSubTrees;
 		}
-		
+
 		public long getSizeTotalNoLimit() {
 			return _sizeFilesNoLimit+_sizeSubTreesNoLimit;
 		}
@@ -56,16 +56,15 @@ public final class ContainerSizeEstimator {
 			return _sizeSubTreesNoLimit;
 		}
 	}
-	
-	
+
 	private ContainerSizeEstimator() {}
-	
+
 	public static ContainerSize getSubTreeSize(HashMap<String, Object> metadata, long maxItemSize, long maxContainerSize, int maxDeep) {
 		ContainerSize result = new ContainerSize();
 		getSubTreeSize(metadata, result, maxItemSize, maxContainerSize, maxDeep);
 		return result;
-	}	
-	
+	}
+
 	private static void getSubTreeSize(HashMap<String, Object> metadata, ContainerSize result, long maxItemSize, long maxContainerSize,int maxDeep) {
 		Set<String> set = metadata.keySet();
 		// files
@@ -105,7 +104,7 @@ public final class ContainerSizeEstimator {
 	public static long getContainerItemSize(long size) {
 		return getContainerItemSize(DEFAULT_ARCHIVE_TYPE, size);
 	}
-	
+
 	private static long getContainerItemSize(ARCHIVE_TYPE archiveType, long size) {
 		if (archiveType == ARCHIVE_TYPE.TAR)
 			return tarItemSize(size);
