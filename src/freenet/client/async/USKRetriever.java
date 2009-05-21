@@ -78,9 +78,20 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
+	/**
+	 * Get the original USK URI which was passed when creating the retriever - not the latest known URI!
+	 */
+	public USK getOriginalUSK() {
+		return origUSK;
+	}
+
+	/**
+	 * Get the original USK URI which was passed when creating the retriever - not the latest known URI!
+	 */
 	@Override
 	public FreenetURI getURI() {
-		return null;
+		// FIXME: Toad: Why did getURI() return null? Does it break anything that I made it return the URI?
+		return origUSK.getURI();
 	}
 
 	@Override

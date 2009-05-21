@@ -1012,7 +1012,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Does not reflect any 'backoff' logic.
 	 */
 	public boolean isRoutingCompatible() {
-		long now = System.currentTimeMillis();
+		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
 		synchronized(this) {
 			if(isRoutable && !disableRouting) {
 				timeLastRoutable = now;
@@ -1023,9 +1023,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public boolean isConnected() {
-        synchronized(this) {
+		long now = System.currentTimeMillis(); // no System.currentTimeMillis in synchronized
+		synchronized(this) {
 			if(isConnected && currentTracker != null && !currentTracker.packets.isDeprecated()) {
-				timeLastConnected = System.currentTimeMillis();
+				timeLastConnected = now;
 				return true;
 			}
 			return false;

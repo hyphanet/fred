@@ -342,7 +342,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				long[] offset = entry.getOffset();
 
 				for (int i = 0; i < offset.length; i++) {
-					if (offset[i] >= storeFileSizeReady && isFree(offset[i])) {
+					if (offset[i] < storeFileOffsetReady && isFree(offset[i])) {
 						// write to free block
 						if (logDEBUG)
 							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
@@ -582,7 +582,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
-	private volatile long storeFileSizeReady = 0;
+	private volatile long storeFileOffsetReady = -1;
 
 	/**
 	 * Open all store files
@@ -742,15 +742,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	/**
 	 * Change on disk store file size
 	 * 
-	 * @param storeFileSize
+	 * @param storeMaxEntries
 	 */
-	private void setStoreFileSize(long storeFileSize, boolean starting) {
+	private void setStoreFileSize(long storeMaxEntries, boolean starting) {
 		try {
 			long oldMetaLen = metaRAF.length();
-			long oldHdLen = hdRAF.length();
+			long currentHdLen = hdRAF.length();
 
-			final long newMetaLen = Entry.METADATA_LENGTH * storeFileSize;
-			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeFileSize;
+			final long newMetaLen = Entry.METADATA_LENGTH * storeMaxEntries;
+			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
 			if (preallocate) {
 				/*
@@ -770,9 +770,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				// start from next 4KB boundary => align to x86 page size
 				if (oldMetaLen % 4096 != 0)
 					oldMetaLen += 4096 - (oldMetaLen % 4096);
-				if (oldHdLen % 4096 != 0)
-					oldHdLen += 4096 - (oldHdLen % 4096);
+				if (currentHdLen % 4096 != 0)
+					currentHdLen += 4096 - (currentHdLen % 4096);
 
+				storeFileOffsetReady = -1;
+				
 				// this may write excess the size, the setLength() would fix it
 				while (oldMetaLen < newMetaLen) {
 					// never write random byte to meta data!
@@ -785,24 +787,24 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				random.nextBytes(seed);
 				Random mt = new MersenneTwister(seed);
 				int x = 0;
-				while (oldHdLen < newHdLen) {
+				while (currentHdLen < newHdLen) {
 					mt.nextBytes(b);
 					bf.rewind();
-					hdFC.write(bf, oldHdLen);
-					oldHdLen += 4096;
-					if(oldHdLen % (1024*1024*1024L) == 0) {
+					hdFC.write(bf, currentHdLen);
+					currentHdLen += 4096;
+					if(currentHdLen % (1024*1024*1024L) == 0) {
 						random.nextBytes(seed);
 						mt = new MersenneTwister(seed);
 						if (starting) {
 							WrapperManager.signalStarting(5*60*1000);
 							if ( x++ % 32 == 0 )
-								System.err.println("Preallocating space for " + name + ": " + oldHdLen + "/" + newHdLen);
+								System.err.println("Preallocating space for " + name + ": " + currentHdLen + "/" + newHdLen);
 						}
 					}
-					storeFileSizeReady = oldHdLen / (headerBlockLength + dataBlockLength + hdPadding);
+					storeFileOffsetReady = currentHdLen / (headerBlockLength + dataBlockLength + hdPadding);
 				}
 			}
-			storeFileSizeReady = storeFileSize;
+			storeFileOffsetReady = 1 + storeMaxEntries;
 
 			metaRAF.setLength(newMetaLen);
 			hdRAF.setLength(newHdLen);

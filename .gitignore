@@ -4,6 +4,7 @@
 /freenet-*
 /junitvmwatcher*
 /lib
+.classpath
 *.swp
 *.iml
 *.ipr
