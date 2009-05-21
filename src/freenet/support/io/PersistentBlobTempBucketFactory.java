@@ -598,7 +598,7 @@ public class PersistentBlobTempBucketFactory {
 							container.store(lastTag);
 							container.store(lastBucket);
 						}
-					}
+					} else break;
 					if(deactivateLastBucket)
 						container.deactivate(lastBucket, 1);
 					if(blocksMoved < 10) {
