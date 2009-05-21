@@ -600,7 +600,7 @@ public class PersistentBlobTempBucketFactory {
 					}
 					if(deactivateLastBucket)
 						container.deactivate(lastBucket, 1);
-					if(blocksMoved++ < 10) {
+					if(blocksMoved++ < 9) {
 						while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
 							Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
 							lastTag.isFree = true;
