@@ -37,13 +37,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Vector;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.io.Closer;
@@ -52,8 +54,22 @@ import freenet.support.io.Closer;
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
  */
 public class SHA256 {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
+
 	/** Size (in bytes) of this hash */
 	private static final int HASH_SIZE = 32;
+
+	private static final int MESSAGE_DIGESTS_TO_CACHE = 16;
+	private static final LinkedList<MessageDigest> digests = new LinkedList<MessageDigest>();
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -76,17 +92,21 @@ public class SHA256 {
 		}
 	}
 
-	static private final Vector<MessageDigest> digests = new Vector<MessageDigest>();
-
 	/**
 	 * Create a new SHA-256 MessageDigest
 	 * Either succeed or stop the node.
 	 */
-	public synchronized static MessageDigest getMessageDigest() {
+	public static MessageDigest getMessageDigest() {
 		try {
-			if(!digests.isEmpty())
-				return digests.remove(digests.size() - 1);
-			return MessageDigest.getInstance("SHA-256");
+			MessageDigest md = null;
+			try {
+				synchronized(digests) {
+					md = digests.removeFirst();
+				}
+			} catch (NoSuchElementException e) {
+				md = MessageDigest.getInstance("SHA-256");
+			}
+			return md;
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
 			Logger.error(Node.class, "Check your JVM settings especially the JCE!" + e2);
@@ -101,16 +121,21 @@ public class SHA256 {
 	 * Return a MessageDigest to the pool.
 	 * Must be SHA-256 !
 	 */
-	public synchronized static void returnMessageDigest(MessageDigest md256) {
+	public static void returnMessageDigest(MessageDigest md256) {
 		if(md256 == null)
 			return;
 		String algo = md256.getAlgorithm();
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
-		if (digests.size() > 16 || noCache) // don't cache too many of them
-			return;
 		md256.reset();
-		digests.add(md256);
+		synchronized (digests) {
+			int mdPoolSize = digests.size();
+			if (mdPoolSize > MESSAGE_DIGESTS_TO_CACHE || noCache) { // don't cache too many of them
+				if(logMINOR) Logger.normal(SHA256.class, "Throwing away a SHA256 MessageDigest ("+mdPoolSize+'>'+MESSAGE_DIGESTS_TO_CACHE+')');
+				return;
+			}
+			digests.addFirst(md256);
+		}
 	}
 
 	public static byte[] digest(byte[] data) {
@@ -129,12 +154,16 @@ public class SHA256 {
 	static {
 		OOMHandler.addOOMHook(new OOMHook() {
 			public void handleLowMemory() throws Exception {
-				digests.clear();
+				synchronized(digests) {
+					digests.clear();
+				}
 				noCache = true;
 			}
 
 			public void handleOutOfMemory() throws Exception {
-				digests.clear();
+				synchronized(digests) {
+					digests.clear();
+				}
 				noCache = true;
 			}
 		});
