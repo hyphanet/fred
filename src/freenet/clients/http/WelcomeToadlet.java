@@ -19,8 +19,6 @@ import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.GenericReadFilterCallback;
-import freenet.frost.message.FrostBoard;
-import freenet.frost.message.FrostMessage;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
