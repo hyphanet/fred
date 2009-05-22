@@ -104,6 +104,7 @@ public class SHA256 {
 					md = digests.removeFirst();
 				}
 			} catch (NoSuchElementException e) {
+				// Cache misses are *very* rare!
 				md = MessageDigest.getInstance("SHA-256");
 			}
 			return md;
