@@ -622,17 +622,6 @@ public class WelcomeToadlet extends Toadlet {
             }
         }
 
-        // Activity
-        HTMLNode activityBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("activityTitle")));
-        HTMLNode activityContent = ctx.getPageMaker().getContentNode(activityBox);
-        HTMLNode activityList = activityContent.addChild("ul", "id", "activity");
-        activityList.addChild("li", l10n("insertCount", "total", Integer.toString(node.getNumInsertSenders())));
-        activityList.addChild("li", l10n("requestCount", "total", Integer.toString(node.getNumRequestSenders())));
-        activityList.addChild("li", l10n("transferringRequestCount", "total", (Integer.toString((node.getNumTransferringRequestSenders()) + (node.getNumTransferringRequestHandlers()))))); // Include both sending and receiving requests.
-        if (advancedModeOutputEnabled) {
-            activityList.addChild("li", l10n("arkFetchCount", "total", Integer.toString(node.getNumARKFetchers())));
-        }
-
         this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
     }
 
