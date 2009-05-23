@@ -560,11 +560,11 @@ public class WelcomeToadlet extends Toadlet {
         	HTMLNode form = searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
         	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
-        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", "Search Freenet!" });
+        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", l10n("searchFreenet") });
         } else {
 			// Warn that search plugin is not loaded.
 			HTMLNode searchBoxContent = ctx.getPageMaker().getContentNode(searchBox);
-			searchBoxContent.addChild("#", L10n.getString("WelcomeToadlet.searchPluginNotLoaded"));
+			L10n.addL10nSubstitution(searchBoxContent, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/\">", "</a>" });
 		}
 			
 
