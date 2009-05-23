@@ -6,8 +6,19 @@ package freenet.client.events;
 import com.db4o.ObjectContainer;
 
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 public class SplitfileProgressEvent implements ClientEvent {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	public final static int CODE = 0x07;
 	
@@ -26,7 +37,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 		this.fatallyFailedBlocks = fatallyFailedBlocks;
 		this.minSuccessfulBlocks = minSuccessfulBlocks;
 		this.finalizedTotal = finalizedTotal;
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Created SplitfileProgressEvent: total="+totalBlocks+" succeed="+succeedBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" min success="+minSuccessfulBlocks+" finalized="+finalizedTotal);
 	}
 

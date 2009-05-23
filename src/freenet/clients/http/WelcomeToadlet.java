@@ -560,11 +560,11 @@ public class WelcomeToadlet extends Toadlet {
         	HTMLNode form = searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
         	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
-        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", "Search Freenet!" });
+        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", l10n("searchFreenet") });
         } else {
 			// Warn that search plugin is not loaded.
 			HTMLNode searchBoxContent = ctx.getPageMaker().getContentNode(searchBox);
-			searchBoxContent.addChild("#", L10n.getString("WelcomeToadlet.searchPluginNotLoaded"));
+			L10n.addL10nSubstitution(searchBoxContent, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/\">", "</a>" });
 		}
 			
 
@@ -620,17 +620,6 @@ public class WelcomeToadlet extends Toadlet {
                 restartForm.addChild("input", new String[]{"type", "name"}, new String[]{"hidden", "restart"});
                 restartForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "restart2", l10n("restartNode")});
             }
-        }
-
-        // Activity
-        HTMLNode activityBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", l10n("activityTitle")));
-        HTMLNode activityContent = ctx.getPageMaker().getContentNode(activityBox);
-        HTMLNode activityList = activityContent.addChild("ul", "id", "activity");
-        activityList.addChild("li", l10n("insertCount", "total", Integer.toString(node.getNumInsertSenders())));
-        activityList.addChild("li", l10n("requestCount", "total", Integer.toString(node.getNumRequestSenders())));
-        activityList.addChild("li", l10n("transferringRequestCount", "total", (Integer.toString((node.getNumTransferringRequestSenders()) + (node.getNumTransferringRequestHandlers()))))); // Include both sending and receiving requests.
-        if (advancedModeOutputEnabled) {
-            activityList.addChild("li", l10n("arkFetchCount", "total", Integer.toString(node.getNumARKFetchers())));
         }
 
         this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
