@@ -628,9 +628,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			nodeReference = Fields.trimLines(nodeReference);
 			fs = new SimpleFieldSet(nodeReference, false, true);
 			if(!fs.getEndMarker().endsWith("End")) {
-				System.err.println("End is \""+fs.getEndMarker()+"\"");
-				System.err.println(fs.toString());
-				System.err.println("END OF FS");
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
 			}
 			fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
