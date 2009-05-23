@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="FreenetJs" default="build" basedir=".">
+  <!-- Configure path to GWT SDK -->
+  <property name="gwt.sdk" location="/home/sashee/gwt-linux-1.6.4" />
+  
+  <property name="staticfiles.dir" location="../../src/freenet/clients/http/staticfiles/freenetjs" />
+
+  <path id="project.class.path">
+    <pathelement location="war/WEB-INF/classes"/>
+    <pathelement location="${gwt.sdk}/gwt-user.jar"/>
+    <fileset dir="${gwt.sdk}" includes="gwt-dev*.jar"/>
+    <!-- Add any additional non-server libs (such as JUnit) -->
+  </path>
+
+  <target name="libs" description="Copy libs to WEB-INF/lib">
+    <mkdir dir="war/WEB-INF/lib" />
+    <copy todir="war/WEB-INF/lib" file="${gwt.sdk}/gwt-servlet.jar" />
+    <!-- Add any additional server libs that need to be copied -->
+  </target>
+
+  <target name="javac" depends="libs" description="Compile java source">
+    <mkdir dir="war/WEB-INF/classes"/>
+    <javac srcdir="src" includes="**" encoding="utf-8"
+        destdir="war/WEB-INF/classes"
+        source="1.5" target="1.5" nowarn="true"
+        debug="true" debuglevel="lines,vars,source">
+      <classpath refid="project.class.path"/>
+    </javac>
+    <copy todir="war/WEB-INF/classes">
+      <fileset dir="src" excludes="**/*.java"/>
+    </copy>
+  </target>
+
+  <target name="gwtc" description="GWT compile to JavaScript">
+    <java failonerror="true" fork="true" classname="com.google.gwt.dev.Compiler">
+      <classpath>
+        <pathelement location="src"/>
+        <path refid="project.class.path"/>
+      </classpath>
+      <!-- add jvmarg -Xss16M or similar if you see a StackOverflowError -->
+      <jvmarg value="-Xmx256M"/>
+      <!-- Additional arguments like -style PRETTY or -logLevel DEBUG -->
+      <arg value="freenet.FreenetJs"/>
+    </java>
+  </target>
+
+  <target name="hosted" depends="javac" description="Run hosted mode">
+    <java failonerror="true" fork="true" classname="com.google.gwt.dev.HostedMode">
+      <classpath>
+        <pathelement location="src"/>
+        <path refid="project.class.path"/>
+      </classpath>
+      <jvmarg value="-Xmx256M"/>
+      <arg value="-startupUrl"/>
+      <arg value="FreenetJs.html"/>
+      <!-- Additional arguments like -style PRETTY or -logLevel DEBUG -->
+      <arg value="freenet.FreenetJs"/>
+    </java>
+  </target>
+
+  <target name="build" depends="gwtc" description="Build this project" >
+    <delete dir="${staticfiles.dir}"/>
+    <copy todir="${staticfiles.dir}">
+      <fileset dir="war/freenetjs"/>
+    </copy>
+    <antcall target="clean"/>
+  </target>
+
+  <target name="clean" description="Cleans this project">
+    <delete dir="war" failonerror="false" />
+  </target>
+
+</project>

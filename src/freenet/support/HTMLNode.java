@@ -192,7 +192,7 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append('"');
 		}
 		if (children.size() == 0) {
-			if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name)) {
+			if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name) || ("script").equals(name)) {
 				tagBuffer.append("></");
 				tagBuffer.append(name);
 				tagBuffer.append('>');
