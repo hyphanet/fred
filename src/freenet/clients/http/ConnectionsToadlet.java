@@ -560,7 +560,16 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			request.freeParts();
 
 			//Split the references string, because the peers are added individually
-			String[] nodesToAdd=ref.toString().split("End");
+			// FIXME split by lines at this point rather than in addNewNode would be more efficient
+			int idx;
+			while((idx = ref.indexOf("\r\n")) > -1) {
+				ref.deleteCharAt(idx);
+			}
+			while((idx = ref.indexOf("\r")) > -1) {
+				// Mac's just use \r
+				ref.setCharAt(idx, '\n');
+			}
+			String[] nodesToAdd=ref.toString().split("\nEnd\n");
 			//The peer's additions results
 			Map<PeerAdditionReturnCodes,Integer> results=new HashMap<PeerAdditionReturnCodes, Integer>();
 			for(int i=0;i<nodesToAdd.length;i++){
@@ -619,6 +628,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			nodeReference = Fields.trimLines(nodeReference);
 			fs = new SimpleFieldSet(nodeReference, false, true);
 			if(!fs.getEndMarker().endsWith("End")) {
+				System.err.println("End is \""+fs.getEndMarker()+"\"");
+				System.err.println(fs.toString());
+				System.err.println("END OF FS");
 				return PeerAdditionReturnCodes.WRONG_ENCODING;
 			}
 			fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
