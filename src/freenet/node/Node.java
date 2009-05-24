@@ -535,14 +535,14 @@ public class Node implements TimeSkewDetectorCallback {
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
 		if((udp != null) && (udp.length > 0)) {
-			for(int i=0;i<udp.length;i++) {
+			for(String udpAddr : udp) {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false, true);
+					p = new Peer(udpAddr, false, true);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udp[i]);
-					System.err.println("Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udp[i]);
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udpAddr);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udpAddr);
 					continue;
 				} catch (PeerParseException e) {
 					IOException e1 = new IOException();
