@@ -46,7 +46,6 @@ import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.LongOption;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
@@ -1893,7 +1892,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
 				Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
 						" ... let's assume it's not what the user wants to do and restore the default.");
-				databaseMaxMemory = Long.valueOf(((LongOption) nodeConfig.getOption("databaseMaxMemory")).getDefault()).longValue();
+				databaseMaxMemory = Long.valueOf(nodeConfig.getOption("databaseMaxMemory").getDefault());
 			}
 			initBDBFS(suffix);
 		} else {
