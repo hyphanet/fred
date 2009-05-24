@@ -523,7 +523,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
-	 * @throws IOException
+	 * @throws IOException throw when I/O error occur
 	 */
 	private void readNodeFile(String filename) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
