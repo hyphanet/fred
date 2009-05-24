@@ -524,6 +524,7 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
+	 * @throws IOException
 	 */
 	private void readNodeFile(String filename) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
@@ -629,6 +630,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Read the config file from the arguments.
 	 * Then create a node.
 	 * Anything that needs static init should ideally be in here.
+	 * @param args
 	 */
 	public static void main(String[] args) throws IOException {
 		NodeStarter.main(args);
@@ -648,12 +650,14 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Create a Node from a Config object.
 	 * @param config The Config object for this node.
-	 * @param random The random number generator for this node. Passed in because we may want
+	 * @param r The random number generator for this node. Passed in because we may want
 	 * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
 	 * a production node. Yarrow will be used if that parameter is null
 	 * @param weakRandom The fast random number generator the node will use. If null a MT
 	 * instance will be used, seeded from the secure PRNG.
-	 * @param the loggingHandler
+	 * @param lc logging config Handler
+	 * @param ns NodeStarter
+	 * @param executor Executor
 	 * @throws NodeInitException If the node initialization fails.
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
@@ -2798,16 +2802,22 @@ public class Node implements TimeSkewDetectorCallback {
 				"\nSSK Datastore: "+sskDatastore.hits()+ '/' +(sskDatastore.hits()+sskDatastore.misses())+ '/' +sskDatastore.keyCount()+
 				"\nSSK Datacache: "+sskDatacache.hits()+ '/' +(sskDatacache.hits()+sskDatacache.misses())+ '/' +sskDatacache.keyCount());
 	}
-	
+
+	/**
+	 * Store a CHKBlock.
+	 * @param block
+	 *      the CHKBlock to be stored
+	 */
 	public void store(CHKBlock block) {
 		store(block, block.getKey().toNormalizedDouble());
 	}
 	
 	/**
-	 * Store a datum.
-	 * @param deep If true, insert to the store as well as the cache. Do not set
-	 * this to true unless the store results from an insert, and this node is the
-	 * closest node to the target; see the description of chkDatastore.
+	 * Store a CHKBlock.
+	 * @param block
+	 *      the CHKBlock to be stored
+	 * @param loc
+	 *      location of the CHKBlock
 	 */
 	public void store(CHKBlock block, double loc) {
 		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
@@ -2817,7 +2827,15 @@ public class Node implements TimeSkewDetectorCallback {
 	public void storeShallow(CHKBlock block) {
 		store(block, false);
 	}
-	
+
+	/**
+	 * Store a datum.
+	 * @param block
+	 *      a KeyBlock
+	 * @param deep If true, insert to the store as well as the cache. Do not set
+	 * this to true unless the store results from an insert, and this node is the
+	 * closest node to the target; see the description of chkDatastore.
+	 */
 	public void store(KeyBlock block, boolean deep) throws KeyCollisionException {
 		if(block instanceof CHKBlock)
 			store((CHKBlock)block, deep);
