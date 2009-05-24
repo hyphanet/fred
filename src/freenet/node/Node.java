@@ -616,7 +616,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	private void initNodeFileSettings(RandomSource r) {
+	private void initNodeFileSettings() {
 		Logger.normal(this, "Creating new node file from scratch");
 		// Don't need to set getDarknetPortNumber()
 		// FIXME use a real IP!
@@ -1411,7 +1411,7 @@ public class Node implements TimeSkewDetectorCallback {
 				} else {
 					System.err.println("Creating new cryptographic keys...");
 				}
-				initNodeFileSettings(random);
+				initNodeFileSettings();
 			}
 		}
 
