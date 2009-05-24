@@ -525,7 +525,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
 	 */
-	private void readNodeFile(String filename, RandomSource r) throws IOException {
+	private void readNodeFile(String filename) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
 		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
@@ -1395,11 +1395,11 @@ public class Node implements TimeSkewDetectorCallback {
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
-			readNodeFile(nodeFile.getPath(), random);
+			readNodeFile(nodeFile.getPath());
 		} catch (IOException e) {
 			try {
 				System.err.println("Trying to read node file backup ...");
-				readNodeFile(nodeFileBackup.getPath(), random);
+				readNodeFile(nodeFileBackup.getPath());
 			} catch (IOException e1) {
 				if(nodeFile.exists() || nodeFileBackup.exists()) {
 					System.err.println("No node file or cannot read, (re)initialising crypto etc");
