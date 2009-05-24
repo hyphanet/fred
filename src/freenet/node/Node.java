@@ -2808,21 +2808,10 @@ public class Node implements TimeSkewDetectorCallback {
 	 *      the CHKBlock to be stored
 	 */
 	public void store(CHKBlock block) {
-		store(block, block.getKey().toNormalizedDouble());
-	}
-	
-	/**
-	 * Store a CHKBlock.
-	 * @param block
-	 *      the CHKBlock to be stored
-	 * @param loc
-	 *      location of the CHKBlock
-	 */
-	public void store(CHKBlock block, double loc) {
-		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
+		boolean deep = !peers.isCloserLocation(block.getKey().toNormalizedDouble(), MIN_UPTIME_STORE_KEY);
 		store(block, deep);
 	}
-
+	
 	public void storeShallow(CHKBlock block) {
 		store(block, false);
 	}
