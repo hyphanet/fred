@@ -1903,6 +1903,7 @@ public class Node implements TimeSkewDetectorCallback {
 			pubKeyDatastore = new PubkeyStore();
 			new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
 			pubKeyDatacache = new PubkeyStore();
+			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
 			sskDatastore = new SSKStore(getPubKey);
 			new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
@@ -1911,7 +1912,6 @@ public class Node implements TimeSkewDetectorCallback {
 			envMutableConfig = null;
 			this.storeEnvironment = null;
 		}
-		getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
 		
@@ -2103,6 +2103,7 @@ public class Node implements TimeSkewDetectorCallback {
 			pubKeyDatacache = new PubkeyStore();
 			SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
 			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
+			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
@@ -2253,6 +2254,7 @@ public class Node implements TimeSkewDetectorCallback {
 			pubKeyDatacache = new PubkeyStore();
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, StoreType.PUBKEY, 
 					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
+			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
