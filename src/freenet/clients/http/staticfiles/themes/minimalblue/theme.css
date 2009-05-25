@@ -4,6 +4,8 @@
 
 @import url(/static/bookmark.css);
 
+/* minimal blue overall settings */
+
 body{
 width: 100%;
 margin: auto;
@@ -143,6 +145,7 @@ color: #0092a4;
 cursor: default;
 padding: 5px;
 }
+
 #navbar ul li a{
 display:block;
 text-align:center;
@@ -155,6 +158,87 @@ padding-left: 4px;
 padding-right: 4px;
 }
 
+#navlist-selected a{
+    background:#444;
+}
+
+
+/* subnavbar section */
+#selected-subnavbar a{
+color: #ddd;
+}
+#selected-subnavbar a:hover{
+color: #fff;
+}
+
+#selected-subnavbar{
+/*float: left;*/
+width: 100%;
+overflow:hidden;
+position:relative;
+top: 0px;
+background: #2573b8;
+margin-top:3px;
+margin-bottom:20px;
+}
+#selected-subnavbar ul#selected-subnavbar-list{
+clear:left;
+float:left;
+position:relative;
+left:50%;
+text-align:center;
+}
+#selected-subnavbar ul, #selected-navbar ul li{
+list-style:none;
+margin:0;
+padding: 0;
+}
+#selected-subnavbar ul li{
+display:block;
+float:left;
+position:relative;
+right:50%;
+color: #ff7100;
+background: #156098;
+margin-left: 3px;
+}
+#selected-subnavbar ul li.selected, #selected-subnavbar ul li:hover{
+color: #0092a4;
+background: #035196;
+}
+#selected-subnavbar ul li.selected a{
+color: #0092a4;
+cursor: default;
+padding: 5px;
+}
+
+#selected-subnavbar ul li a{
+display:block;
+text-align:center;
+text-decoration:none;
+margin:auto;
+font-size: 12px;
+font-weight: bold;
+padding: 5px;
+padding-left: 4px;
+padding-right: 4px;
+}
+
+#selected-subnavbar-list a{
+    background:#444;
+}
+
+#selected-subnavbar-list .submenuitem-selected a{
+    background:#B25600;
+}
+
+#navlist .subnavlist {
+    display:none;
+}
+
+#navlist .subnavlist-selected {
+    display:none;
+}
 /**********************/
 /* End of Menu config */
 /**********************/

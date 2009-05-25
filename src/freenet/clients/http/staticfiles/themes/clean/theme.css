@@ -1,7 +1,7 @@
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
 
-/* overall settings */
+/* clean overall settings */
 
 p, span, div, td, th, li, h1, h2, h3, h4, h5 {
 	font-family: Arial;
@@ -95,9 +95,9 @@ body {
 	padding-left: 3px;
 	padding-right: 3px;
 	list-style-type: none;
-	margin-top: 2px;
-	margin-bottom: 2px;
-	border: 2px outset #d0d0d0;
+	margin-top: 6px;
+	margin-bottom: 6px;
+	border: 3px outset #d0d0d0;
 }
 
 #navbar a {
@@ -108,6 +108,45 @@ body {
 #navbar a:hover {
 	color: #ff0000;
 }
+
+#navlist .subnavlist {
+    display:none;
+}
+
+#navlist-selected a {
+    color:#000;
+}
+
+#navlist-selected {
+    background:#888;
+}
+
+#selected-subnavbar {
+    display:none;
+}
+
+#navlist-selected .subnavlist-selected li {
+	padding-left: 3px;
+	padding-right: 3px;
+	list-style-type: none;
+	margin-top: 6px;
+	margin-bottom: 6px;
+	border: 3px outset #aaa;
+}
+
+#navlist-selected .subnavlist-selected li a {
+    color:#000;
+}
+
+#navlist-selected .subnavlist-selected .submenuitem-selected {
+    background:#eee;
+}
+
+#navlist-selected .subnavlist-selected .submenuitem-selected a{
+    color:#555fff;
+}
+
+
 
 /* alerts */
 

@@ -3,7 +3,7 @@
 
 /* [edward@rnahost.com] */
 
-/* overall settings */
+/* grayandblue overall settings */
 
 p, span, div, td, th, li, h1, h2, h3, h4, h5 {
 	font-family: Verdana;
@@ -111,6 +111,14 @@ body {
 
 #navbar a:hover {
 	color: #09c;
+}
+
+#navlist .subnavlist {
+    display:none;
+}
+
+#selected-subnavbar {
+    display:none;
 }
 
 /* alerts */
