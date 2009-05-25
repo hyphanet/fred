@@ -69,7 +69,7 @@ abstract class ClientRequestSchedulerBase {
 	protected final SortedVectorByNumber[] priorities;
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
-	protected transient final ArrayList<KeyListener> keyListeners = new ArrayList<KeyListener>();
+	protected transient ArrayList<KeyListener> keyListeners;
 
 	abstract boolean persistent();
 	
@@ -418,7 +418,7 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	public void onStarted() {
-		// do nothing?
+		keyListeners = new ArrayList<KeyListener>();
 	}
 	
 	@Override
