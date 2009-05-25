@@ -69,14 +69,13 @@ abstract class ClientRequestSchedulerBase {
 	protected final SortedVectorByNumber[] priorities;
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
-	protected transient ArrayList<KeyListener> keyListeners;
+	protected transient final ArrayList<KeyListener> keyListeners = new ArrayList<KeyListener>();
 
 	abstract boolean persistent();
 	
 	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		keyListeners = new ArrayList<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
 	
