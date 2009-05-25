@@ -76,6 +76,7 @@ abstract class ClientRequestSchedulerBase {
 	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
+		keyListeners = new ArrayList<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
 	
