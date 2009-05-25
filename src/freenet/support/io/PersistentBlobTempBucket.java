@@ -22,14 +22,14 @@ public class PersistentBlobTempBucket implements Bucket {
 	long size;
 	public final PersistentBlobTempBucketFactory factory;
 	/** The index into the blob file of this specific bucket */
-	final long index;
+	private volatile long index;
 	private boolean freed;
 	private boolean readOnly;
 	/** Has this bucket been persisted? If not, it will be only on the temporary
 	 * map in the factory. */
 	private boolean persisted;
 	private final int hashCode;
-	final PersistentBlobTempBucketTag tag;
+	private PersistentBlobTempBucketTag tag;
 	private boolean shadow;
 	
 	@Override
@@ -102,6 +102,7 @@ public class PersistentBlobTempBucket implements Bucket {
 				if (closed) throw new IOException("closed");
 				
 				long max;
+				long idx;
 				synchronized(PersistentBlobTempBucket.this) {
 					if(freed) throw new IOException("Bucket freed during read");
 					max = Math.min(blockSize, size);
@@ -113,7 +114,11 @@ public class PersistentBlobTempBucket implements Bucket {
 				if(length == 0) return -1;
 				if(length < 0) throw new IllegalStateException("offset="+bufOffset+" length="+length+" buf len = "+buffer.length+" my offset is "+offset+" my size is "+max+" for "+this+" for "+PersistentBlobTempBucket.this);
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
-				int read = channel.read(buf, blockSize * index + offset);
+				int read;
+				// Synchronize to guarantee that index doesn't change during a read.
+				synchronized(PersistentBlobTempBucket.this) {
+					read = channel.read(buf, blockSize * index + offset);
+				}
 				if(read > 0) offset += read;
 				return read;
 			}
@@ -174,12 +179,13 @@ public class PersistentBlobTempBucket implements Bucket {
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
 				int written = 0;
 				while(written < length) {
-					int w = channel.write(buf, blockSize * index + offset);
-					offset += w;
+					// Synchronize to guarantee that index doesn't change during a write.
 					synchronized(PersistentBlobTempBucket.this) {
+						int w = channel.write(buf, blockSize * index + offset);
+						offset += w;
 						size += w;
+						written += w;
 					}
-					written += w;
 				}
 			}
 			
@@ -254,5 +260,22 @@ public class PersistentBlobTempBucket implements Bucket {
 	synchronized void onRemove() {
 		persisted = false;
 	}
-	
+
+	/** Always called on the database thread to avoid race conditions */
+	public synchronized long getIndex() {
+		return index;
+	}
+
+	synchronized void setIndex(long index2) {
+		this.index = index2;
+	}
+
+	synchronized void setTag(PersistentBlobTempBucketTag newTag) {
+		this.tag = newTag;
+	}
+
+	public synchronized PersistentBlobTempBucketTag getTag() {
+		return tag;
+	}
+
 }

@@ -1037,9 +1037,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Send a message, off-thread, to this node.
 	* @param msg The message to be sent.
 	* @param cb The callback to be called when the packet has been sent, or null.
-	* @param ctr The number of bytes already reported to the throttle
-	* relating to this packet (normally set when we have delayed a packet in order to
-	* throttle it).
+	* @param ctr A callback to tell how many bytes were used to send this message.
 	*/
 	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException {
 		if(ctr == null)
@@ -1899,6 +1897,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		MessageItem[] messagesTellDisconnected = null;
 		PacketTracker packets = null;
 		synchronized(this) {
+			// FIXME this shouldn't happen, does it?
 			if(currentTracker != null) {
 				if(Arrays.equals(encKey, currentTracker.sessionKey)) {
 					Logger.error(this, "completedHandshake() with identical key to current, maybe replayed JFK(4)?");

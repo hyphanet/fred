@@ -37,8 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.LinkedList;
-import java.util.NoSuchElementException;
+import java.util.ArrayList;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -69,7 +68,7 @@ public class SHA256 {
 	private static final int HASH_SIZE = 32;
 
 	private static final int MESSAGE_DIGESTS_TO_CACHE = 16;
-	private static final LinkedList<MessageDigest> digests = new LinkedList<MessageDigest>();
+	private static final ArrayList<MessageDigest> digests = new ArrayList<MessageDigest>();
 
 	/**
 	 * It won't reset the Message Digest for you!
@@ -99,13 +98,13 @@ public class SHA256 {
 	public static MessageDigest getMessageDigest() {
 		try {
 			MessageDigest md = null;
-			try {
-				synchronized(digests) {
-					md = digests.removeFirst();
-				}
-			} catch (NoSuchElementException e) {
-				md = MessageDigest.getInstance("SHA-256");
+			synchronized(digests) {
+				int x = digests.size();
+				if(x == 0) md = null;
+				else md = digests.remove(x-1);
 			}
+			if(md == null)
+				md = MessageDigest.getInstance("SHA-256");
 			return md;
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms
@@ -134,7 +133,7 @@ public class SHA256 {
 				if(logMINOR) Logger.normal(SHA256.class, "Throwing away a SHA256 MessageDigest ("+mdPoolSize+'>'+MESSAGE_DIGESTS_TO_CACHE+')');
 				return;
 			}
-			digests.addFirst(md256);
+			digests.add(md256);
 		}
 	}
 
