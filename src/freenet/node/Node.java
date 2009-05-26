@@ -46,7 +46,6 @@ import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.LongOption;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
@@ -524,8 +523,9 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
+	 * @throws IOException throw when I/O error occur
 	 */
-	private void readNodeFile(String filename, RandomSource r) throws IOException {
+	private void readNodeFile(String filename) throws IOException {
 		// REDFLAG: Any way to share this code with NodePeer?
 		FileInputStream fis = new FileInputStream(filename);
 		InputStreamReader isr = new InputStreamReader(fis, "UTF-8");
@@ -535,14 +535,14 @@ public class Node implements TimeSkewDetectorCallback {
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
 		if((udp != null) && (udp.length > 0)) {
-			for(int i=0;i<udp.length;i++) {
+			for(String udpAddr : udp) {
 				// Just keep the first one with the correct port number.
 				Peer p;
 				try {
-					p = new Peer(udp[i], false, true);
+					p = new Peer(udpAddr, false, true);
 				} catch (HostnameSyntaxException e) {
-					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udp[i]);
-					System.err.println("Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udp[i]);
+					Logger.error(this, "Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udpAddr);
+					System.err.println("Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udpAddr);
 					continue;
 				} catch (PeerParseException e) {
 					IOException e1 = new IOException();
@@ -616,7 +616,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	private void initNodeFileSettings(RandomSource r) {
+	private void initNodeFileSettings() {
 		Logger.normal(this, "Creating new node file from scratch");
 		// Don't need to set getDarknetPortNumber()
 		// FIXME use a real IP!
@@ -629,6 +629,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Read the config file from the arguments.
 	 * Then create a node.
 	 * Anything that needs static init should ideally be in here.
+	 * @param args
 	 */
 	public static void main(String[] args) throws IOException {
 		NodeStarter.main(args);
@@ -648,12 +649,14 @@ public class Node implements TimeSkewDetectorCallback {
 	/**
 	 * Create a Node from a Config object.
 	 * @param config The Config object for this node.
-	 * @param random The random number generator for this node. Passed in because we may want
+	 * @param r The random number generator for this node. Passed in because we may want
 	 * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
 	 * a production node. Yarrow will be used if that parameter is null
 	 * @param weakRandom The fast random number generator the node will use. If null a MT
 	 * instance will be used, seeded from the secure PRNG.
-	 * @param the loggingHandler
+	 * @param lc logging config Handler
+	 * @param ns NodeStarter
+	 * @param executor Executor
 	 * @throws NodeInitException If the node initialization fails.
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
@@ -1395,11 +1398,11 @@ public class Node implements TimeSkewDetectorCallback {
 		// After we have set up testnet and IP address, load the node file
 		try {
 			// FIXME should take file directly?
-			readNodeFile(nodeFile.getPath(), random);
+			readNodeFile(nodeFile.getPath());
 		} catch (IOException e) {
 			try {
 				System.err.println("Trying to read node file backup ...");
-				readNodeFile(nodeFileBackup.getPath(), random);
+				readNodeFile(nodeFileBackup.getPath());
 			} catch (IOException e1) {
 				if(nodeFile.exists() || nodeFileBackup.exists()) {
 					System.err.println("No node file or cannot read, (re)initialising crypto etc");
@@ -1411,7 +1414,7 @@ public class Node implements TimeSkewDetectorCallback {
 				} else {
 					System.err.println("Creating new cryptographic keys...");
 				}
-				initNodeFileSettings(random);
+				initNodeFileSettings();
 			}
 		}
 
@@ -1889,7 +1892,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
 				Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
 						" ... let's assume it's not what the user wants to do and restore the default.");
-				databaseMaxMemory = Long.valueOf(((LongOption) nodeConfig.getOption("databaseMaxMemory")).getDefault()).longValue();
+				databaseMaxMemory = Long.valueOf(nodeConfig.getOption("databaseMaxMemory").getDefault());
 			}
 			initBDBFS(suffix);
 		} else {
@@ -1900,6 +1903,7 @@ public class Node implements TimeSkewDetectorCallback {
 			pubKeyDatastore = new PubkeyStore();
 			new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
 			pubKeyDatacache = new PubkeyStore();
+			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
 			sskDatastore = new SSKStore(getPubKey);
 			new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
@@ -1908,7 +1912,6 @@ public class Node implements TimeSkewDetectorCallback {
 			envMutableConfig = null;
 			this.storeEnvironment = null;
 		}
-		getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
 		
@@ -2100,6 +2103,7 @@ public class Node implements TimeSkewDetectorCallback {
 			pubKeyDatacache = new PubkeyStore();
 			SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
 			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
+			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
@@ -2250,6 +2254,7 @@ public class Node implements TimeSkewDetectorCallback {
 			pubKeyDatacache = new PubkeyStore();
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, StoreType.PUBKEY, 
 					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
+			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
@@ -2798,26 +2803,29 @@ public class Node implements TimeSkewDetectorCallback {
 				"\nSSK Datastore: "+sskDatastore.hits()+ '/' +(sskDatastore.hits()+sskDatastore.misses())+ '/' +sskDatastore.keyCount()+
 				"\nSSK Datacache: "+sskDatacache.hits()+ '/' +(sskDatacache.hits()+sskDatacache.misses())+ '/' +sskDatacache.keyCount());
 	}
-	
+
+	/**
+	 * Store a CHKBlock.
+	 * @param block
+	 *      the CHKBlock to be stored
+	 */
 	public void store(CHKBlock block) {
-		store(block, block.getKey().toNormalizedDouble());
+		boolean deep = !peers.isCloserLocation(block.getKey().toNormalizedDouble(), MIN_UPTIME_STORE_KEY);
+		store(block, deep);
 	}
 	
+	public void storeShallow(CHKBlock block) {
+		store(block, false);
+	}
+
 	/**
 	 * Store a datum.
+	 * @param block
+	 *      a KeyBlock
 	 * @param deep If true, insert to the store as well as the cache. Do not set
 	 * this to true unless the store results from an insert, and this node is the
 	 * closest node to the target; see the description of chkDatastore.
 	 */
-	public void store(CHKBlock block, double loc) {
-		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
-		store(block, deep);
-	}
-
-	public void storeShallow(CHKBlock block) {
-		store(block, false);
-	}
-	
 	public void store(KeyBlock block, boolean deep) throws KeyCollisionException {
 		if(block instanceof CHKBlock)
 			store((CHKBlock)block, deep);

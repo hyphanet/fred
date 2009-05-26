@@ -506,8 +506,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			FCPMessage oldProgress = null;
 			if(msg instanceof SimpleProgressMessage) {
-				progressPending = (SimpleProgressMessage)msg;
 				oldProgress = progressPending;
+				progressPending = (SimpleProgressMessage)msg;
 			} else if(msg instanceof SendingToNetworkMessage)
 				sentToNetwork = true;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {

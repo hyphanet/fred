@@ -40,7 +40,7 @@ public class PluginTalker {
 		access = access2 ? FredPluginFCP.ACCESS_FCP_FULL : FredPluginFCP.ACCESS_FCP_RESTRICTED;
 		replysender = new PluginReplySenderFCP(handler, pluginname2, connectionIdentifier);
 	}
-	
+
 	protected WeakReference<FredPluginFCP> findPlugin(String pluginname2) throws PluginNotFoundException {
 		Logger.normal(this, "Searching fcp plugin: " + pluginname2);
 		FredPluginFCP plug = node.pluginManager.getFCPPlugin(pluginname2);

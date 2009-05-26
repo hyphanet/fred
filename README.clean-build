@@ -1,0 +1,1 @@
+In order to cleanly build Freenet from source, you will need to build freenet-ext.jar from the contrib module and put it into lib/freenet-ext.jar.

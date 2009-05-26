@@ -456,6 +456,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 					if(persistent)
 						lastBlock.removeFrom(container);
 					dataBuckets[dataBuckets.length-1].data = null;
+					if(persistent)
+						container.store(dataBuckets[dataBuckets.length-1]);
+					// It will be decoded by the FEC job.
 				} else if(lastBlock.size() != CHKBlock.DATA_LENGTH) {
 					// All new inserts will have the last block padded. If it was an old insert, ignoreLastDataBlock
 					// would be set. Another way we can get here is if the last data block of a segment other than
