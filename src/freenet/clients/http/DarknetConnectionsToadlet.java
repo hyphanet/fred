@@ -122,18 +122,18 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
 		actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
 		if(advancedModeEnabled) {
-			actionSelect.addChild("option", "value", "enable", "Enable selected peers");
-			actionSelect.addChild("option", "value", "disable", "Disable selected peers");
-			actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly (only set this if you have a static IP and are not NATed and neither is the peer)");
-			actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
-			actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly (not recommended)");
-			actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
-			actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses (useful if you are connecting to another node on the same LAN)");
-			actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
-			actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
-			actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
-			actionSelect.addChild("option", "value", "set_dont_route", "On selected peers, set dontRoute (you shouldn't use that unless you know what you're doing, really!)");
-			actionSelect.addChild("option", "value", "clear_dont_route", "On selected peers, clear dontRoute");
+			actionSelect.addChild("option", "value", "enable", l10n("peersEnable"));
+			actionSelect.addChild("option", "value", "disable", l10n("peersDisable"));
+			actionSelect.addChild("option", "value", "set_burst_only", l10n("peersSetBurstOnly"));
+			actionSelect.addChild("option", "value", "clear_burst_only", l10n("peersClearBurstOnly"));
+			actionSelect.addChild("option", "value", "set_listen_only", l10n("peersSetListenOnly"));
+			actionSelect.addChild("option", "value", "clear_listen_only", l10n("peersClearListenOnly"));
+			actionSelect.addChild("option", "value", "set_allow_local", l10n("peersSetAllowLocal"));
+			actionSelect.addChild("option", "value", "clear_allow_local", l10n("peersClearAllowLocal"));
+			actionSelect.addChild("option", "value", "set_ignore_source_port", l10n("peersSetIgnoreSourcePort"));
+			actionSelect.addChild("option", "value", "clear_ignore_source_port", l10n("peersClearIgnoreSourcePort"));
+			actionSelect.addChild("option", "value", "set_dont_route", l10n("peersSetDontRoute"));
+			actionSelect.addChild("option", "value", "clear_dont_route", l10n("peersClearDontRoute"));
 		}
 		actionSelect.addChild("option", "value", "", l10n("separator"));
 		actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
