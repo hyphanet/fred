@@ -20,6 +20,10 @@
 	<property name="javadoc" location="javadoc"/>
 	<property name="minExtVersion" value="-1"/>
 	<property name="recommendedExtVersion" value="-1"/>
+	<property name="GWT.generatedjs" value="${src}/freenet/clients/http/staticfiles/freenetjs"/>
+	<property name="GWT.lib" value="generator/js/lib"/>
+	<property name="GWT.lib.dev" value="${GWT.lib}/gwt-dev-linux.jar"/>
+	<property name="GWT.lib.user" value="${GWT.lib}/gwt-user.jar"/>
 	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
 	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
@@ -57,6 +61,39 @@
 		<available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
 		<available file="${CSSTokenizerFilter.java}" property="CSSTokenizerFilter.present"/>
 		<available file="${junit.location}" property="junit.present"/>
+		<available file="${GWT.generatedjs}" type="dir" property="generatedjs.present"/>
+		<echo level="verbose">Javascript generation present:${generatedjs.present}</echo>
+		<available file="${GWT.lib.dev}" property="GWT.lib.dev.present"/>
+		<echo level="verbose">gwt-dev-linux.jar present:${GWT.lib.dev.present}</echo>
+		<available file="${GWT.lib.user}" property="GWT.lib.user.present"/>
+		<echo level="verbose">gwt-user.jar present:${GWT.lib.user.present}</echo>
+	</target>
+	
+	<target name="get-GWT-lib-dev" depends="env" unless="GWT.lib.dev.present">
+		<mkdir dir="${GWT.lib}"/>
+		<get src="http://localhost/gwt-dev-linux.jar" 
+			dest="${GWT.lib}/gwt-dev-linux.jar" 
+			verbose="true"
+			usetimestamp="true"/>
+		<property name="GWT.lib.dev.present" value="true"/>
+	</target>
+	
+	<target name="get-GWT-lib-user" depends="env" unless="GWT.lib.user.present">
+		<mkdir dir="${GWT.lib}"/>
+		<get src="http://localhost/gwt-user.jar" 
+			dest="${GWT.lib}/gwt-user.jar" 
+			verbose="true"
+			usetimestamp="true"/>
+		<property name="GWT.lib.user.present" value="true"/>
+	</target>
+	
+	<target name="get-GWT-libs" unless="generatedjs.present">
+	    <antcall target="get-GWT-lib-dev"/>
+	    <antcall target="get-GWT-lib-user"/>
+	</target>
+	
+	<target name="generate-js" depends="env,get-GWT-libs" unless="generatedjs.present">
+		<ant antfile="build.xml" dir="generator/js"/>
 	</target>
 
 	<target name="generate-CSSTokenizerFilter" depends="env" unless="CSSTokenizerFilter.present">
@@ -80,7 +117,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="compile" depends="get-extjar, generate-CSSTokenizerFilter">
+	<target name="compile" depends="get-extjar, generate-CSSTokenizerFilter, generate-js">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -201,6 +238,8 @@
 		<delete dir="${build-test}"/>
 		<delete dir="${lib}"/>
 		<delete dir="${javadoc}"/>
+		<ant antfile="build.xml" target="deleteGenerated" dir="generator/js"/>
+		<delete dir="${GWT.lib}"/>
 	</target>
 
 

@@ -4,6 +4,8 @@
 /freenet-*
 /junitvmwatcher*
 /lib
+/generator/js/lib
+/src/freenet/clients/http/filter/CSSTokenizerFilter.java
 .classpath
 *.swp
 *.iml
