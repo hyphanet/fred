@@ -219,7 +219,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				} else {
 					// Should probably also be a useralert?
 					Logger.normal(this, "Node " + source + " sent us a UOM claiming that the auto-update key was blown, but it used a different key to us: \nour key=" + updateManager.revocationURI + "\nhis key=" + revocationURI);
-					System.err.println("Node " + source.userToString() + " sent us a UOM claiming that the revocation key was blown, but it used a different key to us: \nour key=" + updateManager.revocationURI + "\nhis key=" + revocationURI);
 				}
 			} catch(MalformedURLException e) {
 				// Should maybe be a useralert?
