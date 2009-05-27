@@ -107,7 +107,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	
 	@Override
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
-		return true;
+		return advancedModeEnabled; // Convenient for advanced users, but normally we will use the "Add a friend" box.
 	}
 
 	@Override

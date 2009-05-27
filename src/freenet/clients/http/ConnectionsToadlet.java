@@ -695,6 +695,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected abstract boolean shouldDrawNoderefBox(boolean advancedModeEnabled);
 
 	private void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx) {
+		drawNoderefBox(contentNode, ctx, getNoderef());
+	}
+	
+	static void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx, SimpleFieldSet fs) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
@@ -706,19 +710,23 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold", "/bold" },
 				new String[] { "<b>", "</b>" });
-		referenceInfoboxContent.addChild("pre", "id", "reference", getNoderef().toString() + '\n');
+		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
 	}
 
 	protected abstract String getPageTitle(String titleCountString, String myName);
 
+	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
+		drawAddPeerBox(contentNode, ctx, isOpennet(), path());
+	}
+	
 	/** Draw the add a peer box. This comes immediately after the main peers table and before the noderef box.
 	 * Implementors may skip it by not doing anything in this method. */
-	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
+	protected static void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n("addPeerTitle"));
 		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
+		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, formTarget, "addPeerForm");
 		peerAdditionForm.addChild("#", l10n("pasteReference"));
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
@@ -729,7 +737,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
-		if(!isOpennet()) {
+		if(!isOpennet) {
 			peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
 			peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
 			peerAdditionForm.addChild("br");
