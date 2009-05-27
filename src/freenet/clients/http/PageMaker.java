@@ -188,7 +188,11 @@ public final class PageMaker {
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
 		
-		Toadlet t = ctx.activeToadlet();
+		Toadlet t;
+		if (ctx != null)
+			t = ctx.activeToadlet();
+		else
+			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();
 		HTMLNode bodyNode = htmlNode.addChild("body");
