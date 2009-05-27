@@ -913,13 +913,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				"(" + (uncompletedDirUpload.size() + uncompletedUpload.size()) +
 				'/' + (failedDirUpload.size() + failedUpload.size()) +
 				'/' + (completedDirUpload.size() + completedUpload.size()) +
-				L10n.getString("QueueToadlet.titleUploads", "nodeName", core.getMyName());
+				") "+L10n.getString("QueueToadlet.titleUploads", "nodeName", core.getMyName());
 		else
 			pageName = 
 				"(" + uncompletedDownload.size() +
 				'/' + failedDownload.size() +
 				'/' + (completedDownloadToDisk.size() + completedDownloadToTemp.size()) +
-				L10n.getString("QueueToadlet.titleDownloads", "nodeName", core.getMyName());
+				") "+L10n.getString("QueueToadlet.titleDownloads", "nodeName", core.getMyName());
 		
 		PageNode page = pageMaker.getPageNode(pageName, ctx);
 		HTMLNode pageNode = page.outer;
