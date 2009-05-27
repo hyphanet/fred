@@ -220,7 +220,12 @@ public final class PageMaker {
 					} else {
 						sublistItem = subnavlist.addChild("li");
 					}
-					sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+					navigationTitle = navigationTitle == null ? null : L10n.getString(navigationTitle);
+					navigationLink = navigationLink == null ? null : L10n.getString(navigationLink);
+					if(navigationTitle != null)
+						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+					else
+						sublistItem.addChild("a", "href", navigationPath, navigationLink);
 				}
 				if(nonEmpty) {
 					HTMLNode listItem;
@@ -254,7 +259,12 @@ public final class PageMaker {
 					} else {
 						sublistItem = subnavlist.addChild("li");
 					}
-					sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+					navigationTitle = navigationTitle == null ? null : L10n.getString(navigationTitle);
+					navigationLink = navigationLink == null ? null : L10n.getString(navigationLink);
+					if(navigationTitle != null)
+						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+					else
+						sublistItem.addChild("a", "href", navigationPath, navigationLink);
 				}
 				if(nonEmpty)
 					pageDiv.addChild(div);

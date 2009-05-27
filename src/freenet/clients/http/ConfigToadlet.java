@@ -5,7 +5,6 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.BooleanOption;
@@ -32,9 +31,10 @@ import freenet.support.api.HTTPRequest;
  * Node Configuration Toadlet. Accessible from <code>http://.../config/</code>.
  */
 // FIXME: add logging, comments
-public class ConfigToadlet extends Toadlet {
+public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	// If a setting has to be more than a meg, something is seriously wrong!
 	private static final int MAX_PARAM_VALUE_SIZE = 1024*1024;
+	private final SubConfig subConfig;
 	private final Config config;
 	private final NodeClientCore core;
 	private final Node node;
@@ -100,11 +100,12 @@ public class ConfigToadlet extends Toadlet {
 		}
 	}
 
-	ConfigToadlet(HighLevelSimpleClient client, Config conf, Node node, NodeClientCore core) {
+	ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
 		super(client);
 		config=conf;
 		this.core = core;
 		this.node = node;
+		this.subConfig = subConfig;
 	}
 	
 	@Override
@@ -118,7 +119,7 @@ public class ConfigToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-			headers.put("Location", "/config/");
+			headers.put("Location", path());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
@@ -206,7 +207,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle"), contentNode);
-		content.addChild("a", new String[]{"href", "title"}, new String[]{".", l10n("shortTitle")}, l10n("returnToNodeConfig"));
+		content.addChild("a", new String[]{"href", "title"}, new String[]{path(), l10n("shortTitle")}, l10n("returnToNodeConfig"));
 		content.addChild("br");
 		addHomepageLink(content);
 
@@ -226,9 +227,6 @@ public class ConfigToadlet extends Toadlet {
 			return;
 		}
 		
-		SubConfig[] sc = config.getConfigs();
-		Arrays.sort(sc);
-		
 		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -237,24 +235,10 @@ public class ConfigToadlet extends Toadlet {
 		
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode);
 		
-		if(mode >= PageMaker.MODE_ADVANCED){
-			HTMLNode navigationContent = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"), contentNode).addChild("ul");
-			if(!L10n.getSelectedLanguage().equals(L10n.LANGUAGE.getDefault()))
-				navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
-			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
-			HTMLNode navigationTableRow = navigationTable.addChild("tr");
-			HTMLNode nextTableCell = navigationTableRow;
-			
-			for(int i=0; i<sc.length;i++){
-				if(sc[i].getPrefix().equals("security-levels")) continue;
-				nextTableCell.addChild("td", "class", "config_navigation").addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), l10n(sc[i].getPrefix()));
-			}
-		}
-
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", l10n("title"));
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
-		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configForm");
+		HTMLNode formNode = ctx.addFormChild(configNode, path(), "configForm");
 		
 		if(WrapperConfig.canChangeProperties()) {
 			String configName = "wrapper.java.maxmemory";
@@ -273,11 +257,9 @@ public class ConfigToadlet extends Toadlet {
 			}
 		}
 		
-		for(int i=0; i<sc.length;i++){
 			short displayedConfigElements = 0;
 			
-			if(sc[i].getPrefix().equals("security-levels")) continue;
-			Option<?>[] o = sc[i].getOptions();
+			Option<?>[] o = subConfig.getOptions();
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 			
 			for(int j=0; j<o.length; j++){
@@ -287,42 +269,41 @@ public class ConfigToadlet extends Toadlet {
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""),
+							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+subConfig.getPrefix() + '.' + o[j].getName() + ']' : ""),
 							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
-						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
+						Logger.error(this, subConfig.getPrefix() + configName + "has returned null from config!);");
 						continue;
 					}
 					
 					ConfigCallback<?> callback = o[j].getCallback();
 					if(callback instanceof EnumerableOptionCallback)
-						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback) callback, sc[i],
+						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback) callback, subConfig,
 						        configName, callback.isReadOnly()));
 					else if(callback instanceof BooleanCallback)
-						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption) o[j]).getValue(), sc[i],
+						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption) o[j]).getValue(), subConfig,
 						        configName, callback.isReadOnly()));
 					else if (callback.isReadOnly())
 						configItemValueNode.addChild("input", //
 						        new String[] { "type", "class", "disabled", "alt", "name", "value" }, //
 						        new String[] { "text", "config", "disabled", o[j].getShortDesc(),
-						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
+						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
 					else
 						configItemValueNode.addChild("input",//
 						        new String[] { "type", "class", "alt", "name", "value" }, //
 						        new String[] { "text", "config", o[j].getShortDesc(),
-						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
+						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
 
 					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc()));
 				}
 			}
 			
 			if(displayedConfigElements>0) {
-				formNode.addChild("div", "class", "configprefix", l10n(sc[i].getPrefix()));
-				formNode.addChild("a", "id", sc[i].getPrefix());
+				formNode.addChild("div", "class", "configprefix", l10n(subConfig.getPrefix()));
+				formNode.addChild("a", "id", subConfig.getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
-		}
 		
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
@@ -379,6 +360,14 @@ public class ConfigToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/config/";
+		return "/config/"+subConfig.getPrefix();
+	}
+
+	public boolean isEnabled(ToadletContext ctx) {
+		Option<?>[] o = subConfig.getOptions();
+		if(core.isAdvancedModeEnabled()) return true;
+		for(Option<?> option : o)
+			if(!option.isExpert()) return true;
+		return false;
 	}
 }

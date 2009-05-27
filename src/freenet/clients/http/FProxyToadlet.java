@@ -9,6 +9,7 @@ import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,6 +26,7 @@ import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.config.Config;
+import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
@@ -883,7 +885,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.registerMenu("/downloads/", "FProxyToadlet.categoryQueue", "FProxyToadlet.categoryTitleQueue");
 		server.registerMenu("/friends/", "FProxyToadlet.categoryFriends", "FProxyToadlet.categoryTitleFriends");
 		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus");
-		server.registerMenu("/config/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig");
+		server.registerMenu("/seclevels/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig");
 		
 		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
 		
@@ -898,12 +900,19 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		SecurityLevelsToadlet seclevels = new SecurityLevelsToadlet(client, node, core);
 		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true, "FProxyToadlet.seclevelsTitle", "FProxyToadlet.seclevels", true, null);
-		
-		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-		server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
-		
+
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
 		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
+		
+		SubConfig[] sc = config.getConfigs();
+		Arrays.sort(sc);
+		
+		for(SubConfig cfg : sc) {
+			String prefix = cfg.getPrefix();
+			if(prefix.equals("security-levels") || prefix.equals("plugins")) continue;
+			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, cfg, node, core);
+			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true, "ConfigToadlet."+prefix, null, true, configtoadlet);
+		}
 		
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, null, "/welcome/", true, false);

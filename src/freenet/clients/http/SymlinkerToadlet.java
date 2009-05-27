@@ -62,6 +62,7 @@ public class SymlinkerToadlet extends Toadlet {
 		addLink("/sl/search/", "/plugins/plugins.Librarian/", false);
 		addLink("/sl/gallery/", "/plugins/plugins.TestGallery/", false);
 		addLink("/queue/", "/downloads/", false);
+		addLink("/config/", "/config/node", false);
 	}
 	
 	public boolean addLink(String alias, String target, boolean store) {
