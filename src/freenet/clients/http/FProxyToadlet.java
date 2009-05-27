@@ -887,7 +887,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus");
 		server.registerMenu("/seclevels/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig");
 		
+		
 		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
+		
+		InsertFreesiteToadlet siteinsert = new InsertFreesiteToadlet(client, core.alerts);
+		server.register(siteinsert, "FProxyToadlet.categoryBrowsing", "/insertsite/", true, "FProxyToadlet.insertFreesiteTitle", "FProxyToadlet.insertFreesite", false, null);
 		
 		UserAlertsToadlet alerts = new UserAlertsToadlet(client, node, core);
 		server.register(alerts, "FProxyToadlet.categoryStatus", "/alerts/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
