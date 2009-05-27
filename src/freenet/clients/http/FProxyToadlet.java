@@ -289,7 +289,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					new String[] { "<a href=\"/\">", "</a>" });
 			if(ctx.isAllowedFullAccess() || !container.publicGatewayMode()) {
 				option = optionList.addChild("li");
-				HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
+				HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
@@ -602,7 +602,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 				HTMLNode ul = infoboxContent.addChild("ul");
 				ul.addChild("li").addChild("p", l10n("progressOptionZero"));
-				HTMLNode optionForm = ctx.addFormChild(ul.addChild("li").addChild("p"), "/queue/", "tooBigQueueForm");
+				HTMLNode optionForm = ctx.addFormChild(ul.addChild("li").addChild("p"), "/downloads/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
@@ -676,7 +676,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplay") });
 					option = optionList.addChild("li");
-					optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
+					optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
@@ -728,7 +728,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				if(!e.isFatal() && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
 					option = optionList.addChild("li");
-					HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
+					HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "dnfQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
@@ -880,7 +880,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		core.setFProxy(fproxy);
 		
 		server.registerMenu("/", "FProxyToadlet.categoryBrowsing", "FProxyToadlet.categoryTitleBrowsing");
-		server.registerMenu("/queue/", "FProxyToadlet.categoryQueue", "FProxyToadlet.categoryTitleQueue");
+		server.registerMenu("/downloads/", "FProxyToadlet.categoryQueue", "FProxyToadlet.categoryTitleQueue");
 		server.registerMenu("/friends/", "FProxyToadlet.categoryFriends", "FProxyToadlet.categoryTitleFriends");
 		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus");
 		server.registerMenu("/config/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig");
@@ -891,8 +891,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.register(alerts, "FProxyToadlet.categoryStatus", "/alerts/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
 
 		
-		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-		server.register(queueToadlet, "FProxyToadlet.categoryQueue", "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
+		QueueToadlet downloadToadlet = new QueueToadlet(core, core.getFCPServer(), client, false);
+		server.register(downloadToadlet, "FProxyToadlet.categoryQueue", "/downloads/", true, "FProxyToadlet.downloadsTitle", "FProxyToadlet.downloads", false, downloadToadlet);
+		QueueToadlet uploadToadlet = new QueueToadlet(core, core.getFCPServer(), client, true);
+		server.register(uploadToadlet, "FProxyToadlet.categoryQueue", "/uploads/", true, "FProxyToadlet.uploadsTitle", "FProxyToadlet.uploads", false, uploadToadlet);
 		
 		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
 		server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);

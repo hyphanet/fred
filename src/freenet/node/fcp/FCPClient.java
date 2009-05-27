@@ -51,7 +51,8 @@ public class FCPClient {
 					throw new UnsupportedOperationException();
 			}
 		};
-		completionCallback = cb;
+		completionCallbacks = new ArrayList<RequestCompletionCallback>();
+		if(cb != null) completionCallbacks.add(cb);
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			assert(root != null);
 			this.root = root;
@@ -80,7 +81,7 @@ public class FCPClient {
 	private transient LinkedList<FCPClient> clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
 	final RequestClient lowLevelClient;
-	private transient RequestCompletionCallback completionCallback;
+	private transient List<RequestCompletionCallback> completionCallbacks;
 	/** Connection mode */
 	final short persistenceType;
 	
@@ -259,8 +260,15 @@ public class FCPClient {
 			req.cancel(container, context);
 		}
         req.requestWasRemoved(container, context);
-		if(completionCallback != null)
-			completionCallback.onRemove(req, container);
+        RequestCompletionCallback[] callbacks = null;
+        synchronized(this) {
+        	if(completionCallbacks != null)
+        		callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
+        }
+		if(callbacks != null) {
+			for(RequestCompletionCallback cb : callbacks)
+				cb.onRemove(req, container);
+		}
 		return true;
 	}
 
@@ -408,8 +416,15 @@ public class FCPClient {
 	 */
 	public void notifySuccess(ClientRequest req, ObjectContainer container) {
 		assert(req.persistenceType == persistenceType);
-		if(completionCallback != null)
-			completionCallback.notifySuccess(req, container);
+        RequestCompletionCallback[] callbacks = null;
+        synchronized(this) {
+        	if(completionCallbacks != null)
+        		callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
+        }
+		if(callbacks != null) {
+			for(RequestCompletionCallback cb : callbacks)
+				cb.notifySuccess(req, container);
+		}
 	}
 
 	/**
@@ -418,14 +433,20 @@ public class FCPClient {
 	 */
 	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		assert(req.persistenceType == persistenceType);
-		if(completionCallback != null)
-			completionCallback.notifyFailure(req, container);
+        RequestCompletionCallback[] callbacks = null;
+        synchronized(this) {
+        	if(completionCallbacks != null)
+        		callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
+        }
+		if(callbacks != null) {
+			for(RequestCompletionCallback cb : callbacks)
+				cb.notifyFailure(req, container);
+		}
 	}
 	
-	public synchronized RequestCompletionCallback setRequestCompletionCallback(RequestCompletionCallback cb) {
-		RequestCompletionCallback old = completionCallback;
-		completionCallback = cb;
-		return old;
+	public synchronized void addRequestCompletionCallback(RequestCompletionCallback cb) {
+		if(completionCallbacks == null) completionCallbacks = new ArrayList<RequestCompletionCallback>(); // it is transient so it might be null
+		completionCallbacks.add(cb);
 	}
 
 	public void removeFromDatabase(ObjectContainer container) {

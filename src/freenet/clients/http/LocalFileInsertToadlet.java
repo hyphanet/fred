@@ -151,7 +151,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
 						HTMLNode cellNode = fileRow.addChild("td");
-						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/queue/", "insertLocalFileForm"); 
+						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm"); 
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
 						if(furi != null)
@@ -166,7 +166,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 				} else {
 					if (currentFile.canRead()) {
 						HTMLNode cellNode = fileRow.addChild("td");
-						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/queue/", "insertLocalFileForm"); 
+						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm"); 
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
 						if(furi != null)

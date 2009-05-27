@@ -970,10 +970,9 @@ public class FCPServer implements Runnable {
 	}
 	
 	public void setCompletionCallback(RequestCompletionCallback cb) {
-		if(globalForeverClient != null && globalForeverClient.setRequestCompletionCallback(cb) != null)
-			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
-		if(globalRebootClient.setRequestCompletionCallback(cb) != null)
-			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
+		if(globalForeverClient != null)
+			globalForeverClient.addRequestCompletionCallback(cb);
+		globalRebootClient.addRequestCompletionCallback(cb);
 	}
 
 	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, DatabaseDisabledException {
