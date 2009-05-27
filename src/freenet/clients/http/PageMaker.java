@@ -208,7 +208,7 @@ public final class PageMaker {
 					String navigationPath = menu.navigationLinks.get(navigationLink);
 					HTMLNode sublistItem;
 					if(activePath.equals(navigationPath)) {
-						sublistItem = subnavlist.addChild("li", "id", "submenuitem-selected");
+						sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
 						isSelected = true;
 					} else {
 						sublistItem = subnavlist.addChild("li");
@@ -243,7 +243,7 @@ public final class PageMaker {
 					String navigationPath = selected.navigationLinks.get(navigationLink);
 					HTMLNode sublistItem;
 					if(activePath.equals(navigationPath)) {
-						sublistItem = subnavlist.addChild("li", "id", "submenuitem-selected");
+						sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
 					} else {
 						sublistItem = subnavlist.addChild("li");
 					}
