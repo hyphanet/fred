@@ -908,6 +908,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		QueueToadlet uploadToadlet = new QueueToadlet(core, core.getFCPServer(), client, true);
 		server.register(uploadToadlet, "FProxyToadlet.categoryQueue", "/uploads/", true, "FProxyToadlet.uploadsTitle", "FProxyToadlet.uploads", false, uploadToadlet);
 		
+		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
+		server.register(symlinkToadlet, null, "/sl/", true, false);
+		
 		SecurityLevelsToadlet seclevels = new SecurityLevelsToadlet(client, node, core);
 		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true, "FProxyToadlet.seclevelsTitle", "FProxyToadlet.seclevels", true, null);
 
@@ -926,9 +929,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
-		
-		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
-		server.register(symlinkToadlet, null, "/sl/", true, false);
 		
 		
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
