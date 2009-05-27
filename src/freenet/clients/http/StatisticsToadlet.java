@@ -141,8 +141,9 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfConnError = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();
@@ -171,8 +172,7 @@ public class StatisticsToadlet extends Toadlet {
 		drawJVMStatsBox(jvmStatsInfobox);
 		
 		// Statistic gathering box
-		HTMLNode statGatheringBox =  nextTableCell.addChild(ctx.getPageMaker().getInfobox(l10n("statisticGatheringTitle")));
-		HTMLNode statGatheringContent = ctx.getPageMaker().getContentNode(statGatheringBox);
+		HTMLNode statGatheringContent = ctx.getPageMaker().getInfobox("#", l10n("statisticGatheringTitle"), nextTableCell);
 		// Generate a Thread-Dump
 		if(node.isUsingWrapper()){
 			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringContent, "/", "threadDumpForm");

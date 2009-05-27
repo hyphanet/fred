@@ -263,10 +263,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				boolean displayFailureBox = failure.size() > 0;
 				boolean displaySuccessBox = success.size() > 0;
 				
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("QueueToadlet.downloadFiles"), ctx);
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				HTMLNode alertNode = contentNode.addChild(ctx.getPageMaker().getInfobox((displayFailureBox ? "infobox-warning" : "infobox-info"), L10n.getString("QueueToadlet.downloadFiles")));
-				HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
+				PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("QueueToadlet.downloadFiles"), ctx);
+				HTMLNode pageNode = page.outer;
+				HTMLNode contentNode = page.content;
+				HTMLNode alertContent = ctx.getPageMaker().getInfobox((displayFailureBox ? "infobox-warning" : "infobox-info"), L10n.getString("QueueToadlet.downloadFiles"), contentNode);
 				Iterator<String> it;
 				if(displaySuccessBox) {
 					HTMLNode successDiv = alertContent.addChild("ul");
@@ -611,12 +611,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	
 	private void writeError(String header, String message, ToadletContext context, boolean returnToQueuePage) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode(header, context);
-		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+		PageNode page = pageMaker.getPageNode(header, context);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		if(context.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", header));
-		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+		HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
 			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
@@ -697,13 +697,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							System.err.println("Total waiting CHKs: "+queued);
 							long reallyQueued = core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container);
 							System.err.println("Total queued CHK requests: "+reallyQueued);
-							pageNode = pageMaker.getPageNode(L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
-							HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+							PageNode page = pageMaker.getPageNode(L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
+							pageNode = page.outer;
+							HTMLNode contentNode = page.content;
 							/* add alert summary box */
 							if(ctx.isAllowedFullAccess())
 								contentNode.addChild(core.alerts.createSummary());
-							HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Queued requests status"));
-							HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+							HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", "Queued requests status", contentNode);
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
 							return false;
@@ -778,13 +778,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
-			HTMLNode pageNode = pageMaker.getPageNode(L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
-			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+			PageNode page = pageMaker.getPageNode(L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			/* add alert summary box */
 			if(ctx.isAllowedFullAccess())
 				contentNode.addChild(core.alerts.createSummary());
-			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty")));
-			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty"), contentNode);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
 			contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
 			contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
@@ -904,12 +904,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		Collections.sort(uncompletedUpload, jobComparator);
 		Collections.sort(uncompletedDirUpload, jobComparator);
 		
-		HTMLNode pageNode = pageMaker.getPageNode("(" + (uncompletedDirUpload.size() + uncompletedDownload.size()
+		PageNode page = 
+			pageMaker.getPageNode("(" + (uncompletedDirUpload.size() + uncompletedDownload.size()
 				+ uncompletedUpload.size()) + '/' + (failedDirUpload.size() + failedDownload.size() + failedUpload.size()) + '/'
                 + (completedDirUpload.size() + completedDownloadToDisk.size() + completedDownloadToTemp.size()
 				+ completedUpload.size()) + ") " +
 				L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
-		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
@@ -919,8 +921,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
 
 		/* navigation bar */
-		HTMLNode navigationBar = pageMaker.getInfobox("navbar", L10n.getString("QueueToadlet.requestNavigation"));
-		HTMLNode navigationContent = pageMaker.getContentNode(navigationBar).addChild("ul");
+		InfoboxNode infobox = pageMaker.getInfobox("navbar", L10n.getString("QueueToadlet.requestNavigation"));
+		HTMLNode navigationBar = infobox.outer;
+		HTMLNode navigationContent = infobox.content.addChild("ul");
 		boolean includeNavigationBar = false;
 		if (!completedDownloadToTemp.isEmpty()) {
 			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToTemp", L10n.getString("QueueToadlet.completedDtoTemp", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) }));
@@ -987,8 +990,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		boolean advancedModeEnabled = (mode >= PageMaker.MODE_ADVANCED);
 
-		HTMLNode legendBox = contentNode.addChild(pageMaker.getInfobox("legend", L10n.getString("QueueToadlet.legend")));
-		HTMLNode legendContent = pageMaker.getContentNode(legendBox);
+		HTMLNode legendContent = pageMaker.getInfobox("legend", L10n.getString("QueueToadlet.legend"), contentNode);
 		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
 		HTMLNode legendRow = legendTable.addChild("tr");
 		for(int i=0; i<7; i++){
@@ -1002,8 +1004,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		if (!completedDownloadToTemp.isEmpty()) {
 			contentNode.addChild("a", "id", "completedDownloadToTemp");
-			HTMLNode completedDownloadsTempInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinTempDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) })));
-			HTMLNode completedDownloadsToTempContent = pageMaker.getContentNode(completedDownloadsTempInfobox);
+			HTMLNode completedDownloadsToTempContent = pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinTempDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
 			} else {
@@ -1013,8 +1014,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		if (!completedDownloadToDisk.isEmpty()) {
 			contentNode.addChild("a", "id", "completedDownloadToDisk");
-			HTMLNode completedToDiskInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinDownloadDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToDisk.size()) })));
-			HTMLNode completedToDiskInfoboxContent = pageMaker.getContentNode(completedToDiskInfobox);
+			HTMLNode completedToDiskInfoboxContent = pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinDownloadDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToDisk.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
 			} else {
@@ -1024,8 +1024,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		if (!completedUpload.isEmpty()) {
 			contentNode.addChild("a", "id", "completedUpload");
-			HTMLNode completedUploadInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) })));
-			HTMLNode completedUploadInfoboxContent = pageMaker.getContentNode(completedUploadInfobox);
+			HTMLNode completedUploadInfoboxContent = pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			} else  {
@@ -1035,8 +1034,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		if (!completedDirUpload.isEmpty()) {
 			contentNode.addChild("a", "id", "completedDirUpload");
-			HTMLNode completedUploadDirInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedUDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) })));
-			HTMLNode completedUploadDirContent = pageMaker.getContentNode(completedUploadDirInfobox);
+			HTMLNode completedUploadDirContent = pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedUDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			} else {
@@ -1046,8 +1044,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				
 		if (!failedDownload.isEmpty()) {
 			contentNode.addChild("a", "id", "failedDownload");
-			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedD", new String[]{ "size" }, new String[]{ String.valueOf(failedDownload.size()) })));
-			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
+			HTMLNode failedContent = pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedD", new String[]{ "size" }, new String[]{ String.valueOf(failedDownload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
 			} else {
@@ -1057,8 +1054,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		if (!failedUpload.isEmpty()) {
 			contentNode.addChild("a", "id", "failedUpload");
-			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedUpload.size()) })));
-			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
+			HTMLNode failedContent = pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedUpload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			} else {
@@ -1068,8 +1064,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		if (!failedDirUpload.isEmpty()) {
 			contentNode.addChild("a", "id", "failedDirUpload");
-			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedDirUpload.size()) })));
-			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
+			HTMLNode failedContent = pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedDirUpload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			} else {
@@ -1079,8 +1074,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		if (!uncompletedDownload.isEmpty()) {
 			contentNode.addChild("a", "id", "uncompletedDownload");
-			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipD", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDownload.size()) })));
-			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
+			HTMLNode uncompletedContent = pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipD", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDownload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
 			} else {
@@ -1090,8 +1084,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		if (!uncompletedUpload.isEmpty()) {
 			contentNode.addChild("a", "id", "uncompletedUpload");
-			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedUpload.size()) })));
-			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
+			HTMLNode uncompletedContent = pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedUpload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			} else {
@@ -1101,8 +1094,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		if (!uncompletedDirUpload.isEmpty()) {
 			contentNode.addChild("a", "id", "uncompletedDirUpload");
-			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipDU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDirUpload.size()) })));
-			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
+			HTMLNode uncompletedContent = pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipDU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDirUpload.size()) }), contentNode);
 			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			} else {
@@ -1223,8 +1215,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
-		HTMLNode panicBox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
-		HTMLNode panicForm = ctx.addFormChild(pageMaker.getContentNode(panicBox), "/queue/", "queuePanicForm");
+		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
+		HTMLNode panicBox = infobox.outer;
+		HTMLNode panicForm = ctx.addFormChild(infobox.content, "/queue/", "queuePanicForm");
 		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + ' '));
 		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", L10n.getString("QueueToadlet.remove") });
 		return panicBox;
@@ -1294,8 +1287,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	
 	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
 		/* the insert file box */
-		HTMLNode insertBox = pageMaker.getInfobox(L10n.getString("QueueToadlet.insertFile"));
-		HTMLNode insertContent = pageMaker.getContentNode(insertBox);
+		InfoboxNode infobox = pageMaker.getInfobox(L10n.getString("QueueToadlet.insertFile"));
+		HTMLNode insertBox = infobox.outer;
+		HTMLNode insertContent = infobox.content;
 		HTMLNode insertForm = ctx.addFormChild(insertContent, "/queue/", "queueInsertForm");
 		insertForm.addChild("#", (L10n.getString("QueueToadlet.insertAs") + ' '));
 		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
@@ -1325,8 +1319,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	private HTMLNode createBulkDownloadForm(ToadletContext ctx, PageMaker pageMaker) {
-		HTMLNode downloadBox = pageMaker.getInfobox(L10n.getString("QueueToadlet.downloadFiles"));
-		HTMLNode downloadBoxContent = pageMaker.getContentNode(downloadBox);
+		InfoboxNode infobox = pageMaker.getInfobox(L10n.getString("QueueToadlet.downloadFiles"));
+		HTMLNode downloadBox = infobox.outer;
+		HTMLNode downloadBoxContent = infobox.content;
 		HTMLNode downloadForm = ctx.addFormChild(downloadBoxContent, "/queue/", "queueDownloadForm");
 		downloadForm.addChild("#", L10n.getString("QueueToadlet.downloadFilesInstructions"));
 		downloadForm.addChild("br");

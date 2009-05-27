@@ -47,9 +47,10 @@ public class N2NTMToadlet extends Toadlet {
 		}
 
 		if (request.isParameterSet("peernode_hashcode")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(
+			PageNode page = ctx.getPageMaker().getPageNode(
 					l10n("sendMessage"), ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 
 			String peernode_name = null;
 			String input_hashcode_string = request
@@ -141,9 +142,10 @@ public class N2NTMToadlet extends Toadlet {
 						l10n("tooLong"));
 				return;
 			}
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(
+			PageNode page =  ctx.getPageMaker().getPageNode(
 					l10n("processingSend"), ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class",
 					"infobox infobox-normal");
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();

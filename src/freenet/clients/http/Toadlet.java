@@ -70,8 +70,9 @@ public abstract class Toadlet {
 	}
 	
 	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
-		HTMLNode pageNode = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
-		HTMLNode contentNode = toadletContext.getPageMaker().getContentNode(pageNode);
+		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
 		infobox.addChild("div", "class", "infobox-header", l10n("notSupportedTitle"));
@@ -221,11 +222,11 @@ public abstract class Toadlet {
 	 * Send a slightly more complex error page.
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, HTMLNode message) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
-		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
-		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode);
 		infoboxContent.addChild(message);
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
@@ -245,11 +246,11 @@ public abstract class Toadlet {
 	 * @throws ToadletContextClosedException If the context has already been closed.
 	 */
 	protected void sendErrorPage(ToadletContext ctx, String desc, String message, Throwable t) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc, ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
-		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
-		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode);
 		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("br");
 		StringWriter sw = new StringWriter();

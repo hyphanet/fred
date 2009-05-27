@@ -73,11 +73,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
 		if(!core.allowUploadFrom(thisPath)) {
-			HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()), toadletContext);
-			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
-			HTMLNode infoboxE = contentNode.addChild(pageMaker.getInfobox("infobox-error",  "Forbidden"));
-			HTMLNode infoboxEContent = pageMaker.getContentNode(infoboxE);
-			infoboxEContent.addChild("#", l10n("dirAccessDenied"));
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()), toadletContext);
+			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content).
+				addChild("#", l10n("dirAccessDenied"));
 
 			thisPath = currentPath;
 			if(!core.allowUploadFrom(thisPath)) {
@@ -100,8 +98,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 			// Known safe at this point
 			currentPath = thisPath;
 
-			pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
-			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
+			pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())
 				contentNode.addChild(core.alerts.createSummary());
 			
@@ -182,8 +181,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 				}
 			}
 		} else {
-			pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
-			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
+			pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())
 				contentNode.addChild(core.alerts.createSummary());
 			

@@ -145,8 +145,9 @@ public class ConfigToadlet extends Toadlet {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
 						if(warning != null) {
 							if(pageNode == null) {
-								pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-								content = ctx.getPageMaker().getContentNode(pageNode);
+								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+								pageNode = page.outer;
+								content = page.content;
 								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
 								ul = formNode.addChild("ul", "class", "config");
 							}
@@ -182,8 +183,9 @@ public class ConfigToadlet extends Toadlet {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newFriendsLevel, confirm);
 						if(warning != null) {
 							if(pageNode == null) {
-								pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-								content = ctx.getPageMaker().getContentNode(pageNode);
+								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+								pageNode = page.outer;
+								content = page.content;
 								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
 								ul = formNode.addChild("ul", "class", "config");
 							}
@@ -284,12 +286,12 @@ public class ConfigToadlet extends Toadlet {
 		}
 		core.storeConfig();
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		if (errbuf.length() == 0) {
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle")));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle"), contentNode);
 			content.addChild("#", l10n("appliedSuccess"));
 			
 			if (needRestart) {
@@ -314,15 +316,14 @@ public class ConfigToadlet extends Toadlet {
 				}
 			}
 		} else {
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle")));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox).addChild("div", "class", "infobox-content");
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle"), contentNode).
+				addChild("div", "class", "infobox-content");
 			content.addChild("#", l10n("appliedFailureExceptions"));
 			content.addChild("br");
 			content.addChild("#", errbuf.toString());
 		}
 		
-		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle")));
-		HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle"), contentNode);
 		content.addChild("a", new String[]{"href", "title"}, new String[]{".", l10n("shortTitle")}, l10n("returnToNodeConfig"));
 		content.addChild("br");
 		addHomepageLink(content);
@@ -348,8 +349,9 @@ public class ConfigToadlet extends Toadlet {
 		SubConfig[] sc = config.getConfigs();
 		Arrays.sort(sc);
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
@@ -360,8 +362,7 @@ public class ConfigToadlet extends Toadlet {
 		} else {
 		
 		if(mode >= PageMaker.MODE_ADVANCED){
-			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
-			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
+			HTMLNode navigationContent = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"), contentNode).addChild("ul");
 			if(!L10n.getSelectedLanguage().equals(L10n.LANGUAGE.getDefault()))
 				navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
 			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
@@ -372,7 +373,6 @@ public class ConfigToadlet extends Toadlet {
 				if(sc[i].getPrefix().equals("security-levels")) continue;
 				nextTableCell.addChild("td", "class", "config_navigation").addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), l10n(sc[i].getPrefix()));
 			}
-			contentNode.addChild(navigationBar);
 		}
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");

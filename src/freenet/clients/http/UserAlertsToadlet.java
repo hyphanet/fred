@@ -41,8 +41,9 @@ public class UserAlertsToadlet extends Toadlet {
 			return;
 		}
 		
-        HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
-        HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
+        HTMLNode pageNode = page.outer;
+        HTMLNode contentNode = page.content;
         contentNode.addChild(alerts.createAlerts());
         
         writeHTMLReply(ctx, 200, "OK", pageNode.generate());

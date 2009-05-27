@@ -235,8 +235,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
@@ -582,8 +583,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				results.put(result, results.get(result)+1);
 			}
 			
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			
 			//We create a table to show the results
 			HTMLNode detailedStatusBox=new HTMLNode("table");
@@ -598,8 +600,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition")));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition"), contentNode);
 			infoboxContent.addChild(detailedStatusBox);
 			infoboxContent.addChild("br");
 			infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));

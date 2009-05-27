@@ -30,19 +30,18 @@ public class StartupToadlet extends Toadlet {
 			staticToadlet.handleGet(uri, req, ctx);
 		else {
 			String desc = L10n.getString("StartupToadlet.title");
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc, false, ctx);
-			HTMLNode headNode = ctx.getPageMaker().getHeadNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(desc, false, ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode headNode = page.headNode;
 			headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode contentNode = page.content;
 
 			if(!isPRNGReady) {
-				HTMLNode prngInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("StartupToadlet.entropyErrorTitle")));
-				HTMLNode prngInfoboxContent = ctx.getPageMaker().getContentNode(prngInfobox);
+				HTMLNode prngInfoboxContent = ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("StartupToadlet.entropyErrorTitle"), contentNode);
 				prngInfoboxContent.addChild("#", L10n.getString("StartupToadlet.entropyErrorContent"));
 			}
 
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode);
 			infoboxContent.addChild("#", L10n.getString("StartupToadlet.isStartingUp"));
 
 			WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);

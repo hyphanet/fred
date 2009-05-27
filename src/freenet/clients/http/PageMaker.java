@@ -69,8 +69,6 @@ public final class PageMaker {
 	private final List<String> navigationLinkTextsNonFull = new ArrayList<String>();
 	private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
 	private final Map<String, String> navigationLinks = new HashMap<String, String>();
-	private final Map<HTMLNode, HTMLNode> contentNodes = new HashMap<HTMLNode, HTMLNode>();
-	private final Map<HTMLNode, HTMLNode> headNodes = new HashMap<HTMLNode, HTMLNode>();
 	private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
 	
 	private final FredPluginL10n plugin; 
@@ -144,11 +142,11 @@ public final class PageMaker {
 		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", name }, name);
 	}
 	
-	public HTMLNode getPageNode(String title, ToadletContext ctx) {
+	public PageNode getPageNode(String title, ToadletContext ctx) {
 		return getPageNode(title, true, ctx);
 	}
 
-	public HTMLNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
+	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage().isoCode);
@@ -184,55 +182,29 @@ public final class PageMaker {
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
-		headNodes.put(pageNode, headNode);
-		contentNodes.put(pageNode, contentDiv);
-		return pageNode;
+		return new PageNode(pageNode, headNode, contentDiv);
 	}
 
-	/**
-	 * Returns the head node belonging to the given page node. This method has
-	 * to be called before {@link #getContentNode(HTMLNode)}!
-	 * 
-	 * @param pageNode
-	 *            The page node to retrieve the head node for
-	 * @return The head node, or <code>null</code> if <code>pageNode</code>
-	 *         is not a valid page node or {@link #getContentNode(HTMLNode)} has
-	 *         already been called
-	 */
-	public HTMLNode getHeadNode(HTMLNode pageNode) {
-		return headNodes.remove(pageNode);
-	}
-
-	/**
-	 * Returns the content node that belongs to the specified node. The node has
-	 * to be a node that was earlier retrieved by a call to one of the
-	 * {@link #getPageNode(String, ToadletContext)} or
-	 * {@link #getInfobox(String, String)} methods!
-	 * <p>
-	 * <strong>Warning:</strong> this method can only be called once!
-	 * 
-	 * @param node
-	 *            The page node to get the content node for
-	 * @return The content node for the specified page node
-	 */
-	public HTMLNode getContentNode(HTMLNode node) {
-		headNodes.remove(node);
-		return contentNodes.remove(node);
-	}
-	
-	public HTMLNode getInfobox(String header) {
+	public InfoboxNode getInfobox(String header) {
 		if (header == null) throw new NullPointerException();
 		return getInfobox(new HTMLNode("#", header));
 	}
 	
-	public HTMLNode getInfobox(HTMLNode header) {
+	public InfoboxNode getInfobox(HTMLNode header) {
 		if (header == null) throw new NullPointerException();
 		return getInfobox(null, header);
 	}
 
-	public HTMLNode getInfobox(String category, String header) {
+	public InfoboxNode getInfobox(String category, String header) {
 		if (header == null) throw new NullPointerException();
 		return getInfobox(category, new HTMLNode("#", header));
+	}
+
+	/** Create an infobox, attach it to the given parent, and return the content node. */
+	public HTMLNode getInfobox(String category, String header, HTMLNode parent) {
+		InfoboxNode node = getInfobox(category, header);
+		parent.addChild(node.outer);
+		return node.content;
 	}
 
 	/**
@@ -247,12 +219,11 @@ public final class PageMaker {
 	 *            The header HTML node
 	 * @return The infobox
 	 */
-	public HTMLNode getInfobox(String category, HTMLNode header) {
+	public InfoboxNode getInfobox(String category, HTMLNode header) {
 		if (header == null) throw new NullPointerException();
 		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (' ' + category)));
 		infobox.addChild("div", "class", "infobox-header").addChild(header);
-		contentNodes.put(infobox, infobox.addChild("div", "class", "infobox-content"));
-		return infobox;
+		return new InfoboxNode(infobox, infobox.addChild("div", "class", "infobox-content"));
 	}
 	
 	private HTMLNode getOverrideContent() {
