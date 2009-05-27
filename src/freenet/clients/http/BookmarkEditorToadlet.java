@@ -377,4 +377,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 	public String supportedMethods() {
 		return "GET, POST";
 	}
+
+	@Override
+	public String path() {
+		return "/bookmarkEditor/";
+	}
 }

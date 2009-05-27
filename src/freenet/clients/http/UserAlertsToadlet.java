@@ -52,5 +52,10 @@ public class UserAlertsToadlet extends Toadlet {
 	protected String l10n(String name, String pattern, String value) {
 		return L10n.getString("UserAlertsToadlet."+name, pattern, value);
 	}
+
+	@Override
+	public String path() {
+		return "/alerts/";
+	}
 	
 }

@@ -1713,4 +1713,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return (!container.publicGatewayMode()) || ctx.isAllowedFullAccess();
 	}
 
+	@Override
+	public String path() {
+		return "/queue/";
+	}
+
 }

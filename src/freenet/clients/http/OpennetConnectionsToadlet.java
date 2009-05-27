@@ -145,5 +145,10 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 					}
 				}};
 	}
+
+	@Override
+	public String path() {
+		return "/strangers/";
+	}
 		
 }

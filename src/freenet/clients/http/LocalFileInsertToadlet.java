@@ -217,4 +217,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 		return "GET,POST";
 	}
 
+	@Override
+	public String path() {
+		return "/files/";
+	}
+
 }

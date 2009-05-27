@@ -220,4 +220,9 @@ public class BrowserTestToadlet extends Toadlet {
 		return "GET";
 	}
 
+	@Override
+	public String path() {
+		return "/test/";
+	}
+
 }

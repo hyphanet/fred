@@ -282,4 +282,9 @@ public class TranslationToadlet extends Toadlet {
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("TranslationToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
+
+	@Override
+	public String path() {
+		return TOADLET_URL;
+	}
 }

@@ -643,4 +643,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return shortSize;
 		}
 	}
+
+	@Override
+	public String path() {
+		return TOADLET_URL;
+	}
 }

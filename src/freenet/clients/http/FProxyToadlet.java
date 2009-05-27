@@ -993,5 +993,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public String path() {
+		return "/";
+	}
 	
 }

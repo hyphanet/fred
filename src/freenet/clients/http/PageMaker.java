@@ -162,6 +162,9 @@ public final class PageMaker {
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
 		
+		Toadlet t = ctx.activeToadlet();
+		String activePath = "";
+		if(t != null) activePath = t.path();
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
@@ -174,7 +177,11 @@ public final class PageMaker {
 				if(cb != null && !cb.isEnabled(ctx)) continue;
 				String navigationTitle = navigationLinkTitles.get(navigationLink);
 				String navigationPath = navigationLinks.get(navigationLink);
-				HTMLNode listItem = navbarUl.addChild("li");
+				HTMLNode listItem;
+				if(activePath.equals(navigationPath))
+					listItem = navbarUl.addChild("li", "id", "navlist-selected");
+				else
+					listItem = navbarUl.addChild("li");
 				if (plugin != null)
 					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
 				else

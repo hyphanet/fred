@@ -268,4 +268,9 @@ public class N2NTMToadlet extends Toadlet {
 		messageForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "submit", "send", l10n("sendMessageShort") });
 	}
+
+	@Override
+	public String path() {
+		return "/send_n2ntm/";
+	}
 }

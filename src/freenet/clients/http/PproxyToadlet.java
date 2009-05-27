@@ -508,4 +508,9 @@ public class PproxyToadlet extends Toadlet {
 		addFreenetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-freenet", l10n("Load") });
 	}
 
+	@Override
+	public String path() {
+		return "/plugins/";
+	}
+
 }

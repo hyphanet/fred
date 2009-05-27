@@ -399,4 +399,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return null;
 	}
 
+	@Override
+	public String path() {
+		return "/friends/";
+	}
+
 }

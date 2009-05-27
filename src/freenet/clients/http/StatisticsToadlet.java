@@ -1276,4 +1276,9 @@ public class StatisticsToadlet extends Toadlet {
 		//
 		return "position: absolute; top: " + fix3p1US.format(y) + "px; left: " + fix3p1US.format(x) + "px";
 	}
+
+	@Override
+	public String path() {
+		return "/stats/";
+	}
 }

@@ -650,4 +650,10 @@ public class WelcomeToadlet extends Toadlet {
             } catch(IOException e) {}
         }
     }
+
+	@Override
+	public String path() {
+		// So it matches "Browse Freenet" on the menu
+		return "/";
+	}
 }

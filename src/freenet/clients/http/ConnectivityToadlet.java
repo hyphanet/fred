@@ -175,4 +175,9 @@ public class ConnectivityToadlet extends Toadlet {
 	private String l10n(String key) {
 		return L10n.getString("ConnectivityToadlet."+key);
 	}
+
+	@Override
+	public String path() {
+		return "/connectivity/";
+	}
 }

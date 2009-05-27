@@ -59,4 +59,9 @@ public class StartupToadlet extends Toadlet {
 	public void setIsPRNGReady() {
 		isPRNGReady = true;
 	}
+
+	@Override
+	public String path() {
+		return "/";
+	}
 }

@@ -594,4 +594,9 @@ public class ConfigToadlet extends Toadlet {
 		
 		return result;
 	}
+
+	@Override
+	public String path() {
+		return "/config/";
+	}
 }

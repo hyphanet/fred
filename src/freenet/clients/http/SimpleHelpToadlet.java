@@ -79,5 +79,10 @@ public class SimpleHelpToadlet extends Toadlet {
 	public String supportedMethods() {
 		return "GET";
 	}
+
+	@Override
+	public String path() {
+		return "/help/";
+	}
 	
 }

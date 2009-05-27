@@ -46,6 +46,8 @@ import freenet.support.api.HTTPRequest;
  */
 public abstract class Toadlet {
 
+	public abstract String path();
+	
 	protected Toadlet(HighLevelSimpleClient client) {
 		this.client = client;
 	}
