@@ -896,6 +896,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		QueueToadlet uploadToadlet = new QueueToadlet(core, core.getFCPServer(), client, true);
 		server.register(uploadToadlet, "FProxyToadlet.categoryQueue", "/uploads/", true, "FProxyToadlet.uploadsTitle", "FProxyToadlet.uploads", false, uploadToadlet);
 		
+		SecurityLevelsToadlet seclevels = new SecurityLevelsToadlet(client, node, core);
+		server.register(seclevels, "FProxyToadlet.categoryConfig", "/seclevels/", true, "FProxyToadlet.seclevelsTitle", "FProxyToadlet.seclevels", true, null);
+		
 		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
 		server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
 		
