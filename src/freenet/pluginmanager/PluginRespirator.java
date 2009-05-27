@@ -4,6 +4,7 @@ import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
+import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.filter.FilterCallback;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -22,10 +23,11 @@ public class PluginRespirator {
 		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 		this.plugin = plug;
 		this.pluginManager = pm;
-		if (plugin instanceof FredPluginL10n)
-			pageMaker = new PageMaker((FredPluginL10n)plugin, pluginManager.getFProxyTheme());
-		else
-			pageMaker = new PageMaker(null, pluginManager.getFProxyTheme());
+//		if (plugin instanceof FredPluginL10n)
+//			pageMaker = new PageMaker((FredPluginL10n)plugin, pluginManager.getFProxyTheme());
+//		else
+//			pageMaker = new PageMaker(null, pluginManager.getFProxyTheme());
+		pageMaker = null; // FIXME!
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {
@@ -46,7 +48,9 @@ public class PluginRespirator {
 	}
 	
 	public PageMaker getPageMaker(){
-		return pageMaker;
+		ToadletContainer container = node.clientCore.getToadletContainer();
+		if(container == null) return null;
+		return container.getPageMaker();
 	}
 	
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {

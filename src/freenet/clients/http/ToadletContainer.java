@@ -19,7 +19,7 @@ public interface ToadletContainer {
 	 * @param atFront If true, add to front of list (where is checked first),
 	 * else add to back of list (where is checked last).
 	 */
-	public void register(Toadlet t, String urlPrefix, boolean atFront, boolean fullAccessOnly);
+	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullAccessOnly);
 
 	/**
 	 * Find a Toadlet by URI.
@@ -68,4 +68,6 @@ public interface ToadletContainer {
 	public boolean isFProxyJavascriptEnabled();
 
 	public boolean disableProgressPage();
+
+	public PageMaker getPageMaker();
 }

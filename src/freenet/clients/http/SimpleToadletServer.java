@@ -534,11 +534,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		// Register static toadlet and startup toadlet
 		
 		StaticToadlet statictoadlet = new StaticToadlet();
-		register(statictoadlet, "/static/", false, false);
+		register(statictoadlet, null, "/static/", false, false);
 		
 		// "Freenet is starting up..." page, to be removed at #removeStartupToadlet()
 		startupToadlet = new StartupToadlet(statictoadlet);
-		register(startupToadlet, "/", false, false);
+		register(startupToadlet, null, "/", false, false);
 	}
 	
 	public StartupToadlet startupToadlet;
@@ -578,18 +578,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	public void register(Toadlet t, String urlPrefix, boolean atFront, boolean fullOnly) {
-		register(t, urlPrefix, atFront, null, null, fullOnly, null);
+	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullOnly) {
+		register(t, menu, urlPrefix, atFront, null, null, fullOnly, null);
 	}
 	
-	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		ToadletElement te = new ToadletElement(t, urlPrefix);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
 		if (name != null) {
-			pageMaker.addNavigationLink(urlPrefix, name, title, fullOnly, cb);
+			pageMaker.addNavigationLink(menu, urlPrefix, name, title, fullOnly, cb);
 		}
+	}
+	
+	public void registerMenu(String link, String name, String title) {
+		pageMaker.addNavigationCategory(link, name, title);
 	}
 
 	public synchronized void unregister(Toadlet t) {
@@ -789,6 +793,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public boolean disableProgressPage() {
 		return disableProgressPage;
+	}
+
+
+
+	public PageMaker getPageMaker() {
+		return pageMaker;
 	}
 
 }

@@ -878,57 +878,68 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		core.random.nextBytes(random);
 		FProxyToadlet fproxy = new FProxyToadlet(client, core);
 		core.setFProxy(fproxy);
-		server.register(fproxy, "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
+		
+		server.registerMenu("/", "FProxyToadlet.categoryBrowsing", "FProxyToadlet.categoryTitleBrowsing");
+		
+		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
+		
+		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus");
 		
 		UserAlertsToadlet alerts = new UserAlertsToadlet(client, node, core);
-		server.register(alerts, "/alerts/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
+		server.register(alerts, "FProxyToadlet.categoryStatus", "/alerts/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
 
+		server.registerMenu("/queue/", "FProxyToadlet.categoryQueue", "FProxyToadlet.categoryTitleQueue");
+		
 		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-		server.register(queueToadlet, "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
+		server.register(queueToadlet, "FProxyToadlet.categoryQueue", "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
+		
+		server.registerMenu("/config/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig");
 		
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
-		server.register(pproxy, "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
+		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
 		
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
-		server.register(welcometoadlet, "/welcome/", true, false);
+		server.register(welcometoadlet, null, "/welcome/", true, false);
 		
 		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
-		server.register(symlinkToadlet, "/sl/", true, false);
+		server.register(symlinkToadlet, null, "/sl/", true, false);
+		
+		server.registerMenu("/friends/", "FProxyToadlet.categoryFriends", "FProxyToadlet.categoryTitleFriends");
 		
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
-		server.register(friendsToadlet, "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
+		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
 		
 		OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
-		server.register(opennetToadlet, "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
+		server.register(opennetToadlet, "FProxyToadlet.categoryStatus", "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 		
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
-		server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
+		server.register(n2ntmToadlet, null, "/send_n2ntm/", true, true);
 		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
-		server.register(localFileInsertToadlet, "/files/", true, false);
+		server.register(localFileInsertToadlet, null, "/files/", true, false);
 		
 		BookmarkEditorToadlet bookmarkEditorToadlet = new BookmarkEditorToadlet(client, core, bookmarks);
-		server.register(bookmarkEditorToadlet, "/bookmarkEditor/", true, false);
+		server.register(bookmarkEditorToadlet, null, "/bookmarkEditor/", true, false);
 		
 		BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
-		server.register(browsertTestToadlet, "/test/", true, false);
+		server.register(browsertTestToadlet, null, "/test/", true, false);
 			
 		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-		server.register(statisticsToadlet, "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
+		server.register(statisticsToadlet, "FProxyToadlet.categoryStatus", "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
 		
 		ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node, core);
-		server.register(connectivityToadlet, "/connectivity/", true, "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
+		server.register(connectivityToadlet, "FProxyToadlet.categoryStatus", "/connectivity/", true, "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
 		
 		TranslationToadlet translationToadlet = new TranslationToadlet(client, core);
-		server.register(translationToadlet, TranslationToadlet.TOADLET_URL, true, true);
+		server.register(translationToadlet, null, TranslationToadlet.TOADLET_URL, true, true);
 		
 		FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
-		server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
+		server.register(firstTimeWizardToadlet, null, FirstTimeWizardToadlet.TOADLET_URL, true, false);
 		
 		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-		server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
+		server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
 		
 		SimpleHelpToadlet simpleHelpToadlet = new SimpleHelpToadlet(client, core);
-		server.register(simpleHelpToadlet, "/help/", true, false);
+		server.register(simpleHelpToadlet, null, "/help/", true, false);
 		
 	}
 	

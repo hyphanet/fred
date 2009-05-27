@@ -10,7 +10,6 @@ import java.util.Map;
 
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
-import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -65,25 +64,59 @@ public final class PageMaker {
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
 	private File override;
-	private final List<String> navigationLinkTexts = new ArrayList<String>();
-	private final List<String> navigationLinkTextsNonFull = new ArrayList<String>();
-	private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
-	private final Map<String, String> navigationLinks = new HashMap<String, String>();
-	private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
 	
-	private final FredPluginL10n plugin; 
-	private final boolean pluginMode;
+	private Map<String, SubMenu> subMenus = new HashMap<String, SubMenu>();
 	
-	public PageMaker(FredPluginL10n plug, THEME t) {
-		setTheme(t);
-		plugin = plug;
-		pluginMode = true;
+	private class SubMenu {
+		
+		/** Name of the submenu */
+		private final String navigationLinkText;
+		/** Link if the user clicks on the submenu itself */
+		private final String defaultNavigationLink;
+		/** Tooltip */
+		private final String defaultNavigationLinkTitle;
+		
+		private final List<String> navigationLinkTexts = new ArrayList<String>();
+		private final List<String> navigationLinkTextsNonFull = new ArrayList<String>();
+		private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
+		private final Map<String, String> navigationLinks = new HashMap<String, String>();
+		private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
+		
+		public SubMenu(String link, String name, String title) {
+			this.navigationLinkText = name;
+			this.defaultNavigationLink = link;
+			this.defaultNavigationLinkTitle = title;
+		}
+
+		public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+			navigationLinkTexts.add(name);
+			if(!fullOnly)
+				navigationLinkTextsNonFull.add(name);
+			navigationLinkTitles.put(name, title);
+			navigationLinks.put(name, path);
+			if(cb != null)
+				navigationLinkCallbacks.put(name, cb);
+		}
+
+		@Deprecated
+		public void removeNavigationLink(String name) {
+			navigationLinkTexts.remove(name);
+			navigationLinkTextsNonFull.remove(name);
+			navigationLinkTitles.remove(name);
+			navigationLinks.remove(name);
+		}
+
+		@Deprecated
+		public void removeAllNavigationLinks() {
+			navigationLinkTexts.clear();
+			navigationLinkTextsNonFull.clear();
+			navigationLinkTitles.clear();
+			navigationLinks.clear();
+		}
 	}
 	
 	protected PageMaker(THEME t) {
 		setTheme(t);
-		plugin = null;
-		pluginMode = false;
 	}
 	
 	void setOverride(File f) {
@@ -101,37 +134,27 @@ public final class PageMaker {
 				this.theme = theme2;
 		}
 	}
-        	
-	public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
-		if (pluginMode && (plugin == null)) {
-			// FIXME invent a check on compile time
-			// log only
-			Logger.error(this, "Deprecated way to use Pagemaker from plugin, your plugin need to implement FredPluginL10n to do so", new Error("FIXME"));
-		}
-		navigationLinkTexts.add(name);
-		if(!fullOnly)
-			navigationLinkTextsNonFull.add(name);
-		navigationLinkTitles.put(name, title);
-		navigationLinks.put(name, path);
-		if(cb != null)
-			navigationLinkCallbacks.put(name, cb);
+
+	public void addNavigationCategory(String link, String name, String title) {
+		subMenus.put(name, new SubMenu(link, name, title));
+	}
+	
+	public void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+		SubMenu menu = subMenus.get(menutext);
+		menu.addNavigationLink(path, name, title, fullOnly, cb);
 	}
 	
 	/* FIXME: Implement a proper way for chosing what the menu looks like upon handleHTTPGet/Post */
 	@Deprecated
-	public void removeNavigationLink(String name) {
-		navigationLinkTexts.remove(name);
-		navigationLinkTextsNonFull.remove(name);
-		navigationLinkTitles.remove(name);
-		navigationLinks.remove(name);
+	public void removeNavigationLink(String menutext, String name) {
+		SubMenu menu = subMenus.get(menutext);
+		menu.removeNavigationLink(name);
 	}
 	
 	@Deprecated
 	public void removeAllNavigationLinks() {
-		navigationLinkTexts.clear();
-		navigationLinkTextsNonFull.clear();
-		navigationLinkTitles.clear();
-		navigationLinks.clear();
+		for(SubMenu menu : subMenus.values())
+			menu.removeAllNavigationLinks();
 	}
 	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
@@ -170,22 +193,64 @@ public final class PageMaker {
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 		topBarDiv.addChild("h1", title);
 		if (renderNavigationLinks) {
+			SubMenu selected = null;
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
-			for (String navigationLink :  fullAccess ? navigationLinkTexts : navigationLinkTextsNonFull) {
-				LinkEnabledCallback cb = navigationLinkCallbacks.get(navigationLink);
-				if(cb != null && !cb.isEnabled(ctx)) continue;
-				String navigationTitle = navigationLinkTitles.get(navigationLink);
-				String navigationPath = navigationLinks.get(navigationLink);
-				HTMLNode listItem;
-				if(activePath.equals(navigationPath))
-					listItem = navbarUl.addChild("li", "id", "navlist-selected");
-				else
-					listItem = navbarUl.addChild("li");
-				if (plugin != null)
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
-				else
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+			for (SubMenu menu : subMenus.values()) {
+				HTMLNode subnavlist = new HTMLNode("ul");
+				boolean isSelected = false;
+				boolean nonEmpty = false;
+				for (String navigationLink :  fullAccess ? menu.navigationLinkTexts : menu.navigationLinkTextsNonFull) {
+					LinkEnabledCallback cb = menu.navigationLinkCallbacks.get(navigationLink);
+					if(cb != null && !cb.isEnabled(ctx)) continue;
+					nonEmpty = true;
+					String navigationTitle = menu.navigationLinkTitles.get(navigationLink);
+					String navigationPath = menu.navigationLinks.get(navigationLink);
+					HTMLNode sublistItem;
+					if(activePath.equals(navigationPath)) {
+						sublistItem = subnavlist.addChild("li", "id", "submenuitem-selected");
+						isSelected = true;
+					} else {
+						sublistItem = subnavlist.addChild("li");
+					}
+					sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+				}
+				if(nonEmpty) {
+					HTMLNode listItem;
+					if(isSelected) {
+						selected = menu;
+						subnavlist.addAttribute("class", "subnavlist-selected");
+						listItem = new HTMLNode("li", "id", "navlist-selected");
+					} else {
+						subnavlist.addAttribute("class", "subnavlist");
+						listItem = new HTMLNode("li");
+					}
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, L10n.getString(menu.defaultNavigationLinkTitle) }, L10n.getString(menu.navigationLinkText));
+					listItem.addChild(subnavlist);
+					navbarUl.addChild(listItem);
+				}
+					
+			}
+			if(selected != null) {
+				HTMLNode div = new HTMLNode("div", "id", "selected-subnavbar");
+				HTMLNode subnavlist = div.addChild("ul", "id", "selected-subnavbar-list");
+				boolean nonEmpty = false;
+				for (String navigationLink :  fullAccess ? selected.navigationLinkTexts : selected.navigationLinkTextsNonFull) {
+					LinkEnabledCallback cb = selected.navigationLinkCallbacks.get(navigationLink);
+					if(cb != null && !cb.isEnabled(ctx)) continue;
+					nonEmpty = true;
+					String navigationTitle = selected.navigationLinkTitles.get(navigationLink);
+					String navigationPath = selected.navigationLinks.get(navigationLink);
+					HTMLNode sublistItem;
+					if(activePath.equals(navigationPath)) {
+						sublistItem = subnavlist.addChild("li", "id", "submenuitem-selected");
+					} else {
+						sublistItem = subnavlist.addChild("li");
+					}
+					sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+				}
+				if(nonEmpty)
+					pageDiv.addChild(div);
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
