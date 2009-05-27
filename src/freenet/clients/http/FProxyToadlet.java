@@ -894,6 +894,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
 		server.register(queueToadlet, "FProxyToadlet.categoryQueue", "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
 		
+		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
+		server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
 		
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
 		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
@@ -933,9 +935,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 		server.register(firstTimeWizardToadlet, null, FirstTimeWizardToadlet.TOADLET_URL, true, false);
-		
-		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-		server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
 		
 		SimpleHelpToadlet simpleHelpToadlet = new SimpleHelpToadlet(client, core);
 		server.register(simpleHelpToadlet, null, "/help/", true, false);
