@@ -435,6 +435,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}else if(ks.startsWith("/opennet/") || ks.equals("/opennet")) { //TODO (pre-build 1045 url format) remove when obsolete
 			writePermanentRedirect(ctx, "obsoleted", "/strangers/");
 			return;
+		} else if(ks.startsWith("/queue/")) {
+			writePermanentRedirect(ctx, "obsoleted", "/downloads/");
+			return;
+		} else if(ks.startsWith("/config/")) {
+			writePermanentRedirect(ctx, "obsoleted", "/config/node");
+			return;
 		}
 		
 		if(ks.startsWith("/"))
