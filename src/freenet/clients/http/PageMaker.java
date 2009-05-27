@@ -65,6 +65,7 @@ public final class PageMaker {
 	private THEME theme;
 	private File override;
 	
+	private List<SubMenu> menuList = new ArrayList<SubMenu>();
 	private Map<String, SubMenu> subMenus = new HashMap<String, SubMenu>();
 	
 	private class SubMenu {
@@ -136,7 +137,9 @@ public final class PageMaker {
 	}
 
 	public void addNavigationCategory(String link, String name, String title) {
-		subMenus.put(name, new SubMenu(link, name, title));
+		SubMenu menu = new SubMenu(link, name, title);
+		subMenus.put(name, menu);
+		menuList.add(menu);
 	}
 	
 	public void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
@@ -196,7 +199,7 @@ public final class PageMaker {
 			SubMenu selected = null;
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
-			for (SubMenu menu : subMenus.values()) {
+			for (SubMenu menu : menuList) {
 				HTMLNode subnavlist = new HTMLNode("ul");
 				boolean isSelected = false;
 				boolean nonEmpty = false;
