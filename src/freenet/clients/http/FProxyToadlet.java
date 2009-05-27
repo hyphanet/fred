@@ -880,20 +880,20 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		core.setFProxy(fproxy);
 		
 		server.registerMenu("/", "FProxyToadlet.categoryBrowsing", "FProxyToadlet.categoryTitleBrowsing");
+		server.registerMenu("/queue/", "FProxyToadlet.categoryQueue", "FProxyToadlet.categoryTitleQueue");
+		server.registerMenu("/friends/", "FProxyToadlet.categoryFriends", "FProxyToadlet.categoryTitleFriends");
+		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus");
+		server.registerMenu("/config/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig");
 		
 		server.register(fproxy, "FProxyToadlet.categoryBrowsing", "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
-		
-		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus");
 		
 		UserAlertsToadlet alerts = new UserAlertsToadlet(client, node, core);
 		server.register(alerts, "FProxyToadlet.categoryStatus", "/alerts/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
 
-		server.registerMenu("/queue/", "FProxyToadlet.categoryQueue", "FProxyToadlet.categoryTitleQueue");
 		
 		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
 		server.register(queueToadlet, "FProxyToadlet.categoryQueue", "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
 		
-		server.registerMenu("/config/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig");
 		
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
 		server.register(pproxy, "FProxyToadlet.categoryConfig", "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
@@ -904,7 +904,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 		server.register(symlinkToadlet, null, "/sl/", true, false);
 		
-		server.registerMenu("/friends/", "FProxyToadlet.categoryFriends", "FProxyToadlet.categoryTitleFriends");
 		
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
 		server.register(friendsToadlet, "FProxyToadlet.categoryFriends", "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
