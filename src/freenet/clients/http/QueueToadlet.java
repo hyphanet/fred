@@ -1477,16 +1477,20 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		File completedIdentifiersList = new File(core.node.getNodeDir(), "completed.list."+dl);
 		File completedIdentifiersListNew = new File(core.node.getNodeDir(), "completed.list."+dl+".bak");
 		File oldCompletedIdentifiersList = new File(core.node.getNodeDir(), "completed.list");
+		boolean migrated = false;
 		if(!readCompletedIdentifiers(completedIdentifiersList)) {
-			if(!readCompletedIdentifiers(completedIdentifiersListNew))
+			if(!readCompletedIdentifiers(completedIdentifiersListNew)) {
 				readCompletedIdentifiers(oldCompletedIdentifiersList);
+				migrated = true;
+			}
 		} else
 			oldCompletedIdentifiersList.delete();
+		final boolean writeAnyway = migrated;
 		core.clientContext.jobRunner.queue(new DBJob() {
 
 			public boolean run(ObjectContainer container, ClientContext context) {
 				String[] identifiers;
-				boolean changed = false;
+				boolean changed = writeAnyway;
 				synchronized(completedRequestIdentifiers) {
 					identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 				}
