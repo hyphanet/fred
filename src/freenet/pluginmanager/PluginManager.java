@@ -783,6 +783,10 @@ public class PluginManager {
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
 		File pluginFile = new File(pluginDirectory, filename);
+		
+		if(pdl instanceof PluginDownLoaderFile) {
+			pluginFile.delete();
+		}
 
 		/* check if file needs to be downloaded. */
 		if(logMINOR)
