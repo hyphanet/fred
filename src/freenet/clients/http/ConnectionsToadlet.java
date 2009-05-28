@@ -715,12 +715,12 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 	protected abstract String getPageTitle(String titleCountString, String myName);
 
+	/** Draw the add a peer box. This comes immediately after the main peers table and before the noderef box.
+	 * Implementors may skip it by not doing anything in this method. */
 	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
 		drawAddPeerBox(contentNode, ctx, isOpennet(), path());
 	}
 	
-	/** Draw the add a peer box. This comes immediately after the main peers table and before the noderef box.
-	 * Implementors may skip it by not doing anything in this method. */
 	protected static void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
