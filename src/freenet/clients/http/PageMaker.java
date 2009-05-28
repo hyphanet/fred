@@ -10,6 +10,7 @@ import java.util.Map;
 
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -77,16 +78,19 @@ public final class PageMaker {
 		/** Tooltip */
 		private final String defaultNavigationLinkTitle;
 		
+		private final FredPluginL10n plugin;
+		
 		private final List<String> navigationLinkTexts = new ArrayList<String>();
 		private final List<String> navigationLinkTextsNonFull = new ArrayList<String>();
 		private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
 		private final Map<String, String> navigationLinks = new HashMap<String, String>();
 		private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
 		
-		public SubMenu(String link, String name, String title) {
+		public SubMenu(String link, String name, String title, FredPluginL10n plugin) {
 			this.navigationLinkText = name;
 			this.defaultNavigationLink = link;
 			this.defaultNavigationLinkTitle = title;
+			this.plugin = plugin;
 		}
 
 		public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
@@ -136,10 +140,16 @@ public final class PageMaker {
 		}
 	}
 
-	public void addNavigationCategory(String link, String name, String title) {
-		SubMenu menu = new SubMenu(link, name, title);
+	public void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin) {
+		SubMenu menu = new SubMenu(link, name, title, plugin);
 		subMenus.put(name, menu);
 		menuList.add(menu);
+	}
+	
+
+	public void removeNavigationCategory(String name) {
+		SubMenu menu = subMenus.remove(name);
+		menuList.remove(menu);
 	}
 	
 	public void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
@@ -220,8 +230,13 @@ public final class PageMaker {
 					} else {
 						sublistItem = subnavlist.addChild("li");
 					}
-					navigationTitle = navigationTitle == null ? null : L10n.getString(navigationTitle);
-					navigationLink = navigationLink == null ? null : L10n.getString(navigationLink);
+					if(menu.plugin != null) {
+						if(navigationTitle != null) navigationTitle = menu.plugin.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = menu.plugin.getString(navigationLink);
+					} else {
+						if(navigationTitle != null) navigationTitle = L10n.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = L10n.getString(navigationLink);
+					}
 					if(navigationTitle != null)
 						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
 					else
@@ -237,7 +252,17 @@ public final class PageMaker {
 						subnavlist.addAttribute("class", "subnavlist");
 						listItem = new HTMLNode("li");
 					}
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, L10n.getString(menu.defaultNavigationLinkTitle) }, L10n.getString(menu.navigationLinkText));
+					String menuItemTitle = menu.defaultNavigationLinkTitle;
+					String text = menu.navigationLinkText;
+					if(menu.plugin == null) {
+						menuItemTitle = L10n.getString(menuItemTitle);
+						text = L10n.getString(text);
+					} else {
+						menuItemTitle = menu.plugin.getString(menuItemTitle);
+						text = menu.plugin.getString(text);
+					}
+					
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
 					listItem.addChild(subnavlist);
 					navbarUl.addChild(listItem);
 				}
@@ -259,8 +284,13 @@ public final class PageMaker {
 					} else {
 						sublistItem = subnavlist.addChild("li");
 					}
-					navigationTitle = navigationTitle == null ? null : L10n.getString(navigationTitle);
-					navigationLink = navigationLink == null ? null : L10n.getString(navigationLink);
+					if(selected.plugin != null) {
+						if(navigationTitle != null) navigationTitle = selected.plugin.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = selected.plugin.getString(navigationLink);
+					} else {
+						if(navigationTitle != null) navigationTitle = L10n.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = L10n.getString(navigationLink);
+					}
 					if(navigationTitle != null)
 						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
 					else

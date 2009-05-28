@@ -48,7 +48,7 @@ public class PluginRespirator {
 	}
 	
 	public PageMaker getPageMaker(){
-		ToadletContainer container = node.clientCore.getToadletContainer();
+		ToadletContainer container = getToadletContainer();
 		if(container == null) return null;
 		return container.getPageMaker();
 	}
@@ -65,6 +65,10 @@ public class PluginRespirator {
 	
 	public PluginTalker getPluginTalker(FredPluginTalker fpt, String pluginname, String identifier) throws PluginNotFoundException {
 		return new PluginTalker(fpt, node, pluginname, identifier);
+	}
+
+	public ToadletContainer getToadletContainer() {
+		return node.clientCore.getToadletContainer();
 	}
 
 }

@@ -26,6 +26,7 @@ import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -592,8 +593,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	public void registerMenu(String link, String name, String title) {
-		pageMaker.addNavigationCategory(link, name, title);
+	public void registerMenu(String link, String name, String title, FredPluginL10n plugin) {
+		pageMaker.addNavigationCategory(link, name, title, plugin);
 	}
 
 	public synchronized void unregister(Toadlet t) {
