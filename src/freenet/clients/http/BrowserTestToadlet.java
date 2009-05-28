@@ -186,30 +186,28 @@ public class BrowserTestToadlet extends Toadlet {
 			return;		
 		}
 		
-		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet browser testing tool", ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode("Freenet browser testing tool", ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		
 		// #### Test MIME inline
-		HTMLNode mimeAutodetectBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline"));
-		HTMLNode mimeAutodetectContent = ctx.getPageMaker().getContentNode(mimeAutodetectBox);
-		//mimeAutodetectContent.addChild("img", new String[]{"src", "alt"}, new String[]{"data:image/gif;base64,"+imgWarningMime, "Your browser is probably safe."});
-		mimeAutodetectContent.addChild("img", new String[]{"src", "alt"}, new String[]{"?mimeTest", "Your browser is probably safe."});
+		ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline", contentNode).
+			//addChild("img", new String[]{"src", "alt"}, new String[]{"data:image/gif;base64,"+imgWarningMime, "Your browser is probably safe."});
+			addChild("img", new String[]{"src", "alt"}, new String[]{"?mimeTest", "Your browser is probably safe."});
 		
 		// #### Test whether we can have more than 10 simultaneous connections to fproxy
-		HTMLNode maxConnectionsPerServerBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Number of connections"));
-		HTMLNode maxConnectionsPerServerContent = ctx.getPageMaker().getContentNode(maxConnectionsPerServerBox);
+		
+		HTMLNode maxConnectionsPerServerContent = ctx.getPageMaker().getInfobox("infobox-warning", "Number of connections", contentNode);
 		maxConnectionsPerServerContent.addChild("#", "If you do not see a green picture below, your browser is probably missconfigured! Ensure it allows more than 10 connections per server.");
 		for(int i = 0; i < 10 ; i++)
 			maxConnectionsPerServerContent.addChild("img", "src", ".?wontload");
 		maxConnectionsPerServerContent.addChild("img", new String[]{"src", "alt"}, new String[]{"/static/themes/clean/success.gif", "fail!"});
 
 		// #### Test whether JS is available. : should do the test with pictures instead!
-		HTMLNode jsTestBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Javascript"));
-		HTMLNode jsTestContent= ctx.getPageMaker().getContentNode(jsTestBox);
+		HTMLNode jsTestContent= ctx.getPageMaker().getInfobox("infobox-warning", "Javascript", contentNode);
 		HTMLNode jsTest = jsTestContent.addChild("div");
 		jsTest.addChild("img", new String[]{"id", "src", "alt"}, new String[]{"JSTEST", "/static/themes/clean/success.gif", "fail!"});
 		jsTest.addChild("script", "type", "text/javascript").addChild("%", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.gif';");
@@ -220,6 +218,11 @@ public class BrowserTestToadlet extends Toadlet {
 	@Override
 	public String supportedMethods() {
 		return "GET";
+	}
+
+	@Override
+	public String path() {
+		return "/test/";
 	}
 
 }

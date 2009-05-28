@@ -413,7 +413,7 @@ public class SecurityLevels {
 				div.addChild("br");
 				L10n.addL10nSubstitution(div, "SecurityLevels.userAlertExtro",
 						new String[] { "link", "/link" },
-						new String[] { "<a href=\"/config/?mode="+ConfigToadlet.MODE_SECURITY_LEVELS+"\">", "</a>" });
+						new String[] { "<a href=\"/seclevels/\">", "</a>" });
 				return div;
 			}
 

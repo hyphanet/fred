@@ -41,8 +41,9 @@ public class UserAlertsToadlet extends Toadlet {
 			return;
 		}
 		
-        HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
-        HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
+        HTMLNode pageNode = page.outer;
+        HTMLNode contentNode = page.content;
         contentNode.addChild(alerts.createAlerts());
         
         writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -50,6 +51,11 @@ public class UserAlertsToadlet extends Toadlet {
 
 	protected String l10n(String name, String pattern, String value) {
 		return L10n.getString("UserAlertsToadlet."+name, pattern, value);
+	}
+
+	@Override
+	public String path() {
+		return "/alerts/";
 	}
 	
 }

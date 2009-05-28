@@ -915,14 +915,27 @@ public class NodeUpdateManager {
 	 * (or failed to do so in a way suggesting that somebody knows the key).
 	 * @param source The node which is claiming this.
 	 */
-	void peerClaimsKeyBlown(PeerNode source) {
+	void peerClaimsKeyBlown() {
 		// Note that UpdateOverMandatoryManager manages the list of peers who think this.
 		// All we have to do is cancel the update.
 		
-		synchronized(this) {
-			peersSayBlown = false;
-			armed = false;
-		}
+		peersSayBlown = true;
+	}
+	
+	/** Called inside locks, so don't lock anything */
+	public void notPeerClaimsKeyBlown() {
+		peersSayBlown = false;
+		node.executor.execute(new Runnable() {
+
+			public void run() {
+				isReadyToDeployUpdate(false);
+			}
+			
+		}, "Check for updates");
+	}
+	
+	boolean peersSayBlown() {
+		return peersSayBlown;
 	}
 
 	public File getMainBlob(int version) {
@@ -982,5 +995,5 @@ public class NodeUpdateManager {
 		Logger.error(this, "Not storing NodeUpdateManager in database", new Exception("error"));
 		return false;
 	}
-	
+
 }

@@ -167,8 +167,9 @@ public class PproxyToadlet extends Toadlet {
 				if (request.isPartSet("purge")) {
 					pm.removeCachedCopy(pluginSpecification);
 				}
-				HTMLNode pageNode = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
+				HTMLNode pageNode = page.outer;
+				HTMLNode contentNode = page.content;
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
 				infobox.addChild("div", "class", "infobox-header", l10n("pluginUnloaded"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -178,8 +179,9 @@ public class PproxyToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				HTMLNode pageNode = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
+				HTMLNode pageNode = page.outer;
+				HTMLNode contentNode = page.content;
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 				infobox.addChild("div", "class", "infobox-header", l10n("unloadPluginTitle"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -197,10 +199,10 @@ public class PproxyToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				HTMLNode pageNode = pageMaker.getPageNode(l10n("plugins"), ctx);
-				HTMLNode contentNode = pageMaker.getContentNode(pageNode);
-				HTMLNode reloadBox = contentNode.addChild(pageMaker.getInfobox("infobox infobox-query", l10n("reloadPluginTitle")));
-				HTMLNode reloadContent = pageMaker.getContentNode(reloadBox);
+				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
+				HTMLNode pageNode = page.outer;
+				HTMLNode contentNode = page.content;
+				HTMLNode reloadContent = pageMaker.getInfobox("infobox infobox-query", l10n("reloadPluginTitle"), contentNode);
 				reloadContent.addChild("p", l10n("reloadExplanation"));
 				reloadContent.addChild("p", l10n("reloadWarning"));
 				HTMLNode reloadForm = ctx.addFormChild(reloadContent, "/plugins/", "reloadPluginConfirmForm");
@@ -299,13 +301,13 @@ public class PproxyToadlet extends Toadlet {
 
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
+				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */
-					HTMLNode headNode = ctx.getPageMaker().getHeadNode(pageNode);
-					headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
+					page.headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "refresh", "10; url=" });
 				}
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode contentNode = page.content;
 
 				contentNode.addChild(core.alerts.createSummary());
 
@@ -504,6 +506,11 @@ public class PproxyToadlet extends Toadlet {
 		addFreenetForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-uri", "80" });
 		addFreenetForm.addChild("#", " ");
 		addFreenetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-freenet", l10n("Load") });
+	}
+
+	@Override
+	public String path() {
+		return "/plugins/";
 	}
 
 }

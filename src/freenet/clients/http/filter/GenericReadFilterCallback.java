@@ -322,7 +322,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Everything is allowed to / - updating the node, shutting it down, everything.
 		// Why? Becuase it's all protected by formPassword anyway.
 		// FIXME whitelist? Most things are okay if the user is prompted for a confirmation...
-		// FIXME what about /queue/ /friends/ etc?
+		// FIXME what about /downloads/ /friends/ etc?
 		if(action.equals("/")) 
 			return action;
 		try {

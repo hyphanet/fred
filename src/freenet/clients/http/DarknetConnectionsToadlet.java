@@ -107,7 +107,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	
 	@Override
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
-		return true;
+		return advancedModeEnabled; // Convenient for advanced users, but normally we will use the "Add a friend" box.
 	}
 
 	@Override
@@ -122,18 +122,18 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		actionSelect.addChild("option", "value", "send_n2ntm", l10n("sendMessageToPeers"));
 		actionSelect.addChild("option", "value", "update_notes", l10n("updateChangedPrivnotes"));
 		if(advancedModeEnabled) {
-			actionSelect.addChild("option", "value", "enable", "Enable selected peers");
-			actionSelect.addChild("option", "value", "disable", "Disable selected peers");
-			actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly (only set this if you have a static IP and are not NATed and neither is the peer)");
-			actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
-			actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly (not recommended)");
-			actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
-			actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses (useful if you are connecting to another node on the same LAN)");
-			actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
-			actionSelect.addChild("option", "value", "set_ignore_source_port", "On selected peers, set ignoreSourcePort (try this if behind an evil corporate firewall; otherwise not recommended)");
-			actionSelect.addChild("option", "value", "clear_ignore_source_port", "On selected peers, clear ignoreSourcePort");
-			actionSelect.addChild("option", "value", "set_dont_route", "On selected peers, set dontRoute (you shouldn't use that unless you know what you're doing, really!)");
-			actionSelect.addChild("option", "value", "clear_dont_route", "On selected peers, clear dontRoute");
+			actionSelect.addChild("option", "value", "enable", l10n("peersEnable"));
+			actionSelect.addChild("option", "value", "disable", l10n("peersDisable"));
+			actionSelect.addChild("option", "value", "set_burst_only", l10n("peersSetBurstOnly"));
+			actionSelect.addChild("option", "value", "clear_burst_only", l10n("peersClearBurstOnly"));
+			actionSelect.addChild("option", "value", "set_listen_only", l10n("peersSetListenOnly"));
+			actionSelect.addChild("option", "value", "clear_listen_only", l10n("peersClearListenOnly"));
+			actionSelect.addChild("option", "value", "set_allow_local", l10n("peersSetAllowLocal"));
+			actionSelect.addChild("option", "value", "clear_allow_local", l10n("peersClearAllowLocal"));
+			actionSelect.addChild("option", "value", "set_ignore_source_port", l10n("peersSetIgnoreSourcePort"));
+			actionSelect.addChild("option", "value", "clear_ignore_source_port", l10n("peersClearIgnoreSourcePort"));
+			actionSelect.addChild("option", "value", "set_dont_route", l10n("peersSetDontRoute"));
+			actionSelect.addChild("option", "value", "clear_dont_route", l10n("peersClearDontRoute"));
 		}
 		actionSelect.addChild("option", "value", "", l10n("separator"));
 		actionSelect.addChild("option", "value", "remove", l10n("removePeers"));
@@ -164,8 +164,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			HashMap<String, String> peers = new HashMap<String, String>();
 			for(DarknetPeerNode pn : peerNodes) {
@@ -332,10 +333,10 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
-						HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
-						HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle")));
-						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
+						HTMLNode pageNode = page.outer;
+						HTMLNode contentNode = page.content;
+						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode); 
 						content.addChild("p").addChild("#",
 								L10n.getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
 						HTMLNode removeForm = ctx.addFormChild(content, "/friends/", "removeConfirmForm");
@@ -396,6 +397,11 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	SimpleColumn[] endColumnHeaders(boolean advancedMode) {
 		return null;
+	}
+
+	@Override
+	public String path() {
+		return "/friends/";
 	}
 
 }

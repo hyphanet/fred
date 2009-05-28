@@ -19,8 +19,12 @@ public interface ToadletContainer {
 	 * @param atFront If true, add to front of list (where is checked first),
 	 * else add to back of list (where is checked last).
 	 */
-	public void register(Toadlet t, String urlPrefix, boolean atFront, boolean fullAccessOnly);
+	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullAccessOnly);
 
+	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb);
+	
+	public void unregister(Toadlet t);
+	
 	/**
 	 * Find a Toadlet by URI.
 	 * @throws URISyntaxException 
@@ -68,4 +72,6 @@ public interface ToadletContainer {
 	public boolean isFProxyJavascriptEnabled();
 
 	public boolean disableProgressPage();
+
+	public PageMaker getPageMaker();
 }
