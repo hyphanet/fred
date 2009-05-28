@@ -26,6 +26,11 @@ public class DarknetAddRefToadlet extends Toadlet {
 	
 	@Override
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		if(!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
+			return;
+		}
+		
 		String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = getNoderef();
@@ -43,11 +48,6 @@ public class DarknetAddRefToadlet extends Toadlet {
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
 			this.writeTextReply(ctx, 200, "OK", sw.toString());
-			return;
-		}
-		
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
