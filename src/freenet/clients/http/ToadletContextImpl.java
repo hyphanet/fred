@@ -412,7 +412,7 @@ public class ToadletContextImpl implements ToadletContext {
 			try {
 				sendError(sock.getOutputStream(), 500, "Internal Error", t.toString(), true, null);
 			} catch (IOException e1) {
-				// Ignore
+				return;
 			}
 			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
 		}
