@@ -24,6 +24,7 @@ import freenet.support.io.NativeThread;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
@@ -138,14 +139,14 @@ public class NodeStats implements Persistable {
 	final TimeDecayingRunningAverage successfulChkOfferReplyBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulSskOfferReplyBytesReceivedAverage;
 	
-	final TrivialRunningAverage globalFetchPSuccess;
-	final TrivialRunningAverage chkFetchPSuccess;
-	final TrivialRunningAverage sskFetchPSuccess;
-	final TrivialRunningAverage localFetchPSuccess;
-	final TrivialRunningAverage remoteFetchPSuccess;
-	final TrivialRunningAverage blockTransferPSuccess;
-	final TrivialRunningAverage blockTransferFailTurtled;
-	final TrivialRunningAverage blockTransferFailTimeout;
+	final BootstrappingDecayingRunningAverage globalFetchPSuccess;
+	final BootstrappingDecayingRunningAverage chkFetchPSuccess;
+	final BootstrappingDecayingRunningAverage sskFetchPSuccess;
+	final BootstrappingDecayingRunningAverage localFetchPSuccess;
+	final BootstrappingDecayingRunningAverage remoteFetchPSuccess;
+	final BootstrappingDecayingRunningAverage blockTransferPSuccess;
+	final BootstrappingDecayingRunningAverage blockTransferFailTurtled;
+	final BootstrappingDecayingRunningAverage blockTransferFailTimeout;
 	
 	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
 	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
@@ -354,14 +355,14 @@ public class NodeStats implements Persistable {
 		successfulChkOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesReceivedAverage"), node);
 		successfulSskOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesReceivedAverage"), node);
 		
-		globalFetchPSuccess = new TrivialRunningAverage();
-		chkFetchPSuccess = new TrivialRunningAverage();
-		sskFetchPSuccess = new TrivialRunningAverage();
-		localFetchPSuccess = new TrivialRunningAverage();
-		remoteFetchPSuccess = new TrivialRunningAverage();
-		blockTransferPSuccess = new TrivialRunningAverage();
-		blockTransferFailTurtled = new TrivialRunningAverage();
-		blockTransferFailTimeout = new TrivialRunningAverage();
+		globalFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		chkFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		sskFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		localFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		remoteFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		blockTransferPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		blockTransferFailTurtled = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		blockTransferFailTimeout = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
 		
 		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
 		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
@@ -1304,7 +1305,7 @@ public class NodeStats implements Persistable {
 	
 	public void fillSuccessRateBox(HTMLNode parent) {
 		HTMLNode list = parent.addChild("table", "border", "0");
-		final TrivialRunningAverage[] averages = new TrivialRunningAverage[] {
+		final BootstrappingDecayingRunningAverage[] averages = new BootstrappingDecayingRunningAverage[] {
 				globalFetchPSuccess,
 				chkFetchPSuccess,
 				sskFetchPSuccess,
