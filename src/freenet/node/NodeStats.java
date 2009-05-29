@@ -1252,6 +1252,15 @@ public class NodeStats implements Persistable {
 		fs.put("availableCPUs", availableCpus);
 		fs.put("runningThreadCount", getActiveThreadCount());
 		
+		fs.put("globalFetchPSuccess", globalFetchPSuccess.currentValue());
+		fs.put("chkFetchPSuccess", chkFetchPSuccess.currentValue());
+		fs.put("sskFetchPSuccess", sskFetchPSuccess.currentValue());
+		fs.put("localFetchPSuccess", localFetchPSuccess.currentValue());
+		fs.put("remoteFetchPSuccess", remoteFetchPSuccess.currentValue());
+		fs.put("blockTransferPSuccess", blockTransferPSuccess.currentValue());
+		fs.put("blockTransferFailTurtled", blockTransferFailTurtled.currentValue());
+		fs.put("blockTransferFailTimeout", blockTransferFailTimeout.currentValue());
+
 		return fs;
 	}
 
