@@ -149,6 +149,10 @@ public final class PageMaker {
 
 	public void removeNavigationCategory(String name) {
 		SubMenu menu = subMenus.remove(name);
+		if (menu == null) {
+			Logger.error(this, "can't remove navigation category, name="+name);
+			return;
+		}	
 		menuList.remove(menu);
 	}
 	
