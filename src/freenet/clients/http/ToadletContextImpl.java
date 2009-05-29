@@ -378,6 +378,8 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (RedirectException re) {
 						uri = re.newuri;
 						redirect = true;
+					} catch (Exception e) {
+						sendError(sock.getOutputStream(), 500, "Internal Error", e.toString(), true, null);
 					} finally {
 						req.freeParts();
 					}
