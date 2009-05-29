@@ -362,7 +362,7 @@ public class ToadletContextImpl implements ToadletContext {
 						break;
 					}
 					
-					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx);
+					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 					try {
 						if(method.equals("GET")) {
 							ctx.setActiveToadlet(t);

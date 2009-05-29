@@ -585,7 +585,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} finally {
 			request.freeParts();
 		}
-		this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
+		this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 	
 	private void sendPersistenceDisabledError(ToadletContext ctx) {

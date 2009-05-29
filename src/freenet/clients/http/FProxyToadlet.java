@@ -845,7 +845,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				while(path.startsWith("/")) path = path.substring(1);
 				if("".equals(path)) return "/";
 				FreenetURI furi = new FreenetURI(path);
-				HTTPRequest req = new HTTPRequestImpl(refererURI);
+				HTTPRequest req = new HTTPRequestImpl(refererURI, "GET");
 				String type = req.getParam("type");
 				referer = "/" + furi.toString();
 				if(type != null && type.length() > 0)

@@ -674,7 +674,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 */
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		// Do nothing - we only support adding nodes
-		handleGet(uri, new HTTPRequestImpl(uri), ctx);
+		handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 
 	/**

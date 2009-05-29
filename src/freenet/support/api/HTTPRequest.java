@@ -126,5 +126,7 @@ public interface HTTPRequest {
 	public void freeParts();
 
 	public long getLongParam(String name, long defaultValue);
+	
+	public String getMethod();
 
 }
