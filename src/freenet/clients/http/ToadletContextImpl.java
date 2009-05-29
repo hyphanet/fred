@@ -409,12 +409,12 @@ public class ToadletContextImpl implements ToadletContext {
 			Logger.error(ToadletContextImpl.class, "ToadletContextClosedException while handling connection!");
 			return;
 		} catch (Throwable t) {
+			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
 			try {
 				sendError(sock.getOutputStream(), 500, "Internal Error", t.toString(), true, null);
 			} catch (IOException e1) {
 				return;
 			}
-			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
 		}
 	}
 	
