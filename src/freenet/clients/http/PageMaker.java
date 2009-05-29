@@ -203,9 +203,10 @@ public final class PageMaker {
 		}
 		
 		Toadlet t;
-		if (ctx != null)
+		if (ctx != null) {
 			t = ctx.activeToadlet();
-		else
+			t = t.showAsToadlet();
+		} else
 			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();
