@@ -789,8 +789,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				contentNode.addChild(core.alerts.createSummary());
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty"), contentNode);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
-			contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
-			contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
+			if(uploads)
+				contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
+			if(!uploads)
+				contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
 			return pageNode;
 		}
 
