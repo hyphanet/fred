@@ -42,13 +42,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		// Before security levels, because once the network security level has been set, we won't redirect
 		// the user to the wizard page.
 		BROWSER_WARNING,
+		// We have to set up UPnP before reaching the bandwidth stage, so we can autodetect bandwidth settings.
+		MISC,
 		SECURITY_NETWORK,
 		SECURITY_FRIENDS,
 		SECURITY_PHYSICAL,
 		NAME_SELECTION,
 		BANDWIDTH,
 		DATASTORE_SIZE,
-		MISC,
 		CONGRATZ,
 		FINAL;
 	}
@@ -84,7 +85,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			L10n.addL10nSubstitution(infoboxContent, "FirstTimeWizardToadlet.browserWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
 			
-			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.SECURITY_NETWORK, L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.MISC, L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
@@ -499,16 +500,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		} else if(request.isPartSet("dsF")) {
 			_setDatastoreSize(request.getPartAsString("ds", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MISC);
-			return;
-		} else if(request.isPartSet("memoryF")) {
-			String selectedMemorySize = request.getPartAsString("memoryF", 6);
-			
-			int memorySize = Fields.parseInt(selectedMemorySize, -1);
-			if(memorySize >= 0) {
-				WrapperConfig.setWrapperProperty("wrapper.java.maxmemory", selectedMemorySize);
-			}
-			super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.MISC);
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
 			return;
 		} else if(request.isPartSet("miscF")) {
 			try {
@@ -530,7 +522,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				else
 					core.node.pluginManager.killPluginByClass("plugins.JSTUN.JSTUN", 5000);
 			}
-			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
+			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
 			return;
 				
 		}
