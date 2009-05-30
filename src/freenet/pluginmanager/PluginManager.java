@@ -712,7 +712,7 @@ public class PluginManager {
 		addOfficialPlugin("SNMP");
 		addOfficialPlugin("TestGallery");
 		addOfficialPlugin("ThawIndexBrowser", false, 2);
-		addOfficialPlugin("UPnP", true, 10002);
+		addOfficialPlugin("UPnP", true, 10003);
 		addOfficialPlugin("XMLLibrarian", false, 22);
 		addOfficialPlugin("XMLSpider", false, 37);
 	}
