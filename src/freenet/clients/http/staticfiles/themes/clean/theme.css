@@ -117,10 +117,6 @@ body {
     color:#000;
 }
 
-#navlist-selected {
-    background:#888;
-}
-
 #selected-subnavbar {
     display:none;
 }
@@ -136,10 +132,6 @@ body {
 
 #navlist-selected .subnavlist-selected li a {
     color:#000;
-}
-
-#navlist-selected .subnavlist-selected .submenuitem-selected {
-    background:#eee;
 }
 
 #navlist-selected .subnavlist-selected .submenuitem-selected a{
