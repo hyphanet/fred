@@ -74,6 +74,10 @@ public class PersistentBlobTempBucket implements Bucket {
 	
 	private int inputStreams;
 	
+	// LOCKING: Writes and reads occur inside synchronized(this) because otherwise
+	// the index might change during defrag, especially if we are reading a shadow
+	// bucket on a non-database thread.
+	
 	public InputStream getInputStream() throws IOException {
 		if(freed) throw new IOException("Already freed");
 		final FileChannel channel = factory.channel;
@@ -267,6 +271,8 @@ public class PersistentBlobTempBucket implements Bucket {
 		return index;
 	}
 
+	/** Used by defrag. Caller *must* also tell shadow buckets, and *must* hold lock
+	 * on all the buckets while copying the data and setting the new indexes. */
 	synchronized void setIndex(long index2) {
 		this.index = index2;
 	}
