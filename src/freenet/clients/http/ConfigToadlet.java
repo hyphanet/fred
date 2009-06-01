@@ -240,7 +240,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
 		HTMLNode formNode = ctx.addFormChild(configNode, path(), "configForm");
 		
-		if(WrapperConfig.canChangeProperties()) {
+		if(subConfig.getPrefix().equals("node") && WrapperConfig.canChangeProperties()) {
 			String configName = "wrapper.java.maxmemory";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
 			if(curValue != null) {
