@@ -120,7 +120,7 @@ public class LongTermPushPullTest {
 			for (int i = 0; i <= MAX_N; i++) {
 				Bucket data = randomData(node);
 				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
-				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()) + "-" + i + "/file");
+				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()) + "-" + i);
 				System.out.println("PUSHING " + uri);
 
 				try {
@@ -167,7 +167,7 @@ public class LongTermPushPullTest {
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 
-				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(targetDate.getTime()) + "-" + i + "/file");
+				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(targetDate.getTime()) + "-" + i);
 				System.out.println("PULLING " + uri);
 
 				try {
