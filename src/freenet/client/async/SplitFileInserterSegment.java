@@ -1301,11 +1301,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					try {
 						b = encodeBucket(block.copyBucket);
 					} catch (CHKEncodeException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (MalformedURLException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (IOException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} finally {
 						block.copyBucket.free();
 					}
