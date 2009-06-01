@@ -574,29 +574,20 @@ public class PersistentBlobTempBucketFactory {
 						// Move one key.
 						PersistentBlobTempBucketTag newTag = freeSlots.remove(lFirstSlot);
 						
+						PersistentBlobTempBucket shadow = null;
+						if(shadows.containsKey(lastCommitted)) {
+							shadow = shadows.get(lastCommitted);
+						}
+						
 						// Synchronize on the target.
 						synchronized(lastBucket) {
-							// Do the move.
-							System.err.println("Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
-							try {
-								byte[] blob = readSlot(lastTag.index);
-								writeSlot(newTag.index, blob);
-							} catch (IOException e) {
-								System.err.println("Failed to move bucket in defrag: "+e);
-								e.printStackTrace();
-								Logger.error(this, "Failed to move bucket in defrag: "+e, e);
-								queueMaybeShrink();
-								return false;
+							if(shadow != null) {
+								synchronized(shadow) {
+									if(!innerDefrag(lastBucket, shadow, lastTag, newTag, container)) return false;
+								}
+							} else {
+								if(!innerDefrag(lastBucket, shadow, lastTag, newTag, container)) return false;
 							}
-							lastBucket.setIndex(newTag.index);
-							lastBucket.setTag(newTag);
-							newTag.bucket = lastBucket;
-							newTag.isFree = false;
-							lastTag.bucket = null;
-							lastTag.isFree = true;
-							container.store(newTag);
-							container.store(lastTag);
-							container.store(lastBucket);
 						}
 					} else break;
 					if(deactivateLastBucket)
@@ -668,6 +659,34 @@ public class PersistentBlobTempBucketFactory {
 		queueMaybeShrink();
 		return true;
 		
+	}
+
+	private boolean innerDefrag(PersistentBlobTempBucket lastBucket, PersistentBlobTempBucket shadow, PersistentBlobTempBucketTag lastTag, PersistentBlobTempBucketTag newTag, ObjectContainer container) {
+		// Do the move.
+		System.err.println("Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
+		try {
+			byte[] blob = readSlot(lastTag.index);
+			writeSlot(newTag.index, blob);
+		} catch (IOException e) {
+			System.err.println("Failed to move bucket in defrag: "+e);
+			e.printStackTrace();
+			Logger.error(this, "Failed to move bucket in defrag: "+e, e);
+			queueMaybeShrink();
+			return false;
+		}
+		lastBucket.setIndex(newTag.index);
+		lastBucket.setTag(newTag);
+		newTag.bucket = lastBucket;
+		newTag.isFree = false;
+		lastTag.bucket = null;
+		lastTag.isFree = true;
+		if(shadow != null)
+			shadow.setIndex(newTag.index);
+		// shadow has no tag
+		container.store(newTag);
+		container.store(lastTag);
+		container.store(lastBucket);
+		return true;
 	}
 
 	private void queueMaybeShrink() {
