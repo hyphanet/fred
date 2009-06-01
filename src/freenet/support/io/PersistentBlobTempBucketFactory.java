@@ -577,6 +577,8 @@ public class PersistentBlobTempBucketFactory {
 						PersistentBlobTempBucket shadow = null;
 						if(shadows.containsKey(lastCommitted)) {
 							shadow = shadows.get(lastCommitted);
+							shadows.remove(lastCommitted);
+							shadows.put(newTag.index, shadow);
 						}
 						
 						// Synchronize on the target.
