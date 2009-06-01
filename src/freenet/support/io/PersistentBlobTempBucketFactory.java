@@ -580,6 +580,8 @@ public class PersistentBlobTempBucketFactory {
 						}
 						
 						// Synchronize on the target.
+						// We must ensure that the shadow is moved also before we relinquish the lock on either bucket.
+						// LOCKING: Nested locking of two buckets is bad, but provided we only do it here, we should be fine.
 						synchronized(lastBucket) {
 							if(shadow != null) {
 								synchronized(shadow) {
