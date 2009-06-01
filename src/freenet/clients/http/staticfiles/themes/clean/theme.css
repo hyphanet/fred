@@ -77,68 +77,92 @@ body {
 
 /* navigation */
 
-#navbar {
-	margin: 5px 5px 0 0;
-	padding: 10px;
-	position: absolute;
-	width: 150px;
+div#navbar {
 	background-color: #e8e8e8;
 	border: 1px solid #d0d0d0;
-}
-
-#navbar ul {
-	margin: 0 0 0 10px;
+	float: left;
+	width: 170px;
+	margin: 5px;
 	padding: 0;
+	margin-left: 0;
+	padding-bottom: 5px;
 }
 
-#navbar li {
-	padding-left: 3px;
-	padding-right: 3px;
-	list-style-type: none;
-	margin-top: 6px;
-	margin-bottom: 6px;
-	border: 3px outset #d0d0d0;
-}
-
-#navbar a {
-	color: #000000;
+div#navbar a {
 	text-decoration: none;
+	display: block;
+	padding: 1px;
+	padding-left: 5px;
 }
 
-#navbar a:hover {
-	color: #ff0000;
+div#navbar a:hover {
+	color: red;
 }
 
-#navlist .subnavlist {
-    display:none;
-}
-
-#navlist-selected a {
-    color:#000;
-}
-
-#selected-subnavbar {
-    display:none;
-}
-
-#navlist-selected .subnavlist-selected li {
-	padding-left: 3px;
-	padding-right: 3px;
+div#navbar ul, div#navbar ul li ul {
 	list-style-type: none;
-	margin-top: 6px;
-	margin-bottom: 6px;
-	border: 3px outset #aaa;
+	padding: 0;
+	margin: 0;
 }
 
-#navlist-selected .subnavlist-selected li a {
-    color:#000;
+div#navbar ul li ul {
+	margin-left: 20px;
+	padding-bottom: 10px;
+	padding-top: 1px;
 }
 
-#navlist-selected .subnavlist-selected .submenuitem-selected a{
-    color:#555fff;
+div#navbar ul li {
+	padding-top: 5px;
+}
+div#navbar ul li ul li:first-child {
+	padding-top: 0;
 }
 
+div#selected-subnavbar {
+	display: none;
+}
 
+div#navbar ul li ul.subnavlist {
+	/* ***************************************
+	   You can comment this if you want all the
+	   submenus to be shown by default (not only
+	   when the mouse is on it).
+	   *************************************** */
+	display: none;
+}
+
+div#navbar ul:hover + li ul.subnavlist {
+	display: block;
+}
+
+div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+	color: blue;
+}
+
+div#navbar ul#navlist li#navlist-selected a {
+	color: blue;	
+	background-color: #ddd;
+}
+
+div#navbar ul#navlist li#navlist-selected ul li a, div#navbar ul#navlist li ul li a {
+	background-color: inherit;
+	color: #666;
+	font-size: 0.9em;
+}
+
+div#navbar ul#navlist li:hover ul.subnavlist {
+	display: block;
+	color: gray;
+}
+
+div#navbar a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+	background-color: #e0e0e0;
+}
+
+div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li a:hover {
+	color: #111;
+	background-color: #e0e0e0;
+}
 
 /* alerts */
 
@@ -655,4 +679,5 @@ td.n2ntm-send-failed {
 .translate_d {
 	background-color: #f0fef0;
 }
+
 
