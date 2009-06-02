@@ -703,7 +703,7 @@ public class PluginManager {
 	
 	static {
 		addOfficialPlugin("Echo");
-		addOfficialPlugin("Freemail");
+		addOfficialPlugin("Freemail", false, 12);
 		addOfficialPlugin("HelloWorld");
 		addOfficialPlugin("HelloFCP");
 		addOfficialPlugin("JSTUN", true, 2);
