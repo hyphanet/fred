@@ -936,6 +936,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public void addConnectionTypeBox(HTMLNode contentNode) {
 		if(node.clientCore == null) return;
 		if(node.clientCore.alerts == null) return;
+		if(proxyAlert == null) return;
 		if(proxyAlert.isValid())
 			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert));
 	}
