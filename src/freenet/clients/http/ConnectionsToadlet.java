@@ -576,11 +576,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			addHomepageLink(infoboxContent);
 			
 			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
-			
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", defaultRedirectLocation());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
 		} else handleAltPost(uri, request, ctx, logMINOR);
 		
 		
