@@ -159,14 +159,15 @@ padding-right: 4px;
 }
 
 #navlist-selected a{
-    background:#444;
+    background: #035196;
+    color: #fff;
 }
-
 
 /* subnavbar section */
 #selected-subnavbar a{
 color: #ddd;
 }
+
 #selected-subnavbar a:hover{
 color: #fff;
 }
@@ -177,8 +178,9 @@ width: 100%;
 overflow:hidden;
 position:relative;
 top: 0px;
-background: #2573b8;
-margin-top:3px;
+/*background: #2573b8;*/
+background: none;
+margin-top: 12px;
 margin-bottom:20px;
 }
 #selected-subnavbar ul#selected-subnavbar-list{
@@ -229,7 +231,8 @@ padding-right: 4px;
 }
 
 #selected-subnavbar-list .submenuitem-selected a{
-    background:#B25600;
+    background:#E25622;
+    color: #fff;
 }
 
 #navlist .subnavlist {
@@ -252,8 +255,9 @@ background: #035196;
 border-bottom: solid 1px black;
 border-right: solid 1px black;
 padding: 0;
-padding-top: 20px;
+padding-top: 60px;
 padding-bottom: 5px;
+margin-top: -60px;
 }
 #topbar{
 width: 100%;;
@@ -545,4 +549,5 @@ span.peer_idle_old {
 	color: #d07070;
 	font-weight: bold;
 }
+
 
