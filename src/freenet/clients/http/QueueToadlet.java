@@ -622,7 +622,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
-			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", path(), "queue page"), new HTMLNode("#", ".") });
+			L10n.addL10nSubstitution(infoboxContent.addChild("div"), "QueueToadlet.returnToQueuePage", new String[] { "link", "/link" }, new String[] { "<a href=\""+path()+"\">", "</a>" });
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
