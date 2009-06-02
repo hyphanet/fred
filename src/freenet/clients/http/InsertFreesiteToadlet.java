@@ -41,6 +41,8 @@ public class InsertFreesiteToadlet extends Toadlet {
 		li = ul.addChild("li");
 		li.addChild("a", "href", "/SSK@8r-uSRcJPkAr-3v3YJR16OCx~lyV2XOKsiG4MOQQBMM,P42IgNemestUdaI7T6z3Og6P-Hi7g9U~e37R3kWGVj8,AQACAAE/freesite-HOWTO-4/", "Freesite HOWTO");
 		li.addChild("#", " - "+l10n("freesiteHowtoExplanation"));
+		L10n.addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.contentThingamablog", new String[] { "thingamablog", "thingamablog-freenet", "/link" },
+				new String[] { "<a href=\"/?_CHECKED_HTTP_=http://downloads.freenetproject.org/alpha/thingamablog/thingamablog.zip\">", "<a href=\"/CHK@o8j9T2Ghc9cfKMLvv9aLrHbvW5XiAMEGwGDqH2UANTk,sVxLdxoNL-UAsvrlXRZtI5KyKlp0zv3Ysk4EcO627V0,AAIC--8/thingamablog.zip\">", "</a>" });
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
