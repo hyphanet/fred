@@ -1892,7 +1892,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
 				Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
 						" ... let's assume it's not what the user wants to do and restore the default.");
-				databaseMaxMemory = Long.valueOf(nodeConfig.getOption("databaseMaxMemory").getDefault());
+				databaseMaxMemory = Fields.parseLong(nodeConfig.getOption("databaseMaxMemory").getDefault());
 			}
 			initBDBFS(suffix);
 		} else {
