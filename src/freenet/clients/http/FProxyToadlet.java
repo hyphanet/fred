@@ -890,6 +890,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		server.registerMenu("/", "FProxyToadlet.categoryBrowsing", "FProxyToadlet.categoryTitleBrowsing", null);
 		server.registerMenu("/downloads/", "FProxyToadlet.categoryQueue", "FProxyToadlet.categoryTitleQueue", null);
 		server.registerMenu("/friends/", "FProxyToadlet.categoryFriends", "FProxyToadlet.categoryTitleFriends", null);
+		server.registerMenu("/chat/", "FProxyToadlet.categoryChat", "FProxyToadlet.categoryTitleChat", null);
 		server.registerMenu("/alerts/", "FProxyToadlet.categoryStatus", "FProxyToadlet.categoryTitleStatus", null);
 		server.registerMenu("/seclevels/", "FProxyToadlet.categoryConfig", "FProxyToadlet.categoryTitleConfig", null);
 		
@@ -939,6 +940,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
 		server.register(opennetToadlet, "FProxyToadlet.categoryStatus", "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
+		
+		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, core.alerts, node.pluginManager);
+		server.register(chatForumsToadlet, "FProxyToadlet.categoryChat", "/chat/", true, "FProxyToadlet.chatForumsTitle", "FProxyToadlet.chatForums", true, chatForumsToadlet);
 		
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, null, "/send_n2ntm/", true, true);
