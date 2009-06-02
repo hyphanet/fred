@@ -449,38 +449,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			drawNoderefBox(contentNode, ctx);
 		}
 		
-		// our ports
-		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		portInfobox.addChild("div", "class", "infobox-header", l10n("nodePortsTitle"));
-		HTMLNode portInfoboxContent = portInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode portInfoList = portInfoboxContent.addChild("ul");
-		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
-		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
-		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
-		portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.darknetFnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
-		int opennetPort = node.getOpennetFNPPort();
-		if(opennetPort > 0)
-			portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.opennetFnpPort", new String[] { "port" }, new String[] { Integer.toString(opennetPort) }));
-		try {
-			if(fproxyConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fproxyPort", new String[] { "port" }, new String[] { Integer.toString(fproxyConfig.getInt("port")) }));
-			} else {
-				portInfoList.addChild("li", l10n("fproxyDisabled"));
-			}
-			if(fcpConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fcpPort", new String[] { "port" }, new String[] { Integer.toString(fcpConfig.getInt("port")) }));
-			} else {
-				portInfoList.addChild("li", l10n("fcpDisabled"));
-			}
-			if(tmciConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.tmciPort", new String[] { "port" }, new String[] { Integer.toString(tmciConfig.getInt("port")) }));
-			} else {
-				portInfoList.addChild("li", l10n("tmciDisabled"));
-			}
-		} catch (FSParseException e) {
-			// ignore
-		}
-		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
