@@ -577,6 +577,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		if(downstreamBWLimit > 0) {
 			int bytes = (downstreamBWLimit / 8) - 1;
 			String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2 / 3);
+			// Set the downstream limit anyway, it is usually so high as to be irrelevant.
+			// The user can choose the upstream limit.
 			_setDownstreamBandwidthLimit(downstreamBWLimitString);
 			Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream=" + downstreamBWLimit + "bits/sec... we will use " + downstreamBWLimitString + " and skip the bandwidth selection step of the wizard.");
 		}
