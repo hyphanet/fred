@@ -738,8 +738,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	 * NOTE: This will be deleted when the segment is deleted! Do not store it or pass 
 	 * it on!
 	 */
-	InsertException getException() {
+	InsertException getException(ObjectContainer container) {
 		synchronized (this) {
+			if(persistent) container.activate(toThrow, 5);
 			return toThrow;
 		}
 	}

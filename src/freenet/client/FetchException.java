@@ -53,6 +53,8 @@ public class FetchException extends Exception {
 	
 	public FetchException(int m) {
 		super(getMessage(m));
+		if(m == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = null;
 		mode = m;
 		errorCodes = null;
@@ -66,6 +68,8 @@ public class FetchException extends Exception {
 
 	public FetchException(int m, long expectedSize, boolean finalizedSize, String expectedMimeType) {
 		super(getMessage(m));
+		if(m == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = null;
 		this.finalizedSizeAndMimeType = finalizedSize;
 		mode = m;
@@ -81,6 +85,8 @@ public class FetchException extends Exception {
 	
 	public FetchException(int m, long expectedSize, boolean finalizedSize, String expectedMimeType, FreenetURI uri) {
 		super(getMessage(m));
+		if(m == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = null;
 		this.finalizedSizeAndMimeType = finalizedSize;
 		mode = m;
@@ -138,6 +144,8 @@ public class FetchException extends Exception {
 
 	public FetchException(int mode, Throwable t) {
 		super(getMessage(mode)+": "+t.getMessage());
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = t.getMessage();
 		this.mode = mode;
 		errorCodes = null;
@@ -152,6 +160,8 @@ public class FetchException extends Exception {
 
 	public FetchException(int mode, String reason, Throwable t) {
 		super(reason+" : "+getMessage(mode)+": "+t.getMessage());
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = t.getMessage();
 		this.mode = mode;
 		errorCodes = null;
@@ -166,6 +176,8 @@ public class FetchException extends Exception {
 
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = null;
 		this.mode = mode;
 		this.errorCodes = errorCodes;
@@ -179,6 +191,8 @@ public class FetchException extends Exception {
 	
 	public FetchException(int mode, String msg) {
 		super(getMessage(mode)+": "+msg);
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = msg;
 		errorCodes = null;
 		this.mode = mode;
@@ -192,6 +206,8 @@ public class FetchException extends Exception {
 
 	public FetchException(int mode, FreenetURI newURI) {
 		super(getMessage(mode));
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = null;
 		this.mode = mode;
 		errorCodes = null;
@@ -205,6 +221,8 @@ public class FetchException extends Exception {
 	
 	public FetchException(int mode, String msg, FreenetURI uri) {
 		super(getMessage(mode)+": "+msg);
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extraMessage = msg;
 		errorCodes = null;
 		this.mode = mode;
@@ -218,6 +236,8 @@ public class FetchException extends Exception {
 
 	public FetchException(FetchException e, int newMode) {
 		super(getMessage(newMode)+(e.extraMessage != null ? ": "+e.extraMessage : ""));
+		if(newMode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		this.mode = newMode;
 		this.newURI = e.newURI;
 		this.errorCodes = e.errorCodes;
@@ -235,6 +255,8 @@ public class FetchException extends Exception {
 		super(e.getMessage());
 		if(e.getCause() != null)
 			initCause(e.getCause());
+		if(e.mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		this.mode = e.mode;
 		this.newURI = uri;
 		this.errorCodes = e.errorCodes;
@@ -251,6 +273,8 @@ public class FetchException extends Exception {
 	public FetchException(FetchException e) {
 		super(e.getMessage());
 		initCause(e);
+		if(e.mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		this.mode = e.mode;
 		this.newURI = e.newURI == null ? null : e.newURI.clone();
 		this.errorCodes = e.errorCodes == null ? null : e.errorCodes.clone();

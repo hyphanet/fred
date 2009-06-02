@@ -40,6 +40,8 @@ public class InsertException extends Exception {
 	
 	public InsertException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
+		if(m == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = msg;
 		mode = m;
 		if(logMINOR)
@@ -50,6 +52,8 @@ public class InsertException extends Exception {
 	
 	public InsertException(int m, FreenetURI expectedURI) {
 		super(getMessage(m));
+		if(m == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		mode = m;
 		if(logMINOR)
@@ -60,6 +64,8 @@ public class InsertException extends Exception {
 
 	public InsertException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.getMessage();
 		if(logMINOR)
 			Logger.minor(this, "Creating InsertException: "+getMessage(mode)+": "+e, e);
@@ -71,6 +77,8 @@ public class InsertException extends Exception {
 
 	public InsertException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
 		super(getMessage(mode));
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		this.mode = mode;
 		if(logMINOR)
@@ -81,6 +89,8 @@ public class InsertException extends Exception {
 
 	public InsertException(int mode) {
 		super(getMessage(mode));
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = null;
 		this.mode = mode;
 		this.errorCodes = null;
@@ -89,6 +99,8 @@ public class InsertException extends Exception {
 
 	public InsertException(InsertException e) {
 		super(e.getMessage());
+		if(e.mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.extra;
 		mode = e.mode;
 		errorCodes = e.errorCodes.clone();
