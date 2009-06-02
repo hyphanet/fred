@@ -247,28 +247,28 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 		
 		if(peerNodeStatuses.length>0){
-
-			/* node status values */
-			long nodeUptimeSeconds = (now - node.startupTime) / 1000;
-			int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
-			int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
-			int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
-			int networkSizeEstimateRecent = 0;
-			if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-				networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
-			}
-			DecimalFormat fix4 = new DecimalFormat("0.0000");
-			double routingMissDistance =  stats.routingMissDistance.currentValue();
-			double backedOffPercent =  stats.backedOffPercent.currentValue();
-			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
-
-			// BEGIN OVERVIEW TABLE
-			HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
-			HTMLNode overviewTableRow = overviewTable.addChild("tr");
-			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
-
-			/* node status overview box */
+			
 			if(mode >= PageMaker.MODE_ADVANCED) {
+
+				/* node status values */
+				long nodeUptimeSeconds = (now - node.startupTime) / 1000;
+				int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
+				int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
+				int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
+				int networkSizeEstimateRecent = 0;
+				if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
+					networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
+				}
+				DecimalFormat fix4 = new DecimalFormat("0.0000");
+				double routingMissDistance =  stats.routingMissDistance.currentValue();
+				double backedOffPercent =  stats.backedOffPercent.currentValue();
+				String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
+				
+				// BEGIN OVERVIEW TABLE
+				HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
+				HTMLNode overviewTableRow = overviewTable.addChild("tr");
+				HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
+				
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
 				HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
@@ -284,48 +284,48 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
-			}
-
-			// Activity box
-			int numARKFetchers = node.getNumARKFetchers();
-
-			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
-			activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
-			HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
-			HTMLNode activityList = StatisticsToadlet.drawActivity(activityInfoboxContent, node);
-			if ((mode >= PageMaker.MODE_ADVANCED) && (activityList != null)) {
-				if (numARKFetchers > 0) {
-					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
+				
+				// Activity box
+				int numARKFetchers = node.getNumARKFetchers();
+				
+				HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
+				activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
+				HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode activityList = StatisticsToadlet.drawActivity(activityInfoboxContent, node);
+				if ((mode >= PageMaker.MODE_ADVANCED) && (activityList != null)) {
+					if (numARKFetchers > 0) {
+						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
+					}
+					StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
 				}
-				StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
-			}
-
-			nextTableCell = (mode >= PageMaker.MODE_ADVANCED) ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
-
-			// Peer statistics box
-			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-			StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
-
-			// Peer routing backoff reason box
-			if(mode >= PageMaker.MODE_ADVANCED) {
-				nextTableCell = overviewTableRow.addChild("td", "class", "last");
-				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
-				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-				String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
-				if(routingBackoffReasons.length == 0) {
-					backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
-				} else {
-					HTMLNode reasonList = backoffReasonContent.addChild("ul");
-					for(int i=0;i<routingBackoffReasons.length;i++) {
-						int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
-						if(reasonCount > 0) {
-							reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+				
+				nextTableCell = (mode >= PageMaker.MODE_ADVANCED) ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+				
+				// Peer statistics box
+				HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
+				
+				// Peer routing backoff reason box
+				if(mode >= PageMaker.MODE_ADVANCED) {
+					nextTableCell = overviewTableRow.addChild("td", "class", "last");
+					HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
+					HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
+					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+					if(routingBackoffReasons.length == 0) {
+						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+					} else {
+						HTMLNode reasonList = backoffReasonContent.addChild("ul");
+						for(int i=0;i<routingBackoffReasons.length;i++) {
+							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+							if(reasonCount > 0) {
+								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+							}
 						}
 					}
 				}
+				// END OVERVIEW TABLE
 			}
-			// END OVERVIEW TABLE
 			
 			boolean enablePeerActions = showPeerActionsBox();
 			
