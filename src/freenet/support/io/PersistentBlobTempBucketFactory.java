@@ -366,6 +366,16 @@ public class PersistentBlobTempBucketFactory {
 		synchronized(this) {
 			if(!freeSlots.isEmpty()) {
 				Long slot = freeSlots.firstKey();
+				if(logMINOR) {
+					try {
+						if(slot * blockSize > channel.size()) {
+							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							return null;
+						}
+					} catch (IOException e) {
+						return null;
+					}
+				}
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
@@ -381,6 +391,16 @@ public class PersistentBlobTempBucketFactory {
 		synchronized(this) {
 			if(!freeSlots.isEmpty()) {
 				Long slot = freeSlots.firstKey();
+				if(logMINOR) {
+					try {
+						if(slot * blockSize > channel.size()) {
+							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							return null;
+						}
+					} catch (IOException e) {
+						return null;
+					}
+				}
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
