@@ -326,8 +326,9 @@ public class Announcer {
 		if(enoughPeers()) {
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
+					int running;
 					synchronized(Announcer.this) {
-						if(runningAnnouncements > 0) return;
+						running = runningAnnouncements;
 					}
 					if(enoughPeers()) {
 						for(SeedServerPeerNode pn : node.peers.getConnectedSeedServerPeersVector(null)) {
@@ -345,7 +346,8 @@ public class Announcer {
 								maybeSendAnnouncement();
 							}
 						}, RETRY_DELAY);
-						maybeSendAnnouncement();
+						if(running != 0)
+							maybeSendAnnouncement();
 					}
 				}
 			}, FINAL_DELAY);
