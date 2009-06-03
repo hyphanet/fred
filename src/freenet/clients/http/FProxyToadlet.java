@@ -925,7 +925,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			String prefix = cfg.getPrefix();
 			if(prefix.equals("security-levels") || prefix.equals("pluginmanager")) continue;
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, cfg, node, core);
-			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true, "ConfigToadlet."+prefix, null, true, configtoadlet);
+			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true, "ConfigToadlet."+prefix, "ConfigToadlet.title."+prefix, true, configtoadlet);
 		}
 		
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
