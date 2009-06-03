@@ -314,6 +314,36 @@ public class Announcer {
 	private long toldUserNoIP = -1;
 	private boolean dontKnowOurIPAddress;
 	
+	private final Runnable checker = new Runnable() {
+		
+		public void run() {
+			int running;
+			synchronized(Announcer.this) {
+				running = runningAnnouncements;
+			}
+			if(enoughPeers()) {
+				for(SeedServerPeerNode pn : node.peers.getConnectedSeedServerPeersVector(null)) {
+					node.peers.disconnect(pn, true, true, false);
+				}
+				// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						maybeSendAnnouncement();
+					}
+				}, RETRY_DELAY);
+			} else {
+				node.getTicker().queueTimedJob(new Runnable() {
+					public void run() {
+						maybeSendAnnouncement();
+					}
+				}, RETRY_DELAY);
+				if(running != 0)
+					maybeSendAnnouncement();
+			}
+		}
+		
+	};
+	
 	protected void maybeSendAnnouncement() {
 		synchronized(this) {
 			if(!started) return;
@@ -324,33 +354,7 @@ public class Announcer {
 		long now = System.currentTimeMillis();
 		if(!node.isOpennetEnabled()) return;
 		if(enoughPeers()) {
-			node.getTicker().queueTimedJob(new Runnable() {
-				public void run() {
-					int running;
-					synchronized(Announcer.this) {
-						running = runningAnnouncements;
-					}
-					if(enoughPeers()) {
-						for(SeedServerPeerNode pn : node.peers.getConnectedSeedServerPeersVector(null)) {
-							node.peers.disconnect(pn, true, true, false);
-						}
-						// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
-						node.getTicker().queueTimedJob(new Runnable() {
-							public void run() {
-								maybeSendAnnouncement();
-							}
-						}, RETRY_DELAY);
-					} else {
-						node.getTicker().queueTimedJob(new Runnable() {
-							public void run() {
-								maybeSendAnnouncement();
-							}
-						}, RETRY_DELAY);
-						if(running != 0)
-							maybeSendAnnouncement();
-					}
-				}
-			}, FINAL_DELAY);
+			node.getTicker().queueTimedJob(checker, FINAL_DELAY);
 			return;
 		}
 		if((!ignoreIPUndetected) && (!node.ipDetector.hasValidIP())) {
