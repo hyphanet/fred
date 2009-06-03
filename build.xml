@@ -71,7 +71,7 @@
 	<target name="get-extjar" depends="env" unless="freenet-ext.present"
 		description="Download some external libraries which Freenet relies on">
 		<mkdir dir="${lib}"/>
-		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar" 
+		<get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
 			dest="${freenet-ext.location}" 
 			verbose="true"
 			usetimestamp="true"/>
@@ -166,6 +166,10 @@
 		<copy todir="${build-test}/freenet/clients/http/filter/png">
 			<fileset dir="${test}/freenet/clients/http/filter/png"/>
 		</copy>
+		
+		<copy todir="${build-test}/freenet/clients/http/filter/bmp">
+					<fileset dir="${test}/freenet/clients/http/filter/bmp"/>
+				</copy>
 	</target>
 
 	<target name="unit" depends="unit-build" if="junit.present" unless="skip_tests">
