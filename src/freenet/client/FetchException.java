@@ -431,8 +431,8 @@ public class FetchException extends Exception {
 			
 		case BUCKET_ERROR:
 		case INTERNAL_ERROR:
-			// Maybe fatal
-			return false;
+			// No point retrying.
+			return true;
 			
 		// Wierd ones
 		case CANCELLED:
