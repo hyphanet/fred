@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.DecimalFormat;
@@ -441,6 +442,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 			// END PEER TABLE
+		} else {
+			if(!isOpennet()) {
+				try {
+					throw new RedirectException("/addfriend/");
+				} catch (URISyntaxException e) {
+					Logger.error(this, "Impossible: "+e+" for /addfriend/", e);
+				}
+			}
 		}
 		
 		// our reference
