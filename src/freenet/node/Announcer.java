@@ -330,13 +330,13 @@ public class Announcer {
 					public void run() {
 						maybeSendAnnouncement();
 					}
-				}, RETRY_DELAY);
+				}, "Check whether we need to announce", RETRY_DELAY, false, true);
 			} else {
 				node.getTicker().queueTimedJob(new Runnable() {
 					public void run() {
 						maybeSendAnnouncement();
 					}
-				}, RETRY_DELAY);
+				}, "Check whether we need to announce", RETRY_DELAY, false, true);
 				if(running != 0)
 					maybeSendAnnouncement();
 			}
