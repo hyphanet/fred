@@ -326,6 +326,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	void finishRegister(final SendableGet[] getters, boolean persistent, ObjectContainer container, final boolean anyValid, final DatastoreCheckerItem reg) {
+		if(logMINOR) Logger.minor(this, "finishRegister for "+getters+" anyValid="+anyValid+" reg="+reg+" persistent="+persistent);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			for(int i=0;i<getters.length;i++) {
