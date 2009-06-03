@@ -23,6 +23,7 @@ public final class PageMaker {
 	public enum THEME {
 		BOXED("boxed", "Boxed", ""),
 		CLEAN("clean", "Clean", "Mr. Proper"),
+		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
                 MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
@@ -30,6 +31,7 @@ public final class PageMaker {
 		public static final String[] possibleValues = {
 			BOXED.code,
 			CLEAN.code,
+			CLEAN_DROPDOWN.code,
 			GRAYANDBLUE.code,
 			SKY.code,
                         MINIMALBLUE.code
