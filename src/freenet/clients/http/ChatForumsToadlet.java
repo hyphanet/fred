@@ -49,7 +49,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
 	@Override
 	public String path() {
-		return "/insertsite/";
+		return "/chat/";
 	}
 
 	@Override
