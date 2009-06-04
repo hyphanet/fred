@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry excluding="freenet/node/*Test.java|plugins/JSTUN/**|test/**" kind="src" path="src"/>
-	<classpathentry including="freenet/|org/" kind="src" path="test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/usr/share/java/junit.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/freenet-ext.jar"/>
+	<classpathentry kind="src" output="build" path="src"/>
+	<classpathentry kind="var" path="JRE_LIB" rootpath="JRE_SRCROOT" sourcepath="JRE_SRC"/>
+	<classpathentry kind="lib" path="/home/ashish/workspace/Freenet/lib/freenet-ext.jar"/>
+	<classpathentry kind="con" path="/home/ashish/workspace/Freenet/gnu-crypto.jar"/>
+	<classpathentry kind="con" path="/home/ashish/workspace/Freenet/javax-security.jar"/>
+	<classpathentry kind="con" path="/home/ashish/workspace/Freenet/javax-crypto.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

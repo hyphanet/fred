@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>fred</name>
+	<name>Freenet</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -24,4 +24,21 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>gnu-crypto.jar</name>
+			<type>2</type>
+			<location>/home/ashish/workspace/Freenet/gnu-crypto.jar</location>
+		</link>
+		<link>
+			<name>javax-security.jar</name>
+			<type>2</type>
+			<location>/home/ashish/workspace/Freenet/javax-security.jar</location>
+		</link>
+		<link>
+			<name>javax-crypto.jar</name>
+			<type>2</type>
+			<location>/home/ashish/workspace/Freenet/javax-crypto.jar</location>
+		</link>
+	</linkedResources>
 </projectDescription>
