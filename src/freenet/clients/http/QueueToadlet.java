@@ -1739,7 +1739,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	public boolean isEnabled(ToadletContext ctx) {
-		return (!container.publicGatewayMode()) || ctx.isAllowedFullAccess();
+		return (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
 	}
 
 	@Override
