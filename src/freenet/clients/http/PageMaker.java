@@ -24,6 +24,7 @@ public final class PageMaker {
 		BOXED("boxed", "Boxed", ""),
 		CLEAN("clean", "Clean", "Mr. Proper"),
 		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu."),
+		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
                 MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
@@ -32,6 +33,7 @@ public final class PageMaker {
 			BOXED.code,
 			CLEAN.code,
 			CLEAN_DROPDOWN.code,
+			CLEAN_STATIC.code,
 			GRAYANDBLUE.code,
 			SKY.code,
                         MINIMALBLUE.code
