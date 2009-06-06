@@ -970,6 +970,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		SimpleHelpToadlet simpleHelpToadlet = new SimpleHelpToadlet(client, core);
 		server.register(simpleHelpToadlet, null, "/help/", true, false);
 		
+		PushDataToadlet pushDataToadlet = new PushDataToadlet(client);
+		server.register(pushDataToadlet, null, pushDataToadlet.path(), true, false);
+		
 	}
 	
 	/**
