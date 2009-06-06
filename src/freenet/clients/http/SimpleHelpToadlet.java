@@ -29,21 +29,19 @@ public class SimpleHelpToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 		
-		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet " + L10n.getString("FProxyToadlet.help"), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode("Freenet " + L10n.getString("FProxyToadlet.help"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		
 		// Description infobox
-		HTMLNode helpScreenBox1 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle")));
-		HTMLNode helpScreenContent1 = ctx.getPageMaker().getContentNode(helpScreenBox1);
+		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle"), contentNode);
 		helpScreenContent1.addChild("#", L10n.getString("SimpleHelpToadlet.descriptionText"));
 		
 		// Definitions infobox
-		HTMLNode helpScreenBox2 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle")));
-		HTMLNode helpScreenContent2 = ctx.getPageMaker().getContentNode(helpScreenBox2);
+		HTMLNode helpScreenContent2 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle"), contentNode);
 		
 		HTMLNode table = helpScreenContent2.addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
        
@@ -69,8 +67,7 @@ public class SimpleHelpToadlet extends Toadlet {
 		
 		
 		// Port forwarding, etc.	
-		HTMLNode helpScreenBox3 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle")));
-		HTMLNode helpScreenContent3 = ctx.getPageMaker().getContentNode(helpScreenBox3);
+		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle"), contentNode);
 		helpScreenContent3.addChild("#", L10n.getString("SimpleHelpToadlet.connectivityText"));
 		
 		
@@ -81,6 +78,11 @@ public class SimpleHelpToadlet extends Toadlet {
 	@Override
 	public String supportedMethods() {
 		return "GET";
+	}
+
+	@Override
+	public String path() {
+		return "/help/";
 	}
 	
 }

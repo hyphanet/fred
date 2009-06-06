@@ -26,7 +26,6 @@ import freenet.keys.FreenetURI;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.LogThresholdCallback;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;

@@ -108,7 +108,7 @@
 	<target name="get-extjar" depends="env" unless="freenet-ext.present"
 		description="Download some external libraries which Freenet relies on">
 		<mkdir dir="${lib}"/>
-		<get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
+		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar" 
 			dest="${freenet-ext.location}" 
 			verbose="true"
 			usetimestamp="true"/>

@@ -703,18 +703,18 @@ public class PluginManager {
 	
 	static {
 		addOfficialPlugin("Echo");
-		addOfficialPlugin("Freemail");
+		addOfficialPlugin("Freemail", false, 12);
 		addOfficialPlugin("HelloWorld");
 		addOfficialPlugin("HelloFCP");
-		addOfficialPlugin("JSTUN", true, -1);
-		addOfficialPlugin("KeyExplorer", false, 4001);
-		addOfficialPlugin("MDNSDiscovery");
+		addOfficialPlugin("JSTUN", true, 2);
+		addOfficialPlugin("KeyExplorer", false, 4004);
+		addOfficialPlugin("MDNSDiscovery", false, 2);
 		addOfficialPlugin("SNMP");
 		addOfficialPlugin("TestGallery");
-		addOfficialPlugin("ThawIndexBrowser", false, 1);
-		addOfficialPlugin("UPnP", true, -1);
+		addOfficialPlugin("ThawIndexBrowser", false, 2);
+		addOfficialPlugin("UPnP", true, 10003);
 		addOfficialPlugin("XMLLibrarian", false, 22);
-		addOfficialPlugin("XMLSpider", false, 36);
+		addOfficialPlugin("XMLSpider", false, 37);
 	}
 	
 	static void addOfficialPlugin(String name) {
@@ -783,6 +783,10 @@ public class PluginManager {
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
 		File pluginFile = new File(pluginDirectory, filename);
+		
+		if(pdl instanceof PluginDownLoaderFile) {
+			pluginFile.delete();
+		}
 
 		/* check if file needs to be downloaded. */
 		if(logMINOR)

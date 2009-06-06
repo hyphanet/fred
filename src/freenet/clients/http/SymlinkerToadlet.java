@@ -145,5 +145,10 @@ public class SymlinkerToadlet extends Toadlet {
 	    
 		throw new RedirectException(outuri);
 	}
+
+	@Override
+	public String path() {
+		return "/sl/";
+	}
 	
 }

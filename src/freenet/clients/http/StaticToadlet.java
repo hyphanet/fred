@@ -97,4 +97,9 @@ public class StaticToadlet extends Toadlet {
 		return "GET";
 	}
 
+	@Override
+	public String path() {
+		return ROOT_URL;
+	}
+
 }

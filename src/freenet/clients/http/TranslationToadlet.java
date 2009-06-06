@@ -56,8 +56,9 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		} else if (request.isParameterSet("translation_updated")) {
 			String key = request.getParam("translation_updated");
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("translationUpdatedTitle"), true, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdatedTitle"), true, ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 
 			HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 			HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
@@ -90,8 +91,9 @@ public class TranslationToadlet extends Toadlet {
 		} else if (request.isParameterSet("translate")) {
 			boolean gotoNext = request.isParameterSet("gotoNext");
 			String key = request.getParam("translate");
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 
 			HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 			HTMLNode updateForm =  ctx.addFormChild(translationNode, TOADLET_URL, "trans_update");
@@ -134,11 +136,11 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		} else if (request.isParameterSet("remove")) {
 			String key = request.getParam("remove");
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("removeOverrideTitle"), true, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("removeOverrideTitle"), true, ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", l10n("removeOverrideWarningTitle")));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("removeOverrideWarningTitle"), contentNode);
 			content.addChild("p").addChild("#",
 					L10n.getString("TranslationToadlet.confirmRemoveOverride", new String[] { "key", "value" },
 							new String[] { key, L10n.getString(key) }));
@@ -152,9 +154,10 @@ public class TranslationToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
-		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 
 		HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 		HTMLNode translationHeaderNode = translationNode.addChild("p");
@@ -278,5 +281,10 @@ public class TranslationToadlet extends Toadlet {
 	
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("TranslationToadlet."+key, new String[] { pattern }, new String[] { value });
+	}
+
+	@Override
+	public String path() {
+		return TOADLET_URL;
 	}
 }

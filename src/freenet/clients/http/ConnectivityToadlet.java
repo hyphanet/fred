@@ -26,9 +26,11 @@ import freenet.io.PeerAddressTrackerItem;
 import freenet.io.AddressTrackerItem.Gap;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.l10n.L10n;
+import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
+import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 
@@ -59,23 +61,54 @@ public class ConnectivityToadlet extends Toadlet {
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
-		HTMLNode pageNode = pageMaker.getPageNode(L10n.getString("ConnectivityToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
-		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+		PageNode page = pageMaker.getPageNode(L10n.getString("ConnectivityToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 
+		// our ports
+		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		portInfobox.addChild("div", "class", "infobox-header", l10nConn("nodePortsTitle"));
+		HTMLNode portInfoboxContent = portInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode portInfoList = portInfoboxContent.addChild("ul");
+		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
+		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
+		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
+		portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.darknetFnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
+		int opennetPort = node.getOpennetFNPPort();
+		if(opennetPort > 0)
+			portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.opennetFnpPort", new String[] { "port" }, new String[] { Integer.toString(opennetPort) }));
+		try {
+			if(fproxyConfig.getBoolean("enabled", false)) {
+				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fproxyPort", new String[] { "port" }, new String[] { Integer.toString(fproxyConfig.getInt("port")) }));
+			} else {
+				portInfoList.addChild("li", l10nConn("fproxyDisabled"));
+			}
+			if(fcpConfig.getBoolean("enabled", false)) {
+				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fcpPort", new String[] { "port" }, new String[] { Integer.toString(fcpConfig.getInt("port")) }));
+			} else {
+				portInfoList.addChild("li", l10nConn("fcpDisabled"));
+			}
+			if(tmciConfig.getBoolean("enabled", false)) {
+				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.tmciPort", new String[] { "port" }, new String[] { Integer.toString(tmciConfig.getInt("port")) }));
+			} else {
+				portInfoList.addChild("li", l10nConn("tmciDisabled"));
+			}
+		} catch (FSParseException e) {
+			// ignore
+		}
+		
 		// Add connection type box.
 		
 		node.ipDetector.addConnectionTypeBox(contentNode);
 		
 		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
 		
-		HTMLNode summaryBox = pageMaker.getInfobox(L10n.getString("ConnectivityToadlet.summaryTitle"));
-		contentNode.addChild(summaryBox);
-		HTMLNode summaryContent = pageMaker.getContentNode(summaryBox);
+		HTMLNode summaryContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.summaryTitle"), contentNode);
 		
 		HTMLNode table = summaryContent.addChild("table", "border", "0");
 		
@@ -99,9 +132,7 @@ public class ConnectivityToadlet extends Toadlet {
 		for(int i=0;i<handlers.length;i++) {
 			// Peers
 			AddressTracker tracker = handlers[i].getAddressTracker();
-			HTMLNode portsBox = pageMaker.getInfobox(L10n.getString("ConnectivityToadlet.byPortTitle", new String[] { "port", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }));
-			contentNode.addChild(portsBox);
-			HTMLNode portsContent = pageMaker.getContentNode(portsBox);
+			HTMLNode portsContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.byPortTitle", new String[] { "port", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }), contentNode);
 			PeerAddressTrackerItem[] items = tracker.getPeerAddressTrackerItems();
 			table = portsContent.addChild("table");
 			HTMLNode row = table.addChild("tr");
@@ -135,9 +166,7 @@ public class ConnectivityToadlet extends Toadlet {
 			}
 
 			// IPs
-			portsBox = pageMaker.getInfobox(L10n.getString("ConnectivityToadlet.byIPTitle", new String[] { "ip", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }));
-			contentNode.addChild(portsBox);
-			portsContent = pageMaker.getContentNode(portsBox);
+			portsContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.byIPTitle", new String[] { "ip", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }), contentNode);
 			InetAddressAddressTrackerItem[] ipItems = tracker.getInetAddressTrackerItems();
 			table = portsContent.addChild("table");
 			row = table.addChild("tr");
@@ -177,7 +206,16 @@ public class ConnectivityToadlet extends Toadlet {
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
+	private String l10nConn(String string) {
+		return L10n.getString("DarknetConnectionsToadlet."+string);
+	}
+
 	private String l10n(String key) {
 		return L10n.getString("ConnectivityToadlet."+key);
+	}
+
+	@Override
+	public String path() {
+		return "/connectivity/";
 	}
 }

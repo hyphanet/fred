@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.DecimalFormat;
@@ -235,8 +236,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
@@ -246,28 +248,28 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 		
 		if(peerNodeStatuses.length>0){
-
-			/* node status values */
-			long nodeUptimeSeconds = (now - node.startupTime) / 1000;
-			int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
-			int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
-			int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
-			int networkSizeEstimateRecent = 0;
-			if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-				networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
-			}
-			DecimalFormat fix4 = new DecimalFormat("0.0000");
-			double routingMissDistance =  stats.routingMissDistance.currentValue();
-			double backedOffPercent =  stats.backedOffPercent.currentValue();
-			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
-
-			// BEGIN OVERVIEW TABLE
-			HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
-			HTMLNode overviewTableRow = overviewTable.addChild("tr");
-			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
-
-			/* node status overview box */
+			
 			if(mode >= PageMaker.MODE_ADVANCED) {
+
+				/* node status values */
+				long nodeUptimeSeconds = (now - node.startupTime) / 1000;
+				int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
+				int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
+				int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
+				int networkSizeEstimateRecent = 0;
+				if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
+					networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
+				}
+				DecimalFormat fix4 = new DecimalFormat("0.0000");
+				double routingMissDistance =  stats.routingMissDistance.currentValue();
+				double backedOffPercent =  stats.backedOffPercent.currentValue();
+				String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
+				
+				// BEGIN OVERVIEW TABLE
+				HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
+				HTMLNode overviewTableRow = overviewTable.addChild("tr");
+				HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
+				
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
 				HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
@@ -283,48 +285,48 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(stats.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
-			}
-
-			// Activity box
-			int numARKFetchers = node.getNumARKFetchers();
-
-			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
-			activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
-			HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
-			HTMLNode activityList = StatisticsToadlet.drawActivity(activityInfoboxContent, node);
-			if ((mode >= PageMaker.MODE_ADVANCED) && (activityList != null)) {
-				if (numARKFetchers > 0) {
-					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
+				
+				// Activity box
+				int numARKFetchers = node.getNumARKFetchers();
+				
+				HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
+				activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
+				HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode activityList = StatisticsToadlet.drawActivity(activityInfoboxContent, node);
+				if ((mode >= PageMaker.MODE_ADVANCED) && (activityList != null)) {
+					if (numARKFetchers > 0) {
+						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
+					}
+					StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
 				}
-				StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
-			}
-
-			nextTableCell = (mode >= PageMaker.MODE_ADVANCED) ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
-
-			// Peer statistics box
-			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-			StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
-
-			// Peer routing backoff reason box
-			if(mode >= PageMaker.MODE_ADVANCED) {
-				nextTableCell = overviewTableRow.addChild("td", "class", "last");
-				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
-				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-				String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
-				if(routingBackoffReasons.length == 0) {
-					backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
-				} else {
-					HTMLNode reasonList = backoffReasonContent.addChild("ul");
-					for(int i=0;i<routingBackoffReasons.length;i++) {
-						int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
-						if(reasonCount > 0) {
-							reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+				
+				nextTableCell = (mode >= PageMaker.MODE_ADVANCED) ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+				
+				// Peer statistics box
+				HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+				StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
+				
+				// Peer routing backoff reason box
+				if(mode >= PageMaker.MODE_ADVANCED) {
+					nextTableCell = overviewTableRow.addChild("td", "class", "last");
+					HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
+					HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
+					String [] routingBackoffReasons = peers.getPeerNodeRoutingBackoffReasons();
+					if(routingBackoffReasons.length == 0) {
+						backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+					} else {
+						HTMLNode reasonList = backoffReasonContent.addChild("ul");
+						for(int i=0;i<routingBackoffReasons.length;i++) {
+							int reasonCount = peers.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+							if(reasonCount > 0) {
+								reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+							}
 						}
 					}
 				}
+				// END OVERVIEW TABLE
 			}
-			// END OVERVIEW TABLE
 			
 			boolean enablePeerActions = showPeerActionsBox();
 			
@@ -440,44 +442,20 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 			// END PEER TABLE
+		} else {
+			if(!isOpennet()) {
+				try {
+					throw new RedirectException("/addfriend/");
+				} catch (URISyntaxException e) {
+					Logger.error(this, "Impossible: "+e+" for /addfriend/", e);
+				}
+			}
 		}
 		
 		// our reference
 		if(shouldDrawNoderefBox(mode >= PageMaker.MODE_ADVANCED)) {
 			drawAddPeerBox(contentNode, ctx);
 			drawNoderefBox(contentNode, ctx);
-		}
-		
-		// our ports
-		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		portInfobox.addChild("div", "class", "infobox-header", l10n("nodePortsTitle"));
-		HTMLNode portInfoboxContent = portInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode portInfoList = portInfoboxContent.addChild("ul");
-		SimpleFieldSet fproxyConfig = node.config.get("fproxy").exportFieldSet(true);
-		SimpleFieldSet fcpConfig = node.config.get("fcp").exportFieldSet(true);
-		SimpleFieldSet tmciConfig = node.config.get("console").exportFieldSet(true);
-		portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.darknetFnpPort", new String[] { "port" }, new String[] { Integer.toString(node.getFNPPort()) }));
-		int opennetPort = node.getOpennetFNPPort();
-		if(opennetPort > 0)
-			portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.opennetFnpPort", new String[] { "port" }, new String[] { Integer.toString(opennetPort) }));
-		try {
-			if(fproxyConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fproxyPort", new String[] { "port" }, new String[] { Integer.toString(fproxyConfig.getInt("port")) }));
-			} else {
-				portInfoList.addChild("li", l10n("fproxyDisabled"));
-			}
-			if(fcpConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.fcpPort", new String[] { "port" }, new String[] { Integer.toString(fcpConfig.getInt("port")) }));
-			} else {
-				portInfoList.addChild("li", l10n("fcpDisabled"));
-			}
-			if(tmciConfig.getBoolean("enabled", false)) {
-				portInfoList.addChild("li", L10n.getString("DarknetConnectionsToadlet.tmciPort", new String[] { "port" }, new String[] { Integer.toString(tmciConfig.getInt("port")) }));
-			} else {
-				portInfoList.addChild("li", l10n("tmciDisabled"));
-			}
-		} catch (FSParseException e) {
-			// ignore
 		}
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -582,8 +560,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				results.put(result, results.get(result)+1);
 			}
 			
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			
 			//We create a table to show the results
 			HTMLNode detailedStatusBox=new HTMLNode("table");
@@ -598,20 +577,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition")));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition"), contentNode);
 			infoboxContent.addChild(detailedStatusBox);
-			infoboxContent.addChild("br");
-			infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
-			infoboxContent.addChild("br");
-			addHomepageLink(infoboxContent);
+			if(!isOpennet())
+				infoboxContent.addChild("p").addChild("a", "href", "/addfriend/", l10n("addAnotherFriend"));
+			infoboxContent.addChild("p").addChild("a", "href", path(), l10n("goFriendConnectionStatus"));
+			addHomepageLink(infoboxContent.addChild("p"));
 			
 			writeHTMLReply(ctx, 500, l10n("reportOfNodeAddition"), pageNode.generate());
-			
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", defaultRedirectLocation());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
 		} else handleAltPost(uri, request, ctx, logMINOR);
 		
 		
@@ -673,7 +646,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 */
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		// Do nothing - we only support adding nodes
-		handleGet(uri, new HTTPRequestImpl(uri), ctx);
+		handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 
 	/**
@@ -694,6 +667,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected abstract boolean shouldDrawNoderefBox(boolean advancedModeEnabled);
 
 	private void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx) {
+		drawNoderefBox(contentNode, ctx, getNoderef());
+	}
+	
+	static void drawNoderefBox(HTMLNode contentNode, ToadletContext ctx, SimpleFieldSet fs) {
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		HTMLNode headerReferenceInfobox = referenceInfobox.addChild("div", "class", "infobox-header");
 		// FIXME better way to deal with this sort of thing???
@@ -705,7 +682,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
 				new String[] { "bold", "/bold" },
 				new String[] { "<b>", "</b>" });
-		referenceInfoboxContent.addChild("pre", "id", "reference", getNoderef().toString() + '\n');
+		referenceInfoboxContent.addChild("pre", "id", "reference", fs.toString() + '\n');
 	}
 
 	protected abstract String getPageTitle(String titleCountString, String myName);
@@ -713,11 +690,15 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/** Draw the add a peer box. This comes immediately after the main peers table and before the noderef box.
 	 * Implementors may skip it by not doing anything in this method. */
 	protected void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx) {
+		drawAddPeerBox(contentNode, ctx, isOpennet(), path());
+	}
+	
+	protected static void drawAddPeerBox(HTMLNode contentNode, ToadletContext ctx, boolean isOpennet, String formTarget) {
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", l10n("addPeerTitle"));
 		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, ".", "addPeerForm");
+		HTMLNode peerAdditionForm = ctx.addFormChild(peerAdditionContent, formTarget, "addPeerForm");
 		peerAdditionForm.addChild("#", l10n("pasteReference"));
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
@@ -728,7 +709,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("#", (l10n("fileReference") + ' '));
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
 		peerAdditionForm.addChild("br");
-		if(!isOpennet()) {
+		if(!isOpennet) {
 			peerAdditionForm.addChild("#", (l10n("enterDescription") + ' '));
 			peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
 			peerAdditionForm.addChild("br");

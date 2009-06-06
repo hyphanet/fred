@@ -5,7 +5,6 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.BooleanOption;
@@ -20,10 +19,6 @@ import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.node.SecurityLevels;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
-import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -36,9 +31,10 @@ import freenet.support.api.HTTPRequest;
  * Node Configuration Toadlet. Accessible from <code>http://.../config/</code>.
  */
 // FIXME: add logging, comments
-public class ConfigToadlet extends Toadlet {
+public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	// If a setting has to be more than a meg, something is seriously wrong!
 	private static final int MAX_PARAM_VALUE_SIZE = 1024*1024;
+	private final SubConfig subConfig;
 	private final Config config;
 	private final NodeClientCore core;
 	private final Node node;
@@ -104,11 +100,12 @@ public class ConfigToadlet extends Toadlet {
 		}
 	}
 
-	ConfigToadlet(HighLevelSimpleClient client, Config conf, Node node, NodeClientCore core) {
+	ConfigToadlet(HighLevelSimpleClient client, Config conf, SubConfig subConfig, Node node, NodeClientCore core) {
 		super(client);
 		config=conf;
 		this.core = core;
 		this.node = node;
+		this.subConfig = subConfig;
 	}
 	
 	@Override
@@ -122,123 +119,11 @@ public class ConfigToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-			headers.put("Location", "/config/");
+			headers.put("Location", path());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
 		
-		if(request.isPartSet("seclevels")) {
-			// Handle the security level changes.
-			HTMLNode pageNode = null;
-			HTMLNode content = null;
-			HTMLNode ul = null;
-			HTMLNode formNode = null;
-			boolean changedAnything = false;
-			String configName = "security-levels.networkThreatLevel";
-			String confirm = "security-levels.networkThreatLevel.confirm";
-			String tryConfirm = "security-levels.networkThreatLevel.tryConfirm";
-			String networkThreatLevel = request.getPartAsString(configName, 128);
-			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
-			if(newThreatLevel != null) {
-				if(newThreatLevel != node.securityLevels.getNetworkThreatLevel()) {
-					if(!request.isPartSet(confirm) && !request.isPartSet(tryConfirm)) {
-						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
-						if(warning != null) {
-							if(pageNode == null) {
-								pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-								content = ctx.getPageMaker().getContentNode(pageNode);
-								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
-								ul = formNode.addChild("ul", "class", "config");
-							}
-							HTMLNode seclevelGroup = ul.addChild("li");
-
-							seclevelGroup.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", configName, networkThreatLevel });
-							HTMLNode infobox = seclevelGroup.addChild("div", "class", "infobox infobox-information");
-							infobox.addChild("div", "class", "infobox-header", l10nSec("networkThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
-							HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-							infoboxContent.addChild(warning);
-							infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", tryConfirm, "on" });
-						} else {
-							// Apply immediately, no confirm needed.
-							node.securityLevels.setThreatLevel(newThreatLevel);
-							changedAnything = true;
-						}
-					} else if(request.isPartSet(confirm)) {
-						// Apply immediately, user confirmed it.
-						node.securityLevels.setThreatLevel(newThreatLevel);
-						changedAnything = true;
-					}
-				}
-			}
-			
-			configName = "security-levels.friendsThreatLevel";
-			confirm = "security-levels.friendsThreatLevel.confirm";
-			tryConfirm = "security-levels.friendsThreatLevel.tryConfirm";
-			String friendsThreatLevel = request.getPartAsString(configName, 128);
-			FRIENDS_THREAT_LEVEL newFriendsLevel = SecurityLevels.parseFriendsThreatLevel(friendsThreatLevel);
-			if(newFriendsLevel != null) {
-				if(newFriendsLevel != node.securityLevels.getFriendsThreatLevel()) {
-					if(!request.isPartSet(confirm) && !request.isPartSet(tryConfirm)) {
-						HTMLNode warning = node.securityLevels.getConfirmWarning(newFriendsLevel, confirm);
-						if(warning != null) {
-							if(pageNode == null) {
-								pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-								content = ctx.getPageMaker().getContentNode(pageNode);
-								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
-								ul = formNode.addChild("ul", "class", "config");
-							}
-							HTMLNode seclevelGroup = ul.addChild("li");
-
-							seclevelGroup.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", configName, friendsThreatLevel });
-							HTMLNode infobox = seclevelGroup.addChild("div", "class", "infobox infobox-information");
-							infobox.addChild("div", "class", "infobox-header", l10nSec("friendsThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newFriendsLevel)));
-							HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-							infoboxContent.addChild(warning);
-							infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", tryConfirm, "on" });
-						} else {
-							// Apply immediately, no confirm needed.
-							node.securityLevels.setThreatLevel(newFriendsLevel);
-							changedAnything = true;
-						}
-					} else if(request.isPartSet(confirm)) {
-						// Apply immediately, user confirmed it.
-						node.securityLevels.setThreatLevel(newFriendsLevel);
-						changedAnything = true;
-					}
-				}
-			}
-			
-			configName = "security-levels.physicalThreatLevel";
-			confirm = "security-levels.physicalThreatLevel.confirm";
-			tryConfirm = "security-levels.physicalThreatLevel.tryConfirm";
-			String physicalThreatLevel = request.getPartAsString(configName, 128);
-			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
-			if(newPhysicalLevel != null) {
-				if(newPhysicalLevel != node.securityLevels.getPhysicalThreatLevel()) {
-					// No confirmation for changes to physical threat level.
-					node.securityLevels.setThreatLevel(newPhysicalLevel);
-					changedAnything = true;
-				}
-			}
-			
-			if(changedAnything)
-				core.storeConfig();
-			
-			if(pageNode != null) {
-				formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
-				formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
-				formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
-				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-				return;
-			} else {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", "/config/?mode="+MODE_SECURITY_LEVELS);
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				return;
-			}
-		}
-		
-		// Other setting (not security level) goes here 
 		SubConfig[] sc = config.getConfigs();
 		StringBuilder errbuf = new StringBuilder();
 		
@@ -284,12 +169,12 @@ public class ConfigToadlet extends Toadlet {
 		}
 		core.storeConfig();
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("appliedTitle"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		if (errbuf.length() == 0) {
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle")));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle"), contentNode);
 			content.addChild("#", l10n("appliedSuccess"));
 			
 			if (needRestart) {
@@ -314,16 +199,15 @@ public class ConfigToadlet extends Toadlet {
 				}
 			}
 		} else {
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle")));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox).addChild("div", "class", "infobox-content");
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle"), contentNode).
+				addChild("div", "class", "infobox-content");
 			content.addChild("#", l10n("appliedFailureExceptions"));
 			content.addChild("br");
 			content.addChild("#", errbuf.toString());
 		}
 		
-		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle")));
-		HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-		content.addChild("a", new String[]{"href", "title"}, new String[]{".", l10n("shortTitle")}, l10n("returnToNodeConfig"));
+		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle"), contentNode);
+		content.addChild("a", new String[]{"href", "title"}, new String[]{path(), l10n("shortTitle")}, l10n("returnToNodeConfig"));
 		content.addChild("br");
 		addHomepageLink(content);
 
@@ -335,8 +219,6 @@ public class ConfigToadlet extends Toadlet {
 		return L10n.getString("ConfigToadlet." + string);
 	}
 
-	public static final int MODE_SECURITY_LEVELS = 3;
-	
 	@Override
     public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
@@ -345,42 +227,20 @@ public class ConfigToadlet extends Toadlet {
 			return;
 		}
 		
-		SubConfig[] sc = config.getConfigs();
-		Arrays.sort(sc);
-		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
-		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode, MODE_SECURITY_LEVELS, "SecurityLevels.title", "SecurityLevels.tooltip");
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode);
 		
-		if(mode == MODE_SECURITY_LEVELS) {
-			drawSecurityLevelsPage(contentNode, ctx);
-		} else {
-		
-		if(mode >= PageMaker.MODE_ADVANCED){
-			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
-			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
-			if(!L10n.getSelectedLanguage().equals(L10n.LANGUAGE.getDefault()))
-				navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
-			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
-			HTMLNode navigationTableRow = navigationTable.addChild("tr");
-			HTMLNode nextTableCell = navigationTableRow;
-			
-			for(int i=0; i<sc.length;i++){
-				if(sc[i].getPrefix().equals("security-levels")) continue;
-				nextTableCell.addChild("td", "class", "config_navigation").addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), l10n(sc[i].getPrefix()));
-			}
-			contentNode.addChild(navigationBar);
-		}
-
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", l10n("title"));
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
-		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configForm");
+		HTMLNode formNode = ctx.addFormChild(configNode, path(), "configForm");
 		
-		if(WrapperConfig.canChangeProperties()) {
+		if(subConfig.getPrefix().equals("node") && WrapperConfig.canChangeProperties()) {
 			String configName = "wrapper.java.maxmemory";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
 			if(curValue != null) {
@@ -397,11 +257,9 @@ public class ConfigToadlet extends Toadlet {
 			}
 		}
 		
-		for(int i=0; i<sc.length;i++){
 			short displayedConfigElements = 0;
 			
-			if(sc[i].getPrefix().equals("security-levels")) continue;
-			Option<?>[] o = sc[i].getOptions();
+			Option<?>[] o = subConfig.getOptions();
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 			
 			for(int j=0; j<o.length; j++){
@@ -411,143 +269,48 @@ public class ConfigToadlet extends Toadlet {
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""),
+							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+subConfig.getPrefix() + '.' + o[j].getName() + ']' : ""),
 							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
-						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
+						Logger.error(this, subConfig.getPrefix() + configName + "has returned null from config!);");
 						continue;
 					}
 					
 					ConfigCallback<?> callback = o[j].getCallback();
 					if(callback instanceof EnumerableOptionCallback)
-						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback) callback, sc[i],
+						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback) callback, subConfig,
 						        configName, callback.isReadOnly()));
 					else if(callback instanceof BooleanCallback)
-						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption) o[j]).getValue(), sc[i],
+						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption) o[j]).getValue(), subConfig,
 						        configName, callback.isReadOnly()));
 					else if (callback.isReadOnly())
 						configItemValueNode.addChild("input", //
 						        new String[] { "type", "class", "disabled", "alt", "name", "value" }, //
 						        new String[] { "text", "config", "disabled", o[j].getShortDesc(),
-						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
+						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
 					else
 						configItemValueNode.addChild("input",//
 						        new String[] { "type", "class", "alt", "name", "value" }, //
 						        new String[] { "text", "config", o[j].getShortDesc(),
-						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
+						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
 
 					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc()));
 				}
 			}
 			
 			if(displayedConfigElements>0) {
-				formNode.addChild("div", "class", "configprefix", l10n(sc[i].getPrefix()));
-				formNode.addChild("a", "id", sc[i].getPrefix());
+				formNode.addChild("div", "class", "configprefix", l10n(subConfig.getPrefix()));
+				formNode.addChild("a", "id", subConfig.getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
-		}
 		
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
-		
-		}
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
-	private void drawSecurityLevelsPage(HTMLNode contentNode, ToadletContext ctx) {
-		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		infobox.addChild("div", "class", "infobox-header", l10nSec("title"));
-		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
-		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configFormSecLevels");
-		// Network security level
-		formNode.addChild("div", "class", "configprefix", l10nSec("networkThreatLevelShort"));
-		HTMLNode ul = formNode.addChild("ul", "class", "config");
-		HTMLNode seclevelGroup = ul.addChild("li");
-		seclevelGroup.addChild("#", l10nSec("networkThreatLevel"));
-		
-		NETWORK_THREAT_LEVEL networkLevel = node.securityLevels.getNetworkThreatLevel();
-		
-		String controlName = "security-levels.networkThreatLevel";
-		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.values()) {
-			HTMLNode input;
-			if(level == networkLevel) {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
-			} else {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-			}
-			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
-			input.addChild("#", ": ");
-			L10n.addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-			HTMLNode inner = input.addChild("p").addChild("i");
-			L10n.addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-		}
-		
-		// Friends security level
-		formNode.addChild("div", "class", "configprefix", l10nSec("friendsThreatLevelShort"));
-		ul = formNode.addChild("ul", "class", "config");
-		seclevelGroup = ul.addChild("li");
-		seclevelGroup.addChild("#", l10nSec("friendsThreatLevel"));
-		
-		FRIENDS_THREAT_LEVEL friendsLevel = node.securityLevels.getFriendsThreatLevel();
-		
-		controlName = "security-levels.friendsThreatLevel";
-		for(FRIENDS_THREAT_LEVEL level : FRIENDS_THREAT_LEVEL.values()) {
-			HTMLNode input;
-			if(level == friendsLevel) {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
-			} else {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-			}
-			input.addChild("b", l10nSec("friendsThreatLevel.name."+level));
-			input.addChild("#", ": ");
-			L10n.addL10nSubstitution(input, "SecurityLevels.friendsThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-			HTMLNode inner = input.addChild("p").addChild("i");
-			L10n.addL10nSubstitution(inner, "SecurityLevels.friendsThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-		}
-		
-		// Physical security level
-		formNode.addChild("div", "class", "configprefix", l10nSec("physicalThreatLevelShort"));
-		ul = formNode.addChild("ul", "class", "config");
-		seclevelGroup = ul.addChild("li");
-		seclevelGroup.addChild("#", l10nSec("physicalThreatLevel"));
-		
-		PHYSICAL_THREAT_LEVEL physicalLevel = node.securityLevels.getPhysicalThreatLevel();
-		
-		controlName = "security-levels.physicalThreatLevel";
-		for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
-			HTMLNode input;
-			if(level == physicalLevel) {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
-			} else {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
-			}
-			input.addChild("b", l10nSec("physicalThreatLevel.name."+level));
-			input.addChild("#", ": ");
-			L10n.addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-			HTMLNode inner = input.addChild("p").addChild("i");
-			L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-		}
-		
-		
-		
-		// FIXME implement the rest, it should be very similar to the above.
-		
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
-		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
-	}
-
-
-	private String l10nSec(String key) {
-		return L10n.getString("SecurityLevels."+key);
-	}
-	
-	private String l10nSec(String key, String pattern, String value) {
-		return L10n.getString("SecurityLevels."+key, pattern, value);
-	}
-
 	@Override
     public String supportedMethods() {
 		return "GET, POST";
@@ -593,5 +356,18 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		return result;
+	}
+
+	@Override
+	public String path() {
+		return "/config/"+subConfig.getPrefix();
+	}
+
+	public boolean isEnabled(ToadletContext ctx) {
+		Option<?>[] o = subConfig.getOptions();
+		if(core.isAdvancedModeEnabled()) return true;
+		for(Option<?> option : o)
+			if(!option.isExpert()) return true;
+		return false;
 	}
 }

@@ -23,6 +23,7 @@ public final class PageMaker {
 	public enum THEME {
 		BOXED("boxed", "Boxed", ""),
 		CLEAN("clean", "Clean", "Mr. Proper"),
+		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
                 MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
@@ -30,6 +31,7 @@ public final class PageMaker {
 		public static final String[] possibleValues = {
 			BOXED.code,
 			CLEAN.code,
+			CLEAN_DROPDOWN.code,
 			GRAYANDBLUE.code,
 			SKY.code,
                         MINIMALBLUE.code
@@ -65,27 +67,63 @@ public final class PageMaker {
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
 	private File override;
-	private final List<String> navigationLinkTexts = new ArrayList<String>();
-	private final List<String> navigationLinkTextsNonFull = new ArrayList<String>();
-	private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
-	private final Map<String, String> navigationLinks = new HashMap<String, String>();
-	private final Map<HTMLNode, HTMLNode> contentNodes = new HashMap<HTMLNode, HTMLNode>();
-	private final Map<HTMLNode, HTMLNode> headNodes = new HashMap<HTMLNode, HTMLNode>();
-	private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
 	
-	private final FredPluginL10n plugin; 
-	private final boolean pluginMode;
+	private List<SubMenu> menuList = new ArrayList<SubMenu>();
+	private Map<String, SubMenu> subMenus = new HashMap<String, SubMenu>();
 	
-	public PageMaker(FredPluginL10n plug, THEME t) {
-		setTheme(t);
-		plugin = plug;
-		pluginMode = true;
+	private class SubMenu {
+		
+		/** Name of the submenu */
+		private final String navigationLinkText;
+		/** Link if the user clicks on the submenu itself */
+		private final String defaultNavigationLink;
+		/** Tooltip */
+		private final String defaultNavigationLinkTitle;
+		
+		private final FredPluginL10n plugin;
+		
+		private final List<String> navigationLinkTexts = new ArrayList<String>();
+		private final List<String> navigationLinkTextsNonFull = new ArrayList<String>();
+		private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
+		private final Map<String, String> navigationLinks = new HashMap<String, String>();
+		private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
+		
+		public SubMenu(String link, String name, String title, FredPluginL10n plugin) {
+			this.navigationLinkText = name;
+			this.defaultNavigationLink = link;
+			this.defaultNavigationLinkTitle = title;
+			this.plugin = plugin;
+		}
+
+		public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+			navigationLinkTexts.add(name);
+			if(!fullOnly)
+				navigationLinkTextsNonFull.add(name);
+			navigationLinkTitles.put(name, title);
+			navigationLinks.put(name, path);
+			if(cb != null)
+				navigationLinkCallbacks.put(name, cb);
+		}
+
+		@Deprecated
+		public void removeNavigationLink(String name) {
+			navigationLinkTexts.remove(name);
+			navigationLinkTextsNonFull.remove(name);
+			navigationLinkTitles.remove(name);
+			navigationLinks.remove(name);
+		}
+
+		@Deprecated
+		public void removeAllNavigationLinks() {
+			navigationLinkTexts.clear();
+			navigationLinkTextsNonFull.clear();
+			navigationLinkTitles.clear();
+			navigationLinks.clear();
+		}
 	}
 	
 	protected PageMaker(THEME t) {
 		setTheme(t);
-		plugin = null;
-		pluginMode = false;
 	}
 	
 	void setOverride(File f) {
@@ -103,37 +141,39 @@ public final class PageMaker {
 				this.theme = theme2;
 		}
 	}
-        	
-	public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
-		if (pluginMode && (plugin == null)) {
-			// FIXME invent a check on compile time
-			// log only
-			Logger.error(this, "Deprecated way to use Pagemaker from plugin, your plugin need to implement FredPluginL10n to do so", new Error("FIXME"));
-		}
-		navigationLinkTexts.add(name);
-		if(!fullOnly)
-			navigationLinkTextsNonFull.add(name);
-		navigationLinkTitles.put(name, title);
-		navigationLinks.put(name, path);
-		if(cb != null)
-			navigationLinkCallbacks.put(name, cb);
+
+	public void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin) {
+		SubMenu menu = new SubMenu(link, name, title, plugin);
+		subMenus.put(name, menu);
+		menuList.add(menu);
+	}
+	
+
+	public void removeNavigationCategory(String name) {
+		SubMenu menu = subMenus.remove(name);
+		if (menu == null) {
+			Logger.error(this, "can't remove navigation category, name="+name);
+			return;
+		}	
+		menuList.remove(menu);
+	}
+	
+	public void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+		SubMenu menu = subMenus.get(menutext);
+		menu.addNavigationLink(path, name, title, fullOnly, cb);
 	}
 	
 	/* FIXME: Implement a proper way for chosing what the menu looks like upon handleHTTPGet/Post */
 	@Deprecated
-	public void removeNavigationLink(String name) {
-		navigationLinkTexts.remove(name);
-		navigationLinkTextsNonFull.remove(name);
-		navigationLinkTitles.remove(name);
-		navigationLinks.remove(name);
+	public void removeNavigationLink(String menutext, String name) {
+		SubMenu menu = subMenus.get(menutext);
+		menu.removeNavigationLink(name);
 	}
 	
 	@Deprecated
 	public void removeAllNavigationLinks() {
-		navigationLinkTexts.clear();
-		navigationLinkTextsNonFull.clear();
-		navigationLinkTitles.clear();
-		navigationLinks.clear();
+		for(SubMenu menu : subMenus.values())
+			menu.removeAllNavigationLinks();
 	}
 	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
@@ -144,11 +184,11 @@ public final class PageMaker {
 		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", name }, name);
 	}
 	
-	public HTMLNode getPageNode(String title, ToadletContext ctx) {
+	public PageNode getPageNode(String title, ToadletContext ctx) {
 		return getPageNode(title, true, ctx);
 	}
 
-	public HTMLNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
+	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage().isoCode);
@@ -165,75 +205,133 @@ public final class PageMaker {
 		}
 		headNode.addChild("script",new String[]{"type","language","src"},new String[]{"text/javascript","javascript","/static/freenetjs/freenetjs.nocache.js"});
 		
+		Toadlet t;
+		if (ctx != null) {
+			t = ctx.activeToadlet();
+			t = t.showAsToadlet();
+		} else
+			t = null;
+		String activePath = "";
+		if(t != null) activePath = t.path();
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 		topBarDiv.addChild("h1", title);
 		if (renderNavigationLinks) {
+			SubMenu selected = null;
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
-			for (String navigationLink :  fullAccess ? navigationLinkTexts : navigationLinkTextsNonFull) {
-				LinkEnabledCallback cb = navigationLinkCallbacks.get(navigationLink);
-				if(cb != null && !cb.isEnabled(ctx)) continue;
-				String navigationTitle = navigationLinkTitles.get(navigationLink);
-				String navigationPath = navigationLinks.get(navigationLink);
-				HTMLNode listItem = navbarUl.addChild("li");
-				if (plugin != null)
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
-				else
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+			for (SubMenu menu : menuList) {
+				HTMLNode subnavlist = new HTMLNode("ul");
+				boolean isSelected = false;
+				boolean nonEmpty = false;
+				for (String navigationLink :  fullAccess ? menu.navigationLinkTexts : menu.navigationLinkTextsNonFull) {
+					LinkEnabledCallback cb = menu.navigationLinkCallbacks.get(navigationLink);
+					if(cb != null && !cb.isEnabled(ctx)) continue;
+					nonEmpty = true;
+					String navigationTitle = menu.navigationLinkTitles.get(navigationLink);
+					String navigationPath = menu.navigationLinks.get(navigationLink);
+					HTMLNode sublistItem;
+					if(activePath.equals(navigationPath)) {
+						sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
+						isSelected = true;
+					} else {
+						sublistItem = subnavlist.addChild("li");
+					}
+					if(menu.plugin != null) {
+						if(navigationTitle != null) navigationTitle = menu.plugin.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = menu.plugin.getString(navigationLink);
+					} else {
+						if(navigationTitle != null) navigationTitle = L10n.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = L10n.getString(navigationLink);
+					}
+					if(navigationTitle != null)
+						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+					else
+						sublistItem.addChild("a", "href", navigationPath, navigationLink);
+				}
+				if(nonEmpty) {
+					HTMLNode listItem;
+					if(isSelected) {
+						selected = menu;
+						subnavlist.addAttribute("class", "subnavlist-selected");
+						listItem = new HTMLNode("li", "id", "navlist-selected");
+					} else {
+						subnavlist.addAttribute("class", "subnavlist");
+						listItem = new HTMLNode("li");
+					}
+					String menuItemTitle = menu.defaultNavigationLinkTitle;
+					String text = menu.navigationLinkText;
+					if(menu.plugin == null) {
+						menuItemTitle = L10n.getString(menuItemTitle);
+						text = L10n.getString(text);
+					} else {
+						menuItemTitle = menu.plugin.getString(menuItemTitle);
+						text = menu.plugin.getString(text);
+					}
+					
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
+					listItem.addChild(subnavlist);
+					navbarUl.addChild(listItem);
+				}
+					
+			}
+			if(selected != null) {
+				HTMLNode div = new HTMLNode("div", "id", "selected-subnavbar");
+				HTMLNode subnavlist = div.addChild("ul", "id", "selected-subnavbar-list");
+				boolean nonEmpty = false;
+				for (String navigationLink :  fullAccess ? selected.navigationLinkTexts : selected.navigationLinkTextsNonFull) {
+					LinkEnabledCallback cb = selected.navigationLinkCallbacks.get(navigationLink);
+					if(cb != null && !cb.isEnabled(ctx)) continue;
+					nonEmpty = true;
+					String navigationTitle = selected.navigationLinkTitles.get(navigationLink);
+					String navigationPath = selected.navigationLinks.get(navigationLink);
+					HTMLNode sublistItem;
+					if(activePath.equals(navigationPath)) {
+						sublistItem = subnavlist.addChild("li", "class", "submenuitem-selected");
+					} else {
+						sublistItem = subnavlist.addChild("li");
+					}
+					if(selected.plugin != null) {
+						if(navigationTitle != null) navigationTitle = selected.plugin.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = selected.plugin.getString(navigationLink);
+					} else {
+						if(navigationTitle != null) navigationTitle = L10n.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = L10n.getString(navigationLink);
+					}
+					if(navigationTitle != null)
+						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+					else
+						sublistItem.addChild("a", "href", navigationPath, navigationLink);
+				}
+				if(nonEmpty)
+					pageDiv.addChild(div);
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
-		headNodes.put(pageNode, headNode);
-		contentNodes.put(pageNode, contentDiv);
-		return pageNode;
+		return new PageNode(pageNode, headNode, contentDiv);
 	}
 
-	/**
-	 * Returns the head node belonging to the given page node. This method has
-	 * to be called before {@link #getContentNode(HTMLNode)}!
-	 * 
-	 * @param pageNode
-	 *            The page node to retrieve the head node for
-	 * @return The head node, or <code>null</code> if <code>pageNode</code>
-	 *         is not a valid page node or {@link #getContentNode(HTMLNode)} has
-	 *         already been called
-	 */
-	public HTMLNode getHeadNode(HTMLNode pageNode) {
-		return headNodes.remove(pageNode);
-	}
-
-	/**
-	 * Returns the content node that belongs to the specified node. The node has
-	 * to be a node that was earlier retrieved by a call to one of the
-	 * {@link #getPageNode(String, ToadletContext)} or
-	 * {@link #getInfobox(String, String)} methods!
-	 * <p>
-	 * <strong>Warning:</strong> this method can only be called once!
-	 * 
-	 * @param node
-	 *            The page node to get the content node for
-	 * @return The content node for the specified page node
-	 */
-	public HTMLNode getContentNode(HTMLNode node) {
-		headNodes.remove(node);
-		return contentNodes.remove(node);
-	}
-	
-	public HTMLNode getInfobox(String header) {
+	public InfoboxNode getInfobox(String header) {
 		if (header == null) throw new NullPointerException();
 		return getInfobox(new HTMLNode("#", header));
 	}
 	
-	public HTMLNode getInfobox(HTMLNode header) {
+	public InfoboxNode getInfobox(HTMLNode header) {
 		if (header == null) throw new NullPointerException();
 		return getInfobox(null, header);
 	}
 
-	public HTMLNode getInfobox(String category, String header) {
+	public InfoboxNode getInfobox(String category, String header) {
 		if (header == null) throw new NullPointerException();
 		return getInfobox(category, new HTMLNode("#", header));
+	}
+
+	/** Create an infobox, attach it to the given parent, and return the content node. */
+	public HTMLNode getInfobox(String category, String header, HTMLNode parent) {
+		InfoboxNode node = getInfobox(category, header);
+		parent.addChild(node.outer);
+		return node.content;
 	}
 
 	/**
@@ -248,12 +346,11 @@ public final class PageMaker {
 	 *            The header HTML node
 	 * @return The infobox
 	 */
-	public HTMLNode getInfobox(String category, HTMLNode header) {
+	public InfoboxNode getInfobox(String category, HTMLNode header) {
 		if (header == null) throw new NullPointerException();
 		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (' ' + category)));
 		infobox.addChild("div", "class", "infobox-header").addChild(header);
-		contentNodes.put(infobox, infobox.addChild("div", "class", "infobox-content"));
-		return infobox;
+		return new InfoboxNode(infobox, infobox.addChild("div", "class", "infobox-content"));
 	}
 	
 	private HTMLNode getOverrideContent() {

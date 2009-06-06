@@ -107,7 +107,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	
 	@Override
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
-		return true;
+		return advancedModeEnabled; // Convenient for advanced users, but normally we will use the "Add a friend" box.
 	}
 
 	@Override
@@ -164,8 +164,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
 			HashMap<String, String> peers = new HashMap<String, String>();
 			for(DarknetPeerNode pn : peerNodes) {
@@ -332,10 +333,10 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
-						HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
-						HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle")));
-						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
+						HTMLNode pageNode = page.outer;
+						HTMLNode contentNode = page.content;
+						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode); 
 						content.addChild("p").addChild("#",
 								L10n.getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
 						HTMLNode removeForm = ctx.addFormChild(content, "/friends/", "removeConfirmForm");
@@ -378,7 +379,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			redirectHere(ctx);
 			return;
 		} else {
-			this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
+			this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 		}
 	}
 
@@ -396,6 +397,11 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	SimpleColumn[] endColumnHeaders(boolean advancedMode) {
 		return null;
+	}
+
+	@Override
+	public String path() {
+		return "/friends/";
 	}
 
 }

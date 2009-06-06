@@ -45,6 +45,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private final ToadletContainer container;
 	private final InetAddress remoteAddr;
 	private boolean sentReplyHeaders;
+	private volatile Toadlet activeToadlet;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
@@ -361,12 +362,14 @@ public class ToadletContextImpl implements ToadletContext {
 						break;
 					}
 					
-					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx);
+					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 					try {
 						if(method.equals("GET")) {
+							ctx.setActiveToadlet(t);
 							t.handleGet(uri, req, ctx);
 							ctx.close();
 						} else if(method.equals("POST")) {
+							ctx.setActiveToadlet(t);
 							t.handlePost(uri, req, ctx);
 						} else {
 							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
@@ -401,15 +404,27 @@ public class ToadletContextImpl implements ToadletContext {
 				// Ignore
 			}
 		} catch (IOException e) {
-			return;
+			// ignore and return
 		} catch (ToadletContextClosedException e) {
 			Logger.error(ToadletContextImpl.class, "ToadletContextClosedException while handling connection!");
-			return;
 		} catch (Throwable t) {
 			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
+			try {
+				sendError(sock.getOutputStream(), 500, "Internal Error", t.toString(), true, null);
+			} catch (IOException e1) {
+				// ignore and return
+			}
 		}
 	}
 	
+	private void setActiveToadlet(Toadlet t) {
+		this.activeToadlet = t;
+	}
+	
+	public Toadlet activeToadlet() {
+		return activeToadlet;
+	}
+
 	/**
 	 * Should the connection be closed after handling this request?
 	 * @param isHTTP10 Did the client specify HTTP/1.0?

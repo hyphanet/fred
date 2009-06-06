@@ -87,5 +87,7 @@ public interface ToadletContext {
 	ToadletContainer getContainer();
 
 	boolean disableProgressPage();
+	
+	Toadlet activeToadlet();
 }
 
