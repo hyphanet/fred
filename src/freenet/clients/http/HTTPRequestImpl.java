@@ -73,6 +73,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 	private Map<String, HTTPUploadedFileImpl> uploadedFiles = new HashMap<String, HTTPUploadedFileImpl>();
 	
 	private final BucketFactory bucketfactory;
+	
+	private final String method;
 
 	/**
 	 * Create a new HTTPRequest for the given URI and parse its request
@@ -81,12 +83,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @param uri
 	 *            the URI being requested
 	 */
-	public HTTPRequestImpl(URI uri) {
+	public HTTPRequestImpl(URI uri, String method) {
 		this.uri = uri;
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
+		this.method = method;
 	}
 
 	/**
@@ -96,7 +99,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @param encodedQueryString a=some+text&b=abc%40def.de
 	 * @throws URISyntaxException if the URI is invalid
 	 */
-	public HTTPRequestImpl(String path, String encodedQueryString) throws URISyntaxException {
+	public HTTPRequestImpl(String path, String encodedQueryString, String method) throws URISyntaxException {
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
@@ -105,6 +108,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		} else {
 			this.uri = new URI(path);
 		}
+		this.method = method;
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
 	}
 	
@@ -117,13 +121,14 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @param ctx The toadlet context (for headers and bucket factory)
 	 * @throws URISyntaxException if the URI is invalid
 	 */
-	public HTTPRequestImpl(URI uri, Bucket d, ToadletContext ctx) {
+	public HTTPRequestImpl(URI uri, Bucket d, ToadletContext ctx, String method) {
 		this.uri = uri;
 		this.headers = ctx.getHeaders();
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
 		this.data = d;
 		this.parts = new HashMap<String, Bucket>();
 		this.bucketfactory = ctx.getBucketFactory();
+		this.method = method;
 		if(data != null) {
 			try {
 				this.parseMultiPartData();
@@ -678,6 +683,10 @@ public class HTTPRequestImpl implements HTTPRequest {
 			return filename;
 		}
 
+	}
+
+	public String getMethod() {
+		return method;
 	}
 
 }

@@ -426,7 +426,6 @@ public class FCPServer implements Runnable {
 		PersistentDownloadsEnabledCallback enabledCB = new PersistentDownloadsEnabledCallback();
 		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "FcpServer.enablePersistentDownload", "FcpServer.enablePersistentDownloadLong", enabledCB);
 		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, "FcpServer.filenameToStorePData", "FcpServer.filenameToStorePDataLong", cb2 = new PersistentDownloadsFileCallback());
-		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, "FcpServer.intervalBetweenWrites", "FcpServer.intervalBetweenWritesLong", (IntCallback) null, false);
 		String persistentDownloadsDir = fcpConfig.getString("persistentDownloadsFile");
 		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");
 		enabledCB.enabled = persistentDownloadsEnabled;

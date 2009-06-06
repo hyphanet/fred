@@ -9,6 +9,7 @@ import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -60,6 +61,9 @@ public class FailureCodeTracker {
 	private HashMap<Integer, Item> map;
 
 	public synchronized void inc(int k) {
+		if(k == 0) {
+			Logger.error(this, "Can't increment 0, not a valid failure mode", new Exception("error"));
+		}
 		if(map == null) map = new HashMap<Integer, Item>();
 		Integer key = k;
 		Item i = map.get(key);
@@ -70,6 +74,9 @@ public class FailureCodeTracker {
 	}
 
 	public synchronized void inc(Integer k, int val) {
+		if(k == 0) {
+			Logger.error(this, "Can't increment 0, not a valid failure mode", new Exception("error"));
+		}
 		if(map == null) map = new HashMap<Integer, Item>();
 		Integer key = k;
 		Item i = map.get(key);

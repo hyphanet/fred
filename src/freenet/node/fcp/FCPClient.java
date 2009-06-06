@@ -187,7 +187,7 @@ public class FCPClient {
 				completedUnackedRequests.add(cg);
 				if(container != null) {
 					container.store(cg);
-					container.store(completedUnackedRequests);
+					container.ext().store(completedUnackedRequests, 2);
 				}
 			} else {
 				runningPersistentRequests.add(cg);
@@ -249,7 +249,7 @@ public class FCPClient {
 			clientRequestsByIdentifier.remove(identifier);
 			if(container != null) {
 				if(removedFromRunning) container.ext().store(runningPersistentRequests, 2);
-				else container.store(completedUnackedRequests);
+				else container.ext().store(completedUnackedRequests, 2);
 				container.ext().store(clientRequestsByIdentifier, 2);
 			}
 		}

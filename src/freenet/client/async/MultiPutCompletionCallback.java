@@ -127,8 +127,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				if(e.getMode() == InsertException.CANCELLED) { // Cancelled is okay, ignore it, we cancel after failure sometimes.
 					// Ignore the new failure mode, use the old one
 					e = this.e;
-					if(persistent)
+					if(persistent) {
+						container.activate(e, 5);
 						e = e.clone(); // Since we will remove it, we can't pass it on
+					}
 				} else {
 					// Delete the old failure mode, use the new one
 					this.e.removeFrom(container);
@@ -190,6 +192,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			cb.onBlockSetFinished(this, container, context);
 		}
 		if(allDone) {
+			if(persistent && e != null) container.activate(e, 5);
 			complete(e, container, context);
 		}
 	}

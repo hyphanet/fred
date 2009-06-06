@@ -340,7 +340,7 @@ public class PacketSender implements Runnable, Ticker {
 					} catch(OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);
 						System.err.println("Will retry above failed operation...");
-						queueTimedJob(r.job, r.name, 200, true);
+						queueTimedJob(r.job, r.name, 200, true, false);
 					} catch(Throwable t) {
 						Logger.error(this, "Caught in PacketSender: " + t, t);
 						System.err.println("Caught in PacketSender: " + t);
@@ -494,10 +494,10 @@ public class PacketSender implements Runnable, Ticker {
 	}
 
 	public void queueTimedJob(Runnable job, long offset) {
-		queueTimedJob(job, "Scheduled job: "+job, offset, false);
+		queueTimedJob(job, "Scheduled job: "+job, offset, false, false);
 	}
 	
-	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway) {
+	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway, boolean noDupes) {
 		// Run directly *if* that won't cause any priority problems.
 		if(offset <= 0 && !runOnTickerAnyway) {
 			if(logMINOR) Logger.minor(this, "Running directly: "+runner);
@@ -509,6 +509,15 @@ public class PacketSender implements Runnable, Ticker {
 		long now = System.currentTimeMillis();
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
+			if(noDupes) {
+				if(timedJobsByTime.containsValue(runner)) {
+					// O(n) but this is okay as it is only used by Announcer.
+					// If you replace this with a lookup set, be *very* careful to ensure that the two are consistent,
+					// otherwise we can forget important recurring jobs e.g. Announcer.
+					Logger.normal(this, "Not re-running as already queued: "+runner+" for "+name);
+					return;
+				}
+			}
 			Object o = timedJobsByTime.get(l);
 			if(o == null)
 				timedJobsByTime.put(l, job);

@@ -23,6 +23,8 @@ public final class PageMaker {
 	public enum THEME {
 		BOXED("boxed", "Boxed", ""),
 		CLEAN("clean", "Clean", "Mr. Proper"),
+		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu."),
+		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
                 MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
@@ -30,6 +32,8 @@ public final class PageMaker {
 		public static final String[] possibleValues = {
 			BOXED.code,
 			CLEAN.code,
+			CLEAN_DROPDOWN.code,
+			CLEAN_STATIC.code,
 			GRAYANDBLUE.code,
 			SKY.code,
                         MINIMALBLUE.code
@@ -149,6 +153,10 @@ public final class PageMaker {
 
 	public void removeNavigationCategory(String name) {
 		SubMenu menu = subMenus.remove(name);
+		if (menu == null) {
+			Logger.error(this, "can't remove navigation category, name="+name);
+			return;
+		}	
 		menuList.remove(menu);
 	}
 	
@@ -199,9 +207,10 @@ public final class PageMaker {
 		}
 		
 		Toadlet t;
-		if (ctx != null)
+		if (ctx != null) {
 			t = ctx.activeToadlet();
-		else
+			t = t.showAsToadlet();
+		} else
 			t = null;
 		String activePath = "";
 		if(t != null) activePath = t.path();

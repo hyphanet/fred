@@ -585,7 +585,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} finally {
 			request.freeParts();
 		}
-		this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
+		this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 	
 	private void sendPersistenceDisabledError(ToadletContext ctx) {
@@ -622,7 +622,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
-			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", path(), "queue page"), new HTMLNode("#", ".") });
+			L10n.addL10nSubstitution(infoboxContent.addChild("div"), "QueueToadlet.returnToQueuePage", new String[] { "link", "/link" }, new String[] { "<a href=\""+path()+"\">", "</a>" });
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
@@ -789,8 +789,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				contentNode.addChild(core.alerts.createSummary());
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty"), contentNode);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
-			contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
-			contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
+			if(uploads)
+				contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
+			if(!uploads)
+				contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
 			return pageNode;
 		}
 
@@ -1737,7 +1739,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	public boolean isEnabled(ToadletContext ctx) {
-		return (!container.publicGatewayMode()) || ctx.isAllowedFullAccess();
+		return (!container.publicGatewayMode()) || ((ctx != null) && ctx.isAllowedFullAccess());
 	}
 
 	@Override

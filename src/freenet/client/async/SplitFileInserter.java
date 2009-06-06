@@ -469,7 +469,7 @@ public class SplitFileInserter implements ClientPutState {
 					container.deactivate(segments[i], 1);
 			}
 			
-			InsertException e = segment.getException();
+			InsertException e = segment.getException(container);
 			if((e != null) && e.isFatal()) {
 				cancel(container, context);
 			} else {
@@ -517,7 +517,7 @@ public class SplitFileInserter implements ClientPutState {
 			for(int i=0;i<segments.length;i++) {
 				if(persistent)
 					container.activate(segments[i], 1);
-				InsertException e = segments[i].getException();
+				InsertException e = segments[i].getException(container);
 				if(e == null) continue;
 				if(logMINOR) Logger.minor(this, "Failure on segment "+i+" : "+segments[i]+" : "+e, e);
 				allSucceeded = false;

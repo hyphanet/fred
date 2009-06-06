@@ -362,7 +362,7 @@ public class ToadletContextImpl implements ToadletContext {
 						break;
 					}
 					
-					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx);
+					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 					try {
 						if(method.equals("GET")) {
 							ctx.setActiveToadlet(t);
@@ -404,12 +404,16 @@ public class ToadletContextImpl implements ToadletContext {
 				// Ignore
 			}
 		} catch (IOException e) {
-			return;
+			// ignore and return
 		} catch (ToadletContextClosedException e) {
 			Logger.error(ToadletContextImpl.class, "ToadletContextClosedException while handling connection!");
-			return;
 		} catch (Throwable t) {
 			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
+			try {
+				sendError(sock.getOutputStream(), 500, "Internal Error", t.toString(), true, null);
+			} catch (IOException e1) {
+				// ignore and return
+			}
 		}
 	}
 	

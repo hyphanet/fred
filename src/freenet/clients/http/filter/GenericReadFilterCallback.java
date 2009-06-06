@@ -115,7 +115,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		String path = uri.getPath();
 		
-		HTTPRequest req = new HTTPRequestImpl(uri);
+		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
 		if (path != null){
 			if(path.equals("/") && req.isParameterSet("newbookmark")){
 				// allow links to the root to add bookmarks
@@ -271,7 +271,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	private String processURI(FreenetURI furi, URI uri, String overrideType, boolean noRelative, boolean inline) {
 		// Valid Freenet URI, allow it
 		// Now what about the queries?
-		HTTPRequest req = new HTTPRequestImpl(uri);
+		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
 		if(cb != null) cb.foundURI(furi);
 		if(cb != null) cb.foundURI(furi, inline);
 		return finishProcess(req, overrideType, '/' + furi.toString(false, false), uri, noRelative);

@@ -366,6 +366,16 @@ public class PersistentBlobTempBucketFactory {
 		synchronized(this) {
 			if(!freeSlots.isEmpty()) {
 				Long slot = freeSlots.firstKey();
+				if(logMINOR) {
+					try {
+						if(slot * blockSize > channel.size()) {
+							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							return null;
+						}
+					} catch (IOException e) {
+						return null;
+					}
+				}
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
@@ -381,6 +391,16 @@ public class PersistentBlobTempBucketFactory {
 		synchronized(this) {
 			if(!freeSlots.isEmpty()) {
 				Long slot = freeSlots.firstKey();
+				if(logMINOR) {
+					try {
+						if(slot * blockSize > channel.size()) {
+							Logger.error(this, "Free slot "+slot+" but file length is "+channel.size()+" = "+(channel.size() / blockSize)+" blocks");
+							return null;
+						}
+					} catch (IOException e) {
+						return null;
+					}
+				}
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
@@ -478,179 +498,174 @@ public class PersistentBlobTempBucketFactory {
 		
 		synchronized(this) {
 		
-		if(now - lastCheckedEnd > 60*1000) {
-			if(logMINOR) Logger.minor(this, "maybeShrink() inner");
-			// Check whether there is a big white space at the end of the file.
-			long size;
-			try {
-				size = channel.size();
-			} catch (IOException e1) {
-				Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
-				return false;
-			}
-			size -= size % blockSize;
-			long blocks = size / blockSize;
-			if(blocks <= 32) {
-				if(logMINOR) Logger.minor(this, "Not shrinking, blob file not larger than a megabyte");
-				lastCheckedEnd = now;
-				queueMaybeShrink();
-				return false;
-			}
-			long lastNotCommitted = notCommittedBlobs.isEmpty() ? 0 : notCommittedBlobs.lastKey();
-			long lastAlmostFreed = almostFreeSlots.isEmpty() ? 0 : almostFreeSlots.lastKey();
-			if(lastNotCommitted < lastAlmostFreed) {
-				if(logMINOR) Logger.minor(this, "Last almost freed: "+lastAlmostFreed+" replacing last not committed: "+lastNotCommitted);
-				lastNotCommitted = lastAlmostFreed;
-			}
-			double full = (double)lastNotCommitted / (double)blocks;
-			if(full > 0.8) {
-				if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
-				lastCheckedEnd = now;
-				queueMaybeShrink();
-				return false;
-			}
-			/*
-			 * Query for the non-free tag with the highest value.
-			 * This query can return a vast number of objects! And it's all kept in RAM in IMMEDIATE mode.
-			 * FIXME LAZY query mode may help, but would likely require changes to other code.
-			 * In the meantime, lets try from the end, going backwards by a manageable number of slots at a time...
-			 */
-			long lastCommitted = -1;
-			PersistentBlobTempBucketTag lastTag = null;
-			PersistentBlobTempBucket lastBucket = null;
-			ObjectSet<PersistentBlobTempBucketTag> tags = null;
-			Query query = null;
-			for(long threshold = blocks - 4096; threshold >= -4095; threshold -= 4096) {
-				query = container.query();
-				query.constrain(PersistentBlobTempBucketTag.class);
-				query.descend("isFree").constrain(false);
-				query.descend("index").orderDescending();
-				query.descend("index").constrain(threshold).greater();
-				tags = query.execute();
-				lastTag = null;
-				while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
-					Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
-					lastTag.isFree = true;
-					container.store(lastTag);
+			if(now - lastCheckedEnd > 60*1000) {
+				if(logMINOR) Logger.minor(this, "maybeShrink() inner");
+				// Check whether there is a big white space at the end of the file.
+				long size;
+				try {
+					size = channel.size();
+				} catch (IOException e1) {
+					Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+					return false;
 				}
-				if(lastTag == null) continue;
-				lastBucket = lastTag.bucket;
-				lastCommitted = lastTag.index;
-				Logger.normal(this, "Last committed block is "+lastCommitted);
-				
-				break;
-			}
-			if(lastCommitted == -1) {
-				// No used slots at all?!
-				// There may be some not committed though
-				Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
-				lastCommitted = 0;
-				query = null;
-			}
-			full = (double) lastCommitted / (double) blocks;
-			if(full > 0.8) {
-				if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
-				lastCheckedEnd = now;
-				queueMaybeShrink();
-				int blocksMoved = 0;
-				while(true) {
-					boolean deactivateLastBucket = !container.ext().isActive(lastBucket);
-					if(deactivateLastBucket)
-						container.activate(lastBucket, 1);
-					if(freeSlots.isEmpty()) {
-						try {
-							jobRunner.queue(slotFinder, NativeThread.LOW_PRIORITY, false);
-						} catch (DatabaseDisabledException e) {
-							// Doh
-						}
-						queueMaybeShrink();
-						return false;
+				size -= size % blockSize;
+				long blocks = size / blockSize;
+				if(blocks <= 32) {
+					if(logMINOR) Logger.minor(this, "Not shrinking, blob file not larger than a megabyte");
+					lastCheckedEnd = now;
+					queueMaybeShrink();
+					return false;
+				}
+				long lastNotCommitted = notCommittedBlobs.isEmpty() ? 0 : notCommittedBlobs.lastKey();
+				long lastAlmostFreed = almostFreeSlots.isEmpty() ? 0 : almostFreeSlots.lastKey();
+				if(lastNotCommitted < lastAlmostFreed) {
+					if(logMINOR) Logger.minor(this, "Last almost freed: "+lastAlmostFreed+" replacing last not committed: "+lastNotCommitted);
+					lastNotCommitted = lastAlmostFreed;
+				}
+				double full = (double)lastNotCommitted / (double)blocks;
+				if(full > 0.8) {
+					if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
+					lastCheckedEnd = now;
+					queueMaybeShrink();
+					return false;
+				}
+				/*
+				 * Query for the non-free tag with the highest value.
+				 * This query can return a vast number of objects! And it's all kept in RAM in IMMEDIATE mode.
+				 * FIXME LAZY query mode may help, but would likely require changes to other code.
+				 * In the meantime, lets try from the end, going backwards by a manageable number of slots at a time...
+				 */
+				long lastCommitted = -1;
+				PersistentBlobTempBucketTag lastTag = null;
+				PersistentBlobTempBucket lastBucket = null;
+				ObjectSet<PersistentBlobTempBucketTag> tags = null;
+				Query query = null;
+				for(long threshold = blocks - 4096; threshold >= -4095; threshold -= 4096) {
+					query = container.query();
+					query.constrain(PersistentBlobTempBucketTag.class);
+					query.descend("isFree").constrain(false);
+					query.descend("index").orderDescending();
+					query.descend("index").constrain(threshold).greater();
+					tags = query.execute();
+					lastTag = null;
+					while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
+						Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
+						lastTag.isFree = true;
+						container.store(lastTag);
 					}
-					Long lFirstSlot = freeSlots.firstKey();
-					long firstSlot = lFirstSlot;
-					if(firstSlot < lastCommitted) {
-						blocksMoved++;
-						// There is some degree of fragmentation.
-						// Move one key.
-						PersistentBlobTempBucketTag newTag = freeSlots.remove(lFirstSlot);
-						
-						// Synchronize on the target.
-						synchronized(lastBucket) {
-							// Do the move.
-							System.err.println("Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
+					if(lastTag == null) continue;
+					lastBucket = lastTag.bucket;
+					lastCommitted = lastTag.index;
+					Logger.normal(this, "Last committed block is "+lastCommitted);
+					
+					break;
+				}
+				if(lastCommitted == -1) {
+					// No used slots at all?!
+					// There may be some not committed though
+					Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
+					lastCommitted = 0;
+					query = null;
+				}
+				full = (double) lastCommitted / (double) blocks;
+				if(full > 0.8) {
+					if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
+					lastCheckedEnd = now;
+					queueMaybeShrink();
+					int blocksMoved = 0;
+					while(true) {
+						boolean deactivateLastBucket = !container.ext().isActive(lastBucket);
+						if(deactivateLastBucket)
+							container.activate(lastBucket, 1);
+						if(freeSlots.isEmpty()) {
 							try {
-								byte[] blob = readSlot(lastTag.index);
-								writeSlot(newTag.index, blob);
-							} catch (IOException e) {
-								System.err.println("Failed to move bucket in defrag: "+e);
-								e.printStackTrace();
-								Logger.error(this, "Failed to move bucket in defrag: "+e, e);
-								queueMaybeShrink();
-								return false;
+								jobRunner.queue(slotFinder, NativeThread.LOW_PRIORITY, false);
+							} catch (DatabaseDisabledException e) {
+								// Doh
 							}
-							lastBucket.setIndex(newTag.index);
-							lastBucket.setTag(newTag);
-							newTag.bucket = lastBucket;
-							newTag.isFree = false;
-							lastTag.bucket = null;
-							lastTag.isFree = true;
-							container.store(newTag);
-							container.store(lastTag);
-							container.store(lastBucket);
+							queueMaybeShrink();
+							return false;
 						}
-					} else break;
-					if(deactivateLastBucket)
-						container.deactivate(lastBucket, 1);
-					if(blocksMoved < 10) {
-						lastTag = null;
-						while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
-							Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
-							lastTag.isFree = true;
-							container.store(lastTag);
-						}
-						if(lastTag == null) break;
-						lastBucket = lastTag.bucket;
-						lastCommitted = lastTag.index;
-						Logger.normal(this, "Last committed block is now "+lastCommitted);
-					} else break;
-				}
-				if(blocksMoved > 0) {
-					try {
-						raf.getFD().sync();
-						System.err.println("Moved "+blocksMoved+" in defrag and synced to disk");
-					} catch (SyncFailedException e) {
-						System.err.println("Failed to sync to disk after defragging: "+e);
-						e.printStackTrace();
-					} catch (IOException e) {
-						System.err.println("Failed to sync to disk after defragging: "+e);
-						e.printStackTrace();
+						Long lFirstSlot = freeSlots.firstKey();
+						long firstSlot = lFirstSlot;
+						if(firstSlot < lastCommitted) {
+							blocksMoved++;
+							// There is some degree of fragmentation.
+							// Move one key.
+							PersistentBlobTempBucketTag newTag = freeSlots.remove(lFirstSlot);
+							
+							PersistentBlobTempBucket shadow = null;
+							if(shadows.containsKey(lastCommitted)) {
+								shadow = shadows.get(lastCommitted);
+								shadows.remove(lastCommitted);
+								shadows.put(newTag.index, shadow);
+							}
+							
+							// Synchronize on the target.
+							// We must ensure that the shadow is moved also before we relinquish the lock on either bucket.
+							// LOCKING: Nested locking of two buckets is bad, but provided we only do it here, we should be fine.
+							synchronized(lastBucket) {
+								if(shadow != null) {
+									synchronized(shadow) {
+										if(!innerDefrag(lastBucket, shadow, lastTag, newTag, container)) return false;
+									}
+								} else {
+									if(!innerDefrag(lastBucket, shadow, lastTag, newTag, container)) return false;
+								}
+							}
+						} else break;
+						if(deactivateLastBucket)
+							container.deactivate(lastBucket, 1);
+						if(blocksMoved < 10) {
+							lastTag = null;
+							while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
+								Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
+								lastTag.isFree = true;
+								container.store(lastTag);
+							}
+							if(lastTag == null) break;
+							lastBucket = lastTag.bucket;
+							lastCommitted = lastTag.index;
+							Logger.normal(this, "Last committed block is now "+lastCommitted);
+						} else break;
 					}
-					jobRunner.setCommitThisTransaction();
+					if(blocksMoved > 0) {
+						try {
+							raf.getFD().sync();
+							System.err.println("Moved "+blocksMoved+" in defrag and synced to disk");
+						} catch (SyncFailedException e) {
+							System.err.println("Failed to sync to disk after defragging: "+e);
+							e.printStackTrace();
+						} catch (IOException e) {
+							System.err.println("Failed to sync to disk after defragging: "+e);
+							e.printStackTrace();
+						}
+						jobRunner.setCommitThisTransaction();
+					}
+					query = null;
 				}
-				query = null;
-			}
-			long lastBlock = Math.max(lastCommitted, lastNotCommitted);
-			// Must be 10% free at end
-			newBlocks = (long) ((lastBlock + 32) * 1.1);
-			newBlocks = Math.max(newBlocks, 32);
-			if(newBlocks >= blocks) {
-				if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from "+blocks+" to "+newBlocks);
+				long lastBlock = Math.max(lastCommitted, lastNotCommitted);
+				// Must be 10% free at end
+				newBlocks = (long) ((lastBlock + 32) * 1.1);
+				newBlocks = Math.max(newBlocks, 32);
+				if(newBlocks >= blocks) {
+					if(logMINOR) Logger.minor(this, "Not shrinking, would shrink from "+blocks+" to "+newBlocks);
+					lastCheckedEnd = now;
+					queueMaybeShrink();
+					return false;
+				}
+				System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
+				for(long l = newBlocks; l <= blocks; l++) {
+					freeSlots.remove(l);
+				}
+				for(Long l : freeSlots.keySet()) {
+					if(l > newBlocks) {
+						Logger.error(this, "Removing free slot "+l+" over the current block limit");
+					}
+				}
 				lastCheckedEnd = now;
 				queueMaybeShrink();
-				return false;
-			}
-			System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
-			for(long l = newBlocks; l <= blocks; l++) {
-				freeSlots.remove(l);
-			}
-			for(Long l : freeSlots.keySet()) {
-				if(l > newBlocks) {
-					Logger.error(this, "Removing free slot "+l+" over the current block limit");
-				}
-			}
-			lastCheckedEnd = now;
-			queueMaybeShrink();
-		} else return false;
+			} else return false;
 		}
 		try {
 			channel.truncate(newBlocks * blockSize);
@@ -668,6 +683,34 @@ public class PersistentBlobTempBucketFactory {
 		queueMaybeShrink();
 		return true;
 		
+	}
+
+	private boolean innerDefrag(PersistentBlobTempBucket lastBucket, PersistentBlobTempBucket shadow, PersistentBlobTempBucketTag lastTag, PersistentBlobTempBucketTag newTag, ObjectContainer container) {
+		// Do the move.
+		System.err.println("Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
+		try {
+			byte[] blob = readSlot(lastTag.index);
+			writeSlot(newTag.index, blob);
+		} catch (IOException e) {
+			System.err.println("Failed to move bucket in defrag: "+e);
+			e.printStackTrace();
+			Logger.error(this, "Failed to move bucket in defrag: "+e, e);
+			queueMaybeShrink();
+			return false;
+		}
+		lastBucket.setIndex(newTag.index);
+		lastBucket.setTag(newTag);
+		newTag.bucket = lastBucket;
+		newTag.isFree = false;
+		lastTag.bucket = null;
+		lastTag.isFree = true;
+		if(shadow != null)
+			shadow.setIndex(newTag.index);
+		// shadow has no tag
+		container.store(newTag);
+		container.store(lastTag);
+		container.store(lastBucket);
+		return true;
 	}
 
 	private void queueMaybeShrink() {

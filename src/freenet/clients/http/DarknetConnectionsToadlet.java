@@ -379,7 +379,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			redirectHere(ctx);
 			return;
 		} else {
-			this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
+			this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 		}
 	}
 

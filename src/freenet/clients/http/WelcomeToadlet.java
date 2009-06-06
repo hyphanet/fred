@@ -19,8 +19,6 @@ import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.GenericReadFilterCallback;
-import freenet.frost.message.FrostBoard;
-import freenet.frost.message.FrostMessage;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -197,104 +195,6 @@ public class WelcomeToadlet extends Toadlet {
             }
             writePermanentRedirect(ctx, l10n("disabledAlert"), (validAlertsRemaining > 0 ? "/alerts/" : "/"));
             return;
-        } else if (request.isPartSet("boardname") && (request.isPartSet("filename") || request.isPartSet("message"))) {
-            // Inserting into a frost board FIN
-			// boardname
-			// filename
-			// boardprivatekey (not needed)
-			// boardpublickey (not needed) (and maybe dump it all the way)
-			// innitialindex
-			// sender
-			// subject
-            String boardName = request.getPartAsString("boardname", FrostBoard.MAX_NAME_LENGTH);
-            String boardPrivateKey = request.getPartAsString("boardprivatekey", 78);
-            String boardPublicKey = request.getPartAsString("boardpublickey", 78);
-            String sender = request.getPartAsString("sender", 64);
-            String subject = request.getPartAsString("subject", 128);
-            String message = request.getPartAsString("message", 1024);
-            if (message.length() == 0) // back compatibility; should use message
-            {
-                message = request.getPartAsString("filename", 1024);
-            }
-
-            int initialIndex = 0;
-            if (request.isPartSet("initialindex")) {
-                try {
-                    initialIndex = Integer.parseInt(request.getPartAsString("initialindex", 10));
-                } catch (NumberFormatException e) {
-                    initialIndex = 0;
-                }
-            } else if (request.isPartSet("innitialindex")) {
-                try {
-                    initialIndex = Integer.parseInt(request.getPartAsString("innitialindex", 10));
-                } catch (NumberFormatException e) {
-                    initialIndex = 0;
-                }
-            }
-
-            if (noPassword) {
-            	PageNode page = ctx.getPageMaker().getPageNode(l10n("finTitle"), ctx);
-                HTMLNode pageNode = page.outer;
-                HTMLNode contentNode = page.content;
-                HTMLNode content = ctx.getPageMaker().getInfobox("infobox-query", l10n("finTitle"), contentNode);
-                content.addChild("p").addChild("#", l10n("confirmFIN"));
-                HTMLNode postForm = ctx.addFormChild(content.addChild("p"), "/", "finConfirmForm");
-                HTMLNode table = postForm.addChild("table", "align", "center");
-
-                finInputRow(table, "boardname", l10n("targetBoardHeader"), boardName);
-                finInputRow(table, "boardprivatekey", l10n("privateKeyHeader"), boardPrivateKey);
-                finInputRow(table, "boardpublickey", l10n("publicKeyHeader"), boardPublicKey);
-                finInputRow(table, "initialindex", l10n("startIndexHeader"), Integer.toString(initialIndex));
-                finInputRow(table, "sender", l10n("fromHeader"), sender);
-                finInputRow(table, "subject", l10n("subjectHeader"), subject);
-                finInputBoxRow(table, "message", l10n("messageHeader"), message);
-
-                postForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "cancel", L10n.getString("Toadlet.cancel")});
-                postForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "finconfirm", l10n("post")});
-                writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-                return;
-            }
-
-            if (!request.isPartSet("finconfirm")) {
-                redirectToRoot(ctx);
-                return;
-            }
-
-            FrostBoard board = null;
-            if ((boardPrivateKey.length() > 0) && (boardPublicKey.length() > 0)) { // keyed board
-                board = new FrostBoard(boardName, boardPrivateKey, boardPublicKey);
-            } else { // unkeyed or public board
-                board = new FrostBoard(boardName);
-            }
-            FrostMessage fin = new FrostMessage("news", board, sender, subject, message);
-
-            PageNode page = ctx.getPageMaker().getPageNode(l10n("finInsertedTitle"), ctx);
-            HTMLNode pageNode = page.outer;
-            HTMLNode contentNode = page.content;
-            HTMLNode content;
-            try {
-                FreenetURI finalKey = fin.insertMessage(this.getClientImpl(), initialIndex);
-                content = ctx.getPageMaker().getInfobox("infobox-success", l10n("insertSucceededTitle"), contentNode);
-                content.addChild("#", l10n("finInsertSuccessWithKey", "key", finalKey.toString()));
-            } catch (InsertException e) {
-            	content = ctx.getPageMaker().getInfobox("infobox-error", l10n("insertFailedTitle"), contentNode);
-                content.addChild("#", l10n("insertFailedWithMessage", "message", e.getMessage()));
-                content.addChild("br");
-                if (e.uri != null) {
-                    content.addChild("#", l10n("uriWouldHaveBeen", "uri", e.uri.toString()));
-                }
-                int mode = e.getMode();
-                if ((mode == InsertException.FATAL_ERRORS_IN_BLOCKS) || (mode == InsertException.TOO_MANY_RETRIES_IN_BLOCKS)) {
-                    content.addChild("br"); /* TODO */
-                    content.addChild("#", l10n("splitfileErrorLabel"));
-                    content.addChild("pre", e.errorCodes.toVerboseString());
-                }
-            }
-            content.addChild("br");
-            addHomepageLink(content);
-
-            writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-            request.freeParts();
         } else if (request.isPartSet("key") && request.isPartSet("filename")) {
             if (noPassword) {
                 redirectToRoot(ctx);
@@ -418,32 +318,6 @@ public class WelcomeToadlet extends Toadlet {
         } else {
             redirectToRoot(ctx);
         }
-    }
-
-    private void finInputBoxRow(HTMLNode table, String name, String label, String message) {
-        HTMLNode row = table.addChild("tr");
-        HTMLNode cell = row.addChild("td");
-        // FIXME this should be in the CSS, not the generated code
-        HTMLNode right = cell.addChild("div", "align", "right");
-        HTMLNode bold = right.addChild("b");
-        HTMLNode font = bold.addChild("font", "size", "-1");
-        font.addChild("#", label);
-        cell = row.addChild("td");
-        cell.addChild("textarea", new String[]{"name", "rows", "cols"},
-                new String[]{name, "12", "80"}).addChild("#", message);
-    }
-
-    private void finInputRow(HTMLNode table, String name, String label, String message) {
-        HTMLNode row = table.addChild("tr");
-        HTMLNode cell = row.addChild("td");
-        // FIXME this should be in the CSS, not the generated code
-        HTMLNode right = cell.addChild("div", "align", "right");
-        HTMLNode bold = right.addChild("b");
-        HTMLNode font = bold.addChild("font", "size", "-1");
-        font.addChild("#", label);
-        cell = row.addChild("td");
-        cell.addChild("input", new String[]{"type", "name", "size", "value"},
-                new String[]{"text", name, "30", message});
     }
 
     @Override

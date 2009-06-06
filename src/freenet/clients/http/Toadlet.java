@@ -48,6 +48,12 @@ public abstract class Toadlet {
 
 	public abstract String path();
 	
+	/** So an invisible toadlet can pretend to be a visible one for the sake of the
+	 * menu. */
+	public Toadlet showAsToadlet() {
+		return this;
+	}
+	
 	protected Toadlet(HighLevelSimpleClient client) {
 		this.client = client;
 	}

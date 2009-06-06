@@ -96,8 +96,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	/** Try again - returns true if we can retry */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
 		retryCount++;
+		if(finished)
+			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this);
+			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this+" finished="+finished+" cancelled="+cancelled);
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
 			if(persistent)

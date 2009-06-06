@@ -738,8 +738,9 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	 * NOTE: This will be deleted when the segment is deleted! Do not store it or pass 
 	 * it on!
 	 */
-	InsertException getException() {
+	InsertException getException(ObjectContainer container) {
 		synchronized (this) {
+			if(persistent) container.activate(toThrow, 5);
 			return toThrow;
 		}
 	}
@@ -1301,11 +1302,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					try {
 						b = encodeBucket(block.copyBucket);
 					} catch (CHKEncodeException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (MalformedURLException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (IOException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} finally {
 						block.copyBucket.free();
 					}
