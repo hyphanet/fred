@@ -981,13 +981,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			return;
-		} catch(IOException e) {
-			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, e);
-			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
-			e.printStackTrace();
-			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
-			// FIXME will be kept until exit for debugging purposes
-			return;
 		} catch(BinaryBlobFormatException e) {
 			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")", e);
 			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")");
@@ -997,6 +990,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				nodesSayKeyRevokedFailedTransfer.add(source);
 			}
 			// FIXME file will be kept until exit for debugging purposes
+			return;
+		} catch(IOException e) {
+			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, e);
+			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			e.printStackTrace();
+			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			// FIXME will be kept until exit for debugging purposes
 			return;
 		} finally {
 			if(dis != null)
