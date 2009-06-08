@@ -5,6 +5,7 @@ package freenet.node.updater;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -853,7 +854,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			maybeNotRevoked();
 			return true;
 		}
-
+		
 		if(updateManager.isBlown()) {
 			if(logMINOR)
 				Logger.minor(this, "Already blown, so not receiving from " + source + "(" + uid + ")");
@@ -873,6 +874,20 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			maybeNotRevoked();
 			return true;
 		}
+		
+		if(length <= 0) {
+			System.err.println("Revocation key is zero bytes from "+source+" - ignoring as this is almost certainly a bug or an attack, it is definitely not valid.");
+			synchronized(UpdateOverMandatoryManager.this) {
+				nodesSayKeyRevoked.remove(source);
+				nodesSayKeyRevokedFailedTransfer.add(source);
+				nodesSayKeyRevokedTransferring.remove(source);
+			}
+			cancelSend(source, uid);
+			maybeNotRevoked();
+			return true;
+		}
+		
+		System.err.println("Transferring auto-updater revocation certificate length "+length+" from "+source);
 
 		// Okay, we can receive it
 
@@ -967,9 +982,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			return;
 		} catch(IOException e) {
-			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " !");
-			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " !");
-			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " !");
+			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, e);
+			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			e.printStackTrace();
+			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
 			// FIXME will be kept until exit for debugging purposes
 			return;
 		} catch(BinaryBlobFormatException e) {
