@@ -1050,7 +1050,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					// Blown: somebody inserted a revocation message, but it was corrupt as inserted
 					// However it had valid signatures etc.
 
-					System.err.println("Got revocation certificate from " + source.userToString() + " (fatal error i.e. someone with the key inserted bad data)");
+					System.err.println("Got revocation certificate from " + source.userToString() + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
 					temp.delete();
@@ -1058,8 +1058,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 
 				} else {
-					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString());
-					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString());
+					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
+					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedFailedTransfer.add(source);
 					}
