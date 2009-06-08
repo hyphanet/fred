@@ -981,6 +981,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			return;
+		} catch (EOFException e) {
+			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")", e);
+			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")");
+			// Probably malicious, might just be buggy, either way, it's not blown
+			e.printStackTrace();
+			synchronized(UpdateOverMandatoryManager.this) {
+				nodesSayKeyRevokedFailedTransfer.add(source);
+			}
+			// FIXME file will be kept until exit for debugging purposes
+			return;
 		} catch(BinaryBlobFormatException e) {
 			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")", e);
 			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")");
