@@ -280,7 +280,17 @@ public class PluginManager {
 					synchronized(pluginWrappers) {
 						pluginsFailedLoad.add(filename);
 					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, l10n("pluginReqNewerJVMTitle", "name", filename)));
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, l10n("pluginBrokenTitle", "name", filename)));
+				} catch(Throwable e) {
+					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
+					System.err.println("Could not load plugin " + filename + " : " + e);
+					e.printStackTrace();
+					System.err.println("Plugin " + filename + " is broken, but we want to retry after next startup");
+					Logger.error(this, "Plugin " + filename + " is broken, but we want to retry after next startup");
+					synchronized(pluginWrappers) {
+						pluginsFailedLoad.add(filename);
+					}
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e.getMessage()));
 				} finally {
 					synchronized(startingPlugins) {
 						startingPlugins.remove(pluginProgress);
