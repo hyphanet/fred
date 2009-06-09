@@ -43,7 +43,7 @@ public class SecurityLevels {
 	public enum FRIENDS_THREAT_LEVEL {
 		LOW, // Friends are ultimately trusted
 		NORMAL, // Share some information
-		HIGH, // Share no/minimal information and take measures to reduce harm if Friends are compromized
+		HIGH, // Share no/minimal information and take measures to reduce harm if Friends are compromised
 	}
 	
 	public enum PHYSICAL_THREAT_LEVEL {
