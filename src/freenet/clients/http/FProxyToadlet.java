@@ -41,6 +41,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.URIPreEncoder;
 import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -820,7 +821,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		sb.append("/");
 		sb.append(uri.toASCIIString());
 		char c = '?';
-		if(requestedMimeType != null) {
+		if(requestedMimeType != null && requestedMimeType != "") {
 			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
 		}
 		if(maxSize > 0 && maxSize != MAX_LENGTH) {
@@ -840,7 +841,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String referer = ctx.getHeaders().get("referer");
 		if(referer != null) {
 			try {
-				URI refererURI = new URI(referer);
+				URI refererURI = new URI(URIPreEncoder.encode(referer));
 				String path = refererURI.getPath();
 				while(path.startsWith("/")) path = path.substring(1);
 				if("".equals(path)) return "/";
