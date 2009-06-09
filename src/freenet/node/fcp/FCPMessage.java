@@ -49,6 +49,8 @@ public abstract class FCPMessage {
 			return new ClientPutDiskDirMessage(fs);
 		if(name.equals(ClientPutMessage.NAME))
 			return new ClientPutMessage(fs);
+		if(name.equals(DisconnectMessage.NAME))
+			return new DisconnectMessage(fs);
 		if(name.equals(FCPPluginMessage.NAME))
 			return new FCPPluginMessage(fs);
 		if(name.equals(GenerateSSKMessage.NAME))
