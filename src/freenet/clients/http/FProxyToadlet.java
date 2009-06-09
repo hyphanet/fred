@@ -68,7 +68,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
-	public static long MAX_LENGTH = 2*1024*1024; // 2MB
+	public static long MAX_LENGTH = 2*1024*1024 * 11 / 10; // 2MB plus a bit due to buggy inserts
 	
 	static final URI welcome;
 	public static final short PRIORITY = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
