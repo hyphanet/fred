@@ -387,9 +387,7 @@ public final class PageMaker {
 	}
 	
 	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
-		// Mode can be changed by a link, not just by the default
-		
-		// FIXME style this properly
+		// FIXME style this properly?
 		HTMLNode table = contentNode.addChild("table", "border", "1");
 		HTMLNode row = table.addChild("tr");
 		HTMLNode cell = row.addChild("td");
