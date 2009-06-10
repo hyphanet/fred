@@ -205,7 +205,9 @@ public final class PageMaker {
 			String themeName = t.code;
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
-		headNode.addChild("script",new String[]{"type","language","src"},new String[]{"text/javascript","javascript","/static/freenetjs/freenetjs.nocache.js"});
+		
+		//Add the generated javascript, if it is enabled
+		if(ctx.getContainer().isFProxyJavascriptEnabled()) headNode.addChild("script",new String[]{"type","language","src"},new String[]{"text/javascript","javascript","/static/freenetjs/freenetjs.nocache.js"});
 		
 		Toadlet t;
 		if (ctx != null) {

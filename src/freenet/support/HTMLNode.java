@@ -217,6 +217,15 @@ public class HTMLNode implements XMLCharacterClasses {
 		}
 		return tagBuffer;
 	}
+	
+	public String generateChildren(){
+		StringBuilder tagBuffer=new StringBuilder();
+		for(int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
+			HTMLNode childNode = children.get(childIndex);
+			childNode.generate(tagBuffer);
+		}
+		return tagBuffer.toString();
+	}
 
 	/**
 	 * Special HTML node for the DOCTYPE declaration. This node differs from a

@@ -128,5 +128,8 @@ public interface HTTPRequest {
 	public long getLongParam(String name, long defaultValue);
 	
 	public String getMethod();
+	
+	/** Returns a name that is unique for this requests.*/
+	public String getUniqueName();
 
 }

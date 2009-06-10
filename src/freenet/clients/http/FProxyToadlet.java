@@ -25,6 +25,7 @@ import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
+import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
@@ -540,11 +541,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode headNode=page.headNode;
 				if(isJsEnabled){
 					//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
-					//And the script file
 					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
-					HTMLNode scriptNode=headNode.addChild("script","//abc");
-					scriptNode.addAttribute("type", "text/javascript");
-					scriptNode.addAttribute("src", "/static/js/progresspage.js");
 				}else{
 					//If he disabled it, we just put the http refresh meta, without the noscript
 					headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
@@ -579,29 +576,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(fr.totalBlocks <= 0)
 					progressCell.addChild("#", L10n.getString("QueueToadlet.unknown"));
 				else {
-					int total = fr.requiredBlocks;
-					int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
-					int failedPercent = (int) (fr.failedBlocks / (double) total * 100);
-					int fatallyFailedPercent = (int) (fr.fatallyFailedBlocks / (double) total * 100);
-					HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
-					progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
-
-					if (fr.failedBlocks > 0)
-						progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
-					if (fr.fatallyFailedBlocks > 0)
-						progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
-					
-					NumberFormat nf = NumberFormat.getInstance();
-					nf.setMaximumFractionDigits(1);
-					String prefix = '('+Integer.toString(fr.fetchedBlocks) + "/ " + Integer.toString(total)+"): ";
-					if (fr.finalizedBlocks) {
-						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + L10n.getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0) + '%');
-					} else {
-						String text = nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0)+ '%';
-						text = "" + fr.fetchedBlocks + " ("+text+"??)";
-						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString("QueueToadlet.progressbarNotAccurate") }, text);
-					}
-
+					progressCell.addChild(new ProgressBarElement(fr,httprequest.getUniqueName()));
 				}
 				
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");

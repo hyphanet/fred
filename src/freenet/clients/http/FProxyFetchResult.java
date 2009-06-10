@@ -26,15 +26,15 @@ public class FProxyFetchResult {
 	/** Total blocks */
 	final int totalBlocks;
 	/** Required blocks */
-	final int requiredBlocks;
+	public final int requiredBlocks;
 	/** Fetched blocks */
-	final int fetchedBlocks;
+	public final int fetchedBlocks;
 	/** Failed blocks */
-	final int failedBlocks;
+	public final int failedBlocks;
 	/** Fatally failed blocks */
-	final int fatallyFailedBlocks;
+	public final int fatallyFailedBlocks;
 	/** Finalized blocks? */
-	final boolean finalizedBlocks;
+	public final boolean finalizedBlocks;
 	
 	
 	/** Failed */

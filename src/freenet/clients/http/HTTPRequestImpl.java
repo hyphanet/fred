@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.StringTokenizer;
 
 import freenet.support.Fields;
@@ -75,6 +76,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 	private final BucketFactory bucketfactory;
 	
 	private final String method;
+	
+	private final String uniqueName;
 
 	/**
 	 * Create a new HTTPRequest for the given URI and parse its request
@@ -90,6 +93,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		this.parts = null;
 		this.bucketfactory = null;
 		this.method = method;
+		this.uniqueName=String.valueOf(new Random().nextLong());
 	}
 
 	/**
@@ -110,6 +114,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		}
 		this.method = method;
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
+		this.uniqueName=String.valueOf(new Random().nextLong());
 	}
 	
 	/**
@@ -136,6 +141,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				Logger.error(this, "Temporary files error ? Could not parse: "+ioe, ioe);
 			}
 		}
+		this.uniqueName=String.valueOf(new Random().nextLong());
 	}
 	
 
@@ -687,6 +693,10 @@ public class HTTPRequestImpl implements HTTPRequest {
 
 	public String getMethod() {
 		return method;
+	}
+	
+	public String getUniqueName() {
+		return uniqueName;
 	}
 
 }
