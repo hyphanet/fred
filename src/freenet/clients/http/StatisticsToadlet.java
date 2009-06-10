@@ -178,9 +178,6 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringContent, "/", "threadDumpForm");
 			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", l10n("threadDumpButton")});
 		}
-		// BDB statistics dump 
-		HTMLNode JEStatsForm = ctx.addFormChild(statGatheringContent, "/", "JEStatsForm");
-		JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", l10n("jeDumpButton")});
 		// Get logs
 		HTMLNode logsList = statGatheringContent.addChild("ul");
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))
