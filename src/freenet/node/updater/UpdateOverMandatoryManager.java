@@ -568,7 +568,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private class PeersSayKeyBlownAlert extends AbstractUserAlert {
 
 		public PeersSayKeyBlownAlert() {
-			super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
+			super(false, null, null, null, null, UserAlert.WARNING, true, null, false, null);
 		}
 
 		@Override
