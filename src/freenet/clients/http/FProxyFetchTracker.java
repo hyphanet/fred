@@ -42,7 +42,7 @@ public class FProxyFetchTracker implements Runnable {
 		this.rc = rc;
 	}
 	
-	FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) throws FetchException {
+	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) throws FetchException {
 		FProxyFetchInProgress progress;
 		/* LOCKING:
 		 * Call getWaiter() inside the fetchers lock, since we will purge old 

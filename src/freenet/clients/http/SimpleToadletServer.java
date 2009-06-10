@@ -15,6 +15,7 @@ import java.util.LinkedList;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
+import freenet.clients.http.updateableelements.PushDataManager;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -91,6 +92,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
+	public final PushDataManager pushDatamanager; 
 	
 	// Config Callbacks
 	private class FProxySSLCallback extends BooleanCallback  {
@@ -536,6 +538,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		StaticToadlet statictoadlet = new StaticToadlet();
 		register(statictoadlet, null, "/static/", false, false);
+		
+		pushDatamanager=new PushDataManager();
 		
 		// "Freenet is starting up..." page, to be removed at #removeStartupToadlet()
 		startupToadlet = new StartupToadlet(statictoadlet);
