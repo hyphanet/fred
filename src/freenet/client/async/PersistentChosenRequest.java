@@ -203,13 +203,11 @@ public class PersistentChosenRequest {
 						bulkFailItems.add(new BulkCallFailureItem(e, block.token));
 					} else {
 						((SendableGet)request).onFailure(e, block.token, container, context);
-						container.commit(); // db4o is read-committed, so we need to commit here.
 					}
 				}
 			}
 			if(bulkFailItems != null) {
 				((SupportsBulkCallFailure)request).onFailure(bulkFailItems.toArray(new BulkCallFailureItem[bulkFailItems.size()]), container, context);
-				container.commit(); // db4o is read-committed, so we need to commit here.
 			}
 		} else /*if(request instanceof SendableInsert)*/ {
 			container.activate(request, 1);
@@ -217,10 +215,8 @@ public class PersistentChosenRequest {
 				container.activate(block, 1);
 				if(block.insertSucceeded()) {
 					((SendableInsert)request).onSuccess(block.token, container, context);
-					container.commit(); // db4o is read-committed, so we need to commit here.
 				} else {
 					((SendableInsert)request).onFailure(block.failedPut(), block.token, container, context);
-					container.commit(); // db4o is read-committed, so we need to commit here.
 				}
 			}
 		}

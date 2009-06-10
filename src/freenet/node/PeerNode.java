@@ -471,10 +471,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 							errCause += " (No peer public key)";
 						if(failed)
 							errCause += " (VERIFICATION FAILED)";
-						Logger.error(this, "The integrity of the reference has been compromized!" + errCause + " fs was\n" + fs.toOrderedString());
+						Logger.error(this, "The integrity of the reference has been compromised!" + errCause + " fs was\n" + fs.toOrderedString());
 						this.isSignatureVerificationSuccessfull = false;
 						fs.putSingle("sig", signature);
-						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!" + errCause);
+						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromised!" + errCause);
 					} else
 						this.isSignatureVerificationSuccessfull = true;
 				} catch(NumberFormatException e) {

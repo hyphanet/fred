@@ -433,9 +433,13 @@ public class WelcomeToadlet extends Toadlet {
         if(core.node.pluginManager != null && 
         		core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
         	HTMLNode form = searchBoxContent.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
+        	// Search must be in a new window so that the user is able to browse the bookmarks.
+        	form.addAttribute("target", "_blank");
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
         	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", l10n("searchFreenet") });
+        	// FIXME: Remove this once we have a non-broken index.
+        	searchBoxContent.addChild("#", l10n("searchBoxWarningSlow"));
         } else {
 			// Warn that search plugin is not loaded.
 			L10n.addL10nSubstitution(searchBoxContent, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/\">", "</a>" });

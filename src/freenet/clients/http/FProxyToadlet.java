@@ -42,6 +42,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.URIPreEncoder;
 import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -68,7 +69,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
-	public static long MAX_LENGTH = 2*1024*1024; // 2MB
+	public static long MAX_LENGTH = 2*1024*1024 * 11 / 10; // 2MB plus a bit due to buggy inserts
 	
 	static final URI welcome;
 	public static final short PRIORITY = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
@@ -534,7 +535,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			} else {
 				if(logMINOR) Logger.minor(this, "Still in progress");
 				// Still in progress
-				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled();
+				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
 				HTMLNode pageNode = page.outer;
 				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
@@ -795,7 +796,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		sb.append("/");
 		sb.append(uri.toASCIIString());
 		char c = '?';
-		if(requestedMimeType != null) {
+		if(requestedMimeType != null && requestedMimeType != "") {
 			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
 		}
 		if(maxSize > 0 && maxSize != MAX_LENGTH) {
@@ -815,7 +816,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		String referer = ctx.getHeaders().get("referer");
 		if(referer != null) {
 			try {
-				URI refererURI = new URI(referer);
+				URI refererURI = new URI(URIPreEncoder.encode(referer));
 				String path = refererURI.getPath();
 				while(path.startsWith("/")) path = path.substring(1);
 				if("".equals(path)) return "/";

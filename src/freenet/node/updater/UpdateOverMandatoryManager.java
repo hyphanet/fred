@@ -5,6 +5,7 @@ package freenet.node.updater;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -567,7 +568,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private class PeersSayKeyBlownAlert extends AbstractUserAlert {
 
 		public PeersSayKeyBlownAlert() {
-			super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
+			super(false, null, null, null, null, UserAlert.WARNING, true, null, false, null);
 		}
 
 		@Override
@@ -853,7 +854,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			maybeNotRevoked();
 			return true;
 		}
-
+		
 		if(updateManager.isBlown()) {
 			if(logMINOR)
 				Logger.minor(this, "Already blown, so not receiving from " + source + "(" + uid + ")");
@@ -873,6 +874,20 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			maybeNotRevoked();
 			return true;
 		}
+		
+		if(length <= 0) {
+			System.err.println("Revocation key is zero bytes from "+source+" - ignoring as this is almost certainly a bug or an attack, it is definitely not valid.");
+			synchronized(UpdateOverMandatoryManager.this) {
+				nodesSayKeyRevoked.remove(source);
+				nodesSayKeyRevokedFailedTransfer.add(source);
+				nodesSayKeyRevokedTransferring.remove(source);
+			}
+			cancelSend(source, uid);
+			maybeNotRevoked();
+			return true;
+		}
+		
+		System.err.println("Transferring auto-updater revocation certificate length "+length+" from "+source);
 
 		// Okay, we can receive it
 
@@ -966,11 +981,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			return;
-		} catch(IOException e) {
-			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " !");
-			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " !");
-			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " !");
-			// FIXME will be kept until exit for debugging purposes
+		} catch (EOFException e) {
+			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")", e);
+			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")");
+			// Probably malicious, might just be buggy, either way, it's not blown
+			e.printStackTrace();
+			synchronized(UpdateOverMandatoryManager.this) {
+				nodesSayKeyRevokedFailedTransfer.add(source);
+			}
+			// FIXME file will be kept until exit for debugging purposes
 			return;
 		} catch(BinaryBlobFormatException e) {
 			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")", e);
@@ -981,6 +1000,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				nodesSayKeyRevokedFailedTransfer.add(source);
 			}
 			// FIXME file will be kept until exit for debugging purposes
+			return;
+		} catch(IOException e) {
+			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, e);
+			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			e.printStackTrace();
+			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			// FIXME will be kept until exit for debugging purposes
 			return;
 		} finally {
 			if(dis != null)
@@ -1024,7 +1050,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					// Blown: somebody inserted a revocation message, but it was corrupt as inserted
 					// However it had valid signatures etc.
 
-					System.err.println("Got revocation certificate from " + source.userToString() + " (fatal error i.e. someone with the key inserted bad data)");
+					System.err.println("Got revocation certificate from " + source.userToString() + " (fatal error i.e. someone with the key inserted bad data) : "+e);
 					// Blow the update, and propagate the revocation certificate.
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
 					temp.delete();
@@ -1032,8 +1058,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 
 				} else {
-					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString());
-					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString());
+					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
+					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedFailedTransfer.add(source);
 					}

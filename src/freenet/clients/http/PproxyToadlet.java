@@ -327,6 +327,8 @@ public class PproxyToadlet extends Toadlet {
 					String pluginName = pluginInfoWrapper.getPluginClassName();
 					String shortPluginName = pluginName.substring(pluginName.lastIndexOf('.') + 1);
 					availablePlugins.remove(shortPluginName);
+
+					if (shortPluginName.equals("FreemailPlugin")) availablePlugins.remove("Freemail"); // DOH!
 				}
 				while (loadingPlugins.hasNext()) {
 					PluginProgress pluginProgress = loadingPlugins.next();

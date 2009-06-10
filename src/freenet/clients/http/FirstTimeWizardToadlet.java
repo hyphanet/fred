@@ -453,7 +453,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					infobox.addChild("div", "class", "infobox-header", l10nSec("friendsThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
 					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 					HTMLNode p = infoboxContent.addChild("p");
-					L10n.addL10nSubstitution(p, "FirstTimeWizardToadlet.highFriendsThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+					L10n.addL10nSubstitution(p, "SecurityLevels.highFriendsThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.friendsThreatLevel.confirm", "off" }, l10nSec("highFriendsThreatLevelCheckbox"));
 					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.friendsThreatLevel.tryConfirm", "on" });
 					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });

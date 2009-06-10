@@ -1142,7 +1142,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		
 		//double frac = p.getSuccessFraction();
-		if (!core.isAdvancedModeEnabled()) {
+		if (!core.isAdvancedModeEnabled() || total < min /* FIXME why? */) {
 			total = min;
 		}
 		

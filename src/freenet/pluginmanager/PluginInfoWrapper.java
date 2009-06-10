@@ -8,7 +8,7 @@ import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
 
-public class PluginInfoWrapper {
+public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 
 	private final String className;
 	private Thread thread;
@@ -218,5 +218,9 @@ public class PluginInfoWrapper {
 		} else {
 			return -1;
 		}
+	}
+
+	public int compareTo(PluginInfoWrapper pi) {
+		return className.compareTo(pi.className);
 	}
 }

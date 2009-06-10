@@ -183,7 +183,25 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						case INTEXT :
 							saveText(b, currentTag, w, this);
 							break;
-						default :
+						case INTAG:
+							w.write("<!-- truncated page: last tag not unfinished -->");
+							break;
+						case INTAGQUOTES:
+							w.write("<!-- truncated page: deleted unfinished tag: still in quotes -->");
+							break;
+						case INTAGSQUOTES:
+							w.write("<!-- truncated page: deleted unfinished tag: still in single quotes -->");
+							break;
+						case INTAGWHITESPACE:
+							w.write("<!-- truncated page: deleted unfinished tag: still in whitespace -->");
+							break;
+						case INTAGCOMMENT:
+							w.write("<!-- truncated page: deleted unfinished comment -->");
+							break;
+						case INTAGCOMMENTCLOSING:
+							w.write("<!-- truncated page: deleted unfinished comment, might be closing -->");
+							break;
+						default:
 							// Dump unfinished tag
 							break;
 					}

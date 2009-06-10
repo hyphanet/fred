@@ -1758,7 +1758,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		storeBloomFilterCounting = nodeConfig.getBoolean("storeBloomFilterCounting");
 		
-		nodeConfig.register("storeSaltHashResizeOnStart", true, sortOrder++, true, false,
+		nodeConfig.register("storeSaltHashResizeOnStart", false, sortOrder++, true, false,
 				"Node.storeSaltHashResizeOnStart", "Node.storeSaltHashResizeOnStartLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
