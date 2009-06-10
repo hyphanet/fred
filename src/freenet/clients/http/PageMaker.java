@@ -366,6 +366,7 @@ public final class PageMaker {
 		return result;
 	}
 	
+	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */
 	protected int parseMode(HTTPRequest req, ToadletContainer container) {
 		int mode = container.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
 		
@@ -380,6 +381,7 @@ public final class PageMaker {
 		return mode;
 	}
 	
+	/** Call this to actually put in the mode selection links */
 	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode) {
 		return drawModeSelectionArray(core, container, contentNode, mode, -1, null, null);
 	}
