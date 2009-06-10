@@ -49,6 +49,7 @@ import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.fcp.NotAllowedException;
 import freenet.node.fcp.RequestCompletionCallback;
+import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.useralerts.SimpleHTMLUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -1134,15 +1135,24 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return reasonCell;
 	}
 
-	private HTMLNode createProgressCell(boolean started, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
+	private HTMLNode createProgressCell(boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
 		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
 		if (!started) {
 			progressCell.addChild("#", L10n.getString("QueueToadlet.starting"));
 			return progressCell;
 		}
+		boolean advancedMode = core.isAdvancedModeEnabled();
+		if(compressing == COMPRESS_STATE.WAITING && advancedMode) {
+			progressCell.addChild("#", L10n.getString("QueueToadlet.awaitingCompression"));
+			return progressCell;
+		}
+		if(compressing != COMPRESS_STATE.WORKING) {
+			progressCell.addChild("#", L10n.getString("QueueToadlet.compressing"));
+			return progressCell;
+		}
 		
 		//double frac = p.getSuccessFraction();
-		if (!core.isAdvancedModeEnabled() || total < min /* FIXME why? */) {
+		if (!advancedMode || total < min /* FIXME why? */) {
 			total = min;
 		}
 		
@@ -1432,7 +1442,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				} else if (column == LIST_TOTAL_SIZE) {
 					requestRow.addChild(createSizeCell(((ClientPutDir) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
 				} else if (column == LIST_PROGRESS) {
-					requestRow.addChild(createProgressCell(clientRequest.isStarted(), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
+					if(clientRequest instanceof ClientPut)
+						requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((ClientPut)clientRequest).isCompressing(container), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
+					else
+						requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
 				} else if (column == LIST_REASON) {
 					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(container)));
 				}

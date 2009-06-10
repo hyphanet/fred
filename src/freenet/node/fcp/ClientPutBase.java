@@ -51,7 +51,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	// Not that important, so not saved on persistence.
 	// Probably saving it would conflict with later changes (full persistence at
 	// ClientPutter level).
-	private FCPMessage progressMessage;
+	protected FCPMessage progressMessage;
 
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
@@ -273,15 +273,21 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				StartedCompressionMessage msg =
 					new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
 				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+				onStartCompressing();
 			}
 		} else if(ce instanceof FinishedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				FinishedCompressionMessage msg = 
 					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
 				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+				onStopCompressing();
 			}
 		}
 	}
+
+	protected abstract void onStopCompressing();
+
+	protected abstract void onStartCompressing();
 
 	public void onFetchable(BaseClientPutter putter, ObjectContainer container) {
 		if(finished) return;
