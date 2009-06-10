@@ -11,6 +11,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -191,6 +192,9 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			} catch (WaitedTooLongException e1) {
 				Logger.error(this, "Took too long to send ssk datareply to "+uid+" (because of throttling)");
 				return;
+			} catch (PeerRestartedException e) {
+				if(logMINOR) Logger.minor(this, "Source restarted on "+uid);
+				return;
 			}
 			block = storedBlock;
 		}
@@ -254,6 +258,9 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					return;
 				} catch (WaitedTooLongException e1) {
 					Logger.error(this, "Took too long to send ssk datareply to "+uid+" because of bwlimiting");
+					return;
+				} catch (PeerRestartedException e) {
+					Logger.error(this, "Peer restarted on "+uid);
 					return;
 				}
             }

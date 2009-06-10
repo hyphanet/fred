@@ -12,6 +12,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.PeerRestartedException;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.Logger;
@@ -276,6 +277,11 @@ outer:	while(true) {
 				lastSentPacket = System.currentTimeMillis();
 			} catch (NotConnectedException e) {
 				cancel("Disconnected");
+				if(logMINOR)
+					Logger.minor(this, "Canclled: not connected "+this);
+				return false;
+			} catch (PeerRestartedException e) {
+				cancel("PeerRestarted");
 				if(logMINOR)
 					Logger.minor(this, "Canclled: not connected "+this);
 				return false;
