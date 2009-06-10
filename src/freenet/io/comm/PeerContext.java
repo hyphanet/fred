@@ -39,7 +39,7 @@ public interface PeerContext {
 	/** Send a throttled message to the node (may block for a long time). 
 	 * @throws SyncSendWaitedTooLongException
 	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later. 
-	 * @throws DisconnectedException If the peer is restarted. FIXME!!
+	 * @throws PeerRestartedException If the peer is restarted.
 	 * */
 	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException;
 	
