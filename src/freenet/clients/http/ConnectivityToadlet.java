@@ -61,6 +61,7 @@ public class ConnectivityToadlet extends Toadlet {
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
+		final int mode = ctx.getPageMaker().parseMode(request, container);
 		PageNode page = pageMaker.getPageNode(L10n.getString("ConnectivityToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -68,7 +69,7 @@ public class ConnectivityToadlet extends Toadlet {
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
+		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 
 		// our ports
 		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");

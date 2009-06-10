@@ -236,6 +236,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
+		final int mode = ctx.getPageMaker().parseMode(request, container);
+		
 		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -245,7 +247,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
+		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 		
 		if(peerNodeStatuses.length>0){
 			

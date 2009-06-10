@@ -141,6 +141,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfConnError = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 
+		final int mode = ctx.getPageMaker().parseMode(request, container);
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -152,7 +153,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
+		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();

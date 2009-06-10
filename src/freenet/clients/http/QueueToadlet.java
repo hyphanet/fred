@@ -924,6 +924,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				'/' + (completedDownloadToDisk.size() + completedDownloadToTemp.size()) +
 				") "+L10n.getString("QueueToadlet.titleDownloads", "nodeName", core.getMyName());
 		
+		final int mode = pageMaker.parseMode(request, this.container);
+		
 		PageNode page = pageMaker.getPageNode(pageName, ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -931,7 +933,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		final int mode = pageMaker.drawModeSelectionArray(core, request, contentNode);
+		pageMaker.drawModeSelectionArray(core, this.container, contentNode, mode);
 		/* add file insert box */
 		if(uploads)
 		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));

@@ -712,6 +712,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return this.advancedModeEnabled;
 	}
 	
+	public void setAdvancedMode(boolean enabled) {
+		synchronized(this) {
+			if(advancedModeEnabled == enabled) return;
+			advancedModeEnabled = enabled;
+		}
+		core.node.config.store();
+	}
+	
 	public synchronized void enableAdvancedMode(boolean b){
 		advancedModeEnabled = b;
 	}
