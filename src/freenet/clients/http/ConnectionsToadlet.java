@@ -300,7 +300,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
 				}
 				
-				nextTableCell = (mode >= PageMaker.MODE_ADVANCED) ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+				nextTableCell = overviewTableRow.addChild("td", "class", "last");
 				
 				// Peer statistics box
 				HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -308,7 +308,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				
 				// Peer routing backoff reason box
 				if(mode >= PageMaker.MODE_ADVANCED) {
-					nextTableCell = overviewTableRow.addChild("td", "class", "last");
 					HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 					backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
 					HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
