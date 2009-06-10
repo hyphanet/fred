@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Locale;
+import java.util.Random;
 import java.util.TimeZone;
 
 import freenet.l10n.L10n;
@@ -46,6 +47,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private final InetAddress remoteAddr;
 	private boolean sentReplyHeaders;
 	private volatile Toadlet activeToadlet;
+	private final String uniqueId;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
@@ -63,6 +65,7 @@ public class ToadletContextImpl implements ToadletContext {
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
+		uniqueId=String.valueOf(new Random().nextLong());
 	}
 	
 	private void close() {
@@ -410,6 +413,7 @@ public class ToadletContextImpl implements ToadletContext {
 		} catch (Throwable t) {
 			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
 			try {
+				Logger.error(t,"", t);
 				sendError(sock.getOutputStream(), 500, "Internal Error", t.toString(), true, null);
 			} catch (IOException e1) {
 				// ignore and return
@@ -496,5 +500,9 @@ public class ToadletContextImpl implements ToadletContext {
 
 	public boolean disableProgressPage() {
 		return container.disableProgressPage();
+	}
+	
+	public String getUniqueId(){
+		return uniqueId;
 	}
 }

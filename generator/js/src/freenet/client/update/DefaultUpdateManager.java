@@ -1,38 +1,57 @@
 package freenet.client.update;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.google.gwt.http.client.Request;
+import com.google.gwt.http.client.RequestBuilder;
+import com.google.gwt.http.client.RequestCallback;
+import com.google.gwt.http.client.RequestException;
+import com.google.gwt.http.client.Response;
+import com.google.gwt.user.client.ui.RootPanel;
 
 import freenet.client.FreenetJs;
-import freenet.client.elemetupdaters.IElementUpdater;
-import freenet.client.elemetupdaters.ReplacerUpdater;
+import freenet.client.connection.IConnectionManager;
 import freenet.client.tools.Base64;
 
 public class DefaultUpdateManager implements IUpdateManager {
+	public final String		requestId;
 
-	private static Map<String, IElementUpdater>	updaters	= new HashMap<String, IElementUpdater>();
-	static {
-		updaters.put("replacerUpdater", new ReplacerUpdater());
+	public static final String	SEPARATOR	= ":";
+
+	public DefaultUpdateManager(String requestId) {
+		this.requestId = requestId;
 	}
-
-	public static final String					SEPARATOR	= ":";
 
 	@Override
 	public void updated(String message) {
-		FreenetJs.log("message:"+message);
-		FreenetJs.log("updatertypeencoded:"+message.substring(0, message.indexOf(SEPARATOR)));
-		FreenetJs.log("updatertypedecoded:"+Base64.decode(message.substring(0, message.indexOf(SEPARATOR))));
+		String elementId = message;
+		FreenetJs.log("elementiddecoded:" + elementId);
+		try {
+			new RequestBuilder(RequestBuilder.GET, IConnectionManager.dataPath+"?requestId="+requestId+"&elementId="+elementId).sendRequest(null, new UpdaterRequestCallback(elementId));
+		} catch (RequestException re) {
+			FreenetJs.log("EXCEPTION at DefaultUpdateManager.updated!");
+		}
+	}
+	
+	private class UpdaterRequestCallback implements RequestCallback{
 		
-		String updaterType = Base64.decode(message.substring(0, message.indexOf(SEPARATOR)));
-		String elementId = Base64.decode(message.substring(message.indexOf(SEPARATOR) + SEPARATOR.length(), message.lastIndexOf(SEPARATOR)));
-		String content = Base64.decode(message.substring(message.lastIndexOf(SEPARATOR) + SEPARATOR.length()));
-		FreenetJs.log("elementiddecoded:"+elementId);
-		FreenetJs.log("contentdecoded:"+content);
-		IElementUpdater updater = updaters.get(updaterType);
-		if (updater == null) {
-			FreenetJs.log("Updater cannot be found:" + updaterType + "! maybe you mistyped the type, or forgot to add to the map.");
-		} else {
-			updater.update(elementId, content);
+		private final String elementId;
+		
+		private UpdaterRequestCallback(String elementId){
+			this.elementId=elementId;
+		}
+		@Override
+		public void onResponseReceived(Request request, Response response) {
+			if(response.getText().startsWith("SUCCESS")==false){
+				FreenetJs.log("ERROR! BAD DATA");
+				FreenetJs.stop();
+			}else{
+				String newContent=Base64.decode(response.getText().substring("SUCCESS:".length()));
+				RootPanel.get(elementId).getElement().setInnerHTML(newContent);
+			}
+		}
+		
+		@Override
+		public void onError(Request request, Throwable exception) {
+			FreenetJs.log("ERROR! AT DATA GETTING!");
 		}
 
 	}

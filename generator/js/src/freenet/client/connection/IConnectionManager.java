@@ -1,9 +1,9 @@
 package freenet.client.connection;
 
-import freenet.client.update.IUpdateManager;
-
 public interface IConnectionManager {
-	public static final String	path	= "/pushdata/";
+	public static final String	dataPath			= "/pushdata/";
+
+	public static final String	notificationPath	= "/pushnotifications/";
 
 	public void openConnection();
 

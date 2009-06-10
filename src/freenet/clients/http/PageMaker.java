@@ -218,6 +218,9 @@ public final class PageMaker {
 		String activePath = "";
 		if(t != null) activePath = t.path();
 		HTMLNode bodyNode = htmlNode.addChild("body");
+		//Add a hidden input that has the request's id
+		bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
+		
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 		topBarDiv.addChild("h1", title);

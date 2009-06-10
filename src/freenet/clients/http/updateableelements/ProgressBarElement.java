@@ -5,35 +5,36 @@ import java.text.NumberFormat;
 import freenet.client.FetchException;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
+import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.support.Base64;
 import freenet.support.Logger;
 
 public class ProgressBarElement extends BaseUpdateableElement {
-	
-	private FProxyFetchTracker tracker;
-	private FreenetURI key;
-	private long maxSize;
-	
-	public ProgressBarElement(FProxyFetchTracker tracker,FreenetURI key, long maxSize,String requestUniqueName) {
-		super("div", "class", "progressbar",requestUniqueName);
-		this.tracker=tracker;
-		this.key=key;
-		this.maxSize=maxSize;
 
+	private FProxyFetchTracker	tracker;
+	private FreenetURI			key;
+	private long				maxSize;
+
+	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, String requestUniqueName,ToadletContext ctx) {
+		super("div", "class", "progressbar", requestUniqueName,ctx);
+		this.tracker = tracker;
+		this.key = key;
+		this.maxSize = maxSize;
+		init();
 	}
-	
+
 	@Override
 	public void updateState() {
 		children.clear();
-		
-		try{
-			FProxyFetchResult fr=tracker.makeFetcher(key, maxSize).getResult();
+
+		try {
+			FProxyFetchResult fr = tracker.makeFetcher(key, maxSize).getResult();
 			int total = fr.requiredBlocks;
 			int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
 			int failedPercent = (int) (fr.failedBlocks / (double) total * 100);
 			int fatallyFailedPercent = (int) (fr.fatallyFailedBlocks / (double) total * 100);
-
 
 			addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
 
@@ -50,14 +51,18 @@ public class ProgressBarElement extends BaseUpdateableElement {
 				text = "" + fr.fetchedBlocks + " (" + text + "??)";
 				addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString("QueueToadlet.progressbarNotAccurate") }, text);
 			}
-		}catch(FetchException fe){
-			addChild("div","Error while trying to fetch the new version! Please see the logs.");
+		} catch (FetchException fe) {
+			addChild("div", "Error while trying to fetch the new version! Please see the logs.");
 			Logger.error(this, "Error while building a ProgressBar", fe);
 		}
 	}
-	
+
 	@Override
 	public String getUpdaterId() {
-		return "progressbar";
+		return getId(key);
+	}
+
+	public static String getId(FreenetURI uri) {
+		return Base64.encodeStandard(("progressbar[URI:" + uri.toString() + "]").getBytes());
 	}
 }

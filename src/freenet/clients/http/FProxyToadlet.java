@@ -577,7 +577,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(fr.totalBlocks <= 0)
 					progressCell.addChild("#", L10n.getString("QueueToadlet.unknown"));
 				else {
-					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,httprequest.getUniqueName()));
+					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,ctx.getUniqueId(),ctx));
 				}
 				
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");

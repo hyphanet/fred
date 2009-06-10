@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 
 public class PushDataManager {
 
@@ -18,12 +19,12 @@ public class PushDataManager {
 	public void updateElement(String id) {
 		boolean needsUpdate = false;
 		synchronized (awaitingNotifications) {
-			for (String reqId : elements.get(id)) {
+			if(elements.containsKey(id))for (String reqId : elements.get(id)) {
 				awaitingNotifications.add(new UpdateEvent(reqId, id));
 				needsUpdate = true;
 			}
 			if (needsUpdate) {
-				awaitingNotifications.notify();
+				awaitingNotifications.notifyAll();
 			}
 		}
 	}
@@ -40,12 +41,21 @@ public class PushDataManager {
 	}
 
 	public HTMLNode getRenderedElement(String requestId, String id) {
-		for (BaseUpdateableElement element : pages.get(requestId)) {
+		System.err.println("Get rendered element");//TODO:remove this
+		System.err.println("requestId:"+requestId);
+		System.err.println("elementId:"+id);
+		System.err.println("Elements for this request:"+pages.get(requestId));
+		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
+			System.err.println("id:"+element.getUpdaterId());
+		}
+		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
 			if (element.getUpdaterId().compareTo(id) == 0) {
 				element.updateState();
+				System.err.println("OK, returning element");
 				return element;
 			}
 		}
+		System.err.println("PROBLEM, RETURNING NULL!");
 		return null;
 	}
 

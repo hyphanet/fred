@@ -89,5 +89,7 @@ public interface ToadletContext {
 	boolean disableProgressPage();
 	
 	Toadlet activeToadlet();
+	
+	public String getUniqueId();
 }
 

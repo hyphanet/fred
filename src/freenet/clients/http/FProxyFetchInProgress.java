@@ -17,7 +17,10 @@ import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.keys.FreenetURI;
+import freenet.node.NodeClientCore;
+import freenet.node.NodeStarter;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -158,6 +161,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 				fatallyFailedBlocks = split.fatallyFailedBlocks;
 				finalizedBlocks = split.finalizedTotal;
 				int req = requiredBlocks - (fetchedBlocks + failedBlocks + fatallyFailedBlocks);
+				((NodeClientCore)context.jobRunner).node.clientCore.getToadletContainer().pushDataManager.updateElement(ProgressBarElement.getId(uri));//TODO:HORRIBLE HACK, it needs to be rethought
 				if(!(req > 1024 && oldReq <= 1024)) return;
 			}
 		} else if(ce instanceof SendingToNetworkEvent) {
