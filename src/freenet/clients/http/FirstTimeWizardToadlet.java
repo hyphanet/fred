@@ -417,8 +417,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.networkThreatLevel.tryConfirm", "on" });
 					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
-					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("ConfigToadlet.apply")});
-					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  L10n.getString("ConfigToadlet.reset")});
+					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("continue")});
 					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 					return;
 				} else if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
@@ -457,8 +456,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.friendsThreatLevel.confirm", "off" }, l10nSec("highFriendsThreatLevelCheckbox"));
 					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.friendsThreatLevel.tryConfirm", "on" });
 					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
-					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("ConfigToadlet.apply")});
-					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  L10n.getString("ConfigToadlet.reset")});
+					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("ConfigToadlet.continue")});
 					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 					return;
 				} else if((!request.isPartSet("security-levels.friendsThreatLevel.confirm")) &&
