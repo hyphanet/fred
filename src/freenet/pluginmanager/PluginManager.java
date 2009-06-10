@@ -15,6 +15,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -545,7 +546,7 @@ public class PluginManager {
 	}
 
 	public Set<PluginInfoWrapper> getPlugins() {
-		HashSet<PluginInfoWrapper> out = new HashSet<PluginInfoWrapper>();
+		TreeSet<PluginInfoWrapper> out = new TreeSet<PluginInfoWrapper>();
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);
