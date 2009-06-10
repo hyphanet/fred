@@ -17,8 +17,14 @@ public class Version {
 	/** FReenet Reference Daemon */
 	public static final String nodeName = "Fred";
 
-	/** The current tree version */
+	/** The current tree version.
+	 * FIXME: This is part of the node compatibility computations, so cannot be 
+	 * safely changed!!! Hence publicVersion ... */
 	public static final String nodeVersion = "0.7";
+	
+	/** The version for publicity purposes i.e. the version of the node that has 
+	 * been released. */
+	public static final String publicVersion = "0.7.5";
 
 	/** The protocol version supported */
 	public static final String protocolVersion = "1.0";
