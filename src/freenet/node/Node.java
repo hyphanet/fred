@@ -3817,22 +3817,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public int getDarknetPortNumber() {
 		return darknetCrypto.portNumber;
 	}
-
-	public void JEStatsDump() {
-		if (storeEnvironment == null) {
-			System.out.println("database stat not availiable");
-			return;
-		}
-		try { 
-			StatsConfig statsConf = new StatsConfig();
-			statsConf.setClear(true);
-			System.out.println(storeEnvironment.getStats(statsConf));
-		}
-		catch(DatabaseException e) {
-			System.out.println("Failed to get stats from JE environment: " + e);
-		}
-	}
-
+	
 	public int getOutputBandwidthLimit() {
 		return outputBandwidthLimit;
 	}
