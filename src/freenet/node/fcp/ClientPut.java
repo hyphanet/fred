@@ -523,6 +523,8 @@ public class ClientPut extends ClientPutBase {
 	
 	/** Probably not meaningful for ClientPutDir's */
 	public COMPRESS_STATE isCompressing(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) container.activate(ctx, 1);
+		if(ctx.dontCompress) return COMPRESS_STATE.WORKING;
 		synchronized(this) {
 			if(progressMessage == null) return COMPRESS_STATE.WAITING; // An insert starts at compressing
 			// The progress message persists... so we need to know whether we have
