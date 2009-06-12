@@ -357,6 +357,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					String last = u.lastMetaString();
 					if(last == null || !last.equals(""))
 						u = u.addMetaStrings(new String[] { "" });
+					else
+						u = null;
 					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, u);
 				}
 				else name = removeMetaString();
