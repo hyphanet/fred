@@ -734,7 +734,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				HTMLNode optionList = infoboxContent.addChild("ul");
 				
-				if((e.mode == FetchException.NOT_IN_ARCHIVE) && (core.node.pluginManager.isPluginLoaded("plugins.KeyExplorer.KeyExplorer"))) {
+				if((e.mode == FetchException.NOT_IN_ARCHIVE || e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) && (core.node.pluginManager.isPluginLoaded("plugins.KeyExplorer.KeyExplorer"))) {
 					option = optionList.addChild("li");
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
 				}
