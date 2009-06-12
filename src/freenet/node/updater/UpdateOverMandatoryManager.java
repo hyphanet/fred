@@ -831,6 +831,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			e.printStackTrace();
 			synchronized(this) {
 				// Wierd case of a failed transfer
+				nodesSayKeyRevoked.remove(source);
 				nodesSayKeyRevokedFailedTransfer.add(source);
 				nodesSayKeyRevokedTransferring.remove(source);
 			}
