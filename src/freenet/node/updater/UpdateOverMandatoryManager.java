@@ -190,52 +190,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					System.err.println("Your peer " + source.userToString() + " says that the auto-update key is blown!");
 					System.err.println("Attempting to fetch it...");
 
-					// Try to transfer it.
-
-					Message msg = DMT.createUOMRequestRevocation(updateManager.node.random.nextLong());
-					source.sendAsync(msg, new AsyncMessageCallback() {
-
-						public void acknowledged() {
-							// Ok
-						}
-
-						public void disconnected() {
-							// :(
-							System.err.println("Failed to send request for revocation key to " + source.userToString() + " because it disconnected!");
-							source.failedRevocationTransfer();
-							synchronized(UpdateOverMandatoryManager.this) {
-								nodesSayKeyRevokedFailedTransfer.add(source);
-							}
-						}
-
-						public void fatalError() {
-							// Not good!
-							System.err.println("Failed to send request for revocation key to " + source.userToString() + " because of a fatal error.");
-						}
-
-						public void sent() {
-							// Cool
-						}
-					}, updateManager.ctr);
+					tryFetchRevocation(source);
 					
-					updateManager.node.getTicker().queueTimedJob(new Runnable() {
-
-						public void run() {
-							if(updateManager.isBlown()) return;
-							synchronized(UpdateOverMandatoryManager.this) {
-								if(nodesSayKeyRevokedFailedTransfer.contains(source)) return;
-								if(nodesSayKeyRevokedTransferring.contains(source)) return;
-								nodesSayKeyRevoked.remove(source);
-							}
-							System.err.println("Peer "+source+" said that the auto-update key had been blown, but did not transfer the revocation certificate. The most likely explanation is that the key has not been blown (the node is buggy or malicious), so we are ignoring this.");
-							maybeNotRevoked();
-						}
-						
-					}, 60*1000);
-
-				// The reply message will start the transfer. It includes the revocation URI
-				// so we can tell if anything wierd is happening.
-
 				} else {
 					// Should probably also be a useralert?
 					Logger.normal(this, "Node " + source + " sent us a UOM claiming that the auto-update key was blown, but it used a different key to us: \nour key=" + updateManager.revocationURI + "\nhis key=" + revocationURI);
@@ -267,6 +223,55 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		handleExtJarOffer(now, extraJarFileLength, extraJarVersion, source, extraJarKey);
 		
 		return true;
+	}
+
+	private void tryFetchRevocation(final PeerNode source) throws NotConnectedException {
+		// Try to transfer it.
+
+		Message msg = DMT.createUOMRequestRevocation(updateManager.node.random.nextLong());
+		source.sendAsync(msg, new AsyncMessageCallback() {
+
+			public void acknowledged() {
+				// Ok
+			}
+
+			public void disconnected() {
+				// :(
+				System.err.println("Failed to send request for revocation key to " + source.userToString() + " because it disconnected!");
+				source.failedRevocationTransfer();
+				synchronized(UpdateOverMandatoryManager.this) {
+					nodesSayKeyRevokedFailedTransfer.add(source);
+				}
+			}
+
+			public void fatalError() {
+				// Not good!
+				System.err.println("Failed to send request for revocation key to " + source.userToString() + " because of a fatal error.");
+			}
+
+			public void sent() {
+				// Cool
+			}
+		}, updateManager.ctr);
+		
+		updateManager.node.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				if(updateManager.isBlown()) return;
+				synchronized(UpdateOverMandatoryManager.this) {
+					if(nodesSayKeyRevokedFailedTransfer.contains(source)) return;
+					if(nodesSayKeyRevokedTransferring.contains(source)) return;
+					nodesSayKeyRevoked.remove(source);
+				}
+				System.err.println("Peer "+source+" said that the auto-update key had been blown, but did not transfer the revocation certificate. The most likely explanation is that the key has not been blown (the node is buggy or malicious), so we are ignoring this.");
+				maybeNotRevoked();
+			}
+			
+		}, 60*1000);
+
+	// The reply message will start the transfer. It includes the revocation URI
+	// so we can tell if anything wierd is happening.
+
 	}
 
 	private void handleMainJarOffer(long now, long mainJarFileLength, long mainJarVersion, PeerNode source, String jarKey) {
