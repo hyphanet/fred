@@ -1172,6 +1172,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
+			countFailedRevocationTransfers = 0;
 			synchronized(this) {
 				timePrevDisconnect = timeLastDisconnect;
 				timeLastDisconnect = now;
@@ -4355,5 +4356,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(turtlingTransfers) {
 			return turtlingTransfers.containsKey(key);
 		}
+	}
+
+	private long lastFailedRevocationTransfer;
+	/** Reset on disconnection */
+	private int countFailedRevocationTransfers;
+	
+	public void failedRevocationTransfer() {
+		lastAttemptedHandshakeIPUpdateTime = System.currentTimeMillis();
+		countFailedRevocationTransfers++;
 	}
 }

@@ -202,6 +202,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						public void disconnected() {
 							// :(
 							System.err.println("Failed to send request for revocation key to " + source.userToString() + " because it disconnected!");
+							source.failedRevocationTransfer();
 							synchronized(UpdateOverMandatoryManager.this) {
 								nodesSayKeyRevokedFailedTransfer.add(source);
 							}
@@ -829,6 +830,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			Logger.error(this, "Failed receiving recovation because URI not parsable: " + e + " for " + key, e);
 			System.err.println("Failed receiving recovation because URI not parsable: " + e + " for " + key);
 			e.printStackTrace();
+			source.failedRevocationTransfer();
 			synchronized(this) {
 				// Wierd case of a failed transfer
 				nodesSayKeyRevoked.remove(source);
@@ -845,6 +847,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				"Node: " + source.userToString() + "\n" +
 				"Our   URI: " + updateManager.revocationURI + "\n" +
 				"Their URI: " + revocationURI);
+			source.failedRevocationTransfer();
 			synchronized(this) {
 				// Wierd case of a failed transfer
 				nodesSayKeyRevoked.remove(source);
@@ -866,6 +869,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		if(length > NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH) {
 			System.err.println("Node " + source.userToString() + " offered us a revocation certificate " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer.");
 			Logger.error(this, "Node " + source.userToString() + " offered us a revocation certificate " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer.");
+			source.failedRevocationTransfer();
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevoked.remove(source);
 				nodesSayKeyRevokedFailedTransfer.add(source);
@@ -878,6 +882,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		if(length <= 0) {
 			System.err.println("Revocation key is zero bytes from "+source+" - ignoring as this is almost certainly a bug or an attack, it is definitely not valid.");
+			source.failedRevocationTransfer();
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevoked.remove(source);
 				nodesSayKeyRevokedFailedTransfer.add(source);
@@ -929,6 +934,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				else {
 					Logger.error(this, "Failed to transfer revocation certificate from " + source);
 					System.err.println("Failed to transfer revocation certificate from " + source);
+					source.failedRevocationTransfer();
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedFailedTransfer.add(source);
 					}
@@ -1004,6 +1010,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")");
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
+			source.failedRevocationTransfer();
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevokedFailedTransfer.add(source);
 			}
@@ -1014,6 +1021,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")");
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
+			source.failedRevocationTransfer();
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevokedFailedTransfer.add(source);
 			}
@@ -1078,6 +1086,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				} else {
 					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
 					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
+					source.failedRevocationTransfer();
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedFailedTransfer.add(source);
 					}
