@@ -1779,4 +1779,19 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
+
+	public void disconnected(PeerNode pn) {
+		synchronized(this) {
+			nodesSayKeyRevoked.remove(pn);
+			nodesSayKeyRevokedFailedTransfer.remove(pn);
+			nodesSayKeyRevokedTransferring.remove(pn);
+			nodesOfferedMainJar.remove(pn);
+			nodesOfferedExtJar.remove(pn);
+			nodesAskedSendMainJar.remove(pn);
+			nodesAskedSendExtJar.remove(pn);
+			nodesSendingMainJar.remove(pn);
+			nodesSendingExtJar.remove(pn);
+		}
+		maybeNotRevoked();
+	}
 }

@@ -1015,4 +1015,8 @@ public class NodeUpdateManager {
 		return false;
 	}
 
+	public void disconnected(PeerNode pn) {
+		uom.disconnected(pn);
+	}
+
 }
