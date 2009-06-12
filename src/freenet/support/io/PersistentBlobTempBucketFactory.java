@@ -657,6 +657,7 @@ public class PersistentBlobTempBucketFactory {
 				System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
 				for(long l = newBlocks; l <= blocks; l++) {
 					freeSlots.remove(l);
+					almostFreeSlots.remove(l);
 				}
 				for(Long l : freeSlots.keySet()) {
 					if(l > newBlocks) {
