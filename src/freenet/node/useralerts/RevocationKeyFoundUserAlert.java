@@ -7,10 +7,29 @@ import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
 public class RevocationKeyFoundUserAlert extends AbstractUserAlert {
-	public RevocationKeyFoundUserAlert(String msg){
-		super(false, L10n.getString("RevocationKeyFoundUserAlert.title"), L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg), L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg), new HTMLNode("#", L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg)), UserAlert.CRITICAL_ERROR, true, null, false, null);
+	public RevocationKeyFoundUserAlert(String msg, boolean disabledNotBlown){
+		super(false,
+				getTitle(disabledNotBlown),
+				getText(disabledNotBlown, msg),
+				getText(disabledNotBlown, msg), 
+				new HTMLNode("#", getText(disabledNotBlown, msg)), 
+				UserAlert.CRITICAL_ERROR, true, null, false, null);
 	}
 	
+	private static String getText(boolean disabledNotBlown, String msg) {
+		if(disabledNotBlown)
+			return L10n.getString("RevocationKeyFoundUserAlert.textDisabled", "message", msg);
+		else
+			return L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg);
+	}
+
+	private static String getTitle(boolean disabledNotBlown) {
+		if(disabledNotBlown)
+			return L10n.getString("RevocationKeyFoundUserAlert.titleDisabled");
+		else
+			return L10n.getString("RevocationKeyFoundUserAlert.title");
+	}
+
 	@Override
 	public void isValid(boolean b){
 		// We ignore it : it's ALWAYS valid !

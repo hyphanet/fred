@@ -905,7 +905,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(IOException e) {
 			System.err.println("Cannot save revocation certificate to disk and therefore cannot fetch it from our peer!: " + e);
 			e.printStackTrace();
-			updateManager.blow("Cannot fetch the revocation certificate from our peer because we cannot write it to disk: " + e);
+			updateManager.blow("Cannot fetch the revocation certificate from our peer because we cannot write it to disk: " + e, true);
 			cancelSend(source, uid);
 			return true;
 		}
@@ -915,7 +915,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			raf = new RandomAccessFileWrapper(temp, "rw");
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
-			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e);
+			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e, true);
 			return true;
 		}
 
@@ -944,7 +944,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Caught error while transferring revocation certificate from "+source+" : "+t, t);
 					System.err.println("Peer "+source+" said that the revocation key has been blown, but we got an internal error while transferring it:");
 					t.printStackTrace();
-					updateManager.blow("Internal error while fetching the revocation certificate from our peer "+source+" : "+t);
+					updateManager.blow("Internal error while fetching the revocation certificate from our peer "+source+" : "+t, true);
 				} finally {
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedTransferring.remove(source);
@@ -1003,7 +1003,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
-			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
+			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!", true);
 			return;
 		} catch (EOFException e) {
 			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")", e);
@@ -1031,7 +1031,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, e);
 			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
 			e.printStackTrace();
-			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, true);
 			// FIXME will be kept until exit for debugging purposes
 			return;
 		} finally {

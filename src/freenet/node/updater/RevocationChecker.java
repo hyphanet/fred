@@ -122,7 +122,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 		} catch (FetchException e) {
 			Logger.error(this, "Not able to start the revocation fetcher.");
-			manager.blow("Cannot fetch the auto-update URI");
+			manager.blow("Cannot start fetch for the auto-update revocation key", true);
 		} catch (DatabaseDisabledException e) {
 			// Impossible
 		}
@@ -168,7 +168,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				msg = "Internal error after retreiving revocation key";
 			}
 		}
-		manager.blow(msg);
+		manager.blow(msg, false); // Real one, even if we can't extract the message.
 	}
 	
 	public boolean hasBlown() {
@@ -198,13 +198,13 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		}
 		if(e.isFatal()) {
-			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString());
-			moveBlob(tmpBlobFile); // other peers need to know
+			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), true);
+			moveBlob(tmpBlobFile); // other peers need to know,
 			return;
 		}
 		if(tmpBlobFile != null) tmpBlobFile.delete();
 		if(e.newURI != null) {
-			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?");
+			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?", false);
 		}
 		synchronized(this) {
 			if(errorCode == FetchException.DATA_NOT_FOUND){

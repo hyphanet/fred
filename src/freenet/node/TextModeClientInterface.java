@@ -370,7 +370,7 @@ public class TextModeClientInterface implements Runnable {
     	}
     	outsb.append("\r\n");
     }else if(uline.startsWith("BLOW")) {
-    	n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p");
+    	n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p", true);
     	outsb.append("\r\n");
     	out.write(outsb.toString().getBytes());
     	out.flush();

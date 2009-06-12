@@ -686,7 +686,12 @@ public class NodeUpdateManager {
 		}
 	}
 	
-	public void blow(String msg){
+	/**
+	 * @param msg
+	 * @param disabledNotBlown If true, the auto-updating system is broken, and should
+	 * be disabled, but the problem *could* be local e.g. out of disk space and a node
+	 * sends us a revocation certificate. */
+	public void blow(String msg, boolean disabledNotBlown){
 		NodeUpdater main, ext;
 		synchronized(this) {
 			if(hasBeenBlown){
@@ -697,8 +702,13 @@ public class NodeUpdateManager {
 				this.hasBeenBlown = true;
 				// We must get to the lower part, and show the user the message
 				try {
-					System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN COMPROMIZED!");
-					System.err.println("The auto-updating system revocation key has been inserted. It says: "+revocationMessage);
+					if(disabledNotBlown) {
+						System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN DISABLED!");
+						System.err.println("We do not know whether this is a local problem or the auto-update system has in fact been compromised. What we do know:\n"+revocationMessage);
+					} else {
+						System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN COMPROMIZED!");
+						System.err.println("The auto-updating system revocation key has been inserted. It says: "+revocationMessage);
+					}
 				} catch (Throwable t) {
 					try {
 						Logger.error(this, "Caught "+t, t);
@@ -715,7 +725,7 @@ public class NodeUpdateManager {
 		if(main != null) main.kill();
 		if(ext != null) ext.kill();
 		if(revocationAlert==null){
-			revocationAlert = new RevocationKeyFoundUserAlert(msg);
+			revocationAlert = new RevocationKeyFoundUserAlert(msg, disabledNotBlown);
 			node.clientCore.alerts.register(revocationAlert);
 			// we don't need to advertize updates : we are not going to do them
 			killUpdateAlerts();

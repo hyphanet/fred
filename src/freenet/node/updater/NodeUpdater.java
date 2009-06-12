@@ -92,7 +92,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			core.uskManager.subscribe(myUsk, this, true, this);
 		} catch(MalformedURLException e) {
 			Logger.error(this, "The auto-update URI isn't valid and can't be used");
-			manager.blow("The auto-update URI isn't valid and can't be used");
+			manager.blow("The auto-update URI isn't valid and can't be used", true);
 		}
 	}
 	
