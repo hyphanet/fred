@@ -182,7 +182,7 @@ public class NodeUpdateManager {
 	}
 
 	private Message getUOMAnnouncement() {
-		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), hasBeenBlown, 
+		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), revocationChecker.hasBlown(), 
 				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
 				extUpdater == null ? -1 : extUpdater.getFetchedVersion(),
 				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(), 
@@ -196,8 +196,14 @@ public class NodeUpdateManager {
 		synchronized(broadcastUOMAnnouncesSync) {
 			if(!broadcastUOMAnnounces) return; // nothing worth announcing yet
 		}
+		boolean hasUpdate;
 		synchronized(this) {
-			if((!hasBeenBlown) && (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0)) return;
+			hasUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
+			if((!hasBeenBlown) && hasUpdate) return;
+		}
+		if(!hasUpdate && hasBeenBlown && !revocationChecker.hasBlown()) {
+			// Local problem, don't broadcast.
+			return;
 		}
 		try {
 			peer.sendAsync(getUOMAnnouncement(), null, ctr);

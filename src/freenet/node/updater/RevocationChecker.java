@@ -36,6 +36,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	private boolean wasAggressive;
 	/** Last time at which we got 3 DNFs on the revocation key */
 	private long lastSucceeded;
+	// Kept separately from NodeUpdateManager.hasBeenBlown because there are local problems that can blow the key.
+	private boolean blown;
 	
 	private File blobFile;
 	private File tmpBlobFile;
@@ -148,6 +150,9 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	void onSuccess(FetchResult result, ClientGetter state, File blob) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
+		synchronized(this) {
+			blown = true;
+		}
 		moveBlob(blob);
 		String msg = null;
 		try {
@@ -164,6 +169,10 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 		}
 		manager.blow(msg);
+	}
+	
+	public boolean hasBlown() {
+		return blown;
 	}
 
 	private void moveBlob(File tmpBlobFile) {
