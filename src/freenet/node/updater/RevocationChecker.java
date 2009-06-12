@@ -37,7 +37,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	/** Last time at which we got 3 DNFs on the revocation key */
 	private long lastSucceeded;
 	// Kept separately from NodeUpdateManager.hasBeenBlown because there are local problems that can blow the key.
-	private boolean blown;
+	private volatile boolean blown;
 	
 	private File blobFile;
 	private File tmpBlobFile;
