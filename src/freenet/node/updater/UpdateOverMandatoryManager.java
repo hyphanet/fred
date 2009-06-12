@@ -1001,7 +1001,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		if(count > 3) return true;
 		for(PeerNode peer : transferring) {
-			if(!peer.isConnected()) return true;
+			if(peer.isConnected()) return true;
 		}
 		return false;
 	}
