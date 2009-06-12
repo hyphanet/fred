@@ -679,7 +679,12 @@ public class PersistentBlobTempBucketFactory {
 		query.constrain(PersistentBlobTempBucketTag.class);
 		query.descend("index").constrain(newBlocks).greater();
 		ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
-		while(tags.hasNext()) container.delete(tags.next());
+		long deleted = 0;
+		while(tags.hasNext()) {
+			container.delete(tags.next());
+			deleted++;
+			if(deleted > 1024) break;
+		}
 		queueMaybeShrink();
 		return true;
 		
