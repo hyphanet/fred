@@ -155,22 +155,6 @@ public class WelcomeToadlet extends Toadlet {
             		addChild("#", l10n("threadDumpNotUsingWrapper"));
             }
             this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-        } else if (request.isPartSet("getJEStatsDump")) {
-            if (noPassword) {
-                redirectToRoot(ctx);
-                return;
-            }
-            PageNode page = ctx.getPageMaker().getPageNode(l10n("databaseStatsTitle"), ctx);
-            HTMLNode pageNode = page.outer;
-            HTMLNode contentNode = page.content;
-
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>> START DATABASE STATS <<<<<<<<<<<<<<<<<<<<<<<");
-            node.JEStatsDump();
-            System.out.println(">>>>>>>>>>>>>>>>>>>>>>>  END DATABASE STATS  <<<<<<<<<<<<<<<<<<<<<<<");
-
-            ctx.getPageMaker().getInfobox("#", l10n("databaseStatsSubTitle"), contentNode).
-            	addChild("#", l10n("writtenDatabaseStats"));
-            this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
         } else if (request.isPartSet("disable")) {
             if (noPassword) {
                 redirectToRoot(ctx);
@@ -474,7 +458,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode versionContent = ctx.getPageMaker().getInfobox("infobox-information", l10n("versionHeader"), contentNode);
         versionContent.addChild("#",
                 L10n.getString("WelcomeToadlet.version", new String[]{"fullVersion", "build", "rev"},
-                new String[]{Version.nodeVersion, Integer.toString(Version.buildNumber()), Version.cvsRevision}));
+                new String[]{Version.publicVersion, Integer.toString(Version.buildNumber()), Version.cvsRevision}));
         versionContent.addChild("br");
         if (NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER) {
             versionContent.addChild("#",

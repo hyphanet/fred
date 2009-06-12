@@ -936,11 +936,12 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public void addConnectionTypeBox(HTMLNode contentNode) {
 		if(node.clientCore == null) return;
 		if(node.clientCore.alerts == null) return;
-		if(proxyAlert == null) return;
+		if(proxyAlert == null) {
+			Logger.error(this, "start() not called yet?", new Exception("debug"));
+			return;
+		}
 		if(proxyAlert.isValid())
 			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert));
-		else
-			Logger.error(this, "start() not called yet?", new Exception("debug"));
 	}
 	
 }

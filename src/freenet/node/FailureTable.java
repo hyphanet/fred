@@ -10,6 +10,7 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.io.xfer.WaitedTooLongException;
@@ -442,6 +443,8 @@ public class FailureTable implements OOMHook {
 						Logger.error(this, "Waited too long sending SSK data");
 					} catch (SyncSendWaitedTooLongException e) {
 						// Impossible
+					} catch (PeerRestartedException e) {
+						// :(
 					} finally {
 						node.unlockUID(uid, isSSK, false, false, true, false, tag);
 					}

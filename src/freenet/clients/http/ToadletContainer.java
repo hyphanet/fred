@@ -74,4 +74,9 @@ public interface ToadletContainer {
 	public boolean disableProgressPage();
 
 	public PageMaker getPageMaker();
+	
+	public boolean isAdvancedModeEnabled();
+	
+	public void setAdvancedMode(boolean enabled);
+
 }

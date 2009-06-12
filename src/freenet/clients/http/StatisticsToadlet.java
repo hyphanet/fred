@@ -141,6 +141,7 @@ public class StatisticsToadlet extends Toadlet {
 		int numberOfConnError = getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONN_ERROR);
 		int numberOfDisconnecting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_DISCONNECTING);
 
+		final int mode = ctx.getPageMaker().parseMode(request, container);
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -152,7 +153,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
+		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();
@@ -178,9 +179,6 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringContent, "/", "threadDumpForm");
 			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", l10n("threadDumpButton")});
 		}
-		// BDB statistics dump 
-		HTMLNode JEStatsForm = ctx.addFormChild(statGatheringContent, "/", "JEStatsForm");
-		JEStatsForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getJEStatsDump", l10n("jeDumpButton")});
 		// Get logs
 		HTMLNode logsList = statGatheringContent.addChild("ul");
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))
@@ -369,7 +367,7 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
 		versionInfoboxList.addChild("li", L10n.getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
-				new String[] { Version.nodeVersion, Integer.toString(Version.buildNumber()), Version.cvsRevision }));
+				new String[] { Version.publicVersion, Integer.toString(Version.buildNumber()), Version.cvsRevision }));
 		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
 			versionInfoboxList.addChild("li", L10n.getString("WelcomeToadlet.extVersionWithRecommended", 
 					new String[] { "build", "recbuild", "rev" }, 

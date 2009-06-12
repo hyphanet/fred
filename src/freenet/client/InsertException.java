@@ -103,7 +103,7 @@ public class InsertException extends Exception {
 			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
 		extra = e.extra;
 		mode = e.mode;
-		errorCodes = e.errorCodes.clone();
+		errorCodes = e.errorCodes == null ? null : e.errorCodes.clone();
 		if(e.uri == null)
 			uri = null;
 		else

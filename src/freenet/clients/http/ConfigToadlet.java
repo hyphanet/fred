@@ -227,13 +227,15 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 			return;
 		}
 		
+		final int mode = ctx.getPageMaker().parseMode(req, container);
+		
 		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode);
+		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 		
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", l10n("title"));

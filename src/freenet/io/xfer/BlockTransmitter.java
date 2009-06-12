@@ -28,6 +28,7 @@ import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.RetrievalException;
 import freenet.node.PrioRunnable;
 import freenet.node.SyncSendWaitedTooLongException;
@@ -113,6 +114,12 @@ public class BlockTransmitter {
 					try {
 						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, null);
 						totalPackets=_prb.getNumPackets();
+					} catch (PeerRestartedException e) {
+						Logger.normal(this, "Terminating send due to peer restart: "+e);
+						synchronized(_senderThread) {
+							_sendComplete = true;
+						}
+						return;
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
 						//the send() thread should notice...

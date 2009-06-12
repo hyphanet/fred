@@ -51,6 +51,7 @@ public class ClientPut extends ClientPutBase {
 	private boolean logMINOR;
 	/** If true, we are inserting a binary blob: No metadata, no URI is generated. */
 	private final boolean binaryBlob;
+	private transient boolean compressing;
 	
 	/**
 	 * Creates a new persistent insert.
@@ -513,4 +514,35 @@ public class ClientPut extends ClientPutBase {
 		}
 		super.requestWasRemoved(container, context);
 	}
+	
+	public enum COMPRESS_STATE {
+		WAITING,
+		COMPRESSING,
+		WORKING
+	}
+	
+	/** Probably not meaningful for ClientPutDir's */
+	public COMPRESS_STATE isCompressing(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) container.activate(ctx, 1);
+		if(ctx.dontCompress) return COMPRESS_STATE.WORKING;
+		synchronized(this) {
+			if(progressMessage == null) return COMPRESS_STATE.WAITING; // An insert starts at compressing
+			// The progress message persists... so we need to know whether we have
+			// started compressing *SINCE RESTART*.
+			if(compressing) return COMPRESS_STATE.COMPRESSING;
+			return COMPRESS_STATE.WORKING;
+		}
+	}
+
+	@Override
+	protected synchronized void onStartCompressing() {
+		compressing = true;
+	}
+
+	@Override
+	protected synchronized void onStopCompressing() {
+		compressing = false;
+	}
+	
+
 }

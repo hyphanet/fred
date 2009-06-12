@@ -14,6 +14,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.PeerRestartedException;
 import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -254,6 +255,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 				continue;
 			} catch (SyncSendWaitedTooLongException e) {
 				// Impossible
+			} catch (PeerRestartedException e) {
+				if(logMINOR) Logger.minor(this, "Peer restarted: "+next);
+				continue;
 			}
             
             // Do we need to send them the pubkey?

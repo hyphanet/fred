@@ -9,23 +9,30 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 public class NullClientCallback implements ClientCallback {
+    private static volatile boolean logMINOR;
+    private static volatile boolean logDEBUG;
+
+    static {
+		Logger.registerClass(NullClientCallback.class);
+    }
 	
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		// Ignore
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFailure e=" + e + ", state=" + state + ", container=" + container, e);
 	}
 
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		// Impossible
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFailure e=" + e + ", state=" + state + ", container=" + container, e);
 	}
 
 	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
-		// Impossible
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFetchable state=" + state + ", container=" + container);
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		// Impossible
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onGeneratedURI uri=" + uri + ", state=" + state + ", container=" + container);
 	}
 
 	public void onMajorProgress(ObjectContainer container) {
@@ -33,11 +40,12 @@ public class NullClientCallback implements ClientCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onSuccess result=" + result + ", state=" + state + ", container=" + container);
 		result.data.free();
 	}
 
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		// Impossible
+		if (logDEBUG) Logger.debug(this, "NullClientCallback#onSuccess state=" + state + ", container=" + container);
 	}
 	
 }

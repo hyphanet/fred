@@ -444,4 +444,14 @@ public class ClientPutDir extends ClientPutBase {
 		}
 		super.requestWasRemoved(container, context);
 	}
+
+	@Override
+	protected void onStartCompressing() {
+		// Ignore
+	}
+
+	@Override
+	protected void onStopCompressing() {
+		// Ignore
+	}
 }

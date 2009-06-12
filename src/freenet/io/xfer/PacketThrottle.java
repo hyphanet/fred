@@ -24,6 +24,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.PeerRestartedException;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -154,7 +155,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException {
+	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
@@ -205,9 +206,11 @@ public class PacketThrottle {
 					_abandonedTickets++;
 					throw new NotConnectedException();
 				}
-				if(bootID != peer.getBootID()) {
+				long newBootID = peer.getBootID();
+				if(bootID != newBootID) {
 					_abandonedTickets++;
-					throw new NotConnectedException();
+					Logger.normal(this, "Peer restarted: boot ID was "+bootID+" now "+newBootID);
+					throw new PeerRestartedException();
 				}
 				if(_deprecatedFor != null) {
 					_abandonedTickets++;

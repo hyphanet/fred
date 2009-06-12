@@ -69,7 +69,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
-	public static long MAX_LENGTH = 2*1024*1024 * 11 / 10; // 2MB plus a bit due to buggy inserts
+	public static long MAX_LENGTH = (2*1024*1024 * 11) / 10; // 2MB plus a bit due to buggy inserts
 	
 	static final URI welcome;
 	public static final short PRIORITY = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
@@ -263,10 +263,14 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 			HTMLNode list = infoboxContent.addChild("ul");
 			writeSizeAndMIME(list, size, mimeType, true);
+			
+			HTMLNode option = list.addChild("li");
+			option.addChild("#", (l10n("filenameLabel") + ' '));
+			option.addChild("a", "href", '/' + key.toString(), getFilename(key, mimeType));
+			
 			infoboxContent.addChild("p").addChild(e.getHTMLExplanation());
 			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
-			HTMLNode option;
 			
 			if((mimeType.equals("application/x-freenet-index")) && (core.node.pluginManager.isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
 				option = optionList.addChild("li");
@@ -645,7 +649,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
 				option.addChild("#", (l10n("filenameLabel") + ' '));
-				option.addChild("a", "href", '/' + key.toString(), getFilename(e, key, e.getExpectedMimeType()));
+				option.addChild("a", "href", '/' + key.toString(), getFilename(key, e.getExpectedMimeType()));
 
 				String mime = writeSizeAndMIME(fileInformationList, e);
 				
@@ -687,7 +691,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
 				option.addChild("#", (l10n("filenameLabel") + ' '));
-				option.addChild("a", "href", '/' + key.toString(), getFilename(e, key, e.getExpectedMimeType()));
+				option.addChild("a", "href", '/' + key.toString(), getFilename(key, e.getExpectedMimeType()));
 
 				String mime = writeSizeAndMIME(fileInformationList, e);
 				infobox.addChild("div", "class", "infobox-header", l10n("explanationTitle"));
@@ -959,7 +963,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	 * @param uri The original URI.
 	 * @param expectedMimeType The expected MIME type.
 	 */
-	private String getFilename(FetchException e, FreenetURI uri, String expectedMimeType) {
+	private static String getFilename(FreenetURI uri, String expectedMimeType) {
 		String s = uri.getPreferredFilename();
 		int dotIdx = s.lastIndexOf('.');
 		String ext = DefaultMIMETypes.getExtension(expectedMimeType);

@@ -37,8 +37,11 @@ public interface PeerContext {
 	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
 	
 	/** Send a throttled message to the node (may block for a long time). 
-	 * @throws SyncSendWaitedTooLongException */
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException;
+	 * @throws SyncSendWaitedTooLongException
+	 * @throws NotConnectedException If the peer is disconnected at the time of sending or becomes so later. 
+	 * @throws PeerRestartedException If the peer is restarted.
+	 * */
+	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean waitForSent, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException;
 	
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
 	public long getBootID();

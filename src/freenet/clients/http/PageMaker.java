@@ -372,20 +372,28 @@ public final class PageMaker {
 		return result;
 	}
 	
-	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode) {
-		return drawModeSelectionArray(core, req, contentNode, -1, null, null);
-	}
-	
-	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
-		// Mode can be changed by a link, not just by the default
-		
-		int mode = core.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
+	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */
+	protected int parseMode(HTTPRequest req, ToadletContainer container) {
+		int mode = container.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
 		
 		if(req.isParameterSet("mode")) {
 			mode = req.getIntParam("mode", mode);
+			if(mode == MODE_ADVANCED)
+				container.setAdvancedMode(true);
+			else
+				container.setAdvancedMode(false);
 		}
 		
-		// FIXME style this properly
+		return mode;
+	}
+	
+	/** Call this to actually put in the mode selection links */
+	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode) {
+		return drawModeSelectionArray(core, container, contentNode, mode, -1, null, null);
+	}
+	
+	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
+		// FIXME style this properly?
 		HTMLNode table = contentNode.addChild("table", "border", "1");
 		HTMLNode row = table.addChild("tr");
 		HTMLNode cell = row.addChild("td");

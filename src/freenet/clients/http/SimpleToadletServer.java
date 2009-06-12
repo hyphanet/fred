@@ -466,7 +466,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		enableActivelinks = fproxyConfig.getBoolean("enableActivelinks");
 		
-		fproxyConfig.register("passthroughMaxSize", 2L*1024*1024, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize(), true);
+		fproxyConfig.register("passthroughMaxSize", (2L*1024*1024*11)/10, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize(), true);
 		FProxyToadlet.MAX_LENGTH = fproxyConfig.getLong("passthroughMaxSize");
 		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
@@ -714,6 +714,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public synchronized boolean isAdvancedModeEnabled() {
 		return this.advancedModeEnabled;
+	}
+	
+	public void setAdvancedMode(boolean enabled) {
+		synchronized(this) {
+			if(advancedModeEnabled == enabled) return;
+			advancedModeEnabled = enabled;
+		}
+		core.node.config.store();
 	}
 	
 	public synchronized void enableAdvancedMode(boolean b){

@@ -10,6 +10,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.PeerRestartedException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -394,6 +395,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					Logger.error(this, "Waited too long to send SSK data on " + RequestHandler.this + " because of bwlimiting");
 				} catch(SyncSendWaitedTooLongException e) {
 					Logger.error(this, "Waited too long to send SSK data on " + RequestHandler.this + " because of peer");
+				} catch (PeerRestartedException e) {
+					// :(
 				} finally {
 					unregisterRequestHandlerWithNode();
 				}
@@ -406,7 +409,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
-	static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr) throws NotConnectedException, WaitedTooLongException {
+	static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr) throws NotConnectedException, WaitedTooLongException, PeerRestartedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
