@@ -1098,4 +1098,8 @@ public class Metadata implements Cloneable {
 		splitfileDataKeys = null;
 		splitfileCheckKeys = null;
 	}
+
+	public int countDocuments() {
+		return manifestEntries.size();
+	}
 }

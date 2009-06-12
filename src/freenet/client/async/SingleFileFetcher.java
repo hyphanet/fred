@@ -352,7 +352,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
-				if(metaStrings.isEmpty()) {
+				if(metadata.countDocuments() == 1 && metadata.getDocument("") != null && metadata.getDocument("").isSimpleManifest()) {
+					Logger.error(this, "Manifest is called \"\" for "+this, new Exception("error"));
+					name = "";
+				} else if(metaStrings.isEmpty()) {
 					FreenetURI u = uri;
 					String last = u.lastMetaString();
 					if(last == null || !last.equals(""))
