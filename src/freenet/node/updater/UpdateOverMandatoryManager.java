@@ -944,11 +944,20 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					Logger.error(this, "Failed to transfer revocation certificate from " + source);
 					System.err.println("Failed to transfer revocation certificate from " + source);
 					source.failedRevocationTransfer();
+					int count = source.countFailedRevocationTransfers();
+					boolean retry = count < 3;
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedFailedTransfer.add(source);
 						nodesSayKeyRevokedTransferring.remove(source);
+						if(retry) {
+							if(nodesSayKeyRevoked.contains(source))
+								retry = false;
+							else
+								nodesSayKeyRevoked.add(source);
+						}
 					}
 					maybeNotRevoked();
+					if(retry) tryFetchRevocation(source);
 				}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught error while transferring revocation certificate from "+source+" : "+t, t);

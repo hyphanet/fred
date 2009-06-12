@@ -4367,4 +4367,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		lastAttemptedHandshakeIPUpdateTime = System.currentTimeMillis();
 		countFailedRevocationTransfers++;
 	}
+	
+	public int countFailedRevocationTransfers() {
+		return countFailedRevocationTransfers;
+	}
 }
