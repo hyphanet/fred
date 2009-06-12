@@ -178,6 +178,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 					// Have to do this first to avoid race condition
 					synchronized(this) {
+						// If already transferring, don't start another transfer.
+						if(nodesSayKeyRevokedTransferring.contains(source)) return true;
+						// If waiting for SendingRevocation, don't start another transfer.
+						if(nodesSayKeyRevoked.contains(source)) return true;
 						nodesSayKeyRevoked.add(source);
 					}
 
