@@ -1152,7 +1152,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		node.usm.onDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
-		node.nodeUpdater.disconnected(this);
+		if(node.nodeUpdater != null)
+			node.nodeUpdater.disconnected(this);
 		boolean ret;
 		SessionKey cur, prev, unv;
 		MessageItem[] messagesTellDisconnected = null;
