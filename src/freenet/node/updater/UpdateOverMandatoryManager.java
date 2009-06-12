@@ -191,7 +191,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					// Tell the user
 					alertUser();
 
-					System.err.println("Your peer " + source.userToString() + " says that the auto-update key is blown!");
+					System.err.println("Your peer " + source.userToString() +
+							" (build #" + source.getSimpleVersion() + ") says that the auto-update key is blown!");
 					System.err.println("Attempting to fetch it...");
 
 					tryFetchRevocation(source);
