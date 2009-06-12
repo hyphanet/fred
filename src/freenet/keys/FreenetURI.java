@@ -530,7 +530,7 @@ public class FreenetURI implements Cloneable {
 			if(metaStr != null)
 				System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
 			System.arraycopy(strs, 0, newMetaStr, metaStr.length, strs.length);
-			return setMetaString(strs);
+			return setMetaString(newMetaStr);
 		}
 	}
 
