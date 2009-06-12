@@ -150,9 +150,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	void onSuccess(FetchResult result, ClientGetter state, File blob) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
-		synchronized(this) {
-			blown = true;
-		}
+		blown = true;
 		moveBlob(blob);
 		String msg = null;
 		try {
