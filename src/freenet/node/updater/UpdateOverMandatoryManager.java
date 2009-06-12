@@ -204,8 +204,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				System.err.println("Node " + source + " says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
 				Logger.error(this, "Node " + source + " says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
 				synchronized(UpdateOverMandatoryManager.this) {
-					nodesSayKeyRevokedFailedTransfer.add(source);
+					nodesSayKeyRevoked.remove(source);
+					// Might be valid, but no way to tell except if other peers tell us.
+					// And there's a good chance it isn't.
 				}
+				maybeNotRevoked();
 			}
 
 		}
