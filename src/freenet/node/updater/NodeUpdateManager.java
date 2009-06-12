@@ -201,7 +201,7 @@ public class NodeUpdateManager {
 			hasUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
 			if((!hasBeenBlown) && hasUpdate) return;
 		}
-		if(!hasUpdate && hasBeenBlown && !revocationChecker.hasBlown()) {
+		if((!hasUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
 			// Local problem, don't broadcast.
 			return;
 		}
