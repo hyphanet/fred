@@ -466,6 +466,9 @@ public class Metadata implements Cloneable {
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
+				if(key.equals("")) {
+					Logger.error(this, "Creating a subdirectory called \"\" - it will not be possible to access this through fproxy!", new Exception("error"));
+				}
 				HashMap<String, Object> hm = (HashMap<String, Object>)o;
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Making metadata map for "+key);
