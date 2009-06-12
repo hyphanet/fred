@@ -187,7 +187,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					// Tell the user
 					alertUser();
 
-					System.err.println("Your peer " + source.userToString() + " says that the auto-update key is blown!");
+					System.err.println("Your peer " + source.userToString() +
+							" (build #" + source.getSimpleVersion() + ") says that the auto-update key is blown!");
 					System.err.println("Attempting to fetch it...");
 
 					// Try to transfer it.
@@ -201,7 +202,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 						public void disconnected() {
 							// :(
-							System.err.println("Failed to send request for revocation key to " + source.userToString() + " because it disconnected!");
+							System.err.println("Failed to send request for revocation key to " + source.userToString() +
+									" (build #" + source.getSimpleVersion() + ") because it disconnected!");
 							synchronized(UpdateOverMandatoryManager.this) {
 								nodesSayKeyRevokedFailedTransfer.add(source);
 							}
@@ -226,7 +228,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 								if(nodesSayKeyRevokedTransferring.contains(source)) return;
 								nodesSayKeyRevoked.remove(source);
 							}
-							System.err.println("Peer "+source+" said that the auto-update key had been blown, but did not transfer the revocation certificate. The most likely explanation is that the key has not been blown (the node is buggy or malicious), so we are ignoring this.");
+							System.err.println("Peer " + source.userToString() +
+								"(build #" + source.getSimpleVersion() + ") said that the auto-update key had been blown, but did not transfer the revocation certificate. The most likely explanation is that the key has not been blown (the node is buggy or malicious), so we are ignoring this.");
 							maybeNotRevoked();
 						}
 						
