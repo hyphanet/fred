@@ -958,10 +958,27 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 	}
 
-	private synchronized boolean mightBeRevoked() {
-		if(!nodesSayKeyRevoked.isEmpty()) return true;
-		if(nodesSayKeyRevokedFailedTransfer.size() >= 3) return true;
-		if(!nodesSayKeyRevokedTransferring.isEmpty()) return true;
+	private boolean mightBeRevoked() {
+		PeerNode[] started;
+		PeerNode[] transferring;
+		PeerNode[] failed;
+		synchronized(this) {
+			started = nodesSayKeyRevoked.toArray(new PeerNode[nodesSayKeyRevoked.size()]);
+			transferring = nodesSayKeyRevokedTransferring.toArray(new PeerNode[nodesSayKeyRevokedTransferring.size()]);
+			failed = nodesSayKeyRevokedFailedTransfer.toArray(new PeerNode[nodesSayKeyRevokedFailedTransfer.size()]);
+		}
+		for(PeerNode peer : started) {
+			if(peer.isConnected()) return true;
+		}
+		int count=0;
+		for(PeerNode peer : failed) {
+			if(!peer.isConnected()) continue;
+			count++;
+		}
+		if(count > 3) return true;
+		for(PeerNode peer : transferring) {
+			if(!peer.isConnected()) return true;
+		}
 		return false;
 	}
 
