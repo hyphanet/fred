@@ -53,8 +53,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		ctxRevocation.cacheLocalRequests = false;
 		ctxRevocation.maxArchiveLevels = 1;
 		// big enough ?
-		ctxRevocation.maxOutputLength = 4096;
-		ctxRevocation.maxTempLength = 4096;
+		ctxRevocation.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
+		ctxRevocation.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
 		ctxRevocation.maxSplitfileBlockRetries = -1; // if we find content, try forever to get it; not used because of the above size limits.
 		ctxRevocation.maxNonSplitfileRetries = 0; // but return quickly normally
 	}
