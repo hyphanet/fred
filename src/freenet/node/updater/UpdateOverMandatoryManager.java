@@ -942,6 +942,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					source.failedRevocationTransfer();
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedFailedTransfer.add(source);
+						nodesSayKeyRevokedTransferring.remove(source);
 					}
 					maybeNotRevoked();
 				}
@@ -950,7 +951,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					System.err.println("Peer "+source+" said that the revocation key has been blown, but we got an internal error while transferring it:");
 					t.printStackTrace();
 					updateManager.blow("Internal error while fetching the revocation certificate from our peer "+source+" : "+t, true);
-				} finally {
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedTransferring.remove(source);
 					}
