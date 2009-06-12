@@ -991,17 +991,25 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			transferring = nodesSayKeyRevokedTransferring.toArray(new PeerNode[nodesSayKeyRevokedTransferring.size()]);
 			failed = nodesSayKeyRevokedFailedTransfer.toArray(new PeerNode[nodesSayKeyRevokedFailedTransfer.size()]);
 		}
+		// If a peer is not connected, ignore it.
+		// If a peer has already tried 3 times to send the revocation cert, ignore it,
+		// because it is probably evil.
 		for(PeerNode peer : started) {
-			if(peer.isConnected()) return true;
+			if(!peer.isConnected()) continue;
+			if(peer.countFailedRevocationTransfers() > 3) continue;
+			return true;
 		}
 		int count=0;
 		for(PeerNode peer : failed) {
 			if(!peer.isConnected()) continue;
+			if(peer.countFailedRevocationTransfers() > 3) continue;
 			count++;
 		}
 		if(count > 3) return true;
 		for(PeerNode peer : transferring) {
-			if(peer.isConnected()) return true;
+			if(!peer.isConnected()) continue;
+			if(peer.countFailedRevocationTransfers() > 3) continue;
+			return true;
 		}
 		return false;
 	}
