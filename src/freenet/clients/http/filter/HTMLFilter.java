@@ -24,7 +24,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.Stack;
 
+import java.io.FileReader;
+import java.io.FileWriter;
 import freenet.l10n.L10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
@@ -42,7 +45,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
-
+	
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -75,6 +78,24 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Closer.close(strm);
 		}
 		return temp;
+	}
+	// Function written for the testing purposes
+	public void doti()
+	{
+		try{
+	    	BufferedReader input = new BufferedReader(new FileReader("/home/ashish/search.html"));
+	    	BufferedWriter output=new BufferedWriter(new FileWriter("/home/ashish/searchfiltered.html"));
+	    	NullFilterCallback objtemp=new NullFilterCallback(); 
+	    	HTMLParseContext pc = new HTMLParseContext(input, output, "ISO-8859-1", objtemp, false);
+			pc.run(null);
+			output.close();
+			
+	    }
+	    catch (IOException e) {
+	    	System.err.println(e.getMessage());
+	    }
+	   	
+	
 	}
 	
 	public Bucket writeFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
@@ -125,13 +146,52 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String detectedCharset;
 		final FilterCallback cb;
 		final boolean noOutput;
-
+		boolean isXHTML=false;
+		Stack<String> openElements;
+		private final String[] VOID_ELEMENTS = { "area", "base", "basefont",
+			"bgsound", "br", "col", "command", "embed", "event-source",
+			"frame", "hr", "img", "input", "keygen", "link", "meta", "param",
+			"source", "spacer", "wbr"};
+		
 		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean noOutput) {
 			this.r = r;
 			this.w = w;
 			this.charset = charset;
 			this.cb = cb;
 			this.noOutput = noOutput;
+			openElements=new Stack<String>();
+		}
+		
+		public void setisXHTML(boolean value) {
+			isXHTML=value;
+		}
+		
+		public boolean getisXHTLM() {
+			return isXHTML;
+		}
+		
+		public void pushElementInStack(String element) {
+			openElements.push(element);
+		}
+		
+		public String popElementFromStack() {
+			if(openElements.size()>0)
+				return openElements.pop();
+			else
+				return null;
+		}
+		
+		public boolean isVoidElement(String element) {
+			
+			for(int i=0;i<VOID_ELEMENTS.length;i++)
+			{
+			
+				if(VOID_ELEMENTS[i].equals(element))
+					return true;
+
+					
+			}
+			return false;
 		}
 
 		Bucket run(Bucket temp) throws IOException, DataFilterException {
@@ -229,6 +289,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
+								
 								saveText(b, currentTag, w, this);
 
 								balt.setLength(0);
@@ -271,7 +332,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append("&gt;");
 							} else if (c == '<') {
 								b.append("&lt;");
-							} else {
+							} else if (c=='&') {
+								b.append("&amp;");
+							} else if (c== '\u00A0') {
+								b.append("&nbsp;");
+							}
+							else {
 								b.append(c);
 							}
 							break;
@@ -283,7 +349,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append("&lt;");
 							} else if (c == '>') {
 								b.append("&gt;");
-							} else {
+							}else if (c=='&') {
+								b.append("&amp;");
+							} else if (c== '\u00A0') {
+								b.append("&nbsp;");
+							} 
+							else {
 								b.append(c);
 							}
 							break;
@@ -345,6 +416,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								mode = INTEXT;
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
+								
 								saveText(balt, currentTag, w, this);
 								balt.setLength(0);
 								b.setLength(0);
@@ -359,9 +431,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				}
 			}
+			//Writing the remaining tags for XHTML if any
+			if(getisXHTLM())
+			{
+				while(openElements.size()>0)
+					w.write("</"+openElements.pop()+">");
+			}
 			return temp;
 		}
-
 		int mode;
 		static final int INTEXT = 0;
 		static final int INTAG = 1;
@@ -400,6 +477,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// Not a real character
 				// STRONGLY suggests somebody is using a bogus charset.
 				// This could be in order to break the filter.
+				
 				s.deleteCharAt(i);
 				if(logDEBUG) Logger.debug(this, "Removing '"+c+"' from the output stream");
 			}
@@ -411,6 +489,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return; // is parsed and written elsewhere
 		}
 		StringBuilder out = new StringBuilder(s.length()*2);
+		
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if(c == '<') {
@@ -447,7 +526,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						w.write(style);
 					pc.currentStyleScriptChunk = "";
 				}
-				t.write(w);
+				
+				t.write(w,pc);
 				if (pc.writeAfterTag.length() > 0) {
 					w.write(pc.writeAfterTag.toString());
 					pc.writeAfterTag = new StringBuilder(1024);
@@ -591,11 +671,33 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			sb.append('>');
 			return sb.toString();
 		}
-
-		public void write(Writer w) throws IOException {
+		
+		public void htmlwrite(Writer w) throws IOException {
 			String s = toString();
 			if (s != null)
 				w.write(s);
+		}
+
+		public void write(Writer w,HTMLParseContext pc) throws IOException {
+			if(!startSlash)
+			{
+				if(pc.getisXHTLM() &&  !pc.isVoidElement(element))
+					pc.pushElementInStack(element);
+				htmlwrite(w);
+			}
+			else
+			{
+				if(pc.getisXHTLM())
+				{
+					String lastElement=pc.popElementFromStack();
+					if(lastElement!=null)
+						w.write("</"+lastElement+">");
+				}
+				else
+				{
+					htmlwrite(w);
+				}
+			}
 		}
 	}
 
@@ -1931,8 +2033,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String xmlns = getHashString(h, "xmlns");
-			if ((xmlns != null) && xmlns.equals("http://www.w3.org/1999/xhtml"))
+			if ((xmlns != null) && xmlns.equals("http://www.w3.org/1999/xhtml")) {
 				hn.put("xmlns", xmlns);
+				pc.setisXHTML(true);
+			}
 			return hn;
 		}
 	}
@@ -2120,5 +2224,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	private static String l10n(String key, String pattern, String value) {
 		return L10n.getString("HTMLFilter."+key, pattern, value);
 	}
+	
+	public static void main(String args[])
+	  {
+		HTMLFilter htmlFilter=new HTMLFilter();
+		htmlFilter.doti();
+	    
+	  }
+	
 
 }
