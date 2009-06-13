@@ -41,21 +41,12 @@ public class PushDataManager {
 	}
 
 	public HTMLNode getRenderedElement(String requestId, String id) {
-		System.err.println("Get rendered element");//TODO:remove this
-		System.err.println("requestId:"+requestId);
-		System.err.println("elementId:"+id);
-		System.err.println("Elements for this request:"+pages.get(requestId));
-		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
-			System.err.println("id:"+element.getUpdaterId());
-		}
 		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
 			if (element.getUpdaterId().compareTo(id) == 0) {
 				element.updateState();
-				System.err.println("OK, returning element");
 				return element;
 			}
 		}
-		System.err.println("PROBLEM, RETURNING NULL!");
 		return null;
 	}
 

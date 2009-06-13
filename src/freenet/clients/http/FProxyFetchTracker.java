@@ -49,13 +49,9 @@ public class FProxyFetchTracker implements Runnable {
 		 * fetchers inside that lock, hence avoid a race condition. FetchInProgress 
 		 * lock is always taken last. */
 		synchronized(fetchers) {
-			if(fetchers.containsKey(key)) {
-				Object[] check = fetchers.getArray(key);
-				for(int i=0;i<check.length;i++) {
-					progress = (FProxyFetchInProgress) check[i];
-					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-							|| progress.hasData()) return progress.getWaiter();
-				}
+			FProxyFetchWaiter waiter=getFetcher(key, maxSize);
+			if(waiter!=null){
+				return waiter;
 			}
 			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx, rc);
 			fetchers.put(key, progress);
@@ -72,6 +68,21 @@ public class FProxyFetchTracker implements Runnable {
 		return progress.getWaiter();
 		// FIXME promote a fetcher when it is re-used
 		// FIXME get rid of fetchers over some age
+	}
+	
+	public FProxyFetchWaiter getFetcher(FreenetURI key,long maxSize){
+		FProxyFetchInProgress progress;
+		synchronized (fetchers) {
+			if(fetchers.containsKey(key)) {
+				Object[] check = fetchers.getArray(key);
+				for(int i=0;i<check.length;i++) {
+					progress = (FProxyFetchInProgress) check[i];
+					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
+							|| progress.hasData()) return progress.getWaiter();
+				}
+			}
+		}
+		return null;
 	}
 
 	public void queueCancel(FProxyFetchInProgress progress) {

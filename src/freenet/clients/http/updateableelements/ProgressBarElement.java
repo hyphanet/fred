@@ -17,8 +17,8 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	private FreenetURI			key;
 	private long				maxSize;
 
-	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, String requestUniqueName,ToadletContext ctx) {
-		super("div", "class", "progressbar", requestUniqueName,ctx);
+	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, String requestUniqueName, ToadletContext ctx) {
+		super("div", "class", "progressbar", requestUniqueName, ctx);
 		this.tracker = tracker;
 		this.key = key;
 		this.maxSize = maxSize;
@@ -29,8 +29,10 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	public void updateState() {
 		children.clear();
 
-		try {
-			FProxyFetchResult fr = tracker.makeFetcher(key, maxSize).getResult();
+		FProxyFetchResult fr = tracker.getFetcher(key, maxSize).getResult();
+		if (fr == null) {
+			addChild("div", "No fetcher found");
+		} else {
 			int total = fr.requiredBlocks;
 			int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
 			int failedPercent = (int) (fr.failedBlocks / (double) total * 100);
@@ -51,9 +53,6 @@ public class ProgressBarElement extends BaseUpdateableElement {
 				text = "" + fr.fetchedBlocks + " (" + text + "??)";
 				addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString("QueueToadlet.progressbarNotAccurate") }, text);
 			}
-		} catch (FetchException fe) {
-			addChild("div", "Error while trying to fetch the new version! Please see the logs.");
-			Logger.error(this, "Error while building a ProgressBar", fe);
 		}
 	}
 
