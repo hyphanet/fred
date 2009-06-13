@@ -148,11 +148,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		final boolean noOutput;
 		boolean isXHTML=false;
 		Stack<String> openElements;
-		private final String[] VOID_ELEMENTS = { "area", "base", "basefont",
-			"bgsound", "br", "col", "command", "embed", "event-source",
-			"frame", "hr", "img", "input", "keygen", "link", "meta", "param",
-			"source", "spacer", "wbr"};
-		
+	
 		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean noOutput) {
 			this.r = r;
 			this.w = w;
@@ -181,18 +177,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				return null;
 		}
 		
-		public boolean isVoidElement(String element) {
-			
-			for(int i=0;i<VOID_ELEMENTS.length;i++)
-			{
-			
-				if(VOID_ELEMENTS[i].equals(element))
-					return true;
 
-					
-			}
-			return false;
-		}
 
 		Bucket run(Bucket temp) throws IOException, DataFilterException {
 
@@ -672,8 +657,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return sb.toString();
 		}
 		
-		public void htmlwrite(Writer w) throws IOException {
+		public void htmlwrite(Writer w,HTMLParseContext pc) throws IOException {
 			String s = toString();
+			if(pc.getisXHTLM())
+			{
+				if(ElementInfo.isVoidElement(element) && s.charAt(s.length()-2)!='/')
+				{
+					s=s.substring(0,s.length()-1)+" />";
+				}
+			}
 			if (s != null)
 				w.write(s);
 		}
@@ -681,9 +673,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public void write(Writer w,HTMLParseContext pc) throws IOException {
 			if(!startSlash)
 			{
-				if(pc.getisXHTLM() &&  !pc.isVoidElement(element))
+				if(pc.getisXHTLM() &&  !ElementInfo.isVoidElement(element))
 					pc.pushElementInStack(element);
-				htmlwrite(w);
+				htmlwrite(w,pc);
 			}
 			else
 			{
@@ -695,7 +687,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}
 				else
 				{
-					htmlwrite(w);
+					htmlwrite(w,pc);
 				}
 			}
 		}
