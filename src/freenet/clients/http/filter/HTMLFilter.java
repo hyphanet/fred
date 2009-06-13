@@ -79,24 +79,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		return temp;
 	}
-	// Function written for the testing purposes
-	public void doti()
-	{
-		try{
-	    	BufferedReader input = new BufferedReader(new FileReader("/home/ashish/search.html"));
-	    	BufferedWriter output=new BufferedWriter(new FileWriter("/home/ashish/searchfiltered.html"));
-	    	NullFilterCallback objtemp=new NullFilterCallback(); 
-	    	HTMLParseContext pc = new HTMLParseContext(input, output, "ISO-8859-1", objtemp, false);
-			pc.run(null);
-			output.close();
-			
-	    }
-	    catch (IOException e) {
-	    	System.err.println(e.getMessage());
-	    }
-	   	
-	
-	}
 	
 	public Bucket writeFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
@@ -2216,13 +2198,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	private static String l10n(String key, String pattern, String value) {
 		return L10n.getString("HTMLFilter."+key, pattern, value);
 	}
-	
-	public static void main(String args[])
-	  {
-		HTMLFilter htmlFilter=new HTMLFilter();
-		htmlFilter.doti();
-	    
-	  }
 	
 
 }
