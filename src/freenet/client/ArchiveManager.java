@@ -415,7 +415,9 @@ outerZIP:		while(true) {
 					continue;
 				}
 				long size = entry.getSize();
-				if(size > maxArchivedFileSize) {
+				if(name.equals(".metadata"))
+					gotMetadata = true;
+				if(size > maxArchivedFileSize && !name.equals(element)) {
 					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
 				} else {
 					// Read the element
@@ -436,11 +438,15 @@ outerZIP:		while(true) {
 					}
 
 					out.close();
-					if(name.equals(".metadata"))
-						gotMetadata = true;
-					addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
-					names.add(name);
-					trimStoredData();
+					if(size <= maxArchivedFileSize) {
+						addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
+						names.add(name);
+						trimStoredData();
+					} else {
+						callback.gotBucket(output, container, context);
+						gotElement.value = true;
+						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
+					}
 				}
 			}
 
