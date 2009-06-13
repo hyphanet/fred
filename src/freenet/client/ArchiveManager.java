@@ -368,6 +368,7 @@ outerTAR:		while(true) {
 						names.add(name);
 						trimStoredData();
 					} else {
+						// We are here because they asked for this file. 
 						callback.gotBucket(output, container, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
@@ -443,6 +444,7 @@ outerZIP:		while(true) {
 						names.add(name);
 						trimStoredData();
 					} else {
+						// We are here because they asked for this file. 
 						callback.gotBucket(output, container, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
