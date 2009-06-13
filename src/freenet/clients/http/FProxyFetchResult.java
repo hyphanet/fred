@@ -92,4 +92,8 @@ public class FProxyFetchResult {
 		return hasWaited;
 	}
 	
+	public boolean isFinished(){
+		return progress.finished();
+	}
+	
 }

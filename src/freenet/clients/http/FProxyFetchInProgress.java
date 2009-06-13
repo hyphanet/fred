@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 
@@ -57,6 +58,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * We may want to wake requests separately in future. */
 	private final ArrayList<FProxyFetchWaiter> waiters;
 	private final ArrayList<FProxyFetchResult> results;
+	/** Gets notified with every change*/
+	private final List<FProxyFetchListener> listener=new ArrayList<FProxyFetchListener>();
 	/** The data, if we have it */
 	private Bucket data;
 	/** Creation time */
@@ -113,6 +116,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		waiters.add(waiter);
 		return waiter;
 	}
+	
+	public void addCustomWaiter(FProxyFetchWaiter waiter){
+		waiters.add(waiter);
+	}
 
 	synchronized FProxyFetchResult innerGetResult(boolean hasWaited) {
 		lastTouched = System.currentTimeMillis();
@@ -150,38 +157,43 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 
 	public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
-		if(ce instanceof SplitfileProgressEvent) {
-			SplitfileProgressEvent split = (SplitfileProgressEvent) ce;
-			synchronized(this) {
-				int oldReq = requiredBlocks - (fetchedBlocks + failedBlocks + fatallyFailedBlocks);
-				totalBlocks = split.totalBlocks;
-				fetchedBlocks = split.succeedBlocks;
-				requiredBlocks = split.minSuccessfulBlocks;
-				failedBlocks = split.failedBlocks;
-				fatallyFailedBlocks = split.fatallyFailedBlocks;
-				finalizedBlocks = split.finalizedTotal;
-				int req = requiredBlocks - (fetchedBlocks + failedBlocks + fatallyFailedBlocks);
-				((NodeClientCore)context.jobRunner).node.clientCore.getToadletContainer().pushDataManager.updateElement(ProgressBarElement.getId(uri));//TODO:HORRIBLE HACK, it needs to be rethought
-				if(!(req > 1024 && oldReq <= 1024)) return;
+		try{
+			if(ce instanceof SplitfileProgressEvent) {
+				SplitfileProgressEvent split = (SplitfileProgressEvent) ce;
+				synchronized(this) {
+					int oldReq = requiredBlocks - (fetchedBlocks + failedBlocks + fatallyFailedBlocks);
+					totalBlocks = split.totalBlocks;
+					fetchedBlocks = split.succeedBlocks;
+					requiredBlocks = split.minSuccessfulBlocks;
+					failedBlocks = split.failedBlocks;
+					fatallyFailedBlocks = split.fatallyFailedBlocks;
+					finalizedBlocks = split.finalizedTotal;
+					int req = requiredBlocks - (fetchedBlocks + failedBlocks + fatallyFailedBlocks);
+					if(!(req > 1024 && oldReq <= 1024)) return;
+				}
+			} else if(ce instanceof SendingToNetworkEvent) {
+				synchronized(this) {
+					if(goneToNetwork) return;
+					goneToNetwork = true;
+					fetchedBlocksPreNetwork = fetchedBlocks;
+				}
+			} else if(ce instanceof ExpectedMIMEEvent) {
+				synchronized(this) {
+					this.mimeType = ((ExpectedMIMEEvent)ce).expectedMIMEType;
+				}
+				if(!goneToNetwork) return;
+			} else if(ce instanceof ExpectedFileSizeEvent) {
+				synchronized(this) {
+					this.size = ((ExpectedFileSizeEvent)ce).expectedSize;
+				}
+				if(!goneToNetwork) return;
+			} else return;
+			wakeWaiters(false);
+		}finally{
+			for(FProxyFetchListener l:listener){
+				l.onEvent();
 			}
-		} else if(ce instanceof SendingToNetworkEvent) {
-			synchronized(this) {
-				if(goneToNetwork) return;
-				goneToNetwork = true;
-				fetchedBlocksPreNetwork = fetchedBlocks;
-			}
-		} else if(ce instanceof ExpectedMIMEEvent) {
-			synchronized(this) {
-				this.mimeType = ((ExpectedMIMEEvent)ce).expectedMIMEType;
-			}
-			if(!goneToNetwork) return;
-		} else if(ce instanceof ExpectedFileSizeEvent) {
-			synchronized(this) {
-				this.size = ((ExpectedFileSizeEvent)ce).expectedSize;
-			}
-			if(!goneToNetwork) return;
-		} else return;
-		wakeWaiters(false);
+		}
 	}
 
 	private void wakeWaiters(boolean finished) {
@@ -191,6 +203,11 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		}
 		for(FProxyFetchWaiter w : waiting) {
 			w.wakeUp(finished);
+		}
+		if(finished==true){
+			for(FProxyFetchListener l:listener){
+				l.onEvent();
+			}
 		}
 	}
 
@@ -307,5 +324,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 
 	public synchronized void setHasWaited() {
 		hasWaited = true;
+	}
+	
+	public void addListener(FProxyFetchListener listener){
+		this.listener.add(listener);
+	}
+	
+	public void removeListener(FProxyFetchListener listener){
+		this.listener.remove(listener);
 	}
 }

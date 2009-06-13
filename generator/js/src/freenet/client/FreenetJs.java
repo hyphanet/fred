@@ -13,11 +13,11 @@ import freenet.client.update.DefaultUpdateManager;
  */
 public class FreenetJs implements EntryPoint {
 
-	private static IConnectionManager cm;
-	
+	private static IConnectionManager	cm;
+
 	public void onModuleLoad() {
-		
-		String requestId=RootPanel.get("requestId").getElement().getAttribute("value");
+
+		String requestId = RootPanel.get("requestId").getElement().getAttribute("value");
 		cm = new SharedConnectionManager(new DefaultUpdateManager(requestId));
 		cm.openConnection();
 	}
@@ -25,8 +25,8 @@ public class FreenetJs implements EntryPoint {
 	public static final native void log(String msg) /*-{
 													console.log(msg);
 													}-*/;
-	
-	public static void stop(){
+
+	public static void stop() {
 		cm.closeConnection();
 	}
 

@@ -71,6 +71,14 @@ public class FProxyFetchTracker implements Runnable {
 	}
 	
 	public FProxyFetchWaiter getFetcher(FreenetURI key,long maxSize){
+		FProxyFetchInProgress progress=getFetchInProgress(key, maxSize);
+		if(progress!=null){
+			return progress.getWaiter();
+		}
+		return null;
+	}
+	
+	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize){
 		FProxyFetchInProgress progress;
 		synchronized (fetchers) {
 			if(fetchers.containsKey(key)) {
@@ -78,7 +86,7 @@ public class FProxyFetchTracker implements Runnable {
 				for(int i=0;i<check.length;i++) {
 					progress = (FProxyFetchInProgress) check[i];
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-							|| progress.hasData()) return progress.getWaiter();
+							|| progress.hasData()) return progress;
 				}
 			}
 		}

@@ -37,7 +37,7 @@ public class FProxyFetchWaiter {
 		progress.close(this);
 	}
 	
-	synchronized void wakeUp(boolean fin) {
+	public synchronized void wakeUp(boolean fin) {
 		if(fin)
 			this.finished = true;
 		else

@@ -2,20 +2,21 @@ package freenet.clients.http.updateableelements;
 
 import java.text.NumberFormat;
 
-import freenet.client.FetchException;
+import freenet.clients.http.FProxyFetchListener;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
+import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.support.Base64;
-import freenet.support.Logger;
 
 public class ProgressBarElement extends BaseUpdateableElement {
 
 	private FProxyFetchTracker	tracker;
 	private FreenetURI			key;
 	private long				maxSize;
+	private NotifierFetchListener fetchListener; 
 
 	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, String requestUniqueName, ToadletContext ctx) {
 		super("div", "class", "progressbar", requestUniqueName, ctx);
@@ -23,6 +24,8 @@ public class ProgressBarElement extends BaseUpdateableElement {
 		this.key = key;
 		this.maxSize = maxSize;
 		init();
+		fetchListener=new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
+		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
 	}
 
 	@Override
@@ -32,6 +35,9 @@ public class ProgressBarElement extends BaseUpdateableElement {
 		FProxyFetchResult fr = tracker.getFetcher(key, maxSize).getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
+		}
+		if (fr.isFinished()) {
+			setContent(UpdaterConstants.FINISHED);
 		} else {
 			int total = fr.requiredBlocks;
 			int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
@@ -63,5 +69,31 @@ public class ProgressBarElement extends BaseUpdateableElement {
 
 	public static String getId(FreenetURI uri) {
 		return Base64.encodeStandard(("progressbar[URI:" + uri.toString() + "]").getBytes());
+	}
+	
+	@Override
+	public void dispose() {
+		tracker.getFetchInProgress(key, maxSize).removeListener(fetchListener);
+	}
+
+	@Override
+	public String getUpdaterType() {
+		return UpdaterConstants.PROGRESSBAR_UPDATER;
+	}
+
+	private class NotifierFetchListener implements FProxyFetchListener {
+
+		private PushDataManager			pushManager;
+
+		private BaseUpdateableElement	element;
+
+		private NotifierFetchListener(PushDataManager pushManager, BaseUpdateableElement element) {
+			this.pushManager = pushManager;
+			this.element = element;
+		}
+
+		public void onEvent() {
+			pushManager.updateElement(element.getUpdaterId());
+		}
 	}
 }

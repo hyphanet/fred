@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.BaseUpdateableElement;
 import freenet.support.Base64;
-import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 public class PushDataToadlet extends Toadlet {
@@ -21,8 +21,8 @@ public class PushDataToadlet extends Toadlet {
 		String requestId = req.getParam("requestId");
 		String elementId = req.getParam("elementId");
 		elementId = elementId.replace(" ", "+");// This is needed, because BASE64 has '+', but it is a HTML escape for ' '
-		HTMLNode node = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getRenderedElement(requestId, elementId);
-		writeHTMLReply(ctx, 200, "OK", "SUCCESS:" + Base64.encodeStandard(node.generateChildren().getBytes()));
+		BaseUpdateableElement node = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getRenderedElement(requestId, elementId);
+		writeHTMLReply(ctx, 200, "OK", "SUCCESS:" + Base64.encodeStandard(node.getUpdaterType().getBytes())+":"+Base64.encodeStandard(node.generateChildren().getBytes()));
 	}
 
 	@Override

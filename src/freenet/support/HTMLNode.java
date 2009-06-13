@@ -16,7 +16,7 @@ public class HTMLNode implements XMLCharacterClasses {
 
 	protected final String name;
 
-	private final String content;
+	private String content;
 
 	private final Map<String, String> attributes = new HashMap<String, String>();
 
@@ -219,12 +219,19 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 	
 	public String generateChildren(){
+		if(content!=null){
+			return content;
+		}
 		StringBuilder tagBuffer=new StringBuilder();
 		for(int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 			HTMLNode childNode = children.get(childIndex);
 			childNode.generate(tagBuffer);
 		}
 		return tagBuffer.toString();
+	}
+	
+	public void setContent(String newContent){
+		content=newContent;
 	}
 
 	/**
