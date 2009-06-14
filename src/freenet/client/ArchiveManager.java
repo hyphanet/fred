@@ -340,8 +340,10 @@ outerTAR:		while(true) {
 					continue;
 				}
 				long size = entry.getSize();
-				if(size > maxArchivedFileSize) {
-					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+				if(name.equals(".metadata"))
+					gotMetadata = true;
+				if(size > maxArchivedFileSize && !name.equals(element)) {
+					addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
 				} else {
 					// Read the element
 					long realLen = 0;
@@ -353,7 +355,7 @@ outerTAR:		while(true) {
 						out.write(buf, 0, readBytes);
 						readBytes += realLen;
 						if(readBytes > maxArchivedFileSize) {
-							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
 							out.close();
 							output.free();
 							continue outerTAR;
@@ -361,11 +363,16 @@ outerTAR:		while(true) {
 					}
 
 					out.close();
-					if(name.equals(".metadata"))
-						gotMetadata = true;
-					addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
-					names.add(name);
-					trimStoredData();
+					if(size <= maxArchivedFileSize) {
+						addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
+						names.add(name);
+						trimStoredData();
+					} else {
+						// We are here because they asked for this file. 
+						callback.gotBucket(output, container, context);
+						gotElement.value = true;
+						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
+					}
 				}
 			}
 
@@ -409,8 +416,10 @@ outerZIP:		while(true) {
 					continue;
 				}
 				long size = entry.getSize();
-				if(size > maxArchivedFileSize) {
-					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+				if(name.equals(".metadata"))
+					gotMetadata = true;
+				if(size > maxArchivedFileSize && !name.equals(element)) {
+					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
 				} else {
 					// Read the element
 					long realLen = 0;
@@ -422,7 +431,7 @@ outerZIP:		while(true) {
 						out.write(buf, 0, readBytes);
 						readBytes += realLen;
 						if(readBytes > maxArchivedFileSize) {
-							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
 							out.close();
 							output.free();
 							continue outerZIP;
@@ -430,11 +439,16 @@ outerZIP:		while(true) {
 					}
 
 					out.close();
-					if(name.equals(".metadata"))
-						gotMetadata = true;
-					addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
-					names.add(name);
-					trimStoredData();
+					if(size <= maxArchivedFileSize) {
+						addStoreElement(ctx, key, name, output, gotElement, element, callback, container, context);
+						names.add(name);
+						trimStoredData();
+					} else {
+						// We are here because they asked for this file. 
+						callback.gotBucket(output, container, context);
+						gotElement.value = true;
+						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
+					}
 				}
 			}
 
@@ -562,8 +576,8 @@ outerZIP:		while(true) {
 	 * @param error The error message to be included on the eventual exception thrown,
 	 * if anyone tries to extract the data for this element.
 	 */
-	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
-		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
+	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error, boolean tooBig) {
+		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error, tooBig);
 		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+ ' ' +name);
 		ArchiveStoreItem oldItem;
 		synchronized (this) {

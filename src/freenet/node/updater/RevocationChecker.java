@@ -36,6 +36,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	private boolean wasAggressive;
 	/** Last time at which we got 3 DNFs on the revocation key */
 	private long lastSucceeded;
+	// Kept separately from NodeUpdateManager.hasBeenBlown because there are local problems that can blow the key.
+	private volatile boolean blown;
 	
 	private File blobFile;
 	private File tmpBlobFile;
@@ -51,8 +53,8 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		ctxRevocation.cacheLocalRequests = false;
 		ctxRevocation.maxArchiveLevels = 1;
 		// big enough ?
-		ctxRevocation.maxOutputLength = 4096;
-		ctxRevocation.maxTempLength = 4096;
+		ctxRevocation.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
+		ctxRevocation.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
 		ctxRevocation.maxSplitfileBlockRetries = -1; // if we find content, try forever to get it; not used because of the above size limits.
 		ctxRevocation.maxNonSplitfileRetries = 0; // but return quickly normally
 	}
@@ -120,7 +122,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			}
 		} catch (FetchException e) {
 			Logger.error(this, "Not able to start the revocation fetcher.");
-			manager.blow("Cannot fetch the auto-update URI");
+			manager.blow("Cannot start fetch for the auto-update revocation key", true);
 		} catch (DatabaseDisabledException e) {
 			// Impossible
 		}
@@ -148,6 +150,7 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	void onSuccess(FetchResult result, ClientGetter state, File blob) {
 		// The key has been blown !
 		// FIXME: maybe we need a bigger warning message.
+		blown = true;
 		moveBlob(blob);
 		String msg = null;
 		try {
@@ -163,7 +166,11 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				msg = "Internal error after retreiving revocation key";
 			}
 		}
-		manager.blow(msg);
+		manager.blow(msg, false); // Real one, even if we can't extract the message.
+	}
+	
+	public boolean hasBlown() {
+		return blown;
 	}
 
 	private void moveBlob(File tmpBlobFile) {
@@ -189,13 +196,13 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 			return; // cancelled by us above, or killed; either way irrelevant and doesn't need to be restarted
 		}
 		if(e.isFatal()) {
-			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString());
-			moveBlob(tmpBlobFile); // other peers need to know
+			manager.blow("Permanent error fetching revocation (error inserting the revocation key?): "+e.toString(), true);
+			moveBlob(tmpBlobFile); // other peers need to know,
 			return;
 		}
 		if(tmpBlobFile != null) tmpBlobFile.delete();
 		if(e.newURI != null) {
-			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?");
+			manager.blow("Revocation URI redirecting to "+e.newURI+" - maybe you set the revocation URI to the update URI?", false);
 		}
 		synchronized(this) {
 			if(errorCode == FetchException.DATA_NOT_FOUND){

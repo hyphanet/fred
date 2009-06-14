@@ -178,6 +178,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 					// Have to do this first to avoid race condition
 					synchronized(this) {
+						// If already transferring, don't start another transfer.
+						if(nodesSayKeyRevokedTransferring.contains(source)) return true;
+						// If waiting for SendingRevocation, don't start another transfer.
+						if(nodesSayKeyRevoked.contains(source)) return true;
 						nodesSayKeyRevoked.add(source);
 					}
 
@@ -187,54 +191,12 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					// Tell the user
 					alertUser();
 
-					System.err.println("Your peer " + source.userToString() + " says that the auto-update key is blown!");
+					System.err.println("Your peer " + source.userToString() +
+							" (build #" + source.getSimpleVersion() + ") says that the auto-update key is blown!");
 					System.err.println("Attempting to fetch it...");
 
-					// Try to transfer it.
-
-					Message msg = DMT.createUOMRequestRevocation(updateManager.node.random.nextLong());
-					source.sendAsync(msg, new AsyncMessageCallback() {
-
-						public void acknowledged() {
-							// Ok
-						}
-
-						public void disconnected() {
-							// :(
-							System.err.println("Failed to send request for revocation key to " + source.userToString() + " because it disconnected!");
-							synchronized(UpdateOverMandatoryManager.this) {
-								nodesSayKeyRevokedFailedTransfer.add(source);
-							}
-						}
-
-						public void fatalError() {
-							// Not good!
-							System.err.println("Failed to send request for revocation key to " + source.userToString() + " because of a fatal error.");
-						}
-
-						public void sent() {
-							// Cool
-						}
-					}, updateManager.ctr);
+					tryFetchRevocation(source);
 					
-					updateManager.node.getTicker().queueTimedJob(new Runnable() {
-
-						public void run() {
-							if(updateManager.isBlown()) return;
-							synchronized(UpdateOverMandatoryManager.this) {
-								if(nodesSayKeyRevokedFailedTransfer.contains(source)) return;
-								if(nodesSayKeyRevokedTransferring.contains(source)) return;
-								nodesSayKeyRevoked.remove(source);
-							}
-							System.err.println("Peer "+source+" said that the auto-update key had been blown, but did not transfer the revocation certificate. The most likely explanation is that the key has not been blown (the node is buggy or malicious), so we are ignoring this.");
-							maybeNotRevoked();
-						}
-						
-					}, 60*1000);
-
-				// The reply message will start the transfer. It includes the revocation URI
-				// so we can tell if anything wierd is happening.
-
 				} else {
 					// Should probably also be a useralert?
 					Logger.normal(this, "Node " + source + " sent us a UOM claiming that the auto-update key was blown, but it used a different key to us: \nour key=" + updateManager.revocationURI + "\nhis key=" + revocationURI);
@@ -247,8 +209,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				System.err.println("Node " + source + " says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
 				Logger.error(this, "Node " + source + " says that the auto-update key was blown, but has now gone offline! Something bad may be happening!");
 				synchronized(UpdateOverMandatoryManager.this) {
-					nodesSayKeyRevokedFailedTransfer.add(source);
+					nodesSayKeyRevoked.remove(source);
+					// Might be valid, but no way to tell except if other peers tell us.
+					// And there's a good chance it isn't.
 				}
+				maybeNotRevoked();
 			}
 
 		}
@@ -266,6 +231,56 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		handleExtJarOffer(now, extraJarFileLength, extraJarVersion, source, extraJarKey);
 		
 		return true;
+	}
+
+	private void tryFetchRevocation(final PeerNode source) throws NotConnectedException {
+		// Try to transfer it.
+
+		Message msg = DMT.createUOMRequestRevocation(updateManager.node.random.nextLong());
+		source.sendAsync(msg, new AsyncMessageCallback() {
+
+			public void acknowledged() {
+				// Ok
+			}
+
+			public void disconnected() {
+				// :(
+				System.err.println("Failed to send request for revocation key to " + source.userToString() + 
+						" (build #" + source.getSimpleVersion() + ") because it disconnected!");
+				source.failedRevocationTransfer();
+				synchronized(UpdateOverMandatoryManager.this) {
+					nodesSayKeyRevokedFailedTransfer.add(source);
+				}
+			}
+
+			public void fatalError() {
+				// Not good!
+				System.err.println("Failed to send request for revocation key to " + source.userToString() + " because of a fatal error.");
+			}
+
+			public void sent() {
+				// Cool
+			}
+		}, updateManager.ctr);
+		
+		updateManager.node.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				if(updateManager.isBlown()) return;
+				synchronized(UpdateOverMandatoryManager.this) {
+					if(nodesSayKeyRevokedFailedTransfer.contains(source)) return;
+					if(nodesSayKeyRevokedTransferring.contains(source)) return;
+					nodesSayKeyRevoked.remove(source);
+				}
+				System.err.println("Peer "+source+" (build #" + source.getSimpleVersion() + ") said that the auto-update key had been blown, but did not transfer the revocation certificate. The most likely explanation is that the key has not been blown (the node is buggy or malicious), so we are ignoring this.");
+				maybeNotRevoked();
+			}
+			
+		}, 60*1000);
+
+	// The reply message will start the transfer. It includes the revocation URI
+	// so we can tell if anything wierd is happening.
+
 	}
 
 	private void handleMainJarOffer(long now, long mainJarFileLength, long mainJarVersion, PeerNode source, String jarKey) {
@@ -818,10 +833,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		final long length = m.getLong(DMT.FILE_LENGTH);
 		String key = m.getString(DMT.REVOCATION_KEY);
 		
-		synchronized(this) {
-			nodesSayKeyRevokedTransferring.add(source);
-		}
-		
 		FreenetURI revocationURI;
 		try {
 			revocationURI = new FreenetURI(key);
@@ -831,7 +842,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			e.printStackTrace();
 			synchronized(this) {
 				// Wierd case of a failed transfer
-				nodesSayKeyRevokedFailedTransfer.add(source);
+				// This is definitely not valid, don't add to nodesSayKeyRevokedFailedTransfer.
+				nodesSayKeyRevoked.remove(source);
 				nodesSayKeyRevokedTransferring.remove(source);
 			}
 			cancelSend(source, uid);
@@ -847,7 +859,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			synchronized(this) {
 				// Wierd case of a failed transfer
 				nodesSayKeyRevoked.remove(source);
-				nodesSayKeyRevokedFailedTransfer.add(source);
+				// This is definitely not valid, don't add to nodesSayKeyRevokedFailedTransfer.
 				nodesSayKeyRevokedTransferring.remove(source);
 			}
 			cancelSend(source, uid);
@@ -862,12 +874,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return true;
 		}
 
-		if(length > NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH) {
-			System.err.println("Node " + source.userToString() + " offered us a revocation certificate " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer.");
-			Logger.error(this, "Node " + source.userToString() + " offered us a revocation certificate " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer.");
+		if(length > NodeUpdateManager.MAX_REVOCATION_KEY_BLOB_LENGTH) {
+			System.err.println("Node " + source.userToString() + " offered us a revocation certificate " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer. No real revocation cert would be this big.");
+			Logger.error(this, "Node " + source.userToString() + " offered us a revocation certificate " + SizeUtil.formatSize(length) + " long. This is unacceptably long so we have refused the transfer. No real revocation cert would be this big.");
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevoked.remove(source);
-				nodesSayKeyRevokedFailedTransfer.add(source);
 				nodesSayKeyRevokedTransferring.remove(source);
 			}
 			cancelSend(source, uid);
@@ -879,7 +890,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Revocation key is zero bytes from "+source+" - ignoring as this is almost certainly a bug or an attack, it is definitely not valid.");
 			synchronized(UpdateOverMandatoryManager.this) {
 				nodesSayKeyRevoked.remove(source);
-				nodesSayKeyRevokedFailedTransfer.add(source);
+				// This is almost certainly not valid, don't add to nodesSayKeyRevokedFailedTransfer.
 				nodesSayKeyRevokedTransferring.remove(source);
 			}
 			cancelSend(source, uid);
@@ -899,7 +910,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(IOException e) {
 			System.err.println("Cannot save revocation certificate to disk and therefore cannot fetch it from our peer!: " + e);
 			e.printStackTrace();
-			updateManager.blow("Cannot fetch the revocation certificate from our peer because we cannot write it to disk: " + e);
+			updateManager.blow("Cannot fetch the revocation certificate from our peer because we cannot write it to disk: " + e, true);
 			cancelSend(source, uid);
 			return true;
 		}
@@ -909,10 +920,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			raf = new RandomAccessFileWrapper(temp, "rw");
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Peer " + source + " asked us for the blob file for the revocation key, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
-			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e);
+			updateManager.blow("Internal error after fetching the revocation certificate from our peer, maybe out of disk space, file disappeared "+temp+" : " + e, true);
 			return true;
 		}
-
+		
+		// It isn't starting, it's transferring.
+		synchronized(this) {
+			nodesSayKeyRevokedTransferring.add(source);
+			nodesSayKeyRevoked.remove(source);
+		}
+		
 		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
 			Node.PACKET_SIZE, raf, false);
 
@@ -928,17 +945,27 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				else {
 					Logger.error(this, "Failed to transfer revocation certificate from " + source);
 					System.err.println("Failed to transfer revocation certificate from " + source);
+					source.failedRevocationTransfer();
+					int count = source.countFailedRevocationTransfers();
+					boolean retry = count < 3;
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedFailedTransfer.add(source);
+						nodesSayKeyRevokedTransferring.remove(source);
+						if(retry) {
+							if(nodesSayKeyRevoked.contains(source))
+								retry = false;
+							else
+								nodesSayKeyRevoked.add(source);
+						}
 					}
 					maybeNotRevoked();
+					if(retry) tryFetchRevocation(source);
 				}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught error while transferring revocation certificate from "+source+" : "+t, t);
 					System.err.println("Peer "+source+" said that the revocation key has been blown, but we got an internal error while transferring it:");
 					t.printStackTrace();
-					updateManager.blow("Internal error while fetching the revocation certificate from our peer "+source+" : "+t);
-				} finally {
+					updateManager.blow("Internal error while fetching the revocation certificate from our peer "+source+" : "+t, true);
 					synchronized(UpdateOverMandatoryManager.this) {
 						nodesSayKeyRevokedTransferring.remove(source);
 					}
@@ -957,10 +984,26 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 	}
 
-	private synchronized boolean mightBeRevoked() {
-		if(!nodesSayKeyRevoked.isEmpty()) return true;
-		if(nodesSayKeyRevokedFailedTransfer.size() >= 3) return true;
-		if(!nodesSayKeyRevokedTransferring.isEmpty()) return true;
+	private boolean mightBeRevoked() {
+		PeerNode[] started;
+		PeerNode[] transferring;
+		synchronized(this) {
+			started = nodesSayKeyRevoked.toArray(new PeerNode[nodesSayKeyRevoked.size()]);
+			transferring = nodesSayKeyRevokedTransferring.toArray(new PeerNode[nodesSayKeyRevokedTransferring.size()]);
+		}
+		// If a peer is not connected, ignore it.
+		// If a peer has already tried 3 times to send the revocation cert, ignore it,
+		// because it is probably evil.
+		for(PeerNode peer : started) {
+			if(!peer.isConnected()) continue;
+			if(peer.countFailedRevocationTransfers() > 3) continue;
+			return true;
+		}
+		for(PeerNode peer : transferring) {
+			if(!peer.isConnected()) continue;
+			if(peer.countFailedRevocationTransfers() > 3) continue;
+			return true;
+		}
 		return false;
 	}
 
@@ -979,16 +1022,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch(FileNotFoundException e) {
 			Logger.error(this, "Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
 			System.err.println("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
-			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!");
+			updateManager.blow("Somebody deleted " + temp + " ? We lost the revocation certificate from " + source.userToString() + "!", true);
 			return;
 		} catch (EOFException e) {
 			Logger.error(this, "Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")", e);
 			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate! (data too short, might be truncated): " + e + " (data in " + temp + ")");
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
-			synchronized(UpdateOverMandatoryManager.this) {
-				nodesSayKeyRevokedFailedTransfer.add(source);
-			}
 			// FIXME file will be kept until exit for debugging purposes
 			return;
 		} catch(BinaryBlobFormatException e) {
@@ -996,16 +1036,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			System.err.println("Peer " + source.userToString() + " sent us an invalid revocation certificate!: " + e + " (data in " + temp + ")");
 			// Probably malicious, might just be buggy, either way, it's not blown
 			e.printStackTrace();
-			synchronized(UpdateOverMandatoryManager.this) {
-				nodesSayKeyRevokedFailedTransfer.add(source);
-			}
 			// FIXME file will be kept until exit for debugging purposes
 			return;
 		} catch(IOException e) {
 			Logger.error(this, "Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, e);
 			System.err.println("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
 			e.printStackTrace();
-			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e);
+			updateManager.blow("Could not read revocation cert from temp file " + temp + " from node " + source.userToString() + " ! : "+e, true);
 			// FIXME will be kept until exit for debugging purposes
 			return;
 		} finally {
@@ -1021,6 +1058,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
 		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
+		// If it is too big, we get a TOO_BIG. This is fatal so we will blow, which is the right thing as it means the top block is valid.
+		tempContext.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
+		tempContext.maxTempLength = NodeUpdateManager.MAX_REVOCATION_KEY_TEMP_LENGTH;
 		tempContext.localRequestOnly = true;
 
 		File f;
@@ -1058,11 +1098,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 
 				} else {
-					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
-					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e);
-					synchronized(UpdateOverMandatoryManager.this) {
-						nodesSayKeyRevokedFailedTransfer.add(source);
-					}
+					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					System.err.println("Failed to fetch revocation certificate from blob from " + source.userToString() + " : "+e+" : this is almost certainly bogus i.e. the auto-update is fine but the node is broken.");
+					// This is almost certainly bogus.
 				}
 			}
 			public void onMajorProgress(ObjectContainer container) {
@@ -1754,5 +1792,20 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 	public void removeFrom(ObjectContainer container) {
 		throw new UnsupportedOperationException();
+	}
+
+	public void disconnected(PeerNode pn) {
+		synchronized(this) {
+			nodesSayKeyRevoked.remove(pn);
+			nodesSayKeyRevokedFailedTransfer.remove(pn);
+			nodesSayKeyRevokedTransferring.remove(pn);
+			nodesOfferedMainJar.remove(pn);
+			nodesOfferedExtJar.remove(pn);
+			nodesAskedSendMainJar.remove(pn);
+			nodesAskedSendExtJar.remove(pn);
+			nodesSendingMainJar.remove(pn);
+			nodesSendingExtJar.remove(pn);
+		}
+		maybeNotRevoked();
 	}
 }

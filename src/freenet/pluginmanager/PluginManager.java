@@ -271,7 +271,7 @@ public class PluginManager {
 					synchronized(pluginWrappers) {
 						pluginsFailedLoad.add(filename);
 					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, message));
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e));
 				} catch(UnsupportedClassVersionError e) {
 					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 					System.err.println("Could not load plugin " + filename + " : " + e);
@@ -291,7 +291,7 @@ public class PluginManager {
 					synchronized(pluginWrappers) {
 						pluginsFailedLoad.add(filename);
 					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e.getMessage()));
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e));
 				} finally {
 					synchronized(startingPlugins) {
 						startingPlugins.remove(pluginProgress);
@@ -314,6 +314,14 @@ public class PluginManager {
 			this.filename = filename;
 			this.official = official;
 			this.message = message;
+		}
+
+		public PluginLoadFailedUserAlert(String filename, boolean official, Throwable e) {
+			this.filename = filename;
+			this.official = official;
+			String msg = e.getMessage();
+			if(msg == null) msg = e.toString();
+			this.message = msg;
 		}
 
 		public String dismissButtonText() {

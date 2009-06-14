@@ -657,6 +657,7 @@ public class PersistentBlobTempBucketFactory {
 				System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
 				for(long l = newBlocks; l <= blocks; l++) {
 					freeSlots.remove(l);
+					almostFreeSlots.remove(l);
 				}
 				for(Long l : freeSlots.keySet()) {
 					if(l > newBlocks) {
@@ -679,7 +680,56 @@ public class PersistentBlobTempBucketFactory {
 		query.constrain(PersistentBlobTempBucketTag.class);
 		query.descend("index").constrain(newBlocks).greater();
 		ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
-		while(tags.hasNext()) container.delete(tags.next());
+		long deleted = 0;
+		while(tags.hasNext()) {
+			container.delete(tags.next());
+			deleted++;
+			if(deleted > 1024) break;
+		}
+		if(deleted > 1024) {
+			try {
+				jobRunner.queue(new DBJob() {
+
+					public boolean run(ObjectContainer container, ClientContext context) {
+						long size;
+						try {
+							size = channel.size();
+						} catch (IOException e1) {
+							Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+							return false;
+						}
+						size -= size % blockSize;
+						long blocks = size / blockSize;
+						Query query = container.query();
+						query.constrain(PersistentBlobTempBucketTag.class);
+						query.descend("index").constrain(blocks).greater();
+						ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
+						long deleted = 0;
+						while(tags.hasNext()) {
+							PersistentBlobTempBucketTag tag = tags.next();
+							if(tag.bucket != null) {
+								Logger.error(this, "Tag with bucket beyond end of file! index="+tag.index+" bucket="+tag.bucket);
+								continue;
+							}
+							container.delete(tags.next());
+							deleted++;
+							if(deleted > 1024) break;
+						}
+						if(deleted > 1024) {
+							try {
+								jobRunner.queue(this, NativeThread.LOW_PRIORITY, true);
+							} catch (DatabaseDisabledException e) {
+								// :(
+							}
+						}
+						return true;
+					}
+					
+				}, NativeThread.LOW_PRIORITY, true);
+			} catch (DatabaseDisabledException e) {
+				// :(
+			}
+		}
 		queueMaybeShrink();
 		return true;
 		

@@ -42,7 +42,10 @@ public class NodeUpdateManager {
 	public final static String REVOCATION_URI = "SSK@tHlY8BK2KFB7JiO2bgeAw~e4sWU43YdJ6kmn73gjrIw,DnQzl0BYed15V8WQn~eRJxxIA-yADuI8XW7mnzEbut8,AQACAAE/revoked";
 	public final static String EXT_URI = "freenet:USK@BFa1voWr5PunINSZ5BGMqFwhkJTiDBBUrOZ0MYBXseg,BOrxeLzUMb6R9tEZzexymY0zyKAmBNvrU4A9Q0tAqu0,AQACAAE/ext/"+NodeStarter.extBuildNumber;
 
-	public static final long MAX_REVOCATION_KEY_LENGTH = 4*1024*1024; // 4MB
+	public static final long MAX_REVOCATION_KEY_LENGTH = 4*1024;
+	public static final long MAX_REVOCATION_KEY_TEMP_LENGTH = 4*1024;
+	public static final long MAX_REVOCATION_KEY_BLOB_LENGTH = 8*1024;
+	
 	public static final long MAX_MAIN_JAR_LENGTH = 16*1024*1024; // 16MB
 	
 	FreenetURI updateURI;
@@ -182,7 +185,7 @@ public class NodeUpdateManager {
 	}
 
 	private Message getUOMAnnouncement() {
-		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), hasBeenBlown, 
+		return DMT.createUOMAnnounce(updateURI.toString(), extURI.toString(), revocationURI.toString(), revocationChecker.hasBlown(), 
 				mainUpdater == null ? -1 : mainUpdater.getFetchedVersion(),
 				extUpdater == null ? -1 : extUpdater.getFetchedVersion(),
 				revocationChecker.lastSucceededDelta(), revocationChecker.getRevocationDNFCounter(), 
@@ -196,8 +199,14 @@ public class NodeUpdateManager {
 		synchronized(broadcastUOMAnnouncesSync) {
 			if(!broadcastUOMAnnounces) return; // nothing worth announcing yet
 		}
+		boolean hasUpdate;
 		synchronized(this) {
-			if((!hasBeenBlown) && (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0)) return;
+			hasUpdate = (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0);
+			if((!hasBeenBlown) && hasUpdate) return;
+		}
+		if((!hasUpdate) && hasBeenBlown && !revocationChecker.hasBlown()) {
+			// Local problem, don't broadcast.
+			return;
 		}
 		try {
 			peer.sendAsync(getUOMAnnouncement(), null, ctr);
@@ -680,7 +689,12 @@ public class NodeUpdateManager {
 		}
 	}
 	
-	public void blow(String msg){
+	/**
+	 * @param msg
+	 * @param disabledNotBlown If true, the auto-updating system is broken, and should
+	 * be disabled, but the problem *could* be local e.g. out of disk space and a node
+	 * sends us a revocation certificate. */
+	public void blow(String msg, boolean disabledNotBlown){
 		NodeUpdater main, ext;
 		synchronized(this) {
 			if(hasBeenBlown){
@@ -691,8 +705,13 @@ public class NodeUpdateManager {
 				this.hasBeenBlown = true;
 				// We must get to the lower part, and show the user the message
 				try {
-					System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN COMPROMIZED!");
-					System.err.println("The auto-updating system revocation key has been inserted. It says: "+revocationMessage);
+					if(disabledNotBlown) {
+						System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN DISABLED!");
+						System.err.println("We do not know whether this is a local problem or the auto-update system has in fact been compromised. What we do know:\n"+revocationMessage);
+					} else {
+						System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN COMPROMIZED!");
+						System.err.println("The auto-updating system revocation key has been inserted. It says: "+revocationMessage);
+					}
 				} catch (Throwable t) {
 					try {
 						Logger.error(this, "Caught "+t, t);
@@ -709,7 +728,7 @@ public class NodeUpdateManager {
 		if(main != null) main.kill();
 		if(ext != null) ext.kill();
 		if(revocationAlert==null){
-			revocationAlert = new RevocationKeyFoundUserAlert(msg);
+			revocationAlert = new RevocationKeyFoundUserAlert(msg, disabledNotBlown);
 			node.clientCore.alerts.register(revocationAlert);
 			// we don't need to advertize updates : we are not going to do them
 			killUpdateAlerts();
@@ -994,6 +1013,10 @@ public class NodeUpdateManager {
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing NodeUpdateManager in database", new Exception("error"));
 		return false;
+	}
+
+	public void disconnected(PeerNode pn) {
+		uom.disconnected(pn);
 	}
 
 }

@@ -10,6 +10,7 @@ class ErrorArchiveStoreItem extends ArchiveStoreItem {
 
 	/** Error message. Usually something about the file being too big. */
 	String error;
+	boolean tooBig;
 	
 	/**
 	 * Create a placeholder item for a file which could not be extracted from the archive.
@@ -19,9 +20,10 @@ class ErrorArchiveStoreItem extends ArchiveStoreItem {
 	 * @param error The error message to be included in the thrown exception when
 	 * somebody tries to get the data.
 	 */
-	public ErrorArchiveStoreItem(ArchiveStoreContext ctx, FreenetURI key2, String name, String error) {
+	public ErrorArchiveStoreItem(ArchiveStoreContext ctx, FreenetURI key2, String name, String error, boolean tooBig) {
 		super(new ArchiveKey(key2, name), ctx);
 		this.error = error;
+		this.tooBig = tooBig;
 	}
 
 	/**
@@ -40,7 +42,12 @@ class ErrorArchiveStoreItem extends ArchiveStoreItem {
 
 	@Override
 	Bucket getReaderBucket() throws ArchiveFailureException {
+		if(tooBig) return null;
 		throw new ArchiveFailureException(error);
+	}
+	
+	public boolean tooBig() {
+		return tooBig;
 	}
 	
 }

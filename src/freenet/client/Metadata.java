@@ -466,6 +466,9 @@ public class Metadata implements Cloneable {
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
+				if(key.equals("")) {
+					Logger.error(this, "Creating a subdirectory called \"\" - it will not be possible to access this through fproxy!", new Exception("error"));
+				}
 				HashMap<String, Object> hm = (HashMap<String, Object>)o;
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Making metadata map for "+key);
@@ -738,7 +741,7 @@ public class Metadata implements Cloneable {
         Iterator<String> i = s.iterator();
         while (i.hasNext()) {
         	String st = i.next();
-        	if (st.length()>1)
+        	if (st.length()>0)
         		docs.put(st, manifestEntries.get(st));
         }
         return docs;
@@ -1094,5 +1097,9 @@ public class Metadata implements Cloneable {
 	public void clearSplitfileKeys() {
 		splitfileDataKeys = null;
 		splitfileCheckKeys = null;
+	}
+
+	public int countDocuments() {
+		return manifestEntries.size();
 	}
 }
