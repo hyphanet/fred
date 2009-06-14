@@ -741,7 +741,7 @@ public class Metadata implements Cloneable {
         Iterator<String> i = s.iterator();
         while (i.hasNext()) {
         	String st = i.next();
-        	if (st.length()>1)
+        	if (st.length()>0)
         		docs.put(st, manifestEntries.get(st));
         }
         return docs;
