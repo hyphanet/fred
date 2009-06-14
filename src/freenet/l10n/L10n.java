@@ -335,6 +335,8 @@ public class L10n {
 	}
 	
 	private static String quoteReplacement(String s) {
+		if (s == null)
+			return "(null)";
 		if ((s.indexOf('\\') == -1) && (s.indexOf('$') == -1))
 			return s;
 		StringBuilder sb = new StringBuilder();
