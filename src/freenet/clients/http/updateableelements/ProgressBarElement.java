@@ -2,6 +2,7 @@ package freenet.clients.http.updateableelements;
 
 import java.text.NumberFormat;
 
+import freenet.clients.http.FProxyFetchInProgress;
 import freenet.clients.http.FProxyFetchListener;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
@@ -13,18 +14,18 @@ import freenet.support.Base64;
 
 public class ProgressBarElement extends BaseUpdateableElement {
 
-	private FProxyFetchTracker	tracker;
-	private FreenetURI			key;
-	private long				maxSize;
-	private NotifierFetchListener fetchListener; 
+	private FProxyFetchTracker		tracker;
+	private FreenetURI				key;
+	private long					maxSize;
+	private NotifierFetchListener	fetchListener;
 
-	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, String requestUniqueName, ToadletContext ctx) {
-		super("div", "class", "progressbar", requestUniqueName, ctx);
+	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx) {
+		super("div", "class", "progressbar", ctx);
 		this.tracker = tracker;
 		this.key = key;
 		this.maxSize = maxSize;
 		init();
-		fetchListener=new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
+		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
 		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
 	}
 
@@ -70,10 +71,13 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	public static String getId(FreenetURI uri) {
 		return Base64.encodeStandard(("progressbar[URI:" + uri.toString() + "]").getBytes());
 	}
-	
+
 	@Override
 	public void dispose() {
-		tracker.getFetchInProgress(key, maxSize).removeListener(fetchListener);
+		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
+		if (progress != null) {
+			progress.removeListener(fetchListener);
+		}
 	}
 
 	@Override

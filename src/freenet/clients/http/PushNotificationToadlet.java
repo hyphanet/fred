@@ -7,6 +7,7 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.PushDataManager;
+import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Base64;
 import freenet.support.api.HTTPRequest;
 
@@ -21,7 +22,7 @@ public class PushNotificationToadlet extends Toadlet {
 		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getNextNotification();
 		String requestId = event.getRequestId();
 		String elementId = event.getElementId();
-		writeHTMLReply(ctx, 200, "OK", "SUCCESS:" + Base64.encodeStandard(requestId.getBytes()) + SEPARATOR +elementId);
+		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS+":" + Base64.encodeStandard(requestId.getBytes()) + SEPARATOR +elementId);
 	}
 
 	@Override

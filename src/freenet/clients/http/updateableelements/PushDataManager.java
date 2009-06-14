@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -17,16 +18,11 @@ public class PushDataManager {
 
 	private Map<String, List<String>>					elements				= new HashMap<String, List<String>>();
 
-	private Map<String, Long>							lastReceivedKeepalive	= new HashMap<String, Long>();
+	private Map<String, Boolean>						isKeepaliveReceived		= new HashMap<String, Boolean>();
 
 	private final Lock									elementLock				= new ReentrantLock();
 
-	private Timer										cleaner					= new Timer(true);
-
-	public PushDataManager() {
-		int delayInMs = (int) (UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000 * 2.1);
-		cleaner.schedule(new CleanerTimerTask(), delayInMs, delayInMs);
-	}
+	private Timer										cleaner;
 
 	public void updateElement(String id) {
 		boolean needsUpdate = false;
@@ -52,6 +48,12 @@ public class PushDataManager {
 				elements.put(element.getUpdaterId(), new ArrayList<String>());
 			}
 			elements.get(element.getUpdaterId()).add(requestUniqueId);
+			isKeepaliveReceived.put(requestUniqueId, true);
+			if (cleaner == null) {
+				int delayInMs = (int) (UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000 * 2.1);
+				cleaner=new Timer(false);
+				cleaner.schedule(new CleanerTimerTask(), delayInMs, delayInMs);
+			}
 		} finally {
 			elementLock.unlock();
 		}
@@ -74,13 +76,13 @@ public class PushDataManager {
 
 	public boolean keepAliveReceived(String requestId) {
 		elementLock.lock();
-		try{
-			if(lastReceivedKeepalive.containsKey(requestId)==false){
+		try {
+			if (isKeepaliveReceived.containsKey(requestId) == false) {
 				return false;
 			}
-			lastReceivedKeepalive.put(requestId,System.currentTimeMillis());
+			isKeepaliveReceived.put(requestId, true);
 			return true;
-		}finally{
+		} finally {
 			elementLock.unlock();
 		}
 	}
@@ -119,8 +121,38 @@ public class PushDataManager {
 	private class CleanerTimerTask extends TimerTask {
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
-
+			System.err.println("Cleaner started");
+			elementLock.lock();
+			try {
+				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {
+					if (entry.getValue() == false) {
+						isKeepaliveReceived.remove(entry.getKey());
+						for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(entry.getKey()))) {
+							pages.get(entry.getKey()).remove(element);
+							if (pages.get(entry.getKey()).size() == 0) {
+								pages.remove(entry.getKey());
+							}
+							elements.remove(element.getUpdaterId());
+							element.dispose();
+						}
+						if (isKeepaliveReceived.size() == 0) {
+							cleaner.cancel();
+							cleaner=null;
+						}
+						System.err.println("Cleaner has deleted key:" + entry.getKey());
+						System.err.println("current status:");
+						System.err.println("awaitingNotifications:" + awaitingNotifications);
+						System.err.println("pages:" + pages);
+						System.err.println("elements:" + elements);
+						System.err.println("isKeepaliveReceived:" + isKeepaliveReceived);
+					} else {
+						isKeepaliveReceived.put(entry.getKey(), false);
+						System.err.println("Cleaner has reseted key:" + entry.getKey());
+					}
+				}
+			} finally {
+				elementLock.unlock();
+			}
 		}
 	}
 }

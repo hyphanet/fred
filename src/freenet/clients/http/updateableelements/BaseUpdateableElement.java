@@ -9,14 +9,14 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 	ToadletContext	ctx;
 
 	public BaseUpdateableElement(String name, String requestUniqueName, ToadletContext ctx) {
-		this(name, new String[] {}, new String[] {}, requestUniqueName, ctx);
+		this(name, new String[] {}, new String[] {}, ctx);
 	}
 
-	public BaseUpdateableElement(String name, String attributeName, String attributeValue, String requestUniqueName, ToadletContext ctx) {
-		this(name, new String[] { attributeName }, new String[] { attributeValue }, requestUniqueName, ctx);
+	public BaseUpdateableElement(String name, String attributeName, String attributeValue, ToadletContext ctx) {
+		this(name, new String[] { attributeName }, new String[] { attributeValue }, ctx);
 	}
 
-	public BaseUpdateableElement(String name, String[] attributeNames, String[] attributeValues, String requestUniqueName, ToadletContext ctx) {
+	public BaseUpdateableElement(String name, String[] attributeNames, String[] attributeValues, ToadletContext ctx) {
 		super(name, attributeNames, attributeValues);
 		this.ctx = ctx;
 	}

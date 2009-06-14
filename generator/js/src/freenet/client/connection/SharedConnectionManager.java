@@ -1,5 +1,6 @@
 package freenet.client.connection;
 
+import freenet.client.FreenetJs;
 import freenet.client.tools.Base64;
 import freenet.client.update.DefaultUpdateManager;
 import freenet.client.update.IUpdateManager;
@@ -30,7 +31,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 	@Override
 	public void updated(String message) {
 		String requestId = Base64.decode(message.substring(0, message.indexOf(DefaultUpdateManager.SEPARATOR)));
-		if (requestId.compareTo(((DefaultUpdateManager) updateManager).requestId) == 0) {
+		if (requestId.compareTo(FreenetJs.requestId) == 0) {
 			String msg = message.substring(message.indexOf(DefaultUpdateManager.SEPARATOR) + 1);
 			updateManager.updated(msg);
 		}

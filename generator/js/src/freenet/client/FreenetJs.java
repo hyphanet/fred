@@ -1,10 +1,10 @@
 package freenet.client;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 
 import freenet.client.connection.IConnectionManager;
+import freenet.client.connection.KeepaliveManager;
 import freenet.client.connection.SharedConnectionManager;
 import freenet.client.update.DefaultUpdateManager;
 
@@ -13,13 +13,20 @@ import freenet.client.update.DefaultUpdateManager;
  */
 public class FreenetJs implements EntryPoint {
 
+	public static String				requestId;
+
 	private static IConnectionManager	cm;
+
+	private static IConnectionManager	keepaliveManager;
 
 	public void onModuleLoad() {
 
-		String requestId = RootPanel.get("requestId").getElement().getAttribute("value");
-		cm = new SharedConnectionManager(new DefaultUpdateManager(requestId));
+		requestId = RootPanel.get("requestId").getElement().getAttribute("value");
+		cm = new SharedConnectionManager(new DefaultUpdateManager());
+		keepaliveManager = new KeepaliveManager();
 		cm.openConnection();
+		keepaliveManager.openConnection();
+
 	}
 
 	public static final native void log(String msg) /*-{
@@ -28,6 +35,7 @@ public class FreenetJs implements EntryPoint {
 
 	public static void stop() {
 		cm.closeConnection();
+		keepaliveManager.closeConnection();
 	}
 
 }

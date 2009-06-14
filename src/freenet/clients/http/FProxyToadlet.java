@@ -581,7 +581,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(fr.totalBlocks <= 0)
 					progressCell.addChild("#", L10n.getString("QueueToadlet.unknown"));
 				else {
-					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,ctx.getUniqueId(),ctx));
+					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,ctx));
 				}
 				
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
@@ -955,6 +955,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		PushNotificationToadlet pushNotificationToadlet = new PushNotificationToadlet(client);
 		server.register(pushNotificationToadlet, null, pushNotificationToadlet.path(), true, false);
+		
+		PushKeepaliveToadlet pushKeepaliveToadlet = new PushKeepaliveToadlet(client);
+		server.register(pushKeepaliveToadlet, null, pushKeepaliveToadlet.path(), true, false);
 	}
 	
 	/**

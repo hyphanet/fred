@@ -19,19 +19,16 @@ import freenet.client.updaters.IUpdater;
 import freenet.client.updaters.ProgressBarUpdater;
 
 public class DefaultUpdateManager implements IUpdateManager {
-	public final String		requestId;
+	public static final String					SEPARATOR	= ":";
 
-	public static final String	SEPARATOR	= ":";
-	
-	private static final Map<String, IUpdater> updaters;
-	static{
-		Map<String,IUpdater> list=new HashMap<String, IUpdater>();
+	private static final Map<String, IUpdater>	updaters;
+	static {
+		Map<String, IUpdater> list = new HashMap<String, IUpdater>();
 		list.put(UpdaterConstants.PROGRESSBAR_UPDATER, new ProgressBarUpdater());
-		updaters=Collections.unmodifiableMap(list);
+		updaters = Collections.unmodifiableMap(list);
 	}
 
-	public DefaultUpdateManager(String requestId) {
-		this.requestId = requestId;
+	public DefaultUpdateManager() {
 	}
 
 	@Override
@@ -39,31 +36,32 @@ public class DefaultUpdateManager implements IUpdateManager {
 		String elementId = message;
 		FreenetJs.log("elementiddecoded:" + elementId);
 		try {
-			new RequestBuilder(RequestBuilder.GET, IConnectionManager.dataPath+"?requestId="+requestId+"&elementId="+elementId).sendRequest(null, new UpdaterRequestCallback(elementId));
+			new RequestBuilder(RequestBuilder.GET, IConnectionManager.dataPath + "?requestId=" + FreenetJs.requestId + "&elementId=" + elementId).sendRequest(null, new UpdaterRequestCallback(elementId));
 		} catch (RequestException re) {
 			FreenetJs.log("EXCEPTION at DefaultUpdateManager.updated!");
 		}
 	}
-	
-	private class UpdaterRequestCallback implements RequestCallback{
-		
-		private final String elementId;
-		
-		private UpdaterRequestCallback(String elementId){
-			this.elementId=elementId;
+
+	private class UpdaterRequestCallback implements RequestCallback {
+
+		private final String	elementId;
+
+		private UpdaterRequestCallback(String elementId) {
+			this.elementId = elementId;
 		}
+
 		@Override
 		public void onResponseReceived(Request request, Response response) {
-			if(response.getText().startsWith("SUCCESS")==false){
+			if (response.getText().startsWith("SUCCESS") == false) {
 				FreenetJs.log("ERROR! BAD DATA");
 				FreenetJs.stop();
-			}else{
-				String updaterType=Base64.decode(response.getText().split("[:]")[1]);
-				String newContent=Base64.decode(response.getText().split("[:]")[2]);
+			} else {
+				String updaterType = Base64.decode(response.getText().split("[:]")[1]);
+				String newContent = Base64.decode(response.getText().split("[:]")[2]);
 				updaters.get(updaterType).updated(elementId, newContent);
 			}
 		}
-		
+
 		@Override
 		public void onError(Request request, Throwable exception) {
 			FreenetJs.log("ERROR! AT DATA GETTING!");
