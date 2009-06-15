@@ -709,7 +709,7 @@ public class NodeUpdateManager {
 						System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN DISABLED!");
 						System.err.println("We do not know whether this is a local problem or the auto-update system has in fact been compromised. What we do know:\n"+revocationMessage);
 					} else {
-						System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN COMPROMIZED!");
+						System.err.println("THE AUTO-UPDATING SYSTEM HAS BEEN COMPROMISED!");
 						System.err.println("The auto-updating system revocation key has been inserted. It says: "+revocationMessage);
 					}
 				} catch (Throwable t) {
