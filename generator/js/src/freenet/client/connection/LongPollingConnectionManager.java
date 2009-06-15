@@ -7,6 +7,7 @@ import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Timer;
 
+import freenet.client.FreenetJs;
 import freenet.client.update.IUpdateManager;
 
 public class LongPollingConnectionManager implements IConnectionManager {
@@ -52,7 +53,7 @@ public class LongPollingConnectionManager implements IConnectionManager {
 	private void sendRequest() {
 		if (running == true) {
 			try {
-				sentRequest = new RequestBuilder(RequestBuilder.GET, IConnectionManager.notificationPath).sendRequest(null, new RequestCallback() {
+				sentRequest = new RequestBuilder(RequestBuilder.GET, IConnectionManager.notificationPath+"?requestId="+FreenetJs.requestId).sendRequest(null, new RequestCallback() {
 
 					@Override
 					public void onResponseReceived(Request request, Response response) {

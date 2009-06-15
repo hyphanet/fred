@@ -64,7 +64,7 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	}
 
 	@Override
-	public String getUpdaterId() {
+	public String getUpdaterId(String requestId) {
 		return getId(key);
 	}
 
@@ -97,7 +97,7 @@ public class ProgressBarElement extends BaseUpdateableElement {
 		}
 
 		public void onEvent() {
-			pushManager.updateElement(element.getUpdaterId());
+			pushManager.updateElement(element.getUpdaterId(null));
 		}
 	}
 }

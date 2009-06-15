@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class PushDataManager {
 
-	private List<UpdateEvent>							awaitingNotifications	= new ArrayList<UpdateEvent>();
+	private Map<String, List<UpdateEvent>>				awaitingNotifications	= new HashMap<String, List<UpdateEvent>>();
 
 	private Map<String, List<BaseUpdateableElement>>	pages					= new HashMap<String, List<BaseUpdateableElement>>();
 
@@ -28,7 +28,9 @@ public class PushDataManager {
 		boolean needsUpdate = false;
 		synchronized (awaitingNotifications) {
 			if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
-				awaitingNotifications.add(new UpdateEvent(reqId, id));
+				for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
+					notificationList.add(new UpdateEvent(reqId, id));
+				}
 				needsUpdate = true;
 			}
 			if (needsUpdate) {
@@ -44,14 +46,14 @@ public class PushDataManager {
 				pages.put(requestUniqueId, new ArrayList<BaseUpdateableElement>());
 			}
 			pages.get(requestUniqueId).add(element);
-			if (elements.containsKey(element.getUpdaterId()) == false) {
-				elements.put(element.getUpdaterId(), new ArrayList<String>());
+			if (elements.containsKey(element.getUpdaterId(requestUniqueId)) == false) {
+				elements.put(element.getUpdaterId(requestUniqueId), new ArrayList<String>());
 			}
-			elements.get(element.getUpdaterId()).add(requestUniqueId);
+			elements.get(element.getUpdaterId(requestUniqueId)).add(requestUniqueId);
 			isKeepaliveReceived.put(requestUniqueId, true);
 			if (cleaner == null) {
 				int delayInMs = (int) (UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000 * 2.1);
-				cleaner=new Timer(false);
+				cleaner = new Timer(false);
 				cleaner.schedule(new CleanerTimerTask(), delayInMs, delayInMs);
 			}
 		} finally {
@@ -63,7 +65,7 @@ public class PushDataManager {
 		elementLock.lock();
 		try {
 			if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
-				if (element.getUpdaterId().compareTo(id) == 0) {
+				if (element.getUpdaterId(requestId).compareTo(id) == 0) {
 					element.updateState();
 					return element;
 				}
@@ -87,16 +89,19 @@ public class PushDataManager {
 		}
 	}
 
-	public UpdateEvent getNextNotification() {
+	public UpdateEvent getNextNotification(String requestId) {
 		synchronized (awaitingNotifications) {
-			while (awaitingNotifications.size() == 0) {
+			if(awaitingNotifications.containsKey(requestId)==false){
+				awaitingNotifications.put(requestId, new ArrayList<UpdateEvent>());
+			}
+			while (awaitingNotifications.get(requestId).size() == 0) {
 				try {
 					awaitingNotifications.wait();
 				} catch (InterruptedException ie) {
 					return null;
 				}
 			}
-			return awaitingNotifications.remove(0);
+			return awaitingNotifications.get(requestId).remove(0);
 		}
 	}
 
@@ -132,12 +137,15 @@ public class PushDataManager {
 							if (pages.get(entry.getKey()).size() == 0) {
 								pages.remove(entry.getKey());
 							}
-							elements.remove(element.getUpdaterId());
+							elements.remove(element.getUpdaterId(entry.getKey()));
 							element.dispose();
+						}
+						synchronized (awaitingNotifications) {
+							awaitingNotifications.remove(entry.getKey());
 						}
 						if (isKeepaliveReceived.size() == 0) {
 							cleaner.cancel();
-							cleaner=null;
+							cleaner = null;
 						}
 						System.err.println("Cleaner has deleted key:" + entry.getKey());
 						System.err.println("current status:");

@@ -19,10 +19,11 @@ public class PushNotificationToadlet extends Toadlet {
 
 	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getNextNotification();
-		String requestId = event.getRequestId();
+		String requestId = req.getParam("requestId");
+		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getNextNotification(requestId);
+		String elementRequestId = event.getRequestId();
 		String elementId = event.getElementId();
-		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS+":" + Base64.encodeStandard(requestId.getBytes()) + SEPARATOR +elementId);
+		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS+":" + Base64.encodeStandard(elementRequestId.getBytes()) + SEPARATOR +elementId);
 	}
 
 	@Override

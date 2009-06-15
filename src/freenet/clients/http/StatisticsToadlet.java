@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.TesterElement;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
 import freenet.node.Location;
@@ -145,6 +146,9 @@ public class StatisticsToadlet extends Toadlet {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
+		
+		//Only for testing, needs to be removed!
+		contentNode.addChild(new TesterElement(ctx));
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();

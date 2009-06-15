@@ -8,7 +8,7 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 
 	ToadletContext	ctx;
 
-	public BaseUpdateableElement(String name, String requestUniqueName, ToadletContext ctx) {
+	public BaseUpdateableElement(String name, ToadletContext ctx) {
 		this(name, new String[] {}, new String[] {}, ctx);
 	}
 
@@ -23,14 +23,14 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 
 	protected void init() {
 		// We set the id to easily find the element
-		addAttribute("id", getUpdaterId());
+		addAttribute("id", getUpdaterId(ctx.getUniqueId()));
 		updateState();
 		((SimpleToadletServer) ctx.getContainer()).pushDataManager.elementRendered(ctx.getUniqueId(), this);
 	}
 
 	public abstract void updateState();
 
-	public abstract String getUpdaterId();
+	public abstract String getUpdaterId(String requestId);
 
 	public abstract String getUpdaterType();
 	
