@@ -9,6 +9,8 @@ import com.google.gwt.user.client.Timer;
 
 import freenet.client.FreenetJs;
 import freenet.client.UpdaterConstants;
+import freenet.client.tools.FreenetRequest;
+import freenet.client.tools.QueryParameter;
 
 public class KeepaliveManager implements IConnectionManager {
 
@@ -27,24 +29,20 @@ public class KeepaliveManager implements IConnectionManager {
 	private class KeepaliveTimer extends Timer {
 		@Override
 		public void run() {
-			try {
-				new RequestBuilder(RequestBuilder.GET, IConnectionManager.keepalivePath + "?requestId=" + FreenetJs.requestId).sendRequest(null, new RequestCallback(){
-				
-					@Override
-					public void onResponseReceived(Request request, Response response) {
-						if(response.getText().compareTo(UpdaterConstants.SUCCESS)!=0){
-							closeConnection();
-						}
-					}
-				
-					@Override
-					public void onError(Request request, Throwable exception) {
+			FreenetRequest.sendRequest(IConnectionManager.keepalivePath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
+
+				@Override
+				public void onResponseReceived(Request request, Response response) {
+					if (response.getText().compareTo(UpdaterConstants.SUCCESS) != 0) {
 						closeConnection();
 					}
-				});
-			} catch (RequestException e) {
-				FreenetJs.log("Error at KeepaliveTimer!");
-			}
+				}
+
+				@Override
+				public void onError(Request request, Throwable exception) {
+					closeConnection();
+				}
+			});
 		}
 	}
 }

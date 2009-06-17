@@ -148,7 +148,9 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		//Only for testing, needs to be removed!
-		contentNode.addChild(new TesterElement(ctx));
+		contentNode.addChild(new TesterElement(ctx,"1"));
+		contentNode.addChild(new TesterElement(ctx,"2"));
+		contentNode.addChild(new TesterElement(ctx,"3"));
 
 		// FIXME! We need some nice images
 		final long now = System.currentTimeMillis();

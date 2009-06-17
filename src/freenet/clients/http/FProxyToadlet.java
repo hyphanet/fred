@@ -958,6 +958,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		PushKeepaliveToadlet pushKeepaliveToadlet = new PushKeepaliveToadlet(client);
 		server.register(pushKeepaliveToadlet, null, pushKeepaliveToadlet.path(), true, false);
+		
+		PushFailoverToadlet pushFailoverToadlet = new PushFailoverToadlet(client);
+		server.register(pushFailoverToadlet, null, pushFailoverToadlet.path(), true, false);
 	}
 	
 	/**

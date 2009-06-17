@@ -9,12 +9,13 @@ import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
-import com.google.gwt.user.client.ui.RootPanel;
 
 import freenet.client.FreenetJs;
 import freenet.client.UpdaterConstants;
 import freenet.client.connection.IConnectionManager;
 import freenet.client.tools.Base64;
+import freenet.client.tools.FreenetRequest;
+import freenet.client.tools.QueryParameter;
 import freenet.client.updaters.IUpdater;
 import freenet.client.updaters.ProgressBarUpdater;
 
@@ -28,18 +29,12 @@ public class DefaultUpdateManager implements IUpdateManager {
 		updaters = Collections.unmodifiableMap(list);
 	}
 
-	public DefaultUpdateManager() {
-	}
-
 	@Override
 	public void updated(String message) {
 		String elementId = message;
 		FreenetJs.log("elementiddecoded:" + elementId);
-		try {
-			new RequestBuilder(RequestBuilder.GET, IConnectionManager.dataPath + "?requestId=" + FreenetJs.requestId + "&elementId=" + elementId).sendRequest(null, new UpdaterRequestCallback(elementId));
-		} catch (RequestException re) {
-			FreenetJs.log("EXCEPTION at DefaultUpdateManager.updated!");
-		}
+		FreenetRequest.sendRequest(IConnectionManager.dataPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
+				new QueryParameter("elementId", elementId) }, new UpdaterRequestCallback(elementId));
 	}
 
 	private class UpdaterRequestCallback implements RequestCallback {

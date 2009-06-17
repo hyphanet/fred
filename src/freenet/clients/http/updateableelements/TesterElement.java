@@ -15,8 +15,11 @@ public class TesterElement extends BaseUpdateableElement {
 	
 	Timer t;
 	
-	public TesterElement(ToadletContext ctx) {
+	String id;
+	
+	public TesterElement(ToadletContext ctx,String id) {
 		super("div", ctx);
+		this.id=id;
 		this.ctx=ctx;
 		init();
 		t=new Timer(true);
@@ -40,7 +43,7 @@ public class TesterElement extends BaseUpdateableElement {
 
 	@Override
 	public String getUpdaterId(String requestId) {
-		return "test:"+requestId;
+		return "test:"+requestId+"id:"+id;
 	}
 
 	@Override

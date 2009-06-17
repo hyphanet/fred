@@ -76,6 +76,18 @@ public class PushDataManager {
 		}
 	}
 
+	public boolean failover(String originalRequestId, String newRequestId) {
+		synchronized (awaitingNotifications) {
+			if (awaitingNotifications.containsKey(originalRequestId)) {
+				awaitingNotifications.put(newRequestId, awaitingNotifications.remove(originalRequestId));
+				awaitingNotifications.notifyAll();
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+
 	public boolean keepAliveReceived(String requestId) {
 		elementLock.lock();
 		try {
@@ -91,7 +103,15 @@ public class PushDataManager {
 
 	public UpdateEvent getNextNotification(String requestId) {
 		synchronized (awaitingNotifications) {
-			if(awaitingNotifications.containsKey(requestId)==false){
+			if (awaitingNotifications.containsKey(requestId) == false) {
+				elementLock.lock();
+				try{
+					if(pages.containsKey(requestId)==false){
+						return null;
+					}
+				}finally{
+					elementLock.unlock();
+				}
 				awaitingNotifications.put(requestId, new ArrayList<UpdateEvent>());
 			}
 			while (awaitingNotifications.get(requestId).size() == 0) {

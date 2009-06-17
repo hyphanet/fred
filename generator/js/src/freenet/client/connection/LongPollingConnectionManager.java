@@ -8,6 +8,8 @@ import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Timer;
 
 import freenet.client.FreenetJs;
+import freenet.client.tools.FreenetRequest;
+import freenet.client.tools.QueryParameter;
 import freenet.client.update.IUpdateManager;
 
 public class LongPollingConnectionManager implements IConnectionManager {
@@ -20,10 +22,10 @@ public class LongPollingConnectionManager implements IConnectionManager {
 
 	private boolean			running				= false;
 
-	
-	public LongPollingConnectionManager(IUpdateManager updateManager){
-		this.updateManager=updateManager;
+	public LongPollingConnectionManager(IUpdateManager updateManager) {
+		this.updateManager = updateManager;
 	}
+
 	@Override
 	public void closeConnection() {
 		running = false;
@@ -52,26 +54,22 @@ public class LongPollingConnectionManager implements IConnectionManager {
 
 	private void sendRequest() {
 		if (running == true) {
-			try {
-				sentRequest = new RequestBuilder(RequestBuilder.GET, IConnectionManager.notificationPath+"?requestId="+FreenetJs.requestId).sendRequest(null, new RequestCallback() {
+			sentRequest = FreenetRequest.sendRequest(IConnectionManager.notificationPath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
 
-					@Override
-					public void onResponseReceived(Request request, Response response) {
-						if (response.getText().startsWith("SUCCESS:")) {
-							numOfFailedRequests = 0;
-							updateManager.updated(response.getText().substring("SUCCESS:".length()));
-						}
-						scheduleNextRequest();
+				@Override
+				public void onResponseReceived(Request request, Response response) {
+					if (response.getText().startsWith("SUCCESS:")) {
+						numOfFailedRequests = 0;
+						updateManager.updated(response.getText().substring("SUCCESS:".length()));
 					}
+					scheduleNextRequest();
+				}
 
-					@Override
-					public void onError(Request request, Throwable exception) {
-						scheduleNextRequest();
-					}
-				});
-			} catch (RequestException e) {
-				scheduleNextRequest();
-			}
+				@Override
+				public void onError(Request request, Throwable exception) {
+					scheduleNextRequest();
+				}
+			});
 		}
 	}
 

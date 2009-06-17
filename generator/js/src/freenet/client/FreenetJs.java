@@ -13,6 +13,8 @@ import freenet.client.update.DefaultUpdateManager;
  */
 public class FreenetJs implements EntryPoint {
 
+	public static final boolean			isDebug	= false;
+
 	public static String				requestId;
 
 	private static IConnectionManager	cm;
@@ -29,9 +31,15 @@ public class FreenetJs implements EntryPoint {
 
 	}
 
-	public static final native void log(String msg) /*-{
-													console.log(msg);
-													}-*/;
+	public static final void log(String msg) {
+		if (isDebug) {
+			nativeLog(msg);
+		}
+	}
+
+	public static final native void nativeLog(String msg) /*-{
+															console.log(msg);
+															}-*/;
 
 	public static void stop() {
 		cm.closeConnection();

@@ -1,10 +1,15 @@
 package freenet.client.connection;
 
+import com.google.gwt.http.client.RequestBuilder;
+import com.google.gwt.http.client.RequestCallback;
+import com.google.gwt.http.client.RequestException;
 import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Timer;
 
 import freenet.client.FreenetJs;
 import freenet.client.tools.Base64;
+import freenet.client.tools.FreenetRequest;
+import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
 import freenet.client.update.IUpdateManager;
 
@@ -40,8 +45,12 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 				if (Long.parseLong(Cookies.getCookie(LEADER_KEEPALIVE)) + sharedConnectionKeepaliveIntervalInMs * 3 < System.currentTimeMillis()) {
 					followerTakeOverTimer.cancel();
 					followerNotifierTimer.cancel();
+					String originalLeader = Cookies.getCookie(LEADER_NAME);
 					startLeading();
-					// TODO:Failover
+					if (originalLeader != null) {
+						FreenetRequest.sendRequest(IConnectionManager.failoverPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
+								new QueryParameter("originalRequestId", originalLeader) });
+					}
 				}
 			}
 		};

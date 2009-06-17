@@ -7,6 +7,8 @@ public interface IConnectionManager {
 
 	public static final String	keepalivePath		= "/keepalive/";
 
+	public static final String	failoverPath		= "/failover/";
+
 	public void openConnection();
 
 	public void closeConnection();
