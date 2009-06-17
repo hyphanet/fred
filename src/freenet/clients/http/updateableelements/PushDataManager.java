@@ -107,7 +107,7 @@ public class PushDataManager {
 				elementLock.lock();
 				try{
 					if(pages.containsKey(requestId)==false){
-						return null;
+						//return null;
 					}
 				}finally{
 					elementLock.unlock();
