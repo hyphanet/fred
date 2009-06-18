@@ -236,6 +236,14 @@ public abstract class Logger {
 		logger = new LoggerHookChain();
 	}
 
+	public synchronized static void debug(Class<?> c, String s) {
+		logger.log(c, s, DEBUG);
+	}
+
+	public synchronized static void debug(Class<?> c, String s, Throwable t) {
+		logger.log(c, s, t, DEBUG);
+	}
+	
 	public synchronized static void debug(Object o, String s) {
 		logger.log(o, s, DEBUG);
 	}
