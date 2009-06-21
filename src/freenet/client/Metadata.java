@@ -752,8 +752,8 @@ public class Metadata implements Cloneable {
 	 */
 	public boolean isSingleFileRedirect() {
 		return (((!splitfile) &&
-				(documentType == SIMPLE_REDIRECT)) || (documentType == MULTI_LEVEL_METADATA) ||
-				(documentType == ARCHIVE_MANIFEST));
+				(documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA) ||
+				(documentType == ARCHIVE_MANIFEST)));
 	}
 
 	/**
