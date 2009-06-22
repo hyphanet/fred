@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import freenet.node.Ticker;
 
@@ -20,8 +18,6 @@ public class PushDataManager {
 
 	private Map<String, Boolean>						isKeepaliveReceived		= new HashMap<String, Boolean>();
 
-	private final Lock									elementLock				= new ReentrantLock();
-
 	private Ticker										cleaner;
 
 	private CleanerTimerTask							cleanerTask				= new CleanerTimerTask();
@@ -30,101 +26,75 @@ public class PushDataManager {
 		cleaner = ticker;
 	}
 
-	public void updateElement(String id) {
+	public synchronized void updateElement(String id) {
 		boolean needsUpdate = false;
-		synchronized (awaitingNotifications) {
-			if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
-				for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
-					notificationList.add(new UpdateEvent(reqId, id));
-				}
-				needsUpdate = true;
+		if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
+			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
+				notificationList.add(new UpdateEvent(reqId, id));
 			}
-			if (needsUpdate) {
-				awaitingNotifications.notifyAll();
-			}
+			needsUpdate = true;
+		}
+		if (needsUpdate) {
+			notifyAll();
 		}
 	}
 
-	public void elementRendered(String requestUniqueId, BaseUpdateableElement element) {
-		elementLock.lock();
-		try {
-			if (pages.containsKey(requestUniqueId) == false) {
-				pages.put(requestUniqueId, new ArrayList<BaseUpdateableElement>());
-			}
-			pages.get(requestUniqueId).add(element);
-			if (elements.containsKey(element.getUpdaterId(requestUniqueId)) == false) {
-				elements.put(element.getUpdaterId(requestUniqueId), new ArrayList<String>());
-			}
-			elements.get(element.getUpdaterId(requestUniqueId)).add(requestUniqueId);
-			isKeepaliveReceived.put(requestUniqueId, true);
-			cleaner.queueTimedJob(cleanerTask, getDelayInMs());
-		} finally {
-			elementLock.unlock();
+	public synchronized void elementRendered(String requestUniqueId, BaseUpdateableElement element) {
+		if (pages.containsKey(requestUniqueId) == false) {
+			pages.put(requestUniqueId, new ArrayList<BaseUpdateableElement>());
 		}
+		pages.get(requestUniqueId).add(element);
+		if (elements.containsKey(element.getUpdaterId(requestUniqueId)) == false) {
+			elements.put(element.getUpdaterId(requestUniqueId), new ArrayList<String>());
+		}
+		elements.get(element.getUpdaterId(requestUniqueId)).add(requestUniqueId);
+		isKeepaliveReceived.put(requestUniqueId, true);
+		cleaner.queueTimedJob(cleanerTask,"cleanerTask",getDelayInMs(),false,true);
 	}
 
-	public BaseUpdateableElement getRenderedElement(String requestId, String id) {
-		elementLock.lock();
-		try {
-			if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
-				if (element.getUpdaterId(requestId).compareTo(id) == 0) {
-					element.updateState();
-					return element;
-				}
-			}
-			return null;
-		} finally {
-			elementLock.unlock();
-		}
-	}
-
-	public boolean failover(String originalRequestId, String newRequestId) {
-		synchronized (awaitingNotifications) {
-			if (awaitingNotifications.containsKey(originalRequestId)) {
-				awaitingNotifications.put(newRequestId, awaitingNotifications.remove(originalRequestId));
-				awaitingNotifications.notifyAll();
-				return true;
-			} else {
-				return false;
+	public synchronized BaseUpdateableElement getRenderedElement(String requestId, String id) {
+		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
+			if (element.getUpdaterId(requestId).compareTo(id) == 0) {
+				element.updateState();
+				return element;
 			}
 		}
+		return null;
 	}
 
-	public boolean keepAliveReceived(String requestId) {
-		elementLock.lock();
-		try {
-			if (isKeepaliveReceived.containsKey(requestId) == false) {
-				return false;
-			}
-			isKeepaliveReceived.put(requestId, true);
+	public synchronized boolean failover(String originalRequestId, String newRequestId) {
+		if (awaitingNotifications.containsKey(originalRequestId)) {
+			awaitingNotifications.put(newRequestId, awaitingNotifications.remove(originalRequestId));
+			notifyAll();
 			return true;
-		} finally {
-			elementLock.unlock();
+		} else {
+			return false;
 		}
 	}
 
-	public UpdateEvent getNextNotification(String requestId) {
-		synchronized (awaitingNotifications) {
-			if (awaitingNotifications.containsKey(requestId) == false) {
-				elementLock.lock();
-				try {
-					if (pages.containsKey(requestId) == false) {
-						// return null;
-					}
-				} finally {
-					elementLock.unlock();
-				}
-				awaitingNotifications.put(requestId, new ArrayList<UpdateEvent>());
-			}
-			while (awaitingNotifications.get(requestId).size() == 0) {
-				try {
-					awaitingNotifications.wait();
-				} catch (InterruptedException ie) {
-					return null;
-				}
-			}
-			return awaitingNotifications.get(requestId).remove(0);
+	public synchronized boolean keepAliveReceived(String requestId) {
+		if (isKeepaliveReceived.containsKey(requestId) == false) {
+			return false;
 		}
+		isKeepaliveReceived.put(requestId, true);
+		return true;
+	}
+
+	public synchronized UpdateEvent getNextNotification(String requestId) {
+		if (awaitingNotifications.containsKey(requestId) == false) {
+			if (pages.containsKey(requestId) == false) {
+				// return null;
+			}
+			awaitingNotifications.put(requestId, new ArrayList<UpdateEvent>());
+		}
+		while (awaitingNotifications.get(requestId).size() == 0) {
+			try {
+				wait();
+			} catch (InterruptedException ie) {
+				return null;
+			}
+		}
+		return awaitingNotifications.get(requestId).remove(0);
 	}
 
 	private int getDelayInMs() {
@@ -151,8 +121,7 @@ public class PushDataManager {
 
 	private class CleanerTimerTask implements Runnable {
 		public void run() {
-			elementLock.lock();
-			try {
+			synchronized (PushDataManager.this) {
 				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {
 					if (entry.getValue() == false) {
 						isKeepaliveReceived.remove(entry.getKey());
@@ -164,17 +133,13 @@ public class PushDataManager {
 							elements.remove(element.getUpdaterId(entry.getKey()));
 							element.dispose();
 						}
-						synchronized (awaitingNotifications) {
-							awaitingNotifications.remove(entry.getKey());
-						}
+						awaitingNotifications.remove(entry.getKey());
 					} else {
 						isKeepaliveReceived.put(entry.getKey(), false);
 					}
 				}
-			} finally {
-				elementLock.unlock();
-				if(isKeepaliveReceived.size()!=0){
-					cleaner.queueTimedJob(cleanerTask, getDelayInMs());
+				if (isKeepaliveReceived.size() != 0) {
+					cleaner.queueTimedJob(cleanerTask,"cleanerTask",getDelayInMs(),false,true);
 				}
 			}
 		}
