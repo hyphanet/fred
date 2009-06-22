@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import freenet.node.Ticker;
 
 public class PushDataManager {
 
@@ -22,7 +22,13 @@ public class PushDataManager {
 
 	private final Lock									elementLock				= new ReentrantLock();
 
-	private Timer										cleaner;
+	private Ticker										cleaner;
+
+	private CleanerTimerTask							cleanerTask				= new CleanerTimerTask();
+
+	public PushDataManager(Ticker ticker) {
+		cleaner = ticker;
+	}
 
 	public void updateElement(String id) {
 		boolean needsUpdate = false;
@@ -51,11 +57,7 @@ public class PushDataManager {
 			}
 			elements.get(element.getUpdaterId(requestUniqueId)).add(requestUniqueId);
 			isKeepaliveReceived.put(requestUniqueId, true);
-			if (cleaner == null) {
-				int delayInMs = (int) (UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000 * 2.1);
-				cleaner = new Timer(false);
-				cleaner.schedule(new CleanerTimerTask(), delayInMs, delayInMs);
-			}
+			cleaner.queueTimedJob(cleanerTask, getDelayInMs());
 		} finally {
 			elementLock.unlock();
 		}
@@ -105,11 +107,11 @@ public class PushDataManager {
 		synchronized (awaitingNotifications) {
 			if (awaitingNotifications.containsKey(requestId) == false) {
 				elementLock.lock();
-				try{
-					if(pages.containsKey(requestId)==false){
-						//return null;
+				try {
+					if (pages.containsKey(requestId) == false) {
+						// return null;
 					}
-				}finally{
+				} finally {
 					elementLock.unlock();
 				}
 				awaitingNotifications.put(requestId, new ArrayList<UpdateEvent>());
@@ -123,6 +125,10 @@ public class PushDataManager {
 			}
 			return awaitingNotifications.get(requestId).remove(0);
 		}
+	}
+
+	private int getDelayInMs() {
+		return (int) (UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000 * 2.1);
 	}
 
 	public class UpdateEvent {
@@ -143,8 +149,7 @@ public class PushDataManager {
 		}
 	}
 
-	private class CleanerTimerTask extends TimerTask {
-		@Override
+	private class CleanerTimerTask implements Runnable {
 		public void run() {
 			elementLock.lock();
 			try {
@@ -162,16 +167,15 @@ public class PushDataManager {
 						synchronized (awaitingNotifications) {
 							awaitingNotifications.remove(entry.getKey());
 						}
-						if (isKeepaliveReceived.size() == 0) {
-							cleaner.cancel();
-							cleaner = null;
-						}
 					} else {
 						isKeepaliveReceived.put(entry.getKey(), false);
 					}
 				}
 			} finally {
 				elementLock.unlock();
+				if(isKeepaliveReceived.size()!=0){
+					cleaner.queueTimedJob(cleanerTask, getDelayInMs());
+				}
 			}
 		}
 	}

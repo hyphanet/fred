@@ -93,7 +93,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
-	public final PushDataManager pushDataManager; 
+	public PushDataManager pushDataManager; 
 	
 	// Config Callbacks
 	private class FProxySSLCallback extends BooleanCallback  {
@@ -298,6 +298,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
 		}
+		
+		pushDataManager=new PushDataManager(getTicker());
 		bookmarkManager = new BookmarkManager(core);
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
@@ -539,8 +541,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		StaticToadlet statictoadlet = new StaticToadlet();
 		register(statictoadlet, null, "/static/", false, false);
-		
-		pushDataManager=new PushDataManager();
+
 		
 		// "Freenet is starting up..." page, to be removed at #removeStartupToadlet()
 		startupToadlet = new StartupToadlet(statictoadlet);
