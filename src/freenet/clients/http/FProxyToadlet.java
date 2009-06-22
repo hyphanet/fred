@@ -20,6 +20,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
+import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
@@ -961,6 +962,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		PushFailoverToadlet pushFailoverToadlet = new PushFailoverToadlet(client);
 		server.register(pushFailoverToadlet, null, pushFailoverToadlet.path(), true, false);
+		
+		PushTesterToadlet pushTesterToadlet = new PushTesterToadlet(client);
+		server.register(pushTesterToadlet, null, pushTesterToadlet.path(), true, false);
 	}
 	
 	/**

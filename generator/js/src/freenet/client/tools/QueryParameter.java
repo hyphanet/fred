@@ -16,4 +16,9 @@ public class QueryParameter {
 	public String getValue() {
 		return value;
 	}
+	
+	@Override
+	public String toString() {
+		return "QueryParameter[name="+name+",value="+value+"]";
+	}
 }

@@ -146,7 +146,6 @@ public class PushDataManager {
 	private class CleanerTimerTask extends TimerTask {
 		@Override
 		public void run() {
-			System.err.println("Cleaner started");
 			elementLock.lock();
 			try {
 				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {
@@ -167,15 +166,8 @@ public class PushDataManager {
 							cleaner.cancel();
 							cleaner = null;
 						}
-						System.err.println("Cleaner has deleted key:" + entry.getKey());
-						System.err.println("current status:");
-						System.err.println("awaitingNotifications:" + awaitingNotifications);
-						System.err.println("pages:" + pages);
-						System.err.println("elements:" + elements);
-						System.err.println("isKeepaliveReceived:" + isKeepaliveReceived);
 					} else {
 						isKeepaliveReceived.put(entry.getKey(), false);
-						System.err.println("Cleaner has reseted key:" + entry.getKey());
 					}
 				}
 			} finally {

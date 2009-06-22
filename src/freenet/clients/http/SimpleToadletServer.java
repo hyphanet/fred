@@ -27,6 +27,7 @@ import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.node.Ticker;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
 import freenet.support.HTMLNode;
@@ -812,6 +813,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public PageMaker getPageMaker() {
 		return pageMaker;
+	}
+	
+	public Ticker getTicker(){
+		return core.node.ps;
 	}
 
 }

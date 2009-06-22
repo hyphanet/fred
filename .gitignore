@@ -5,6 +5,8 @@
 /junitvmwatcher*
 /lib
 /generator/js/lib
+/generator/js/tests/lib
+/generator/js/tests/bin
 /src/freenet/clients/http/filter/CSSTokenizerFilter.java
 .classpath
 *.swp

@@ -1,8 +1,5 @@
 package freenet.client.connection;
 
-import com.google.gwt.http.client.RequestBuilder;
-import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
 import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Timer;
 
@@ -42,15 +39,16 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 		followerTakeOverTimer = new Timer() {
 			@Override
 			public void run() {
-				if (Long.parseLong(Cookies.getCookie(LEADER_KEEPALIVE)) + sharedConnectionKeepaliveIntervalInMs * 3 < System.currentTimeMillis()) {
+				if ((Long.parseLong(Cookies.getCookie(LEADER_KEEPALIVE)) + sharedConnectionKeepaliveIntervalInMs * 3) < getTime()) {
+					FreenetJs.log("Getting leadership lastKeepalive:" + Cookies.getCookie(LEADER_KEEPALIVE));
 					followerTakeOverTimer.cancel();
 					followerNotifierTimer.cancel();
 					String originalLeader = Cookies.getCookie(LEADER_NAME);
-					startLeading();
 					if (originalLeader != null) {
 						FreenetRequest.sendRequest(IConnectionManager.failoverPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
 								new QueryParameter("originalRequestId", originalLeader) });
 					}
+					startLeading();
 				}
 			}
 		};
@@ -78,7 +76,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 		if (updateManager == null) {
 			throw new RuntimeException("You must set the UpdateManager before opening the connection!");
 		}
-		if (Cookies.getCookie(LEADER_NAME) == null || (Cookies.getCookie(LEADER_KEEPALIVE) == null || (Long.parseLong(Cookies.getCookie(LEADER_KEEPALIVE)) + sharedConnectionKeepaliveIntervalInMs * 3) < System.currentTimeMillis())) {
+		if (Cookies.getCookie(LEADER_NAME) == null || (Cookies.getCookie(LEADER_KEEPALIVE) == null || (Long.parseLong(Cookies.getCookie(LEADER_KEEPALIVE)) + sharedConnectionKeepaliveIntervalInMs * 3) < getTime())) {
 			startLeading();
 		} else {
 			followerTakeOverTimer.scheduleRepeating(sharedConnectionKeepaliveIntervalInMs * 3);
@@ -88,12 +86,13 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 
 	private void startLeading() {
 		Cookies.setCookie(LEADER_NAME, FreenetJs.requestId, null, null, "/", false);
-		Cookies.setCookie(LEADER_KEEPALIVE, "" + System.currentTimeMillis(), null, null, "/", false);
+		Cookies.setCookie(LEADER_KEEPALIVE, "" + getTime(), null, null, "/", false);
 		processMessages();
 		longPollingManager.openConnection();
 		new Timer() {
 			public void run() {
-				Cookies.setCookie(LEADER_KEEPALIVE, "" + System.currentTimeMillis(), null, null, "/", false);
+				Cookies.setCookie(LEADER_KEEPALIVE, "" + getTime(), null, null, "/", false);
+				FreenetJs.log("Setting leader keepalive:" + Cookies.getCookie(LEADER_KEEPALIVE));
 			};
 		}.scheduleRepeating(sharedConnectionKeepaliveIntervalInMs);
 	}
@@ -112,6 +111,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 			++messageCounter;
 			Cookies.setCookie(MESSAGE_COUNTER, "" + messageCounter, null, null, "/", false);
 		}
+		Cookies.setCookie(LEADER_KEEPALIVE, "" + getTime(), null, null, "/", false);
 	}
 
 	private void processMessages() {
@@ -127,6 +127,10 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 			}
 			messageCounter++;
 		}
+	}
+	
+	private int getTime(){
+		return (int)(System.currentTimeMillis());
 	}
 
 }
