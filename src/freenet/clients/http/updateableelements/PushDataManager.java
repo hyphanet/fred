@@ -22,6 +22,8 @@ public class PushDataManager {
 
 	private CleanerTimerTask							cleanerTask				= new CleanerTimerTask();
 
+	private boolean										isScheduled				= false;
+
 	public PushDataManager(Ticker ticker) {
 		cleaner = ticker;
 	}
@@ -49,8 +51,11 @@ public class PushDataManager {
 		}
 		elements.get(element.getUpdaterId(requestUniqueId)).add(requestUniqueId);
 		isKeepaliveReceived.put(requestUniqueId, true);
-		System.err.println("Cleaner is queued(1) time:"+System.currentTimeMillis());
-		cleaner.queueTimedJob(cleanerTask,"cleanerTask",getDelayInMs(),false,true);
+		if (isScheduled == false) {
+			System.err.println("Cleaner is queued(1) time:" + System.currentTimeMillis());
+			cleaner.queueTimedJob(cleanerTask, "cleanerTask", getDelayInMs(), false, true);
+			isScheduled = true;
+		}
 	}
 
 	public synchronized BaseUpdateableElement getRenderedElement(String requestId, String id) {
@@ -123,10 +128,11 @@ public class PushDataManager {
 	private class CleanerTimerTask implements Runnable {
 		public void run() {
 			synchronized (PushDataManager.this) {
-				System.err.println("Cleaner running time:"+System.currentTimeMillis());
+				isScheduled = false;
+				System.err.println("Cleaner running time:" + System.currentTimeMillis());
 				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {
 					if (entry.getValue() == false) {
-						System.err.println("Cleaner cleaned request:"+entry.getKey());
+						System.err.println("Cleaner cleaned request:" + entry.getKey());
 						isKeepaliveReceived.remove(entry.getKey());
 						for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(entry.getKey()))) {
 							pages.get(entry.getKey()).remove(element);
@@ -138,13 +144,14 @@ public class PushDataManager {
 						}
 						awaitingNotifications.remove(entry.getKey());
 					} else {
-						System.err.println("Cleaner reseted request:"+entry.getKey());
+						System.err.println("Cleaner reseted request:" + entry.getKey());
 						isKeepaliveReceived.put(entry.getKey(), false);
 					}
 				}
-				if (isKeepaliveReceived.size() != 0) {
-					System.err.println("Cleaner is queued(2) time:"+System.currentTimeMillis());
-					cleaner.queueTimedJob(cleanerTask,"cleanerTask",getDelayInMs(),false,true);
+				if (isKeepaliveReceived.size() != 0 && isScheduled == false) {
+					System.err.println("Cleaner is queued(2) time:" + System.currentTimeMillis());
+					cleaner.queueTimedJob(cleanerTask, "cleanerTask", getDelayInMs(), false, true);
+					isScheduled = true;
 				}
 			}
 		}
