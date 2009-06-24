@@ -3,10 +3,13 @@ package freenet;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.w3c.dom.NodeList;
 
@@ -17,9 +20,11 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
 public class PushTester {
 
-	public static final String	TEST_URL	= "http://127.0.0.1:8888/pushtester";
+	public static final String	TEST_URL_PREFIX	= "http://127.0.0.1:8888";
 
-	public static final boolean	stress		= false;
+	public static final String	TEST_URL		= TEST_URL_PREFIX + "/pushtester";
+
+	public static final boolean	stress			= false;
 
 	private List<Method> getAllTestMethods() {
 		List<Method> methods = new ArrayList<Method>();
@@ -63,26 +68,38 @@ public class PushTester {
 	private void runTests(List<Method> tests) throws Exception {
 		for (Method m : tests) {
 			String testName = String.valueOf(m.getName().charAt(4)).toLowerCase().concat(m.getName().substring(5));
-			System.out.println("Testing: " + testName + (m.isAnnotationPresent(SecondsLong.class) ? ". Lasts:" + m.getAnnotation(SecondsLong.class).value() + " seconds" : ""));
+			int secondsLasts = m.isAnnotationPresent(SecondsLong.class) ? m.getAnnotation(SecondsLong.class).value() : -1;
+			System.out.println("Testing: " + testName + (secondsLasts != -1 ? " Lasts: " + secondsLasts + " seconds" : ""));
 			PrintStream err = System.err;
-			System.setErr(new PrintStream(new OutputStream() {
-
-				@Override
-				public void write(int b) throws IOException {
-				}
-			}));
 			try {
-				try {
-					m.invoke(this);
-				} finally {
-					System.setErr(err);
+				System.setErr(new PrintStream(new OutputStream() {
+
+					@Override
+					public void write(int b) throws IOException {
+					}
+				}));
+				Countdown countdown = null;
+				if (secondsLasts != -1) {
+					countdown = new Countdown(secondsLasts, System.out);
 				}
-			} catch (Exception e) {
-				System.out.println("FAILED! msg:" + e.getCause().getMessage());
-				e.printStackTrace();
-				throw new Exception("Test failed");
+				try {
+					try {
+						m.invoke(this);
+					} finally {
+						System.setErr(err);
+					}
+				} catch (Exception e) {
+					if (countdown != null) {
+						countdown.cancelTimer();
+					}
+					System.out.println("FAILED! msg:" + e.getCause().getMessage());
+					e.printStackTrace();
+					throw new Exception("Test failed");
+				}
+				System.out.println("Passed");
+			} finally {
+				System.setErr(err);
 			}
-			System.out.println("Passed");
 		}
 	}
 
@@ -127,7 +144,7 @@ public class PushTester {
 				e.printStackTrace();
 				return;
 			}
-			System.out.println("Acceptance tests:");
+			System.out.println("\nAcceptance tests:");
 			try {
 				runTests(getAllAcceptanceTests());
 			} catch (Exception e) {
@@ -136,6 +153,20 @@ public class PushTester {
 			}
 		}
 
+	}
+
+	@SecondsLong(43)
+	@TestType(Type.INTEGRATION)
+	public void testKeepalive() throws Exception {
+		WebClient c = new WebClient();
+		String requestId = ((HtmlPage) c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		if (c.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("SUCCESS") == false) {
+			throw new Exception("Initial keepalive should be successfull");
+		}
+		Thread.sleep(43000);
+		if (c.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("FAILURE") == false) {
+			throw new Exception("Timeouted keepalive should have failed");
+		}
 	}
 
 	@SecondsLong(4)
@@ -221,8 +252,35 @@ public class PushTester {
 	public static void logToWindow(WebWindow window, String msg) {
 		((HtmlPage) window.getEnclosedPage()).executeJavaScript("window.log(\"" + msg + "\");");
 	}
-	
-	public static void enableDebug(WebWindow window){
+
+	public static void enableDebug(WebWindow window) {
 		((HtmlPage) window.getEnclosedPage()).executeJavaScript("window.enableDebug();");
+	}
+
+	private class Countdown extends TimerTask {
+		private int			status;
+
+		private PrintStream	out;
+
+		private Timer		timer=new Timer(true);
+
+		public Countdown(int from, PrintStream out) {
+			status = from;
+			this.out = out;
+			timer.scheduleAtFixedRate(this, 0, 1000);
+		}
+
+		@Override
+		public void run() {
+			out.print((status--) + "..");
+			if(status==0){
+				cancel();
+			}
+		}
+
+		public void cancelTimer() {
+			timer.cancel();
+		}
+
 	}
 }

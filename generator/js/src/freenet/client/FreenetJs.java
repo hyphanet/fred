@@ -1,6 +1,10 @@
 package freenet.client;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.WindowCloseListener;
+import com.google.gwt.user.client.Window.ClosingEvent;
+import com.google.gwt.user.client.Window.ClosingHandler;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.RootPanel;
@@ -25,6 +29,11 @@ public class FreenetJs implements EntryPoint {
 	private static IConnectionManager	keepaliveManager;
 
 	public void onModuleLoad() {
+		/*Window.addWindowClosingHandler(new ClosingHandler() {
+			@Override
+			public native void onWindowClosing(ClosingEvent event) /*-{alert("Leaving");}-*//*;
+			
+		});*/
 		exportStaticMethod();
 		requestId = RootPanel.get("requestId").getElement().getAttribute("value");
 		cm = new SharedConnectionManager(new DefaultUpdateManager());
