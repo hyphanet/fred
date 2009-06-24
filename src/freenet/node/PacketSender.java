@@ -497,6 +497,8 @@ public class PacketSender implements Runnable, Ticker {
 		queueTimedJob(job, "Scheduled job: "+job, offset, false, false);
 	}
 	
+	/** FIXME: noDupes is not working at all, because it checks whether the Runnable is present,
+	 * but the TreeMap holds Jobs as values.*/
 	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway, boolean noDupes) {
 		// Run directly *if* that won't cause any priority problems.
 		if(offset <= 0 && !runOnTickerAnyway) {
