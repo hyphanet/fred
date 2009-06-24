@@ -182,5 +182,10 @@ public class LRUQueue<T> {
 	public synchronized boolean isEmpty() {
 		return hash.isEmpty();
 	}
+	
+	public synchronized void clear() {
+		list.clear();
+		hash.clear();
+	}
 }
 

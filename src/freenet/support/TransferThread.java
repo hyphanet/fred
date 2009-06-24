@@ -12,6 +12,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -33,6 +34,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	private final String mName;
 	protected final Node mNode;
 	protected final HighLevelSimpleClient mClient;
+	protected final ClientContext mClientContext;
 	protected final TempBucketFactory mTBF;
 	
 	private Thread mThread;
@@ -46,6 +48,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 	public TransferThread(Node myNode, HighLevelSimpleClient myClient, String myName) {
 		mNode = myNode;
 		mClient = myClient;
+		mClientContext = mNode.clientCore.clientContext;;
 		mTBF = mNode.clientCore.tempBucketFactory;
 		mName = myName;
 	}

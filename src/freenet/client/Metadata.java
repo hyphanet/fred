@@ -751,9 +751,9 @@ public class Metadata implements Cloneable {
 	 * Does the metadata point to a single URI?
 	 */
 	public boolean isSingleFileRedirect() {
-		return (((!splitfile) &&
-				(documentType == SIMPLE_REDIRECT)) || (documentType == MULTI_LEVEL_METADATA) ||
-				(documentType == ARCHIVE_MANIFEST));
+		return ((!splitfile) &&
+				((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA) ||
+				(documentType == ARCHIVE_MANIFEST)));
 	}
 
 	/**
