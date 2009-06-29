@@ -56,6 +56,15 @@ public class ManifestElement {
 		this.dataSize = me.dataSize;
 		this.targetURI = me.targetURI;
 	}
+	
+	public ManifestElement(ManifestElement me, String newName, String newFullName) {
+		this.name = newName;
+		this.fullName = newFullName;
+		this.data = me.data;
+		this.mimeOverride = me.mimeOverride;
+		this.dataSize = me.dataSize;
+		this.targetURI = me.targetURI;
+	}
 
 	public ManifestElement(String name, FreenetURI targetURI, String mimeOverride) {
 		this.name = name;
