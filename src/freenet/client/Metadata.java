@@ -31,28 +31,27 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 
-
 /** Metadata parser/writer class. */
 public class Metadata implements Cloneable {
-    private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 
-    static {
+	static {
 		Logger.registerClass(Metadata.class);
-    }
+	}
 
 	static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;
 	static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 1000*1000;
-	
+
 	// URI at which this Metadata has been/will be inserted.
 	FreenetURI resolvedURI;
-	
+
 	// Name at which this Metadata has been/will be inside container.
 	String resolvedName;
-	
+
 	// Actual parsed data
-	
+
 	// document type
 	byte documentType;
 	public static final byte SIMPLE_REDIRECT = 0;
@@ -83,50 +82,50 @@ public class Metadata implements Cloneable {
 	static final short FLAGS_FULL_KEYS = 32;
 //	static final short FLAGS_SPLIT_USE_LENGTHS = 64; FIXME not supported, reassign to something else if we need a new flag
 	static final short FLAGS_COMPRESSED = 128;
-	
+
 	/** Container archive type 
 	 * @see ARCHIVE_TYPE
 	 */
 	ARCHIVE_TYPE archiveType;
-	
+
 	/** Compressed splitfile codec 
 	 * @see COMPRESSOR_TYPE
 	 */
 	COMPRESSOR_TYPE compressionCodec;
-	
+
 	/** The length of the splitfile */
 	long dataLength;
 	/** The decompressed length of the compressed data */
 	long decompressedLength;
-	
+
 	/** The MIME type, as a string */
 	String mimeType;
-	
+
 	/** The compressed MIME type - lookup index for the MIME types table.
 	 * Must be between 0 and 32767.
 	 */
 	short compressedMIMEValue;
 	boolean hasCompressedMIMEParams;
 	short compressedMIMEParams;
-	
+
 	/** The simple redirect key */
 	FreenetURI simpleRedirectKey;
-	
+
 	/** Metadata is sometimes used as a key in hashtables. Therefore it needs a persistent hashCode. */
 	private final int hashCode;
-	
+
 	short splitfileAlgorithm;
 	static public final short SPLITFILE_NONREDUNDANT = 0;
 	static public final short SPLITFILE_ONION_STANDARD = 1;
 	public static final int MAX_SIZE_IN_MANIFEST = Short.MAX_VALUE;
-	
+
 	/** Splitfile parameters */
 	byte[] splitfileParams;
 	int splitfileBlocks;
 	int splitfileCheckBlocks;
 	ClientCHK[] splitfileDataKeys;
 	ClientCHK[] splitfileCheckKeys;
-	
+
 	// Manifests
 	/** Manifest entries by name */
 	HashMap<String, Metadata> manifestEntries;
@@ -144,7 +143,7 @@ public class Metadata implements Cloneable {
 			throw new Error("Yes it is!");
 		}
 	}
-	
+
 	/** Parse a block of bytes into a Metadata structure.
 	 * Constructor method because of need to catch impossible exceptions.
 	 * @throws MetadataParseException If the metadata is invalid.
@@ -158,7 +157,7 @@ public class Metadata implements Cloneable {
 			throw e1;
 		}
 	}
-	
+
 	/**
 	 * Parse a bucket of data into a Metadata structure.
 	 * @throws MetadataParseException If the parsing failed because of invalid metadata.
@@ -176,7 +175,7 @@ public class Metadata implements Cloneable {
 		}
 		return m;
 	}
-	
+
 	/** Parse some metadata from a byte[]. 
 	 * @throws IOException If the data is incomplete, or something wierd happens. 
 	 * @throws MetadataParseException */
@@ -188,7 +187,7 @@ public class Metadata implements Cloneable {
 	public int hashCode() {
 		return hashCode;
 	}
-	
+
 	/** Parse some metadata from a DataInputStream
 	 * @throws IOException If an I/O error occurs, or the data is incomplete. */
 	public Metadata(DataInputStream dis, long length) throws IOException, MetadataParseException {
@@ -215,7 +214,7 @@ public class Metadata implements Cloneable {
 			fullKeys = (flags & FLAGS_FULL_KEYS) == FLAGS_FULL_KEYS;
 			compressed = (flags & FLAGS_COMPRESSED) == FLAGS_COMPRESSED;
 		}
-		
+
 		if(documentType == ARCHIVE_MANIFEST) {
 			if(logMINOR) Logger.minor(this, "Archive manifest");
 			archiveType = ARCHIVE_TYPE.getArchiveType(dis.readShort());
@@ -228,13 +227,13 @@ public class Metadata implements Cloneable {
 			dataLength = dis.readLong();
 			if(dataLength < -1)
 				throw new MetadataParseException("Invalid real content length "+dataLength);
-			
+
 			if(dataLength == -1) {
 				if(splitfile)
 					throw new MetadataParseException("Splitfile must have a real-length");
 			}
 		}
-		
+
 		if(compressed) {
 			compressionCodec = COMPRESSOR_TYPE.getCompressorByMetadataID(dis.readShort());
 			if(compressionCodec == null)
@@ -242,7 +241,7 @@ public class Metadata implements Cloneable {
 			
 			decompressedLength = dis.readLong();
 		}
-		
+
 		if(noMIME) {
 			mimeType = null;
 			if(logMINOR) Logger.minor(this, "noMIME enabled");
@@ -271,11 +270,11 @@ public class Metadata implements Cloneable {
 			}
 			if(logMINOR) Logger.minor(this, "MIME = "+mimeType);
 		}
-		
+
 		if(dbr) {
 			throw new MetadataParseException("Do not support DBRs pending decision on putting them in the key!");
 		}
-		
+
 		if(extraMetadata) {
 			int numberOfExtraFields = (dis.readShort()) & 0xffff;
 			for(int i=0;i<numberOfExtraFields;i++) {
@@ -287,9 +286,9 @@ public class Metadata implements Cloneable {
 			}
 			extraMetadata = false; // can't parse, can't write
 		}
-		
+
 		clientMetadata = new ClientMetadata(mimeType);
-		
+
 		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
 			simpleRedirectKey = readKey(dis);
 		} else if(splitfile) {
@@ -297,21 +296,21 @@ public class Metadata implements Cloneable {
 			if(!((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) ||
 					(splitfileAlgorithm == SPLITFILE_ONION_STANDARD)))
 				throw new MetadataParseException("Unknown splitfile algorithm "+splitfileAlgorithm);
-			
+
 			if(splitfileAlgorithm == SPLITFILE_NONREDUNDANT)
 				throw new MetadataParseException("Non-redundant splitfile invalid");
-			
+
 			int paramsLength = dis.readInt();
 			if(paramsLength > MAX_SPLITFILE_PARAMS_LENGTH)
 				throw new MetadataParseException("Too many bytes of splitfile parameters: "+paramsLength);
-			
+
 			if(paramsLength > 0) {
 				splitfileParams = new byte[paramsLength];
 				dis.readFully(splitfileParams);
 			} else if(paramsLength < 0) {
 				throw new MetadataParseException("Invalid splitfile params length: "+paramsLength);
 			}
-			
+
 			splitfileBlocks = dis.readInt(); // 64TB file size limit :)
 			if(splitfileBlocks < 0)
 				throw new MetadataParseException("Invalid number of blocks: "+splitfileBlocks);
@@ -322,7 +321,7 @@ public class Metadata implements Cloneable {
 				throw new MetadataParseException("Invalid number of check blocks: "+splitfileCheckBlocks);
 			if(splitfileCheckBlocks > MAX_SPLITFILE_BLOCKS)
 				throw new MetadataParseException("Too many splitfile check-blocks (soft limit to prevent memory DoS): "+splitfileCheckBlocks);
-			
+
 			splitfileDataKeys = new ClientCHK[splitfileBlocks];
 			splitfileCheckKeys = new ClientCHK[splitfileCheckBlocks];
 			for(int i=0;i<splitfileDataKeys.length;i++)
@@ -332,18 +331,18 @@ public class Metadata implements Cloneable {
 				if((splitfileCheckKeys[i] = readCHK(dis)) == null)
 					throw new MetadataParseException("Null check key: "+i);
 		}
-		
+
 		if(documentType == SIMPLE_MANIFEST) {
 			int manifestEntryCount = dis.readInt();
 			if(manifestEntryCount < 0)
 				throw new MetadataParseException("Invalid manifest entry count: "+manifestEntryCount);
-			
+
 			manifestEntries = new HashMap<String, Metadata>();
-			
+
 			// Parse the sub-Manifest.
-			
+
 			if(logMINOR)Logger.minor(this, "Simple manifest, "+manifestEntryCount+" entries");
-			
+
 			for(int i=0;i<manifestEntryCount;i++) {
 				short nameLength = dis.readShort();
 				byte[] buf = new byte[nameLength];
@@ -366,7 +365,7 @@ public class Metadata implements Cloneable {
 			}
 			if(logMINOR) Logger.minor(this, "End of manifest"); // Make it easy to search for it!
 		}
-		
+
 		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT)) {
 			int len = dis.readShort();
 			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
@@ -376,7 +375,7 @@ public class Metadata implements Cloneable {
 			if(logMINOR) Logger.minor(this, "Archive internal redirect: "+nameInArchive+" ("+len+ ')');
 		}
 	}
-	
+
 	/**
 	 * Create an empty Metadata object 
 	 */
@@ -384,7 +383,7 @@ public class Metadata implements Cloneable {
 		hashCode = super.hashCode();
 		// Should be followed by addRedirectionManifest
 	}
-	
+
 	/**
 	 * Create a Metadata object and add data for redirection to it.
 	 * 
@@ -418,7 +417,7 @@ public class Metadata implements Cloneable {
 			manifestEntries.put(key, target);
 		}
 	}
-	
+
 	/**
 	 * Create a Metadata object and add data for redirection to it.
 	 * 
@@ -442,7 +441,7 @@ public class Metadata implements Cloneable {
 		ret.addRedirectionManifestWithMetadata(dir);
 		return ret;
 	}
-	
+
 	private void addRedirectionManifestWithMetadata(HashMap<String, Object> dir) {
 		// Simple manifest - contains actual redirects.
 		// Not archive manifest, which is basically a redirect.
@@ -533,7 +532,7 @@ public class Metadata implements Cloneable {
 		} else
 			throw new IllegalArgumentException();
 	}
-	
+
 	/**
 	 * Create a Metadata redircet object that points to resolved metadata inside container.
 	 * docType = ARCHIVE_METADATA_REDIRECT
@@ -769,7 +768,7 @@ public class Metadata implements Cloneable {
 	public boolean isArchiveManifest() {
 		return documentType == ARCHIVE_MANIFEST;
 	}
-	
+
 	/**
 	 * Is this a archive internal metadata redirect?
 	 * @return
@@ -777,7 +776,6 @@ public class Metadata implements Cloneable {
 	public boolean isArchiveMetadataRedirect() {
 		return documentType == ARCHIVE_METADATA_REDIRECT;
 	}
-
 
 	/**
 	 * Is this a Archive internal redirect?
@@ -828,7 +826,7 @@ public class Metadata implements Cloneable {
 	public void setSimpleRedirect() {
 		documentType = SIMPLE_REDIRECT;
 	}
-	
+
 	/** Is this a simple redirect?
 	 * (for KeyExplorer)
 	 */
@@ -868,21 +866,21 @@ public class Metadata implements Cloneable {
 			if(compressionCodec != null) flags |= FLAGS_COMPRESSED;
 			dos.writeShort(flags);
 		}
-		
+
 		if(documentType == ARCHIVE_MANIFEST) {
 			short code = archiveType.metadataID;
 			dos.writeShort(code);
 		}
-		
+
 		if(splitfile) {
 			dos.writeLong(dataLength);
 		}
-		
+
 		if(compressionCodec != null) {
 			dos.writeShort(compressionCodec.metadataID);
 			dos.writeLong(decompressedLength);
 		}
-		
+
 		if(!noMIME) {
 			if(compressedMIME) {
 				int x = compressedMIMEValue;
@@ -897,13 +895,13 @@ public class Metadata implements Cloneable {
 				dos.write(data);
 			}
 		}
-		
+
 		if(dbr)
 			throw new UnsupportedOperationException("No DBR support yet");
-		
+
 		if(extraMetadata)
 			throw new UnsupportedOperationException("No extra metadata support yet");
-		
+
 		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
 			writeKey(dos, simpleRedirectKey);
 		} else if(splitfile) {
@@ -913,7 +911,7 @@ public class Metadata implements Cloneable {
 				dos.write(splitfileParams);
 			} else
 				dos.writeInt(0);
-			
+
 			dos.writeInt(splitfileBlocks);
 			dos.writeInt(splitfileCheckBlocks);
 			for(int i=0;i<splitfileBlocks;i++)
@@ -921,7 +919,7 @@ public class Metadata implements Cloneable {
 			for(int i=0;i<splitfileCheckBlocks;i++)
 				writeCHK(dos, splitfileCheckKeys[i]);
 		}
-		
+
 		if(documentType == SIMPLE_MANIFEST) {
 			dos.writeInt(manifestEntries.size());
 			boolean kill = false;
@@ -968,7 +966,7 @@ public class Metadata implements Cloneable {
 				throw new MetadataUnresolvedException(meta, "Manifest data too long and not resolved");
 			}
 		}
-		
+
 		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT)) {
 			byte[] data = nameInArchive.getBytes("UTF-8");
 			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Archive internal redirect name too long");
@@ -996,7 +994,7 @@ public class Metadata implements Cloneable {
 	public ClientCHK[] getSplitfileDataKeys() {
 		return splitfileDataKeys;
 	}
-	
+
 	public ClientCHK[] getSplitfileCheckKeys() {
 		return splitfileCheckKeys;
 	}
@@ -1020,15 +1018,15 @@ public class Metadata implements Cloneable {
 	public long uncompressedDataLength() {
 		return this.decompressedLength;
 	}
-	
+
 	public FreenetURI getResolvedURI() {
 		return resolvedURI;
 	}
-	
+
 	public void resolve(FreenetURI uri) {
 		this.resolvedURI = uri;
 	}
-	
+
 	public void resolve(String name) {
 		this.resolvedName = name;
 	}
