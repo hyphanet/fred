@@ -60,7 +60,8 @@ public class Metadata implements Cloneable {
 	public static final byte ARCHIVE_MANIFEST = 3;
 	public static final byte ARCHIVE_INTERNAL_REDIRECT = 4;
 	public static final byte ARCHIVE_METADATA_REDIRECT = 5;
-	
+	public static final byte SYMBOLIC_SHORTLINK = 6;
+
 	// 2 bytes of flags
 	/** Is a splitfile */
 	boolean splitfile;
@@ -131,7 +132,7 @@ public class Metadata implements Cloneable {
 	HashMap<String, Metadata> manifestEntries;
 
 	/** Archive internal redirect: name of file in archive 
-	 *  SympolicShortLink: Target name */
+	 *  SympolicShortLink: Target name*/
 	String targetName;
 
 	ClientMetadata clientMetadata;
@@ -200,7 +201,7 @@ public class Metadata implements Cloneable {
 		if(version != 0)
 			throw new MetadataParseException("Unsupported version "+version);
 		documentType = dis.readByte();
-		if((documentType < 0) || (documentType > 5))
+		if((documentType < 0) || (documentType > 6))
 			throw new MetadataParseException("Unsupported document type: "+documentType);
 		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
 		
@@ -367,13 +368,13 @@ public class Metadata implements Cloneable {
 			if(logMINOR) Logger.minor(this, "End of manifest"); // Make it easy to search for it!
 		}
 
-		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT)) {
+		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT) || (documentType == SYMBOLIC_SHORTLINK)) {
 			int len = dis.readShort();
 			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
 			targetName = new String(buf, "UTF-8");
-			if(logMINOR) Logger.minor(this, "Archive internal redirect: "+targetName+" ("+len+ ')');
+			if(logMINOR) Logger.minor(this, "Archive and/or internal redirect: "+targetName+" ("+len+ ')');
 		}
 	}
 
@@ -521,7 +522,7 @@ public class Metadata implements Cloneable {
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
 		hashCode = super.hashCode();
-		if(docType == ARCHIVE_INTERNAL_REDIRECT) {
+		if((docType == ARCHIVE_INTERNAL_REDIRECT) || (docType == SYMBOLIC_SHORTLINK)) {
 			documentType = docType;
 			this.archiveType = archiveType;
 			// Determine MIME type
@@ -791,6 +792,16 @@ public class Metadata implements Cloneable {
 	 * if this is a archive internal redirect.
 	 */
 	public String getArchiveInternalName() {
+		if ((documentType != ARCHIVE_INTERNAL_REDIRECT) && (documentType != ARCHIVE_METADATA_REDIRECT)) throw new IllegalArgumentException();
+		return targetName;
+	}
+
+	/**
+	 * Return the name of the document referred to in the dir,
+	 * if this is a symbolic short link.
+	 */
+	public String getSymbolicShortlinkTargetName() {
+		if (documentType != SYMBOLIC_SHORTLINK) throw new IllegalArgumentException();
 		return targetName;
 	}
 
@@ -847,6 +858,11 @@ public class Metadata implements Cloneable {
 	 */
 	public String getResolvedName() {
 		return resolvedName;
+	}
+
+	/** Is this a symbilic shortlink? */
+	public boolean isSymbolicShortlink() {
+		return documentType == SYMBOLIC_SHORTLINK;
 	}
 
 	/** Write the metadata as binary. 
@@ -968,7 +984,7 @@ public class Metadata implements Cloneable {
 			}
 		}
 
-		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT)) {
+		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT) || (documentType == SYMBOLIC_SHORTLINK)) {
 			byte[] data = targetName.getBytes("UTF-8");
 			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Archive internal redirect name too long");
 			dos.writeShort(data.length);
@@ -982,7 +998,7 @@ public class Metadata implements Cloneable {
 	public boolean haveFlags() {
 		return ((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
 				|| (documentType == ARCHIVE_MANIFEST) || (documentType == ARCHIVE_INTERNAL_REDIRECT)
-				|| (documentType == ARCHIVE_METADATA_REDIRECT));
+				|| (documentType == ARCHIVE_METADATA_REDIRECT) || (documentType == SYMBOLIC_SHORTLINK));
 	}
 
 	/**
