@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import freenet.node.fcp.FCPMessage;
 import freenet.support.HTMLNode;
 
 public interface UserAlert {
@@ -75,7 +76,18 @@ public interface UserAlert {
 	 * the last few displayed on the homepage.
 	 */
 	public boolean isEventNotification();
+
+	/**
+	 * @param The identifier of the subscription
+	 * @return A FCPMessage that is sent subscribing FCPClients
+	 */
+	public FCPMessage getFCPMessage(String identifier);
 	
+	/**
+	 * @return The Unix timestamp of when the alert was created
+	 */
+	public long getCreationTime();
+
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
 	/** An error which prevents normal operation but might be temporary */

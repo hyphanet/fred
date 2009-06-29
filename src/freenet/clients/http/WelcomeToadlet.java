@@ -21,6 +21,7 @@ import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
@@ -363,10 +364,32 @@ public class WelcomeToadlet extends Toadlet {
                 if(request.isParameterSet("hasAnActivelink")) {
                 	addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden","hasAnActivelink",request.getParam("hasAnActivelink")});
                 }
+				addForm.addChild("label", "for", "name", L10n.getString("BookmarkEditorToadlet.nameLabel") + ' ');
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"text", "name", request.getParam("desc")});
+                addForm.addChild("br");
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "bookmark", "/"});
                 addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "action", "addItem"});
-                addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "addbookmark", L10n.getString("BookmarkEditorToadlet.addBookmark")});
+                addForm.addChild("label", "for", "descB", L10n.getString("BookmarkEditorToadlet.descLabel") + ' ');
+                addForm.addChild("br");
+                addForm.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"descB", "descB", "3", "70"});
+		addForm.addChild("br");
+		addForm.addChild("br");
+
+		HTMLNode peerTable = addForm.addChild("table", "class", "darknet_connections");
+		peerTable.addChild("th", "colspan", "2", L10n.getString("BookmarkEditorToadlet.recommendToFriends"));
+		for(DarknetPeerNode peer : node.getDarknetConnections()) {
+			HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_normal");
+			peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peer.hashCode() });
+			peerRow.addChild("td", "class", "peer-name").addChild("#", peer.getName());
+		}
+
+		addForm.addChild("label", "for", "descB", (L10n.getString("BookmarkEditorToadlet.publicDescLabel") + ' '));
+		addForm.addChild("br");
+		addForm.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"descB", "publicDescB", "3", "70"}, "");
+		addForm.addChild("br");
+
+		addForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "addbookmark", L10n.getString("BookmarkEditorToadlet.addBookmark")});
+
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             } else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {

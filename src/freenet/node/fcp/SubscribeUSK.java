@@ -29,7 +29,7 @@ public class SubscribeUSK implements USKCallback {
 		this.usk = message.key;
 		prio = message.prio;
 		prioProgress = message.prioProgress;
-		handler.addSubscription(identifier, this);
+		handler.addUSKSubscription(identifier, this);
 		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient);
 	}
 

@@ -32,6 +32,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.keys.KeyVerifyException;
 import freenet.l10n.L10n;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.store.FreenetStore;
@@ -1427,7 +1428,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
-	private final class CleanerStatusUserAlert implements UserAlert {
+	private final class CleanerStatusUserAlert extends AbstractUserAlert {
 		private Cleaner cleaner;
 
 		private CleanerStatusUserAlert(Cleaner cleaner) {

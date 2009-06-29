@@ -3,13 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
+import freenet.client.async.FeedCallback;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
@@ -19,16 +26,29 @@ import freenet.support.Logger;
 public class UserAlertManager implements Comparator<UserAlert> {
 	private final HashSet<UserAlert> alerts;
 	private final NodeClientCore core;
+	private long lastUpdated;
+	private final Set<FeedCallback> subscribers;
 
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
 		alerts = new LinkedHashSet<UserAlert>();
+		subscribers = new CopyOnWriteArraySet<FeedCallback>();
 	}
 
-	public void register(UserAlert alert) {
+	public void register(final UserAlert alert) {
 		synchronized (alerts) {
-			if(!alerts.contains(alert))
+			if(!alerts.contains(alert)) {
 				alerts.add(alert);
+				lastUpdated = System.currentTimeMillis();
+				// Run off-thread, because of locking, and because client
+				// callbacks may take some time
+				for (final FeedCallback subscriber : subscribers)
+					core.clientContext.mainExecutor.execute(new Runnable() {
+						public void run() {
+							subscriber.sendReply(alert.getFCPMessage(subscriber.getIdentifier()));
+						}
+					}, "FeedManager callback executor for " + subscriber);
+			}
 		}
 	}
 
@@ -307,4 +327,52 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		}
 	}
 
+	public void subscribe(FeedCallback subscriber) {
+		subscribers.add(subscriber);
+	}
+
+	public void unsubscribe(FeedCallback subscriber) {
+		subscribers.remove(subscriber);
+	}
+
+	//Formats a Unix timestamp according to RFC 3339
+	private String formatTime(long time) {
+		final Format format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+		String date = format.format(new Date(time));
+		//Z doesn't include a colon between the hour and the minutes
+		return date.substring(0, 22) + ":" + date.substring(22);
+	}
+
+	public String getAtom(String startURI) {
+		String messagesURI = startURI + "/messages/";
+		String feedURI = startURI + "/feed/";
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.append("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n");
+		sb.append("\n");
+		sb.append("  <title>").append(l10n("feedTitle")).append("</title>\n");
+		sb.append("  <link href=\"").append(feedURI).append("\" rel=\"self\"/>\n");
+		sb.append("  <link href=\"").append(startURI).append("\"/>\n");
+		sb.append("  <updated>").append(formatTime(lastUpdated)).append("</updated>\n");
+		sb.append("  <id>urn:node:").append(Base64.encode(core.node.getDarknetIdentity())).append("</id>\n");
+		sb.append("  <logo>").append("/favicon.ico").append("</logo>\n");
+		UserAlert[] alerts = getAlerts();
+		for(int i = alerts.length - 1; i >= 0; i--) {
+			UserAlert alert = alerts[i];
+			if (alert.isValid()) {
+				sb.append("\n");
+				sb.append("  <entry>\n");
+				sb.append("    <title>").append(alert.getTitle()).append("</title>\n");
+				sb.append("    <link href=\"").append(messagesURI).append("\"/>\n");
+				sb.append("    <summary>").append(alert.getShortText()).append("</summary>\n");
+				sb.append("    <content type=\"text\">").append(alert.getText()).append("</content>\n");
+				sb.append("    <id>urn:feed:").append(alert.hashCode()).append("</id>\n");
+				sb.append("    <updated>").append(formatTime(alert.getCreationTime())).append("</updated>\n");
+				sb.append("  </entry>\n");
+			}
+		}
+		sb.append("\n</feed>\n");
+		return sb.toString();
+	}
 }

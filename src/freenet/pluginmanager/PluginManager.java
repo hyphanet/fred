@@ -41,6 +41,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.Ticker;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -304,7 +305,7 @@ public class PluginManager {
 				}
 	}
 
-	class PluginLoadFailedUserAlert implements UserAlert {
+	class PluginLoadFailedUserAlert extends AbstractUserAlert {
 
 		final String filename;
 		final String message;

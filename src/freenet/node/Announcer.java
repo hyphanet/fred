@@ -19,6 +19,7 @@ import java.util.Vector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
@@ -292,7 +293,7 @@ public class Announcer {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Get the earliest time at which we had enough opennet peers. This is reset when we drop
 	 * below the threshold.
@@ -543,7 +544,7 @@ public class Announcer {
 		node.executor.execute(sender, "Announcer to "+seed);
 	}
 
-	class AnnouncementUserAlert implements UserAlert {
+	class AnnouncementUserAlert extends AbstractUserAlert {
 		public String dismissButtonText() {
 			return L10n.getString("UserAlert.hide");
 		}

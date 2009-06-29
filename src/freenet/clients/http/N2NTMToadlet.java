@@ -181,7 +181,7 @@ public class N2NTMToadlet extends Toadlet {
 							return;
 						}
 					} else {
-						status = pn.sendTextMessage(message);
+						status = pn.sendTextFeed(message);
 					}
 					
 					String sendStatusShort;

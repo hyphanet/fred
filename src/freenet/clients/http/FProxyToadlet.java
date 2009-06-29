@@ -431,6 +431,14 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 			strm.close();
 			return;
+		} else if(ks.startsWith("/feed/") || ks.equals("/feed")) {
+			//TODO Better way to find the host. Find if https is used?
+			String host = ctx.getHeaders().get("host");
+			String atom = core.alerts.getAtom("http://" + host);
+			byte[] buf = atom.getBytes("UTF-8");
+			ctx.sendReplyHeaders(200, "OK", null, "application/atom+xml", buf.length);
+			ctx.writeData(buf, 0, buf.length);
+			return;
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){
 			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
