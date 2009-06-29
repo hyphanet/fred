@@ -129,9 +129,10 @@ public class Metadata implements Cloneable {
 	// Manifests
 	/** Manifest entries by name */
 	HashMap<String, Metadata> manifestEntries;
-	
-	/** Archive internal redirect: name of file in archive */
-	String nameInArchive;
+
+	/** Archive internal redirect: name of file in archive 
+	 *  SympolicShortLink: Target name */
+	String targetName;
 
 	ClientMetadata clientMetadata;
 
@@ -371,8 +372,8 @@ public class Metadata implements Cloneable {
 			if(logMINOR) Logger.minor(this, "Reading archive internal redirect length "+len);
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
-			nameInArchive = new String(buf, "UTF-8");
-			if(logMINOR) Logger.minor(this, "Archive internal redirect: "+nameInArchive+" ("+len+ ')');
+			targetName = new String(buf, "UTF-8");
+			if(logMINOR) Logger.minor(this, "Archive internal redirect: "+targetName+" ("+len+ ')');
 		}
 	}
 
@@ -528,7 +529,7 @@ public class Metadata implements Cloneable {
 			this.compressionCodec = compressionCodec;
 			if(cm != null)
 				this.setMIMEType(cm.getMIMEType());
-			nameInArchive = arg;
+			targetName = arg;
 		} else
 			throw new IllegalArgumentException();
 	}
@@ -543,7 +544,7 @@ public class Metadata implements Cloneable {
 		noMIME = true;
 		if(docType == ARCHIVE_METADATA_REDIRECT) {
 			documentType = docType;
-			nameInArchive = name;
+			targetName = name;
 		} else
 			throw new IllegalArgumentException();
 	}
@@ -790,7 +791,7 @@ public class Metadata implements Cloneable {
 	 * if this is a archive internal redirect.
 	 */
 	public String getArchiveInternalName() {
-		return nameInArchive;
+		return targetName;
 	}
 
 	/**
@@ -968,7 +969,7 @@ public class Metadata implements Cloneable {
 		}
 
 		if((documentType == ARCHIVE_INTERNAL_REDIRECT) || (documentType == ARCHIVE_METADATA_REDIRECT)) {
-			byte[] data = nameInArchive.getBytes("UTF-8");
+			byte[] data = targetName.getBytes("UTF-8");
 			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Archive internal redirect name too long");
 			dos.writeShort(data.length);
 			dos.write(data);
