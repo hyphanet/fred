@@ -1100,4 +1100,59 @@ public class Metadata implements Cloneable {
 	public int countDocuments() {
 		return manifestEntries.size();
 	}
+
+	/**
+	 * Helper for composing manifests<BR>
+	 * It is a replacement for mkRedirectionManifestWithMetadata, used in BaseManifestPutter
+	 * <PRE>
+	 * Metadata item = &lt;Redirect to a html&gt;
+	 * SimpleManifestComposer smc = new SimpleManifestComposer();
+	 * smc.add("index.html", item);
+	 * smc.add("", item);  // make it the default item
+	 * SimpleManifestComposer subsmc = new SimpleManifestComposer();
+	 * subsmc.add("content.txt", item2);
+	 * smc.add("data", subsmc.getMetadata();
+	 * Metadata manifest = smc.getMetadata();
+	 * // manifest contains now a structure like returned from mkRedirectionManifestWithMetadata
+	 * </PRE>
+	 * 
+	 * @see BaseManifestPutter
+	 */
+	public static class SimpleManifestComposer {
+
+		private Metadata m;
+
+		/**
+		 * Create a new compose helper (an empty dir)
+		 */
+		public SimpleManifestComposer() {
+			m = new Metadata();
+			m.documentType = SIMPLE_MANIFEST;
+			m.noMIME = true;
+			m.manifestEntries = new HashMap<String, Metadata>();
+		}
+
+		/**
+		 * Add an item to the manifest
+		 * @param String the item name
+		 * @param item
+		 */
+		public void addItem(String name, Metadata item) {
+			if (name == null || item == null) throw new NullPointerException();
+			if (m == null) throw new IllegalStateException("You can't call it after getMetadata()");
+			if (m.manifestEntries.containsKey(name)) throw new IllegalStateException("You can't add a item twice: '"+name+"'");
+			m.manifestEntries.put(name, item);
+		}
+
+		/**
+		 * stop editing and return the metadata object
+		 * @return the composed metadata object
+		 */
+		public Metadata getMetadata() {
+			// after handing off the metadata object it is read only.
+			Metadata result = m;
+			m = null;
+			return result;
+		}
+	}
 }
