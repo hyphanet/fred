@@ -9,6 +9,8 @@ public interface IConnectionManager {
 
 	public static final String	failoverPath		= "/failover/";
 
+	public static final String	leavingPath			= "/leaving/";
+
 	public void openConnection();
 
 	public void closeConnection();

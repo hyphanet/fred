@@ -10,13 +10,13 @@ import freenet.node.Ticker;
 
 public class PushDataManager {
 
-	/** What notifications are waiting for the leader*/
+	/** What notifications are waiting for the leader */
 	private Map<String, List<UpdateEvent>>				awaitingNotifications	= new HashMap<String, List<UpdateEvent>>();
 
-	/** What elements are on the page*/
+	/** What elements are on the page */
 	private Map<String, List<BaseUpdateableElement>>	pages					= new HashMap<String, List<BaseUpdateableElement>>();
 
-	/** What pages are on the element*/
+	/** What pages are on the element */
 	private Map<String, List<String>>					elements				= new HashMap<String, List<String>>();
 
 	private Map<String, Boolean>						isKeepaliveReceived		= new HashMap<String, Boolean>();
@@ -81,6 +81,14 @@ public class PushDataManager {
 		}
 	}
 
+	public synchronized boolean leaving(String requestId) {
+		try {
+			return deleteRequest(requestId);
+		} finally {
+			System.err.println("Remaining pages num:" + pages.size());
+		}
+	}
+
 	public synchronized boolean keepAliveReceived(String requestId) {
 		if (isKeepaliveReceived.containsKey(requestId) == false) {
 			return false;
@@ -110,6 +118,30 @@ public class PushDataManager {
 		return (int) (UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000 * 2.1);
 	}
 
+	private boolean deleteRequest(String requestId) {
+		if (pages.get(requestId) == null) {
+			return false;
+		}
+		isKeepaliveReceived.remove(requestId);
+		for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(requestId))) {
+			pages.get(requestId).remove(element);
+			if (pages.get(requestId).size() == 0) {
+				pages.remove(requestId);
+			}
+			elements.remove(element.getUpdaterId(requestId));
+			element.dispose();
+			for (String events : awaitingNotifications.keySet()) {
+				for (UpdateEvent updateEvent : new ArrayList<UpdateEvent>(awaitingNotifications.get(events))) {
+					if (updateEvent.requestId.compareTo(requestId) == 0) {
+						awaitingNotifications.get(events).remove(updateEvent);
+					}
+				}
+			}
+		}
+		awaitingNotifications.remove(requestId);
+		return true;
+	}
+
 	public class UpdateEvent {
 		private String	requestId;
 		private String	elementId;
@@ -136,23 +168,7 @@ public class PushDataManager {
 				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {
 					if (entry.getValue() == false) {
 						System.err.println("Cleaner cleaned request:" + entry.getKey());
-						isKeepaliveReceived.remove(entry.getKey());
-						for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(entry.getKey()))) {
-							pages.get(entry.getKey()).remove(element);
-							if (pages.get(entry.getKey()).size() == 0) {
-								pages.remove(entry.getKey());
-							}
-							elements.remove(element.getUpdaterId(entry.getKey()));
-							element.dispose();
-							for(String events:awaitingNotifications.keySet()){
-								for(UpdateEvent updateEvent:new ArrayList<UpdateEvent>(awaitingNotifications.get(events))){
-									if(updateEvent.requestId.compareTo(entry.getKey())==0){
-										awaitingNotifications.get(events).remove(updateEvent);
-									}
-								}
-							}
-						}
-						awaitingNotifications.remove(entry.getKey());
+						deleteRequest(entry.getKey());
 					} else {
 						System.err.println("Cleaner reseted request:" + entry.getKey());
 						isKeepaliveReceived.put(entry.getKey(), false);

@@ -3,7 +3,6 @@ package freenet;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,10 +12,10 @@ import java.util.TimerTask;
 
 import org.w3c.dom.NodeList;
 
-import sun.misc.BASE64Decoder;
-
+import com.gargoylesoftware.htmlunit.AjaxController;
 import com.gargoylesoftware.htmlunit.TopLevelWindow;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.WebRequestSettings;
 import com.gargoylesoftware.htmlunit.WebWindow;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
@@ -182,6 +181,7 @@ public class PushTester {
 		if (c.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("FAILURE") == false) {
 			throw new Exception("Timeouted keepalive should have failed");
 		}
+		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId);
 	}
 
 	@SecondsLong(4)
@@ -196,34 +196,37 @@ public class PushTester {
 		if (current < 3 || current > 5) {
 			throw new Exception("The value is not in the expected interval:[3,5]. The current value:" + current);
 		}
+		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + p.getElementById("requestId").getAttribute("value"));
 	}
 
-	@SecondsLong(5)
+	@SecondsLong(12)
 	@TestType(Type.ACCEPTANCE)
 	public void testConnectionSharing() throws Exception {
 		WebClient c = new WebClient();
 		WebWindow w1 = new TopLevelWindow("1", c);
 		WebWindow w2 = new TopLevelWindow("2", c);
 		c.setCurrentWindow(w1);
-		c.getPage(TEST_URL);
+		String requestId1=((HtmlPage)c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
 		Thread.sleep(1000);
 		c.setCurrentWindow(w2);
-		c.getPage(TEST_URL);
+		String requestId2=((HtmlPage)c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
 		Thread.sleep(500);
 		enableDebug(w1);
 		enableDebug(w2);
-		Thread.sleep(4000);
+		Thread.sleep(10000);
 		int current = Integer.parseInt(((HtmlPage) w1.getEnclosedPage()).getElementById("content").getFirstChild().getFirstChild().getTextContent().trim());
-		if (current < 3 || current > 5) {
-			throw new Exception("The value is not in the expected interval:[3,5] for Window 1. The current value:" + current);
+		if (current < 9 || current > 11) {
+			throw new Exception("The value is not in the expected interval:[9,11] for Window 1. The current value:" + current);
 		}
 		current = Integer.parseInt(((HtmlPage) w2.getEnclosedPage()).getElementById("content").getFirstChild().getFirstChild().getTextContent().trim());
-		if (current < 3 || current > 5) {
-			throw new Exception("The value is not in the expected interval:[3,5] for Window 2. The current value:" + current);
+		if (current < 9 || current > 11) {
+			throw new Exception("The value is not in the expected interval:[9,11] for Window 2. The current value:" + current);
 		}
 		if (getLogForWindows(w2).contains("pushnotifications") || getLogForWindows(w1).contains("pushnotifications") == false) {
 			throw new Exception("Window 2 is making permanent requests or Window 1 don't");
 		}
+		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId1);
+		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId2);
 	}
 
 	@SecondsLong(15)
@@ -244,6 +247,7 @@ public class PushTester {
 		if (current < 13 || current > 15) {
 			throw new Exception("The value is not in the expected interval:[13,15] for Window 2. The current value:" + current);
 		}
+		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + ((HtmlPage)w2.getEnclosedPage()).getElementById("requestId").getAttribute("value"));
 	}
 	
 	/** Tests that the failing pages' notifications are removed nicely.*/
@@ -253,7 +257,7 @@ public class PushTester {
 		WebClient c1 = new WebClient();
 		WebClient c2 = new WebClient();
 		String requestId1 = ((HtmlPage) c1.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
-		((HtmlPage) c2.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		String requestId2 =((HtmlPage) c2.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
 		System.out.println("Pages got");
 		c1.closeAllWindows();
 		c2.closeAllWindows();
@@ -275,6 +279,24 @@ public class PushTester {
 			if(new String(Base64.decodeStandard(c1.getPage(TEST_URL_PREFIX+"/pushnotifications/?requestId="+requestId1).getWebResponse().getContentAsString().split("[:]")[1])).compareTo(requestId1)!=0){
 				throw new Exception("Only the first page should have notifications!");
 			}
+		}
+		c1.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId1);
+		c2.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId2);
+	}
+	
+	@SecondsLong(0)
+	@TestType(Type.INTEGRATION)
+	public void testLeaving() throws Exception{
+		WebClient c = new WebClient();
+		String requestId = ((HtmlPage) c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		if (c.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("SUCCESS") == false) {
+			throw new Exception("Initial keepalive should be successfull");
+		}
+		if (c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("SUCCESS") == false) {
+			throw new Exception("Leaving should always be successfull");
+		}
+		if (c.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("FAILURE") == false) {
+			throw new Exception("Keepalive should fail after leaving");
 		}
 	}
 
@@ -320,7 +342,7 @@ public class PushTester {
 		@Override
 		public void run() {
 			out.print((status--) + "..");
-			if(status==0){
+			if(status<0){
 				cancel();
 			}
 		}

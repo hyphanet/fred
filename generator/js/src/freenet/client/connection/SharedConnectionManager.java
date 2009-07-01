@@ -29,6 +29,8 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 	private LongPollingConnectionManager	longPollingManager						= new LongPollingConnectionManager(this);
 
 	private IUpdateManager					updateManager							= null;
+	
+	private boolean isLeading=false;
 
 	private Timer							followerTakeOverTimer;
 
@@ -68,6 +70,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 
 	@Override
 	public void closeConnection() {
+		Cookies.setCookie(LEADER_NAME, "", null, null, "/", false);
 		longPollingManager.closeConnection();
 	}
 
@@ -76,7 +79,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 		if (updateManager == null) {
 			throw new RuntimeException("You must set the UpdateManager before opening the connection!");
 		}
-		if (Cookies.getCookie(LEADER_NAME) == null || (Cookies.getCookie(LEADER_KEEPALIVE) == null || (Long.parseLong(Cookies.getCookie(LEADER_KEEPALIVE)) + sharedConnectionKeepaliveIntervalInMs * 3) < getTime())) {
+		if (Cookies.getCookie(LEADER_NAME) == null ||Cookies.getCookie(LEADER_NAME).trim().compareTo("")==0 || (Cookies.getCookie(LEADER_KEEPALIVE) == null || (Long.parseLong(Cookies.getCookie(LEADER_KEEPALIVE)) + sharedConnectionKeepaliveIntervalInMs * 3) < getTime())) {
 			startLeading();
 		} else {
 			followerTakeOverTimer.scheduleRepeating(sharedConnectionKeepaliveIntervalInMs * 3);
@@ -85,6 +88,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 	}
 
 	private void startLeading() {
+		isLeading=true;
 		Cookies.setCookie(LEADER_NAME, FreenetJs.requestId, null, null, "/", false);
 		Cookies.setCookie(LEADER_KEEPALIVE, "" + getTime(), null, null, "/", false);
 		processMessages();

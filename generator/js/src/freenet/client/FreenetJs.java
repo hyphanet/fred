@@ -13,6 +13,8 @@ import com.google.gwt.user.client.ui.SimplePanel;
 import freenet.client.connection.IConnectionManager;
 import freenet.client.connection.KeepaliveManager;
 import freenet.client.connection.SharedConnectionManager;
+import freenet.client.tools.FreenetRequest;
+import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
 
 /**
@@ -20,7 +22,7 @@ import freenet.client.update.DefaultUpdateManager;
  */
 public class FreenetJs implements EntryPoint {
 
-	public static boolean			isDebug	= false;
+	public static boolean				isDebug	= false;
 
 	public static String				requestId;
 
@@ -29,11 +31,13 @@ public class FreenetJs implements EntryPoint {
 	private static IConnectionManager	keepaliveManager;
 
 	public void onModuleLoad() {
-		/*Window.addWindowClosingHandler(new ClosingHandler() {
+		Window.addWindowClosingHandler(new ClosingHandler() {
 			@Override
-			public native void onWindowClosing(ClosingEvent event) /*-{alert("Leaving");}-*//*;
-			
-		});*/
+			public void onWindowClosing(ClosingEvent event) {
+				FreenetRequest.sendRequest(IConnectionManager.leavingPath, new QueryParameter("requestId",requestId));
+				cm.closeConnection();
+			}
+		});
 		exportStaticMethod();
 		requestId = RootPanel.get("requestId").getElement().getAttribute("value");
 		cm = new SharedConnectionManager(new DefaultUpdateManager());
@@ -45,19 +49,19 @@ public class FreenetJs implements EntryPoint {
 
 	public static final void log(String msg) {
 		if (isDebug) {
-			//nativeLog(msg);
+			// nativeLog(msg);
 			Panel logPanel = RootPanel.get("log");
 			if (logPanel == null) {
 				logPanel = new SimplePanel();
 				logPanel.getElement().setId("log");
 				RootPanel.get("content").add(logPanel);
 			}
-			logPanel.add(new Label("{"+System.currentTimeMillis()+"}"+msg));
+			logPanel.add(new Label("{" + System.currentTimeMillis() + "}" + msg));
 		}
 	}
-	
-	public static final void enableDebug(){
-		isDebug=true;
+
+	public static final void enableDebug() {
+		isDebug = true;
 	}
 
 	public static final native void nativeLog(String msg) /*-{
