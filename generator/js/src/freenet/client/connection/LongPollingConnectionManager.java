@@ -50,6 +50,7 @@ public class LongPollingConnectionManager implements IConnectionManager {
 				sendRequest();
 			}
 		}.schedule(Math.min((int) Math.pow(2, (numOfFailedRequests++)), 10000));
+		FreenetJs.log("Next request scheduled");
 	}
 
 	private void sendRequest() {
@@ -58,7 +59,9 @@ public class LongPollingConnectionManager implements IConnectionManager {
 
 				@Override
 				public void onResponseReceived(Request request, Response response) {
+					FreenetJs.log("AJAX response:success:"+(response.getText().startsWith("SUCCESS:")?"true":"false"));
 					if (response.getText().startsWith("SUCCESS:")) {
+						
 						numOfFailedRequests = 0;
 						updateManager.updated(response.getText().substring("SUCCESS:".length()));
 					}
@@ -67,6 +70,7 @@ public class LongPollingConnectionManager implements IConnectionManager {
 
 				@Override
 				public void onError(Request request, Throwable exception) {
+					FreenetJs.log("AJAX response:ERROR");
 					scheduleNextRequest();
 				}
 			});

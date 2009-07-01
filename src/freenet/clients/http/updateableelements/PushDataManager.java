@@ -10,10 +10,13 @@ import freenet.node.Ticker;
 
 public class PushDataManager {
 
+	/** What notifications are waiting for the leader*/
 	private Map<String, List<UpdateEvent>>				awaitingNotifications	= new HashMap<String, List<UpdateEvent>>();
 
+	/** What elements are on the page*/
 	private Map<String, List<BaseUpdateableElement>>	pages					= new HashMap<String, List<BaseUpdateableElement>>();
 
+	/** What pages are on the element*/
 	private Map<String, List<String>>					elements				= new HashMap<String, List<String>>();
 
 	private Map<String, Boolean>						isKeepaliveReceived		= new HashMap<String, Boolean>();
@@ -141,6 +144,13 @@ public class PushDataManager {
 							}
 							elements.remove(element.getUpdaterId(entry.getKey()));
 							element.dispose();
+							for(String events:awaitingNotifications.keySet()){
+								for(UpdateEvent updateEvent:new ArrayList<UpdateEvent>(awaitingNotifications.get(events))){
+									if(updateEvent.requestId.compareTo(entry.getKey())==0){
+										awaitingNotifications.get(events).remove(updateEvent);
+									}
+								}
+							}
 						}
 						awaitingNotifications.remove(entry.getKey());
 					} else {

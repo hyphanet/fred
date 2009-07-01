@@ -13,10 +13,14 @@ import java.util.TimerTask;
 
 import org.w3c.dom.NodeList;
 
+import sun.misc.BASE64Decoder;
+
 import com.gargoylesoftware.htmlunit.TopLevelWindow;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebWindow;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+
+import freenet.support.Base64;
 
 public class PushTester {
 
@@ -71,7 +75,16 @@ public class PushTester {
 			int secondsLasts = m.isAnnotationPresent(SecondsLong.class) ? m.getAnnotation(SecondsLong.class).value() : -1;
 			System.out.println("Testing: " + testName + (secondsLasts != -1 ? " Lasts: " + secondsLasts + " seconds" : ""));
 			PrintStream err = System.err;
+			PrintStream out=System.out;
 			try {
+				System.setOut(new PrintStream(new OutputStream() {
+					
+					@Override
+					public void write(int b) throws IOException {
+						// TODO Auto-generated method stub
+						
+					}
+				}));
 				System.setErr(new PrintStream(new OutputStream() {
 
 					@Override
@@ -80,7 +93,7 @@ public class PushTester {
 				}));
 				Countdown countdown = null;
 				if (secondsLasts != -1) {
-					countdown = new Countdown(secondsLasts, System.out);
+					countdown = new Countdown(secondsLasts, out);
 				}
 				try {
 					try {
@@ -92,13 +105,14 @@ public class PushTester {
 					if (countdown != null) {
 						countdown.cancelTimer();
 					}
-					System.out.println("FAILED! msg:" + e.getCause().getMessage());
+					out.println("FAILED! msg:" + e.getCause().getMessage());
 					e.printStackTrace();
 					throw new Exception("Test failed");
 				}
-				System.out.println("Passed");
+				out.println("Passed");
 			} finally {
 				System.setErr(err);
+				System.setOut(out);
 			}
 		}
 	}
@@ -160,6 +174,7 @@ public class PushTester {
 	public void testKeepalive() throws Exception {
 		WebClient c = new WebClient();
 		String requestId = ((HtmlPage) c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		c.closeAllWindows();
 		if (c.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("SUCCESS") == false) {
 			throw new Exception("Initial keepalive should be successfull");
 		}
@@ -230,6 +245,38 @@ public class PushTester {
 			throw new Exception("The value is not in the expected interval:[13,15] for Window 2. The current value:" + current);
 		}
 	}
+	
+	/** Tests that the failing pages' notifications are removed nicely.*/
+	@SecondsLong(42)
+	@TestType(Type.INTEGRATION)
+	public void testCleanerNotificationRemoval() throws Exception{
+		WebClient c1 = new WebClient();
+		WebClient c2 = new WebClient();
+		String requestId1 = ((HtmlPage) c1.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		((HtmlPage) c2.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		System.out.println("Pages got");
+		c1.closeAllWindows();
+		c2.closeAllWindows();
+		System.out.println("Windows closed");
+		if(c1.getPage(TEST_URL_PREFIX+"/pushnotifications/?requestId="+requestId1).getWebResponse().getContentAsString().startsWith("SUCCESS")==false){
+			throw new Exception("There should be a notification!");
+		}
+		System.out.println("Notifications working");
+		for(int i=0;i<21;i++){
+			Thread.sleep(2000);
+			System.out.println("Sending keepalive:"+i);
+			if(c1.getPage(TEST_URL_PREFIX+"/keepalive/?requestId="+requestId1).getWebResponse().getContentAsString().startsWith("SUCCESS")==false){
+				throw new Exception("Keepalive should be successful!");				
+			}
+		}
+		System.out.println("All keepalives sent");
+		for(int i=0;i<20;i++){
+			System.out.println("Getting notification:"+i);
+			if(new String(Base64.decodeStandard(c1.getPage(TEST_URL_PREFIX+"/pushnotifications/?requestId="+requestId1).getWebResponse().getContentAsString().split("[:]")[1])).compareTo(requestId1)!=0){
+				throw new Exception("Only the first page should have notifications!");
+			}
+		}
+	}
 
 	public static String getLogForWindows(WebWindow... windows) {
 		List<String> log = new ArrayList<String>();
@@ -282,5 +329,15 @@ public class PushTester {
 			timer.cancel();
 		}
 
+	}
+	
+	private class LoggerStream extends OutputStream{
+
+		@Override
+		public void write(int b) throws IOException {
+			// TODO Auto-generated method stub
+			
+		}
+		
 	}
 }
