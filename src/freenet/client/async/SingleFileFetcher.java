@@ -381,10 +381,23 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
 				} else {
 					if(!persistent) {
-						metadata = metadata.getDocument(name);
+						Metadata origMd = metadata;
+						metadata = origMd.getDocument(name);
+						if (metadata != null && metadata.isSymbolicShortlink()) {
+							String oldName = name;
+							name = metadata.getSymbolicShortlinkTargetName();
+							if (oldName.equals(name)) throw new FetchException(FetchException.INVALID_METADATA, "redirect loop: "+name);
+							metadata = origMd.getDocument(name);
+						}
 						thisKey = thisKey.pushMetaString(name);
 					} else {
 						Metadata newMeta = metadata.grabDocument(name);
+						if (newMeta != null && newMeta.isSymbolicShortlink()) {
+							String oldName = name;
+							name = newMeta.getSymbolicShortlinkTargetName();
+							if (oldName.equals(name)) throw new FetchException(FetchException.INVALID_METADATA, "redirect loop: "+name);
+							newMeta = metadata.getDocument(name);
+						}
 						metadata.removeFrom(container);
 						metadata = newMeta;
 						FreenetURI oldThisKey = thisKey;

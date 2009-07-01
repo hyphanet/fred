@@ -30,21 +30,21 @@ public class ManifestElement {
 	/** Redirect target */
 	final FreenetURI targetURI;
 	
-	public ManifestElement(String name, String fullName, Bucket data, String mimeOverride, long size) {
-		this.name = name;
-		this.fullName = fullName;
-		this.data = data;
-		this.mimeOverride = mimeOverride;
+	public ManifestElement(String name2, String fullName2, Bucket data2, String mimeOverride2, long size) {
+		this.name = name2;
+		this.fullName = fullName2;
+		this.data = data2;
+		this.mimeOverride = mimeOverride2;
 		this.dataSize = size;
 		this.targetURI = null;
 	}
 	
-	public ManifestElement(String name, Bucket data, String mimeOverride, long size) {
-		this.name = name;
-		this.fullName = name;
-		this.data = data;
-		this.mimeOverride = mimeOverride;
-		this.dataSize = size;
+	public ManifestElement(String name2, Bucket data2, String mimeOverride2, long size2) {
+		this.name = name2;
+		this.fullName = name2;
+		this.data = data2;
+		this.mimeOverride = mimeOverride2;
+		this.dataSize = size2;
 		this.targetURI = null;
 	}
 	
@@ -56,14 +56,23 @@ public class ManifestElement {
 		this.dataSize = me.dataSize;
 		this.targetURI = me.targetURI;
 	}
+	
+	public ManifestElement(ManifestElement me, String newName, String newFullName) {
+		this.name = newName;
+		this.fullName = newFullName;
+		this.data = me.data;
+		this.mimeOverride = me.mimeOverride;
+		this.dataSize = me.dataSize;
+		this.targetURI = me.targetURI;
+	}
 
-	public ManifestElement(String name, FreenetURI targetURI, String mimeOverride) {
-		this.name = name;
-		this.fullName = name;
+	public ManifestElement(String name2, FreenetURI targetURI2, String mimeOverride2) {
+		this.name = name2;
+		this.fullName = name2;
 		this.data = null;
-		this.mimeOverride = mimeOverride;
+		this.mimeOverride = mimeOverride2;
 		this.dataSize = -1;
-		this.targetURI = targetURI;
+		this.targetURI = targetURI2;
 	}
 	
 	@Override
