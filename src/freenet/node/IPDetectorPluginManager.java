@@ -35,7 +35,7 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class IPDetectorPluginManager implements ForwardPortCallback {
 	
-	public class PortForwardAlert implements UserAlert {
+	public class PortForwardAlert extends AbstractUserAlert {
 
 		private int[] portsNotForwarded;
 		

@@ -41,6 +41,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
@@ -2680,7 +2681,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.clientCore.alerts.register(disconnectedStillNotAckedAlert);
 	}
 	
-	private UserAlert disconnectedStillNotAckedAlert = new UserAlert() {
+	private UserAlert disconnectedStillNotAckedAlert = new AbstractUserAlert() {
 
 		public String anchor() {
 			return "disconnectedStillNotAcked";

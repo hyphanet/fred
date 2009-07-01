@@ -320,7 +320,7 @@ public class L10n {
 	* L10n.getString("testing.test", new String[]{ "test1", "test2" }, "a", "b" })
 	*
 	* @param key
-	* @param patterns : a list of patterns wich are matchable from the translation
+	* @param patterns : a list of patterns which are matchable from the translation
 	* @param values : the values corresponding to the list
 	* @return the translated string or the default value from the default language or the key if nothing is found
 	*/

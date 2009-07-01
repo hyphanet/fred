@@ -8,7 +8,7 @@ import freenet.support.HTMLNode;
  * have a bunch of UAs and switch between them knowing that more than one will never
  * be displayed at the same time.
  */
-public class ProxyUserAlert implements UserAlert {
+public class ProxyUserAlert extends AbstractUserAlert {
 
 	private UserAlert alert;
 	private final UserAlertManager uam;

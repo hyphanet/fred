@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -105,6 +106,7 @@ import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
+import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
@@ -464,9 +466,15 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED = 3;
 	/** Identifier within fproxy messages for rejecting an offer to transfer a file */
 	public static final int N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED = 4;
+	/** Identified within friend feed for the recommendation of a bookmark */
+	public static final int N2N_TEXT_MESSAGE_TYPE_BOOKMARK = 5;
+	/** Identified within friend feed for the recommendation of a file */
+	public static final int N2N_TEXT_MESSAGE_TYPE_DOWNLOAD = 6;
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
 	public static final int EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM = 3;
+	public static final int EXTRA_PEER_DATA_TYPE_BOOKMARK = 4;
+	public static final int EXTRA_PEER_DATA_TYPE_DOWNLOAD = 5;
 	public static final int PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT = 1;
 	
 	/** The bootID of the last time the node booted up. Or -1 if we don't know due to
@@ -1240,7 +1248,7 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Your freenet.ini file is corrupted! 'listenPort=-1'");
 		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false, securityLevels);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
-		
+
 		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
 		
 		nodeDBHandle = darknetCrypto.getNodeHandle(db);
@@ -3522,10 +3530,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public void receivedNodeToNodeMessage(PeerNode src, int type, ShortBuffer messageData, boolean partingMessage) {
-		boolean fromDarknet = false;
-		if(src instanceof DarknetPeerNode) {
-			fromDarknet = true;
-		}
+		boolean fromDarknet = src instanceof DarknetPeerNode;
 		
 		NodeToNodeMessageListener listener = null;
 		synchronized(this) {
@@ -3576,21 +3581,16 @@ public class Node implements TimeSkewDetectorCallback {
 			SimpleFieldSet fs = null;
 			try {
 				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
+				fs.putOverwrite("source_nodename", Base64.encode(darkSource.getName().getBytes("UTF-8")));
+				fs.putOverwrite("target_nodename", Base64.encode(getMyName().getBytes("UTF-8")));
+			} catch (UnsupportedEncodingException e) {
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			} catch (IOException e) {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
 			}
-			if(fs.get("n2nType") != null) {
-				fs.removeValue("n2nType");
-			}
 			fs.putOverwrite("n2nType", Integer.toString(type));
-			if(fs.get("receivedTime") != null) {
-				fs.removeValue("receivedTime");
-			}
 			fs.putOverwrite("receivedTime", Long.toString(System.currentTimeMillis()));
-			if(fs.get("receivedAs") != null) {
-				fs.removeValue("receivedAs");
-			}
 			fs.putOverwrite("receivedAs", "nodeToNodeMessage");
 			int fileNumber = darkSource.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
 			if( fileNumber == -1 ) {
@@ -3633,6 +3633,10 @@ public class Node implements TimeSkewDetectorCallback {
 			source.handleFproxyFileOfferAccepted(fs, fileNumber);
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED) {
 			source.handleFproxyFileOfferRejected(fs, fileNumber);
+		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_BOOKMARK) {
+			source.handleFproxyBookmarkFeed(getMyName(), fs, fileNumber);
+		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_DOWNLOAD) {
+			source.handleFproxyDownloadFeed(getMyName(), fs, fileNumber);
 		} else {
 			Logger.error(this, "Received unknown fproxy node to node message sub-type '"+type+"' from "+source.getPeer());
 		}

@@ -12,6 +12,7 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
@@ -394,7 +395,7 @@ public class SecurityLevels {
 	}
 
 	public void registerUserAlert(UserAlertManager alerts) {
-		alerts.register(new UserAlert() {
+		alerts.register(new AbstractUserAlert() {
 
 			public String anchor() {
 				return "seclevels";

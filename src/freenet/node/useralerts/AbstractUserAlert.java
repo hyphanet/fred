@@ -18,6 +18,8 @@
 
 package freenet.node.useralerts;
 
+import freenet.node.fcp.FCPMessage;
+import freenet.node.fcp.ReceivedStatusFeedMessage;
 import freenet.support.HTMLNode;
 
 /**
@@ -38,6 +40,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	private final String dismissButtonText;
 	private final boolean shouldUnregisterOnDismiss;
 	private final Object userIdentifier;
+	private final long creationTime;
 
 	protected AbstractUserAlert() {
 		this.userCanDismiss = false;
@@ -50,6 +53,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 		this.shouldUnregisterOnDismiss = false;
 		this.userIdentifier = null;
 		this.shortText = null;
+		creationTime = System.currentTimeMillis();
 	}
 
 	protected AbstractUserAlert(boolean userCanDismiss, String title, String text, String shortText, HTMLNode htmlText, short priorityClass, boolean valid, String dismissButtonText, boolean shouldUnregisterOnDismiss, Object userIdentifier) {
@@ -63,6 +67,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 		this.dismissButtonText = dismissButtonText;
 		this.shouldUnregisterOnDismiss = shouldUnregisterOnDismiss;
 		this.userIdentifier = userIdentifier;
+		creationTime = System.currentTimeMillis();
 	}
 
 	/**
@@ -154,4 +159,13 @@ public abstract class AbstractUserAlert implements UserAlert {
 	public boolean isEventNotification() {
 		return false;
 	}
+
+	public long getCreationTime()  {
+		return creationTime;
+	}
+
+	public FCPMessage getFCPMessage(String identifier) {
+		return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getCreationTime());
+	}
+
 }

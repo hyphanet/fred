@@ -17,6 +17,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.io.comm.DisconnectedException;
+import freenet.node.DarknetPeerNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -62,6 +64,7 @@ public class FCPConnectionHandler implements Closeable {
 	final Socket sock;
 	final FCPConnectionInputHandler inputHandler;
 	final Map<String, SubscribeUSK> uskSubscriptions;
+	final Map<String, SubscribeFeed> feedSubscriptions;
 	public final FCPConnectionOutputHandler outputHandler;
 	private boolean isClosed;
 	private boolean inputClosed;
@@ -96,6 +99,7 @@ public class FCPConnectionHandler implements Closeable {
 		this.bf = server.core.tempBucketFactory;
 		requestsByIdentifier = new HashMap<String, ClientRequest>();
 		uskSubscriptions = new HashMap<String, SubscribeUSK>();
+		feedSubscriptions = new HashMap<String, SubscribeFeed>();
 		this.inputHandler = new FCPConnectionInputHandler(this);
 		this.outputHandler = new FCPConnectionOutputHandler(this);
 		
@@ -116,17 +120,21 @@ public class FCPConnectionHandler implements Closeable {
 		if(foreverClient != null)
 			foreverClient.onLostConnection(this);
 		boolean dupe;
-		SubscribeUSK[] subscriptions;
+		SubscribeUSK[] uskSubscriptions2;
+		SubscribeFeed[] feedSubscriptions2;
 		synchronized(this) {
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
 			requests = requestsByIdentifier.values().toArray(requests);
-			subscriptions = uskSubscriptions.values().toArray(new SubscribeUSK[uskSubscriptions.size()]);
+			uskSubscriptions2 = uskSubscriptions.values().toArray(new SubscribeUSK[uskSubscriptions.size()]);
+			feedSubscriptions2 = feedSubscriptions.values().toArray(new SubscribeFeed[feedSubscriptions.size()]);
 			dupe = killedDupe;
 		}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection(null, server.core.clientContext);
-		for(SubscribeUSK sub : subscriptions)
+		for(SubscribeUSK sub : uskSubscriptions2)
+			sub.unsubscribe();
+		for(SubscribeFeed sub : feedSubscriptions2)
 			sub.unsubscribe();
 		if(!dupe) {
 		try {
@@ -780,16 +788,30 @@ public class FCPConnectionHandler implements Closeable {
 		return false;
 	}
 
-	public synchronized void addSubscription(String identifier, SubscribeUSK subscribeUSK) throws IdentifierCollisionException {
+	public synchronized void addUSKSubscription(String identifier, SubscribeUSK subscribeUSK) throws IdentifierCollisionException {
 		if(uskSubscriptions.containsKey(identifier)) throw new IdentifierCollisionException();
-		uskSubscriptions.put(identifier, subscribeUSK);
+			uskSubscriptions.put(identifier, subscribeUSK);
 	}
 
-	public void unsubscribe(String identifier) throws MessageInvalidException {
+	public synchronized void addFeedSubscription(String identifier, SubscribeFeed subscribeFeed) throws IdentifierCollisionException {
+		if(feedSubscriptions.containsKey(identifier)) throw new IdentifierCollisionException();
+			feedSubscriptions.put(identifier, subscribeFeed);
+	}
+
+	public void unsubscribeUSK(String identifier) throws MessageInvalidException {
 		SubscribeUSK sub;
 		synchronized(this) {
 			if(!uskSubscriptions.containsKey(identifier)) throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "No such identifier unsubscribing", identifier, false);
 			sub = uskSubscriptions.remove(identifier);
+		}
+		sub.unsubscribe();
+	}
+
+	public void unsubscribeFeed(String identifier) throws MessageInvalidException {
+		SubscribeFeed sub;
+		synchronized(this) {
+			if(!feedSubscriptions.containsKey(identifier)) throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "No such identifier unsubscribing", identifier, false);
+			sub = feedSubscriptions.remove(identifier);
 		}
 		sub.unsubscribe();
 	}

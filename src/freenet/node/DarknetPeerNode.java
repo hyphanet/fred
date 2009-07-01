@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -28,8 +29,11 @@ import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
+import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.BookmarkFeedUserAlert;
+import freenet.node.useralerts.DownloadFeedUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Base64;
@@ -534,6 +538,16 @@ public class DarknetPeerNode extends PeerNode {
 					queuedToSendN2NMExtraPeerDataFileNumbers.add(Integer.valueOf(fileNumber));
 				}
 			}
+			return true;
+		}
+		else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_BOOKMARK) {
+			Logger.normal(this, "Read friend bookmark" + fs.toString());
+			handleFproxyBookmarkFeed(getName(), fs, fileNumber);
+			return true;
+		}
+		else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_DOWNLOAD) {
+			Logger.normal(this, "Read friend download" + fs.toString());
+			handleFproxyDownloadFeed(getName(), fs, fileNumber);
 			return true;
 		}
 		Logger.error(this, "Read unknown extra peer data type '"+extraPeerDataType+"' from file "+extraPeerDataFile.getPath());
@@ -1246,13 +1260,50 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 
-	public int sendTextMessage(String message) {
+	public int sendBookmarkFeed(FreenetURI uri, String name, String description, boolean hasAnActiveLink) {
+		long now = System.currentTimeMillis();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.putSingle("URI", uri.toString());
+		fs.putSingle("Name", name);
+		fs.put("composedTime", now);
+		fs.put("hasAnActivelink", hasAnActiveLink);
+		if(description != null)
+			try {
+				fs.putSingle("Description", Base64.encode(description.getBytes("UTF-8")));
+			} catch (UnsupportedEncodingException e) {
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+
+			}
+		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_BOOKMARK);
+		System.err.println(fs.toString());
+		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
+		setPeerNodeStatus(System.currentTimeMillis());
+		return getPeerNodeStatus();
+	}
+
+	public int sendDownloadFeed(FreenetURI URI, String description) {
+		long now = System.currentTimeMillis();
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.putSingle("URI", URI.toString());
+		fs.put("composedTime", now);
+		if(description != null)
+			try {
+				fs.putSingle("Description", Base64.encode(description.getBytes("UTF-8")));
+			} catch (UnsupportedEncodingException e) {
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+
+		}
+		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_DOWNLOAD);
+		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
+		setPeerNodeStatus(System.currentTimeMillis());
+		return getPeerNodeStatus();
+	}
+
+	public int sendTextFeed(String message) {
 		long now = System.currentTimeMillis();
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_USERALERT);
 		try {
-			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
-			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
 			fs.putSingle("text", Base64.encode(message.getBytes("UTF-8")));
 			fs.put("composedTime", now);
 			sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
@@ -1488,6 +1539,56 @@ public class DarknetPeerNode extends PeerNode {
 		fo.onRejected();
 	}
 
+	public void handleFproxyBookmarkFeed(String source_nodename, SimpleFieldSet fs, int fileNumber) {
+		String target_nodename = getName();
+		String name = fs.get("Name");
+		String description = null;
+		FreenetURI uri = null;
+		boolean hasAnActiveLink;
+		long composedTime;
+		long sentTime;
+		long receivedTime;
+		composedTime = fs.getLong("composedTime", -1);
+		sentTime = fs.getLong("sentTime", -1);
+		receivedTime = fs.getLong("receivedTime", -1);
+		hasAnActiveLink = fs.getBoolean("hasAnActivelink", false);
+		try {
+			if(fs.get("Description") != null)
+				description = new String(Base64.decode(fs.get("Description")));
+			uri = new FreenetURI(fs.get("URI"));
+		} catch (MalformedURLException e) {
+			Logger.error(this, "Malformed URI in N2NTM Bookmark Feed message");
+		} catch (IllegalBase64Exception e) {
+			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
+			return;
+		}
+		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, source_nodename, target_nodename, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
+		node.clientCore.alerts.register(userAlert);
+	}
+
+	public void handleFproxyDownloadFeed(String sourceNodeName, SimpleFieldSet fs, int fileNumber) {
+		FreenetURI uri = null;
+		String description = null;
+		long composedTime;
+		long sentTime;
+		long receivedTime;
+		composedTime = fs.getLong("composedTime", -1);
+		sentTime = fs.getLong("sentTime", -1);
+		receivedTime = fs.getLong("receivedTime", -1);
+		try {
+			if(fs.get("Description") != null)
+				description = new String(Base64.decode(fs.get("Description")));
+			uri = new FreenetURI(fs.get("URI"));
+		} catch (MalformedURLException e) {
+			Logger.error(this, "Malformed URI in N2NTM File Feed message");
+		} catch (IllegalBase64Exception e) {
+			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
+			return;
+		}
+		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, sourceNodeName, getName(), description, fileNumber, uri, composedTime, sentTime, receivedTime);
+		node.clientCore.alerts.register(userAlert);
+	}
+
 	@Override
 	public String userToString() {
 		return ""+getPeer()+" : "+getName();
@@ -1552,5 +1653,5 @@ public class DarknetPeerNode extends PeerNode {
 	public final boolean shouldDisconnectAndRemoveNow() {
 		return false;
 	}
-	
+
 }

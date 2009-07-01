@@ -5,12 +5,12 @@ import com.db4o.ObjectContainer;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
-public class UnsubscribeUSKMessage extends FCPMessage {
+public class UnsubscribeFeedMessages extends FCPMessage {
 
-	public static final String NAME = "UnsubscribeUSK";
+	public static final String NAME = "UnsubscribeFeeds";
 	private final String identifier;
 
-	public UnsubscribeUSKMessage(SimpleFieldSet fs) throws MessageInvalidException {
+	public UnsubscribeFeedMessages(SimpleFieldSet fs) throws MessageInvalidException {
 		this.identifier = fs.get("Identifier");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier!", null, false);
@@ -34,7 +34,7 @@ public class UnsubscribeUSKMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		handler.unsubscribeUSK(identifier);
+		handler.unsubscribeFeed(identifier);
 	}
 
 }

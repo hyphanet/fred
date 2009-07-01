@@ -11,6 +11,7 @@ import java.util.Vector;
 
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
@@ -387,7 +388,7 @@ public class PacketSender implements Runnable, Ticker {
 		node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
 	}
 	
-	private UserAlert peersDumpedBlockedTooLongAlert = new UserAlert() {
+	private UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
 
 		public String anchor() {
 			return "disconnectedStillNotAcked";
