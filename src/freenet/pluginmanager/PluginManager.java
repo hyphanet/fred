@@ -727,7 +727,7 @@ public class PluginManager {
 		addOfficialPlugin("HelloWorld");
 		addOfficialPlugin("HelloFCP");
 		addOfficialPlugin("JSTUN", true, 2);
-		addOfficialPlugin("KeyExplorer", false, 4004);
+		addOfficialPlugin("KeyExplorer", false, 4010);
 		addOfficialPlugin("MDNSDiscovery", false, 2);
 		addOfficialPlugin("SNMP");
 		addOfficialPlugin("TestGallery");
