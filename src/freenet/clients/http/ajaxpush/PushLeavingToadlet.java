@@ -12,6 +12,10 @@ import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.api.HTTPRequest;
 
+/**
+ * This toadlet allows the client to notify the server about page leaving. All of it's data is then erased, it's elements disposed, and notifications removed. It needs the
+ * requestId parameter.
+ */
 public class PushLeavingToadlet extends Toadlet {
 
 	public PushLeavingToadlet(HighLevelSimpleClient client) {
@@ -21,8 +25,8 @@ public class PushLeavingToadlet extends Toadlet {
 	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
-		boolean deleted=((SimpleToadletServer) ctx.getContainer()).pushDataManager.leaving(requestId);
-		System.err.println("Page leaving requestid:"+requestId+" deleted:"+deleted);
+		boolean deleted = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.leaving(requestId);
+		System.err.println("Page leaving requestid:" + requestId + " deleted:" + deleted);
 		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS);
 	}
 

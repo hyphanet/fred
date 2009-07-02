@@ -11,6 +11,7 @@ import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Base64;
 import freenet.support.api.HTTPRequest;
 
+/** This toadlet provides notifications for clients. It will block until one is present. It requires the requestId parameter. */
 public class PushNotificationToadlet extends Toadlet {
 
 	protected PushNotificationToadlet(HighLevelSimpleClient client) {
@@ -23,7 +24,7 @@ public class PushNotificationToadlet extends Toadlet {
 		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getNextNotification(requestId);
 		String elementRequestId = event.getRequestId();
 		String elementId = event.getElementId();
-		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS+":" + Base64.encodeStandard(elementRequestId.getBytes()) + SEPARATOR +elementId);
+		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(elementRequestId.getBytes()) + SEPARATOR + elementId);
 	}
 
 	@Override

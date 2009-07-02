@@ -7,6 +7,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.api.HTTPRequest;
 
+/** This toadlet receives keepalives. It requires the requestId parameter. If the keepalive is failed, the request is already deleted. */
 public class PushKeepaliveToadlet extends Toadlet {
 
 	protected PushKeepaliveToadlet(HighLevelSimpleClient client) {

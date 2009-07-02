@@ -12,6 +12,7 @@ import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.TesterElement;
 import freenet.support.api.HTTPRequest;
 
+/** This toadlet provides a simple page with pushed elements, making it suitable for automated tests. */
 public class PushTesterToadlet extends Toadlet {
 
 	public PushTesterToadlet(HighLevelSimpleClient client) {
@@ -20,11 +21,11 @@ public class PushTesterToadlet extends Toadlet {
 
 	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		PageNode pageNode=ctx.getPageMaker().getPageNode("Push tester", false,ctx);
+		PageNode pageNode = ctx.getPageMaker().getPageNode("Push tester", false, ctx);
 		pageNode.content.addChild(new TesterElement(ctx, "1"));
 		writeHTMLReply(ctx, 200, "OK", pageNode.outer.generate());
 	}
-	
+
 	@Override
 	public String path() {
 		return "/pushtester/";
