@@ -13,6 +13,7 @@ import com.google.gwt.user.client.ui.SimplePanel;
 import freenet.client.connection.IConnectionManager;
 import freenet.client.connection.KeepaliveManager;
 import freenet.client.connection.SharedConnectionManager;
+import freenet.client.dynamics.TimeIncrementer;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
@@ -44,7 +45,7 @@ public class FreenetJs implements EntryPoint {
 		keepaliveManager = new KeepaliveManager();
 		cm.openConnection();
 		keepaliveManager.openConnection();
-
+		new TimeIncrementer().start();
 	}
 
 	public static final void log(String msg) {

@@ -23,11 +23,13 @@ import freenet.client.async.ClientContext;
 import freenet.clients.http.ajaxpush.PushLeavingToadlet;
 import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.bookmark.BookmarkManager;
+import freenet.clients.http.complexhtmlnodes.SecondCounterNode;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.clients.http.updateableelements.ProgressBarElement;
+import freenet.clients.http.updateableelements.ProgressInfoElement;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
@@ -318,7 +320,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 	
-	private static String l10n(String msg) {
+	public static String l10n(String msg) {
 		return L10n.getString("FProxyToadlet."+msg);
 	}
 
@@ -566,25 +568,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
-				infoboxContent.addChild("#", l10n("filenameLabel")+ " ");
-				infoboxContent.addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
-				if(fr.mimeType != null) infoboxContent.addChild("br", l10n("contentTypeLabel")+" "+fr.mimeType);
-				if(fr.size > 0) infoboxContent.addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
-				if(core.isAdvancedModeEnabled()) {
-					infoboxContent.addChild("br", l10n("blocksDetail", 
-							new String[] { "fetched", "required", "total", "failed", "fatallyfailed" },
-							new String[] { Integer.toString(fr.fetchedBlocks), Integer.toString(fr.requiredBlocks), Integer.toString(fr.totalBlocks), Integer.toString(fr.failedBlocks), Integer.toString(fr.fatallyFailedBlocks) }));
-				}
-				infoboxContent.addChild("br", l10n("timeElapsedLabel")+" "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
-				long eta = fr.eta;
-				if(eta > 0)
-					infoboxContent.addChild("br", "ETA: "+TimeUtil.formatTime(eta));
-				if(fr.goneToNetwork)
-					infoboxContent.addChild("p", l10n("progressDownloading"));
-				else
-					infoboxContent.addChild("p", l10n("progressCheckingStore"));
-				if(!fr.finalizedBlocks)
-					infoboxContent.addChild("p", l10n("progressNotFinalized"));
+				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, maxSize, core.isAdvancedModeEnabled(), ctx));
 				
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
 				HTMLNode progressCell = table.addChild("tr").addChild("td", "class", "request-progress");
@@ -800,7 +784,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		return L10n.getString("FProxyToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 	
-	private String l10n(String key, String[] pattern, String[] value) {
+	public static String l10n(String key, String[] pattern, String[] value) {
 		return L10n.getString("FProxyToadlet."+key, pattern, value);
 	}
 
