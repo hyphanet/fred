@@ -13,13 +13,13 @@ public class SendDownloadFeedMessage extends SendFeedMessage {
 
 	public final static String NAME = "SendDownloadFeed";
 	private final FreenetURI uri;
-	private final String description;
+	private final byte[] description;
 
 	public SendDownloadFeedMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		super(fs);
 		try {
 			String encodedDescription = fs.get("Description");
-			description = encodedDescription == null ? null : new String(Base64.decode(encodedDescription));
+			description = encodedDescription == null ? null : Base64.decode(encodedDescription);
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (IllegalBase64Exception e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, e.getMessage(),
@@ -34,12 +34,8 @@ public class SendDownloadFeedMessage extends SendFeedMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		fs.putSingle("URI", uri.toString());
-		try {
 			if (description != null)
-				fs.putSingle("Description", Base64.encode(description.getBytes("UTF-8")));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+				fs.putSingle("Description", Base64.encode(description));
 		return fs;
 	}
 
@@ -50,6 +46,10 @@ public class SendDownloadFeedMessage extends SendFeedMessage {
 
 	@Override
 	protected int handleFeed(DarknetPeerNode pn) {
-		return pn.sendDownloadFeed(uri, description);
+		try {
+			return pn.sendDownloadFeed(uri, new String(description, "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+		}
 	}
 }

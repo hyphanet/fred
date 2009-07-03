@@ -974,6 +974,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private long moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
 		if(queue == null) return Long.MAX_VALUE;
 		long now = System.currentTimeMillis();
+		if(logMINOR) Logger.minor(this, "Moving keys from cooldown queue persistent="+persistent);
 		/*
 		 * Only go around once. We will be called again. If there are keys to move, then RequestStarter will not
 		 * sleep, because it will start them. Then it will come back here. If we are off-thread i.e. on the database

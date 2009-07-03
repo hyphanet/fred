@@ -263,7 +263,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 
 					form.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "action", req.getParam("action")});
 
-					form.addChild("input", new String[]{"type", "value"}, new String[]{"submit", L10n.getString("BookmarkEditorToadlet.save")});
+					form.addChild("input", new String[]{"type", "value"}, new String[]{"submit", "share".equals(action) ? L10n.getString("BookmarkEditorToadlet.share") : L10n.getString("BookmarkEditorToadlet.save")});
 				} else if("up".equals(action))
 					bookmarkManager.moveBookmarkUp(bookmarkPath, true);
 				else if("down".equals(action))

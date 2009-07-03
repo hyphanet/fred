@@ -585,16 +585,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				return;
 			} else if (request.isPartSet("recommend_request")) {
-				PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("QueueToadlet.recommendAFileToAFriend"), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("QueueToadlet.recommendAFileToFriends"), ctx);
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
-                HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", L10n.getString("QueueToadlet.recommendAFileToAFriend"), contentNode);
+                HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", L10n.getString("QueueToadlet.recommendAFileToFriends"), contentNode);
                 HTMLNode form = ctx.addFormChild(infoboxContent, "/downloads/", "recommendForm2");
+                String key = request.getPartAsString("URI", MAX_KEY_LENGTH);
+                form.addChild("#", L10n.getString("QueueToadlet.key") + ":");
+                form.addChild("br");
+                form.addChild("#", key);
+                form.addChild("br");
 				form.addChild("label", "for", "descB", (L10n.getString("QueueToadlet.recommendDescription") + ' '));
 				form.addChild("br");
 				form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"descB", "description", "3", "70"});
 				form.addChild("br");
-                form.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "URI", request.getPartAsString("URI", MAX_KEY_LENGTH)});
+                form.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "URI", key});
                 form.addChild("br");
 
 				HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");

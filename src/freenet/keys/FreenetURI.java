@@ -34,7 +34,7 @@ import freenet.support.io.FileUtil;
 /**
  * Note that the metadata pairs below are not presently supported. They are supported
  * by the old (0.5) code however.
- * 
+ *
  * FreenetURI handles parsing and creation of the Freenet URI format, defined
  * as follows:
  * <p>
@@ -92,6 +92,9 @@ public class FreenetURI implements Cloneable {
 
 	private final String keyType,  docName;
 	private final String[] metaStr;
+	/* for SSKs, routingKey is actually the pkHash. the actual routing key is
+	 * calculated in NodeSSK and is a function of pkHash and the docName
+	 */
 	private final byte[] routingKey,  cryptoKey,  extra;
 	private final long suggestedEdition; // for USKs
 	private boolean hasHashCode;
@@ -157,11 +160,11 @@ public class FreenetURI implements Cloneable {
 			return true;
 		}
 	}
-	
+
 	public boolean equalsKeypair(FreenetURI u2) {
 		if((routingKey != null) && (cryptoKey != null))
 			return Arrays.equals(routingKey, u2.routingKey) && Arrays.equals(cryptoKey, u2.cryptoKey);
-		
+
 		return false;
 	}
 
@@ -262,12 +265,12 @@ public class FreenetURI implements Cloneable {
 
 	// Strip http:// and freenet: prefix
 	protected final static Pattern URI_PREFIX = Pattern.compile("^(http://[^/]+/+)?(freenet:)?");
-	
+
 	public FreenetURI(String URI) throws MalformedURLException {
 //		this.uniqueHashCode = super.hashCode();
 		if(URI == null)
 			throw new MalformedURLException("No URI specified");
-		
+
 		URI = URI.trim();
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0)
 			// Encoded URL?
@@ -276,9 +279,9 @@ public class FreenetURI implements Cloneable {
 			} catch(URLEncodedFormatException e) {
 				throw new MalformedURLException("Invalid URI: no @ or /, or @ or / is escaped but there are invalid escapes");
 			}
-		
+
 		URI = URI_PREFIX.matcher(URI).replaceFirst("");
-			
+
 		// decode keyType
 		int atchar = URI.indexOf('@');
 		if(atchar == -1)
@@ -286,7 +289,7 @@ public class FreenetURI implements Cloneable {
 
 		String _keyType = URI.substring(0, atchar).toUpperCase();
 		URI = URI.substring(atchar + 1);
-		
+
 		boolean validKeyType = false;
 		for(int i = 0; i < VALID_KEY_TYPES.length; i++) {
 			if (_keyType.equals(VALID_KEY_TYPES[i])) {
@@ -884,7 +887,7 @@ public class FreenetURI implements Cloneable {
 	public URI toURI(String basePath) throws URISyntaxException {
 		return new URI(basePath + toString(false, false));
 	}
-	
+
 	public boolean isSSK() {
 		return "SSK".equals(keyType);
 	}
@@ -893,7 +896,7 @@ public class FreenetURI implements Cloneable {
 		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
 		container.delete(this);
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		if(this == FreenetURI.EMPTY_CHK_URI) {
 			throw new RuntimeException("Storing static CHK@ to database - can't remove it!");
@@ -908,11 +911,11 @@ public class FreenetURI implements Cloneable {
 		}
 		return true;
 	}
-	
+
 	public void objectOnDelete(ObjectContainer container) {
 		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Deleting URI", new Exception("debug"));
 	}
-	
+
 	public boolean isUSK() {
 		return "USK".equals(keyType);
 	}
@@ -929,7 +932,7 @@ public class FreenetURI implements Cloneable {
 	public boolean isSSKForUSK() {
 		return keyType.equalsIgnoreCase("SSK") && docName.matches(".*\\-[0-9]+");
 	}
-	
+
 	public FreenetURI uskForSSK() {
 		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
 		if (!docName.matches(".*\\-[0-9]+"))
@@ -941,14 +944,14 @@ public class FreenetURI implements Cloneable {
 
 		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
 	}
-	
+
 	public long getEdition() {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;
 		else if(keyType.equalsIgnoreCase("SSK")) {
 			if (!docName.matches(".*\\-[0-9]+")) /* Taken from uskForSSK, also modify there if necessary */
 				throw new IllegalStateException();
-			
+
 			return Long.valueOf(docName.substring(docName.lastIndexOf('-') + 1, docName.length()));
 		} else
 			throw new IllegalStateException();

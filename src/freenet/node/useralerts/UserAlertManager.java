@@ -42,12 +42,12 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				lastUpdated = System.currentTimeMillis();
 				// Run off-thread, because of locking, and because client
 				// callbacks may take some time
-				for (final FeedCallback subscriber : subscribers)
-					core.clientContext.mainExecutor.execute(new Runnable() {
-						public void run() {
+				core.clientContext.mainExecutor.execute(new Runnable() {
+					public void run() {
+						for (FeedCallback subscriber : subscribers)
 							subscriber.sendReply(alert.getFCPMessage(subscriber.getIdentifier()));
-						}
-					}, "FeedManager callback executor for " + subscriber);
+					}
+				}, "UserAlertManager callback executor");
 			}
 		}
 	}
@@ -344,7 +344,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	public String getAtom(String startURI) {
-		String messagesURI = startURI + "/messages/";
+		String messagesURI = startURI + "/alerts/";
 		String feedURI = startURI + "/feed/";
 
 		StringBuilder sb = new StringBuilder();
@@ -364,10 +364,10 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				sb.append("\n");
 				sb.append("  <entry>\n");
 				sb.append("    <title>").append(alert.getTitle()).append("</title>\n");
-				sb.append("    <link href=\"").append(messagesURI).append("\"/>\n");
+				sb.append("    <link href=\"").append(messagesURI).append("#").append(alert.anchor()).append("\"/>\n");
 				sb.append("    <summary>").append(alert.getShortText()).append("</summary>\n");
 				sb.append("    <content type=\"text\">").append(alert.getText()).append("</content>\n");
-				sb.append("    <id>urn:feed:").append(alert.hashCode()).append("</id>\n");
+				sb.append("    <id>urn:feed:").append(alert.anchor()).append("</id>\n");
 				sb.append("    <updated>").append(formatTime(alert.getCreationTime())).append("</updated>\n");
 				sb.append("  </entry>\n");
 			}
