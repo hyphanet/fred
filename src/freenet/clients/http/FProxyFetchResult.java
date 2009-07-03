@@ -38,7 +38,7 @@ public class FProxyFetchResult {
 	
 	
 	/** Failed */
-	final FetchException failed;
+	public final FetchException failed;
 	
 	final FProxyFetchInProgress progress;
 	final boolean hasWaited;

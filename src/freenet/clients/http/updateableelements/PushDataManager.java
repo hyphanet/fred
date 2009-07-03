@@ -46,7 +46,10 @@ public class PushDataManager {
 		boolean needsUpdate = false;
 		if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
 			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
-				notificationList.add(new UpdateEvent(reqId, id));
+				UpdateEvent updateEvent = new UpdateEvent(reqId, id);
+				if (notificationList.contains(updateEvent) == false) {
+					notificationList.add(updateEvent);
+				}
 			}
 			needsUpdate = true;
 		}
@@ -76,6 +79,8 @@ public class PushDataManager {
 		elements.get(element.getUpdaterId(requestUniqueId)).add(requestUniqueId);
 		// The request needs to be tracked
 		isKeepaliveReceived.put(requestUniqueId, true);
+		
+		awaitingNotifications.put(requestUniqueId, new ArrayList<UpdateEvent>());
 		// If the Cleaner isn't running, then we schedule it to clear this request if failing
 		if (isScheduled == false) {
 			System.err.println("Cleaner is queued(1) time:" + System.currentTimeMillis());
@@ -160,15 +165,15 @@ public class PushDataManager {
 	 * @return The next notification when present
 	 */
 	public synchronized UpdateEvent getNextNotification(String requestId) {
-		if (awaitingNotifications.containsKey(requestId) == false) {
-			awaitingNotifications.put(requestId, new ArrayList<UpdateEvent>());
-		}
-		while (awaitingNotifications.get(requestId).size() == 0) {
+		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0) {
 			try {
 				wait();
 			} catch (InterruptedException ie) {
 				return null;
 			}
+		}
+		if (awaitingNotifications.get(requestId) == null) {
+			return null;
 		}
 		return awaitingNotifications.get(requestId).remove(0);
 	}
@@ -186,18 +191,20 @@ public class PushDataManager {
 	 * @return Was a request deleted?
 	 */
 	private boolean deleteRequest(String requestId) {
-		// If the page has no pushed element, then it doesn't need deletion
-		if (pages.get(requestId) == null) {
+		if (isKeepaliveReceived.containsKey(requestId) == false) {
 			return false;
 		}
 		isKeepaliveReceived.remove(requestId);
-		// Iterate over all the pushed elements presen on the page
+		// Iterate over all the pushed elements present on the page
 		for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(requestId))) {
 			pages.get(requestId).remove(element);
 			if (pages.get(requestId).size() == 0) {
 				pages.remove(requestId);
 			}
-			elements.remove(element.getUpdaterId(requestId));
+			elements.get(element.getUpdaterId(requestId)).remove(requestId);
+			if (elements.get(element.getUpdaterId(requestId)).size() == 0) {
+				elements.remove(element.getUpdaterId(requestId));
+			}
 			element.dispose();
 			// Delete all notification originated from the deleted element
 			for (String events : awaitingNotifications.keySet()) {
@@ -229,12 +236,24 @@ public class PushDataManager {
 		public String getElementId() {
 			return elementId;
 		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if(obj instanceof UpdateEvent){
+				UpdateEvent o=(UpdateEvent)obj;
+				if(o.getRequestId().compareTo(requestId)==0 && o.getElementId().compareTo(elementId)==0){
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 
 	/** A task for the Cleaner, that periodically checks for failed requests. */
 	private class CleanerTimerTask implements Runnable {
 		public void run() {
 			synchronized (PushDataManager.this) {
+				System.err.println("Cleaner running:" + isKeepaliveReceived);
 				isScheduled = false;
 				System.err.println("Cleaner running time:" + System.currentTimeMillis());
 				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {

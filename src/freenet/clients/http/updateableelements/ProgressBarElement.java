@@ -43,7 +43,7 @@ public class ProgressBarElement extends BaseUpdateableElement {
 		if (fr == null) {
 			addChild("div", "No fetcher found");
 		}
-		if (fr.isFinished()) {
+		if (fr.isFinished() || fr.hasData() || fr.failed != null) {
 			// If finished then we just send a FINISHED text. It will reload the page
 			setContent(UpdaterConstants.FINISHED);
 		} else {

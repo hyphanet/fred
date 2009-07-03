@@ -133,8 +133,8 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 		}
 	}
 	
-	private int getTime(){
-		return (int)(System.currentTimeMillis());
+	private long getTime(){
+		return System.currentTimeMillis();
 	}
 
 }

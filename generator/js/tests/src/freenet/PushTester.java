@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.jws.WebParam;
+
 import org.w3c.dom.NodeList;
 
 import com.gargoylesoftware.htmlunit.AjaxController;
@@ -319,7 +321,7 @@ public class PushTester {
 	}
 
 	public static void logToWindow(WebWindow window, String msg) {
-		((HtmlPage) window.getEnclosedPage()).executeJavaScript("window.log(\"" + msg + "\");");
+		((HtmlPage) window.getEnclosedPage()).executeJavaScript("window.log(\"" + msg.replace("\"", "\\\"") + "\");");
 	}
 
 	public static void enableDebug(WebWindow window) {
