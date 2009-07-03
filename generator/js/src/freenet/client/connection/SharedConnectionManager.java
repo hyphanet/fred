@@ -70,7 +70,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 
 	@Override
 	public void closeConnection() {
-		Cookies.setCookie(LEADER_NAME, "", null, null, "/", false);
+		stopLeading();
 		longPollingManager.closeConnection();
 	}
 
@@ -99,6 +99,10 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 				FreenetJs.log("Setting leader keepalive:" + Cookies.getCookie(LEADER_KEEPALIVE));
 			};
 		}.scheduleRepeating(sharedConnectionKeepaliveIntervalInMs);
+	}
+	
+	private void stopLeading(){
+		Cookies.setCookie(LEADER_NAME, "", null, null, "/", false);
 	}
 
 	@Override

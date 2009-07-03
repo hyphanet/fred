@@ -8,6 +8,7 @@ import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Timer;
 
 import freenet.client.FreenetJs;
+import freenet.client.UpdaterConstants;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.IUpdateManager;
@@ -59,11 +60,14 @@ public class LongPollingConnectionManager implements IConnectionManager {
 
 				@Override
 				public void onResponseReceived(Request request, Response response) {
-					FreenetJs.log("AJAX response:success:"+(response.getText().startsWith("SUCCESS:")?"true":"false"));
-					if (response.getText().startsWith("SUCCESS:")) {
+					FreenetJs.log("AJAX response:success:"+(response.getText().startsWith(UpdaterConstants.SUCCESS)?"true":"false"));
+					if (response.getText().startsWith(UpdaterConstants.SUCCESS)) {
 						
 						numOfFailedRequests = 0;
 						updateManager.updated(response.getText().substring("SUCCESS:".length()));
+					}
+					if(response.getText().startsWith(UpdaterConstants.FAILURE)){
+						FreenetJs.stop();
 					}
 					scheduleNextRequest();
 				}
