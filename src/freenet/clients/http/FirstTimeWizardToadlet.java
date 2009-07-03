@@ -572,6 +572,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return -1;
 		
 		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
+		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
+		if(downstreamBWLimit > 0 && downstreamBWLimit < 65536 || upstreamBWLimit > 0 && upstreamBWLimit < 8192) {
+			// These are kilobits, not bits, per second, right?
+			// Assume the router is buggy and don't autoconfigure.
+			System.err.println("Buggy router? downstream: "+downstreamBWLimit+" upstream: "+upstreamBWLimit+" - these are supposed to be in bits per second!");
+			return -1;
+		}
 		if(downstreamBWLimit > 0) {
 			int bytes = (downstreamBWLimit / 8) - 1;
 			String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2 / 3);
@@ -582,7 +589,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		}
 		
 		// We don't mind if the downstreamBWLimit couldn't be set, but upstreamBWLimit is important
-		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
 		if(upstreamBWLimit > 0) {
 			int bytes = (upstreamBWLimit / 8) - 1;
 			if(bytes < 16384) return 8192;
