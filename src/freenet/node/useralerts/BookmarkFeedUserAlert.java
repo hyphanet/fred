@@ -1,6 +1,7 @@
 package freenet.node.useralerts;
 
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.fcp.ReceivedBookmarkFeed;
 import freenet.support.HTMLNode;
@@ -37,17 +38,21 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String getTitle() {
-		return sourceNodeName + " recommends you a freesite";
+		return l10n("title", "from", sourceNodeName);
 	}
 
 	@Override
 	public String getText() {
-		return "Name: " + name + "\nURI: " + uri + "\nDescription: " + description;
+		StringBuilder sb = new StringBuilder();
+		sb.append(l10n("peerName")).append("\n").append(name).append("\n");
+		sb.append(l10n("bookmarkURI")).append("\n").append(uri).append("\n");
+		sb.append(l10n("bookmarkDescription")).append("\n").append(description);
+		return sb.toString();
 	}
 
 	@Override
 	public String getShortText() {
-		return sourceNodeName + " recommends you a freesite";
+		return getTitle();
 	}
 
 	@Override
@@ -58,22 +63,35 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 				.addChild(
 						"img",
 						new String[] { "src", "alt", "title" },
-						new String[] { "/static/icon/bookmark-new.png", "Add as a bookmark",
-								"Add as a bookmark" });
+						new String[] { "/static/icon/bookmark-new.png", l10n("addAsABookmark"),
+								l10n("addAsABookmark") });
 		alertNode.addChild("a", "href", uri.toString()).addChild("#", name);
 		if (description != null && !description.isEmpty()) {
+			String[] lines = description.split("\n");
 			alertNode.addChild("br");
 			alertNode.addChild("br");
-			alertNode.addChild("#", "Description:");
+			alertNode.addChild("#", l10n("bookmarkDescription"));
 			alertNode.addChild("br");
-			alertNode.addChild("#", description);
+			for (int i = 0; i < lines.length; i++) {
+				alertNode.addChild("#", lines[i]);
+				if (i != lines.length - 1)
+					alertNode.addChild("br");
+			}
 		}
 		return alertNode;
 	}
 
 	@Override
 	public String dismissButtonText() {
-		return "Delete";
+		return l10n("delete");
+	}
+
+	private String l10n(String key) {
+		return L10n.getString("BookmarkFeedUserAlert." + key);
+	}
+
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("BookmarkFeedUserAlert." + key, pattern, value);
 	}
 
 	@Override

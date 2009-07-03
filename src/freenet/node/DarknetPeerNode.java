@@ -1558,6 +1558,7 @@ public class DarknetPeerNode extends PeerNode {
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Malformed URI in N2NTM Bookmark Feed message");
+                        return;
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
@@ -1581,6 +1582,7 @@ public class DarknetPeerNode extends PeerNode {
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Malformed URI in N2NTM File Feed message");
+                        return;
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
