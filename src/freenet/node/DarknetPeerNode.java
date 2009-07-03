@@ -1432,8 +1432,8 @@ public class DarknetPeerNode extends PeerNode {
 		long sentTime;
 		long receivedTime;
 	  	try {
-			source_nodename = new String(Base64.decode(fs.get("source_nodename")));
-			target_nodename = new String(Base64.decode(fs.get("target_nodename")));
+			source_nodename = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
+			target_nodename = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
 			text = new String(Base64.decode(fs.get("text")));
 			composedTime = fs.getLong("composedTime", -1);
 			sentTime = fs.getLong("sentTime", -1);
@@ -1441,6 +1441,8 @@ public class DarknetPeerNode extends PeerNode {
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, source_nodename, target_nodename, text, fileNumber, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);

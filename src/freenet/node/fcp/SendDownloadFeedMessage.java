@@ -1,5 +1,6 @@
 package freenet.node.fcp;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
@@ -45,6 +46,10 @@ public class SendDownloadFeedMessage extends SendFeedMessage {
 
 	@Override
 	protected int handleFeed(DarknetPeerNode pn) {
-		return pn.sendDownloadFeed(uri, new String(description));
+		try {
+			return pn.sendDownloadFeed(uri, new String(description, "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+		}
 	}
 }

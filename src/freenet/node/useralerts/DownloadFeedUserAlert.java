@@ -61,7 +61,6 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 			alertNode.addChild("br");
 			alertNode.addChild("#", l10n("fileDescription"));
 			alertNode.addChild("br");
-			alertNode.addChild("#", description);
 			for (int i = 0; i < lines.length; i++) {
 				alertNode.addChild("#", lines[i]);
 				if (i != lines.length - 1)

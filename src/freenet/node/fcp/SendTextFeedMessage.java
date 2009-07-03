@@ -10,7 +10,7 @@ import freenet.support.SimpleFieldSet;
 public class SendTextFeedMessage extends SendFeedMessage {
 
 	public static final String NAME = "SendTextFeed";
-	private String text;
+	private byte[] text;
 
 	public SendTextFeedMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		super(fs);
@@ -19,7 +19,7 @@ public class SendTextFeedMessage extends SendFeedMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No text", identifier,
 					false);
 		try {
-			text = new String(Base64.decode(encodedText));
+			text = Base64.decode(encodedText);
 		} catch (IllegalBase64Exception e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, e.getMessage(),
 					identifier, false);
@@ -29,11 +29,7 @@ public class SendTextFeedMessage extends SendFeedMessage {
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
-		try {
-			fs.putSingle("Text", Base64.encode(text.getBytes("UTF-8")));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		fs.putSingle("Text", Base64.encode(text));
 		return fs;
 	}
 
@@ -44,6 +40,10 @@ public class SendTextFeedMessage extends SendFeedMessage {
 
 	@Override
 	protected int handleFeed(DarknetPeerNode pn) {
-		return pn.sendTextFeed(text);
+		try {
+			return pn.sendTextFeed(new String(text, "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+		}
 	}
 }

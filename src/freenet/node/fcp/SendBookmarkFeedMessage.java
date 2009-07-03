@@ -1,5 +1,6 @@
 package freenet.node.fcp;
 
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
@@ -21,8 +22,7 @@ public class SendBookmarkFeedMessage extends SendFeedMessage {
 		super(fs);
 		try {
 			String encodedDescription = fs.get("Description");
-			description = encodedDescription == null ? null : Base64
-					.decode(encodedDescription);
+			description = encodedDescription == null ? null : Base64.decode(encodedDescription);
 			name = fs.get("Name");
 			if (name == null)
 				throw new MessageInvalidException(
@@ -59,6 +59,10 @@ public class SendBookmarkFeedMessage extends SendFeedMessage {
 
 	@Override
 	protected int handleFeed(DarknetPeerNode pn) {
-		return pn.sendBookmarkFeed(uri, name, new String(description), hasAnAnActiveLink);
+		try {
+			return pn.sendBookmarkFeed(uri, name, new String(description, "UTF-8"), hasAnAnActiveLink);
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+		}
 	}
 }
