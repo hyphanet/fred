@@ -111,6 +111,7 @@ public class PushTester {
 					throw new Exception("Test failed");
 				}
 				out.println("Passed");
+				Thread.sleep(60000);
 			} finally {
 				System.setErr(err);
 				System.setOut(out);
@@ -217,12 +218,12 @@ public class PushTester {
 		enableDebug(w2);
 		Thread.sleep(10000);
 		int current = Integer.parseInt(((HtmlPage) w1.getEnclosedPage()).getElementById("content").getFirstChild().getFirstChild().getTextContent().trim());
-		if (current < 9 || current > 11) {
-			throw new Exception("The value is not in the expected interval:[9,11] for Window 1. The current value:" + current);
+		if (current < 9 || current > 12) {
+			throw new Exception("The value is not in the expected interval:[9,12] for Window 1. The current value:" + current);
 		}
 		current = Integer.parseInt(((HtmlPage) w2.getEnclosedPage()).getElementById("content").getFirstChild().getFirstChild().getTextContent().trim());
-		if (current < 9 || current > 11) {
-			throw new Exception("The value is not in the expected interval:[9,11] for Window 2. The current value:" + current);
+		if (current < 9 || current > 12) {
+			throw new Exception("The value is not in the expected interval:[9,12] for Window 2. The current value:" + current);
 		}
 		if (getLogForWindows(w2).contains("pushnotifications") || getLogForWindows(w1).contains("pushnotifications") == false) {
 			throw new Exception("Window 2 is making permanent requests or Window 1 don't");

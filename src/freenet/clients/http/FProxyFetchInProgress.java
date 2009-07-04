@@ -259,6 +259,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public synchronized boolean canCancel() {
 		if(!waiters.isEmpty()) return false;
 		if(!results.isEmpty()) return false;
+		if(!listener.isEmpty()) return false;
 		if(lastTouched + LIFETIME >= System.currentTimeMillis()) {
 			if(logMINOR) Logger.minor(this, "Not able to cancel for "+this+" : "+uri+" : "+maxSize);
 			return false;
