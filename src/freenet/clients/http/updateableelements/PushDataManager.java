@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.db4o.internal.fieldindex.OrIndexedLeaf;
+
 import freenet.node.Ticker;
 
 /** A manager class that manages all the pushing. All it's public method must be synchronized to maintain consistency. */
@@ -117,11 +119,14 @@ public class PushDataManager {
 	 * @return Was the failover successful?
 	 */
 	public synchronized boolean failover(String originalRequestId, String newRequestId) {
+		System.err.println("Failover in, original:"+originalRequestId+" new:"+newRequestId);
 		if (awaitingNotifications.containsKey(originalRequestId)) {
 			awaitingNotifications.put(newRequestId, awaitingNotifications.remove(originalRequestId));
+			System.err.println("copied "+awaitingNotifications.get(newRequestId).size()+" notification:"+awaitingNotifications.get(newRequestId));
 			notifyAll();
 			return true;
 		} else {
+			System.err.println("Does not contains key");
 			return false;
 		}
 	}
@@ -165,6 +170,7 @@ public class PushDataManager {
 	 * @return The next notification when present
 	 */
 	public synchronized UpdateEvent getNextNotification(String requestId) {
+		System.err.println("Polling for notification:"+requestId);
 		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0) {
 			try {
 				wait();
@@ -175,6 +181,7 @@ public class PushDataManager {
 		if (awaitingNotifications.get(requestId) == null) {
 			return null;
 		}
+		System.err.println("Getting notification, notification:"+awaitingNotifications.get(requestId).get(0)+",remaining:"+(awaitingNotifications.get(requestId).size()-1));
 		return awaitingNotifications.get(requestId).remove(0);
 	}
 
@@ -246,6 +253,11 @@ public class PushDataManager {
 				}
 			}
 			return false;
+		}
+		
+		@Override
+		public String toString() {
+			return "UpdateEvent[requestId="+requestId+",elementId="+elementId+"]";
 		}
 	}
 

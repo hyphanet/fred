@@ -31,6 +31,8 @@ public class PushTester {
 
 	public static final boolean	stress			= false;
 
+	public static final boolean	continous		= true;
+
 	private List<Method> getAllTestMethods() {
 		List<Method> methods = new ArrayList<Method>();
 		for (Method m : getClass().getMethods()) {
@@ -76,16 +78,10 @@ public class PushTester {
 			int secondsLasts = m.isAnnotationPresent(SecondsLong.class) ? m.getAnnotation(SecondsLong.class).value() : -1;
 			System.out.println("Testing: " + testName + (secondsLasts != -1 ? " Lasts: " + secondsLasts + " seconds" : ""));
 			PrintStream err = System.err;
-			PrintStream out=System.out;
+			PrintStream out = System.out;
 			try {
-				System.setOut(new PrintStream(new OutputStream() {
-					
-					@Override
-					public void write(int b) throws IOException {
-						// TODO Auto-generated method stub
-						
-					}
-				}));
+				MemoryOutputStream mos = new MemoryOutputStream();
+				System.setOut(new PrintStream(mos));
 				System.setErr(new PrintStream(new OutputStream() {
 
 					@Override
@@ -108,14 +104,28 @@ public class PushTester {
 					}
 					out.println("FAILED! msg:" + e.getCause().getMessage());
 					e.printStackTrace();
+					out.println(mos.getVal());
 					throw new Exception("Test failed");
 				}
 				out.println("Passed");
-				Thread.sleep(60000);
 			} finally {
 				System.setErr(err);
 				System.setOut(out);
 			}
+		}
+	}
+
+	private class MemoryOutputStream extends OutputStream {
+
+		StringBuilder	sb	= new StringBuilder();
+
+		@Override
+		public void write(int b) throws IOException {
+			sb.append(new String(new byte[] { (byte) b }));
+		}
+
+		public String getVal() {
+			return sb.toString();
 		}
 	}
 
@@ -130,19 +140,25 @@ public class PushTester {
 
 			}
 		} else {
-			new PushTester().startTesting(false);
+			boolean runned = false;
+			boolean error = false;
+			while ((continous || !runned) && !error) {
+				error = !new PushTester().startTesting(false);
+				runned = true;
+			}
 		}
 	}
 
-	private void startTesting(boolean stress) {
+	private boolean startTesting(boolean stress) {
 		Method only = getMethodWithOnlyAnnotation();
 		if (only != null) {
 			try {
 				only.invoke(this);
 			} catch (Exception e) {
 				e.printStackTrace();
+				return false;
 			}
-			return;
+			return true;
 		}
 		if (stress) {
 			List<Method> methods = getAllTestMethods();
@@ -158,16 +174,17 @@ public class PushTester {
 				runTests(getAllIntegrationTests());
 			} catch (Exception e) {
 				e.printStackTrace();
-				return;
+				return false;
 			}
 			System.out.println("\nAcceptance tests:");
 			try {
 				runTests(getAllAcceptanceTests());
 			} catch (Exception e) {
 				e.printStackTrace();
-				return;
+				return false;
 			}
 		}
+		return true;
 
 	}
 
@@ -209,14 +226,15 @@ public class PushTester {
 		WebWindow w1 = new TopLevelWindow("1", c);
 		WebWindow w2 = new TopLevelWindow("2", c);
 		c.setCurrentWindow(w1);
-		String requestId1=((HtmlPage)c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		String requestId1 = ((HtmlPage) c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
 		Thread.sleep(1000);
 		c.setCurrentWindow(w2);
-		String requestId2=((HtmlPage)c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		String requestId2 = ((HtmlPage) c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
 		Thread.sleep(500);
 		enableDebug(w1);
 		enableDebug(w2);
 		Thread.sleep(10000);
+		System.out.println(getLogForWindows(w1,w2));
 		int current = Integer.parseInt(((HtmlPage) w1.getEnclosedPage()).getElementById("content").getFirstChild().getFirstChild().getTextContent().trim());
 		if (current < 9 || current > 12) {
 			throw new Exception("The value is not in the expected interval:[9,12] for Window 1. The current value:" + current);
@@ -232,7 +250,8 @@ public class PushTester {
 		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId2);
 	}
 
-	@SecondsLong(15)
+	@Only
+	@SecondsLong(25)
 	@TestType(Type.ACCEPTANCE)
 	public void testFailover() throws Exception {
 		WebClient c = new WebClient();
@@ -240,56 +259,61 @@ public class PushTester {
 		WebWindow w2 = new TopLevelWindow("2", c);
 		c.setCurrentWindow(w1);
 		c.getPage(TEST_URL);
-		Thread.sleep(1000);
+		Thread.sleep(500);
+		enableDebug(w1);
+		Thread.sleep(500);
 		c.setCurrentWindow(w2);
 		c.getPage(TEST_URL);
+		Thread.sleep(500);
+		enableDebug(w2);
 		Thread.sleep(4000);
 		c.deregisterWebWindow(w1);
-		Thread.sleep(10000);
+		Thread.sleep(20000);
+		System.out.println(getLogForWindows(w1,w2));
 		int current = Integer.parseInt(((HtmlPage) w2.getEnclosedPage()).getElementById("content").getFirstChild().getFirstChild().getTextContent().trim());
-		if (current < 13 || current > 15) {
-			throw new Exception("The value is not in the expected interval:[13,15] for Window 2. The current value:" + current);
+		if (current < 23 || current > 25) {
+			throw new Exception("The value is not in the expected interval:[23,25] for Window 2. The current value:" + current);
 		}
-		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + ((HtmlPage)w2.getEnclosedPage()).getElementById("requestId").getAttribute("value"));
+		c.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + ((HtmlPage) w2.getEnclosedPage()).getElementById("requestId").getAttribute("value"));
 	}
-	
-	/** Tests that the failing pages' notifications are removed nicely.*/
+
+	/** Tests that the failing pages' notifications are removed nicely. */
 	@SecondsLong(42)
 	@TestType(Type.INTEGRATION)
-	public void testCleanerNotificationRemoval() throws Exception{
+	public void testCleanerNotificationRemoval() throws Exception {
 		WebClient c1 = new WebClient();
 		WebClient c2 = new WebClient();
 		String requestId1 = ((HtmlPage) c1.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
-		String requestId2 =((HtmlPage) c2.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
+		String requestId2 = ((HtmlPage) c2.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
 		System.out.println("Pages got");
 		c1.closeAllWindows();
 		c2.closeAllWindows();
 		System.out.println("Windows closed");
-		if(c1.getPage(TEST_URL_PREFIX+"/pushnotifications/?requestId="+requestId1).getWebResponse().getContentAsString().startsWith("SUCCESS")==false){
+		if (c1.getPage(TEST_URL_PREFIX + "/pushnotifications/?requestId=" + requestId1).getWebResponse().getContentAsString().startsWith("SUCCESS") == false) {
 			throw new Exception("There should be a notification!");
 		}
 		System.out.println("Notifications working");
-		for(int i=0;i<21;i++){
+		for (int i = 0; i < 21; i++) {
 			Thread.sleep(2000);
-			System.out.println("Sending keepalive:"+i);
-			if(c1.getPage(TEST_URL_PREFIX+"/keepalive/?requestId="+requestId1).getWebResponse().getContentAsString().startsWith("SUCCESS")==false){
-				throw new Exception("Keepalive should be successful!");				
+			System.out.println("Sending keepalive:" + i);
+			if (c1.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId1).getWebResponse().getContentAsString().startsWith("SUCCESS") == false) {
+				throw new Exception("Keepalive should be successful!");
 			}
 		}
 		System.out.println("All keepalives sent");
-		for(int i=0;i<20;i++){
-			System.out.println("Getting notification:"+i);
-			if(new String(Base64.decodeStandard(c1.getPage(TEST_URL_PREFIX+"/pushnotifications/?requestId="+requestId1).getWebResponse().getContentAsString().split("[:]")[1])).compareTo(requestId1)!=0){
+		for (int i = 0; i < 20; i++) {
+			System.out.println("Getting notification:" + i);
+			if (new String(Base64.decodeStandard(c1.getPage(TEST_URL_PREFIX + "/pushnotifications/?requestId=" + requestId1).getWebResponse().getContentAsString().split("[:]")[1])).compareTo(requestId1) != 0) {
 				throw new Exception("Only the first page should have notifications!");
 			}
 		}
 		c1.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId1);
 		c2.getPage(TEST_URL_PREFIX + "/leaving/?requestId=" + requestId2);
 	}
-	
+
 	@SecondsLong(0)
 	@TestType(Type.INTEGRATION)
-	public void testLeaving() throws Exception{
+	public void testLeaving() throws Exception {
 		WebClient c = new WebClient();
 		String requestId = ((HtmlPage) c.getPage(TEST_URL)).getElementById("requestId").getAttribute("value");
 		if (c.getPage(TEST_URL_PREFIX + "/keepalive/?requestId=" + requestId).getWebResponse().getContentAsString().startsWith("SUCCESS") == false) {
@@ -334,7 +358,7 @@ public class PushTester {
 
 		private PrintStream	out;
 
-		private Timer		timer=new Timer(true);
+		private Timer		timer	= new Timer(true);
 
 		public Countdown(int from, PrintStream out) {
 			status = from;
@@ -345,7 +369,7 @@ public class PushTester {
 		@Override
 		public void run() {
 			out.print((status--) + "..");
-			if(status<0){
+			if (status < 0) {
 				cancel();
 			}
 		}
@@ -355,14 +379,14 @@ public class PushTester {
 		}
 
 	}
-	
-	private class LoggerStream extends OutputStream{
+
+	private class LoggerStream extends OutputStream {
 
 		@Override
 		public void write(int b) throws IOException {
 			// TODO Auto-generated method stub
-			
+
 		}
-		
+
 	}
 }

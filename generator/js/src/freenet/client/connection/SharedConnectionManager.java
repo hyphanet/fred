@@ -88,6 +88,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 	}
 
 	private void startLeading() {
+		FreenetJs.log("Starting leading");
 		isLeading=true;
 		Cookies.setCookie(LEADER_NAME, FreenetJs.requestId, null, null, "/", false);
 		Cookies.setCookie(LEADER_KEEPALIVE, "" + getTime(), null, null, "/", false);
@@ -102,6 +103,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 	}
 	
 	private void stopLeading(){
+		FreenetJs.log("Stopping leading");
 		Cookies.setCookie(LEADER_NAME, "", null, null, "/", false);
 	}
 
@@ -109,33 +111,41 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 	public void updated(String message) {
 		String requestId = Base64.decode(message.substring(0, message.indexOf(DefaultUpdateManager.SEPARATOR)));
 		String msg = message.substring(message.indexOf(DefaultUpdateManager.SEPARATOR) + 1);
-		FreenetJs.log("requestId:" + requestId);
+		FreenetJs.log("SharedConnectionManagaer updated:requestId:" + requestId);
 		if (requestId.compareTo(FreenetJs.requestId) == 0) {
 			updateManager.updated(msg);
 			FreenetJs.log("Updating");
 		} else {
-			FreenetJs.log("Setting cookie");
+			FreenetJs.log("Setting cookie: name:"+MESSAGE_PREFIX + (messageCounter % MAX_MESSAGES)+" value:"+message);
 			Cookies.setCookie(MESSAGE_PREFIX + (messageCounter % MAX_MESSAGES), message, null, null, "/", false);
 			++messageCounter;
+			FreenetJs.log("Setting message counter:"+messageCounter);
 			Cookies.setCookie(MESSAGE_COUNTER, "" + messageCounter, null, null, "/", false);
 		}
 		Cookies.setCookie(LEADER_KEEPALIVE, "" + getTime(), null, null, "/", false);
 	}
 
 	private void processMessages() {
+		FreenetJs.log("Processing messages");
 		if (Cookies.getCookie(MESSAGE_COUNTER) == null) {
 			return;
 		}
+		FreenetJs.log("Message counter set, value:"+Cookies.getCookie(MESSAGE_COUNTER)+" internal message counter:"+messageCounter);
 		while (messageCounter < Long.parseLong(Cookies.getCookie(MESSAGE_COUNTER))) {
+			FreenetJs.log("Inside the loop: internal counter:"+messageCounter+" cookie counter:"+Cookies.getCookie(MESSAGE_COUNTER));
 			String message = Cookies.getCookie(MESSAGE_PREFIX + (messageCounter % MAX_MESSAGES));
+			FreenetJs.log("Got messsage:"+message);
 			String requestId = Base64.decode(message.substring(0, message.indexOf(DefaultUpdateManager.SEPARATOR)));
+			FreenetJs.log("Got requestId:"+requestId);
 			String msg = message.substring(message.indexOf(DefaultUpdateManager.SEPARATOR) + 1);
+			FreenetJs.log("Processing message:requestId:"+requestId+" msg:"+msg);
 			if (requestId.compareTo(FreenetJs.requestId) == 0) {
 				updateManager.updated(msg);
 			}
 			messageCounter++;
 		}
-	}
+		FreenetJs.log("Finished processing messages");
+		}
 	
 	private long getTime(){
 		return System.currentTimeMillis();
