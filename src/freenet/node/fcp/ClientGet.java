@@ -978,4 +978,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
 	}
+	
+	public FetchContext getFetchContext(){
+		return fctx;
+	}
 }

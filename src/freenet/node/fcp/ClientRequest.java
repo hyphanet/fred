@@ -549,5 +549,8 @@ public abstract class ClientRequest {
 		container.store(this);
 	}
 	
+	public FCPClient getClient(){
+		return client;
+	}
 	
 }

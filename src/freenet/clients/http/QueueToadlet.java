@@ -35,6 +35,7 @@ import freenet.client.TempFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.clients.http.updateableelements.RequestElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
@@ -69,19 +70,19 @@ import freenet.support.io.NativeThread;
 
 public class QueueToadlet extends Toadlet implements RequestCompletionCallback, LinkEnabledCallback {
 
-	private static final int LIST_IDENTIFIER = 1;
-	private static final int LIST_SIZE = 2;
-	private static final int LIST_MIME_TYPE = 3;
-	private static final int LIST_DOWNLOAD = 4;
-	private static final int LIST_PERSISTENCE = 5;
-	private static final int LIST_KEY = 6;
-	private static final int LIST_FILENAME = 7;
-	private static final int LIST_PRIORITY = 8;
-	private static final int LIST_FILES = 9;
-	private static final int LIST_TOTAL_SIZE = 10;
-	private static final int LIST_PROGRESS = 11;
-	private static final int LIST_REASON = 12;
-	private static final int LIST_RECOMMEND = 13;
+	public static final int LIST_IDENTIFIER = 1;
+	public static final int LIST_SIZE = 2;
+	public static final int LIST_MIME_TYPE = 3;
+	public static final int LIST_DOWNLOAD = 4;
+	public static final int LIST_PERSISTENCE = 5;
+	public static final int LIST_KEY = 6;
+	public static final int LIST_FILENAME = 7;
+	public static final int LIST_PRIORITY = 8;
+	public static final int LIST_FILES = 9;
+	public static final int LIST_TOTAL_SIZE = 10;
+	public static final int LIST_PROGRESS = 11;
+	public static final int LIST_REASON = 12;
+	public static final int LIST_RECOMMEND = 13;
 
 	private static final int MAX_IDENTIFIER_LENGTH = 1024*1024;
 	private static final int MAX_FILENAME_LENGTH = 1024*1024;
@@ -1174,129 +1175,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	
-	private HTMLNode createReasonCell(String failureReason) {
-		HTMLNode reasonCell = new HTMLNode("td", "class", "request-reason");
-		if (failureReason == null) {
-			reasonCell.addChild("span", "class", "failure_reason_unknown", L10n.getString("QueueToadlet.unknown"));
-		} else {
-			reasonCell.addChild("span", "class", "failure_reason_is", failureReason);
-		}
-		return reasonCell;
-	}
 
-	private HTMLNode createProgressCell(boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
-		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
-		if (!started) {
-			progressCell.addChild("#", L10n.getString("QueueToadlet.starting"));
-			return progressCell;
-		}
-		boolean advancedMode = core.isAdvancedModeEnabled();
-		if(compressing == COMPRESS_STATE.WAITING && advancedMode) {
-			progressCell.addChild("#", L10n.getString("QueueToadlet.awaitingCompression"));
-			return progressCell;
-		}
-		if(compressing != COMPRESS_STATE.WORKING) {
-			progressCell.addChild("#", L10n.getString("QueueToadlet.compressing"));
-			return progressCell;
-		}
-		
-		//double frac = p.getSuccessFraction();
-		if (!advancedMode || total < min /* FIXME why? */) {
-			total = min;
-		}
-		
-		if ((fetched < 0) || (total <= 0)) {
-			progressCell.addChild("span", "class", "progress_fraction_unknown", L10n.getString("QueueToadlet.unknown"));
-		} else {
-			int fetchedPercent = (int) (fetched / (double) total * 100);
-			int failedPercent = (int) (failed / (double) total * 100);
-			int fatallyFailedPercent = (int) (fatallyFailed / (double) total * 100);
-			int minPercent = (int) (min / (double) total * 100);
-			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
-			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
 
-			if (failed > 0)
-				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
-			if (fatallyFailed > 0)
-				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
-			if ((fetched + failed + fatallyFailed) < min)
-				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-min", "width: " + (minPercent - fetchedPercent) + "%;" });
-			
-			NumberFormat nf = NumberFormat.getInstance();
-			nf.setMaximumFractionDigits(1);
-			String prefix = '('+Integer.toString(fetched) + "/ " + Integer.toString(min)+"): ";
-			if (finalized) {
-				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + L10n.getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0) + '%');
-			} else {
-				String text = nf.format((int) ((fetched / (double) min) * 1000) / 10.0)+ '%';
-				if(!finalized)
-					text = "" + fetched + " ("+text+"??)";
-				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString(upload ? "QueueToadlet.uploadProgressbarNotAccurate" : "QueueToadlet.progressbarNotAccurate") }, text);
-			}
-		}
-		return progressCell;
-	}
 
-	private HTMLNode createNumberCell(int numberOfFiles) {
-		HTMLNode numberCell = new HTMLNode("td", "class", "request-files");
-		numberCell.addChild("span", "class", "number_of_files", String.valueOf(numberOfFiles));
-		return numberCell;
-	}
-
-	private HTMLNode createFilenameCell(File filename) {
-		HTMLNode filenameCell = new HTMLNode("td", "class", "request-filename");
-		if (filename != null) {
-			filenameCell.addChild("span", "class", "filename_is", filename.toString());
-		} else {
-			filenameCell.addChild("span", "class", "filename_none", L10n.getString("QueueToadlet.none"));
-		}
-		return filenameCell;
-	}
-
-	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass, ToadletContext ctx, String[] priorityClasses, boolean advancedModeEnabled) {
-		
-		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
-		HTMLNode priorityForm = ctx.addFormChild(priorityCell, path(), "queueChangePriorityCell-" + identifier.hashCode());
-		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
-		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
-			if(p <= RequestStarter.INTERACTIVE_PRIORITY_CLASS && !advancedModeEnabled) continue;
-			if (p == priorityClass) {
-				prioritySelect.addChild("option", new String[] { "value", "selected" }, new String[] { String.valueOf(p), "selected" }, priorityClasses[p]);
-			} else {
-				prioritySelect.addChild("option", "value", String.valueOf(p), priorityClasses[p]);
-			}
-		}
-		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change_priority", L10n.getString("QueueToadlet.change") });
-		return priorityCell;
-	}
-
-	private HTMLNode createRecommendCell(PageMaker pageMaker, FreenetURI URI, ToadletContext ctx) {
-		HTMLNode recommendNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode shareForm = ctx.addFormChild(recommendNode, "/downloads/", "recommendForm");
-		shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
-		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", L10n.getString("QueueToadlet.recommendToFriends") });
-
-		return recommendNode;
-	}
-
-	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier, ClientRequest clientRequest, ToadletContext ctx) {
-		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode deleteForm = ctx.addFormChild(deleteNode, path(), "queueDeleteForm-" + identifier.hashCode());
-		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
-		
-		// If it's failed, offer to restart it
-		
-		if(clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
-			HTMLNode retryForm = ctx.addFormChild(deleteNode, path(), "queueRestartForm-" + identifier.hashCode());
-			String restartName = L10n.getString(clientRequest instanceof ClientGet && ((ClientGet)clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
-			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
-		}
-		
-		return deleteNode;
-	}
 	
 	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
 		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
@@ -1307,68 +1188,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return panicBox;
 	}
 	
-	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier, boolean directory) {
-		HTMLNode identifierCell = new HTMLNode("td", "class", "request-identifier");
-		if (uri != null) {
-			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", "/" + uri + (directory ? "/" : ""), identifier);
-		} else {
-			identifierCell.addChild("span", "class", "identifier_without_uri", identifier);
-		}
-		return identifierCell;
-	}
 
-	private HTMLNode createPersistenceCell(boolean persistent, boolean persistentForever) {
-		HTMLNode persistenceCell = new HTMLNode("td", "class", "request-persistence");
-		if (persistentForever) {
-			persistenceCell.addChild("span", "class", "persistence_forever", L10n.getString("QueueToadlet.persistenceForever"));
-		} else if (persistent) {
-			persistenceCell.addChild("span", "class", "persistence_reboot", L10n.getString("QueueToadlet.persistenceReboot"));
-		} else {
-			persistenceCell.addChild("span", "class", "persistence_none", L10n.getString("QueueToadlet.persistenceNone"));
-		}
-		return persistenceCell;
-	}
 
-	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p, ObjectContainer container) {
-		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		FreenetURI uri = p.getURI(container);
-		if(uri == null)
-			Logger.error(this, "NO URI FOR "+p, new Exception("error"));
-		else
-			downloadCell.addChild("a", "href", uri.toString(), L10n.getString("QueueToadlet.download"));
-		return downloadCell;
-	}
 
-	private HTMLNode createTypeCell(String type) {
-		HTMLNode typeCell = new HTMLNode("td", "class", "request-type");
-		if (type != null) {
-			typeCell.addChild("span", "class", "mimetype_is", type);
-		} else {
-			typeCell.addChild("span", "class", "mimetype_unknown", L10n.getString("QueueToadlet.unknown"));
-		}
-		return typeCell;
-	}
-
-	private HTMLNode createSizeCell(long dataSize, boolean confirmed, boolean advancedModeEnabled) {
-		HTMLNode sizeCell = new HTMLNode("td", "class", "request-size");
-		if (dataSize > 0 && (confirmed || advancedModeEnabled)) {
-			sizeCell.addChild("span", "class", "filesize_is", (confirmed ? "" : ">= ") + SizeUtil.formatSize(dataSize) + (confirmed ? "" : " ??"));
-		} else {
-			sizeCell.addChild("span", "class", "filesize_unknown", L10n.getString("QueueToadlet.unknown"));
-		}
-		return sizeCell;
-	}
-
-	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash) {
-		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
-		if (uri != null) {
-			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString() + (addSlash ? "/" : ""), uri.toShortString() + (addSlash ? "/" : ""));
-		} else {
-			keyCell.addChild("span", "class", "key_unknown", L10n.getString("QueueToadlet.unknown"));
-		}
-		return keyCell;
-	}
-	
 	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
 		/* the insert file box */
 		InfoboxNode infobox = pageMaker.getInfobox(L10n.getString("QueueToadlet.insertFile"));
@@ -1452,67 +1274,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		for (ClientRequest clientRequest : requests) {
 			container.activate(clientRequest, 1);
-			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
+			table.addChild(new RequestElement(clientRequest, columns, path(), container, advancedModeEnabled, priorityClasses, isUpload, ctx));
 
-			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier(), clientRequest, ctx));
-
-			for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
-				int column = columns[columnIndex];
-				if (column == LIST_IDENTIFIER) {
-					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(container), clientRequest.getIdentifier(), false));
-					} else if (clientRequest instanceof ClientPutDir) {
-						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(container), clientRequest.getIdentifier(), true));
-					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(container), clientRequest.getIdentifier(), false));
-					}
-				} else if (column == LIST_SIZE) {
-					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createSizeCell(((ClientGet) clientRequest).getDataSize(container), ((ClientGet) clientRequest).isTotalFinalized(container), advancedModeEnabled));
-					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize(container), true, advancedModeEnabled));
-					}
-				} else if (column == LIST_DOWNLOAD) {
-					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest, container));
-				} else if (column == LIST_MIME_TYPE) {
-					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createTypeCell(((ClientGet) clientRequest).getMIMEType(container)));
-					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createTypeCell(((ClientPut) clientRequest).getMIMEType()));
-					}
-				} else if (column == LIST_PERSISTENCE) {
-					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
-				} else if (column == LIST_KEY) {
-					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI(container), false));
-					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(container), false));
-					}else {
-						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(container), true));
-					}
-				} else if (column == LIST_FILENAME) {
-					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createFilenameCell(((ClientGet) clientRequest).getDestFilename(container)));
-					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createFilenameCell(((ClientPut) clientRequest).getOrigFilename(container)));
-					}
-				} else if (column == LIST_PRIORITY) {
-					requestRow.addChild(createPriorityCell(pageMaker, clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses, advancedModeEnabled));
-				} else if (column == LIST_FILES) {
-					requestRow.addChild(createNumberCell(((ClientPutDir) clientRequest).getNumberOfFiles()));
-				} else if (column == LIST_TOTAL_SIZE) {
-					requestRow.addChild(createSizeCell(((ClientPutDir) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
-				} else if (column == LIST_PROGRESS) {
-					if(clientRequest instanceof ClientPut)
-						requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((ClientPut)clientRequest).isCompressing(container), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
-					else
-						requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
-				} else if (column == LIST_REASON) {
-					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(container)));
-				} else if (column == LIST_RECOMMEND) {
-						requestRow.addChild(createRecommendCell(pageMaker, ((ClientGet) clientRequest).getURI(container), ctx));
-				}
-			}
 		}
 		return table;
 	}

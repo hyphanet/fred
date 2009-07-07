@@ -37,6 +37,10 @@ public class SimpleEventProducer implements ClientEventProducer {
     }
     
     public void addEventListener(ClientEventListener cel) {
+    	if(listeners==null){
+    		//Don't know how it can happen, but it did, and checking for null isn't going to hurt anything
+    		listeners=new Vector<ClientEventListener>();
+    	}
 	if(cel != null)
 	    listeners.addElement(cel);
 	else

@@ -448,6 +448,10 @@ public class FCPClient {
 		if(completionCallbacks == null) completionCallbacks = new ArrayList<RequestCompletionCallback>(); // it is transient so it might be null
 		completionCallbacks.add(cb);
 	}
+	
+	public synchronized void removeRequestCompletionCallback(RequestCompletionCallback cb){
+		if(completionCallbacks!=null) completionCallbacks.remove(cb);
+	}
 
 	public void removeFromDatabase(ObjectContainer container) {
 		container.activate(runningPersistentRequests, 2);

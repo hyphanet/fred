@@ -579,4 +579,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			container.store(this);
 	}
 	
+	public InsertContext getInsertContext(){
+		return ctx;
+	}
+	
 }
