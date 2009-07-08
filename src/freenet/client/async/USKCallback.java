@@ -31,12 +31,13 @@ public interface USKCallback {
 	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo);
 	
 	/**
-	 * Priority at which the polling should run normally.
+	 * Priority at which the polling should run normally. See RequestScheduler for constants.
 	 */
 	short getPollingPriorityNormal();
 	
 	/**
 	 * Priority at which the polling should run when starting, or immediately after making some progress.
+	 * See RequestScheduler for constants.
 	 */
 	short getPollingPriorityProgress();
 	
