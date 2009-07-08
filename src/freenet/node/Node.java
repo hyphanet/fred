@@ -2100,26 +2100,12 @@ public class Node implements TimeSkewDetectorCallback {
 
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
-				chkDataFS.migrationFrom(//
-				        new File(storeDir, "chk" + suffix + ".store"), // 
-				        new File(storeDir, "chk" + suffix + ".store.keys"));
-				chkCacheFS.migrationFrom(//
-				        new File(storeDir, "chk" + suffix + ".cache"), // 
-				        new File(storeDir, "chk" + suffix + ".cache.keys"));
-
-				pubkeyDataFS.migrationFrom(//
-				        new File(storeDir, "pubkey" + suffix + ".store"), // 
-				        new File(storeDir, "pubkey" + suffix + ".store.keys"));
-				pubkeyCacheFS.migrationFrom(//
-				        new File(storeDir, "pubkey" + suffix + ".cache"), // 
-				        new File(storeDir, "pubkey" + suffix + ".cache.keys"));
-
-				sskDataFS.migrationFrom(//
-				        new File(storeDir, "ssk" + suffix + ".store"), // 
-				        new File(storeDir, "ssk" + suffix + ".store.keys"));
-				sskCacheFS.migrationFrom(//
-				        new File(storeDir, "ssk" + suffix + ".cache"), // 
-				        new File(storeDir, "ssk" + suffix + ".cache.keys"));
+				tryMigrate(chkDataFS, "chk", true, suffix);
+				tryMigrate(chkCacheFS, "chk", false, suffix);
+				tryMigrate(pubkeyDataFS, "pubkey", true, suffix);
+				tryMigrate(pubkeyCacheFS, "pubkey", false, suffix);
+				tryMigrate(sskDataFS, "ssk", true, suffix);
+				tryMigrate(sskCacheFS, "ssk", false, suffix);
 				migrationFile.createNewFile();
 			}
 		} catch (IOException e) {
@@ -2128,7 +2114,14 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
 		}
     }
-	
+
+	private void tryMigrate(SaltedHashFreenetStore chkDataFS, String type, boolean isStore, String suffix) {
+		String store = isStore ? "store" : "cache";
+		chkDataFS.migrationFrom(//
+		        new File(storeDir, type + suffix + "."+store), // 
+		        new File(storeDir, type + suffix + "."+store+".keys"));
+	}
+
 	private SaltedHashFreenetStore makeStore(String suffix, int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb) throws IOException {
 		String store = isStore ? "store" : "cache";
 		Logger.normal(this, "Initializing "+type+" Data"+store);
