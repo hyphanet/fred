@@ -20,11 +20,13 @@ public interface USKRetrieverCallback {
 
 	/**
 	 * Priority at which the polling should run normally.
+	 * You have to return one of the constants from {@link RequestStarter}.
 	 */
 	short getPollingPriorityNormal();
 
 	/**
 	 * Priority at which the polling should run when starting, or immediately after making some progress.
+	 *  You have to return one of the constants from {@link RequestStarter}.
 	 */
 	short getPollingPriorityProgress();
 
