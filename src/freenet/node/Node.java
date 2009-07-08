@@ -2060,25 +2060,15 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private boolean isBDBStoreExist(final String suffix) {
-		return new File(storeDir, "chk" + suffix + ".store").exists()
-	            || new File(storeDir, "chk" + suffix + ".store.keys").exists()
-	            || new File(storeDir, "chk" + suffix + ".store.lru").exists()
-	            || new File(storeDir, "chk" + suffix + ".cache").exists()
-	            || new File(storeDir, "chk" + suffix + ".cache.keys").exists()
-	            || new File(storeDir, "chk" + suffix + ".cache.lru").exists()
-	            || new File(storeDir, "pubkey" + suffix + ".store").exists()
-	            || new File(storeDir, "pubkey" + suffix + ".store.keys").exists()
-	            || new File(storeDir, "pubkey" + suffix + ".store.lru").exists()
-	            || new File(storeDir, "pubkey" + suffix + ".cache").exists()
-	            || new File(storeDir, "pubkey" + suffix + ".cache.keys").exists()
-	            || new File(storeDir, "pubkey" + suffix + ".cache.lru").exists()
-	            || new File(storeDir, "ssk" + suffix + ".store").exists()
-	            || new File(storeDir, "ssk" + suffix + ".store.keys").exists()
-	            || new File(storeDir, "ssk" + suffix + ".store.lru").exists()
-	            || new File(storeDir, "ssk" + suffix + ".cache").exists()
-	            || new File(storeDir, "ssk" + suffix + ".cache.keys").exists()
-	            || new File(storeDir, "ssk" + suffix + ".cache.lru").exists()
-	            || new File(storeDir, "database" + suffix).exists();
+		for(String type : new String[] { "chk", "pubkey", "ssk" }) {
+			for(String ver : new String[] { "store", "cache" }) {
+				for(String ext : new String[] { "", ".keys", ".lru" }) {
+					if(new File(storeDir, type + suffix + "." + ver + ext).exists()) return true;
+				}
+			}
+		}
+		if(new File(storeDir, "database" + suffix).exists()) return true;
+		return false;
     }
 
 	private void initSaltHashFS(final String suffix) throws NodeInitException {
