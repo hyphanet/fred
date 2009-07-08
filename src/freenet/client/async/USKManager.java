@@ -439,6 +439,7 @@ public class USKManager implements RequestClient {
 	 * @param runBackgroundFetch If true, start a background fetcher for the key, which will run
 	 * forever until we unsubscribe.
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
+	 * @param prio Priority for fetching the content (see constants in RequestScheduler).
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
