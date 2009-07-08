@@ -104,6 +104,7 @@ import freenet.store.KeyCollisionException;
 import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
+import freenet.store.StoreCallback;
 import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.Base64;
@@ -2081,37 +2082,21 @@ public class Node implements TimeSkewDetectorCallback {
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
-			Logger.normal(this, "Initializing CHK Datastore");
-			System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
 			chkDatastore = new CHKStore();
-			SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store", chkDatastore,
-			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
-			Logger.normal(this, "Initializing CHK Datacache");
-			System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
+			SaltedHashFreenetStore chkDataFS = makeStore(suffix, bloomFilterSizeInM, "CHK", true, chkDatastore);
 			chkDatacache = new CHKStore();
-			SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache", chkDatacache,
-			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
-			Logger.normal(this, "Initializing pubKey Datastore");
-			System.out.println("Initializing pubKey Datastore");
+			SaltedHashFreenetStore chkCacheFS = makeStore(suffix, bloomFilterSizeInM, "CHK", false, chkDatacache);
 			pubKeyDatastore = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
-			        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
-			Logger.normal(this, "Initializing pubKey Datacache");
-			System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
+			SaltedHashFreenetStore pubkeyDataFS = makeStore(suffix, bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore);
 			pubKeyDatacache = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
-			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
+			SaltedHashFreenetStore pubkeyCacheFS = makeStore(suffix, bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache);
 			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store", sskDatastore,
-			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
-			Logger.normal(this, "Initializing SSK Datacache");
-			System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
+			SaltedHashFreenetStore sskDataFS = makeStore(suffix, bloomFilterSizeInM, "SSK", true, sskDatastore);
 			sskDatacache = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache", sskDatacache,
-			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
+			SaltedHashFreenetStore sskCacheFS = makeStore(suffix, bloomFilterSizeInM, "SSK", false, sskDatacache);
 
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
@@ -2144,6 +2129,16 @@ public class Node implements TimeSkewDetectorCallback {
 		}
     }
 	
+	private SaltedHashFreenetStore makeStore(String suffix, int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb) throws IOException {
+		String store = isStore ? "store" : "cache";
+		Logger.normal(this, "Initializing "+type+" Data"+store);
+		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
+		long maxKeys = isStore ? maxStoreKeys : maxCacheKeys;
+
+		return SaltedHashFreenetStore.construct(storeDir, type+"-"+store, cb,
+		        random, maxKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
+	}
+
 	private void initBDBFS(final String suffix) throws NodeInitException {
 		// Setup datastores		
 		final EnvironmentConfig envConfig = BerkeleyDBFreenetStore.getBDBConfig();
