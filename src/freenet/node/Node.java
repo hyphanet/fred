@@ -2083,20 +2083,20 @@ public class Node implements TimeSkewDetectorCallback {
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
 			chkDatastore = new CHKStore();
-			SaltedHashFreenetStore chkDataFS = makeStore(suffix, bloomFilterSizeInM, "CHK", true, chkDatastore);
+			SaltedHashFreenetStore chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore);
 			chkDatacache = new CHKStore();
-			SaltedHashFreenetStore chkCacheFS = makeStore(suffix, bloomFilterSizeInM, "CHK", false, chkDatacache);
+			SaltedHashFreenetStore chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache);
 			pubKeyDatastore = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyDataFS = makeStore(suffix, bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore);
+			SaltedHashFreenetStore pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore);
 			pubKeyDatacache = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyCacheFS = makeStore(suffix, bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache);
+			SaltedHashFreenetStore pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache);
 			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskDataFS = makeStore(suffix, bloomFilterSizeInM, "SSK", true, sskDatastore);
+			SaltedHashFreenetStore sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore);
 			sskDatacache = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskCacheFS = makeStore(suffix, bloomFilterSizeInM, "SSK", false, sskDatacache);
+			SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache);
 
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
@@ -2122,7 +2122,7 @@ public class Node implements TimeSkewDetectorCallback {
 		        new File(storeDir, type + suffix + "."+store+".keys"));
 	}
 
-	private SaltedHashFreenetStore makeStore(String suffix, int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb) throws IOException {
+	private SaltedHashFreenetStore makeStore(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb) throws IOException {
 		String store = isStore ? "store" : "cache";
 		Logger.normal(this, "Initializing "+type+" Data"+store);
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
