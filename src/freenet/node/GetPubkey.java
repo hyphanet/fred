@@ -68,14 +68,14 @@ public class GetPubkey {
 		try {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
-				key = pubKeyClientcache.fetch(hash, false, false, false);
+				key = pubKeyClientcache.fetch(hash, false);
 			if(key == null && pubKeySlashdotcache != null && forULPR)
-				key = pubKeySlashdotcache.fetch(hash, false, false, false);
+				key = pubKeySlashdotcache.fetch(hash, false);
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
 			if(key == null)
-				key = pubKeyDatastore.fetch(hash, false, false, false);
+				key = pubKeyDatastore.fetch(hash, false);
 			if (key == null)
-				key = pubKeyDatacache.fetch(hash, false, false, false);
+				key = pubKeyDatacache.fetch(hash, false);
 			if (key != null) {
 				// Just put into the in-memory cache
 				cacheKey(hash, key, false, false, false, forULPR);
@@ -143,23 +143,23 @@ public class GetPubkey {
 			if (canWriteClientCache) {
 				if(pubKeyClientcache != null) {
 					pubKeyClientcache.put(hash, key);
-					pubKeyClientcache.fetch(hash, true, false, false);
+					pubKeyClientcache.fetch(hash, true);
 				}
 			}
 			if (forULPR) {
 				if(pubKeySlashdotcache!= null) {
 					pubKeySlashdotcache.put(hash, key);
-					pubKeySlashdotcache.fetch(hash, true, false, false);
+					pubKeySlashdotcache.fetch(hash, true);
 				}
 			}
 			// Cannot write to the store or cache if request started nearby.
 			if(!canWriteDatastore) return;
 			if (deep) {
 				pubKeyDatastore.put(hash, key);
-				pubKeyDatastore.fetch(hash, true, false, false);
+				pubKeyDatastore.fetch(hash, true);
 			}
 			pubKeyDatacache.put(hash, key);
-			pubKeyDatacache.fetch(hash, true, false, false);
+			pubKeyDatacache.fetch(hash, true);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: " + e, e);

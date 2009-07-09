@@ -26,7 +26,7 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 		}
 	}
 
-	public DSAPublicKey fetch(byte[] hash, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+	public DSAPublicKey fetch(byte[] hash, boolean dontPromote) throws IOException {
 		return store.fetch(hash, null, dontPromote, false, false);
 	}
 	

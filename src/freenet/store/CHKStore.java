@@ -23,7 +23,7 @@ public class CHKStore extends StoreCallback<CHKBlock> {
 		return CHKBlock.construct(data, headers);
 	}
 
-	public CHKBlock fetch(NodeCHK chk, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+	public CHKBlock fetch(NodeCHK chk, boolean dontPromote) throws IOException {
 		return store.fetch(chk.getRoutingKey(), null, dontPromote, false, false);
 	}
 	

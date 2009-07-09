@@ -2960,7 +2960,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public CHKBlock fetch(NodeCHK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		if(canReadClientCache) {
 			try {
-				CHKBlock block = chkClientcache.fetch(key, dontPromote || !canWriteClientCache, canReadClientCache, false);
+				CHKBlock block = chkClientcache.fetch(key, dontPromote || !canWriteClientCache);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from client cache: "+e, e);
@@ -2968,7 +2968,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(forULPR || useSlashdotCache || canReadClientCache) {
 			try {
-				CHKBlock block = chkSlashdotcache.fetch(key, dontPromote || !canWriteClientCache, canReadClientCache, false);
+				CHKBlock block = chkSlashdotcache.fetch(key, dontPromote || !canWriteClientCache);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from slashdot/ULPR cache: "+e, e);
@@ -2979,14 +2979,14 @@ public class Node implements TimeSkewDetectorCallback {
 			double loc=key.toNormalizedDouble();
 			double dist=Location.distance(lm.getLocation(), loc);
 			nodeStats.avgRequestLocation.report(loc);
-			CHKBlock block = chkDatastore.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, false);
+			CHKBlock block = chkDatastore.fetch(key, dontPromote || !canWriteDatastore);
 			if (block != null) {
 				nodeStats.avgStoreSuccess.report(loc);
 				if (dist > nodeStats.furthestStoreSuccess)
 					nodeStats.furthestStoreSuccess=dist;
 				return block;
 			}
-			block=chkDatacache.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, false);
+			block=chkDatacache.fetch(key, dontPromote || !canWriteDatastore);
 			if (block != null) {
 				nodeStats.avgCacheSuccess.report(loc);
 				if (dist > nodeStats.furthestCacheSuccess)
