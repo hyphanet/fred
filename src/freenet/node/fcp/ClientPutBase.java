@@ -140,36 +140,44 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		synchronized(this) {
-			// Including this helps with certain bugs...
-			//progressMessage = null;
-			succeeded = true;
-			finished = true;
-			if(generatedURI == null)
-				Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
+		try{
+			synchronized(this) {
+				// Including this helps with certain bugs...
+				//progressMessage = null;
+				succeeded = true;
+				finished = true;
+				if(generatedURI == null)
+					Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
+			}
+			// Could restart, and is on the putter, don't free data until we remove the putter
+			//freeData(container);
+			finish(container);
+			trySendFinalMessage(null, container);
+			if(client != null)
+				client.notifySuccess(this, container);
+		}finally{
+			client.getWhiteboard().event(getIdentifier(), this);
 		}
-		// Could restart, and is on the putter, don't free data until we remove the putter
-		//freeData(container);
-		finish(container);
-		trySendFinalMessage(null, container);
-		if(client != null)
-			client.notifySuccess(this, container);
 	}
 
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		if(finished) return;
-		synchronized(this) {
-			finished = true;
-			putFailedMessage = new PutFailedMessage(e, identifier, global);
+		try{
+			if(finished) return;
+			synchronized(this) {
+				finished = true;
+				putFailedMessage = new PutFailedMessage(e, identifier, global);
+			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.store(this);
+			// Could restart, and is on the putter, don't free data until we remove the putter
+			//freeData(container);
+			finish(container);
+			trySendFinalMessage(null, container);
+			if(client != null)
+				client.notifyFailure(this, container);
+		}finally{
+			client.getWhiteboard().event(getIdentifier(), this);
 		}
-		if(persistenceType == PERSIST_FOREVER)
-			container.store(this);
-		// Could restart, and is on the putter, don't free data until we remove the putter
-		//freeData(container);
-		finish(container);
-		trySendFinalMessage(null, container);
-		if(client != null)
-			client.notifyFailure(this, container);
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
@@ -244,44 +252,48 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
-		if(finished) return;
-		if(persistenceType == PERSIST_FOREVER && container == null) {
-			try {
-				context.jobRunner.queue(new DBJob() {
-
-					public boolean run(ObjectContainer container, ClientContext context) {
-						container.activate(ClientPutBase.this, 1);
-						receive(ce, container, context);
-						container.deactivate(ClientPutBase.this, 1);
-						return false;
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-			} catch (DatabaseDisabledException e) {
-				// Impossible, not much we can do.
+		try{
+			if(finished) return;
+			if(persistenceType == PERSIST_FOREVER && container == null) {
+				try {
+					context.jobRunner.queue(new DBJob() {
+	
+						public boolean run(ObjectContainer container, ClientContext context) {
+							container.activate(ClientPutBase.this, 1);
+							receive(ce, container, context);
+							container.deactivate(ClientPutBase.this, 1);
+							return false;
+						}
+						
+					}, NativeThread.NORM_PRIORITY, false);
+				} catch (DatabaseDisabledException e) {
+					// Impossible, not much we can do.
+				}
+				return;
 			}
-			return;
-		}
-		if(ce instanceof SplitfileProgressEvent) {
-			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
-				SimpleProgressMessage progress = 
-					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
-				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, container, context);
+			if(ce instanceof SplitfileProgressEvent) {
+				if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
+					SimpleProgressMessage progress = 
+						new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
+					trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, container, context);
+				}
+			} else if(ce instanceof StartedCompressionEvent) {
+				if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
+					StartedCompressionMessage msg =
+						new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
+					trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+					onStartCompressing();
+				}
+			} else if(ce instanceof FinishedCompressionEvent) {
+				if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
+					FinishedCompressionMessage msg = 
+						new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
+					trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+					onStopCompressing();
+				}
 			}
-		} else if(ce instanceof StartedCompressionEvent) {
-			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
-				StartedCompressionMessage msg =
-					new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
-				onStartCompressing();
-			}
-		} else if(ce instanceof FinishedCompressionEvent) {
-			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
-				FinishedCompressionMessage msg = 
-					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
-				onStopCompressing();
-			}
+		}finally{
+			client.getWhiteboard().event(getIdentifier(), this);
 		}
 	}
 

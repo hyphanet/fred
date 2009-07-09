@@ -10,6 +10,7 @@ import com.db4o.query.Predicate;
 import com.db4o.query.Query;
 
 import freenet.node.NodeClientCore;
+import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Logger;
 
 /**
@@ -22,12 +23,12 @@ public class FCPPersistentRoot {
 	final long nodeDBHandle;
 	final FCPClient globalForeverClient;
 	
-	public FCPPersistentRoot(long nodeDBHandle, ObjectContainer container) {
+	public FCPPersistentRoot(long nodeDBHandle, Whiteboard whiteboard, ObjectContainer container) {
 		this.nodeDBHandle = nodeDBHandle;
-		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, container);
+		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, whiteboard, container);
 	}
 
-	public static FCPPersistentRoot create(final long nodeDBHandle, ObjectContainer container) {
+	public static FCPPersistentRoot create(final long nodeDBHandle, Whiteboard whiteboard, ObjectContainer container) {
 		ObjectSet<FCPPersistentRoot> set = container.query(new Predicate<FCPPersistentRoot>() {
 			@Override
 			public boolean match(FCPPersistentRoot root) {
@@ -40,9 +41,10 @@ public class FCPPersistentRoot {
 			FCPPersistentRoot root = set.next();
 			container.activate(root, 2);
 			root.globalForeverClient.init(container);
+			root.globalForeverClient.setWhiteboard(whiteboard);
 			return root;
 		}
-		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, container);
+		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, whiteboard, container);
 		container.store(root);
 		System.err.println("Created FCP persistent root.");
 		return root;
@@ -78,7 +80,7 @@ public class FCPPersistentRoot {
 			client.init(container);
 			return client;
 		}
-		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
+		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this,server.getWhiteboard(), container);
 		container.store(client);
 		return client;
 	}

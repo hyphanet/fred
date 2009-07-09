@@ -5,9 +5,6 @@ import java.text.NumberFormat;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ClientContext;
-import freenet.client.events.ClientEvent;
-import freenet.client.events.ClientEventListener;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
@@ -16,18 +13,20 @@ import freenet.l10n.L10n;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
-import freenet.node.fcp.ClientPutBase;
 import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientRequest;
-import freenet.node.fcp.RequestCompletionCallback;
+import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
+import freenet.node.fcp.whiteboard.WhiteboardListener;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 
 public class RequestElement extends BaseUpdateableElement {
 
-	private ClientRequest		clientRequest;
+	private FCPServer			server;
+
+	private String				clientRequestId;
 
 	private int[]				columns;
 
@@ -45,51 +44,37 @@ public class RequestElement extends BaseUpdateableElement {
 
 	private boolean				wasFinished	= false;
 
-	public RequestElement(ClientRequest clientRequest, int[] columns, String path, ObjectContainer container, boolean advancedModeEnabled, String[] priorityClasses, boolean isUpload, ToadletContext ctx) {
+	public RequestElement(FCPServer server, ClientRequest clientRequest, int[] columns, String path, ObjectContainer container, boolean advancedModeEnabled, String[] priorityClasses, boolean isUpload, ToadletContext ctx) {
 		super("tr", "class", "priority" + clientRequest.getPriority(), ctx);
-		this.clientRequest = clientRequest;
 		this.columns = columns;
 		this.path = path;
 		this.container = container;
 		this.advancedModeEnabled = advancedModeEnabled;
 		this.priorityClasses = priorityClasses;
 		this.isUpload = isUpload;
+		this.server = server;
+		this.clientRequestId = clientRequest.getIdentifier();
+
 		progressListener = new ProgressListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager);
 		wasFinished = clientRequest.hasFinished();
 
 		init();
 
-		if (clientRequest instanceof ClientGet) {
-			if (((ClientGet) clientRequest).getFetchContext().eventProducer != null) ((ClientGet) clientRequest).getFetchContext().eventProducer.addEventListener(progressListener);
-		} else if (clientRequest instanceof ClientPutBase) {
-			if (((ClientPutBase) clientRequest).getInsertContext().eventProducer != null) ((ClientPutBase) clientRequest).getInsertContext().eventProducer.addEventListener(progressListener);
-		} else {
-			System.err.println("Dont know this type! type:" + clientRequest.getClass());
-		}
-		clientRequest.getClient().addRequestCompletionCallback(progressListener);
+		server.getWhiteboard().addListener(clientRequest.getIdentifier(), progressListener);
 	}
 
 	@Override
 	public void dispose() {
-		if (clientRequest instanceof ClientGet) {
-			if (clientRequest instanceof ClientGet) {
-				if (((ClientGet) clientRequest).getFetchContext().eventProducer != null) ((ClientGet) clientRequest).getFetchContext().eventProducer.removeEventListener(progressListener);
-			} else if (clientRequest instanceof ClientPutBase) {
-				if (((ClientPutBase) clientRequest).getInsertContext().eventProducer != null) ((ClientPutBase) clientRequest).getInsertContext().eventProducer.removeEventListener(progressListener);
-			} else {
-				System.err.println("Dont know this type! type:" + clientRequest.getClass());
-			}
-		}
-		clientRequest.getClient().removeRequestCompletionCallback(progressListener);
+		server.getWhiteboard().removeListener(progressListener);
 	}
 
 	@Override
 	public String getUpdaterId(String requestId) {
-		return getId(clientRequest);
+		return getId(clientRequestId);
 	}
 
-	public static String getId(ClientRequest req) {
-		return "RequestElement:" + req.getIdentifier();
+	public static String getId(String requestId) {
+		return "RequestElement:" + requestId;
 	}
 
 	@Override
@@ -100,6 +85,8 @@ public class RequestElement extends BaseUpdateableElement {
 	@Override
 	public void updateState() {
 		children.clear();
+
+		ClientRequest clientRequest = server.getGlobalRequest(clientRequestId, container);
 
 		if (wasFinished == false && clientRequest.hasFinished()) {
 			setContent(UpdaterConstants.FINISHED);
@@ -348,7 +335,7 @@ public class RequestElement extends BaseUpdateableElement {
 		return progressCell;
 	}
 
-	private class ProgressListener implements ClientEventListener ,RequestCompletionCallback{
+	private class ProgressListener implements WhiteboardListener {
 
 		private PushDataManager	manager;
 
@@ -356,32 +343,7 @@ public class RequestElement extends BaseUpdateableElement {
 			this.manager = pushDataManager;
 		}
 
-		public void onRemoveEventProducer(ObjectContainer container) {
-			removed();
-		}
-
-		public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
-			finished();
-		}
-
-		public void notifyFailure(ClientRequest req, ObjectContainer container) {
-			finished();
-		}
-
-		public void notifySuccess(ClientRequest req, ObjectContainer container) {
-			finished();
-		}
-
-		public void onRemove(ClientRequest req, ObjectContainer container) {
-			removed();
-		}
-		
-		private void removed(){
-			System.err.println("Event producer removed! Was it finished:"+clientRequest.hasFinished());
-			manager.updateElement(getUpdaterId(null));
-		}
-		
-		private void finished(){
+		public void onEvent(String id, Object msg) {
 			manager.updateElement(getUpdaterId(null));
 		}
 

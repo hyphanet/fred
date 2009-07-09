@@ -1274,7 +1274,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		for (ClientRequest clientRequest : requests) {
 			container.activate(clientRequest, 1);
-			table.addChild(new RequestElement(clientRequest, columns, path(), container, advancedModeEnabled, priorityClasses, isUpload, ctx));
+			table.addChild(new RequestElement(fcp,clientRequest, columns, path(), container, advancedModeEnabled, priorityClasses, isUpload, ctx));
 
 		}
 		return table;
