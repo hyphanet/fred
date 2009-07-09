@@ -19,7 +19,7 @@ public class SSKStore extends StoreCallback<SSKBlock> {
 	@Override
 	public SSKBlock construct(byte[] data, byte[] headers,
 			byte[] routingKey, byte[] fullKey, 
-			boolean canReadClientCache, DSAPublicKey knownPublicKey) 
+			boolean canReadClientCache, boolean canReadSlashdotCache, DSAPublicKey knownPublicKey) 
 	throws SSKVerifyException {
 		if(data == null || headers == null) throw new SSKVerifyException("Need data and headers");
 		if(fullKey == null) throw new SSKVerifyException("Need full key to reconstruct an SSK");
@@ -27,14 +27,14 @@ public class SSKStore extends StoreCallback<SSKBlock> {
 		key = NodeSSK.construct(fullKey);
 		if(knownPublicKey != null)
 			key.setPubKey(knownPublicKey);
-		else if(!key.grabPubkey(pubkeyCache, canReadClientCache))
+		else if(!key.grabPubkey(pubkeyCache, canReadClientCache, canReadSlashdotCache))
 			throw new SSKVerifyException("No pubkey found");
 		SSKBlock block = new SSKBlock(data, headers, key, false);
 		return block;
 	}
 	
-	public SSKBlock fetch(NodeSSK chk, boolean dontPromote, boolean canReadClientCache) throws IOException {
-		return store.fetch(chk.getRoutingKey(), chk.getFullKey(), dontPromote, canReadClientCache);
+	public SSKBlock fetch(NodeSSK chk, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+		return store.fetch(chk.getRoutingKey(), chk.getFullKey(), dontPromote, canReadClientCache, canReadSlashdotCache);
 	}
 
 	public void put(SSKBlock b, boolean overwrite) throws IOException, KeyCollisionException {

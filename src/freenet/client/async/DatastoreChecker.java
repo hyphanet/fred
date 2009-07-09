@@ -382,7 +382,7 @@ public class DatastoreChecker implements PrioRunnable {
 			if(blocks != null)
 				block = blocks.get(key);
 			if(blocks == null)
-				block = node.fetch(key, dontCache, true, true, false);
+				block = node.fetch(key, dontCache, true, true, false, false);
 			if(block != null) {
 				if(logMINOR) Logger.minor(this, "Found key");
 				if(key instanceof NodeSSK)

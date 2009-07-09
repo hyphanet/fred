@@ -188,7 +188,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		cleanerThread.start();
 	}
 
-	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache) throws IOException {
+	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
@@ -219,7 +219,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				try {
-					StorableBlock block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, null);
+					StorableBlock block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, null);
 					if (block == null) {
 						misses.incrementAndGet();
 						return null;
@@ -322,7 +322,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if (!collisionPossible)
 							return;
 						oldEntry.setHD(readHD(oldOffset)); // read from disk
-						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
+						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
 						if (block.equals(oldBlock)) {
 							return; // already in store
 						} else if (!overwrite) {
@@ -547,13 +547,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return out;
 		}
 
-		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, DSAPublicKey knownKey) throws KeyVerifyException {
+		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, DSAPublicKey knownKey) throws KeyVerifyException {
 			if (isFree() || header == null || data == null)
 				return null; // this is a free block
 			if (!cipherManager.decrypt(this, routingKey))
 				return null;
 
-			StorableBlock block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, knownKey);
+			StorableBlock block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, knownKey);
 			byte[] blockRoutingKey = block.getRoutingKey();
 
 			if (!Arrays.equals(blockRoutingKey, routingKey)) {
@@ -1745,7 +1745,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				try {
-					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, null);
+					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, false, null);
 					put(b, data, header, true);
 				} catch (KeyVerifyException e) {
 					System.out.println("kve at block " + l);

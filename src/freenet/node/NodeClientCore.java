@@ -1080,7 +1080,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			long startTime = System.currentTimeMillis();
 			if(cache)
-				node.store(block, canWriteClientCache, false);
+				node.store(block, canWriteClientCache, false, false);
 			is = node.makeInsertSender(block.getKey(),
 				node.maxHTL(), uid, null, headers, prb, false, cache, canWriteClientCache);
 			boolean hasReceivedRejectedOverload = false;
@@ -1194,7 +1194,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			long startTime = System.currentTimeMillis();
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
-			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false);
+			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false, false);
 			if(altBlock != null && !altBlock.equals(block))
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			is = node.makeInsertSender(block,

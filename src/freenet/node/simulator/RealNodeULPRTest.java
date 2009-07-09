@@ -240,7 +240,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Store the key to ONE node.
         
 		long tStart = System.currentTimeMillis();
-		nodes[nodes.length-1].store(block, false, false, true); // Write to datastore
+		nodes[nodes.length-1].store(block, false, false, true, false); // Write to datastore
 		
 		int x = -1;
 		while(true) {
@@ -248,7 +248,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 			Thread.sleep(1000);
 			int count = 0;
 			for(int i=0;i<nodes.length;i++) {
-				if(nodes[i].fetch(fetchKey.getNodeKey(), true, true, true, true) != null)
+				if(nodes[i].fetch(fetchKey.getNodeKey(), true, true, true, true, true) != null)
 					count++;
 			}
 			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
@@ -271,7 +271,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 			if(x % nodes.length == 0) {
 				System.err.print("Nodes that don't have the data: ");
 				for(int i=0;i<nodes.length;i++)
-					if(nodes[i].fetch(fetchKey.getNodeKey(), true, true, false, false) == null) {
+					if(nodes[i].fetch(fetchKey.getNodeKey(), true, true, false, false, true) == null) {
 						System.err.print(i+" ");
 					}
 				System.err.println();

@@ -31,6 +31,7 @@ public class GetPubkey {
 	private PubkeyStore pubKeyDatastore;
 	private PubkeyStore pubKeyDatacache;
 	private PubkeyStore pubKeyClientcache;
+	private PubkeyStore pubKeySlashdotcache;
 	
 	GetPubkey() {
 		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
@@ -48,7 +49,7 @@ public class GetPubkey {
 	 * @param canWriteDatastore If this is a request with high HTL, we can't promote it.
 	 * @return A public key, or null.
 	 */
-	public DSAPublicKey getKey(byte[] hash, boolean canReadClientCache) {
+	public DSAPublicKey getKey(byte[] hash, boolean canReadClientCache, boolean forULPR) {
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		if (logMINOR)
 			Logger.minor(this, "Getting pubkey: " + HexUtil.bytesToHex(hash));
@@ -67,15 +68,17 @@ public class GetPubkey {
 		try {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
-				key = pubKeyClientcache.fetch(hash, false, false);
+				key = pubKeyClientcache.fetch(hash, false, false, false);
+			if(key == null && pubKeySlashdotcache != null && forULPR)
+				key = pubKeySlashdotcache.fetch(hash, false, false, false);
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
 			if(key == null)
-				key = pubKeyDatastore.fetch(hash, false, false);
+				key = pubKeyDatastore.fetch(hash, false, false, false);
 			if (key == null)
-				key = pubKeyDatacache.fetch(hash, false, false);
+				key = pubKeyDatacache.fetch(hash, false, false, false);
 			if (key != null) {
 				// Just put into the in-memory cache
-				cacheKey(hash, key, false, false, false);
+				cacheKey(hash, key, false, false, false, forULPR);
 				if (logMINOR)
 					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from store");
 			}
@@ -97,8 +100,9 @@ public class GetPubkey {
 	 * @param canWriteDatastore If true, we cannot *write to* the store or the cache. This 
 	 * happens for high initial HTL on both local requests and requests started relatively 
 	 * nearby.
+	 * @param forULPR 
 	 */
-	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore) {
+	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		if (logMINOR)
 			Logger.minor(this, "Cache key: " + HexUtil.bytesToHex(hash) + " : " + key);
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
@@ -121,7 +125,7 @@ public class GetPubkey {
 						} else {
 							Logger.error(this, "Old hash is wrong!");
 							cachedPubKeys.removeKey(w);
-							cacheKey(hash, key, deep, canWriteClientCache, canWriteDatastore);
+							cacheKey(hash, key, deep, canWriteClientCache, canWriteDatastore, forULPR);
 						}
 					} else {
 						Logger.error(this, "New hash is wrong");
@@ -139,17 +143,23 @@ public class GetPubkey {
 			if (canWriteClientCache) {
 				if(pubKeyClientcache != null) {
 					pubKeyClientcache.put(hash, key);
-					pubKeyClientcache.fetch(hash, true, false);
+					pubKeyClientcache.fetch(hash, true, false, false);
+				}
+			}
+			if (forULPR) {
+				if(pubKeySlashdotcache!= null) {
+					pubKeySlashdotcache.put(hash, key);
+					pubKeySlashdotcache.fetch(hash, true, false, false);
 				}
 			}
 			// Cannot write to the store or cache if request started nearby.
 			if(!canWriteDatastore) return;
 			if (deep) {
 				pubKeyDatastore.put(hash, key);
-				pubKeyDatastore.fetch(hash, true, false);
+				pubKeyDatastore.fetch(hash, true, false, false);
 			}
 			pubKeyDatacache.put(hash, key);
-			pubKeyDatacache.fetch(hash, true, false);
+			pubKeyDatacache.fetch(hash, true, false, false);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: " + e, e);
@@ -158,5 +168,9 @@ public class GetPubkey {
 
 	public void setLocalDataStore(PubkeyStore pubKeyClientcache) {
 		this.pubKeyClientcache = pubKeyClientcache;
+	}
+	
+	public void setLocalSlashdotcache(PubkeyStore pubKeySlashdotcache) {
+		this.pubKeySlashdotcache = pubKeySlashdotcache;
 	}
 }

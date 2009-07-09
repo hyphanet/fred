@@ -386,7 +386,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
                 if(!canCommit) return;
                 if(!prb.allReceived()) return;
                 CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
-                node.store(block, false, canWriteDatastore);
+                node.store(block, false, canWriteDatastore, false);
                 if(logMINOR) Logger.minor(this, "Committed");
             } catch (CHKVerifyException e) {
             	Logger.error(this, "Verify failed in CHKInsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
