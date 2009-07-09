@@ -3058,7 +3058,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(canWriteClientCache) {
 				chkClientcache.put(block);
 			}
-			if(forULPR || useSlashdotCache)
+			if(forULPR || useSlashdotCache && !canWriteDatastore)
 				chkSlashdotcache.put(block);
 			if(canWriteDatastore) {
 				double loc=block.getKey().toNormalizedDouble();
@@ -3103,7 +3103,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(canWriteClientCache) {
 				sskClientcache.put(block, overwrite);
 			}
-			if(forULPR || useSlashdotCache)
+			if(forULPR || useSlashdotCache && !canWriteDatastore)
 				sskSlashdotcache.put(block, overwrite);
 			if(canWriteDatastore) {
 				if(deep) {
