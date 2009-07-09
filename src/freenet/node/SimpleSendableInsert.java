@@ -87,7 +87,7 @@ public class SimpleSendableInsert extends SendableInsert {
 				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+this);
-					core.realPut(block, shouldCache());
+					core.realPut(block, shouldCache(), req.canWriteClientCache);
 				} catch (LowLevelPutException e) {
 					onFailure(e, req.token, null, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
@@ -174,5 +174,10 @@ public class SimpleSendableInsert extends SendableInsert {
 	@Override
 	public boolean cacheInserts(ObjectContainer container) {
 		return scheduler.cacheInserts();
+	}
+
+	@Override
+	public boolean canWriteClientCache(ObjectContainer container) {
+		return false;
 	}
 }

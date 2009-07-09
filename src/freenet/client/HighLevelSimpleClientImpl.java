@@ -71,6 +71,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	/** If set, only check the local datastore, don't send an actual request out.
 	 * Don't turn this off either. */
 	static final boolean LOCAL_REQUESTS_ONLY = false;
+	/** By default, write to the client cache. Turn this off if you are fetching big stuff. */
+	static final boolean CAN_WRITE_CLIENT_CACHE = true;
+	/** By default, don't write local inserts to the client cache. */
+	static final boolean CAN_WRITE_CLIENT_CACHE_INSERTS = false;
 	static final int SPLITFILE_INSERT_THREADS = 20;
 	/** Number of retries on inserts */
 	static final int INSERT_RETRIES = 10;
@@ -248,7 +252,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, eventProducer, 
-				cacheLocalRequests, false);
+				cacheLocalRequests, false, CAN_WRITE_CLIENT_CACHE);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
@@ -256,7 +260,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				eventProducer, cacheLocalRequests);
+				eventProducer, cacheLocalRequests, CAN_WRITE_CLIENT_CACHE_INSERTS);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

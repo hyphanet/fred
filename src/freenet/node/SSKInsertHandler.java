@@ -47,10 +47,11 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     private byte[] headers;
     private boolean canCommit;
     final InsertTag tag;
+    private final boolean canWriteDatastore;
 
 	private boolean collided = false;
     
-    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
+    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean canWriteDatastore) {
         this.node = node;
         this.uid = id;
         this.source = source;
@@ -60,9 +61,10 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         this.data = data;
         this.headers = headers;
         this.tag = tag;
+        this.canWriteDatastore = canWriteDatastore;
         if(htl <= 0) htl = 1;
         byte[] pubKeyHash = key.getPubKeyHash();
-        pubKey = node.getPubKey.getKey(pubKeyHash);
+        pubKey = node.getPubKey.getKey(pubKeyHash, false);
         canCommit = false;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
@@ -181,7 +183,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			return;
 		}
 		
-		SSKBlock storedBlock = node.fetch(key, false);
+		SSKBlock storedBlock = node.fetch(key, false, false, false, canWriteDatastore);
 		
 		if((storedBlock != null) && !storedBlock.equals(block)) {
 			try {
@@ -214,7 +216,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         }
         
         if(htl > 0)
-            sender = node.makeInsertSender(block, htl, uid, source, false, true);
+            sender = node.makeInsertSender(block, htl, uid, source, false, true, false, canWriteDatastore);
         
         boolean receivedRejectedOverload = false;
         
@@ -340,7 +342,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     	
     	if(canCommit) {
     		try {
-				node.store(block, block.getKey().toNormalizedDouble(), collided);
+				node.store(block, block.getKey().toNormalizedDouble(), collided, false, canWriteDatastore);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

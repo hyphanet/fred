@@ -81,6 +81,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean sentBackoffTurtle;
     /** Set when we start to think about going to turtle mode - not unset if we get cancelled instead. */
     private boolean tryTurtle;
+    private final boolean canWriteClientCache;
+    private final boolean canWriteDatastore;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -163,7 +165,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * already; RequestSender will not look it up.
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n,
-            PeerNode source, boolean offersOnly) {
+            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
         this.key = key;
@@ -173,6 +175,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         this.node = n;
         this.source = source;
         this.tryOffersOnly = offersOnly;
+        this.canWriteClientCache = canWriteClientCache;
+        this.canWriteDatastore = canWriteDatastore;
         target = key.toNormalizedDouble();
         node.addRequestSender(key, htl, this);
     }
@@ -942,7 +946,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.storeShallow(block);
+			node.storeShallow(block, canWriteClientCache, canWriteDatastore);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next, false);
@@ -964,7 +968,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private boolean finishSSKFromGetOffer(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.storeShallow(block);
+			node.storeShallow(block, canWriteClientCache, canWriteDatastore);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next, true);
@@ -994,12 +998,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		// requests don't go to the full distance, and therefore pollute the 
     		// store; simulations it is best to only include data from requests
     		// which go all the way i.e. inserts.
-    		node.storeShallow(block);
+    		node.storeShallow(block, canWriteClientCache, canWriteDatastore);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
     		try {
-				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false));
+				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false), canWriteClientCache, canWriteDatastore);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

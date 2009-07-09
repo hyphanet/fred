@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import com.sleepycat.je.DatabaseException;
 
+import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 
 /**
@@ -52,7 +53,7 @@ public abstract class StoreCallback<T extends StorableBlock> {
 	 * IMPORTANT: Using the full key or routing key is OPTIONAL, and if we don't use them, WE DON'T
 	 * CHECK THEM EITHER! Caller MUST check that the key is the one expected.
 	 * @throws KeyVerifyException */
-	public abstract T construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey)
+	public abstract T construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey, boolean canReadClientCache, DSAPublicKey knownPubKey)
 	        throws KeyVerifyException;
 	
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {

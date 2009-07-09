@@ -28,10 +28,11 @@ public class InsertContext {
 	public final ClientEventProducer eventProducer;
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
+	public boolean canWriteClientCache;
 	
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, boolean canWriteClientCache) {
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
 		dontCompress = false;
@@ -43,6 +44,7 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = cacheLocalRequests;
+		this.canWriteClientCache = canWriteClientCache;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {

@@ -35,8 +35,10 @@ import com.sleepycat.je.Transaction;
 import com.sleepycat.je.log.DbChecksumException;
 import com.sleepycat.je.log.LogFileNotFoundException;
 
+import freenet.crypt.DSAPublicKey;
 import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
+import freenet.keys.SSKBlock;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -270,7 +272,8 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				blocksInStore = 0;
 				lastRecentlyUsed = 0;
 
-				reconstruct();
+				// REDFLAG: BDBFS cannot be used for a client-cache, so always pass in false.
+				reconstruct(false);
 
 				blocksInStore = countCHKBlocksFromFile();
 				lastRecentlyUsed = getMaxRecentlyUsed();
@@ -931,7 +934,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	 * @throws DatabaseException
 	 * @throws IOException
 	 */
-	private void reconstruct() throws DatabaseException, IOException {
+	private void reconstruct(boolean canReadClientCache) throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
 		// Timeout must be well below Integer.MAX_VALUE. It is added to previous timeouts in an integer value.
@@ -1025,7 +1028,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
 						keyFromData = true;
 						try {
-							StorableBlock block = callback.construct(data, header, null, keyBuf);
+							StorableBlock block = callback.construct(data, header, null, keyBuf, false, null);
 							routingkey = block.getRoutingKey();
 						} catch (KeyVerifyException e) {
 							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
@@ -1059,7 +1062,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 									storeRAF.readFully(data);
 									dataRead = true;
 								}
-								StorableBlock block = callback.construct(data, header, null, keyBuf);
+								StorableBlock block = callback.construct(data, header, null, keyBuf, false, null);
 								routingkey = block.getRoutingKey();
 								if(Arrays.equals(oldRoutingkey, routingkey)) {
 									dupes++;
@@ -1159,7 +1162,16 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
-	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote) throws IOException {
+	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote,
+			boolean canReadClientCache) throws IOException {
+		return fetch(routingkey, fullKey, dontPromote, canReadClientCache, null);
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote,
+			boolean canReadClientCache, DSAPublicKey knownPublicKey) throws IOException {
 		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		int running;
@@ -1218,7 +1230,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					return null;
 				}
 				
-				block = callback.construct(data, header, routingkey, fullKey);
+				block = callback.construct(data, header, routingkey, fullKey, canReadClientCache, knownPublicKey);
 				
 				// Write the key.
 				byte[] newFullKey = block.getFullKey();
@@ -1401,7 +1413,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		
 		if(logMINOR)
 			Logger.minor(this, "Putting "+HexUtil.bytesToHex(routingkey)+" for "+callback);
-		StorableBlock oldBlock = fetch(routingkey, fullKey, false);
+		StorableBlock oldBlock = fetch(routingkey, fullKey, false, false, block instanceof SSKBlock ? ((SSKBlock)block).getPubKey() : null);
 		if(oldBlock != null) {
 			if(!collisionPossible) return;
 			if(!block.equals(oldBlock)) {
@@ -1508,7 +1520,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				// But is it valid?
 				t.abort();
 				t = null;
-				if(fetch(routingkey, fullKey, false) != null) return; // old key was valid, we are not overwriting
+				if(fetch(routingkey, fullKey, false, false, block instanceof SSKBlock ? ((SSKBlock)block).getPubKey() : null) != null) return; // old key was valid, we are not overwriting
 				// If we are here, it was corrupt, or it was just deleted, so we can replace it.
 				if(logMINOR) Logger.minor(this, "Old key was invalid, adding anyway");
 				innerPut(block, routingkey, fullKey, data, header);

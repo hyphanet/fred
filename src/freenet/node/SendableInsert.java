@@ -48,5 +48,7 @@ public abstract class SendableInsert extends SendableRequest {
 	}
 
 	public abstract boolean cacheInserts(ObjectContainer container);
+
+	public abstract boolean canWriteClientCache(ObjectContainer container);
 	
 }

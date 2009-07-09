@@ -214,9 +214,9 @@ public class NodeSSK extends Key {
 		return new NodeSSK(pubkeyHash, encryptedHashedDocname, null, cryptoAlgorithm);
 	}
 
-	public boolean grabPubkey(GetPubkey pubkeyCache) {
+	public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache) {
 		if(pubKey != null) return false;
-		pubKey = pubkeyCache.getKey(pubKeyHash);
+		pubKey = pubkeyCache.getKey(pubKeyHash, canReadClientCache);
 		return pubKey != null;
 	}
 

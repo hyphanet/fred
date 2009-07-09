@@ -56,6 +56,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     private Thread runThread;
     PartiallyReceivedBlock prb;
     final InsertTag tag;
+    private boolean canWriteDatastore;
     
     CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
         this.req = req;
@@ -67,6 +68,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
         if(htl <= 0) htl = 1;
+        canWriteDatastore = node.canWriteDatastoreInsert(htl);
         receivedBytes(req.receivedByteCount());
     }
     
@@ -150,7 +152,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
-            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, true);
+            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, true, false);
         br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
         
         // Receive the data, off thread
@@ -384,7 +386,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
                 if(!canCommit) return;
                 if(!prb.allReceived()) return;
                 CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
-                node.store(block);
+                node.store(block, false, canWriteDatastore);
                 if(logMINOR) Logger.minor(this, "Committed");
             } catch (CHKVerifyException e) {
             	Logger.error(this, "Verify failed in CHKInsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);

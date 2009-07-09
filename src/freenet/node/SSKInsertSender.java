@@ -59,6 +59,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private boolean hasRecentlyCollided;
     private SSKBlock block;
     private static boolean logMINOR;
+    private final boolean canWriteClientCache;
+    private final boolean canWriteDatastore;
     
     private int status = -1;
     /** Still running */
@@ -76,7 +78,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore) {
+    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
@@ -95,6 +97,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	pubKeyHash = SHA256.digest(pubKeyAsBytes);
     	this.block = block;
     	startTime = System.currentTimeMillis();
+    	this.canWriteClientCache = canWriteClientCache;
+    	this.canWriteDatastore = canWriteDatastore;
     }
 
     void start() {

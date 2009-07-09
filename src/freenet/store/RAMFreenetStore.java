@@ -40,7 +40,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	}
 	
 	public synchronized T fetch(byte[] routingKey, byte[] fullKey,
-			boolean dontPromote) throws IOException {
+			boolean dontPromote, boolean canReadClientCache) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		Block block = blocksByRoutingKey.get(key);
 		if(block == null) {
@@ -49,7 +49,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		}
 		try {
 			T ret =
-				callback.construct(block.data, block.header, routingKey, block.fullKey);
+				callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, null);
 			hits++;
 			if(!dontPromote)
 				blocksByRoutingKey.push(key, block);

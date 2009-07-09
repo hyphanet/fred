@@ -355,21 +355,26 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			boolean localRequestOnly;
 			boolean cacheLocalRequests;
 			boolean ignoreStore;
+			boolean canWriteClientCache;
 			if(req instanceof SendableGet) {
 				SendableGet sg = (SendableGet) req;
 				FetchContext ctx = sg.getContext();
 				localRequestOnly = ctx.localRequestOnly;
 				cacheLocalRequests = ctx.cacheLocalRequests;
 				ignoreStore = ctx.ignoreStore;
+				canWriteClientCache = ctx.canWriteClientCache;
 			} else {
 				localRequestOnly = false;
-				if(req instanceof SendableInsert)
+				if(req instanceof SendableInsert) {
 					cacheLocalRequests = ((SendableInsert)req).cacheInserts(null);
-				else
+					canWriteClientCache = ((SendableInsert)req).canWriteClientCache(null);
+				} else {
 					cacheLocalRequests = false;
+					canWriteClientCache = false;
+				}
 				ignoreStore = false;
 			}
-			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, sched);
+			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, canWriteClientCache, sched);
 			return ret;
 		}
 	}
