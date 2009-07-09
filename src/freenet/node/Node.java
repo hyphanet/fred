@@ -2926,7 +2926,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(forULPR || useSlashdotCache || canReadClientCache) {
 			try {
-				SSKBlock block = sskSlashdotcache.fetch(key, dontPromote || !canWriteClientCache, canReadClientCache, forULPR);
+				SSKBlock block = sskSlashdotcache.fetch(key, dontPromote, canReadClientCache, forULPR);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from slashdot/ULPR cache: "+e, e);
@@ -2968,7 +2968,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(forULPR || useSlashdotCache || canReadClientCache) {
 			try {
-				CHKBlock block = chkSlashdotcache.fetch(key, dontPromote || !canWriteClientCache);
+				CHKBlock block = chkSlashdotcache.fetch(key, dontPromote);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from slashdot/ULPR cache: "+e, e);
