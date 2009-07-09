@@ -735,6 +735,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			return;
 		}
+		short htl = node.maxHTL();
+		// If another node requested it within the ULPR period at a lower HTL, that may allow
+		// us to cache it in the datastore. Find the lowest HTL fetching the key in that period,
+		// and use that for purposes of deciding whether to cache it in the store.
+		if(offersOnly)
+			htl = node.failureTable.minOfferedHTL(key, htl);
 		asyncGet(key, isSSK, cache, offersOnly, uid, new RequestSender.Listener() {
 
 			public void onCHKTransferBegins() {
@@ -756,7 +762,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void onAbortDownstreamTransfers(int reason, String desc) {
 				// Ignore, onRequestSenderFinished will also be called.
 			}
-		}, tag, canReadClientCache, canWriteClientCache);
+		}, tag, canReadClientCache, canWriteClientCache, htl);
 	}
 
 	/**
@@ -765,7 +771,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean isSSK, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache) {
+	void asyncGet(Key key, boolean isSSK, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl) {
 		try {
 			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, false, cache, false, offersOnly, canReadClientCache, canWriteClientCache);
 			if(o instanceof KeyBlock) {

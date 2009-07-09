@@ -654,4 +654,13 @@ public class FailureTable implements OOMHook {
 			entriesByKey.clear();
 		}
 	}
+
+	public short minOfferedHTL(Key key, short htl) {
+		FailureTableEntry entry;
+		synchronized(this) {
+			entry = entriesByKey.get(key);
+			if(entry == null) return htl;
+		}
+		return entry.minRequestorHTL(htl);
+	}
 }

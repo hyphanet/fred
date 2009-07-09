@@ -560,4 +560,32 @@ class FailureTableEntry implements TimedOutNodesList {
 		return isEmpty(System.currentTimeMillis());
 	}
 
+	public synchronized short minRequestorHTL(short htl) {
+		long now = System.currentTimeMillis();
+		boolean anyValid = false;
+		for(int i=0;i<requestorNodes.length;i++) {
+			WeakReference<PeerNode> ref = requestorNodes[i];
+			if(ref == null) continue;
+			PeerNode pn = ref.get();
+			if(pn == null) {
+				requestorNodes[i] = null;
+				continue;
+			}
+			long bootID = pn.getBootID();
+			if(bootID != requestorBootIDs[i]) {
+				requestorNodes[i] = null;
+				continue;
+			}
+			if(now - requestorTimes[i] < MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
+				if(requestorHTLs[i] < htl) htl = requestorHTLs[i];
+			} 
+		}
+		if(!anyValid) {
+			requestorNodes = EMPTY_WEAK_REFERENCE;
+			requestorTimes = requestorBootIDs = EMPTY_LONG_ARRAY;;
+			requestorHTLs = EMPTY_SHORT_ARRAY;
+		}
+		return htl;
+	}
+
 }
