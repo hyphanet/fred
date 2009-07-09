@@ -116,7 +116,7 @@ public class FailureTable implements OOMHook {
 		entry.failedTo(routedTo, timeout, now, htl);
 	}
 	
-	public void onFinalFailure(Key key, PeerNode routedTo, short htl, int timeout, PeerNode requestor) {
+	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
@@ -131,7 +131,7 @@ public class FailureTable implements OOMHook {
 		if(routedTo != null)
 			entry.failedTo(routedTo, timeout, now, htl);
 		if(requestor != null)
-			entry.addRequestor(requestor, now);
+			entry.addRequestor(requestor, now, origHTL);
 	}
 	
 	private synchronized void trimEntries(long now) {
