@@ -94,8 +94,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	/** This DOES NOT PERSIST */
-	private final OfferedKeysList[] offeredKeys;
+	/** Offered keys list. Only one, not split by priority, to prevent various attacks relating
+	 * to offering specific keys and timing how long it takes for the node to request the key. 
+	 * Non-persistent. */
+	private final OfferedKeysList offeredKeys;
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
@@ -136,9 +138,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		if(!forInserts) {
-			offeredKeys = new OfferedKeysList[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-			for(short i=0;i<RequestStarter.NUMBER_OF_PRIORITY_CLASSES;i++)
-				offeredKeys[i] = new OfferedKeysList(core, random, i, forSSKs);
+			offeredKeys = new OfferedKeysList(core, random, (short)0, forSSKs);
 		} else {
 			offeredKeys = null;
 		}
@@ -882,9 +882,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
 		
 		if(offeredKeys != null) {
-			for(int i=0;i<offeredKeys.length;i++) {
-				offeredKeys[i].remove(block.getKey());
-			}
+			offeredKeys.remove(block.getKey());
 		}
 		final Key key = block.getKey();
 		schedTransient.tripPendingKey(key, block, null, clientContext);
@@ -918,7 +916,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		priority = schedTransient.getKeyPrio(key, priority, null, clientContext);
 		if(priority < Short.MAX_VALUE) {
-			offeredKeys[priority].queueKey(key);
+			offeredKeys.queueKey(key);
 			starter.wakeUp();
 		}
 		
@@ -931,7 +929,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					// Don't activate/deactivate the key, because it's not persistent in the first place!!
 					short priority = schedCore.getKeyPrio(key, oldPrio, container, context);
 					if(priority >= oldPrio) return false; // already on list at >= priority
-					offeredKeys[priority].queueKey(key.cloneKey());
+					offeredKeys.queueKey(key.cloneKey());
 					starter.wakeUp();
 					return false;
 				}
@@ -946,9 +944,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void dequeueOfferedKey(Key key) {
-		for(int i=0;i<offeredKeys.length;i++) {
-			offeredKeys[i].remove(key);
-		}
+		offeredKeys.remove(key);
 	}
 
 	/**
