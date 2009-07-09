@@ -389,7 +389,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		int choosenPriorityClass = removeFirstAccordingToPriorities(fuzz, random, schedTransient, transientOnly, maxPrio, container);
 		if(choosenPriorityClass == -1) {
 			if(!tryOfferedKeys) {
-				if(offeredKeys.hasValidKeys(this, null, context))
+				if(offeredKeys != null && offeredKeys.hasValidKeys(this, null, context))
 					return offeredKeys;
 			}
 			if(logMINOR)
