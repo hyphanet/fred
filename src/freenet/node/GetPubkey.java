@@ -33,8 +33,11 @@ public class GetPubkey {
 	private PubkeyStore pubKeyClientcache;
 	private PubkeyStore pubKeySlashdotcache;
 	
-	GetPubkey() {
+	private final Node node;
+	
+	GetPubkey(Node node) {
 		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
+		this.node = node;
 	}
 
 	void setDataStore(PubkeyStore pubKeyDatastore, PubkeyStore pubKeyDatacache) {
@@ -69,13 +72,25 @@ public class GetPubkey {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
 				key = pubKeyClientcache.fetch(hash, false);
+			if(pubKeyClientcache != null && canReadClientCache && key == null) {
+				PubkeyStore pks = node.oldPKClientCache;
+				if(pks != null) key = pks.fetch(hash, false);
+			}
 			if(key == null && pubKeySlashdotcache != null && forULPR)
 				key = pubKeySlashdotcache.fetch(hash, false);
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
 			if(key == null)
 				key = pubKeyDatastore.fetch(hash, false);
+			if(key == null) {
+				PubkeyStore pks = node.oldPK;
+				if(pks != null) key = pks.fetch(hash, false);
+			}
 			if (key == null)
 				key = pubKeyDatacache.fetch(hash, false);
+			if(key == null) {
+				PubkeyStore pks = node.oldPKCache;
+				if(pks != null) key = pks.fetch(hash, false);
+			}
 			if (key != null) {
 				// Just put into the in-memory cache
 				cacheKey(hash, key, false, false, false, forULPR, false);

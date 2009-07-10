@@ -100,11 +100,13 @@ import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.CHKStore;
+import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.store.SlashdotStore;
+import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
@@ -140,18 +142,74 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 public class Node implements TimeSkewDetectorCallback {
 
 	public class MigrateOldStoreData implements Runnable {
-
+		
+		private final boolean clientCache;
+		
 		public MigrateOldStoreData(boolean clientCache) {
-			// TODO Auto-generated constructor stub
+			this.clientCache = clientCache;
+			if(clientCache) {
+				oldCHK = chkClientcache;
+				oldPK = pubKeyClientcache;
+				oldSSK = sskClientcache;
+			} else {
+				oldCHK = chkDatastore;
+				oldPK = pubKeyDatastore;
+				oldSSK = sskDatastore;
+				oldCHKCache = chkDatastore;
+				oldPKCache = pubKeyDatastore;
+				oldSSKCache = sskDatastore;
+			}
 		}
 
 		public void run() {
-			// TODO Auto-generated method stub
-
+			if(clientCache) {
+				migrateOldStore(oldCHKClientCache, chkClientcache, true);
+				oldCHKClientCache = null;
+				migrateOldStore(oldPKClientCache, pubKeyClientcache, true);
+				oldPKClientCache = null;
+				migrateOldStore(oldSSKClientCache, sskClientcache, true);
+				oldSSKClientCache = null;
+			} else {
+				migrateOldStore(oldCHK, chkDatastore, false);
+				oldCHK = null;
+				migrateOldStore(oldPK, pubKeyDatastore, false);
+				oldPK = null;
+				migrateOldStore(oldSSK, sskDatastore, false);
+				oldSSK = null;
+				migrateOldStore(oldCHKCache, chkDatacache, false);
+				oldCHKCache = null;
+				migrateOldStore(oldPKCache, pubKeyDatacache, false);
+				oldPKCache = null;
+				migrateOldStore(oldSSKCache, sskDatacache, false);
+				oldSSKCache = null;
+			}
 		}
 
 	}
+	
+	volatile CHKStore oldCHK;
+	volatile PubkeyStore oldPK;
+	volatile SSKStore oldSSK;
+	
+	volatile CHKStore oldCHKCache;
+	volatile PubkeyStore oldPKCache;
+	volatile SSKStore oldSSKCache;
 
+	volatile CHKStore oldCHKClientCache;
+	volatile PubkeyStore oldPKClientCache;
+	volatile SSKStore oldSSKClientCache;
+	
+	private <T extends StorableBlock> void migrateOldStore(StoreCallback<T> old, StoreCallback<T> newStore, boolean canReadClientCache) {
+		RAMFreenetStore<T> store = (RAMFreenetStore<T>)old.getStore();
+		try {
+			store.migrateTo(newStore, canReadClientCache);
+		} catch (IOException e) {
+			Logger.error(this, "Caught migrating old store: "+e, e);
+		}
+		store.clear();
+	}
+	
+	
 	private static volatile boolean logMINOR;
 
 	static {
@@ -524,7 +582,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * sharing purposes. */
 	private boolean writeLocalToDatastore;
 
-	GetPubkey getPubKey = new GetPubkey();
+	final GetPubkey getPubKey;
 	
 	/** RequestSender's currently running, by KeyHTLPair */
 	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
@@ -835,6 +893,7 @@ public class Node implements TimeSkewDetectorCallback {
 		nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
+		getPubKey = new GetPubkey(this);
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
@@ -3171,6 +3230,11 @@ public class Node implements TimeSkewDetectorCallback {
 			double dist=Location.distance(lm.getLocation(), loc);
 			nodeStats.avgRequestLocation.report(loc);
 			SSKBlock block = sskDatastore.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+			if(block == null) {
+				SSKStore store = oldSSK;
+				if(store != null)
+					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+			}
 			if(block != null) {
 				nodeStats.avgStoreSuccess.report(loc);
 				if (dist > nodeStats.furthestStoreSuccess)
@@ -3178,6 +3242,11 @@ public class Node implements TimeSkewDetectorCallback {
 				return block;
 			}
 			block=sskDatacache.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+			if(block == null) {
+				SSKStore store = oldSSKCache;
+				if(store != null)
+					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+			}
 			if (block != null) {
 				nodeStats.avgCacheSuccess.report(loc);
 				if (dist > nodeStats.furthestCacheSuccess)
@@ -3213,6 +3282,11 @@ public class Node implements TimeSkewDetectorCallback {
 			double dist=Location.distance(lm.getLocation(), loc);
 			nodeStats.avgRequestLocation.report(loc);
 			CHKBlock block = chkDatastore.fetch(key, dontPromote || !canWriteDatastore);
+			if(block == null) {
+				CHKStore store = oldCHK;
+				if(store != null)
+					block = store.fetch(key, dontPromote || !canWriteDatastore);
+			}
 			if (block != null) {
 				nodeStats.avgStoreSuccess.report(loc);
 				if (dist > nodeStats.furthestStoreSuccess)
@@ -3220,6 +3294,11 @@ public class Node implements TimeSkewDetectorCallback {
 				return block;
 			}
 			block=chkDatacache.fetch(key, dontPromote || !canWriteDatastore);
+			if(block == null) {
+				CHKStore store = oldCHKCache;
+				if(store != null)
+					block = store.fetch(key, dontPromote || !canWriteDatastore);
+			}
 			if (block != null) {
 				nodeStats.avgCacheSuccess.report(loc);
 				if (dist > nodeStats.furthestCacheSuccess)
