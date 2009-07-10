@@ -610,6 +610,9 @@ public class StatisticsToadlet extends Toadlet {
 		row.addChild("td", "Distance Stats");
 		row.addChild("td", fix3p1pct.format(storePercent));
 		row.addChild("td", fix3p1pct.format(cachePercent));
+		
+		node.drawClientCacheBox(storeSizeInfobox);
+		node.drawSlashdotCacheBox(storeSizeInfobox);
 	}
 
 	private void drawUnclaimedFIFOMessageCountsBox(HTMLNode unclaimedFIFOMessageCountsInfobox) {

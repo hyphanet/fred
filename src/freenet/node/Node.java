@@ -3058,7 +3058,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(canWriteClientCache) {
 				chkClientcache.put(block);
 			}
-			if(forULPR || useSlashdotCache && !canWriteDatastore)
+			if((forULPR || useSlashdotCache) && !canWriteDatastore)
 				chkSlashdotcache.put(block);
 			if(canWriteDatastore) {
 				double loc=block.getKey().toNormalizedDouble();
@@ -3103,7 +3103,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(canWriteClientCache) {
 				sskClientcache.put(block, overwrite);
 			}
-			if(forULPR || useSlashdotCache && !canWriteDatastore)
+			if((forULPR || useSlashdotCache) && !canWriteDatastore)
 				sskSlashdotcache.put(block, overwrite);
 			if(canWriteDatastore) {
 				if(deep) {
@@ -4434,6 +4434,18 @@ public class Node implements TimeSkewDetectorCallback {
 				turtles += senders.length;
 			return turtles;
 		}
+	}
+
+	public void drawClientCacheBox(HTMLNode storeSizeInfobox) {
+		HTMLNode div = storeSizeInfobox.addChild("div");
+		div.addChild("p", "Client cache max size: "+this.maxClientCacheKeys+" keys");
+		div.addChild("p", "Client cache size: CHK "+this.chkClientcache.keyCount()+" pubkey "+this.pubKeyClientcache.keyCount()+" SSK "+this.sskClientcache.keyCount());
+	}
+
+	public void drawSlashdotCacheBox(HTMLNode storeSizeInfobox) {
+		HTMLNode div = storeSizeInfobox.addChild("div");
+		div.addChild("p", "Slashdot/ULPR cache max size: "+MAX_SLASHDOT_CACHE_KEYS+" keys");
+		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
 	}
 
 }
