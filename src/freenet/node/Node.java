@@ -3133,7 +3133,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public void store(SSKBlock block, double loc, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
 		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
-		store(block, deep, overwrite, canWriteClientCache, canWriteDatastore);
+		store(block, deep, overwrite, canWriteClientCache, canWriteDatastore, false); // Not a ULPR
 	}
 	
 	/**
