@@ -948,7 +948,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.storeShallow(block, canWriteClientCache, canWriteDatastore);
+			node.storeShallow(block, canWriteClientCache, canWriteDatastore, false);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next, false);
@@ -970,7 +970,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private boolean finishSSKFromGetOffer(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.storeShallow(block, canWriteClientCache, canWriteDatastore);
+			node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next, true);
@@ -1000,12 +1000,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		// requests don't go to the full distance, and therefore pollute the 
     		// store; simulations it is best to only include data from requests
     		// which go all the way i.e. inserts.
-    		node.storeShallow(block, canWriteClientCache, canWriteDatastore);
+    		node.storeShallow(block, canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
     		try {
-				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false), canWriteClientCache, canWriteDatastore);
+				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false), canWriteClientCache, canWriteDatastore, tryOffersOnly);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

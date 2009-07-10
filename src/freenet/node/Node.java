@@ -3033,7 +3033,7 @@ public class Node implements TimeSkewDetectorCallback {
 		store(block, deep, canWriteClientCache, canWriteDatastore, forULPR);
 	}
 	
-	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore) {
+	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		store(block, false, canWriteClientCache, canWriteDatastore, false);
 	}
 
@@ -3091,8 +3091,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Store only to the cache, and not the store. Called by requests,
 	 * as only inserts cause data to be added to the store. */
-	public void storeShallow(SSKBlock block, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
-		store(block, false, canWriteClientCache, canWriteDatastore, false);
+	public void storeShallow(SSKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean fromULPR) throws KeyCollisionException {
+		store(block, false, canWriteClientCache, canWriteDatastore, fromULPR);
 	}
 	
 	public void store(SSKBlock block, boolean deep, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) throws KeyCollisionException {
