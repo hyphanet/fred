@@ -1,0 +1,212 @@
+package freenet.store;
+
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.sleepycat.je.DatabaseException;
+
+import freenet.keys.KeyVerifyException;
+import freenet.node.Ticker;
+import freenet.support.ByteArrayWrapper;
+import freenet.support.LRUHashtable;
+import freenet.support.api.Bucket;
+import freenet.support.io.TempBucketFactory;
+
+/** Short-term cache. Used to cache all blocks retrieved in the last 30 minutes (on low 
+ * security levels), or just to cache data fetched through ULPRs (on higher security levels).
+ * - Strict LRU.
+ * - Size limit.
+ * - Strictly enforced time limit.
+ * - Blocks are encrypted, and kept in temp files.
+ * 
+ * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+ */
+public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
+
+	private class DiskBlock {
+		Bucket data;
+		long lastAccessed;
+	}
+	
+	private final TempBucketFactory bf;
+	
+	private final long maxLifetime;
+	
+	private final long purgePeriod;
+	
+	// PURGING OLD DATA:
+	// Every X period? I don't think it matters if we're a few minutes out, and it's probably easiest that way...
+	
+	private final Ticker ticker;
+	
+	private final LRUHashtable<ByteArrayWrapper, DiskBlock> blocksByRoutingKey;
+	
+	private final StoreCallback<T> callback;
+	
+	private int maxKeys;
+	
+	private long hits;
+	private long misses;
+	private long writes;
+	
+	private final int headerSize;
+	private final int dataSize;
+	private final int fullKeySize;
+	
+	public SlashdotStore(StoreCallback<T> callback, int maxKeys, long maxLifetime, long purgePeriod, Ticker ticker, TempBucketFactory tbf) {
+		this.callback = callback;
+		this.blocksByRoutingKey = new LRUHashtable<ByteArrayWrapper, DiskBlock>();
+		this.maxKeys = maxKeys;
+		this.bf = tbf;
+		this.ticker = ticker;
+		this.maxLifetime = maxLifetime;
+		this.purgePeriod = purgePeriod;
+		callback.setStore(this);
+		this.headerSize = callback.headerLength();
+		this.dataSize = callback.dataLength();
+		this.fullKeySize = callback.fullKeyLength();
+		ticker.queueTimedJob(purgeOldData, maxLifetime + purgePeriod);
+	}
+	
+	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
+		DiskBlock block;
+		synchronized(this) {
+			block = blocksByRoutingKey.get(key);
+			if(block == null) {
+				misses++;
+				return null;
+			}
+		}
+		InputStream in = block.data.getInputStream();
+		DataInputStream dis = new DataInputStream(in);
+		byte[] fk = new byte[fullKeySize];
+		byte[] header = new byte[headerSize];
+		byte[] data = new byte[dataSize];
+		dis.readFully(fk);
+		dis.readFully(header);
+		dis.readFully(data);
+		in.close();
+		try {
+			T ret =
+				callback.construct(data, header, routingKey, fk, canReadClientCache, canReadSlashdotCache, null);
+			hits++;
+			if(!dontPromote) {
+				block.lastAccessed = System.currentTimeMillis();
+				blocksByRoutingKey.push(key, block);
+			}
+			return ret;
+		} catch (KeyVerifyException e) {
+			block.data.free();
+			synchronized(this) {
+				blocksByRoutingKey.removeKey(key);
+				misses++;
+			}
+			return null;
+		}
+	}
+
+	public long getBloomFalsePositive() {
+		return -1;
+	}
+
+	public long getMaxKeys() {
+		return maxKeys;
+	}
+
+	public long hits() {
+		return hits;
+	}
+
+	public long keyCount() {
+		return blocksByRoutingKey.size();
+	}
+
+	public long misses() {
+		return misses;
+	}
+
+	public boolean probablyInStore(byte[] routingKey) {
+		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
+		return blocksByRoutingKey.containsKey(key);
+	}
+
+	public void put(T block, byte[] data, byte[] header, boolean overwrite) throws IOException, KeyCollisionException {
+		byte[] routingkey = block.getRoutingKey();
+		byte[] fullKey = block.getFullKey();
+		
+		Bucket bucket = bf.makeBucket(fullKeySize + dataSize + headerSize);
+		OutputStream os = bucket.getOutputStream();
+		os.write(fullKey);
+		os.write(header);
+		os.write(data);
+		os.close();
+		
+		DiskBlock stored = new DiskBlock();
+		stored.data = bucket;
+		purgeOldData(new ByteArrayWrapper(routingkey), stored);
+	}
+
+	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {
+		if(maxStoreKeys > Integer.MAX_VALUE) throw new IllegalArgumentException();
+		this.maxKeys = (int) maxStoreKeys;
+		if(shrinkNow) {
+			purgeOldData();
+		} else {
+			ticker.queueTimedJob(new Runnable() {
+
+				public void run() {
+					purgeOldData();
+					// Don't re-schedule
+				}
+				
+			}, 0);
+		}
+	}
+
+	public long writes() {
+		return writes;
+	}
+
+	private final Runnable purgeOldData = new Runnable() {
+
+		public void run() {
+			try {
+				purgeOldData();
+			} finally {
+				ticker.queueTimedJob(this, purgePeriod);
+			}
+		}
+		
+	};
+
+	protected void purgeOldData() {
+		purgeOldData(null, null);
+	}
+	
+	protected void purgeOldData(ByteArrayWrapper key, DiskBlock addFirst) {
+		List<DiskBlock> blocks = null;
+		synchronized(this) {
+			long now = System.currentTimeMillis();
+			if(addFirst != null) {
+				addFirst.lastAccessed = now;
+				blocksByRoutingKey.push(key, addFirst);
+			}
+			while(true) {
+				DiskBlock block = blocksByRoutingKey.peekValue();
+				if(now - block.lastAccessed < maxLifetime && blocksByRoutingKey.size() < maxKeys) break;
+				if(blocks == null) blocks = new ArrayList<DiskBlock>();
+				blocks.add(block);
+				blocksByRoutingKey.popValue();
+			}
+		}
+		if(blocks == null) return;
+		for(DiskBlock block : blocks) {
+			block.data.free();
+		}
+	}
+}

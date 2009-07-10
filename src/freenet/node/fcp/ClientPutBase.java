@@ -63,26 +63,28 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries, boolean earlyEncode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
+		ctx.canWriteClientCache = canWriteClientCache;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
 			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
+		ctx.canWriteClientCache = canWriteClientCache;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}

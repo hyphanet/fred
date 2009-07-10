@@ -66,6 +66,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     final Key key;
     final double target;
     private short htl;
+    private final short origHTL;
     final long uid;
     final Node node;
     /** The source of this request if any - purely so we can avoid routing to it */
@@ -81,6 +82,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private boolean sentBackoffTurtle;
     /** Set when we start to think about going to turtle mode - not unset if we get cancelled instead. */
     private boolean tryTurtle;
+    private final boolean canWriteClientCache;
+    private final boolean canWriteDatastore;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -163,16 +166,19 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * already; RequestSender will not look it up.
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n,
-            PeerNode source, boolean offersOnly) {
+            PeerNode source, boolean offersOnly, boolean canWriteClientCache, boolean canWriteDatastore) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
     	startTime = System.currentTimeMillis();
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
+        this.origHTL = htl;
         this.uid = uid;
         this.node = n;
         this.source = source;
         this.tryOffersOnly = offersOnly;
+        this.canWriteClientCache = canWriteClientCache;
+        this.canWriteDatastore = canWriteDatastore;
         target = key.toNormalizedDouble();
         node.addRequestSender(key, htl, this);
     }
@@ -438,7 +444,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	// This used to be RNF, I dunno why
 				//???: finish(GENERATED_REJECTED_OVERLOAD, null);
                 finish(DATA_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, FailureTable.REJECT_TIME, source);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, FailureTable.REJECT_TIME, source);
                 return;
             }
 
@@ -453,7 +459,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
                 // Backtrack
                 finish(ROUTE_NOT_FOUND, null, false);
-                node.failureTable.onFinalFailure(key, null, htl, -1, source);
+                node.failureTable.onFinalFailure(key, null, htl, origHTL, -1, source);
                 return;
             }
             
@@ -610,7 +616,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
             		finish(TIMED_OUT, next, false);
-            		node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+            		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
             		return;
             	}
 				
@@ -621,7 +627,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	if(msg.getSpec() == DMT.FNPDataNotFound) {
             		next.successNotOverload();
             		finish(DATA_NOT_FOUND, next, false);
-            		node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+            		node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
             		return;
             	}
             	
@@ -686,7 +692,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		// If there is, we will avoid sending requests for the specified period.
             		// FIXME we need to create the FT entry.
            			finish(RECENTLY_FAILED, next, false);
-           			node.failureTable.onFinalFailure(key, next, htl, timeLeft, source);
+           			node.failureTable.onFinalFailure(key, next, htl, origHTL, timeLeft, source);
             		return;
             	}
             	
@@ -800,7 +806,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			} catch (KeyVerifyException e1) {
                 				Logger.normal(this, "Got data but verify failed: "+e1, e1);
                 				finish(VERIFY_FAILURE, next, false);
-                				node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+                				node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
                 				return;
                 			}
                 			finish(SUCCESS, next, false);
@@ -827,7 +833,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 								Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+next, e);
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
-                			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+                			node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
             				int reason = e.getReason();
                 			boolean timeout = (!br.senderAborted()) &&
     							(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
@@ -840,7 +846,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                					// Quick failure (in that we didn't have to timeout). Don't backoff.
                					// Treat as a DNF.
                					// If it was turtled, and then failed, still treat it as a DNF.
-           						node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+           						node.failureTable.onFinalFailure(key, next, htl, origHTL, FailureTable.REJECT_TIME, source);
                				}
                    			node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
                 			return;
@@ -942,7 +948,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.storeShallow(block);
+			node.storeShallow(block, canWriteClientCache, canWriteDatastore);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next, false);
@@ -964,7 +970,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private boolean finishSSKFromGetOffer(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.storeShallow(block);
+			node.storeShallow(block, canWriteClientCache, canWriteDatastore);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next, true);
@@ -994,12 +1000,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     		// requests don't go to the full distance, and therefore pollute the 
     		// store; simulations it is best to only include data from requests
     		// which go all the way i.e. inserts.
-    		node.storeShallow(block);
+    		node.storeShallow(block, canWriteClientCache, canWriteDatastore);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
     		try {
-				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false));
+				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false), canWriteClientCache, canWriteDatastore);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}
@@ -1472,7 +1478,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
 	public void killTurtle() {
 		prb.abort(RetrievalException.TURTLE_KILLED, "Too many turtles / already have turtles for this key");
-		node.failureTable.onFinalFailure(key, transferringFrom(), htl, FailureTable.REJECT_TIME, source);
+		node.failureTable.onFinalFailure(key, transferringFrom(), htl, origHTL, FailureTable.REJECT_TIME, source);
 	}
 
 	public boolean abortedDownstreamTransfers() {

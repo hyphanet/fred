@@ -148,7 +148,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
 					insertAttempts++;
-					randomNode.clientCore.realPut(block, true);
+					randomNode.clientCore.realPut(block, true, false);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {
@@ -162,7 +162,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = fetchNode.clientCore.realGetKey(fetchKey, false, true, false);
+                block = fetchNode.clientCore.realGetKey(fetchKey, false, true, false, false);
                 if(block == null) {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);

@@ -30,6 +30,8 @@ public class GetPubkey {
 
 	private PubkeyStore pubKeyDatastore;
 	private PubkeyStore pubKeyDatacache;
+	private PubkeyStore pubKeyClientcache;
+	private PubkeyStore pubKeySlashdotcache;
 	
 	GetPubkey() {
 		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
@@ -40,12 +42,14 @@ public class GetPubkey {
 		this.pubKeyDatacache = pubKeyDatacache;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see freenet.node.GetPubkey#getKey(byte[])
+	/**
+	 * Get a public key by hash.
+	 * @param hash The hash of the public key. Normally from an SSK.
+	 * @param canReadClientCache If this is a local request, we can read the client-cache.
+	 * @param canWriteDatastore If this is a request with high HTL, we can't promote it.
+	 * @return A public key, or null.
 	 */
-	public DSAPublicKey getKey(byte[] hash) {
+	public DSAPublicKey getKey(byte[] hash, boolean canReadClientCache, boolean forULPR) {
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		if (logMINOR)
 			Logger.minor(this, "Getting pubkey: " + HexUtil.bytesToHex(hash));
@@ -62,12 +66,19 @@ public class GetPubkey {
 			}
 		}
 		try {
-			DSAPublicKey key;
-			key = pubKeyDatastore.fetch(hash, false);
+			DSAPublicKey key = null;
+			if(pubKeyClientcache != null && canReadClientCache)
+				key = pubKeyClientcache.fetch(hash, false);
+			if(key == null && pubKeySlashdotcache != null && forULPR)
+				key = pubKeySlashdotcache.fetch(hash, false);
+			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
+			if(key == null)
+				key = pubKeyDatastore.fetch(hash, false);
 			if (key == null)
 				key = pubKeyDatacache.fetch(hash, false);
 			if (key != null) {
-				cacheKey(hash, key, false);
+				// Just put into the in-memory cache
+				cacheKey(hash, key, false, false, false, forULPR);
 				if (logMINOR)
 					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from store");
 			}
@@ -80,9 +91,18 @@ public class GetPubkey {
 	}
 
 	/**
-	 * Cache a public key
+	 * Cache a public key.
+	 * @param hash The hash of the public key.
+	 * @param key The key to store.
+	 * @param deep If true, we can store to the datastore rather than the cache.
+	 * @param canWriteClientCache If true, we can write to the client-cache. Only set if the 
+	 * request originated locally, and the client-cache option hasn't been turned off.
+	 * @param canWriteDatastore If true, we cannot *write to* the store or the cache. This 
+	 * happens for high initial HTL on both local requests and requests started relatively 
+	 * nearby.
+	 * @param forULPR 
 	 */
-	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep) {
+	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		if (logMINOR)
 			Logger.minor(this, "Cache key: " + HexUtil.bytesToHex(hash) + " : " + key);
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
@@ -91,6 +111,7 @@ public class GetPubkey {
 			if ((key2 != null) && !key2.equals(key)) {
 				// FIXME is this test really needed?
 				// SHA-256 inside synchronized{} is a bad idea
+				// FIXME get rid
 				MessageDigest md256 = SHA256.getMessageDigest();
 				try {
 					byte[] hashCheck = md256.digest(key.asBytes());
@@ -104,7 +125,7 @@ public class GetPubkey {
 						} else {
 							Logger.error(this, "Old hash is wrong!");
 							cachedPubKeys.removeKey(w);
-							cacheKey(hash, key, deep);
+							cacheKey(hash, key, deep, canWriteClientCache, canWriteDatastore, forULPR);
 						}
 					} else {
 						Logger.error(this, "New hash is wrong");
@@ -119,6 +140,20 @@ public class GetPubkey {
 				cachedPubKeys.popKey();
 		}
 		try {
+			if (canWriteClientCache) {
+				if(pubKeyClientcache != null) {
+					pubKeyClientcache.put(hash, key);
+					pubKeyClientcache.fetch(hash, true);
+				}
+			}
+			if (forULPR) {
+				if(pubKeySlashdotcache!= null) {
+					pubKeySlashdotcache.put(hash, key);
+					pubKeySlashdotcache.fetch(hash, true);
+				}
+			}
+			// Cannot write to the store or cache if request started nearby.
+			if(!canWriteDatastore) return;
 			if (deep) {
 				pubKeyDatastore.put(hash, key);
 				pubKeyDatastore.fetch(hash, true);
@@ -129,5 +164,13 @@ public class GetPubkey {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: " + e, e);
 		}
+	}
+
+	public void setLocalDataStore(PubkeyStore pubKeyClientcache) {
+		this.pubKeyClientcache = pubKeyClientcache;
+	}
+	
+	public void setLocalSlashdotcache(PubkeyStore pubKeySlashdotcache) {
+		this.pubKeySlashdotcache = pubKeySlashdotcache;
 	}
 }

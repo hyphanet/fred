@@ -279,7 +279,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container){
+	private int removeFirstAccordingToPriorities(int fuzz, RandomSource random, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container){
 		SortedVectorByNumber result = null;
 		
 		short iteration = 0, priority;
@@ -299,8 +299,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				fuzz++;
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
-			if(((result != null) && (!result.isEmpty()))
-					|| (tryOfferedKeys && !offeredKeys[priority].isEmpty(container))) {
+			if(((result != null) && (!result.isEmpty()))) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
@@ -317,7 +316,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+	ChosenBlock removeFirstTransient(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, true, false, maxPrio, retryCount, context, container);
 		if(isInsertScheduler && req instanceof SendableGet) {
 			IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
@@ -355,35 +354,44 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			boolean localRequestOnly;
 			boolean cacheLocalRequests;
 			boolean ignoreStore;
+			boolean canWriteClientCache;
 			if(req instanceof SendableGet) {
 				SendableGet sg = (SendableGet) req;
 				FetchContext ctx = sg.getContext();
 				localRequestOnly = ctx.localRequestOnly;
 				cacheLocalRequests = ctx.cacheLocalRequests;
 				ignoreStore = ctx.ignoreStore;
+				canWriteClientCache = ctx.canWriteClientCache;
 			} else {
 				localRequestOnly = false;
-				if(req instanceof SendableInsert)
+				if(req instanceof SendableInsert) {
 					cacheLocalRequests = ((SendableInsert)req).cacheInserts(null);
-				else
+					canWriteClientCache = ((SendableInsert)req).canWriteClientCache(null);
+				} else {
 					cacheLocalRequests = false;
+					canWriteClientCache = false;
+				}
 				ignoreStore = false;
 			}
-			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, sched);
+			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, canWriteClientCache, sched);
 			return ret;
 		}
 	}
 
-	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
-		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
-		if(choosenPriorityClass == -1 && offeredKeys != null && (!tryOfferedKeys) && (!notTransient)) {
-			tryOfferedKeys = true;
-			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
+		if(tryOfferedKeys) {
+			if(offeredKeys.hasValidKeys(this, null, context))
+				return offeredKeys;
 		}
+		int choosenPriorityClass = removeFirstAccordingToPriorities(fuzz, random, schedTransient, transientOnly, maxPrio, container);
 		if(choosenPriorityClass == -1) {
+			if(!tryOfferedKeys) {
+				if(offeredKeys != null && offeredKeys.hasValidKeys(this, null, context))
+					return offeredKeys;
+			}
 			if(logMINOR)
 				Logger.minor(this, "Nothing to do");
 			return null;
@@ -392,10 +400,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			maxPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 		for(;choosenPriorityClass <= maxPrio;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
-			if(tryOfferedKeys) {
-				if(offeredKeys[choosenPriorityClass].hasValidKeys(this, null, context))
-					return offeredKeys[choosenPriorityClass];
-			}
 			SortedVectorByNumber perm = null;
 			if(!transientOnly)
 				perm = priorities[choosenPriorityClass];

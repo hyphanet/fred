@@ -206,7 +206,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         for(int i=0;i<nodes.length;i++) {
         	System.out.println("Searching from node "+i);
         	try {
-        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, true, false);
+        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, true, false, false);
         		System.err.println("TEST FAILED: KEY ALREADY PRESENT!!!"); // impossible!
         		System.exit(EXIT_KEY_EXISTS);
         	} catch (LowLevelGetException e) {
@@ -240,7 +240,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Store the key to ONE node.
         
 		long tStart = System.currentTimeMillis();
-		nodes[nodes.length-1].store(block, false);
+		nodes[nodes.length-1].store(block, false, false, true, false); // Write to datastore
 		
 		int x = -1;
 		while(true) {
@@ -248,7 +248,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 			Thread.sleep(1000);
 			int count = 0;
 			for(int i=0;i<nodes.length;i++) {
-				if(nodes[i].fetch(fetchKey.getNodeKey(), true) != null)
+				if(nodes[i].fetch(fetchKey.getNodeKey(), true, true, true, true, true) != null)
 					count++;
 			}
 			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
@@ -271,7 +271,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 			if(x % nodes.length == 0) {
 				System.err.print("Nodes that don't have the data: ");
 				for(int i=0;i<nodes.length;i++)
-					if(nodes[i].fetch(fetchKey.getNodeKey(), true) == null) {
+					if(nodes[i].fetch(fetchKey.getNodeKey(), true, true, false, false, true) == null) {
 						System.err.print(i+" ");
 					}
 				System.err.println();

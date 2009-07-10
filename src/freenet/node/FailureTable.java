@@ -116,7 +116,7 @@ public class FailureTable implements OOMHook {
 		entry.failedTo(routedTo, timeout, now, htl);
 	}
 	
-	public void onFinalFailure(Key key, PeerNode routedTo, short htl, int timeout, PeerNode requestor) {
+	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
@@ -131,7 +131,7 @@ public class FailureTable implements OOMHook {
 		if(routedTo != null)
 			entry.failedTo(routedTo, timeout, now, htl);
 		if(requestor != null)
-			entry.addRequestor(requestor, now);
+			entry.addRequestor(requestor, now, origHTL);
 	}
 	
 	private synchronized void trimEntries(long now) {
@@ -287,7 +287,10 @@ public class FailureTable implements OOMHook {
 	protected void innerOnOffer(Key key, PeerNode peer, byte[] authenticator) {
 		if(key.getRoutingKey() == null) throw new NullPointerException();
 		//NB: node.hasKey() executes a datastore fetch
-		if(node.hasKey(key)) {
+		// If we have the key in the datastore (store or cache), we don't want it.
+		// If we have the key in the client cache, we might want it for other nodes,
+		// although hopefully the client layer was tripped when we got it.
+		if(node.hasKey(key, false, true)) {
 			Logger.minor(this, "Already have key");
 			return;
 		}
@@ -413,7 +416,7 @@ public class FailureTable implements OOMHook {
 	 */
 	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag) throws NotConnectedException {
 		if(isSSK) {
-			SSKBlock block = node.fetch((NodeSSK)key, false);
+			SSKBlock block = node.fetch((NodeSSK)key, false, false, false, false, true);
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
@@ -457,7 +460,7 @@ public class FailureTable implements OOMHook {
 				source.sendAsync(pk, null, senderCounter);
 			}
 		} else {
-			CHKBlock block = node.fetch((NodeCHK)key, false);
+			CHKBlock block = node.fetch((NodeCHK)key, false, false, false, false, true);
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
@@ -650,5 +653,14 @@ public class FailureTable implements OOMHook {
 		synchronized (this) {
 			entriesByKey.clear();
 		}
+	}
+
+	public short minOfferedHTL(Key key, short htl) {
+		FailureTableEntry entry;
+		synchronized(this) {
+			entry = entriesByKey.get(key);
+			if(entry == null) return htl;
+		}
+		return entry.minRequestorHTL(htl);
 	}
 }

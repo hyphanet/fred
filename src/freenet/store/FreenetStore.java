@@ -17,9 +17,15 @@ public interface FreenetStore<T extends StorableBlock> {
 	 * @param routingKey The routing key i.e. the database key under which the block is stored.
 	 * @param dontPromote If true, don't promote the block to the top of the LRU.
 	 * @return A StorableBlock, or null if the key cannot be found.
+	 * @param canReadClientCache Whether we can read the client-cache, for purposes of finding
+	 * the pubkey for an SSK.
+	 * @param canWriteClientCache Whether we can write the client-cache, for purposes of finding
+	 * the pubkey for an SSK.
+	 * @param canWriteDatastore Whether we can write the datastore, for purposes of finding the
+	 * pubkey for an SSK.
 	 * @throws IOException If a disk I/O error occurs.
 	 */
-	T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote) throws IOException;
+	T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException;
 	
 	/**
 	 * Store a block.

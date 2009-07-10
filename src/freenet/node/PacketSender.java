@@ -74,6 +74,12 @@ public class PacketSender implements Runnable, Ticker {
 			this.name = name;
 			this.job = job;
 		}
+		
+		public boolean equals(Object o) {
+			if(!(o instanceof Job)) return false;
+			// Ignore the name, we are only interested in the job, needed for noDupes.
+			return ((Job)o).job == job;
+		}
 	}
 	
 	PacketSender(Node node) {
@@ -497,9 +503,23 @@ public class PacketSender implements Runnable, Ticker {
 	public void queueTimedJob(Runnable job, long offset) {
 		queueTimedJob(job, "Scheduled job: "+job, offset, false, false);
 	}
-	
-	/** FIXME: noDupes is not working at all, because it checks whether the Runnable is present,
-	 * but the TreeMap holds Jobs as values.*/
+
+	/**
+	 * Queue a job at a specific time.
+	 * @param runner The job to run. FastRunnable's get run directly on the PacketSender thread.
+	 * @param name The name of the job, the thread running it will temporarily take this name,
+	 * assuming it is run on a separate thread.
+	 * @param offset The time at which to run the job in milliseconds after 
+	 * System.currentTimeMillis().
+	 * @param runOnTickerAnyway If false, run jobs with offset <=0 on the ticker, to preserve
+	 * their thread priorities; if true, jobs to run immediately through the executor (which
+	 * normally will also preserve thread priorities, but may need to call back via 
+	 * runOnTickerAnyway=true if it needs to increase the thread priority).
+	 * @param noDupes Don't run this job if it is already scheduled. Relatively expensive, O(n)
+	 * with queued jobs. Necessary for Announcer to ensure that we don't get exponentially 
+	 * increasing numbers of announcement check jobs queued, while ensuring that we do always 
+	 * have one queued within the given period.
+	 */
 	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway, boolean noDupes) {
 		// Run directly *if* that won't cause any priority problems.
 		if(offset <= 0 && !runOnTickerAnyway) {
@@ -513,7 +533,7 @@ public class PacketSender implements Runnable, Ticker {
 		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			if(noDupes) {
-				if(timedJobsByTime.containsValue(runner)) {
+				if(timedJobsByTime.containsValue(new Job(name, runner))) {
 					// O(n) but this is okay as it is only used by Announcer.
 					// If you replace this with a lookup set, be *very* careful to ensure that the two are consistent,
 					// otherwise we can forget important recurring jobs e.g. Announcer.

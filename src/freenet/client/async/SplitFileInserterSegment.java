@@ -1338,7 +1338,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}, "Got URI");
 						
 					}
-					core.realPut(b, req.cacheLocalRequests);
+					core.realPut(b, req.cacheLocalRequests, req.canWriteClientCache);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
@@ -1484,6 +1484,20 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				container.activate(blockInsertContext, 1);
 		}
 		boolean retval = blockInsertContext.cacheLocalRequests;
+		if(deactivate)
+			container.deactivate(blockInsertContext, 1);
+		return retval;
+	}
+	
+	@Override
+	public boolean canWriteClientCache(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(blockInsertContext);
+			if(deactivate)
+				container.activate(blockInsertContext, 1);
+		}
+		boolean retval = blockInsertContext.canWriteClientCache;
 		if(deactivate)
 			container.deactivate(blockInsertContext, 1);
 		return retval;

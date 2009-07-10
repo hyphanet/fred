@@ -48,6 +48,7 @@ public class FetchContext implements Cloneable {
 	public final BlockSet blocks;
 	public Set allowedMIMETypes;
 	private final boolean hasOwnEventProducer;
+	public boolean canWriteClientCache;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -57,7 +58,7 @@ public class FetchContext implements Cloneable {
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, 
-			boolean ignoreTooManyPathComponents) {
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -78,6 +79,7 @@ public class FetchContext implements Cloneable {
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
+		this.canWriteClientCache = canWriteClientCache;
 		hasOwnEventProducer = true;
 	}
 
@@ -118,6 +120,7 @@ public class FetchContext implements Cloneable {
 		this.maxRecursionLevel = ctx.maxRecursionLevel;
 		this.maxSplitfileThreads = ctx.maxSplitfileThreads;
 		this.returnZIPManifests = ctx.returnZIPManifests;
+		this.canWriteClientCache = ctx.canWriteClientCache;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT

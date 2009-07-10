@@ -43,6 +43,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final boolean global;
 	final String defaultName;
 	final boolean earlyEncode;
+	final boolean canWriteClientCache;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -113,6 +114,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
 		}
+		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
 	}

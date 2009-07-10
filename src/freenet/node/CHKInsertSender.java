@@ -168,7 +168,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	}
 	
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
-            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore) {
+            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
+            boolean canWriteClientCache, boolean canWriteDatastore) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.uid = uid;
@@ -180,6 +181,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.fromStore = fromStore;
         this.startTime = System.currentTimeMillis();
         this.backgroundTransfers = new Vector<BackgroundTransfer>();
+        this.canWriteClientCache = canWriteClientCache;
+        this.canWriteDatastore = canWriteDatastore;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
@@ -207,6 +210,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private boolean receiveFailed;
     final long startTime;
     private boolean sentRequest;
+    private final boolean canWriteClientCache;
+    private final boolean canWriteDatastore;
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */

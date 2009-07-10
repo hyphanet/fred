@@ -67,6 +67,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final String targetFilename;
 	final boolean earlyEncode;
 	final boolean binaryBlob;
+	final boolean canWriteClientCache;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
@@ -193,6 +194,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier, global);
 		}
+		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
 		String f = fs.get("TargetFilename");
 		if(f != null)
