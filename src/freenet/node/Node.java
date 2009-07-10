@@ -1931,48 +1931,49 @@ public class Node implements TimeSkewDetectorCallback {
 			});
 		}
 		
+		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
+				new LongCallback() {
+
+			@Override
+			public Long get() {
+				return databaseMaxMemory;
+			}
+
+			@Override
+			public void set(Long val) throws InvalidConfigValueException {
+				if(val < 0)
+					throw new InvalidConfigValueException(l10n("mustBePositive"));
+				else {
+					long maxHeapMemory = Runtime.getRuntime().maxMemory();
+					/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+					if(maxHeapMemory < Long.MAX_VALUE && val > (80 * maxHeapMemory / 100))
+						throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
+				}
+				
+				envMutableConfig.setCacheSize(val);
+				try{
+					storeEnvironment.setMutableConfig(envMutableConfig);
+				} catch (DatabaseException e) {
+					throw new InvalidConfigValueException(l10n("errorApplyingConfig", "error", e.getLocalizedMessage()));
+				}
+				databaseMaxMemory = val;
+			}
+			
+		}, true);
+
+		/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+		long maxHeapMemory = Runtime.getRuntime().maxMemory();
+		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
+		// see #1202
+		if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
+			Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
+					" ... let's assume it's not what the user wants to do and restore the default.");
+			databaseMaxMemory = Fields.parseLong(nodeConfig.getOption("databaseMaxMemory").getDefault());
+		}
+		
 		if (storeType.equals("salt-hash")) {
 			initSaltHashFS(suffix);
 		} else if (storeType.equals("bdb-index")) {
-			nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
-					new LongCallback() {
-
-				@Override
-				public Long get() {
-					return databaseMaxMemory;
-				}
-
-				@Override
-				public void set(Long val) throws InvalidConfigValueException {
-					if(val < 0)
-						throw new InvalidConfigValueException(l10n("mustBePositive"));
-					else {
-						long maxHeapMemory = Runtime.getRuntime().maxMemory();
-						/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-						if(maxHeapMemory < Long.MAX_VALUE && val > (80 * maxHeapMemory / 100))
-							throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
-					}
-					
-					envMutableConfig.setCacheSize(val);
-					try{
-						storeEnvironment.setMutableConfig(envMutableConfig);
-					} catch (DatabaseException e) {
-						throw new InvalidConfigValueException(l10n("errorApplyingConfig", "error", e.getLocalizedMessage()));
-					}
-					databaseMaxMemory = val;
-				}
-				
-			}, true);
-
-			/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-			long maxHeapMemory = Runtime.getRuntime().maxMemory();
-			databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
-			// see #1202
-			if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
-				Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
-						" ... let's assume it's not what the user wants to do and restore the default.");
-				databaseMaxMemory = Fields.parseLong(nodeConfig.getOption("databaseMaxMemory").getDefault());
-			}
 			initBDBFS(suffix);
 		} else {
 			chkDatastore = new CHKStore();
