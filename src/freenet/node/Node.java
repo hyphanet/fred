@@ -227,7 +227,7 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			if(type.equals("ram")) {
 				Runnable migrate = new MigrateOldStoreData();
-				synchronized(this) {
+				synchronized(this) { // Serialise this part.
 					String suffix = getStoreSuffix();
 					if (val.equals("salt-hash")) {
 						try {
