@@ -275,13 +275,12 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	private class ClientCacheTypeCallback extends StringCallback implements EnumerableOptionCallback {
-		private String cachedStoreType;
-
+		
 		@Override
 		public String get() {
-			if (cachedStoreType == null)
-				cachedStoreType = clientCacheType;
-			return cachedStoreType;
+			synchronized(Node.this) {
+				return clientCacheType;
+			}
 		}
 
 		@Override
@@ -296,7 +295,9 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 			
-			cachedStoreType = val;
+			synchronized(Node.this) {
+				clientCacheType = val;
+			}
 			throw new NodeNeedRestartException("Store type cannot be changed on the fly");
 		}
 
@@ -443,7 +444,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private PubkeyStore pubKeyDatastore;
 	
 	/** Client cache store type */
-	private final String clientCacheType;
+	private String clientCacheType;
 	/** Client cache maximum cached keys for each type */
 	long maxClientCacheKeys;
 	/** Maximum size of the client cache. Kept to avoid rounding problems. */
