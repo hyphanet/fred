@@ -1986,78 +1986,7 @@ public class Node implements TimeSkewDetectorCallback {
 		netid = new NetworkIDManager(this);
 		
 		if (storeType.equals("salt-hash")) {
-			((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-
-			if (isBDBStoreExist(suffix)) {
-				clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("Node.storeSaltHashMigratedShort"),
-				        L10n.getString("Node.storeSaltHashMigratedShort"), L10n
-				                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
-					
-					@Override
-					public HTMLNode getHTMLText() {
-						HTMLNode div = new HTMLNode("div");
-						div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
-						HTMLNode ul = div.addChild("ul");
-
-						for (String type : new String[] { "chk", "pubkey", "ssk" })
-							for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-							        "cache.keys", "cache.lru" }) {
-								File f = new File(storeDir, type + suffix + "." + storecache);
-								if (f.exists())
-									ul.addChild("li", f.getAbsolutePath());
-							}
-						
-						File dbDir = new File(storeDir, "database" + suffix);
-						if (dbDir.exists())
-							ul.addChild("li", dbDir.getAbsolutePath());
-						
-						return div;
-					}
-
-					@Override
-					public String getText() {						
-						StringBuilder sb = new StringBuilder();
-						sb.append(L10n.getString("Node.storeSaltHashMigrated") + " \n");
-						
-						for (String type : new String[] { "chk", "pubkey", "ssk" })
-							for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-							        "cache.keys", "cache.lru" }) {
-								File f = new File(storeDir, type + suffix + "." + storecache);
-						if (f.exists())
-									sb.append(" - ");
-								sb.append(f.getAbsolutePath());
-								sb.append("\n");
-						}
-						File dbDir = new File(storeDir, "database" + suffix);
-						if (dbDir.exists()) {
-							sb.append(" - ");
-							sb.append(dbDir.getAbsolutePath());
-							sb.append("\n");
-						}
-						
-						return sb.toString();
-					}
-
-					@Override
-					public boolean isValid() {
-						return isBDBStoreExist(suffix);
-					}
-					
-					@Override
-					public void onDismiss() {
-					}
-					
-					@Override
-					public boolean userCanDismiss() {
-						return true;
-					}
-				});
-			}
+			finishInitSaltHashFS(suffix, clientCore);
 		}
 		
 		// Client cache
@@ -2308,6 +2237,81 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+	}
+
+	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
+		((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+
+		if (isBDBStoreExist(suffix)) {
+			clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("Node.storeSaltHashMigratedShort"),
+			        L10n.getString("Node.storeSaltHashMigratedShort"), L10n
+			                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
+				
+				@Override
+				public HTMLNode getHTMLText() {
+					HTMLNode div = new HTMLNode("div");
+					div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
+					HTMLNode ul = div.addChild("ul");
+
+					for (String type : new String[] { "chk", "pubkey", "ssk" })
+						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
+						        "cache.keys", "cache.lru" }) {
+							File f = new File(storeDir, type + suffix + "." + storecache);
+							if (f.exists())
+								ul.addChild("li", f.getAbsolutePath());
+						}
+					
+					File dbDir = new File(storeDir, "database" + suffix);
+					if (dbDir.exists())
+						ul.addChild("li", dbDir.getAbsolutePath());
+					
+					return div;
+				}
+
+				@Override
+				public String getText() {						
+					StringBuilder sb = new StringBuilder();
+					sb.append(L10n.getString("Node.storeSaltHashMigrated") + " \n");
+					
+					for (String type : new String[] { "chk", "pubkey", "ssk" })
+						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
+						        "cache.keys", "cache.lru" }) {
+							File f = new File(storeDir, type + suffix + "." + storecache);
+					if (f.exists())
+								sb.append(" - ");
+							sb.append(f.getAbsolutePath());
+							sb.append("\n");
+					}
+					File dbDir = new File(storeDir, "database" + suffix);
+					if (dbDir.exists()) {
+						sb.append(" - ");
+						sb.append(dbDir.getAbsolutePath());
+						sb.append("\n");
+					}
+					
+					return sb.toString();
+				}
+
+				@Override
+				public boolean isValid() {
+					return isBDBStoreExist(suffix);
+				}
+				
+				@Override
+				public void onDismiss() {
+				}
+				
+				@Override
+				public boolean userCanDismiss() {
+					return true;
+				}
+			});
+		}
 	}
 
 	private void initRAMFS() {
