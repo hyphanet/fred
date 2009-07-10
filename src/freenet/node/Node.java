@@ -204,7 +204,9 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		@Override
 		public String get() {
-			return storeType;
+			synchronized(Node.this) {
+				return storeType;
+			}
 		}
 
 		@Override
@@ -219,41 +221,50 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 			
-			if(storeType.equals("ram")) {
+			String type;
+			synchronized(Node.this) {
+				type = storeType;
+			}
+			if(type.equals("ram")) {
 				Runnable migrate = new MigrateOldStoreData();
-				String suffix = getStoreSuffix();
-				if (storeType.equals("salt-hash")) {
-					try {
-						initSaltHashFS(suffix, true);
-					} catch (NodeInitException e) {
-						Logger.error(this, "Unable to create new store", e);
-						System.err.println("Unable to create new store: "+e);
-						e.printStackTrace();
-						// FIXME l10n both on the NodeInitException and the wrapper message
-						throw new InvalidConfigValueException("Unable to create new store: "+e);
+				synchronized(this) {
+					String suffix = getStoreSuffix();
+					if (val.equals("salt-hash")) {
+						try {
+							initSaltHashFS(suffix, true);
+						} catch (NodeInitException e) {
+							Logger.error(this, "Unable to create new store", e);
+							System.err.println("Unable to create new store: "+e);
+							e.printStackTrace();
+							// FIXME l10n both on the NodeInitException and the wrapper message
+							throw new InvalidConfigValueException("Unable to create new store: "+e);
+						}
+					} else if (val.equals("bdb-index")) {
+						try {
+							initBDBFS(suffix);
+						} catch (NodeInitException e) {
+							Logger.error(this, "Unable to create new store", e);
+							System.err.println("Unable to create new store: "+e);
+							e.printStackTrace();
+							// FIXME l10n both on the NodeInitException and the wrapper message
+							throw new InvalidConfigValueException("Unable to create new store: "+e);
+						}
+					} else {
+						initRAMFS();
 					}
-				} else if (storeType.equals("bdb-index")) {
-					try {
-						initBDBFS(suffix);
-					} catch (NodeInitException e) {
-						Logger.error(this, "Unable to create new store", e);
-						System.err.println("Unable to create new store: "+e);
-						e.printStackTrace();
-						// FIXME l10n both on the NodeInitException and the wrapper message
-						throw new InvalidConfigValueException("Unable to create new store: "+e);
+					
+					if (storeType.equals("salt-hash")) {
+						finishInitSaltHashFS(suffix, clientCore);
 					}
-				} else {
-					initRAMFS();
+					synchronized(Node.this) {
+						storeType = val;
+					}
 				}
-				
-				if (storeType.equals("salt-hash")) {
-					finishInitSaltHashFS(suffix, clientCore);
-				}
-				storeType = val;
 				executor.execute(migrate, "Migrate data from previous store");
 			} else {
-			
-				storeType = val;
+				synchronized(Node.this) {
+					storeType = val;
+				}
 				throw new NodeNeedRestartException("Store type cannot be changed on the fly");
 			}
 		}
