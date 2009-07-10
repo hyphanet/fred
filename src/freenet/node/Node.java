@@ -2813,7 +2813,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * requests that don't get cached. */
 	boolean canWriteDatastoreRequest(short htl) {
-		return htl > (maxHTL - 2);
+		return htl < (maxHTL - 2);
 	}
 
 	/** Can we write to the datastore for a given insert?
@@ -2824,7 +2824,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * inserts that don't get cached. */
 	boolean canWriteDatastoreInsert(short htl) {
-		return htl > (maxHTL - 3);
+		return htl < (maxHTL - 3);
 	}
 
 	static class KeyHTLPair {
