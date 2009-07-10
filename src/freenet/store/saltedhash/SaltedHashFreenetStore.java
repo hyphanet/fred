@@ -333,7 +333,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					// Overwrite old offset with same key
-					Entry entry = new Entry(routingKey, header, data);
+					Entry entry = new Entry(routingKey, header, data, true);
 					writeEntry(entry, oldOffset);
 					writes.incrementAndGet();
 					if (oldEntry.generation != generation)
@@ -341,7 +341,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return;
 				}
 
-				Entry entry = new Entry(routingKey, header, data);
+				Entry entry = new Entry(routingKey, header, data, true);
 				long[] offset = entry.getOffset();
 
 				for (int i = 0; i < offset.length; i++) {
@@ -420,6 +420,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private final static long ENTRY_FLAG_OCCUPIED = 0x00000001L;
 		/** Flag for plain key available */
 		private final static long ENTRY_FLAG_PLAINKEY = 0x00000002L;
+		/** Flag for block added after we stopped caching local (and high htl) requests */
+		private final static long ENTRY_NEW_BLOCK = 0x00000004L;
 
 		/** Control block length */
 		private static final int METADATA_LENGTH = 0x80;
@@ -489,10 +491,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @param header
 		 * @param data
 		 */
-		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data) {
+		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data, boolean newBlock) {
 			this.plainRoutingKey = plainRoutingKey;
 
 			flag = ENTRY_FLAG_OCCUPIED;
+			if(newBlock)
+				flag |= ENTRY_NEW_BLOCK;
 			this.storeSize = SaltedHashFreenetStore.this.storeSize;
 			this.generation = SaltedHashFreenetStore.this.generation;
 
