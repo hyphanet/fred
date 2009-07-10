@@ -34,7 +34,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	
 	private final TempBucketFactory bf;
 	
-	private final long maxLifetime;
+	private long maxLifetime;
 	
 	private final long purgePeriod;
 	
@@ -208,5 +208,13 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		for(DiskBlock block : blocks) {
 			block.data.free();
 		}
+	}
+
+	public synchronized Long getLifetime() {
+		return maxLifetime;
+	}
+
+	public synchronized void setLifetime(Long val) {
+		maxLifetime = val;
 	}
 }

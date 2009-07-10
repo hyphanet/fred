@@ -417,13 +417,16 @@ public class Node implements TimeSkewDetectorCallback {
 	// These only cache keys for 30 minutes.
 	
 	// FIXME make the first two configurable
-	static final int MAX_SLASHDOT_CACHE_KEYS = 5000;
-	static final long MAX_SLASHDOT_LIFETIME = 30*60*1000;
+	private long maxSlashdotCacheSize;
+	private int maxSlashdotCacheKeys;
 	static final long PURGE_INTERVAL = 60*1000;
 	
 	private CHKStore chkSlashdotcache;
+	private SlashdotStore chkSlashdotcacheStore;
 	private SSKStore sskSlashdotcache;
+	private SlashdotStore sskSlashdotcacheStore;
 	private PubkeyStore pubKeySlashdotcache;
+	private SlashdotStore pubKeySlashdotcacheStore;
 	
 	/** If false, only ULPRs will use the slashdot cache. If true, everything does. */
 	private boolean useSlashdotCache;
@@ -2146,13 +2149,76 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		useSlashdotCache = nodeConfig.getBoolean("useSlashdotCache");
 		
+		nodeConfig.register("slashdotCacheLifetime", 30*60*1000L, sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
+
+			@Override
+			public Long get() {
+				return chkSlashdotcacheStore.getLifetime();
+			}
+
+			@Override
+			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+				if(val < 0) throw new InvalidConfigValueException("Must be positive!");
+				chkSlashdotcacheStore.setLifetime(val);
+				pubKeySlashdotcacheStore.setLifetime(val);
+				sskSlashdotcacheStore.setLifetime(val);
+			}
+			
+		}, false);
+		
+		long slashdotCacheLifetime = nodeConfig.getLong("slashdotCacheLifetime");
+		
+		nodeConfig.register("slashdotCacheSize", "50M", sortOrder++, false, true, "Node.slashdotCacheSize", "Node.slashdotCacheSizeLong", 
+				new LongCallback() {
+
+					@Override
+					public Long get() {
+						return maxSlashdotCacheSize;
+					}
+
+					@Override
+					public void set(Long storeSize) throws InvalidConfigValueException {
+						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
+							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
+						int newMaxStoreKeys = (int) Math.min(storeSize / sizePerKey, Integer.MAX_VALUE);
+						if(newMaxStoreKeys == maxSlashdotCacheKeys) return;
+						// Update each datastore
+						synchronized(Node.this) {
+							maxSlashdotCacheSize = storeSize;
+							maxSlashdotCacheKeys = newMaxStoreKeys;
+						}
+						try {
+							chkSlashdotcache.setMaxKeys(maxSlashdotCacheKeys, storeForceBigShrinks);
+							pubKeySlashdotcache.setMaxKeys(maxSlashdotCacheKeys, storeForceBigShrinks);
+							sskSlashdotcache.setMaxKeys(maxSlashdotCacheKeys, storeForceBigShrinks);
+						} catch (IOException e) {
+							// FIXME we need to be able to tell the user.
+							Logger.error(this, "Caught "+e+" resizing the slashdotcache", e);
+							System.err.println("Caught "+e+" resizing the slashdotcache");
+							e.printStackTrace();
+						} catch (DatabaseException e) {
+							Logger.error(this, "Caught "+e+" resizing the slashdotcache", e);
+							System.err.println("Caught "+e+" resizing the slashdotcache");
+							e.printStackTrace();
+						}
+					}
+		}, true);
+		
+		maxSlashdotCacheSize = nodeConfig.getLong("slashdotCacheSize");
+		
+		if(maxSlashdotCacheSize < 0) {
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid client cache size");
+		}
+
+		maxSlashdotCacheKeys = (int) Math.min(maxSlashdotCacheSize / sizePerKey, Integer.MAX_VALUE);
+		
 		chkSlashdotcache = new CHKStore();
-		new SlashdotStore(chkSlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		chkSlashdotcacheStore = new SlashdotStore(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
 		pubKeySlashdotcache = new PubkeyStore();
-		new SlashdotStore(pubKeySlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		pubKeySlashdotcacheStore = new SlashdotStore(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
 		getPubKey.setLocalSlashdotcache(pubKeySlashdotcache);
 		sskSlashdotcache = new SSKStore(getPubKey);
-		new SlashdotStore(sskSlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		sskSlashdotcacheStore = new SlashdotStore(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
 		
 		securityLevels.registerUserAlert(clientCore.alerts);
 		
@@ -4459,7 +4525,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void drawSlashdotCacheBox(HTMLNode storeSizeInfobox) {
 		HTMLNode div = storeSizeInfobox.addChild("div");
-		div.addChild("p", "Slashdot/ULPR cache max size: "+MAX_SLASHDOT_CACHE_KEYS+" keys");
+		div.addChild("p", "Slashdot/ULPR cache max size: "+maxSlashdotCacheKeys+" keys");
 		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
 	}
 
