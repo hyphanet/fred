@@ -20,6 +20,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		byte[] header;
 		byte[] data;
 		byte[] fullKey;
+		boolean oldBlock;
 	}
 	
 	private final LRUHashtable<ByteArrayWrapper, Block> blocksByRoutingKey;
@@ -77,7 +78,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		return misses;
 	}
 
-	public synchronized void put(T block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException {
+	public synchronized void put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws KeyCollisionException {
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		
@@ -96,6 +97,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 					oldBlock.header = header;
 					if(storeFullKeys)
 						oldBlock.fullKey = fullKey;
+					oldBlock.oldBlock = isOldBlock;
 				} else {
 					throw new KeyCollisionException();
 				}
@@ -109,6 +111,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		storeBlock.header = header;
 		if(storeFullKeys)
 			storeBlock.fullKey = fullKey;
+		storeBlock.oldBlock = isOldBlock;
 		blocksByRoutingKey.push(key, storeBlock);
 		while(blocksByRoutingKey.size() > maxKeys) {
 			blocksByRoutingKey.popKey();

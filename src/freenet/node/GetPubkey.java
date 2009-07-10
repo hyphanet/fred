@@ -78,7 +78,7 @@ public class GetPubkey {
 				key = pubKeyDatacache.fetch(hash, false);
 			if (key != null) {
 				// Just put into the in-memory cache
-				cacheKey(hash, key, false, false, false, forULPR);
+				cacheKey(hash, key, false, false, false, forULPR, false);
 				if (logMINOR)
 					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from store");
 			}
@@ -102,7 +102,7 @@ public class GetPubkey {
 	 * nearby.
 	 * @param forULPR 
 	 */
-	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, boolean writeLocalToDatastore) {
 		if (logMINOR)
 			Logger.minor(this, "Cache key: " + HexUtil.bytesToHex(hash) + " : " + key);
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
@@ -125,7 +125,7 @@ public class GetPubkey {
 						} else {
 							Logger.error(this, "Old hash is wrong!");
 							cachedPubKeys.removeKey(w);
-							cacheKey(hash, key, deep, canWriteClientCache, canWriteDatastore, forULPR);
+							cacheKey(hash, key, deep, canWriteClientCache, canWriteDatastore, forULPR, writeLocalToDatastore);
 						}
 					} else {
 						Logger.error(this, "New hash is wrong");
@@ -142,23 +142,23 @@ public class GetPubkey {
 		try {
 			if (canWriteClientCache) {
 				if(pubKeyClientcache != null) {
-					pubKeyClientcache.put(hash, key);
+					pubKeyClientcache.put(hash, key, false);
 					pubKeyClientcache.fetch(hash, true);
 				}
 			}
 			if (forULPR) {
 				if(pubKeySlashdotcache!= null) {
-					pubKeySlashdotcache.put(hash, key);
+					pubKeySlashdotcache.put(hash, key, false);
 					pubKeySlashdotcache.fetch(hash, true);
 				}
 			}
 			// Cannot write to the store or cache if request started nearby.
-			if(!canWriteDatastore) return;
+			if(!(canWriteDatastore || writeLocalToDatastore)) return;
 			if (deep) {
-				pubKeyDatastore.put(hash, key);
+				pubKeyDatastore.put(hash, key, canWriteDatastore);
 				pubKeyDatastore.fetch(hash, true);
 			}
-			pubKeyDatacache.put(hash, key);
+			pubKeyDatacache.put(hash, key, canWriteDatastore);
 			pubKeyDatacache.fetch(hash, true);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.

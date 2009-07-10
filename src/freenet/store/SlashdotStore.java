@@ -135,7 +135,11 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		return blocksByRoutingKey.containsKey(key);
 	}
 
-	public void put(T block, byte[] data, byte[] header, boolean overwrite) throws IOException, KeyCollisionException {
+	/**
+	 * @param isOldBlock Ignored, we don't distinguish between stuff that should be cached and
+	 * stuff that shouldn't be cached; really it's all in the latter category anyway here!
+	 */
+	public void put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		

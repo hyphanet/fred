@@ -27,9 +27,9 @@ public class CHKStore extends StoreCallback<CHKBlock> {
 		return store.fetch(chk.getRoutingKey(), null, dontPromote, false, false);
 	}
 	
-	public void put(CHKBlock b) throws IOException {
+	public void put(CHKBlock b, boolean isOldBlock) throws IOException {
 		try {
-			store.put(b, b.getRawData(), b.getRawHeaders(), false);
+			store.put(b, b.getRawData(), b.getRawHeaders(), false, isOldBlock);
 		} catch (KeyCollisionException e) {
 			Logger.error(this, "Impossible for CHKStore: "+e, e);
 		}

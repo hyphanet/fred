@@ -1407,7 +1407,8 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * {@inheritDoc}
 	 */
-	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws KeyCollisionException, IOException {
+	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws KeyCollisionException, IOException {
+		// We do not support flagging a block as old because we do not support block flags.
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		

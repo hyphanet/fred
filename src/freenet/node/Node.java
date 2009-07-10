@@ -430,6 +430,10 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	/** If false, only ULPRs will use the slashdot cache. If true, everything does. */
 	private boolean useSlashdotCache;
+	/** If true, we write stuff to the datastore even though we shouldn't because the HTL is
+	 * too high. However it is flagged as old so it won't be included in the Bloom filter for
+	 * sharing purposes. */
+	private boolean writeLocalToDatastore;
 
 	GetPubkey getPubKey = new GetPubkey();
 	
@@ -2149,6 +2153,35 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		useSlashdotCache = nodeConfig.getBoolean("useSlashdotCache");
 		
+		nodeConfig.register("writeLocalToDatastore", false, sortOrder++, true, false, "Node.writeLocalToDatastore", "Node.writeLocalToDatastoreLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return writeLocalToDatastore;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				writeLocalToDatastore = val;
+			}
+			
+		});
+		
+		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
+		
+		// LOW seclevel = writeLocalToDatastore
+		
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+					writeLocalToDatastore = true;
+				else
+					writeLocalToDatastore = false;
+			}
+			
+		});
+		
 		nodeConfig.register("slashdotCacheLifetime", 30*60*1000L, sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
 
 			@Override
@@ -3150,17 +3183,17 @@ public class Node implements TimeSkewDetectorCallback {
 	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		try {
 			if(canWriteClientCache) {
-				chkClientcache.put(block);
+				chkClientcache.put(block, false);
 			}
-			if((forULPR || useSlashdotCache) && !canWriteDatastore)
-				chkSlashdotcache.put(block);
-			if(canWriteDatastore) {
+			if((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore))
+				chkSlashdotcache.put(block, false);
+			if(canWriteDatastore || writeLocalToDatastore) {
 				double loc=block.getKey().toNormalizedDouble();
 				if(deep) {
-					chkDatastore.put(block);
+					chkDatastore.put(block, canWriteDatastore);
 					nodeStats.avgStoreLocation.report(loc);
 				}
-				chkDatacache.put(block);
+				chkDatacache.put(block, canWriteDatastore);
 				nodeStats.avgCacheLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
@@ -3193,17 +3226,17 @@ public class Node implements TimeSkewDetectorCallback {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache);
+			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache, writeLocalToDatastore);
 			if(canWriteClientCache) {
-				sskClientcache.put(block, overwrite);
+				sskClientcache.put(block, overwrite, false);
 			}
-			if((forULPR || useSlashdotCache) && !canWriteDatastore)
-				sskSlashdotcache.put(block, overwrite);
-			if(canWriteDatastore) {
+			if((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore))
+				sskSlashdotcache.put(block, overwrite, false);
+			if(canWriteDatastore || writeLocalToDatastore) {
 				if(deep) {
-					sskDatastore.put(block, overwrite);
+					sskDatastore.put(block, overwrite, canWriteDatastore);
 				}
-				sskDatacache.put(block, overwrite);
+				sskDatacache.put(block, overwrite, canWriteDatastore);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -3358,7 +3391,7 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
 		if(cache)
-			getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false);
+			getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
@@ -3723,7 +3756,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
-		getPubKey.cacheKey(clientSSK.pubKeyHash, key, false, canWriteClientCache, canWriteDatastore, false);
+		getPubKey.cacheKey(clientSSK.pubKeyHash, key, false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		return ClientSSKBlock.construct(block, clientSSK);
 	}
 
