@@ -2118,7 +2118,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxClientCacheKeys = maxTotalClientCacheSize / sizePerKey;
 		
-		if (storeType.equals("salt-hash")) {
+		if (clientCacheType.equals("salt-hash")) {
 			initSaltHashClientCacheFS(suffix);
 		} else { // ram
 			chkClientcache = new CHKStore();
