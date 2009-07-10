@@ -2134,7 +2134,7 @@ public class Node implements TimeSkewDetectorCallback {
 			this.storeEnvironment = null;
 		}
 		
-		nodeConfig.register("useSlashdotCache", false, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
+		nodeConfig.register("useSlashdotCache", true, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
@@ -2219,6 +2219,19 @@ public class Node implements TimeSkewDetectorCallback {
 		getPubKey.setLocalSlashdotcache(pubKeySlashdotcache);
 		sskSlashdotcache = new SSKStore(getPubKey);
 		sskSlashdotcacheStore = new SlashdotStore(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		
+		// MAXIMUM seclevel = no slashdot cache.
+		
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+					useSlashdotCache = false;
+				else if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+					useSlashdotCache = true;
+			}
+
+		});
 		
 		securityLevels.registerUserAlert(clientCore.alerts);
 		
