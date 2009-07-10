@@ -222,7 +222,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 			
-			if(cachedStoreType == "ram") {
+			if(cachedStoreType.equals("ram")) {
 				Runnable migrate = new MigrateOldStoreData();
 				String suffix = getStoreSuffix();
 				if (storeType.equals("salt-hash")) {
@@ -252,6 +252,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if (storeType.equals("salt-hash")) {
 					finishInitSaltHashFS(suffix, clientCore);
 				}
+				cachedStoreType = val;
 				executor.execute(migrate, "Migrate data from previous store");
 			} else {
 			
