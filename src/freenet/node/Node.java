@@ -141,6 +141,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public class MigrateOldStoreData implements Runnable {
 
+		public MigrateOldStoreData(boolean clientCache) {
+			// TODO Auto-generated constructor stub
+		}
+
 		public void run() {
 			// TODO Auto-generated method stub
 
@@ -226,7 +230,7 @@ public class Node implements TimeSkewDetectorCallback {
 				type = storeType;
 			}
 			if(type.equals("ram")) {
-				Runnable migrate = new MigrateOldStoreData();
+				Runnable migrate = new MigrateOldStoreData(false);
 				synchronized(this) { // Serialise this part.
 					String suffix = getStoreSuffix();
 					if (val.equals("salt-hash")) {
@@ -295,10 +299,42 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 			
+			String type;
 			synchronized(Node.this) {
-				clientCacheType = val;
+				type = clientCacheType;
 			}
-			throw new NodeNeedRestartException("Store type cannot be changed on the fly");
+			if(type.equals("ram")) {
+				Runnable migrate = new MigrateOldStoreData(true);
+				synchronized(this) { // Serialise this part.
+					String suffix = getStoreSuffix();
+					if (val.equals("salt-hash")) {
+						try {
+							initSaltHashClientCacheFS(suffix, true);
+						} catch (NodeInitException e) {
+							Logger.error(this, "Unable to create new store", e);
+							System.err.println("Unable to create new store: "+e);
+							e.printStackTrace();
+							// FIXME l10n both on the NodeInitException and the wrapper message
+							throw new InvalidConfigValueException("Unable to create new store: "+e);
+						}
+					} else {
+						initRAMClientCacheFS();
+					}
+					
+					if (storeType.equals("salt-hash")) {
+						finishInitSaltHashFS(suffix, clientCore);
+					}
+					synchronized(Node.this) {
+						clientCacheType = val;
+					}
+				}
+				executor.execute(migrate, "Migrate data from previous store");
+			} else {
+				synchronized(Node.this) {
+					clientCacheType = val;
+				}
+				throw new NodeNeedRestartException("Store type cannot be changed on the fly");
+			}
 		}
 
 		public String[] getPossibleValues() {
@@ -2097,14 +2133,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if (clientCacheType.equals("salt-hash")) {
 			initSaltHashClientCacheFS(suffix, false);
 		} else { // ram
-			chkClientcache = new CHKStore();
-			new RAMFreenetStore(chkClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
-			pubKeyClientcache = new PubkeyStore();
-			new RAMFreenetStore(pubKeyClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
-			sskClientcache = new SSKStore(getPubKey);
-			new RAMFreenetStore(sskClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
-			envMutableConfig = null;
-			this.storeEnvironment = null;
+			initRAMClientCacheFS();
 		}
 		
 		nodeConfig.register("useSlashdotCache", true, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
@@ -2290,6 +2319,17 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+	}
+
+	private void initRAMClientCacheFS() {
+		chkClientcache = new CHKStore();
+		new RAMFreenetStore(chkClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
+		pubKeyClientcache = new PubkeyStore();
+		new RAMFreenetStore(pubKeyClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
+		sskClientcache = new SSKStore(getPubKey);
+		new RAMFreenetStore(sskClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
+		envMutableConfig = null;
+		this.storeEnvironment = null;
 	}
 
 	private String getStoreSuffix() {
