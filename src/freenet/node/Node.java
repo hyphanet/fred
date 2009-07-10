@@ -1976,21 +1976,7 @@ public class Node implements TimeSkewDetectorCallback {
 		} else if (storeType.equals("bdb-index")) {
 			initBDBFS(suffix);
 		} else {
-			chkDatastore = new CHKStore();
-			new RAMFreenetStore(chkDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-			chkDatacache = new CHKStore();
-			new RAMFreenetStore(chkDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			pubKeyDatastore = new PubkeyStore();
-			new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-			pubKeyDatacache = new PubkeyStore();
-			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
-			new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			sskDatastore = new SSKStore(getPubKey);
-			new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-			sskDatacache = new SSKStore(getPubKey);
-			new RAMFreenetStore(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			envMutableConfig = null;
-			this.storeEnvironment = null;
+			initRAMFS();
 		}
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
@@ -2322,6 +2308,24 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+	}
+
+	private void initRAMFS() {
+		chkDatastore = new CHKStore();
+		new RAMFreenetStore(chkDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+		chkDatacache = new CHKStore();
+		new RAMFreenetStore(chkDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+		pubKeyDatastore = new PubkeyStore();
+		new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+		pubKeyDatacache = new PubkeyStore();
+		getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
+		new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+		sskDatastore = new SSKStore(getPubKey);
+		new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+		sskDatacache = new SSKStore(getPubKey);
+		new RAMFreenetStore(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+		envMutableConfig = null;
+		this.storeEnvironment = null;
 	}
 
 	private boolean isBDBStoreExist(final String suffix) {
