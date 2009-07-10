@@ -426,7 +426,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private PubkeyStore pubKeySlashdotcache;
 	
 	/** If false, only ULPRs will use the slashdot cache. If true, everything does. */
-	private boolean useSlashdotCache = true;
+	private boolean useSlashdotCache;
 
 	GetPubkey getPubKey = new GetPubkey();
 	
@@ -2131,6 +2131,21 @@ public class Node implements TimeSkewDetectorCallback {
 			this.storeEnvironment = null;
 		}
 		
+		nodeConfig.register("useSlashdotCache", false, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return useSlashdotCache;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				useSlashdotCache = val;
+			}
+			
+		});
+		useSlashdotCache = nodeConfig.getBoolean("useSlashdotCache");
+		
 		chkSlashdotcache = new CHKStore();
 		new SlashdotStore(chkSlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
 		pubKeySlashdotcache = new PubkeyStore();
@@ -2140,7 +2155,7 @@ public class Node implements TimeSkewDetectorCallback {
 		new SlashdotStore(sskSlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
 		
 		securityLevels.registerUserAlert(clientCore.alerts);
-						
+		
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
