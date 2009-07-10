@@ -2090,7 +2090,7 @@ public class Node implements TimeSkewDetectorCallback {
 						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						long newMaxStoreKeys = storeSize / sizePerKey;
-						if(newMaxStoreKeys == maxTotalKeys) return;
+						if(newMaxStoreKeys == maxClientCacheKeys) return;
 						// Update each datastore
 						synchronized(Node.this) {
 							maxTotalClientCacheSize = storeSize;
