@@ -201,13 +201,10 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	private class StoreTypeCallback extends StringCallback implements EnumerableOptionCallback {
-		private String cachedStoreType;
 		
 		@Override
 		public String get() {
-			if (cachedStoreType == null)
-				cachedStoreType = storeType;
-			return cachedStoreType;
+			return storeType;
 		}
 
 		@Override
@@ -222,7 +219,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 			
-			if(cachedStoreType.equals("ram")) {
+			if(storeType.equals("ram")) {
 				Runnable migrate = new MigrateOldStoreData();
 				String suffix = getStoreSuffix();
 				if (storeType.equals("salt-hash")) {
@@ -252,11 +249,11 @@ public class Node implements TimeSkewDetectorCallback {
 				if (storeType.equals("salt-hash")) {
 					finishInitSaltHashFS(suffix, clientCore);
 				}
-				cachedStoreType = val;
+				storeType = val;
 				executor.execute(migrate, "Migrate data from previous store");
 			} else {
 			
-				cachedStoreType = val;
+				storeType = val;
 				throw new NodeNeedRestartException("Store type cannot be changed on the fly");
 			}
 		}
@@ -397,7 +394,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private final File storeDir;
 	
 	/** Datastore properties */
-	private final String storeType;
+	private String storeType;
 	private int storeBloomFilterSize;
 	private final boolean storeBloomFilterCounting;
 	private boolean storeSaltHashResizeOnStart;
