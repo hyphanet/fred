@@ -4042,9 +4042,9 @@ public class Node implements TimeSkewDetectorCallback {
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED) {
 			source.handleFproxyFileOfferRejected(fs, fileNumber);
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_BOOKMARK) {
-			source.handleFproxyBookmarkFeed(getMyName(), fs, fileNumber);
+			source.handleFproxyBookmarkFeed(fs, fileNumber);
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_DOWNLOAD) {
-			source.handleFproxyDownloadFeed(getMyName(), fs, fileNumber);
+			source.handleFproxyDownloadFeed(fs, fileNumber);
 		} else {
 			Logger.error(this, "Received unknown fproxy node to node message sub-type '"+type+"' from "+source.getPeer());
 		}
