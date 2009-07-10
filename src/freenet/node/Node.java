@@ -379,7 +379,7 @@ public class Node implements TimeSkewDetectorCallback {
 						initRAMClientCacheFS();
 					}
 					
-					if (storeType.equals("salt-hash")) {
+					if (type.equals("salt-hash")) {
 						finishInitSaltHashFS(suffix, clientCore);
 					}
 					synchronized(Node.this) {
