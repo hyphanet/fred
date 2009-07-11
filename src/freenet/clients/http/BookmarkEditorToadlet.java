@@ -61,6 +61,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 		final String addBookmark = L10n.getString("BookmarkEditorToadlet.addBookmark");
 		final String addCategory = L10n.getString("BookmarkEditorToadlet.addCategory");
 
+		boolean hasFriends = core.node.getDarknetConnections().length > 0;
+
 		for(int i = 0; i < items.size(); i++) {
 			BookmarkItem item =  items.get(i);
 				
@@ -81,7 +83,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 			if(i != items.size() - 1)
 				actions.addChild("a", "href", "?action=down&bookmark=" + itemPath).addChild("img", new String[]{"src", "alt", "title"}, new String[]{"/static/icon/go-down.png", moveDown, moveDown});
 
-			actions.addChild("a", "href", "?action=share&bookmark=" + itemPath, L10n.getString("BookmarkEditorToadlet.share"));
+			if(hasFriends)
+				actions.addChild("a", "href", "?action=share&bookmark=" + itemPath, L10n.getString("BookmarkEditorToadlet.share"));
 
 			li.addChild(actions);
 			list.addChild(li);
@@ -242,7 +245,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 							form.addChild("input", new String[]{"type", "id", "name", "checked"}, new String[]{"checkbox", "hasAnActivelink", "hasAnActivelink", String.valueOf(item.hasAnActivelink())});
 						else
 							form.addChild("input", new String[]{"type", "id", "name"}, new String[]{"checkbox", "hasAnActivelink", "hasAnActivelink"});
-						if("addItem".equals(action) || "share".equals(action)) {
+						if(core.node.getDarknetConnections().length > 0 && ("addItem".equals(action) || "share".equals(action))) {
 							form.addChild("br");
 							form.addChild("br");
 							HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
