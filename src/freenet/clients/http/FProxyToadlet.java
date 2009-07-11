@@ -1,14 +1,15 @@
 package freenet.clients.http;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -23,13 +24,13 @@ import freenet.client.async.ClientContext;
 import freenet.clients.http.ajaxpush.PushLeavingToadlet;
 import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.bookmark.BookmarkManager;
-import freenet.clients.http.complexhtmlnodes.SecondCounterNode;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.clients.http.updateableelements.ProgressInfoElement;
+import freenet.clients.http.updateableelements.TesterElement;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
@@ -45,7 +46,6 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
-import freenet.support.TimeUtil;
 import freenet.support.URIPreEncoder;
 import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
@@ -251,7 +251,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.writeData(tmpRange);
 				} else {
 					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
-					context.writeData(data);
+					context.writeData(addImagePushing(ctx,data));
 				}
 			}
 		} catch (URISyntaxException use1) {
@@ -318,6 +318,27 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(toFree != null && !dontFreeData) toFree.free();
 			if(tmpRange != null) tmpRange.free();
 		}
+	}
+	
+	private static byte[] addImagePushing(ToadletContext ctx,Bucket data) throws IOException{
+		StringBuilder sb=new StringBuilder();
+		BufferedReader reader=new BufferedReader(new InputStreamReader(data.getInputStream()));
+		while(reader.ready()){
+			String line=reader.readLine();
+			sb.append(line);
+			sb.append("\n");
+			if(line.contains("<head")){
+				sb.append("<script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script>\n");
+			}
+			if(line.contains("<body")){
+				sb.append("<input type=\"hidden\" name=\"requestId\" value=\""+ctx.getUniqueId()+"\" id=\"requestId\"></input>\n");
+				sb.append(new TesterElement(ctx, "1").generate());
+			}
+			if(line.contains("<img")){
+				
+			}
+		}
+		return sb.toString().getBytes();
 	}
 	
 	public static String l10n(String msg) {
