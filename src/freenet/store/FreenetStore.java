@@ -36,9 +36,13 @@ public interface FreenetStore<T extends StorableBlock> {
 	 * @param overwrite
 	 *            If true, overwrite old content rather than throwing a
 	 *            <code>KeyCollisionException</code>.
+	 * @param oldBlock
+	 *            If true, the block really shouldn't be in the datastore, but we are storing
+	 *            it anyway; it should not have the new block flag, so it should be excluded 
+	 *            from Bloom filter sharing. 				
 	 */
     public void put(T block, byte[] data, byte[] header, 
-    		boolean overwrite) throws IOException, KeyCollisionException;
+    		boolean overwrite, boolean oldBlock) throws IOException, KeyCollisionException;
     
     /**
      * Change the store size.

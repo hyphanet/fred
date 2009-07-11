@@ -284,7 +284,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return null;
 	}
 
-	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite) throws IOException, KeyCollisionException {
+	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		
@@ -333,7 +333,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					// Overwrite old offset with same key
-					Entry entry = new Entry(routingKey, header, data);
+					Entry entry = new Entry(routingKey, header, data, !isOldBlock);
 					writeEntry(entry, oldOffset);
 					writes.incrementAndGet();
 					if (oldEntry.generation != generation)
@@ -341,7 +341,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return;
 				}
 
-				Entry entry = new Entry(routingKey, header, data);
+				Entry entry = new Entry(routingKey, header, data, !isOldBlock);
 				long[] offset = entry.getOffset();
 
 				for (int i = 0; i < offset.length; i++) {
@@ -420,6 +420,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private final static long ENTRY_FLAG_OCCUPIED = 0x00000001L;
 		/** Flag for plain key available */
 		private final static long ENTRY_FLAG_PLAINKEY = 0x00000002L;
+		/** Flag for block added after we stopped caching local (and high htl) requests */
+		private final static long ENTRY_NEW_BLOCK = 0x00000004L;
 
 		/** Control block length */
 		private static final int METADATA_LENGTH = 0x80;
@@ -489,10 +491,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @param header
 		 * @param data
 		 */
-		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data) {
+		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data, boolean newBlock) {
 			this.plainRoutingKey = plainRoutingKey;
 
 			flag = ENTRY_FLAG_OCCUPIED;
+			if(newBlock)
+				flag |= ENTRY_NEW_BLOCK;
 			this.storeSize = SaltedHashFreenetStore.this.storeSize;
 			this.generation = SaltedHashFreenetStore.this.generation;
 
@@ -1746,7 +1750,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				try {
 					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, false, null);
-					put(b, data, header, true);
+					put(b, data, header, true, true);
 				} catch (KeyVerifyException e) {
 					System.out.println("kve at block " + l);
 				} catch (KeyCollisionException e) {

@@ -542,12 +542,12 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_BOOKMARK) {
 			Logger.normal(this, "Read friend bookmark" + fs.toString());
-			handleFproxyBookmarkFeed(getName(), fs, fileNumber);
+			handleFproxyBookmarkFeed(fs, fileNumber);
 			return true;
 		}
 		else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_DOWNLOAD) {
 			Logger.normal(this, "Read friend download" + fs.toString());
-			handleFproxyDownloadFeed(getName(), fs, fileNumber);
+			handleFproxyDownloadFeed(fs, fileNumber);
 			return true;
 		}
 		Logger.error(this, "Read unknown extra peer data type '"+extraPeerDataType+"' from file "+extraPeerDataFile.getPath());
@@ -1425,15 +1425,15 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
-		String source_nodename = null;
-		String target_nodename = null;
+		String sourceNodeName = null;
+		String targetNodeName = null;
 		String text = null;
 		long composedTime;
 		long sentTime;
 		long receivedTime;
 	  	try {
-			source_nodename = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
-			target_nodename = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
+			sourceNodeName = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
+			targetNodeName = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
 			text = new String(Base64.decode(fs.get("text")));
 			composedTime = fs.getLong("composedTime", -1);
 			sentTime = fs.getLong("sentTime", -1);
@@ -1444,7 +1444,7 @@ public class DarknetPeerNode extends PeerNode {
 		} catch (UnsupportedEncodingException e) {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
-		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, source_nodename, target_nodename, text, fileNumber, composedTime, sentTime, receivedTime);
+		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, sourceNodeName, targetNodeName, text, fileNumber, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);
 	}
 
@@ -1541,8 +1541,9 @@ public class DarknetPeerNode extends PeerNode {
 		fo.onRejected();
 	}
 
-	public void handleFproxyBookmarkFeed(String source_nodename, SimpleFieldSet fs, int fileNumber) {
-		String target_nodename = getName();
+	public void handleFproxyBookmarkFeed(SimpleFieldSet fs, int fileNumber) {
+		String sourceNodeName = null;
+		String targetNodeName = null;
 		String name = fs.get("Name");
 		String description = null;
 		FreenetURI uri = null;
@@ -1555,6 +1556,8 @@ public class DarknetPeerNode extends PeerNode {
 		receivedTime = fs.getLong("receivedTime", -1);
 		hasAnActiveLink = fs.getBoolean("hasAnActivelink", false);
 		try {
+			sourceNodeName = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
+			targetNodeName = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
 			if(fs.get("Description") != null)
 				description = new String(Base64.decode(fs.get("Description")));
 			uri = new FreenetURI(fs.get("URI"));
@@ -1564,12 +1567,16 @@ public class DarknetPeerNode extends PeerNode {
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
-		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, source_nodename, target_nodename, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
+		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, sourceNodeName, targetNodeName, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);
 	}
 
-	public void handleFproxyDownloadFeed(String sourceNodeName, SimpleFieldSet fs, int fileNumber) {
+	public void handleFproxyDownloadFeed(SimpleFieldSet fs, int fileNumber) {
+		String sourceNodeName = null;
+		String targetNodeName = null;
 		FreenetURI uri = null;
 		String description = null;
 		long composedTime;
@@ -1579,6 +1586,8 @@ public class DarknetPeerNode extends PeerNode {
 		sentTime = fs.getLong("sentTime", -1);
 		receivedTime = fs.getLong("receivedTime", -1);
 		try {
+			sourceNodeName = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
+			targetNodeName = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
 			if(fs.get("Description") != null)
 				description = new String(Base64.decode(fs.get("Description")));
 			uri = new FreenetURI(fs.get("URI"));
@@ -1588,8 +1597,10 @@ public class DarknetPeerNode extends PeerNode {
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
-		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, sourceNodeName, getName(), description, fileNumber, uri, composedTime, sentTime, receivedTime);
+		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, sourceNodeName, targetNodeName, description, fileNumber, uri, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);
 	}
 

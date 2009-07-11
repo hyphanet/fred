@@ -139,6 +139,15 @@ import freenet.support.transport.ip.HostnameSyntaxException;
  */
 public class Node implements TimeSkewDetectorCallback {
 
+	public class MigrateOldStoreData implements Runnable {
+
+		public void run() {
+			// TODO Auto-generated method stub
+
+		}
+
+	}
+
 	private static volatile boolean logMINOR;
 
 	static {
@@ -193,7 +202,7 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private class StoreTypeCallback extends StringCallback implements EnumerableOptionCallback {
 		private String cachedStoreType;
-
+		
 		@Override
 		public String get() {
 			if (cachedStoreType == null)
@@ -213,8 +222,43 @@ public class Node implements TimeSkewDetectorCallback {
 			if (!found)
 				throw new InvalidConfigValueException("Invalid store type");
 			
-			cachedStoreType = val;
-			throw new NodeNeedRestartException("Store type cannot be changed on the fly");
+			if(cachedStoreType.equals("ram")) {
+				Runnable migrate = new MigrateOldStoreData();
+				String suffix = getStoreSuffix();
+				if (storeType.equals("salt-hash")) {
+					try {
+						initSaltHashFS(suffix, true);
+					} catch (NodeInitException e) {
+						Logger.error(this, "Unable to create new store", e);
+						System.err.println("Unable to create new store: "+e);
+						e.printStackTrace();
+						// FIXME l10n both on the NodeInitException and the wrapper message
+						throw new InvalidConfigValueException("Unable to create new store: "+e);
+					}
+				} else if (storeType.equals("bdb-index")) {
+					try {
+						initBDBFS(suffix);
+					} catch (NodeInitException e) {
+						Logger.error(this, "Unable to create new store", e);
+						System.err.println("Unable to create new store: "+e);
+						e.printStackTrace();
+						// FIXME l10n both on the NodeInitException and the wrapper message
+						throw new InvalidConfigValueException("Unable to create new store: "+e);
+					}
+				} else {
+					initRAMFS();
+				}
+				
+				if (storeType.equals("salt-hash")) {
+					finishInitSaltHashFS(suffix, clientCore);
+				}
+				cachedStoreType = val;
+				executor.execute(migrate, "Migrate data from previous store");
+			} else {
+			
+				cachedStoreType = val;
+				throw new NodeNeedRestartException("Store type cannot be changed on the fly");
+			}
 		}
 
 		public String[] getPossibleValues() {
@@ -417,16 +461,23 @@ public class Node implements TimeSkewDetectorCallback {
 	// These only cache keys for 30 minutes.
 	
 	// FIXME make the first two configurable
-	static final int MAX_SLASHDOT_CACHE_KEYS = 5000;
-	static final long MAX_SLASHDOT_LIFETIME = 30*60*1000;
+	private long maxSlashdotCacheSize;
+	private int maxSlashdotCacheKeys;
 	static final long PURGE_INTERVAL = 60*1000;
 	
 	private CHKStore chkSlashdotcache;
+	private SlashdotStore chkSlashdotcacheStore;
 	private SSKStore sskSlashdotcache;
+	private SlashdotStore sskSlashdotcacheStore;
 	private PubkeyStore pubKeySlashdotcache;
+	private SlashdotStore pubKeySlashdotcacheStore;
 	
 	/** If false, only ULPRs will use the slashdot cache. If true, everything does. */
-	private boolean useSlashdotCache = true;
+	private boolean useSlashdotCache;
+	/** If true, we write stuff to the datastore even though we shouldn't because the HTL is
+	 * too high. However it is flagged as old so it won't be included in the Bloom filter for
+	 * sharing purposes. */
+	private boolean writeLocalToDatastore;
 
 	GetPubkey getPubKey = new GetPubkey();
 	
@@ -1862,7 +1913,7 @@ public class Node implements TimeSkewDetectorCallback {
 			        }
 		});
 
-		final String suffix = "-" + getDarknetPortNumber();
+		final String suffix = getStoreSuffix();
 		String datastoreDir = nodeConfig.getString("storeDir");
 		storeDir = new File(datastoreDir);
 		if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
@@ -1924,65 +1975,52 @@ public class Node implements TimeSkewDetectorCallback {
 			});
 		}
 		
-		if (storeType.equals("salt-hash")) {
-			initSaltHashFS(suffix);
-		} else if (storeType.equals("bdb-index")) {
-			nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
-					new LongCallback() {
+		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
+				new LongCallback() {
 
-				@Override
-				public Long get() {
-					return databaseMaxMemory;
-				}
+			@Override
+			public Long get() {
+				return databaseMaxMemory;
+			}
 
-				@Override
-				public void set(Long val) throws InvalidConfigValueException {
-					if(val < 0)
-						throw new InvalidConfigValueException(l10n("mustBePositive"));
-					else {
-						long maxHeapMemory = Runtime.getRuntime().maxMemory();
-						/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-						if(maxHeapMemory < Long.MAX_VALUE && val > (80 * maxHeapMemory / 100))
-							throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
-					}
-					
-					envMutableConfig.setCacheSize(val);
-					try{
-						storeEnvironment.setMutableConfig(envMutableConfig);
-					} catch (DatabaseException e) {
-						throw new InvalidConfigValueException(l10n("errorApplyingConfig", "error", e.getLocalizedMessage()));
-					}
-					databaseMaxMemory = val;
+			@Override
+			public void set(Long val) throws InvalidConfigValueException {
+				if(val < 0)
+					throw new InvalidConfigValueException(l10n("mustBePositive"));
+				else {
+					long maxHeapMemory = Runtime.getRuntime().maxMemory();
+					/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+					if(maxHeapMemory < Long.MAX_VALUE && val > (80 * maxHeapMemory / 100))
+						throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
 				}
 				
-			}, true);
-
-			/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-			long maxHeapMemory = Runtime.getRuntime().maxMemory();
-			databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
-			// see #1202
-			if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
-				Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
-						" ... let's assume it's not what the user wants to do and restore the default.");
-				databaseMaxMemory = Fields.parseLong(nodeConfig.getOption("databaseMaxMemory").getDefault());
+				envMutableConfig.setCacheSize(val);
+				try{
+					storeEnvironment.setMutableConfig(envMutableConfig);
+				} catch (DatabaseException e) {
+					throw new InvalidConfigValueException(l10n("errorApplyingConfig", "error", e.getLocalizedMessage()));
+				}
+				databaseMaxMemory = val;
 			}
+			
+		}, true);
+
+		/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+		long maxHeapMemory = Runtime.getRuntime().maxMemory();
+		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
+		// see #1202
+		if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
+			Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
+					" ... let's assume it's not what the user wants to do and restore the default.");
+			databaseMaxMemory = Fields.parseLong(nodeConfig.getOption("databaseMaxMemory").getDefault());
+		}
+		
+		if (storeType.equals("salt-hash")) {
+			initSaltHashFS(suffix, false);
+		} else if (storeType.equals("bdb-index")) {
 			initBDBFS(suffix);
 		} else {
-			chkDatastore = new CHKStore();
-			new RAMFreenetStore(chkDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-			chkDatacache = new CHKStore();
-			new RAMFreenetStore(chkDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			pubKeyDatastore = new PubkeyStore();
-			new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-			pubKeyDatacache = new PubkeyStore();
-			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
-			new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			sskDatastore = new SSKStore(getPubKey);
-			new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
-			sskDatacache = new SSKStore(getPubKey);
-			new RAMFreenetStore(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			envMutableConfig = null;
-			this.storeEnvironment = null;
+			initRAMFS();
 		}
 		
 		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
@@ -1992,78 +2030,7 @@ public class Node implements TimeSkewDetectorCallback {
 		netid = new NetworkIDManager(this);
 		
 		if (storeType.equals("salt-hash")) {
-			((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
-			((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
-
-			if (isBDBStoreExist(suffix)) {
-				clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("Node.storeSaltHashMigratedShort"),
-				        L10n.getString("Node.storeSaltHashMigratedShort"), L10n
-				                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
-					
-					@Override
-					public HTMLNode getHTMLText() {
-						HTMLNode div = new HTMLNode("div");
-						div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
-						HTMLNode ul = div.addChild("ul");
-
-						for (String type : new String[] { "chk", "pubkey", "ssk" })
-							for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-							        "cache.keys", "cache.lru" }) {
-								File f = new File(storeDir, type + suffix + "." + storecache);
-								if (f.exists())
-									ul.addChild("li", f.getAbsolutePath());
-							}
-						
-						File dbDir = new File(storeDir, "database" + suffix);
-						if (dbDir.exists())
-							ul.addChild("li", dbDir.getAbsolutePath());
-						
-						return div;
-					}
-
-					@Override
-					public String getText() {						
-						StringBuilder sb = new StringBuilder();
-						sb.append(L10n.getString("Node.storeSaltHashMigrated") + " \n");
-						
-						for (String type : new String[] { "chk", "pubkey", "ssk" })
-							for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
-							        "cache.keys", "cache.lru" }) {
-								File f = new File(storeDir, type + suffix + "." + storecache);
-						if (f.exists())
-									sb.append(" - ");
-								sb.append(f.getAbsolutePath());
-								sb.append("\n");
-						}
-						File dbDir = new File(storeDir, "database" + suffix);
-						if (dbDir.exists()) {
-							sb.append(" - ");
-							sb.append(dbDir.getAbsolutePath());
-							sb.append("\n");
-						}
-						
-						return sb.toString();
-					}
-
-					@Override
-					public boolean isValid() {
-						return isBDBStoreExist(suffix);
-					}
-					
-					@Override
-					public void onDismiss() {
-					}
-					
-					@Override
-					public boolean userCanDismiss() {
-						return true;
-					}
-				});
-			}
+			finishInitSaltHashFS(suffix, clientCore);
 		}
 		
 		// Client cache
@@ -2084,10 +2051,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
-						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
+						if((storeSize < 0))
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						long newMaxStoreKeys = storeSize / sizePerKey;
-						if(newMaxStoreKeys == maxTotalKeys) return;
+						if(newMaxStoreKeys == maxClientCacheKeys) return;
 						// Update each datastore
 						synchronized(Node.this) {
 							maxTotalClientCacheSize = storeSize;
@@ -2118,8 +2085,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 		maxClientCacheKeys = maxTotalClientCacheSize / sizePerKey;
 		
-		if (storeType.equals("salt-hash")) {
-			initSaltHashClientCacheFS(suffix);
+		if (clientCacheType.equals("salt-hash")) {
+			initSaltHashClientCacheFS(suffix, false);
 		} else { // ram
 			chkClientcache = new CHKStore();
 			new RAMFreenetStore(chkClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
@@ -2131,16 +2098,136 @@ public class Node implements TimeSkewDetectorCallback {
 			this.storeEnvironment = null;
 		}
 		
+		nodeConfig.register("useSlashdotCache", true, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return useSlashdotCache;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				useSlashdotCache = val;
+			}
+			
+		});
+		useSlashdotCache = nodeConfig.getBoolean("useSlashdotCache");
+		
+		nodeConfig.register("writeLocalToDatastore", false, sortOrder++, true, false, "Node.writeLocalToDatastore", "Node.writeLocalToDatastoreLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return writeLocalToDatastore;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				writeLocalToDatastore = val;
+			}
+			
+		});
+		
+		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
+		
+		// LOW seclevel = writeLocalToDatastore
+		
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+					writeLocalToDatastore = true;
+				else
+					writeLocalToDatastore = false;
+			}
+			
+		});
+		
+		nodeConfig.register("slashdotCacheLifetime", 30*60*1000L, sortOrder++, true, false, "Node.slashdotCacheLifetime", "Node.slashdotCacheLifetimeLong", new LongCallback() {
+
+			@Override
+			public Long get() {
+				return chkSlashdotcacheStore.getLifetime();
+			}
+
+			@Override
+			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+				if(val < 0) throw new InvalidConfigValueException("Must be positive!");
+				chkSlashdotcacheStore.setLifetime(val);
+				pubKeySlashdotcacheStore.setLifetime(val);
+				sskSlashdotcacheStore.setLifetime(val);
+			}
+			
+		}, false);
+		
+		long slashdotCacheLifetime = nodeConfig.getLong("slashdotCacheLifetime");
+		
+		nodeConfig.register("slashdotCacheSize", "50M", sortOrder++, false, true, "Node.slashdotCacheSize", "Node.slashdotCacheSizeLong", 
+				new LongCallback() {
+
+					@Override
+					public Long get() {
+						return maxSlashdotCacheSize;
+					}
+
+					@Override
+					public void set(Long storeSize) throws InvalidConfigValueException {
+						if((storeSize < 0))
+							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
+						int newMaxStoreKeys = (int) Math.min(storeSize / sizePerKey, Integer.MAX_VALUE);
+						if(newMaxStoreKeys == maxSlashdotCacheKeys) return;
+						// Update each datastore
+						synchronized(Node.this) {
+							maxSlashdotCacheSize = storeSize;
+							maxSlashdotCacheKeys = newMaxStoreKeys;
+						}
+						try {
+							chkSlashdotcache.setMaxKeys(maxSlashdotCacheKeys, storeForceBigShrinks);
+							pubKeySlashdotcache.setMaxKeys(maxSlashdotCacheKeys, storeForceBigShrinks);
+							sskSlashdotcache.setMaxKeys(maxSlashdotCacheKeys, storeForceBigShrinks);
+						} catch (IOException e) {
+							// FIXME we need to be able to tell the user.
+							Logger.error(this, "Caught "+e+" resizing the slashdotcache", e);
+							System.err.println("Caught "+e+" resizing the slashdotcache");
+							e.printStackTrace();
+						} catch (DatabaseException e) {
+							Logger.error(this, "Caught "+e+" resizing the slashdotcache", e);
+							System.err.println("Caught "+e+" resizing the slashdotcache");
+							e.printStackTrace();
+						}
+					}
+		}, true);
+		
+		maxSlashdotCacheSize = nodeConfig.getLong("slashdotCacheSize");
+		
+		if(maxSlashdotCacheSize < 0) {
+			throw new NodeInitException(NodeInitException.EXIT_INVALID_STORE_SIZE, "Invalid client cache size");
+		}
+
+		maxSlashdotCacheKeys = (int) Math.min(maxSlashdotCacheSize / sizePerKey, Integer.MAX_VALUE);
+		
 		chkSlashdotcache = new CHKStore();
-		new SlashdotStore(chkSlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		chkSlashdotcacheStore = new SlashdotStore(chkSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
 		pubKeySlashdotcache = new PubkeyStore();
-		new SlashdotStore(pubKeySlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		pubKeySlashdotcacheStore = new SlashdotStore(pubKeySlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
 		getPubKey.setLocalSlashdotcache(pubKeySlashdotcache);
 		sskSlashdotcache = new SSKStore(getPubKey);
-		new SlashdotStore(sskSlashdotcache, MAX_SLASHDOT_CACHE_KEYS, MAX_SLASHDOT_LIFETIME, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		sskSlashdotcacheStore = new SlashdotStore(sskSlashdotcache, maxSlashdotCacheKeys, slashdotCacheLifetime, PURGE_INTERVAL, ps, this.clientCore.tempBucketFactory);
+		
+		// MAXIMUM seclevel = no slashdot cache.
+		
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+					useSlashdotCache = false;
+				else if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+					useSlashdotCache = true;
+			}
+
+		});
 		
 		securityLevels.registerUserAlert(clientCore.alerts);
-						
+		
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
@@ -2196,6 +2283,103 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 	}
 
+	private String getStoreSuffix() {
+		return "-" + getDarknetPortNumber();
+	}
+
+	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
+		((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+		((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+
+		if (isBDBStoreExist(suffix)) {
+			clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("Node.storeSaltHashMigratedShort"),
+			        L10n.getString("Node.storeSaltHashMigratedShort"), L10n
+			                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
+				
+				@Override
+				public HTMLNode getHTMLText() {
+					HTMLNode div = new HTMLNode("div");
+					div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
+					HTMLNode ul = div.addChild("ul");
+
+					for (String type : new String[] { "chk", "pubkey", "ssk" })
+						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
+						        "cache.keys", "cache.lru" }) {
+							File f = new File(storeDir, type + suffix + "." + storecache);
+							if (f.exists())
+								ul.addChild("li", f.getAbsolutePath());
+						}
+					
+					File dbDir = new File(storeDir, "database" + suffix);
+					if (dbDir.exists())
+						ul.addChild("li", dbDir.getAbsolutePath());
+					
+					return div;
+				}
+
+				@Override
+				public String getText() {						
+					StringBuilder sb = new StringBuilder();
+					sb.append(L10n.getString("Node.storeSaltHashMigrated") + " \n");
+					
+					for (String type : new String[] { "chk", "pubkey", "ssk" })
+						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
+						        "cache.keys", "cache.lru" }) {
+							File f = new File(storeDir, type + suffix + "." + storecache);
+					if (f.exists())
+								sb.append(" - ");
+							sb.append(f.getAbsolutePath());
+							sb.append("\n");
+					}
+					File dbDir = new File(storeDir, "database" + suffix);
+					if (dbDir.exists()) {
+						sb.append(" - ");
+						sb.append(dbDir.getAbsolutePath());
+						sb.append("\n");
+					}
+					
+					return sb.toString();
+				}
+
+				@Override
+				public boolean isValid() {
+					return isBDBStoreExist(suffix);
+				}
+				
+				@Override
+				public void onDismiss() {
+				}
+				
+				@Override
+				public boolean userCanDismiss() {
+					return true;
+				}
+			});
+		}
+	}
+
+	private void initRAMFS() {
+		chkDatastore = new CHKStore();
+		new RAMFreenetStore(chkDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+		chkDatacache = new CHKStore();
+		new RAMFreenetStore(chkDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+		pubKeyDatastore = new PubkeyStore();
+		new RAMFreenetStore(pubKeyDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+		pubKeyDatacache = new PubkeyStore();
+		getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
+		new RAMFreenetStore(pubKeyDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+		sskDatastore = new SSKStore(getPubKey);
+		new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
+		sskDatacache = new SSKStore(getPubKey);
+		new RAMFreenetStore(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
+		envMutableConfig = null;
+		this.storeEnvironment = null;
+	}
+
 	private boolean isBDBStoreExist(final String suffix) {
 		for(String type : new String[] { "chk", "pubkey", "ssk" }) {
 			for(String ver : new String[] { "store", "cache" }) {
@@ -2208,7 +2392,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return false;
     }
 
-	private void initSaltHashFS(final String suffix) throws NodeInitException {
+	private void initSaltHashFS(final String suffix, boolean dontResizeOnStart) throws NodeInitException {
 	    storeEnvironment = null;
 		envMutableConfig = null;
 		try {
@@ -2219,20 +2403,20 @@ public class Node implements TimeSkewDetectorCallback {
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
 			chkDatastore = new CHKStore();
-			SaltedHashFreenetStore chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore);
+			SaltedHashFreenetStore chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore, dontResizeOnStart);
 			chkDatacache = new CHKStore();
-			SaltedHashFreenetStore chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache);
+			SaltedHashFreenetStore chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache, dontResizeOnStart);
 			pubKeyDatastore = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore);
+			SaltedHashFreenetStore pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore, dontResizeOnStart);
 			pubKeyDatacache = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache);
+			SaltedHashFreenetStore pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache, dontResizeOnStart);
 			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore);
+			SaltedHashFreenetStore sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore, dontResizeOnStart);
 			sskDatacache = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache);
+			SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache, dontResizeOnStart);
 
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
@@ -2251,7 +2435,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
     }
 
-	private void initSaltHashClientCacheFS(final String suffix) throws NodeInitException {
+	private void initSaltHashClientCacheFS(final String suffix, boolean dontResizeOnStart) throws NodeInitException {
 	    storeEnvironment = null;
 		envMutableConfig = null;
 		try {
@@ -2260,12 +2444,12 @@ public class Node implements TimeSkewDetectorCallback {
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
 			chkClientcache = new CHKStore();
-			SaltedHashFreenetStore chkDataFS = makeClientcache(bloomFilterSizeInM, "CHK", true, chkClientcache);
+			SaltedHashFreenetStore chkDataFS = makeClientcache(bloomFilterSizeInM, "CHK", true, chkClientcache, dontResizeOnStart);
 			pubKeyClientcache = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyDataFS = makeClientcache(bloomFilterSizeInM, "PUBKEY", true, pubKeyClientcache);
+			SaltedHashFreenetStore pubkeyDataFS = makeClientcache(bloomFilterSizeInM, "PUBKEY", true, pubKeyClientcache, dontResizeOnStart);
 			getPubKey.setLocalDataStore(pubKeyClientcache);
 			sskClientcache = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskDataFS = makeClientcache(bloomFilterSizeInM, "SSK", true, sskClientcache);
+			SaltedHashFreenetStore sskDataFS = makeClientcache(bloomFilterSizeInM, "SSK", true, sskClientcache, dontResizeOnStart);
 		} catch (IOException e) {
 			System.err.println("Could not open store: " + e);
 			e.printStackTrace();
@@ -2280,22 +2464,22 @@ public class Node implements TimeSkewDetectorCallback {
 		        new File(storeDir, type + suffix + "."+store+".keys"));
 	}
 
-	private SaltedHashFreenetStore makeClientcache(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb) throws IOException {
-		return makeStore(bloomFilterSizeInM, type, "clientcache", maxClientCacheKeys, cb);
+	private SaltedHashFreenetStore makeClientcache(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb, boolean dontResizeOnStart) throws IOException {
+		return makeStore(bloomFilterSizeInM, type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart);
 	}
 	
-	private SaltedHashFreenetStore makeStore(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb) throws IOException {
+	private SaltedHashFreenetStore makeStore(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb, boolean dontResizeOnStart) throws IOException {
 		String store = isStore ? "store" : "cache";
 		long maxKeys = isStore ? maxStoreKeys : maxCacheKeys;
-		return makeStore(bloomFilterSizeInM, type, store, maxKeys, cb);
+		return makeStore(bloomFilterSizeInM, type, store, maxKeys, cb, dontResizeOnStart);
 	}
 	
-	private SaltedHashFreenetStore makeStore(int bloomFilterSizeInM, String type, String store, long maxKeys, StoreCallback cb) throws IOException {
+	private SaltedHashFreenetStore makeStore(int bloomFilterSizeInM, String type, String store, long maxKeys, StoreCallback cb, boolean dontResizeOnStart) throws IOException {
 		Logger.normal(this, "Initializing "+type+" Data"+store);
 		System.out.println("Initializing "+type+" Data"+store+" (" + maxStoreKeys + " keys)");
 
 		return SaltedHashFreenetStore.construct(storeDir, type+"-"+store, cb,
-		        random, maxKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart);
+		        random, maxKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate, storeSaltHashResizeOnStart && !dontResizeOnStart);
 	}
 
 	private void initBDBFS(final String suffix) throws NodeInitException {
@@ -2813,7 +2997,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * requests that don't get cached. */
 	boolean canWriteDatastoreRequest(short htl) {
-		return htl > (maxHTL - 2);
+		return htl < (maxHTL - 2);
 	}
 
 	/** Can we write to the datastore for a given insert?
@@ -2824,7 +3008,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * inserts that don't get cached. */
 	boolean canWriteDatastoreInsert(short htl) {
-		return htl > (maxHTL - 3);
+		return htl < (maxHTL - 3);
 	}
 
 	static class KeyHTLPair {
@@ -3033,7 +3217,7 @@ public class Node implements TimeSkewDetectorCallback {
 		store(block, deep, canWriteClientCache, canWriteDatastore, forULPR);
 	}
 	
-	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore) {
+	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		store(block, false, canWriteClientCache, canWriteDatastore, false);
 	}
 
@@ -3056,17 +3240,17 @@ public class Node implements TimeSkewDetectorCallback {
 	private void store(CHKBlock block, boolean deep, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		try {
 			if(canWriteClientCache) {
-				chkClientcache.put(block);
+				chkClientcache.put(block, false);
 			}
-			if(forULPR || useSlashdotCache && !canWriteDatastore)
-				chkSlashdotcache.put(block);
-			if(canWriteDatastore) {
+			if((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore))
+				chkSlashdotcache.put(block, false);
+			if(canWriteDatastore || writeLocalToDatastore) {
 				double loc=block.getKey().toNormalizedDouble();
 				if(deep) {
-					chkDatastore.put(block);
+					chkDatastore.put(block, canWriteDatastore);
 					nodeStats.avgStoreLocation.report(loc);
 				}
-				chkDatacache.put(block);
+				chkDatacache.put(block, canWriteDatastore);
 				nodeStats.avgCacheLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
@@ -3091,25 +3275,25 @@ public class Node implements TimeSkewDetectorCallback {
 
 	/** Store only to the cache, and not the store. Called by requests,
 	 * as only inserts cause data to be added to the store. */
-	public void storeShallow(SSKBlock block, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
-		store(block, false, canWriteClientCache, canWriteDatastore, false);
+	public void storeShallow(SSKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean fromULPR) throws KeyCollisionException {
+		store(block, false, canWriteClientCache, canWriteDatastore, fromULPR);
 	}
 	
 	public void store(SSKBlock block, boolean deep, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) throws KeyCollisionException {
 		try {
 			// Store the pubkey before storing the data, otherwise we can get a race condition and
 			// end up deleting the SSK data.
-			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache);
+			getPubKey.cacheKey((block.getKey()).getPubKeyHash(), (block.getKey()).getPubKey(), deep, canWriteClientCache, canWriteDatastore, forULPR || useSlashdotCache, writeLocalToDatastore);
 			if(canWriteClientCache) {
-				sskClientcache.put(block, overwrite);
+				sskClientcache.put(block, overwrite, false);
 			}
-			if(forULPR || useSlashdotCache && !canWriteDatastore)
-				sskSlashdotcache.put(block, overwrite);
-			if(canWriteDatastore) {
+			if((forULPR || useSlashdotCache) && !(canWriteDatastore || writeLocalToDatastore))
+				sskSlashdotcache.put(block, overwrite, false);
+			if(canWriteDatastore || writeLocalToDatastore) {
 				if(deep) {
-					sskDatastore.put(block, overwrite);
+					sskDatastore.put(block, overwrite, canWriteDatastore);
 				}
-				sskDatacache.put(block, overwrite);
+				sskDatacache.put(block, overwrite, canWriteDatastore);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -3133,7 +3317,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public void store(SSKBlock block, double loc, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
 		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
-		store(block, deep, overwrite, canWriteClientCache, canWriteDatastore);
+		store(block, deep, overwrite, canWriteClientCache, canWriteDatastore, false); // Not a ULPR
 	}
 	
 	/**
@@ -3264,7 +3448,7 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
 		if(cache)
-			getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false);
+			getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
@@ -3629,7 +3813,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
-		getPubKey.cacheKey(clientSSK.pubKeyHash, key, false, canWriteClientCache, canWriteDatastore, false);
+		getPubKey.cacheKey(clientSSK.pubKeyHash, key, false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		return ClientSSKBlock.construct(block, clientSSK);
 	}
 
@@ -3858,9 +4042,9 @@ public class Node implements TimeSkewDetectorCallback {
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED) {
 			source.handleFproxyFileOfferRejected(fs, fileNumber);
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_BOOKMARK) {
-			source.handleFproxyBookmarkFeed(getMyName(), fs, fileNumber);
+			source.handleFproxyBookmarkFeed(fs, fileNumber);
 		} else if(type == Node.N2N_TEXT_MESSAGE_TYPE_DOWNLOAD) {
-			source.handleFproxyDownloadFeed(getMyName(), fs, fileNumber);
+			source.handleFproxyDownloadFeed(fs, fileNumber);
 		} else {
 			Logger.error(this, "Received unknown fproxy node to node message sub-type '"+type+"' from "+source.getPeer());
 		}
@@ -4434,6 +4618,18 @@ public class Node implements TimeSkewDetectorCallback {
 				turtles += senders.length;
 			return turtles;
 		}
+	}
+
+	public void drawClientCacheBox(HTMLNode storeSizeInfobox) {
+		HTMLNode div = storeSizeInfobox.addChild("div");
+		div.addChild("p", "Client cache max size: "+this.maxClientCacheKeys+" keys");
+		div.addChild("p", "Client cache size: CHK "+this.chkClientcache.keyCount()+" pubkey "+this.pubKeyClientcache.keyCount()+" SSK "+this.sskClientcache.keyCount());
+	}
+
+	public void drawSlashdotCacheBox(HTMLNode storeSizeInfobox) {
+		HTMLNode div = storeSizeInfobox.addChild("div");
+		div.addChild("p", "Slashdot/ULPR cache max size: "+maxSlashdotCacheKeys+" keys");
+		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
 	}
 
 }

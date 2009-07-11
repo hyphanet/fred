@@ -5,6 +5,8 @@ import java.text.NumberFormat;
 
 import com.db4o.ObjectContainer;
 
+import freenet.clients.http.InfoboxNode;
+import freenet.clients.http.PageMaker;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
@@ -334,6 +336,23 @@ public class RequestElement extends BaseUpdateableElement {
 		}
 		return progressCell;
 	}
+	
+	private HTMLNode createRecommendCell(PageMaker pageMaker, FreenetURI URI, ToadletContext ctx) {
+		HTMLNode recommendNode = new HTMLNode("td", "class", "request-delete");
+		HTMLNode shareForm = ctx.addFormChild(recommendNode, path, "recommendForm");
+		shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
+		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", L10n.getString("QueueToadlet.recommendToFriends") });
+		return recommendNode;
+	}
+	
+	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
+		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
+		HTMLNode panicBox = infobox.outer;
+		HTMLNode panicForm = ctx.addFormChild(infobox.content, path, "queuePanicForm");
+		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + ' '));
+		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", L10n.getString("QueueToadlet.remove") });
+		return panicBox;
+	}
 
 	private class ProgressListener implements WhiteboardListener {
 
@@ -348,5 +367,7 @@ public class RequestElement extends BaseUpdateableElement {
 		}
 
 	}
+	
+	
 
 }

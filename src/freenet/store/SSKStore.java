@@ -37,8 +37,8 @@ public class SSKStore extends StoreCallback<SSKBlock> {
 		return store.fetch(chk.getRoutingKey(), chk.getFullKey(), dontPromote, canReadClientCache, canReadSlashdotCache);
 	}
 
-	public void put(SSKBlock b, boolean overwrite) throws IOException, KeyCollisionException {
-		store.put(b, b.getRawData(), b.getRawHeaders(), overwrite);
+	public void put(SSKBlock b, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
+		store.put(b, b.getRawData(), b.getRawHeaders(), overwrite, isOldBlock);
 	}
 	
 	@Override
