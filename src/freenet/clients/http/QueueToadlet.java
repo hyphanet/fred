@@ -589,7 +589,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
                 HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", L10n.getString("QueueToadlet.recommendAFileToFriends"), contentNode);
-                HTMLNode form = ctx.addFormChild(infoboxContent, "/downloads/", "recommendForm2");
+                HTMLNode form = ctx.addFormChild(infoboxContent, path(), "recommendForm2");
                 String key = request.getPartAsString("URI", MAX_KEY_LENGTH);
                 form.addChild("#", L10n.getString("QueueToadlet.key") + ":");
                 form.addChild("br");
@@ -1091,9 +1091,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			contentNode.addChild("a", "id", "completedUpload");
 			HTMLNode completedUploadInfoboxContent = pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) }), contentNode);
 			if (advancedModeEnabled) {
-				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			} else  {
-				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true, container));
 			}
 		}
 		
@@ -1273,7 +1273,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private HTMLNode createRecommendCell(PageMaker pageMaker, FreenetURI URI, ToadletContext ctx) {
 		HTMLNode recommendNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode shareForm = ctx.addFormChild(recommendNode, "/downloads/", "recommendForm");
+		HTMLNode shareForm = ctx.addFormChild(recommendNode, path(), "recommendForm");
 		shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
 		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", L10n.getString("QueueToadlet.recommendToFriends") });
 
@@ -1510,7 +1510,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				} else if (column == LIST_REASON) {
 					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(container)));
 				} else if (column == LIST_RECOMMEND) {
+					if(clientRequest instanceof ClientGet) {
 						requestRow.addChild(createRecommendCell(pageMaker, ((ClientGet) clientRequest).getURI(container), ctx));
+					} else {
+						requestRow.addChild(createRecommendCell(pageMaker, ((ClientPut) clientRequest).getFinalURI(container), ctx));
+					}
 				}
 			}
 		}
