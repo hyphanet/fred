@@ -5,7 +5,6 @@ import java.text.NumberFormat;
 
 import com.db4o.ObjectContainer;
 
-import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -127,7 +126,7 @@ public class RequestElement extends BaseUpdateableElement {
 						addChild(createKeyCell(((ClientGet) clientRequest).getURI(container), false));
 					} else if (clientRequest instanceof ClientPut) {
 						addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(container), false));
-					} else {
+					}else {
 						addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(container), true));
 					}
 				} else if (column == QueueToadlet.LIST_FILENAME) {
@@ -143,12 +142,18 @@ public class RequestElement extends BaseUpdateableElement {
 				} else if (column == QueueToadlet.LIST_TOTAL_SIZE) {
 					addChild(createSizeCell(((ClientPutDir) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
 				} else if (column == QueueToadlet.LIST_PROGRESS) {
-					if (clientRequest instanceof ClientPut) addChild(createProgressCell(clientRequest.isStarted(), ((ClientPut) clientRequest).isCompressing(container), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
-					else addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
+					if(clientRequest instanceof ClientPut)
+						addChild(createProgressCell(clientRequest.isStarted(), ((ClientPut)clientRequest).isCompressing(container), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
+					else
+						addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
 				} else if (column == QueueToadlet.LIST_REASON) {
 					addChild(createReasonCell(clientRequest.getFailureReason(container)));
 				} else if (column == QueueToadlet.LIST_RECOMMEND) {
-					addChild(createRecommendCell(((ClientGet) clientRequest).getURI(container), ctx));
+					if(clientRequest instanceof ClientGet) {
+						addChild(createRecommendCell(((ClientGet) clientRequest).getURI(container), ctx));
+					} else {
+						addChild(createRecommendCell(((ClientPut) clientRequest).getFinalURI(container), ctx));
+					}
 				}
 			}
 		}
@@ -343,15 +348,6 @@ public class RequestElement extends BaseUpdateableElement {
 		shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
 		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", L10n.getString("QueueToadlet.recommendToFriends") });
 		return recommendNode;
-	}
-	
-	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
-		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
-		HTMLNode panicBox = infobox.outer;
-		HTMLNode panicForm = ctx.addFormChild(infobox.content, path, "queuePanicForm");
-		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + ' '));
-		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", L10n.getString("QueueToadlet.remove") });
-		return panicBox;
 	}
 
 	private class ProgressListener implements WhiteboardListener {
