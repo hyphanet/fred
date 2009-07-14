@@ -26,13 +26,19 @@ import freenet.support.Logger;
  */
 public class CipherManager {
 	/**
-	 * <tt>0x10</tt> bytes of salt for better digestion, not too salty.
+	 * The actual salt. 16 bytes.
 	 */
 	private byte[] salt;
 
-	CipherManager(byte[] salt) {
+	/**
+	 * The original on-disk salt, may be encrypted. 16 bytes.
+	 */
+	private byte[] diskSalt;
+
+	CipherManager(byte[] salt, byte[] diskSalt) {
 		assert salt.length == 0x10;
 		this.salt = salt;
+		this.diskSalt = diskSalt;
 	}
 
 	/**
@@ -40,8 +46,8 @@ public class CipherManager {
 	 * 
 	 * @return salt
 	 */
-	byte[] getSalt() {
-		return salt;
+	byte[] getDiskSalt() {
+		return diskSalt;
 	}
 
 	/**

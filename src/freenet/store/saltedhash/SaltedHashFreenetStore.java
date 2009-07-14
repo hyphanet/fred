@@ -29,7 +29,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.crypt.BlockCipher;
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.l10n.L10n;
@@ -95,16 +98,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private boolean preallocate = true;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec, byte[] masterKey)
 	        throws IOException {
 		SaltedHashFreenetStore store = new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
-		        shutdownHook, preallocate, resizeOnStart);
+		        shutdownHook, preallocate, resizeOnStart, masterKey);
 		store.start(exec);
 		return store;
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart) throws IOException {
+	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -131,7 +134,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		this.baseDir.mkdirs();
 
 		configFile = new File(this.baseDir, name + ".config");
-		boolean newStore = loadConfigFile();
+		boolean newStore = loadConfigFile(masterKey);
 
 		newStore |= openStoreFiles(baseDir, name);
 
@@ -861,17 +864,31 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Load config file
+	 * @param masterKey 
 	 * 
 	 * @return <code>true</code> iff this is a new datastore
 	 */
-	private boolean loadConfigFile() throws IOException {
+	private boolean loadConfigFile(byte[] masterKey) throws IOException {
 		assert cipherManager == null; // never load the configuration twice
 
 		if (!configFile.exists()) {
 			// create new
 			byte[] newsalt = new byte[0x10];
 			random.nextBytes(newsalt);
-			cipherManager = new CipherManager(newsalt);
+			byte[] diskSalt = newsalt;
+			if(masterKey != null) {
+				BlockCipher cipher;
+				try {
+					cipher = new Rijndael(256, 128);
+				} catch (UnsupportedCipherException e) {
+					throw new Error("Impossible: no Rijndael(256,128): "+e, e);
+				}
+				cipher.initialize(masterKey);
+				diskSalt = new byte[0x10];
+				cipher.encipher(newsalt, diskSalt);
+				System.err.println("Encrypting store with "+HexUtil.bytesToHex(newsalt));
+			}
+			cipherManager = new CipherManager(newsalt, diskSalt);
 			bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 
 			writeConfigFile();
@@ -881,9 +898,24 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				// try to load
 				RandomAccessFile raf = new RandomAccessFile(configFile, "r");
 				try {
-					byte[] salt = new byte[0x10];
-					raf.readFully(salt);
-					cipherManager = new CipherManager(salt);
+					byte[] diskSalt = new byte[0x10];
+					raf.readFully(diskSalt);
+					
+					byte[] salt = diskSalt;
+					if(masterKey != null) {
+						BlockCipher cipher;
+						try {
+							cipher = new Rijndael(256, 128);
+						} catch (UnsupportedCipherException e) {
+							throw new Error("Impossible: no Rijndael(256,128): "+e, e);
+						}
+						cipher.initialize(masterKey);
+						diskSalt = new byte[0x10];
+						cipher.decipher(diskSalt, salt);
+						System.err.println("Encrypting store with "+HexUtil.bytesToHex(salt));
+					}
+					
+					cipherManager = new CipherManager(salt, diskSalt);
 
 					storeSize = raf.readLong();
 					prevStoreSize = raf.readLong();
@@ -916,7 +948,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (configFile.exists() && configFile.delete()) {
 					File metaFile = new File(baseDir, name + ".metadata");
 					metaFile.delete();
-					return loadConfigFile();
+					return loadConfigFile(masterKey);
 				}
 
 				// last restore
@@ -936,7 +968,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			File tempConfig = new File(configFile.getPath() + ".tmp");
 			RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
 			raf.seek(0);
-			raf.write(cipherManager.getSalt());
+			raf.write(cipherManager.getDiskSalt());
 
 			raf.writeLong(storeSize);
 			raf.writeLong(prevStoreSize);
