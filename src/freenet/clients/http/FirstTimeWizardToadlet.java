@@ -540,6 +540,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
 			config.get("node").set("storeSize", selectedStoreSize);
+			if(config.get("node").getString("storeType").equals("ram"))
+				config.get("node").set("storeType", "salt-hash");
 			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);

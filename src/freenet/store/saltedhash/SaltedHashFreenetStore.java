@@ -33,7 +33,9 @@ import freenet.crypt.DSAPublicKey;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
 import freenet.l10n.L10n;
+import freenet.node.FastRunnable;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.node.Ticker;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
@@ -42,6 +44,7 @@ import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.support.BloomFilter;
+import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -92,10 +95,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private boolean preallocate = true;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec)
 	        throws IOException {
-		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
+		SaltedHashFreenetStore store = new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
 		        shutdownHook, preallocate, resizeOnStart);
+		store.start(exec);
+		return store;
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
@@ -184,8 +189,19 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags+" bloom size = "+bloomFilterSize+" keys = "+maxKeys);
-		
-		cleanerThread.start();
+	}
+	
+	private void start(Ticker ticker) {
+		if(ticker == null) {
+			cleanerThread.start();
+		} else
+			ticker.queueTimedJob(new FastRunnable() {
+
+				public void run() {
+					cleanerThread.start();
+				}
+				
+			}, "Start cleaner thread", 0, true, false);
 	}
 
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
