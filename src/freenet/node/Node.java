@@ -148,9 +148,9 @@ public class Node implements TimeSkewDetectorCallback {
 		public MigrateOldStoreData(boolean clientCache) {
 			this.clientCache = clientCache;
 			if(clientCache) {
-				oldCHK = chkClientcache;
-				oldPK = pubKeyClientcache;
-				oldSSK = sskClientcache;
+				oldCHKClientCache = chkClientcache;
+				oldPKClientCache = pubKeyClientcache;
+				oldSSKClientCache = sskClientcache;
 			} else {
 				oldCHK = chkDatastore;
 				oldPK = pubKeyDatastore;
