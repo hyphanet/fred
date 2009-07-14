@@ -539,9 +539,38 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
-			config.get("node").set("storeSize", selectedStoreSize);
+			long size = Fields.parseLong(selectedStoreSize);
+			// client cache: 10% up to 200MB
+			long clientCacheSize = Math.min(size / 10, 200*1024*1024);
+			// recent requests cache / slashdot cache / ULPR cache
+			int upstreamLimit = config.get("node").getInt("outputBandwidthLimit");
+			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
+			// is used for remote stuff, so go by the minimum of the two
+			int limit;
+			if(downstreamLimit <= 0) limit = upstreamLimit;
+			else limit = Math.min(downstreamLimit, upstreamLimit);
+			// 35KB/sec limit has been seen to have 0.5 store writes per second.
+			// So saying we want to have space to cache everything is only doubling that ...
+			// OTOH most stuff is at low enough HTL to go to the datastore and thus not to 
+			// the slashdot cache, so we could probably cut this significantly...
+			long lifetime = config.get("node").getLong("slashdotCacheLifetime");
+			long maxSlashdotCacheSize = (lifetime / 1000) * limit;
+			long slashdotCacheSize = Math.min(size / 10, maxSlashdotCacheSize);
+			
+			long storeSize = size - (clientCacheSize + slashdotCacheSize);
+			
+			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
+			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
 			if(config.get("node").getString("storeType").equals("ram"))
 				config.get("node").set("storeType", "salt-hash");
+			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
+			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
+			if(config.get("node").getString("clientCacheType").equals("ram"))
+				config.get("node").set("clientCacheType", "salt-hash");
+			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
+			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
+			
+			
 			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);

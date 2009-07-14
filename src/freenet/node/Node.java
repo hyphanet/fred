@@ -2260,7 +2260,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		long slashdotCacheLifetime = nodeConfig.getLong("slashdotCacheLifetime");
 		
-		nodeConfig.register("slashdotCacheSize", "50M", sortOrder++, false, true, "Node.slashdotCacheSize", "Node.slashdotCacheSizeLong", 
+		nodeConfig.register("slashdotCacheSize", "10M", sortOrder++, false, true, "Node.slashdotCacheSize", "Node.slashdotCacheSizeLong", 
 				new LongCallback() {
 
 					@Override
