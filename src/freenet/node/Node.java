@@ -2516,7 +2516,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		public HTMLNode getHTMLText() {
 			HTMLNode content = new HTMLNode("div");
-			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, false, null);
+			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, false, false, null);
 			return content;
 		}
 
