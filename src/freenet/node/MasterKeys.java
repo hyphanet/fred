@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 
@@ -26,9 +27,11 @@ public class MasterKeys {
 	// Currently we only encrypt the client cache
 	
 	final byte[] clientCacheMasterKey;
+	final long flags;
 	
-	public MasterKeys(byte[] clientCacheKey) {
+	public MasterKeys(byte[] clientCacheKey, long flags) {
 		this.clientCacheMasterKey = clientCacheKey;
+		this.flags = flags;
 	}
 
 	void clearClientCacheKeys() {
@@ -99,7 +102,7 @@ public class MasterKeys {
 				// In future the flags will tell us whether the database and the datastore are encrypted.
 				byte[] clientCacheKey = new byte[32];
 				dis.readFully(clientCacheKey);
-				MasterKeys ret = new MasterKeys(clientCacheKey);
+				MasterKeys ret = new MasterKeys(clientCacheKey, flags);
 				clear(data);
 				clear(hash);
 				SHA256.returnMessageDigest(md);
@@ -162,7 +165,7 @@ public class MasterKeys {
 		fos.close();
 		clear(data);
 		clear(hash);
-		return new MasterKeys(clientCacheKey);
+		return new MasterKeys(clientCacheKey, flags);
 	}
 
 	private static boolean arraysEqualTruncated(byte[] checkHash, byte[] hash, int length) {
@@ -177,9 +180,65 @@ public class MasterKeys {
 			buf[i] = 0;
 	}
 
-	public void changePassword(String newPassword) {
-		// TODO Auto-generated method stub
+	public void changePassword(File masterKeysFile, String newPassword, RandomSource hardRandom) throws IOException {
+		System.err.println("Writing new master.keys file for new password");
+		// Write it to a byte[], check size, then replace in-place atomically
 		
+		// New IV, new salt, same client cache key
+		
+		byte[] iv = new byte[32];
+		hardRandom.nextBytes(iv);
+		byte[] salt = new byte[32];
+		hardRandom.nextBytes(salt);
+
+		byte[] flagBytes = Fields.longToBytes(flags);
+
+		byte[] data = new byte[iv.length + salt.length + flagBytes.length + clientCacheMasterKey.length + HASH_LENGTH];
+
+		System.arraycopy(salt, 0, data, 0, salt.length);
+		System.arraycopy(iv, 0, data, salt.length, iv.length);
+		
+		System.arraycopy(flagBytes, 0, data, salt.length + iv.length, flagBytes.length);
+		System.arraycopy(clientCacheMasterKey, 0, data, flagBytes.length + salt.length + iv.length, clientCacheMasterKey.length);
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(data, salt.length + iv.length, flagBytes.length + clientCacheMasterKey.length);
+		byte[] hash = md.digest();
+		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheMasterKey.length + iv.length + salt.length, HASH_LENGTH);
+		
+		byte[] pwd;
+		try {
+			pwd = newPassword.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Impossible
+			throw new Error(e);
+		}
+		md.update(pwd);
+		md.update(salt);
+		byte[] outerKey = md.digest();
+
+		BlockCipher cipher;
+		try {
+			cipher = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			// Impossible
+			throw new Error(e);
+		}
+		cipher.initialize(outerKey);
+		PCFBMode pcfb = PCFBMode.create(cipher, iv);
+		pcfb.blockEncipher(data, iv.length + salt.length, data.length - iv.length - salt.length);
+		
+		RandomAccessFile raf = new RandomAccessFile(masterKeysFile, "rw");
+		
+		raf.seek(0);
+		raf.write(data);
+		long len = raf.length();
+		if(len > data.length) {
+			byte[] diff = new byte[(int)(len - data.length)];
+			raf.write(diff);
+			raf.setLength(data.length);
+		}
+		raf.getFD().sync();
+		raf.close();
 	}
 
 }

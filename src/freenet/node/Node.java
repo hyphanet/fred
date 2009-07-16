@@ -2513,7 +2513,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		public HTMLNode getHTMLText() {
 			HTMLNode content = new HTMLNode("div");
-			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, null);
+			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, false, null);
 			return content;
 		}
 
@@ -5031,10 +5031,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public void changeMasterPassword(String oldPassword, String newPassword) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
 		MasterKeys keys = MasterKeys.read(masterKeysFile, random, oldPassword);
-		keys.changePassword(newPassword);
+		keys.changePassword(masterKeysFile, newPassword, random);
 	}
 	
 	public class AlreadySetPasswordException extends Exception {
 		
+	}
+
+	public synchronized File getMasterPasswordFile() {
+		return masterKeysFile;
 	}
 }
