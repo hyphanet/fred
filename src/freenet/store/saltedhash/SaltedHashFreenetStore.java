@@ -887,6 +887,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				diskSalt = new byte[0x10];
 				cipher.encipher(newsalt, diskSalt);
 				System.err.println("Encrypting store with "+HexUtil.bytesToHex(newsalt));
+				System.err.println("Writing: "+HexUtil.bytesToHex(diskSalt));
 			}
 			cipherManager = new CipherManager(newsalt, diskSalt);
 			bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
@@ -898,10 +899,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				// try to load
 				RandomAccessFile raf = new RandomAccessFile(configFile, "r");
 				try {
-					byte[] diskSalt = new byte[0x10];
-					raf.readFully(diskSalt);
+					byte[] salt = new byte[0x10];
+					raf.readFully(salt);
 					
-					byte[] salt = diskSalt;
+					byte[] diskSalt = salt;
 					if(masterKey != null) {
 						BlockCipher cipher;
 						try {
@@ -910,9 +911,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							throw new Error("Impossible: no Rijndael(256,128): "+e, e);
 						}
 						cipher.initialize(masterKey);
-						diskSalt = new byte[0x10];
+						salt = new byte[0x10];
 						cipher.decipher(diskSalt, salt);
-						System.err.println("Encrypting store with "+HexUtil.bytesToHex(salt));
+						System.err.println("Encrypting store with "+HexUtil.bytesToHex(salt)+" diskSalt = "+HexUtil.bytesToHex(diskSalt));
 					}
 					
 					cipherManager = new CipherManager(salt, diskSalt);
