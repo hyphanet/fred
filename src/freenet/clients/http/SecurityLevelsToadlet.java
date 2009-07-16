@@ -4,6 +4,8 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -58,8 +60,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 			return;
 		}
 		
-		String pass = request.getPartAsString("formPassword", 32);
-		if((pass == null) || !pass.equals(core.formPassword)) {
+		String formPassword = request.getPartAsString("formPassword", 32);
+		if((formPassword == null) || !formPassword.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
 			headers.put("Location", "/seclevels/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -154,6 +156,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			tryConfirm = "security-levels.physicalThreatLevel.tryConfirm";
 			String physicalThreatLevel = request.getPartAsString(configName, 128);
 			PHYSICAL_THREAT_LEVEL newPhysicalLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
+			PHYSICAL_THREAT_LEVEL oldPhysicalLevel = core.node.securityLevels.getPhysicalThreatLevel();
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "New physical threat level: "+newPhysicalLevel+" old = "+node.securityLevels.getPhysicalThreatLevel());
 			if(newPhysicalLevel != null) {
 				if(newPhysicalLevel != node.securityLevels.getPhysicalThreatLevel()) {
@@ -163,18 +166,21 @@ public class SecurityLevelsToadlet extends Toadlet {
 						String password = request.getPartAsString("masterPassword", MAX_PASSWORD_LENGTH);
 						if(password != null && password.length() > 0) {
 							try {
-								core.node.setMasterPassword(password, true);
+								if(oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW)
+									core.node.changeMasterPassword("", password);
+								else
+									core.node.setMasterPassword(password, true);
 							} catch (AlreadySetPasswordException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (MasterKeysWrongPasswordException e) {
 								System.err.println("Wrong password!");
-								PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+								PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx);
 								pageNode = page.outer;
 								HTMLNode contentNode = page.content;
 								
 								content = ctx.getPageMaker().getInfobox("infobox-error", 
-										l10n("passwordWrongTitle"), contentNode).
+										l10nSec("passwordWrongTitle"), contentNode).
 										addChild("div", "class", "infobox-content");
 								
 								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, false, newPhysicalLevel.name());
@@ -191,9 +197,81 @@ public class SecurityLevelsToadlet extends Toadlet {
 								return;
 							}
 						} else {
-							sendEmptyPasswordPage(ctx, password != null && password.length() == 0, newPhysicalLevel.name());
+							sendPasswordPage(ctx, password != null && password.length() == 0, newPhysicalLevel.name());
 							return;
 						}
+					}
+					if((newPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW || newPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL) &&
+							oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
+						// Check for password
+						String password = request.getPartAsString("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
+						if(password != null && password.length() > 0) {
+							// This is actually the OLD password ...
+							try {
+								core.node.changeMasterPassword(password, "");
+							} catch (IOException e) {
+								if(!core.node.getMasterPasswordFile().exists()) {
+									// Ok.
+									System.out.println("Master password file no longer exists, assuming this is deliberate");
+								} else {
+									System.err.println("Cannot change password as cannot write new passwords file: "+e);
+									e.printStackTrace();
+									String msg = "<html><head><title>"+l10nSec("cantWriteNewMasterKeysFileTitle")+
+									"</title></head><body><h1>"+l10nSec("cantWriteNewMasterKeysFileTitle")+"</h1><pre>";
+									StringWriter sw = new StringWriter();
+									PrintWriter pw = new PrintWriter(sw);
+									e.printStackTrace(pw);
+									pw.flush();
+									msg = msg + sw.toString() + "</pre></body></html>";
+									writeHTMLReply(ctx, 500, "Internal Error", msg);
+									return;
+								}
+							} catch (MasterKeysWrongPasswordException e) {
+								System.err.println("Wrong password!");
+								PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordForDecryptTitle"), ctx);
+								pageNode = page.outer;
+								HTMLNode contentNode = page.content;
+								
+								content = ctx.getPageMaker().getInfobox("infobox-error", 
+										l10nSec("passwordWrongTitle"), contentNode).
+										addChild("div", "class", "infobox-content");
+									
+								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, false, newPhysicalLevel.name());
+								
+								addBackToPhysicalSeclevelsLink(content);
+								
+								writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+								return;
+							} catch (MasterKeysFileTooBigException e) {
+								SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+								return;
+							} catch (MasterKeysFileTooShortException e) {
+								SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+								return;
+							}
+						} else if(core.node.getMasterPasswordFile().exists()) {
+							// We need the old password
+							PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordForDecryptTitle"), ctx);
+							pageNode = page.outer;
+							HTMLNode contentNode = page.content;
+							
+							content = ctx.getPageMaker().getInfobox("infobox-error", 
+									l10nSec("passwordForDecryptTitle"), contentNode).
+									addChild("div", "class", "infobox-content");
+							
+							if(password != null && password.length() == 0) {
+								content.addChild("p", l10nSec("passwordNotZeroLength"));
+							}
+							
+							SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, false, true, newPhysicalLevel.name());
+							
+							addBackToPhysicalSeclevelsLink(content);
+							
+							writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+							return;
+							
+						}
+						
 					}
 					node.securityLevels.setThreatLevel(newPhysicalLevel);
 					changedAnything = true;
@@ -220,7 +298,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			if(request.isPartSet("masterPassword")) {
 				String masterPassword = request.getPartAsString("masterPassword", 1024);
 				if(masterPassword.length() == 0) {
-					sendEmptyPasswordPage(ctx, true, null);
+					sendPasswordPage(ctx, true, null);
 					return;
 				}
 				System.err.println("Setting master password");
@@ -259,7 +337,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 	
-	private void sendEmptyPasswordPage(ToadletContext ctx, boolean emptyPassword, String threatlevel) throws ToadletContextClosedException, IOException {
+	private void sendPasswordPage(ToadletContext ctx, boolean emptyPassword, String threatlevel) throws ToadletContextClosedException, IOException {
 		
 		// Must set a password!
 		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx);
@@ -443,12 +521,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 	 * @throws ToadletContextClosedException 
 	 */
 	private void sendPasswordFormPage(boolean wasWrong, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-				wasWrong ? l10n("passwordWrongTitle") : l10n("enterPasswordTitle"), contentNode).
+				wasWrong ? l10nSec("passwordWrongTitle") : l10nSec("enterPasswordTitle"), contentNode).
 				addChild("div", "class", "infobox-content");
 		
 		generatePasswordFormPage(wasWrong, ctx.getContainer(), content, false, false, null);

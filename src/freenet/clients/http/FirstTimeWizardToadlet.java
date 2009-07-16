@@ -174,7 +174,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
 					// Add password form
 					HTMLNode p = inner.addChild("p");
-					p.addChild("label", "id", "passwordBox", l10nSec("enterPassword"));
+					p.addChild("label", "id", "passwordBox", l10nSec("setPassword"));
 					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
 				}
 			}
@@ -576,7 +576,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						}
 					} catch (MasterKeysWrongPasswordException e) {
 						System.err.println("Wrong password!");
-						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptPageTitle"), ctx);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
 						HTMLNode pageNode = page.outer;
 						HTMLNode contentNode = page.content;
 						
@@ -599,7 +599,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				} else if(core.node.getMasterPasswordFile().exists()) {
 					// We need the old password
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptPageTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
 					HTMLNode pageNode = page.outer;
 					HTMLNode contentNode = page.content;
 					

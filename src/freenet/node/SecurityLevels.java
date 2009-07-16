@@ -5,7 +5,6 @@ package freenet.node;
 
 import java.util.ArrayList;
 
-import freenet.clients.http.ConfigToadlet;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -382,6 +381,10 @@ public class SecurityLevels {
 			physicalThreatLevel = newThreatLevel;
 		}
 		physicalThreatLevelCallback.onSet(oldLevel, newThreatLevel);
+	}
+	
+	public void resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL level) {
+		physicalThreatLevel = level;
 	}
 
 	public static String localisedName(NETWORK_THREAT_LEVEL newThreatLevel) {

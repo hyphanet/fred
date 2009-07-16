@@ -2270,7 +2270,10 @@ public class Node implements TimeSkewDetectorCallback {
 			MasterKeys keys;
 			try {
 				keys = MasterKeys.read(masterKeysFile, random, "");
-				
+				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
+					System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
+					securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
+				}
 				try {
 					initSaltHashClientCacheFS(suffix, false, keys.clientCacheMasterKey);
 				} finally {

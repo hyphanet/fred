@@ -181,7 +181,7 @@ public class MasterKeys {
 	}
 
 	public void changePassword(File masterKeysFile, String newPassword, RandomSource hardRandom) throws IOException {
-		System.err.println("Writing new master.keys file for new password");
+		System.err.println("Writing new master.keys file");
 		// Write it to a byte[], check size, then replace in-place atomically
 		
 		// New IV, new salt, same client cache key
