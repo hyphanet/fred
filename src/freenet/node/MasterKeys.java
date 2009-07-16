@@ -177,4 +177,9 @@ public class MasterKeys {
 			buf[i] = 0;
 	}
 
+	public void changePassword(String newPassword) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

@@ -49,7 +49,9 @@ public class SecurityLevels {
 	
 	public enum PHYSICAL_THREAT_LEVEL {
 		LOW, // Don't encrypt temp files etc etc
-		NORMAL, // Encrypt temp files etc etc
+		NORMAL, // Encrypt temp files, centralise keys for client cache in master.keys, if that is deleted client cache is unreadable. Later on will include encrypting node.db4o as well, which contains tempfile keys.
+		HIGH, // Password master.keys.
+		MAXIMUM // Transient encryption for client cache, no persistent downloads support, etc.
 	}
 	
 	NETWORK_THREAT_LEVEL networkThreatLevel;

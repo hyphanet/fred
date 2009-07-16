@@ -14,9 +14,13 @@ import freenet.config.ConfigException;
 import freenet.config.Option;
 import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
+import freenet.node.MasterKeysFileTooBigException;
+import freenet.node.MasterKeysFileTooShortException;
+import freenet.node.MasterKeysWrongPasswordException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
+import freenet.node.Node.AlreadySetPasswordException;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
@@ -165,6 +169,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				L10n.addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				HTMLNode inner = input.addChild("p").addChild("i");
 				L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+				if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
+					// Add password form
+					HTMLNode p = inner.addChild("p");
+					p.addChild("label", "id", "passwordBox", l10nSec("enterPassword"));
+					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+				}
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "physicalSecurityF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
@@ -478,6 +488,56 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 				return;
 			}
+			if(newThreatLevel == PHYSICAL_THREAT_LEVEL.HIGH && core.node.securityLevels.getPhysicalThreatLevel() != newThreatLevel) {
+				// Check for password
+				if(request.isPartSet("masterPassword")) {
+					String pass = request.getPartAsString("masterPassword", 1024);
+					try {
+						core.node.setMasterPassword(pass, true);
+					} catch (AlreadySetPasswordException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (MasterKeysWrongPasswordException e) {
+						System.err.println("Wrong password!");
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+						HTMLNode pageNode = page.outer;
+						HTMLNode contentNode = page.content;
+						
+						HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+								l10n("passwordWrongTitle"), contentNode).
+								addChild("div", "class", "infobox-content");
+						
+						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, newThreatLevel.name());
+						
+						addBackToPhysicalSeclevelsLink(content);
+						
+						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+						return;
+					} catch (MasterKeysFileTooBigException e) {
+						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+						return;
+					} catch (MasterKeysFileTooShortException e) {
+						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+						return;
+					}
+				} else {
+					// Must set a password!
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+					HTMLNode pageNode = page.outer;
+					HTMLNode contentNode = page.content;
+					
+					HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+							l10nSec("enterPasswordTitle"), contentNode).
+							addChild("div", "class", "infobox-content");
+					
+					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, newThreatLevel.name());
+					
+					addBackToPhysicalSeclevelsLink(content);
+					
+					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+					return;
+				}
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
@@ -528,6 +588,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 	}
 	
+	private void addBackToPhysicalSeclevelsLink(HTMLNode content) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	private String l10n(String key) {
 		return L10n.getString("FirstTimeWizardToadlet."+key);
 	}

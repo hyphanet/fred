@@ -43,6 +43,8 @@ import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.clients.http.ConfigToadlet;
+import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
@@ -86,6 +88,8 @@ import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.node.fcp.FCPMessage;
+import freenet.node.fcp.ReceivedStatusFeedMessage;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
@@ -362,27 +366,40 @@ public class Node implements TimeSkewDetectorCallback {
 			String type;
 			synchronized(Node.this) {
 				type = clientCacheType;
+				if(clientCacheAwaitingPassword)
+					type = "ram";
 			}
 			if(type.equals("ram")) {
 				Runnable migrate = new MigrateOldStoreData(true);
 				synchronized(this) { // Serialise this part.
 					String suffix = getStoreSuffix();
 					if (val.equals("salt-hash")) {
-						MasterKeys keys;
-						try {
-							keys = MasterKeys.read(masterKeysFile, random, "");
-						} catch (MasterKeysWrongPasswordException e1) {
-							// FIXME
-							throw new InvalidConfigValueException("Wrong password but we don't support passwords!!");
-						} catch (MasterKeysFileTooBigException e1) {
-							throw new InvalidConfigValueException("Master keys file corrupted (too big)");
-						} catch (MasterKeysFileTooShortException e1) {
-							throw new InvalidConfigValueException("Master keys file corrupted (too small)");
-						} catch (IOException e1) {
-							throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
+						byte[] key;
+						synchronized(Node.this) {
+							key = cachedClientCacheKey;
+							cachedClientCacheKey = null;
+						}
+						if(key == null) {
+							MasterKeys keys;
+							try {
+								keys = MasterKeys.read(masterKeysFile, random, "");
+								key = keys.clientCacheMasterKey;
+							} catch (MasterKeysWrongPasswordException e1) {
+								setClientCacheAwaitingPassword();
+								synchronized(Node.this) {
+									clientCacheType = val;
+								}
+								throw new InvalidConfigValueException("You must enter the password");
+							} catch (MasterKeysFileTooBigException e1) {
+								throw new InvalidConfigValueException("Master keys file corrupted (too big)");
+							} catch (MasterKeysFileTooShortException e1) {
+								throw new InvalidConfigValueException("Master keys file corrupted (too small)");
+							} catch (IOException e1) {
+								throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
+							}
 						}
 						try {
-							initSaltHashClientCacheFS(suffix, true, keys.clientCacheMasterKey);
+							initSaltHashClientCacheFS(suffix, true, key);
 						} catch (NodeInitException e) {
 							Logger.error(this, "Unable to create new store", e);
 							System.err.println("Unable to create new store: "+e);
@@ -390,7 +407,7 @@ public class Node implements TimeSkewDetectorCallback {
 							// FIXME l10n both on the NodeInitException and the wrapper message
 							throw new InvalidConfigValueException("Unable to create new store: "+e);
 						} finally {
-							keys.clearClientCacheKeys();
+							MasterKeys.clear(key);
 						}
 					} else {
 						initRAMClientCacheFS();
@@ -556,10 +573,15 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	/** Client cache store type */
 	private String clientCacheType;
+	/** Client cache could not be opened so is a RAMFS until the correct password is entered */
+	private boolean clientCacheAwaitingPassword;
 	/** Client cache maximum cached keys for each type */
 	long maxClientCacheKeys;
 	/** Maximum size of the client cache. Kept to avoid rounding problems. */
 	private long maxTotalClientCacheSize;
+	
+	/** Cached client cache key if the user is in the first-time wizard */
+	private byte[] cachedClientCacheKey;
 	
 	/** The CHK datacache. Short term cache which stores everything that passes
 	 * through this node. */
@@ -577,7 +599,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private SSKStore sskClientcache;
 	/** The pubkey client cache. Caches local requests only. */
 	private PubkeyStore pubKeyClientcache;
-	
+
 	// These only cache keys for 30 minutes.
 	
 	// FIXME make the first two configurable
@@ -2256,7 +2278,8 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				startedClientCache = true;
 			} catch (MasterKeysWrongPasswordException e) {
-				System.err.println("Impossible: wrong master key password entered but we don't support passwords yet!");
+				System.err.println("Cannot open client-cache, it is passworded");
+				setClientCacheAwaitingPassword();
 				break;
 			} catch (MasterKeysFileTooBigException e) {
 				System.err.println("Impossible: master keys file "+masterKeysFile+" too big! Deleting to enable startup, but you will lose your client cache.");
@@ -2459,6 +2482,91 @@ public class Node implements TimeSkewDetectorCallback {
 
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+	}
+
+	private void setClientCacheAwaitingPassword() {
+		createPasswordUserAlert();
+		synchronized(this) {
+			clientCacheAwaitingPassword = true;
+		}
+	}
+
+	private final UserAlert masterPasswordUserAlert = new UserAlert() {
+
+		final long creationTime = System.currentTimeMillis();
+		
+		public String anchor() {
+			return "password";
+		}
+
+		public String dismissButtonText() {
+			return null;
+		}
+
+		public long getCreationTime() {
+			return creationTime;
+		}
+
+		public FCPMessage getFCPMessage(String identifier) {
+			return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getCreationTime());
+		}
+
+		public HTMLNode getHTMLText() {
+			HTMLNode content = new HTMLNode("div");
+			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, null);
+			return content;
+		}
+
+		public short getPriorityClass() {
+			return UserAlert.ERROR;
+		}
+
+		public String getShortText() {
+			return L10n.getString("SecurityLevels.enterPassword");
+		}
+
+		public String getText() {
+			return L10n.getString("SecurityLevels.enterPassword");
+		}
+
+		public String getTitle() {
+			return L10n.getString("SecurityLevels.enterPassword");
+		}
+
+		public Object getUserIdentifier() {
+			return Node.this;
+		}
+
+		public boolean isEventNotification() {
+			return false;
+		}
+
+		public boolean isValid() {
+			synchronized(Node.this) {
+				return clientCacheAwaitingPassword;
+			}
+		}
+
+		public void isValid(boolean validity) {
+			// Ignore
+		}
+
+		public void onDismiss() {
+			// Ignore
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return false;
+		}
+
+		public boolean userCanDismiss() {
+			return false;
+		}
+		
+	};
+	
+	private void createPasswordUserAlert() {
+		this.clientCore.alerts.register(masterPasswordUserAlert);
 	}
 
 	private void initRAMClientCacheFS() {
@@ -4853,4 +4961,80 @@ public class Node implements TimeSkewDetectorCallback {
 		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
 	}
 
+	private boolean enteredPassword;
+	
+	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+		synchronized(this) {
+			if(enteredPassword)
+				throw new AlreadySetPasswordException();
+		}
+		MasterKeys keys = MasterKeys.read(masterKeysFile, random, password);
+		boolean noClear = false;
+		try {
+			synchronized(this) {
+				enteredPassword = true;
+				if(!clientCacheAwaitingPassword) {
+					if(inFirstTimeWizard) {
+						cachedClientCacheKey = keys.clientCacheMasterKey;
+						noClear = true;
+						// Wipe it if haven't specified datastore size in 10 minutes.
+						ps.queueTimedJob(new Runnable() {
+
+							public void run() {
+								synchronized(Node.this) {
+									MasterKeys.clear(cachedClientCacheKey);
+									cachedClientCacheKey = null;
+								}
+							}
+							
+						}, 10*60*1000);
+					}
+					return;
+				}
+			}
+			activatePasswordedClientCache(keys);
+		} finally {
+			if(!noClear) keys.clearClientCacheKeys();
+		}
+		
+	}
+	
+	private void activatePasswordedClientCache(MasterKeys keys) {
+		synchronized(this) {
+			if(clientCacheType.equals("ram")) {
+				System.err.println("RAM client cache cannot be passworded!");
+				return;
+			}
+			if(!clientCacheType.equals("salt-hash")) {
+				System.err.println("Unknown client cache type, cannot activate passworded store: "+clientCacheType);
+				return;
+			}
+		}
+		Runnable migrate = new MigrateOldStoreData(true);
+		String suffix = getStoreSuffix();
+		try {
+			initSaltHashClientCacheFS(suffix, true, keys.clientCacheMasterKey);
+		} catch (NodeInitException e) {
+			Logger.error(this, "Unable to activate passworded client cache", e);
+			System.err.println("Unable to activate passworded client cache: "+e);
+			e.printStackTrace();
+			return;
+		}
+		
+		synchronized(this) {
+			clientCacheAwaitingPassword = false;
+		}
+		
+		finishInitSaltHashFS(suffix, clientCore);
+		executor.execute(migrate, "Migrate data from previous store");
+	}
+
+	public void changeMasterPassword(String oldPassword, String newPassword) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+		MasterKeys keys = MasterKeys.read(masterKeysFile, random, oldPassword);
+		keys.changePassword(newPassword);
+	}
+	
+	public class AlreadySetPasswordException extends Exception {
+		
+	}
 }
