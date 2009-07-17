@@ -203,7 +203,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 								
 								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, false, true, newPhysicalLevel.name());
 								
-								addBackToPhysicalSeclevelsLink(content);
+								addBackToSeclevelsLink(content);
 								
 								writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 								if(changedAnything)
@@ -266,7 +266,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 									
 								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, true, false, newPhysicalLevel.name());
 								
-								addBackToPhysicalSeclevelsLink(content);
+								addBackToSeclevelsLink(content);
 								
 								writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 								if(changedAnything)
@@ -299,7 +299,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 							
 							SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, false, true, false, newPhysicalLevel.name());
 							
-							addBackToPhysicalSeclevelsLink(content);
+							addBackToSeclevelsLink(content);
 							
 							writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 							if(changedAnything)
@@ -405,7 +405,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.physicalThreatLevel", physicalSecurityLevel });
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "true" });
 		}
-		addBackToPhysicalSeclevelsLink(content);
+		addBackToSeclevelsLink(content);
 		
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		
@@ -428,12 +428,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 		
 		SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, false, false, true, threatlevel);
 		
-		addBackToPhysicalSeclevelsLink(content);
+		addBackToSeclevelsLink(content);
 		
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private void addBackToPhysicalSeclevelsLink(HTMLNode content) {
+	private void addBackToSeclevelsLink(HTMLNode content) {
 		// TODO Auto-generated method stub
 		
 	}
