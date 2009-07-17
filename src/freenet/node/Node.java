@@ -2188,7 +2188,8 @@ public class Node implements TimeSkewDetectorCallback {
 						} catch (IOException e) {
 							masterKeysFile.delete();
 							Logger.error(this, "Unable to securely delete "+masterKeysFile);
-							System.err.println(L10n.getString("SecurityLevels.cantDeletePasswordFile"));
+							System.err.println(L10n.getString("SecurityLevels.cantDeletePasswordFile", "filename", masterKeysFile.getAbsolutePath()));
+							clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("SecurityLevels.cantDeletePasswordFileTitle"), L10n.getString("SecurityLevels.cantDeletePasswordFile"), L10n.getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
 						}
 				}
 				
