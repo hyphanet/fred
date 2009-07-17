@@ -410,8 +410,10 @@ public class Node implements TimeSkewDetectorCallback {
 						} finally {
 							MasterKeys.clear(key);
 						}
-					} else {
+					} else if(val.equals("ram")) {
 						initRAMClientCacheFS();
+					} else /*if(val.equals("none")) */{
+						initNoClientCacheFS();
 					}
 					
 					if (type.equals("salt-hash")) {
