@@ -5126,6 +5126,9 @@ public class Node implements TimeSkewDetectorCallback {
 			// Ignore
 		}
 		dbFile.delete();
+	}
+	
+	public void finishPanic() {
 		WrapperManager.restart();
 		System.exit(0);
 	}

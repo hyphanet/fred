@@ -86,7 +86,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean enableActivelinks;
 	
 	// Something does not really belongs to here
-	static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
+	volatile static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
+	volatile static boolean noConfirmPanic;
 	public BookmarkManager bookmarkManager;				// move to WelcomeToadlet / BookmarkEditorToadlet ?
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
@@ -385,6 +386,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				}
 		});
 		
+		fproxyConfig.register("noConfirmPanic", false, configItemOrder++, true, true, "SimpleToadletServer.noConfirmPanic", "SimpleToadletServer.noConfirmPanicLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return SimpleToadletServer.noConfirmPanic;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(val == SimpleToadletServer.noConfirmPanic) return;
+						else SimpleToadletServer.noConfirmPanic = val;
+					}
+		});
+		
 		fproxyConfig.register("publicGatewayMode", false, configItemOrder++, true, true, "SimpleToadletServer.publicGatewayMode", "SimpleToadletServer.publicGatewayModeLong", new BooleanCallback() {
 
 			@Override
@@ -499,6 +515,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		doRobots = fproxyConfig.getBoolean("doRobots");
 		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
+		SimpleToadletServer.noConfirmPanic = fproxyConfig.getBoolean("noConfirmPanic");
 		this.bf = bucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");

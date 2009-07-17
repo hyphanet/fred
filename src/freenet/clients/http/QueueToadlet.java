@@ -192,9 +192,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				writePermanentRedirect(ctx, "Done", path());
 				return;
 			} else if(request.isPartSet("panic") && (request.getPartAsString("panic", 32).length() > 0)) {
+				if(SimpleToadletServer.noConfirmPanic) {
+					core.node.killMasterKeysFile();
+					core.node.panic();
+					sendPanicingPage(ctx);
+					core.node.finishPanic();
+					return;
+				} else {
+					sendConfirmPanicPage(ctx);
+					return;
+				}
+			} else if(request.isPartSet("confirmpanic") && (request.getPartAsString("confirmpanic", 32).length() > 0)) {
 				core.node.killMasterKeysFile();
 				core.node.panic();
-				writePermanentRedirect(ctx, "Done", path());
+				sendPanicingPage(ctx);
+				core.node.finishPanic();
 				return;
 			}else if(request.isPartSet("download")) {
 				// Queue a download
@@ -623,6 +635,33 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 	
+	private void sendPanicingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
+        writeHTMLReply(ctx, 200, "OK", WelcomeToadlet.sendRestartingPageInner(ctx).generate());
+	}
+
+	private void sendConfirmPanicPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmPanicButtonPageTitle"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+		
+		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+				l10n("confirmPanicButtonPageTitle"), contentNode).
+				addChild("div", "class", "infobox-content");
+		
+		content.addChild("p", l10n("confirmPanicButton"));
+		
+		HTMLNode form = ctx.addFormChild(content, path(), "confirmPanicButton");
+		form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirmpanic", l10n("confirmPanicButtonYes") });
+		form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "noconfirmpanic", l10n("confirmPanicButtonNo") });
+		
+		if(uploads)
+			content.addChild("p").addChild("a", "href", path(), l10n("backToUploadsPage"));
+		else
+			content.addChild("p").addChild("a", "href", path(), l10n("backToDownloadsPage"));
+		
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+
 	private void sendPersistenceDisabledError(ToadletContext ctx) {
 		try {
 			if(core.node.isStopping())
@@ -1289,7 +1328,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
 		HTMLNode panicBox = infobox.outer;
 		HTMLNode panicForm = ctx.addFormChild(infobox.content, path(), "queuePanicForm");
-		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + ' '));
+		panicForm.addChild("#", (SimpleToadletServer.noConfirmPanic ? l10n("panicButtonNoConfirmation") : l10n("panicButtonWithConfirmation")) + ' ');
 		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "panic", L10n.getString("QueueToadlet.panicButton") });
 		return panicBox;
 	}
@@ -1789,6 +1828,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 	}
 
+	String l10n(String key) {
+		return L10n.getString("QueueToadlet."+key);
+	}
+	
 	String l10n(String key, String pattern, String value) {
 		return L10n.getString("QueueToadlet."+key, pattern, value);
 	}
