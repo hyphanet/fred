@@ -177,6 +177,7 @@ public class MasterKeys {
 	}
 
 	public static void clear(byte[] buf) {
+		if(buf == null) return; // Valid no-op, simplifies code
 		for(int i=0;i<buf.length;i++)
 			buf[i] = 0;
 	}
