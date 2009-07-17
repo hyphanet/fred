@@ -160,12 +160,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 							sendChangePasswordForm(ctx, true, false, newPhysicalLevel.name());
 							return;
 						} catch (MasterKeysFileTooBigException e) {
-							SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+							sendPasswordFileCorruptedPage(true, ctx, false, true);
 							if(changedAnything)
 								core.storeConfig();
 							return;
 						} catch (MasterKeysFileTooShortException e) {
-							SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+							sendPasswordFileCorruptedPage(false, ctx, false, true);
 							if(changedAnything)
 								core.storeConfig();
 							return;
@@ -210,12 +210,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 									core.storeConfig();
 								return;
 							} catch (MasterKeysFileTooBigException e) {
-								SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+								sendPasswordFileCorruptedPage(true, ctx, false, true);
 								if(changedAnything)
 									core.storeConfig();
 								return;
 							} catch (MasterKeysFileTooShortException e) {
-								SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+								sendPasswordFileCorruptedPage(false, ctx, false, true);
 								if(changedAnything)
 									core.storeConfig();
 								return;
@@ -273,12 +273,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 									core.storeConfig();
 								return;
 							} catch (MasterKeysFileTooBigException e) {
-								SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+								sendPasswordFileCorruptedPage(true, ctx, false, true);
 								if(changedAnything)
 									core.storeConfig();
 								return;
 							} catch (MasterKeysFileTooShortException e) {
-								SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+								sendPasswordFileCorruptedPage(false, ctx, false, true);
 								if(changedAnything)
 									core.storeConfig();
 								return;
@@ -433,8 +433,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private void addBackToSeclevelsLink(HTMLNode content) {
-		content.addChild("a", "href", path(), l10nSec("backToSecurityLevels"));
+	private static void addBackToSeclevelsLink(HTMLNode content) {
+		content.addChild("a", "href", PATH, l10nSec("backToSecurityLevels"));
 	}
 
 	@Override
@@ -562,10 +562,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode p = inner.addChild("p");
 		p.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "changePassword", l10nSec("changePasswordButton") });
 	}
+	
+	static final String PATH = "/seclevels/";
 
 	@Override
 	public String path() {
-		return "/seclevels/";
+		return PATH;
 	}
 
 	@Override
@@ -585,18 +587,31 @@ public class SecurityLevelsToadlet extends Toadlet {
 		return L10n.getString("SecurityLevels."+key, pattern, value);
 	}
 	
+	void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
+		HTMLNode page = sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, node.getMasterPasswordFile().getPath());
+		writeHTMLReply(ctx, 500, "Internal Server Error", page.generate());
+	}
+	
 	/** Send a page asking what to do when the master password file has been corrupted. 
 	 * @param forSecLevels The user has tried to change the security levels.
 	 * @param forFirstTimeWizard The user has tried to set a password in the first-time wizard on the physical security levels page.
 	 * If neither of the above are set, the user is just trying to unlock an existing master keys file, which sadly has been corrupted. :(
 	 * @param ctx */
-	static void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) {
-		// OPTIONS:
-		// Set a new password. (Save what has already been loaded, dump the rest; need to indicate what would be lost?).
-		// Do nothing. (Let the user restore the file).
-		// Don't set that seclevel?
-		// TODO Auto-generated method stub
+	static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile) {
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordFileCorruptedTitle"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		
+		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+				l10nSec("passwordFileCorruptedTitle"), contentNode).
+				addChild("div", "class", "infobox-content");
+		content.addChild(l10nSec("passwordFileCorrupted", "file", masterPasswordFile));
+		
+		addHomepageLink(content);
+		
+		addBackToSeclevelsLink(content);
+		
+		return pageNode;
 	}
 
 	/** Send a page asking for the master password.

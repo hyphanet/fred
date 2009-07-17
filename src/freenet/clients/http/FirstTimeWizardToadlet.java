@@ -522,10 +522,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 						return;
 					} catch (MasterKeysFileTooBigException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+						sendPasswordFileCorruptedPage(true, ctx, false, true);
 						return;
 					} catch (MasterKeysFileTooShortException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+						sendPasswordFileCorruptedPage(true, ctx, false, true);
 						return;
 					}
 				} else {
@@ -592,10 +592,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 						return;
 					} catch (MasterKeysFileTooBigException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+						sendPasswordFileCorruptedPage(true, ctx, false, true);
 						return;
 					} catch (MasterKeysFileTooShortException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+						sendPasswordFileCorruptedPage(false, ctx, false, true);
 						return;
 					}
 				} else if(core.node.getMasterPasswordFile().exists()) {
@@ -672,6 +672,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 	}
 	
+	private void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
+		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath()).generate());
+	}
+
 	private void addBackToPhysicalSeclevelsLink(HTMLNode content) {
 		content.addChild("a", "href", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL, l10n("backToSecurityLevels"));
 	}
