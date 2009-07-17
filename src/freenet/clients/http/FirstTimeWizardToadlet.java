@@ -172,10 +172,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				HTMLNode inner = input.addChild("p").addChild("i");
 				L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
-					// Add password form
-					HTMLNode p = inner.addChild("p");
-					p.addChild("label", "id", "passwordBox", l10nSec("setPasswordLabel")+":");
-					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+					if(core.node.securityLevels.getPhysicalThreatLevel() != level) {
+						// Add password form
+						HTMLNode p = inner.addChild("p");
+						p.addChild("label", "for", "passwordBox", l10nSec("setPasswordLabel")+":");
+						p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+					}
 				}
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "physicalSecurityF", L10n.getString("FirstTimeWizardToadlet.continue")});
