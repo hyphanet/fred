@@ -1325,7 +1325,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
-		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButton"));
+		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", L10n.getString("QueueToadlet.panicButtonTitle"));
 		HTMLNode panicBox = infobox.outer;
 		HTMLNode panicForm = ctx.addFormChild(infobox.content, path(), "queuePanicForm");
 		panicForm.addChild("#", (SimpleToadletServer.noConfirmPanic ? l10n("panicButtonNoConfirmation") : l10n("panicButtonWithConfirmation")) + ' ');

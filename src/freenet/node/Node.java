@@ -2532,6 +2532,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// toadlet server should start after all initialized
 		// see NodeClientCore line 437
 		if (toadlets.isEnabled()) {
+			toadlets.finishStart();
 			toadlets.createFproxy();
 			toadlets.removeStartupToadlet();
 		}

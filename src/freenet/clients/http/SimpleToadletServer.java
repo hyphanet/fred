@@ -26,6 +26,8 @@ import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevelListener;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
 import freenet.support.HTMLNode;
@@ -516,6 +518,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
 		SimpleToadletServer.noConfirmPanic = fproxyConfig.getBoolean("noConfirmPanic");
+		
 		this.bf = bucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");
@@ -594,6 +597,20 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		} catch (IOException e) {
 			Logger.error(this, "Could not bind network port for FProxy?", e);
 		}
+	}
+	
+	public void finishStart() {
+		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
+
+			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+				if(newLevel != oldLevel && newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+					isPanicButtonToBeShown = false;
+				} else if(newLevel != oldLevel) {
+					isPanicButtonToBeShown = true;
+				}
+			}
+			
+		});
 	}
 	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullOnly) {
