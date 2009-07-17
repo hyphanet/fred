@@ -1676,26 +1676,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	public class ShutdownDB implements Runnable {
 		public void run() {
-			shutdown = true;
-			lockManager.shutdown();
-
-			cleanerLock.lock();
-			try {
-				cleanerCondition.signalAll();
-				cleanerThread.interrupt();
-			} finally {
-				cleanerLock.unlock();
-			}
-
-			configLock.writeLock().lock();
-			try {
-				flushAndClose();
-				flags &= ~FLAG_DIRTY; // clean shutdown
-				writeConfigFile();
-			} finally {
-				configLock.writeLock().unlock();
-			}
-			System.out.println("Successfully closed store "+name);
+			close();
 		}
 	}
 
@@ -1711,6 +1692,29 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private long[] getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
 		return getOffsetFromDigestedKey(cipherManager.getDigestedKey(plainKey), storeSize);
+	}
+
+	public void close() {
+		shutdown = true;
+		lockManager.shutdown();
+
+		cleanerLock.lock();
+		try {
+			cleanerCondition.signalAll();
+			cleanerThread.interrupt();
+		} finally {
+			cleanerLock.unlock();
+		}
+
+		configLock.writeLock().lock();
+		try {
+			flushAndClose();
+			flags &= ~FLAG_DIRTY; // clean shutdown
+			writeConfigFile();
+		} finally {
+			configLock.writeLock().unlock();
+		}
+		System.out.println("Successfully closed store "+name);
 	}
 
 	/**

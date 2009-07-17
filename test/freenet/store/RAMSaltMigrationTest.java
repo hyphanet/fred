@@ -89,6 +89,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false);
 		String newData = decodeBlock(newVerify, key);
 		assertEquals(test, newData);
+		saltStore.close();
 	}
 	
 	public void testMigrateKeyed() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
@@ -117,6 +118,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false);
 		String newData = decodeBlock(newVerify, key);
 		assertEquals(test, newData);
+		saltStore.close();
 	}
 	
 	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {
