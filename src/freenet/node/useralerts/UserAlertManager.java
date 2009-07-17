@@ -5,12 +5,13 @@ package freenet.node.useralerts;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import freenet.client.async.FeedCallback;
@@ -24,32 +25,56 @@ import freenet.support.Logger;
  * Collection of UserAlert's.
  */
 public class UserAlertManager implements Comparator<UserAlert> {
-	private final HashSet<UserAlert> alerts;
+	private final Set<UserAlert> alerts;
 	private final NodeClientCore core;
-	private long lastUpdated;
 	private final Set<FeedCallback> subscribers;
+	private final Map<String, UserAlert> events;
+	private long lastUpdated;
 
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
-		alerts = new LinkedHashSet<UserAlert>();
+		alerts = new TreeSet<UserAlert>(this);
 		subscribers = new CopyOnWriteArraySet<FeedCallback>();
+		events = new HashMap<String, UserAlert>();
+		lastUpdated = System.currentTimeMillis();
 	}
 
 	public void register(final UserAlert alert) {
-		synchronized (alerts) {
-			if(!alerts.contains(alert)) {
-				alerts.add(alert);
+		if(alert.isEvent()) {
+			String name = alert.getClass().getName();
+			//Only the latest event is displayed as an alert
+			synchronized(events) {
+				UserAlert lastEvent = events.get(name);
+				synchronized(alerts) {
+					if(lastEvent != null)
+						alerts.remove(lastEvent);
+					alerts.add(alert);
+				}
+				events.put(name, alert);
 				lastUpdated = System.currentTimeMillis();
-				// Run off-thread, because of locking, and because client
-				// callbacks may take some time
-				core.clientContext.mainExecutor.execute(new Runnable() {
-					public void run() {
-						for (FeedCallback subscriber : subscribers)
-							subscriber.sendReply(alert.getFCPMessage(subscriber.getIdentifier()));
-					}
-				}, "UserAlertManager callback executor");
+				notifySubscribers(alert);
 			}
 		}
+		else {
+			synchronized (alerts) {
+				if(!alerts.contains(alert)) {
+					alerts.add(alert);
+					lastUpdated = System.currentTimeMillis();
+					notifySubscribers(alert);
+				}
+			}
+		}
+	}
+
+	private void notifySubscribers(final UserAlert alert) {
+		// Run off-thread, because of locking, and because client
+		// callbacks may take some time
+		core.clientContext.mainExecutor.execute(new Runnable() {
+			public void run() {
+				for (FeedCallback subscriber : subscribers)
+					subscriber.sendReply(alert.getFCPMessage(subscriber.getIdentifier()));
+			}
+		}, "UserAlertManager callback executor");
 	}
 
 	public void unregister(UserAlert alert) {
@@ -88,7 +113,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		synchronized (alerts) {
 			a = alerts.toArray(new UserAlert[alerts.size()]);
 		}
-		Arrays.sort(a, this);
 		return a;
 	}
 
@@ -368,7 +392,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				sb.append("    <summary>").append(alert.getShortText()).append("</summary>\n");
 				sb.append("    <content type=\"text\">").append(alert.getText()).append("</content>\n");
 				sb.append("    <id>urn:feed:").append(alert.anchor()).append("</id>\n");
-				sb.append("    <updated>").append(formatTime(alert.getCreationTime())).append("</updated>\n");
+				sb.append("    <updated>").append(formatTime(alert.getUpdatedTime())).append("</updated>\n");
 				sb.append("  </entry>\n");
 			}
 		}

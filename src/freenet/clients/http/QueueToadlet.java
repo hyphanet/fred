@@ -20,11 +20,12 @@ import java.net.URI;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
@@ -51,7 +52,7 @@ import freenet.node.fcp.MessageInvalidException;
 import freenet.node.fcp.NotAllowedException;
 import freenet.node.fcp.RequestCompletionCallback;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
-import freenet.node.useralerts.SimpleHTMLUserAlert;
+import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -713,7 +714,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	@Override
 	public void handleGet(URI uri, final HTTPRequest request, final ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
-		
+
 		// We ensure that we have a FCP server running
 		if(!fcp.enabled){
 			writeError(L10n.getString("QueueToadlet.fcpIsMissing"), L10n.getString("QueueToadlet.pleaseEnableFCP"), ctx, false);
@@ -1568,7 +1569,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	 */
 	private final HashSet<String> completedRequestIdentifiers = new HashSet<String>();
 	
-	private final HashMap<String, UserAlert> alertsByIdentifier = new HashMap<String, UserAlert>();
+	private final Map<String, GetCompletedEvent> completedGets = new LinkedHashMap<String, GetCompletedEvent>();
+	private final Map<String, PutCompletedEvent> completedPuts = new LinkedHashMap<String, PutCompletedEvent>();
+	private final Map<String, PutDirCompletedEvent> completedPutDirs = new LinkedHashMap<String, PutDirCompletedEvent>();
 	
 	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		// FIXME do something???
@@ -1735,33 +1738,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			}
 			long size = ((ClientGet)req).getDataSize(container);
-			String name = uri.getPreferredFilename();
-			String title = l10n("downloadSucceededTitle", "filename", name);
-			HTMLNode text = new HTMLNode("div");
-			L10n.addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
-					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
-					new String[] { "<a href=\""+path()+uri.toASCIIString()+"\">", "</a>", "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
-			UserAlert alert = 
-			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
-				@Override
-				public void onDismiss() {
-					synchronized(completedRequestIdentifiers) {
-						completedRequestIdentifiers.remove(identifier);
-					}
-					synchronized(alertsByIdentifier) {
-						alertsByIdentifier.remove(identifier);
-					}
-					saveCompletedIdentifiersOffThread();
-				}
-				@Override
-				public boolean isEventNotification() {
-					return true;
-				}
-			};
-			core.alerts.register(alert);
-			synchronized(alertsByIdentifier) {
-				alertsByIdentifier.put(identifier, alert);
+			GetCompletedEvent event = new GetCompletedEvent(identifier, uri, size);
+			synchronized(completedGets) {
+				completedGets.put(identifier, event);
 			}
+			core.alerts.register(event);
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI(container);
 			if(req.isPersistentForever() && uri != null)
@@ -1771,33 +1752,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			}
 			long size = ((ClientPut)req).getDataSize(container);
-			String name = uri.getPreferredFilename();
-			String title = l10n("uploadSucceededTitle", "filename", name);
-			HTMLNode text = new HTMLNode("div");
-			L10n.addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
-					new String[] { "link", "/link", "filename", "size" },
-					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
-			UserAlert alert =
-			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
-				@Override
-				public void onDismiss() {
-					synchronized(completedRequestIdentifiers) {
-						completedRequestIdentifiers.remove(identifier);
-					}
-					synchronized(alertsByIdentifier) {
-						alertsByIdentifier.remove(identifier);
-					}
-					saveCompletedIdentifiersOffThread();
-				}
-				@Override
-				public boolean isEventNotification() {
-					return true;
-				}
-			};
-			core.alerts.register(alert);
-			synchronized(alertsByIdentifier) {
-				alertsByIdentifier.put(identifier, alert);
+			PutCompletedEvent event = new PutCompletedEvent(identifier, uri, size);
+			synchronized(completedPuts) {
+				completedPuts.put(identifier, event);
 			}
+			core.alerts.register(event);
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI(container);
 			if(req.isPersistentForever() && uri != null)
@@ -1808,33 +1767,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 			long size = ((ClientPutDir)req).getTotalDataSize();
 			int files = ((ClientPutDir)req).getNumberOfFiles();
-			String name = uri.getPreferredFilename();
-			String title = l10n("siteUploadSucceededTitle", "filename", name);
-			HTMLNode text = new HTMLNode("div");
-			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
-					new String[] { "link", "/link", "filename", "size", "files" },
-					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
-			UserAlert alert = 
-			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
-				@Override
-				public void onDismiss() {
-					synchronized(completedRequestIdentifiers) {
-						completedRequestIdentifiers.remove(identifier);
-					}
-					synchronized(alertsByIdentifier) {
-						alertsByIdentifier.remove(identifier);
-					}
-					saveCompletedIdentifiersOffThread();
-				}
-				@Override
-				public boolean isEventNotification() {
-					return true;
-				}
-			};
-			core.alerts.register(alert);
-			synchronized(alertsByIdentifier) {
-				alertsByIdentifier.put(identifier, alert);
+			PutDirCompletedEvent event = new PutDirCompletedEvent(identifier, uri, size, files);
+			synchronized(completedPutDirs) {
+				completedPutDirs.put(identifier, event);
 			}
+			core.alerts.register(event);
 		}
 	}
 
@@ -1851,11 +1788,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		synchronized(completedRequestIdentifiers) {
 			completedRequestIdentifiers.remove(identifier);
 		}
-		UserAlert alert;
-		synchronized(alertsByIdentifier) {
-			alert = alertsByIdentifier.remove(identifier);
-		}
-		core.alerts.unregister(alert);
+		if(req instanceof ClientGet)
+			synchronized(completedGets) {
+				completedGets.remove(identifier);
+			}
+		else if(req instanceof ClientPut)
+			synchronized(completedPuts) {
+				completedPuts.remove(identifier);
+			}
+		else if(req instanceof ClientPutDir)
+			synchronized(completedPutDirs) {
+				completedPutDirs.remove(identifier);
+			}
 		saveCompletedIdentifiersOffThread();
 	}
 
@@ -1869,6 +1813,177 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return "/uploads/";
 		else
 			return "/downloads/";
+	}
+
+	private class GetCompletedEvent extends StoringUserEvent<GetCompletedEvent> {
+
+		private final String identifier;
+		private final FreenetURI uri;
+		private final long size;
+
+		public GetCompletedEvent(String identifier, FreenetURI uri, long size) {
+			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedGets);
+			this.identifier = identifier;
+			this.uri = uri;
+			this.size = size;
+		}
+
+		@Override
+		public void onDismiss() {
+			super.onDismiss();
+			saveCompletedIdentifiersOffThread();
+		}
+
+		public void onEventDismiss() {
+			synchronized(completedRequestIdentifiers) {
+				completedRequestIdentifiers.remove(identifier);
+			}
+		}
+
+		public HTMLNode getEventHTMLText() {
+			HTMLNode text = new HTMLNode("div");
+			L10n.addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
+					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
+					new String[] { "<a href=\""+path()+uri.toASCIIString()+"\">", "</a>", "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", uri.getPreferredFilename(), SizeUtil.formatSize(size) } );
+			return text;
+		}
+
+		@Override
+		public String getTitle() {
+			String title = null;
+			synchronized(events) {
+				if(events.size() == 1)
+					title = l10n("downloadSucceededTitle", "filename", uri.getPreferredFilename());
+				else
+					title = l10n("downloadsSucceededTitle", "nr", Integer.toString(events.size()));
+			}
+			return title;
+		}
+
+		@Override
+		public String getShortText() {
+			return getTitle();
+		}
+
+		@Override
+		public String getEventText() {
+			return l10n("downloadSucceededTitle", "filename", uri.getPreferredFilename());
+		}
+
+	}
+
+	private class PutCompletedEvent extends StoringUserEvent<PutCompletedEvent> {
+
+		private final String identifier;
+		private final FreenetURI uri;
+		private final long size;
+
+		public PutCompletedEvent(String identifier, FreenetURI uri, long size) {
+			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPuts);
+			this.identifier = identifier;
+			this.uri = uri;
+			this.size = size;
+		}
+
+		@Override
+		public void onDismiss() {
+			super.onDismiss();
+			saveCompletedIdentifiersOffThread();
+		}
+
+		public void onEventDismiss() {
+			synchronized(completedRequestIdentifiers) {
+				completedRequestIdentifiers.remove(identifier);
+			}
+		}
+
+		public HTMLNode getEventHTMLText() {
+			HTMLNode text = new HTMLNode("div");
+			L10n.addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
+					new String[] { "link", "/link", "filename", "size" },
+					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", uri.getPreferredFilename(), SizeUtil.formatSize(size) } );
+			return text;
+		}
+
+		public String getTitle() {
+			String title = null;
+			synchronized(events) {
+				if(events.size() == 1)
+					title = l10n("uploadSucceededTitle", "filename", uri.getPreferredFilename());
+				else
+					title = l10n("uploadsSucceededTitle", "nr", Integer.toString(events.size()));
+			}
+			return title;
+		}
+
+		@Override
+		public String getShortText() {
+			return getTitle();
+		}
+
+		@Override
+		public String getEventText() {
+			return l10n("uploadSucceededTitle", "filename", uri.getPreferredFilename());
+		}
+
+	}
+
+	private class PutDirCompletedEvent extends StoringUserEvent<PutDirCompletedEvent> {
+
+		private final String identifier;
+		private final FreenetURI uri;
+		private final long size;
+		private final int files;
+
+		public PutDirCompletedEvent(String identifier, FreenetURI uri, long size, int files) {
+			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPutDirs);
+			this.identifier = identifier;
+			this.uri = uri;
+			this.size = size;
+			this.files = files;
+		}
+
+		@Override
+		public void onDismiss() {
+			super.onDismiss();
+			saveCompletedIdentifiersOffThread();
+		}
+
+		public void onEventDismiss() {
+			synchronized(completedRequestIdentifiers) {
+				completedRequestIdentifiers.remove(identifier);
+			}
+		}
+
+		public HTMLNode getEventHTMLText() {
+			String name = uri.getPreferredFilename();
+			HTMLNode text = new HTMLNode("div");
+			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
+					new String[] { "link", "/link", "filename", "size", "files" },
+					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
+			return text;
+		}
+
+		public String getTitle() {
+			String title = null;
+			synchronized(events) {
+				if(events.size() == 1)
+					title = l10n("siteUploadSucceededTitle", "filename", uri.getPreferredFilename());
+				else
+					title = l10n("sitesUploadSucceededTitle", "nr", Integer.toString(events.size()));
+			}
+			return title;
+		}
+
+		@Override
+		public String getShortText() {
+			return getTitle();
+		}
+
+		public String getEventText() {
+			return l10n("siteUploadSucceededTitle", "filename", uri.getPreferredFilename());
+		}
+
 	}
 
 }

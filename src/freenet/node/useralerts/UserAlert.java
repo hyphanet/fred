@@ -69,7 +69,7 @@ public interface UserAlert {
 	 * MUST NOT contain spaces or commas.
 	 */
 	public String anchor();
-	
+
 	/**
 	 * @return True if this is an event notification. Event notifications can be bulk deleted.
 	 * Eventually they will be handled diffferently - logged to a separate event log, and only
@@ -78,15 +78,20 @@ public interface UserAlert {
 	public boolean isEventNotification();
 
 	/**
+	 * @return True if this is an event. Only the last registered event is displayed.
+	 */
+	public boolean isEvent();
+
+	/**
 	 * @param The identifier of the subscription
 	 * @return A FCPMessage that is sent subscribing FCPClients
 	 */
 	public FCPMessage getFCPMessage(String identifier);
 	
 	/**
-	 * @return The Unix timestamp of when the alert was created
+	 * @return The Unix timestamp of when the alert was last updated
 	 */
-	public long getCreationTime();
+	public long getUpdatedTime();
 
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
