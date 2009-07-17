@@ -90,6 +90,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final int fullKeyLength;
 	private final int dataBlockLength;
 	private final Random random;
+	private final File bloomFile;
 	
 	private long storeSize;
 	private int generation;
@@ -138,7 +139,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		newStore |= openStoreFiles(baseDir, name);
 
-		File bloomFile = new File(this.baseDir, name + ".bloom");
+		bloomFile = new File(this.baseDir, name + ".bloom");
 		bloomFilter = BloomFilter.createFilter(bloomFile, bloomFilterSize, bloomFilterK, bloomCounting);
 
 		System.err.println("Bloomfilter (" + bloomFilter + ") for " + name + " is loaded.");
@@ -1832,5 +1833,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		metaFile.delete();
 		hdFile.delete();
 		configFile.delete();
+		bloomFile.delete();
 	}
 }
