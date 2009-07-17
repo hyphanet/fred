@@ -2,12 +2,14 @@ package freenet.store;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Enumeration;
 
 import com.sleepycat.je.DatabaseException;
 
 import freenet.keys.KeyVerifyException;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
+import freenet.support.Logger;
 
 /**
  * LRU in memory store.
@@ -138,5 +140,31 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	public boolean probablyInStore(byte[] routingKey) {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		return blocksByRoutingKey.get(key) != null;
+	}
+
+	public void clear() {
+		blocksByRoutingKey.clear();
+	}
+
+	public void migrateTo(StoreCallback<T> target, boolean canReadClientCache) throws IOException {
+		Enumeration<ByteArrayWrapper> keys = blocksByRoutingKey.keys();
+		while(keys.hasMoreElements()) {
+			ByteArrayWrapper routingKeyWrapped = keys.nextElement();
+			byte[] routingKey = routingKeyWrapped.get();
+			Block block = blocksByRoutingKey.get(routingKeyWrapped);
+			
+			T ret;
+			try {
+				ret = callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, false, null);
+			} catch (KeyVerifyException e) {
+				Logger.error(this, "Caught while migrating: "+e, e);
+				continue;
+			}
+			try {
+				target.getStore().put(ret, block.data, block.header, false, block.oldBlock);
+			} catch (KeyCollisionException e) {
+				// Ignore
+			}
+		}
 	}
 }

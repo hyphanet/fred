@@ -1233,6 +1233,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<ClientRequest> requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, ObjectContainer container) {
+		boolean hasFriends = core.node.getDarknetConnections().length > 0;
 		HTMLNode table = new HTMLNode("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
 		headerRow.addChild("th");
@@ -1263,13 +1264,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed")).addChild("#", L10n.getString("QueueToadlet.progress"));
 			} else if (column == LIST_REASON) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.reason"));
-			} else if (column == LIST_RECOMMEND) {
+			} else if (column == LIST_RECOMMEND && hasFriends) {
 				headerRow.addChild("th");
 			}
 		}
 		for (ClientRequest clientRequest : requests) {
 			container.activate(clientRequest, 1);
-			table.addChild(new RequestElement(fcp,clientRequest, columns, path(), container, advancedModeEnabled, priorityClasses, isUpload, ctx));
+			table.addChild(new RequestElement(fcp,clientRequest, columns, path(), container, advancedModeEnabled, priorityClasses, isUpload, ctx,hasFriends));
 		}
 		return table;
 	}

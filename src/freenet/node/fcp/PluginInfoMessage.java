@@ -25,8 +25,9 @@ public class PluginInfoMessage extends FCPMessage {
 	private final String originuri;
 	private final long started;
 	private final boolean isTalkable;
+	private final long longVersion;
+	private final String version;
 
-	
 	PluginInfoMessage(PluginInfoWrapper pi, String identifier, boolean detail) {
 		this.identifier = identifier;
 		this.detailed = detail;
@@ -34,6 +35,8 @@ public class PluginInfoMessage extends FCPMessage {
 		originuri = pi.getFilename();
 		started = pi.getStarted();
 		isTalkable = pi.isFCPPlugin();
+		longVersion = pi.getPluginLongVersion();
+		version = pi.getPluginVersion();
 	}
 
 	@Override
@@ -43,7 +46,9 @@ public class PluginInfoMessage extends FCPMessage {
 			sfs.putSingle("Identifier", identifier);
 		sfs.putSingle("PluginName", classname);
 		sfs.put("IsTalkable", isTalkable);
-		
+		sfs.put("LongVersion", longVersion);
+		sfs.putSingle("Version", version);
+
 		if (detailed) {
 			sfs.putSingle("OriginUri", originuri);
 			sfs.put("Started", started);

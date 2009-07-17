@@ -7,6 +7,15 @@ import java.util.TimerTask;
 import freenet.node.FastRunnable;
 import freenet.node.Ticker;
 
+/**
+ * Ticker implemented using Timer's.
+ * 
+ * If deploying this to replace PacketSender, be careful to handle priority changes properly.
+ * Hopefully that can be achieved simply by creating at max priority during startup.
+ * 
+ * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+ *
+ */
 public class TrivialTicker implements Ticker {
 
 	private final Timer timer = new Timer(true);

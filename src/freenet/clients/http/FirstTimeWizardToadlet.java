@@ -5,6 +5,8 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.URI;
 
@@ -14,9 +16,13 @@ import freenet.config.ConfigException;
 import freenet.config.Option;
 import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
+import freenet.node.MasterKeysFileTooBigException;
+import freenet.node.MasterKeysFileTooShortException;
+import freenet.node.MasterKeysWrongPasswordException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
+import freenet.node.Node.AlreadySetPasswordException;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
@@ -165,6 +171,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				L10n.addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				HTMLNode inner = input.addChild("p").addChild("i");
 				L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+				if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
+					// Add password form
+					HTMLNode p = inner.addChild("p");
+					p.addChild("label", "id", "passwordBox", l10nSec("setPasswordLabel")+":");
+					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+				}
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "physicalSecurityF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
@@ -473,10 +485,141 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			// confuse the user, and we don't know whether the node has friends yet etc.
 			// FIXME should we have confirmation here???
 			String physicalThreatLevel = request.getPartAsString("security-levels.physicalThreatLevel", 128);
+			PHYSICAL_THREAT_LEVEL oldThreatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 			PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Old threat level: "+oldThreatLevel+" new threat level: "+newThreatLevel);
 			if(newThreatLevel == null) {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 				return;
+			}
+			if(newThreatLevel == PHYSICAL_THREAT_LEVEL.HIGH && oldThreatLevel != newThreatLevel) {
+				// Check for password
+				String pass = request.getPartAsString("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
+				if(pass != null && pass.length() > 0) {
+					try {
+						if(oldThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldThreatLevel == PHYSICAL_THREAT_LEVEL.LOW)
+							core.node.changeMasterPassword("", pass);
+						else
+							core.node.setMasterPassword(pass, true);
+					} catch (AlreadySetPasswordException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (MasterKeysWrongPasswordException e) {
+						System.err.println("Wrong password!");
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+						HTMLNode pageNode = page.outer;
+						HTMLNode contentNode = page.content;
+						
+						HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+								l10n("passwordWrongTitle"), contentNode).
+								addChild("div", "class", "infobox-content");
+						
+						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, true, newThreatLevel.name());
+						
+						addBackToPhysicalSeclevelsLink(content);
+						
+						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+						return;
+					} catch (MasterKeysFileTooBigException e) {
+						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+						return;
+					} catch (MasterKeysFileTooShortException e) {
+						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+						return;
+					}
+				} else {
+					// Must set a password!
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+					HTMLNode pageNode = page.outer;
+					HTMLNode contentNode = page.content;
+					
+					HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+							l10nSec("enterPasswordTitle"), contentNode).
+							addChild("div", "class", "infobox-content");
+					
+					if(pass != null && pass.length() == 0) {
+						content.addChild("p", l10nSec("passwordNotZeroLength"));
+					}
+					
+					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, false, true, newThreatLevel.name());
+					
+					addBackToPhysicalSeclevelsLink(content);
+					
+					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+					return;
+				}
+			}
+			if((newThreatLevel == PHYSICAL_THREAT_LEVEL.LOW || newThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL) &&
+					oldThreatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
+				// Check for password
+				String pass = request.getPartAsString("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
+				if(pass != null && pass.length() > 0) {
+					// This is actually the OLD password ...
+					try {
+						core.node.changeMasterPassword(pass, "");
+					} catch (IOException e) {
+						if(!core.node.getMasterPasswordFile().exists()) {
+							// Ok.
+							System.out.println("Master password file no longer exists, assuming this is deliberate");
+						} else {
+							System.err.println("Cannot change password as cannot write new passwords file: "+e);
+							e.printStackTrace();
+							String msg = "<html><head><title>"+l10n("cantWriteNewMasterKeysFileTitle")+
+									"</title></head><body><h1>"+l10n("cantWriteNewMasterKeysFileTitle")+"</h1><pre>";
+							StringWriter sw = new StringWriter();
+							PrintWriter pw = new PrintWriter(sw);
+							e.printStackTrace(pw);
+							pw.flush();
+							msg = msg + sw.toString() + "</pre></body></html>";
+							writeHTMLReply(ctx, 500, "Internal Error", msg);
+							return;
+						}
+					} catch (MasterKeysWrongPasswordException e) {
+						System.err.println("Wrong password!");
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
+						HTMLNode pageNode = page.outer;
+						HTMLNode contentNode = page.content;
+						
+						HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+								l10n("passwordWrongTitle"), contentNode).
+								addChild("div", "class", "infobox-content");
+						
+						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, false, newThreatLevel.name());
+						
+						addBackToPhysicalSeclevelsLink(content);
+						
+						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+						return;
+					} catch (MasterKeysFileTooBigException e) {
+						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+						return;
+					} catch (MasterKeysFileTooShortException e) {
+						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+						return;
+					}
+				} else if(core.node.getMasterPasswordFile().exists()) {
+					// We need the old password
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
+					HTMLNode pageNode = page.outer;
+					HTMLNode contentNode = page.content;
+					
+					HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+							l10nSec("passwordForDecryptTitle"), contentNode).
+							addChild("div", "class", "infobox-content");
+					
+					if(pass != null && pass.length() == 0) {
+						content.addChild("p", l10nSec("passwordNotZeroLength"));
+					}
+					
+					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, true, false, newThreatLevel.name());
+					
+					addBackToPhysicalSeclevelsLink(content);
+					
+					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+					return;
+
+				}
+
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
@@ -528,6 +671,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 	}
 	
+	private void addBackToPhysicalSeclevelsLink(HTMLNode content) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	private String l10n(String key) {
 		return L10n.getString("FirstTimeWizardToadlet."+key);
 	}
@@ -539,7 +687,38 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
-			config.get("node").set("storeSize", selectedStoreSize);
+			long size = Fields.parseLong(selectedStoreSize);
+			// client cache: 10% up to 200MB
+			long clientCacheSize = Math.min(size / 10, 200*1024*1024);
+			// recent requests cache / slashdot cache / ULPR cache
+			int upstreamLimit = config.get("node").getInt("outputBandwidthLimit");
+			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
+			// is used for remote stuff, so go by the minimum of the two
+			int limit;
+			if(downstreamLimit <= 0) limit = upstreamLimit;
+			else limit = Math.min(downstreamLimit, upstreamLimit);
+			// 35KB/sec limit has been seen to have 0.5 store writes per second.
+			// So saying we want to have space to cache everything is only doubling that ...
+			// OTOH most stuff is at low enough HTL to go to the datastore and thus not to 
+			// the slashdot cache, so we could probably cut this significantly...
+			long lifetime = config.get("node").getLong("slashdotCacheLifetime");
+			long maxSlashdotCacheSize = (lifetime / 1000) * limit;
+			long slashdotCacheSize = Math.min(size / 10, maxSlashdotCacheSize);
+			
+			long storeSize = size - (clientCacheSize + slashdotCacheSize);
+			
+			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
+			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
+			if(config.get("node").getString("storeType").equals("ram"))
+				config.get("node").set("storeType", "salt-hash");
+			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
+			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
+			if(config.get("node").getString("clientCacheType").equals("ram"))
+				config.get("node").set("clientCacheType", "salt-hash");
+			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
+			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
+			
+			
 			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);

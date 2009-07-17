@@ -33,4 +33,9 @@ public class ByteArrayWrapper {
 	public int hashCode() {
 		return hashCode;
 	}
+	
+	/** DO NOT MODIFY THE RETURNED DATA! */
+	public byte[] get() {
+		return buf;
+	}
 }

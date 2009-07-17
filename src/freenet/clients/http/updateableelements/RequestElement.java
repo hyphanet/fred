@@ -44,8 +44,10 @@ public class RequestElement extends BaseUpdateableElement {
 	private ProgressListener	progressListener;
 
 	private boolean				wasFinished	= false;
+	
+	private boolean hasFriends;
 
-	public RequestElement(FCPServer server, ClientRequest clientRequest, int[] columns, String path, ObjectContainer container, boolean advancedModeEnabled, String[] priorityClasses, boolean isUpload, ToadletContext ctx) {
+	public RequestElement(FCPServer server, ClientRequest clientRequest, int[] columns, String path, ObjectContainer container, boolean advancedModeEnabled, String[] priorityClasses, boolean isUpload, ToadletContext ctx,boolean hasFriends) {
 		super("tr", "class", "priority" + clientRequest.getPriority(), ctx);
 		this.columns = columns;
 		this.path = path;
@@ -55,7 +57,8 @@ public class RequestElement extends BaseUpdateableElement {
 		this.isUpload = isUpload;
 		this.server = server;
 		this.clientRequestId = clientRequest.getIdentifier();
-
+		this.hasFriends=hasFriends;
+		
 		progressListener = new ProgressListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager);
 		wasFinished = clientRequest.hasFinished();
 
@@ -136,7 +139,7 @@ public class RequestElement extends BaseUpdateableElement {
 						addChild(createFilenameCell(((ClientPut) clientRequest).getOrigFilename(container)));
 					}
 				} else if (column == QueueToadlet.LIST_PRIORITY) {
-					addChild(createPriorityCell(clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses, advancedModeEnabled));
+					addChild(createPriorityCell( clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses, advancedModeEnabled));
 				} else if (column == QueueToadlet.LIST_FILES) {
 					addChild(createNumberCell(((ClientPutDir) clientRequest).getNumberOfFiles()));
 				} else if (column == QueueToadlet.LIST_TOTAL_SIZE) {
@@ -148,7 +151,7 @@ public class RequestElement extends BaseUpdateableElement {
 						addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
 				} else if (column == QueueToadlet.LIST_REASON) {
 					addChild(createReasonCell(clientRequest.getFailureReason(container)));
-				} else if (column == QueueToadlet.LIST_RECOMMEND) {
+				} else if (column == QueueToadlet.LIST_RECOMMEND && hasFriends) {
 					if(clientRequest instanceof ClientGet) {
 						addChild(createRecommendCell(((ClientGet) clientRequest).getURI(container), ctx));
 					} else {

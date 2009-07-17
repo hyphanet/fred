@@ -5,7 +5,6 @@ package freenet.node;
 
 import java.util.ArrayList;
 
-import freenet.clients.http.ConfigToadlet;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -49,7 +48,9 @@ public class SecurityLevels {
 	
 	public enum PHYSICAL_THREAT_LEVEL {
 		LOW, // Don't encrypt temp files etc etc
-		NORMAL, // Encrypt temp files etc etc
+		NORMAL, // Encrypt temp files, centralise keys for client cache in master.keys, if that is deleted client cache is unreadable. Later on will include encrypting node.db4o as well, which contains tempfile keys.
+		HIGH, // Password master.keys.
+		MAXIMUM // Transient encryption for client cache, no persistent downloads support, etc.
 	}
 	
 	NETWORK_THREAT_LEVEL networkThreatLevel;
@@ -380,6 +381,10 @@ public class SecurityLevels {
 			physicalThreatLevel = newThreatLevel;
 		}
 		physicalThreatLevelCallback.onSet(oldLevel, newThreatLevel);
+	}
+	
+	public void resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL level) {
+		physicalThreatLevel = level;
 	}
 
 	public static String localisedName(NETWORK_THREAT_LEVEL newThreatLevel) {
