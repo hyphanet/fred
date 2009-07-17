@@ -198,8 +198,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 								else
 									core.node.setMasterPassword(password, true);
 							} catch (AlreadySetPasswordException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
+								sendChangePasswordForm(ctx, false, false, newPhysicalLevel.name());
+								return;
 							} catch (MasterKeysWrongPasswordException e) {
 								System.err.println("Wrong password!");
 								PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx);
@@ -352,7 +352,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 				} catch (AlreadySetPasswordException e) {
 					System.err.println("Already set master password");
 					Logger.error(this, "Already set master password");
-					sendAlreadySetMasterPassword(ctx);
+					MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
+					headers.put("Location", "/");
+					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 					return;
 				} catch (MasterKeysWrongPasswordException e) {
 					sendPasswordFormPage(true, ctx);

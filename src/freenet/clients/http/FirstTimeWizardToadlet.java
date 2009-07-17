@@ -504,8 +504,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						else
 							core.node.setMasterPassword(pass, true);
 					} catch (AlreadySetPasswordException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						// Do nothing, already set a password.
 					} catch (MasterKeysWrongPasswordException e) {
 						System.err.println("Wrong password!");
 						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
