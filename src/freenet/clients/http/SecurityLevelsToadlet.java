@@ -309,6 +309,14 @@ public class SecurityLevelsToadlet extends Toadlet {
 						}
 						
 					}
+					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+						try {
+							core.node.killMasterKeysFile();
+						} catch (IOException e) {
+							sendCantDeleteMasterKeysFile(ctx, newPhysicalLevel.name());
+							return;
+						}
+					}
 					node.securityLevels.setThreatLevel(newPhysicalLevel);
 					changedAnything = true;
 				}
@@ -375,6 +383,32 @@ public class SecurityLevelsToadlet extends Toadlet {
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 	
+	private void sendCantDeleteMasterKeysFile(ToadletContext ctx, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
+		HTMLNode pageNode = sendCantDeleteMasterKeysFileInner(ctx, node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel);
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+	}
+
+	static HTMLNode sendCantDeleteMasterKeysFileInner(ToadletContext ctx, String filename, boolean forFirstTimeWizard, String physicalSecurityLevel) {
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("cantDeletePasswordFileTitle"), ctx);
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+		
+		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
+				l10nSec("cantDeletePasswordFileTitle"), contentNode).
+				addChild("div", "class", "infobox-content");
+		
+		HTMLNode form = forFirstTimeWizard ? ctx.addFormChild(content, "/wizard/", "masterPasswordForm") :
+			ctx.addFormChild(content, "/seclevels/", "masterPasswordForm");
+		
+		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.physicalThreatLevel", physicalSecurityLevel });
+		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "true" });
+		
+		form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "tryAgain", l10nSec("cantDeletePasswordFileButton") });
+		
+		content.addChild("p", l10nSec("cantDeletePasswordFile", "filename", filename));
+		return pageNode;
+	}
+
 	/** Send a form asking the user to change the password. 
 	 * @throws IOException 
 	 * @throws ToadletContextClosedException */

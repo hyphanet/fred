@@ -20,6 +20,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
+import freenet.support.io.FileUtil;
 
 /** Keys read from the master keys file */
 public class MasterKeys {
@@ -239,6 +240,14 @@ public class MasterKeys {
 		}
 		raf.getFD().sync();
 		raf.close();
+	}
+
+	public void clearAllNotClientCacheKey() {
+		// So far nothing to do
+	}
+
+	public static void killMasterKeys(File masterKeysFile, RandomSource random) throws IOException {
+		FileUtil.secureDelete(masterKeysFile, random);
 	}
 
 }

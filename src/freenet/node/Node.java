@@ -410,10 +410,16 @@ public class Node implements TimeSkewDetectorCallback {
 							cachedClientCacheKey = null;
 						}
 						if(key == null) {
-							MasterKeys keys;
+							MasterKeys keys = null;
 							try {
-								keys = MasterKeys.read(masterKeysFile, random, "");
-								key = keys.clientCacheMasterKey;
+								if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+									key = new byte[32];
+									random.nextBytes(key);
+								} else {
+									keys = MasterKeys.read(masterKeysFile, random, "");
+									key = keys.clientCacheMasterKey;
+									keys.clearAllNotClientCacheKey();
+								}
 							} catch (MasterKeysWrongPasswordException e1) {
 								setClientCacheAwaitingPassword();
 								synchronized(Node.this) {
@@ -2174,6 +2180,14 @@ public class Node implements TimeSkewDetectorCallback {
 					} catch (InvalidConfigValueException e) {
 						// Ignore
 					}
+					if(newLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+						try {
+							killMasterKeysFile();
+						} catch (IOException e) {
+							masterKeysFile.delete();
+							Logger.error(this, "Unable to securely delete "+masterKeysFile);
+							System.err.println(L10n.getString("SecurityLevels.cantDeletePasswordFile"));
+						}
 				}
 				
 			});
@@ -2294,18 +2308,22 @@ public class Node implements TimeSkewDetectorCallback {
 		for(int i=0;i<2 && !startedClientCache; i++) {
 		if (clientCacheType.equals("salt-hash")) {
 			
+			byte[] clientCacheKey = null;
 			MasterKeys keys;
 			try {
-				keys = MasterKeys.read(masterKeysFile, random, "");
-				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
-					System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
-					securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
+				if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+					clientCacheKey = new byte[32];
+					random.nextBytes(clientCacheKey);
+				} else {
+					keys = MasterKeys.read(masterKeysFile, random, "");
+					clientCacheKey = keys.clientCacheMasterKey;
+					keys.clearAllNotClientCacheKey();
+					if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
+						System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
+						securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
+					}
 				}
-				try {
-					initSaltHashClientCacheFS(suffix, false, keys.clientCacheMasterKey);
-				} finally {
-					keys.clearClientCacheKeys();
-				}
+				initSaltHashClientCacheFS(suffix, false, clientCacheKey);
 				startedClientCache = true;
 			} catch (MasterKeysWrongPasswordException e) {
 				System.err.println("Cannot open client-cache, it is passworded");
@@ -2319,6 +2337,8 @@ public class Node implements TimeSkewDetectorCallback {
 				masterKeysFile.delete();
 			} catch (IOException e) {
 				break;
+			} finally {
+				MasterKeys.clear(clientCacheKey);
 			}
 		} else if(clientCacheType.equals("none")) {
 			initNoClientCacheFS();
@@ -2517,6 +2537,11 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
+
+	public void killMasterKeysFile() throws IOException {
+		MasterKeys.killMasterKeys(masterKeysFile, random);
+	}
+
 
 	private void setClientCacheAwaitingPassword() {
 		createPasswordUserAlert();
@@ -5013,6 +5038,8 @@ public class Node implements TimeSkewDetectorCallback {
 			if(enteredPassword)
 				throw new AlreadySetPasswordException();
 		}
+		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+			Logger.error(this, "Setting password while physical threat level is at MAXIMUM???");
 		MasterKeys keys = MasterKeys.read(masterKeysFile, random, password);
 		boolean noClear = false;
 		try {
@@ -5075,6 +5102,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void changeMasterPassword(String oldPassword, String newPassword) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
 		MasterKeys keys = MasterKeys.read(masterKeysFile, random, oldPassword);
 		keys.changePassword(masterKeysFile, newPassword, random);
 	}

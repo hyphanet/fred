@@ -622,6 +622,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 
 			}
+			if(newThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+				try {
+					core.node.killMasterKeysFile();
+				} catch (IOException e) {
+					sendCantDeleteMasterKeysFile(ctx, newThreatLevel.name());
+					return;
+				}
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
@@ -823,6 +831,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			return shortSize;
 		}
+	}
+	
+	private void sendCantDeleteMasterKeysFile(ToadletContext ctx, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
+		HTMLNode pageNode = SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(ctx, core.node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel);
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	@Override

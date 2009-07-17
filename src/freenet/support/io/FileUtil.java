@@ -14,8 +14,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 
 final public class FileUtil {
@@ -341,6 +343,63 @@ final public class FileUtil {
 			}
 		}
 		return true;
+	}
+
+	public static void secureDelete(File file, RandomSource random) throws IOException {
+		// FIXME somebody who understands these things should have a look at this...
+		if(!file.exists()) return;
+		long size = file.length();
+		if(size > 0) {
+			RandomAccessFile raf = null;
+			try {
+				raf = new RandomAccessFile(file, "rw");
+				raf.seek(0);
+				long count;
+				byte[] buf = new byte[4096];
+				// First zero it out
+				count = 0;
+				while(count < size) {
+					int written = (int) Math.min(buf.length, size - count);
+					raf.write(buf, 0, written);
+					count += written;
+				}
+				raf.getFD().sync();
+				// Then ffffff it out
+				for(int i=0;i<buf.length;i++)
+					buf[i] = (byte)0xFF;
+				raf.seek(0);
+				count = 0;
+				while(count < size) {
+					int written = (int) Math.min(buf.length, size - count);
+					raf.write(buf, 0, written);
+					count += written;
+				}
+				raf.getFD().sync();
+				// Then random data
+				random.nextBytes(buf);
+				count = 0;
+				while(count < size) {
+					int written = (int) Math.min(buf.length, size - count);
+					raf.write(buf, 0, written);
+					count += written;
+				}
+				raf.getFD().sync();
+				// Then 0's again
+				for(int i=0;i<buf.length;i++)
+					buf[i] = 0;
+				count = 0;
+				while(count < size) {
+					int written = (int) Math.min(buf.length, size - count);
+					raf.write(buf, 0, written);
+					count += written;
+				}
+				raf.getFD().sync();
+			} finally {
+				Closer.close(raf);
+			}
+		}
+		if((!file.delete()) && file.exists())
+			throw new IOException("Unable to delete file");
 	}
 
 }
