@@ -47,7 +47,6 @@ import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.support.BloomFilter;
-import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -887,8 +886,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cipher.initialize(masterKey);
 				diskSalt = new byte[0x10];
 				cipher.encipher(newsalt, diskSalt);
-				System.err.println("Encrypting store with "+HexUtil.bytesToHex(newsalt));
-				System.err.println("Writing: "+HexUtil.bytesToHex(diskSalt));
 			}
 			cipherManager = new CipherManager(newsalt, diskSalt);
 			bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
@@ -914,7 +911,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						cipher.initialize(masterKey);
 						salt = new byte[0x10];
 						cipher.decipher(diskSalt, salt);
-						System.err.println("Encrypting store with "+HexUtil.bytesToHex(salt)+" diskSalt = "+HexUtil.bytesToHex(diskSalt));
 					}
 					
 					cipherManager = new CipherManager(salt, diskSalt);
