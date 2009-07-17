@@ -19,7 +19,6 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.io.FileUtil;
 
 /** Keys read from the master keys file */
