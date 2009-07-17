@@ -14,6 +14,7 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.node.MasterKeys;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 
@@ -169,5 +170,10 @@ public class CipherManager {
 			Logger.error(this, "Rijndael not supported!", e);
 			throw new Error("Rijndael not supported!", e);
 		}
+	}
+
+	public void shutdown() {
+		MasterKeys.clear(salt);
+		MasterKeys.clear(diskSalt);
 	}
 }
