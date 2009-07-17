@@ -409,7 +409,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					if(persistentTempBucketFactory.isEncrypting()) {
 						persistentTempBucketFactory.setEncryption(false);
 					}
-				} else { // newLevel == PHYSICAL_THREAT_LEVEL.NORMAL
+				} else { // newLevel >= PHYSICAL_THREAT_LEVEL.NORMAL
 					if(!tempBucketFactory.isEncrypting()) {
 						tempBucketFactory.setEncryption(true);
 					}
