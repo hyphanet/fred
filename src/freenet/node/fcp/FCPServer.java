@@ -899,7 +899,7 @@ public class FCPServer implements Runnable {
 					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id, Integer.MAX_VALUE,
 					RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, false, this, container);
-		cg.register(container, false, false);
+		cg.register(container, false);
 		cg.start(container, core.clientContext);
 	}
 
@@ -984,7 +984,7 @@ public class FCPServer implements Runnable {
 			}
 			if(container != null) {
 				// Don't activate, it may not be stored yet.
-					req.register(container, false, false);
+					req.register(container, false);
 					req.start(container, context);
 				container.deactivate(req, 1);
 			} else {
@@ -994,7 +994,7 @@ public class FCPServer implements Runnable {
 				public boolean run(ObjectContainer container, ClientContext context) {
 					// Don't activate, it may not be stored yet.
 					try {
-						req.register(container, false, false);
+						req.register(container, false);
 						req.start(container, context);
 					} catch (IdentifierCollisionException e) {
 						ow.collided = e;

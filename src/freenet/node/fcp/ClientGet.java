@@ -298,12 +298,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * @throws IdentifierCollisionException If the identifier is already in use.
 	 */
 	@Override
-	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
+	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
 		if(client != null)
 			assert(this.persistenceType == client.persistenceType);
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
-				client.register(this, lazyResume, container);
+				client.register(this, container);
 			} catch (IdentifierCollisionException e) {
 				returnBucket.free();
 				if(persistenceType == PERSIST_FOREVER)

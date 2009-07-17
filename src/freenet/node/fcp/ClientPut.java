@@ -345,9 +345,9 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	@Override
-	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
+	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this, false, container);
+			client.register(this, container);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
 			FCPMessage msg = persistentTagMessage(container);
 			client.queueClientRequestMessage(msg, 0, container);

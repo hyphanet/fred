@@ -297,7 +297,7 @@ public class FCPConnectionHandler implements Closeable {
 										return false;
 									}
 									try {
-										getter.register(container, false, false);
+										getter.register(container, false);
 										container.store(getter);
 									} catch (IdentifierCollisionException e) {
 										Logger.normal(this, "Identifier collision on "+this);
@@ -329,7 +329,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
 			try {
-				cg.register(null, false, false);
+				cg.register(null, false);
 			} catch (IdentifierCollisionException e) {
 				success = false;
 			}
@@ -393,7 +393,7 @@ public class FCPConnectionHandler implements Closeable {
 									return false;
 								}
 								try {
-									putter.register(container, false, false);
+									putter.register(container, false);
 									container.store(putter);
 								} catch (IdentifierCollisionException e) {
 									Logger.normal(this, "Identifier collision on "+this);
@@ -431,7 +431,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
 			try {
-				cp.register(null, false, false);
+				cp.register(null, false);
 			} catch (IdentifierCollisionException e) {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}
@@ -516,7 +516,7 @@ public class FCPConnectionHandler implements Closeable {
 								return false;
 							}
 							try {
-								putter.register(container, false, false);
+								putter.register(container, false);
 								container.store(putter);
 							} catch (IdentifierCollisionException e) {
 								Logger.normal(this, "Identifier collision on "+this);
@@ -552,7 +552,7 @@ public class FCPConnectionHandler implements Closeable {
 		
 		if(message.persistenceType == ClientRequest.PERSIST_REBOOT)
 			try {
-				cp.register(null, false, false);
+				cp.register(null, false);
 			} catch (IdentifierCollisionException e) {
 				failedMessage = new IdentifierCollisionMessage(id, message.global);
 			}

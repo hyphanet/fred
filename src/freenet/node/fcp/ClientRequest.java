@@ -255,12 +255,12 @@ public abstract class ClientRequest {
 			String type = fs.get("Type");
 			if(type.equals("GET")) {
 				ClientGet cg = new ClientGet(fs, client, server);
-				cg.register(container, false, true);
+				cg.register(container, true);
 				cg.start(container, context);
 				return cg;
 			} else if(type.equals("PUT")) {
 				final ClientPut cp = new ClientPut(fs, client, server, container);
-				client.register(cp, false, container);
+				client.register(cp, container);
 				DBJob start = new DBJob() {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
@@ -280,7 +280,7 @@ public abstract class ClientRequest {
 				return cp;
 			} else if(type.equals("PUTDIR")) {
 				final ClientPutDir cp = new ClientPutDir(fs, client, server, container);
-				client.register(cp, false, container);
+				client.register(cp, container);
 				DBJob start = new DBJob() {
 
 					public boolean run(ObjectContainer container, ClientContext context) {
@@ -311,7 +311,7 @@ public abstract class ClientRequest {
 		}
 	}
 	
-	abstract void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException;
+	abstract void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException;
 
 	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientRequester cr = getClientRequest();
