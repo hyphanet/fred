@@ -170,11 +170,24 @@ public class Node implements TimeSkewDetectorCallback {
 			System.err.println("Migrating old "+(clientCache ? "client cache" : "datastore"));
 			if(clientCache) {
 				migrateOldStore(oldCHKClientCache, chkClientcache, true);
-				oldCHKClientCache = null;
+				StoreCallback old;
+				synchronized(Node.this) {
+					old = oldCHKClientCache;
+					oldCHKClientCache = null;
+				}
+				closeOldStore(old);
 				migrateOldStore(oldPKClientCache, pubKeyClientcache, true);
-				oldPKClientCache = null;
+				synchronized(Node.this) {
+					old = oldPKClientCache;
+					oldPKClientCache = null;
+				}
+				closeOldStore(old);
 				migrateOldStore(oldSSKClientCache, sskClientcache, true);
-				oldSSKClientCache = null;
+				synchronized(Node.this) {
+					old = oldSSKClientCache;
+					oldSSKClientCache = null;
+				}
+				closeOldStore(old);
 			} else {
 				migrateOldStore(oldCHK, chkDatastore, false);
 				oldCHK = null;
@@ -207,16 +220,33 @@ public class Node implements TimeSkewDetectorCallback {
 	volatile SSKStore oldSSKClientCache;
 	
 	private <T extends StorableBlock> void migrateOldStore(StoreCallback<T> old, StoreCallback<T> newStore, boolean canReadClientCache) {
-		RAMFreenetStore<T> store = (RAMFreenetStore<T>)old.getStore();
-		try {
-			store.migrateTo(newStore, canReadClientCache);
-		} catch (IOException e) {
-			Logger.error(this, "Caught migrating old store: "+e, e);
+		FreenetStore<T> store = (FreenetStore<T>)old.getStore();
+		if(store instanceof RAMFreenetStore) {
+			RAMFreenetStore<T> ramstore = (RAMFreenetStore<T>)store;
+			try {
+				ramstore.migrateTo(newStore, canReadClientCache);
+			} catch (IOException e) {
+				Logger.error(this, "Caught migrating old store: "+e, e);
+			}
+			ramstore.clear();
+		} else if(store instanceof SaltedHashFreenetStore) {
+			SaltedHashFreenetStore saltstore = (SaltedHashFreenetStore) store;
+			// FIXME
+			Logger.error(this, "Migrating from from a saltedhashstore not fully supported yet: will not keep old keys");
 		}
-		store.clear();
 	}
 	
 	
+	public void closeOldStore(StoreCallback old) {
+		FreenetStore store = (FreenetStore)old.getStore();
+		if(store instanceof SaltedHashFreenetStore) {
+			SaltedHashFreenetStore saltstore = (SaltedHashFreenetStore) store;
+			saltstore.close();
+			saltstore.destruct();
+		}
+	}
+
+
 	private static volatile boolean logMINOR;
 
 	static {
@@ -370,7 +400,6 @@ public class Node implements TimeSkewDetectorCallback {
 				if(clientCacheAwaitingPassword)
 					type = "ram";
 			}
-			if(type.equals("ram") || type.equals("none")) {
 				Runnable migrate = type.equals("none") ? null : new MigrateOldStoreData(true);
 				synchronized(this) { // Serialise this part.
 					String suffix = getStoreSuffix();
@@ -425,12 +454,6 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				if(migrate != null)
 					executor.execute(migrate, "Migrate data from previous store");
-			} else {
-				synchronized(Node.this) {
-					clientCacheType = val;
-				}
-				throw new NodeNeedRestartException("Store type cannot be changed on the fly");
-			}
 		}
 
 		public String[] getPossibleValues() {

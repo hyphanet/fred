@@ -1827,4 +1827,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			configLock.readLock().unlock();
 		}
 	}
+
+	public void destruct() {
+		metaFile.delete();
+		hdFile.delete();
+		configFile.delete();
+	}
 }
