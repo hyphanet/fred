@@ -217,7 +217,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 									System.err.println("Cannot change password as cannot write new passwords file: "+e);
 									e.printStackTrace();
 									String msg = "<html><head><title>"+l10nSec("cantWriteNewMasterKeysFileTitle")+
-									"</title></head><body><h1>"+l10nSec("cantWriteNewMasterKeysFileTitle")+"</h1><pre>";
+										"</title></head><body><h1>"+l10nSec("cantWriteNewMasterKeysFileTitle")+"</h1><p>"+l10nSec("cantWriteNewMasterKeysFile")+"<pre>";
 									StringWriter sw = new StringWriter();
 									PrintWriter pw = new PrintWriter(sw);
 									e.printStackTrace(pw);
