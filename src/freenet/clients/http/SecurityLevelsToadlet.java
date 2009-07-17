@@ -8,16 +8,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.config.BooleanOption;
-import freenet.config.Config;
-import freenet.config.ConfigCallback;
-import freenet.config.EnumerableOptionCallback;
-import freenet.config.Option;
-import freenet.config.SubConfig;
-import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.MasterKeysFileTooBigException;
 import freenet.node.MasterKeysFileTooShortException;
@@ -32,7 +24,6 @@ import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -595,11 +586,6 @@ public class SecurityLevelsToadlet extends Toadlet {
 		return L10n.getString("SecurityLevels."+key, pattern, value);
 	}
 	
-	private void sendAlreadySetMasterPassword(ToadletContext ctx) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	/** Send a page asking what to do when the master password file has been corrupted. 
 	 * @param forSecLevels The user has tried to change the security levels.
 	 * @param forFirstTimeWizard The user has tried to set a password in the first-time wizard on the physical security levels page.
