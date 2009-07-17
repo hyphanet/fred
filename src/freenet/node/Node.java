@@ -489,6 +489,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
+	private final File dbFile;
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
@@ -1233,8 +1234,9 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
 		ObjectContainer database;
+		dbFile = new File(nodeDir, "node.db4o");
 		try {
-			database = Db4o.openFile(dbConfig, new File(nodeDir, "node.db4o").toString());
+			database = Db4o.openFile(dbConfig, dbFile.toString());
 			System.err.println("Opened database");
 		} catch (Db4oException e) {
 			database = null;
@@ -5114,5 +5116,17 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public synchronized File getMasterPasswordFile() {
 		return masterKeysFile;
+	}
+
+	public void panic() {
+		db.close();
+		try {
+			FileUtil.secureDelete(dbFile, random);
+		} catch (IOException e) {
+			// Ignore
+		}
+		dbFile.delete();
+		WrapperManager.restart();
+		System.exit(0);
 	}
 }

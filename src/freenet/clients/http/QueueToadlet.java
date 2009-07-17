@@ -191,23 +191,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
-			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
-				
-				// FIXME panic button should just dump the entire database ???
-				// FIXME what about non-global requests ???
-				boolean success = false;
-				try {
-				  success = fcp.removeAllGlobalRequestsBlocking();
-				} catch (Exception e) {
-					Logger.error(this, "Exception on remove all", e);
-				}
-				
-				if(!success)
-					this.sendErrorPage(ctx, 200, 
-							L10n.getString("QueueToadlet.failedToRemoveRequest"),
-							L10n.getString("QueueToadlet.failedToRemoveAll"));
-				else
-					writePermanentRedirect(ctx, "Done", path());
+			} else if(request.isPartSet("panic") && (request.getPartAsString("panic", 32).length() > 0)) {
+				core.node.killMasterKeysFile();
+				core.node.panic();
+				writePermanentRedirect(ctx, "Done", path());
 				return;
 			}else if(request.isPartSet("download")) {
 				// Queue a download
@@ -1303,7 +1290,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode panicBox = infobox.outer;
 		HTMLNode panicForm = ctx.addFormChild(infobox.content, path(), "queuePanicForm");
 		panicForm.addChild("#", (L10n.getString("QueueToadlet.panicButtonConfirmation") + ' '));
-		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", L10n.getString("QueueToadlet.remove") });
+		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "panic", L10n.getString("QueueToadlet.panicButton") });
 		return panicBox;
 	}
 	
