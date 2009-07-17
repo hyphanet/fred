@@ -106,6 +106,7 @@ import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
+import freenet.store.NullFreenetStore;
 import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
@@ -369,8 +370,8 @@ public class Node implements TimeSkewDetectorCallback {
 				if(clientCacheAwaitingPassword)
 					type = "ram";
 			}
-			if(type.equals("ram")) {
-				Runnable migrate = new MigrateOldStoreData(true);
+			if(type.equals("ram") || type.equals("none")) {
+				Runnable migrate = type.equals("none") ? null : new MigrateOldStoreData(true);
 				synchronized(this) { // Serialise this part.
 					String suffix = getStoreSuffix();
 					if (val.equals("salt-hash")) {
@@ -420,7 +421,8 @@ public class Node implements TimeSkewDetectorCallback {
 						clientCacheType = val;
 					}
 				}
-				executor.execute(migrate, "Migrate data from previous store");
+				if(migrate != null)
+					executor.execute(migrate, "Migrate data from previous store");
 			} else {
 				synchronized(Node.this) {
 					clientCacheType = val;
@@ -430,7 +432,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		public String[] getPossibleValues() {
-			return new String[] { "salt-hash", "ram" };
+			return new String[] { "salt-hash", "ram", "none" };
 		}
 	}
 	
@@ -2293,6 +2295,10 @@ public class Node implements TimeSkewDetectorCallback {
 			} catch (IOException e) {
 				break;
 			}
+		} else if(clientCacheType.equals("none")) {
+			initNoClientCacheFS();
+			startedClientCache = true;
+			break;
 		} else { // ram
 			initRAMClientCacheFS();
 			startedClientCache = true;
@@ -2579,6 +2585,17 @@ public class Node implements TimeSkewDetectorCallback {
 		new RAMFreenetStore(pubKeyClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
 		sskClientcache = new SSKStore(getPubKey);
 		new RAMFreenetStore(sskClientcache, (int) Math.min(Integer.MAX_VALUE, maxClientCacheKeys));
+		envMutableConfig = null;
+		this.storeEnvironment = null;
+	}
+
+	private void initNoClientCacheFS() {
+		chkClientcache = new CHKStore();
+		new NullFreenetStore(chkClientcache);
+		pubKeyClientcache = new PubkeyStore();
+		new NullFreenetStore(pubKeyClientcache);
+		sskClientcache = new SSKStore(getPubKey);
+		new NullFreenetStore(sskClientcache);
 		envMutableConfig = null;
 		this.storeEnvironment = null;
 	}
