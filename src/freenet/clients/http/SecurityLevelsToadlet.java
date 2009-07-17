@@ -434,8 +434,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	private void addBackToSeclevelsLink(HTMLNode content) {
-		// TODO Auto-generated method stub
-		
+		content.addChild("a", "href", path(), l10nSec("backToSecurityLevels"));
 	}
 
 	@Override
