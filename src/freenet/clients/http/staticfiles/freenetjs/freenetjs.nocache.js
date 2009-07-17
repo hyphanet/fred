@@ -1,11 +1,275 @@
-function freenetjs(){var l='',F='" for "gwt:onLoadErrorFn"',D='" for "gwt:onPropertyErrorFn"',n='"><\/script>',p='#',r='/',wb='27444BBA7D12AEA7FA0F9990D6BF5897.cache.html',ub='450666EBBEB9E91363AC169DA770E658.cache.html',vb='4A7912B4FBD3F9C9BD9DBD755516F6CB.cache.html',zb='<script defer="defer">freenetjs.onInjectionDone(\'freenetjs\')<\/script>',Db='<script id="',A='=',q='?',C='Bad handler "',sb='CEC78777F23C19472AC82414C195D982.cache.html',xb='DOMContentLoaded',tb='E7C0F6FA665B903EA0B1746E725F9163.cache.html',o='SCRIPT',Cb='__gwt_marker_freenetjs',s='base',nb='begin',cb='bootstrap',u='clear.cache.gif',z='content',Bb='end',m='freenetjs',lb='gecko',mb='gecko1_8',yb='gwt.hybrid',E='gwt:onLoadErrorFn',B='gwt:onPropertyErrorFn',y='gwt:property',qb='hosted.html?freenetjs',kb='ie6',ab='iframe',t='img',bb="javascript:''",pb='loadExternalRefs',v='meta',eb='moduleRequested',Ab='moduleStartup',jb='msie',w='name',gb='opera',db='position:absolute;width:0;height:0;border:none',ib='safari',rb='selectingPermutation',x='startup',ob='unknown',fb='user.agent',hb='webkit';var Fb=window,k=document,Eb=Fb.__gwtStatsEvent?function(a){return Fb.__gwtStatsEvent(a)}:null,tc,jc,ec,dc=l,mc={},wc=[],sc=[],cc=[],pc,rc;Eb&&Eb({moduleName:m,subSystem:x,evtGroup:cb,millis:(new Date()).getTime(),type:nb});if(!Fb.__gwt_stylesLoaded){Fb.__gwt_stylesLoaded={}}if(!Fb.__gwt_scriptsLoaded){Fb.__gwt_scriptsLoaded={}}function ic(){var b=false;try{b=Fb.external&&(Fb.external.gwtOnLoad&&Fb.location.search.indexOf(yb)==-1)}catch(a){}ic=function(){return b};return b}
-function lc(){if(tc&&jc){var c=k.getElementById(m);var b=c.contentWindow;if(ic()){b.__gwt_getProperty=function(a){return fc(a)}}freenetjs=null;b.gwtOnLoad(pc,m,dc);Eb&&Eb({moduleName:m,subSystem:x,evtGroup:Ab,millis:(new Date()).getTime(),type:Bb})}}
-function gc(){var j,h=Cb,i;k.write(Db+h+n);i=k.getElementById(h);j=i&&i.previousSibling;while(j&&j.tagName!=o){j=j.previousSibling}function f(b){var a=b.lastIndexOf(p);if(a==-1){a=b.length}var c=b.indexOf(q);if(c==-1){c=b.length}var d=b.lastIndexOf(r,Math.min(c,a));return d>=0?b.substring(0,d+1):l}
-;if(j&&j.src){dc=f(j.src)}if(dc==l){var e=k.getElementsByTagName(s);if(e.length>0){dc=e[e.length-1].href}else{dc=f(k.location.href)}}else if(dc.match(/^\w+:\/\//)){}else{var g=k.createElement(t);g.src=dc+u;dc=f(g.src)}if(i){i.parentNode.removeChild(i)}}
-function qc(){var f=document.getElementsByTagName(v);for(var d=0,g=f.length;d<g;++d){var e=f[d],h=e.getAttribute(w),b;if(h){if(h==y){b=e.getAttribute(z);if(b){var i,c=b.indexOf(A);if(c>=0){h=b.substring(0,c);i=b.substring(c+1)}else{h=b;i=l}mc[h]=i}}else if(h==B){b=e.getAttribute(z);if(b){try{rc=eval(b)}catch(a){alert(C+b+D)}}}else if(h==E){b=e.getAttribute(z);if(b){try{pc=eval(b)}catch(a){alert(C+b+F)}}}}}}
-function vc(d,e){var a=cc;for(var b=0,c=d.length-1;b<c;++b){a=a[d[b]]||(a[d[b]]=[])}a[d[c]]=e}
-function fc(d){var e=sc[d](),b=wc[d];if(e in b){return e}var a=[];for(var c in b){a[b[c]]=c}if(rc){rc(d,a,e)}throw null}
-var hc;function kc(){if(!hc){hc=true;var a=k.createElement(ab);a.src=bb;a.id=m;a.style.cssText=db;a.tabIndex=-1;k.body.appendChild(a);Eb&&Eb({moduleName:m,subSystem:x,evtGroup:Ab,millis:(new Date()).getTime(),type:eb});a.contentWindow.location.replace(dc+uc)}}
-sc[fb]=function(){var d=navigator.userAgent.toLowerCase();var b=function(a){return parseInt(a[1])*1000+parseInt(a[2])};if(d.indexOf(gb)!=-1){return gb}else if(d.indexOf(hb)!=-1){return ib}else if(d.indexOf(jb)!=-1){var c=/msie ([0-9]+)\.([0-9]+)/.exec(d);if(c&&c.length==3){if(b(c)>=6000){return kb}}}else if(d.indexOf(lb)!=-1){var c=/rv:([0-9]+)\.([0-9]+)/.exec(d);if(c&&c.length==3){if(b(c)>=1008)return mb}return lb}return ob};wc[fb]={gecko:0,gecko1_8:1,ie6:2,opera:3,safari:4};freenetjs.onScriptLoad=function(){if(hc){jc=true;lc()}};freenetjs.onInjectionDone=function(){tc=true;Eb&&Eb({moduleName:m,subSystem:x,evtGroup:pb,millis:(new Date()).getTime(),type:Bb});lc()};gc();var uc;if(ic()){if(Fb.external.initModule&&Fb.external.initModule(m)){Fb.location.reload();return}uc=qb}qc();Eb&&Eb({moduleName:m,subSystem:x,evtGroup:cb,millis:(new Date()).getTime(),type:rb});if(!uc){try{vc([gb],sb);vc([ib],tb);vc([mb],ub);vc([lb],vb);vc([kb],wb);uc=cc[fc(fb)]}catch(a){return}}var oc;function nc(){if(!ec){ec=true;lc();if(k.removeEventListener){k.removeEventListener(xb,nc,false)}if(oc){clearInterval(oc)}}}
-if(k.addEventListener){k.addEventListener(xb,function(){kc();nc()},false)}var oc=setInterval(function(){if(/loaded|complete/.test(k.readyState)){kc();nc()}},50);Eb&&Eb({moduleName:m,subSystem:x,evtGroup:cb,millis:(new Date()).getTime(),type:Bb});Eb&&Eb({moduleName:m,subSystem:x,evtGroup:pb,millis:(new Date()).getTime(),type:nb});k.write(zb)}
+function freenetjs(){
+  var $wnd_0 = window, $doc_0 = document, $stats = $wnd_0.__gwtStatsEvent?function(a){
+    return $wnd_0.__gwtStatsEvent(a);
+  }
+  :null, scriptsDone, loadDone, bodyDone, base = '', metaProps = {}, values = [], providers = [], answers = [], onLoadErrorFunc, propertyErrorFunc;
+  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'begin'});
+  if (!$wnd_0.__gwt_stylesLoaded) {
+    $wnd_0.__gwt_stylesLoaded = {};
+  }
+  if (!$wnd_0.__gwt_scriptsLoaded) {
+    $wnd_0.__gwt_scriptsLoaded = {};
+  }
+  function isHostedMode(){
+    var result = false;
+    try {
+      result = $wnd_0.external && ($wnd_0.external.gwtOnLoad && $wnd_0.location.search.indexOf('gwt.hybrid') == -1);
+    }
+     catch (e) {
+    }
+    isHostedMode = function(){
+      return result;
+    }
+    ;
+    return result;
+  }
+
+  function maybeStartModule(){
+    if (scriptsDone && loadDone) {
+      var iframe = $doc_0.getElementById('freenetjs');
+      var frameWnd = iframe.contentWindow;
+      if (isHostedMode()) {
+        frameWnd.__gwt_getProperty = function(name_0){
+          return computePropValue(name_0);
+        }
+        ;
+      }
+      freenetjs = null;
+      frameWnd.gwtOnLoad(onLoadErrorFunc, 'freenetjs', base);
+      $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date()).getTime(), type:'end'});
+    }
+  }
+
+  function computeScriptBase(){
+    var thisScript, markerId = '__gwt_marker_freenetjs', markerScript;
+    $doc_0.write('<script id="' + markerId + '"><\/script>');
+    markerScript = $doc_0.getElementById(markerId);
+    thisScript = markerScript && markerScript.previousSibling;
+    while (thisScript && thisScript.tagName != 'SCRIPT') {
+      thisScript = thisScript.previousSibling;
+    }
+    function getDirectoryOfFile(path){
+      var hashIndex = path.lastIndexOf('#');
+      if (hashIndex == -1) {
+        hashIndex = path.length;
+      }
+      var queryIndex = path.indexOf('?');
+      if (queryIndex == -1) {
+        queryIndex = path.length;
+      }
+      var slashIndex = path.lastIndexOf('/', Math.min(queryIndex, hashIndex));
+      return slashIndex >= 0?path.substring(0, slashIndex + 1):'';
+    }
+
+    ;
+    if (thisScript && thisScript.src) {
+      base = getDirectoryOfFile(thisScript.src);
+    }
+    if (base == '') {
+      var baseElements = $doc_0.getElementsByTagName('base');
+      if (baseElements.length > 0) {
+        base = baseElements[baseElements.length - 1].href;
+      }
+       else {
+        base = getDirectoryOfFile($doc_0.location.href);
+      }
+    }
+     else if (base.match(/^\w+:\/\//)) {
+    }
+     else {
+      var img = $doc_0.createElement('img');
+      img.src = base + 'clear.cache.gif';
+      base = getDirectoryOfFile(img.src);
+    }
+    if (markerScript) {
+      markerScript.parentNode.removeChild(markerScript);
+    }
+  }
+
+  function processMetas(){
+    var metas = document.getElementsByTagName('meta');
+    for (var i = 0, n = metas.length; i < n; ++i) {
+      var meta = metas[i], name_0 = meta.getAttribute('name'), content;
+      if (name_0) {
+        if (name_0 == 'gwt:property') {
+          content = meta.getAttribute('content');
+          if (content) {
+            var value, eq = content.indexOf('=');
+            if (eq >= 0) {
+              name_0 = content.substring(0, eq);
+              value = content.substring(eq + 1);
+            }
+             else {
+              name_0 = content;
+              value = '';
+            }
+            metaProps[name_0] = value;
+          }
+        }
+         else if (name_0 == 'gwt:onPropertyErrorFn') {
+          content = meta.getAttribute('content');
+          if (content) {
+            try {
+              propertyErrorFunc = eval(content);
+            }
+             catch (e) {
+              alert('Bad handler "' + content + '" for "gwt:onPropertyErrorFn"');
+            }
+          }
+        }
+         else if (name_0 == 'gwt:onLoadErrorFn') {
+          content = meta.getAttribute('content');
+          if (content) {
+            try {
+              onLoadErrorFunc = eval(content);
+            }
+             catch (e) {
+              alert('Bad handler "' + content + '" for "gwt:onLoadErrorFn"');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  function unflattenKeylistIntoAnswers(propValArray, value){
+    var answer = answers;
+    for (var i = 0, n = propValArray.length - 1; i < n; ++i) {
+      answer = answer[propValArray[i]] || (answer[propValArray[i]] = []);
+    }
+    answer[propValArray[n]] = value;
+  }
+
+  function computePropValue(propName){
+    var value = providers[propName](), allowedValuesMap = values[propName];
+    if (value in allowedValuesMap) {
+      return value;
+    }
+    var allowedValuesList = [];
+    for (var k in allowedValuesMap) {
+      allowedValuesList[allowedValuesMap[k]] = k;
+    }
+    if (propertyErrorFunc) {
+      propertyErrorFunc(propName, allowedValuesList, value);
+    }
+    throw null;
+  }
+
+  var frameInjected;
+  function maybeInjectFrame(){
+    if (!frameInjected) {
+      frameInjected = true;
+      var iframe = $doc_0.createElement('iframe');
+      iframe.src = "javascript:''";
+      iframe.id = 'freenetjs';
+      iframe.style.cssText = 'position:absolute;width:0;height:0;border:none';
+      iframe.tabIndex = -1;
+      $doc_0.body.appendChild(iframe);
+      $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date()).getTime(), type:'moduleRequested'});
+      iframe.contentWindow.location.replace(base + strongName);
+    }
+  }
+
+  providers['user.agent'] = function(){
+    var ua = navigator.userAgent.toLowerCase();
+    var makeVersion = function(result){
+      return parseInt(result[1]) * 1000 + parseInt(result[2]);
+    }
+    ;
+    if (ua.indexOf('opera') != -1) {
+      return 'opera';
+    }
+     else if (ua.indexOf('webkit') != -1) {
+      return 'safari';
+    }
+     else if (ua.indexOf('msie') != -1) {
+      var result_0 = /msie ([0-9]+)\.([0-9]+)/.exec(ua);
+      if (result_0 && result_0.length == 3) {
+        if (makeVersion(result_0) >= 6000) {
+          return 'ie6';
+        }
+      }
+    }
+     else if (ua.indexOf('gecko') != -1) {
+      var result_0 = /rv:([0-9]+)\.([0-9]+)/.exec(ua);
+      if (result_0 && result_0.length == 3) {
+        if (makeVersion(result_0) >= 1008)
+          return 'gecko1_8';
+      }
+      return 'gecko';
+    }
+    return 'unknown';
+  }
+  ;
+  values['user.agent'] = {gecko:0, gecko1_8:1, ie6:2, opera:3, safari:4};
+  freenetjs.onScriptLoad = function(){
+    if (frameInjected) {
+      loadDone = true;
+      maybeStartModule();
+    }
+  }
+  ;
+  freenetjs.onInjectionDone = function(){
+    scriptsDone = true;
+    $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date()).getTime(), type:'end'});
+    maybeStartModule();
+  }
+  ;
+  computeScriptBase();
+  var strongName;
+  if (isHostedMode()) {
+    if ($wnd_0.external.initModule && $wnd_0.external.initModule('freenetjs')) {
+      $wnd_0.location.reload();
+      return;
+    }
+    strongName = 'hosted.html?freenetjs';
+  }
+  processMetas();
+  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'selectingPermutation'});
+  if (!strongName) {
+    try {
+      unflattenKeylistIntoAnswers(['ie6'], '45EB270DAD0608EA48F331B466957A18.cache.html');
+      unflattenKeylistIntoAnswers(['gecko1_8'], 'C37E7F2F0F589C4650D011001BE50455.cache.html');
+      unflattenKeylistIntoAnswers(['opera'], '513EB484F5FADEBA661EC6A6C84330EC.cache.html');
+      unflattenKeylistIntoAnswers(['safari'], '8FDA97FC83379D095E512577CE2BF368.cache.html');
+      unflattenKeylistIntoAnswers(['gecko'], '496C40BB4C893FD03888B6DC4C241A4A.cache.html');
+      strongName = answers[computePropValue('user.agent')];
+    }
+     catch (e) {
+      return;
+    }
+  }
+  var onBodyDoneTimerId;
+  function onBodyDone(){
+    if (!bodyDone) {
+      bodyDone = true;
+      maybeStartModule();
+      if ($doc_0.removeEventListener) {
+        $doc_0.removeEventListener('DOMContentLoaded', onBodyDone, false);
+      }
+      if (onBodyDoneTimerId) {
+        clearInterval(onBodyDoneTimerId);
+      }
+    }
+  }
+
+  if ($doc_0.addEventListener) {
+    $doc_0.addEventListener('DOMContentLoaded', function(){
+      maybeInjectFrame();
+      onBodyDone();
+    }
+    , false);
+  }
+  var onBodyDoneTimerId = setInterval(function(){
+    if (/loaded|complete/.test($doc_0.readyState)) {
+      maybeInjectFrame();
+      onBodyDone();
+    }
+  }
+  , 50);
+  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'end'});
+  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date()).getTime(), type:'begin'});
+  $doc_0.write('<script defer="defer">freenetjs.onInjectionDone(\'freenetjs\')<\/script>');
+}
+
 freenetjs();

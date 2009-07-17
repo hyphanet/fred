@@ -24,6 +24,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.Map.Entry;
+
+import javax.smartcardio.ATR;
 
 import freenet.l10n.L10n;
 import freenet.support.HTMLDecoder;
@@ -438,19 +441,24 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			t = t.sanitize(pc);
 			if(pc.noOutput) return; // sanitize has done all the work we are interested in
 			if (t != null) {
-				if (pc.writeStyleScriptWithTag) {
-					pc.writeStyleScriptWithTag = false;
-					String style = pc.currentStyleScriptChunk;
-					if ((style == null) || (style.length() == 0))
-						pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
-					else
-						w.write(style);
-					pc.currentStyleScriptChunk = "";
-				}
-				t.write(w);
-				if (pc.writeAfterTag.length() > 0) {
-					w.write(pc.writeAfterTag.toString());
-					pc.writeAfterTag = new StringBuilder(1024);
+				String newContent=pc.cb.processTag(t);
+				if(newContent!=null){
+					w.write(newContent);
+				}else{
+					if (pc.writeStyleScriptWithTag) {
+						pc.writeStyleScriptWithTag = false;
+						String style = pc.currentStyleScriptChunk;
+						if ((style == null) || (style.length() == 0))
+							pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
+						else
+							w.write(style);
+						pc.currentStyleScriptChunk = "";
+					}
+					t.write(w);
+					if (pc.writeAfterTag.length() > 0) {
+						w.write(pc.writeAfterTag.toString());
+						pc.writeAfterTag = new StringBuilder(1024);
+					}
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
@@ -505,9 +513,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		throw new DataFilterException(longer, longer, msg, new HTMLNode("div", msg));
 	}
 
-	static class ParsedTag {
+	public static class ParsedTag {
 		final String element;
-		final String[] unparsedAttrs;
+		public final String[] unparsedAttrs;
 		final boolean startSlash;
 		final boolean endSlash;
 		/*
@@ -518,6 +526,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public ParsedTag(ParsedTag t, String[] outAttrs) {
 			this.element = t.element;
 			this.unparsedAttrs = outAttrs;
+			this.startSlash = t.startSlash;
+			this.endSlash = t.endSlash;
+		}
+		
+		public ParsedTag(ParsedTag t, Map<String,String> attributes){
+			String[] attrs=new String[attributes.size()];
+			int pos=0;
+			for(Entry<String,String> entry:attributes.entrySet()){
+				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+			}
+			this.element = t.element;
+			this.unparsedAttrs = attrs;
 			this.startSlash = t.startSlash;
 			this.endSlash = t.endSlash;
 		}
@@ -590,6 +610,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				sb.append(" /");
 			sb.append('>');
 			return sb.toString();
+		}
+		
+		public Map<String,String> getAttributesAsMap(){
+			Map<String,String> map=new HashMap<String, String>();
+			for(int i=0;i<unparsedAttrs.length;i++){
+				String attr=unparsedAttrs[i];
+				String name=attr.substring(0,attr.indexOf("="));
+				String value=attr.substring(attr.indexOf("=")+2,attr.length()-1);
+				map.put(name, value);
+			}
+			return map;
 		}
 
 		public void write(Writer w) throws IOException {
@@ -1229,7 +1260,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (h == null)
 				return null;
 			if (t.startSlash)
-				return new ParsedTag(t, null);
+				return new ParsedTag(t, (String[])null);
 			String[] outAttrs = new String[h.size()];
 			int i = 0;
 			for (Map.Entry<String, Object> entry : h.entrySet()) {

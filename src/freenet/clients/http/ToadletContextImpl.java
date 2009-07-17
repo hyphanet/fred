@@ -48,6 +48,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean sentReplyHeaders;
 	private volatile Toadlet activeToadlet;
 	private final String uniqueId;
+	private URI uri;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
@@ -55,9 +56,10 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container,URI uri) throws IOException {
 		this.headers = headers;
 		this.closed = false;
+		this.uri=uri;
 		sockOutputStream = sock.getOutputStream();
 		remoteAddr = sock.getInetAddress();
 		if(Logger.shouldLog(Logger.DEBUG, this))
@@ -277,7 +279,6 @@ public class ToadletContextImpl implements ToadletContext {
 					sendURIParseError(sock.getOutputStream(), true, e);
 					return;
 				}
-				
 				String method = split[0];
 				
 				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
@@ -305,7 +306,7 @@ public class ToadletContextImpl implements ToadletContext {
 				boolean allowPost = container.allowPosts();
 				BucketFactory bf = container.getBucketFactory();
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container);
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container,uri);
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
@@ -504,5 +505,9 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public String getUniqueId(){
 		return uniqueId;
+	}
+	
+	public URI getUri() {
+		return uri;
 	}
 }

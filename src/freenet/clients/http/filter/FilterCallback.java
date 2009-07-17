@@ -1,5 +1,7 @@
 package freenet.clients.http.filter;
 
+import freenet.clients.http.filter.HTMLFilter.ParsedTag;
+
 
 /**
  * Callback to be provided to a content filter.
@@ -47,5 +49,13 @@ public interface FilterCallback {
 	 * @throws CommentException 
 	 */
 	public String processForm(String method, String action) throws CommentException;
+	
+	/**
+	 * Process a tag. If it needs changing, then return the changed
+	 * HTML, if not, then return null;
+	 * @param pt - The tag to be replaced
+	 * @return The new tag, or null, if it doesn't need changing
+	 * */
+	public String processTag(ParsedTag pt);
 	
 }

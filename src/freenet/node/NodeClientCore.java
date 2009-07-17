@@ -1396,7 +1396,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR)
 			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb);
-		return new GenericReadFilterCallback(uri, cb);
+		return new GenericReadFilterCallback(uri, cb,null);
 	}
 
 	public int maxBackgroundUSKFetchers() {

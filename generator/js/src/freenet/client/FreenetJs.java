@@ -1,8 +1,8 @@
 package freenet.client;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.dom.client.Document;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.WindowCloseListener;
 import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.user.client.Window.ClosingHandler;
 import com.google.gwt.user.client.ui.Label;
@@ -35,7 +35,7 @@ public class FreenetJs implements EntryPoint {
 		Window.addWindowClosingHandler(new ClosingHandler() {
 			@Override
 			public void onWindowClosing(ClosingEvent event) {
-				FreenetRequest.sendRequest(IConnectionManager.leavingPath, new QueryParameter("requestId",requestId));
+				FreenetRequest.sendRequest(IConnectionManager.leavingPath, new QueryParameter("requestId", requestId));
 				cm.closeConnection();
 			}
 		});
@@ -55,7 +55,8 @@ public class FreenetJs implements EntryPoint {
 			if (logPanel == null) {
 				logPanel = new SimplePanel();
 				logPanel.getElement().setId("log");
-				RootPanel.get("content").add(logPanel);
+				logPanel.getElement().setAttribute("style", "display:none;");
+				Document.get().getElementsByTagName("body").getItem(0).appendChild(logPanel.getElement());
 			}
 			logPanel.add(new Label("{" + System.currentTimeMillis() + "}" + msg));
 		}

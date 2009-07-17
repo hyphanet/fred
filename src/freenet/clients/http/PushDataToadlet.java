@@ -24,6 +24,7 @@ public class PushDataToadlet extends Toadlet {
 		String requestId = req.getParam("requestId");
 		String elementId = req.getParam("elementId");
 		elementId = elementId.replace(" ", "+");// This is needed, because BASE64 has '+', but it is a HTML escape for ' '
+		System.err.println("Getting data for element:"+elementId);
 		BaseUpdateableElement node = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getRenderedElement(requestId, elementId);
 		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(node.getUpdaterType().getBytes()) + ":" + Base64.encodeStandard(node.generateChildren().getBytes()));
 	}

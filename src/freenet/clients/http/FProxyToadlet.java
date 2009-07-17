@@ -26,6 +26,7 @@ import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
+import freenet.clients.http.filter.TagReplacerCallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.clients.http.updateableelements.ProgressBarElement;
@@ -155,7 +156,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null);
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null,new TagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx));
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;
@@ -250,8 +251,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
 					context.writeData(tmpRange);
 				} else {
-					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
-					context.writeData(addImagePushing(ctx,data));
+					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size()+getImagePushingScript(ctx.getUniqueId()).getBytes().length);
+					context.writeData(data);
+					context.writeData(getImagePushingScript(ctx.getUniqueId()).getBytes());
 				}
 			}
 		} catch (URISyntaxException use1) {
@@ -320,26 +322,27 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 	
-	private static byte[] addImagePushing(ToadletContext ctx,Bucket data) throws IOException{
-		StringBuilder sb=new StringBuilder();
-		BufferedReader reader=new BufferedReader(new InputStreamReader(data.getInputStream()));
-		while(reader.ready()){
-			String line=reader.readLine();
-			sb.append(line);
-			sb.append("\n");
-			if(line.contains("<head")){
-				sb.append("<script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script>\n");
-			}
-			if(line.contains("<body")){
-				sb.append("<input type=\"hidden\" name=\"requestId\" value=\""+ctx.getUniqueId()+"\" id=\"requestId\"></input>\n");
-				sb.append(new TesterElement(ctx, "1").generate());
-			}
-			if(line.contains("<img")){
-				
-			}
+	private static String getImagePushingScript(String requestId){
+		return "<script id=\"loaderScript\">\n"+
+"var requestIdNode=document.createElement('input');\n"+
+"requestIdNode.type='hidden';\n"+
+"requestIdNode.id='requestId';\n"+
+"requestIdNode.name='requestId';\n"+
+"requestIdNode.value='"+requestId+"';\n"+
+"document.getElementsByTagName('body')[0].appendChild(requestIdNode);\n"+
+"\n"+
+"var head=document.getElementsByTagName('head')[0];\n"+
+"if(head==null){\n"+
+"	var htmlNode=document.getElementsByTagName('html')[0];\n"+
+"	var head=document.createElement('head');\n"+
+"	htmlNode.appendChild(head);\n"+
+"}\n"+
+"var scriptNode=document.createElement('script');\n"+
+"scriptNode.type='text/javascript';\n"+
+"scriptNode.src='/static/loadgwt.js';\n"+
+"head.appendChild(scriptNode);\n"+
+"</script>";
 		}
-		return sb.toString().getBytes();
-	}
 	
 	public static String l10n(String msg) {
 		return L10n.getString("FProxyToadlet."+msg);

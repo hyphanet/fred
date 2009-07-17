@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Date;
 
 import freenet.support.HTMLNode;
@@ -91,5 +92,7 @@ public interface ToadletContext {
 	Toadlet activeToadlet();
 	
 	public String getUniqueId();
+	
+	public URI getUri();
 }
 

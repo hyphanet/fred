@@ -12,6 +12,7 @@ import java.util.HashSet;
 
 import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
+import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.support.HTMLEncoder;
@@ -40,18 +41,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 	private URI baseURI;
 	private URI strippedBaseURI;
 	private final FoundURICallback cb;
+	private final TagReplacerCallback trc;
 	
-	public GenericReadFilterCallback(URI uri, FoundURICallback cb) {
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc) {
 		this.baseURI = uri;
 		this.cb = cb;
+		this.trc=trc;
 		setStrippedURI(uri.toString());
 	}
 	
-	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb) {
+	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc) {
 		try {
 			this.baseURI = uri.toRelativeURI();
 			setStrippedURI(baseURI.toString());
 			this.cb = cb;
+			this.trc=trc;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
@@ -342,6 +346,14 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		// Otherwise disallow.
 		return null;
+	}
+	
+	public String processTag(ParsedTag pt) {
+		if(trc!=null){
+			return trc.processTag(pt);
+		}else{
+			return null;
+		}
 	}
 
 	public static String escapeURL(String uri) {

@@ -192,13 +192,18 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append('"');
 		}
 		if (children.size() == 0) {
-			if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name) || ("script").equals(name)) {
-				tagBuffer.append("></");
-				tagBuffer.append(name);
-				tagBuffer.append('>');
-			} else {
-				tagBuffer.append(" />");
+			if(content==null){
+				if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name) || ("script").equals(name)) {
+					tagBuffer.append("></");
+					tagBuffer.append(name);
+					tagBuffer.append('>');
+				} else {
+					tagBuffer.append(" />");
+				}
+			}else{
+				tagBuffer.append(">"+content+"</"+name+">");
 			}
+			
 		} else {
 			tagBuffer.append('>');
 			if(("div").equals(name) || ("form").equals(name) || ("input").equals(name) || ("script").equals(name) || ("table").equals(name) || ("tr").equals(name) || ("td").equals(name)) {

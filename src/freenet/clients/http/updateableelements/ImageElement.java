@@ -1,27 +1,35 @@
 package freenet.clients.http.updateableelements;
 
+import java.util.Map;
+
 import freenet.client.FetchException;
 import freenet.clients.http.FProxyFetchInProgress;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
+import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 
 public class ImageElement extends BaseUpdateableElement {
 
 	/** The tracker that the Fetcher can be acquired */
-	private FProxyFetchTracker		tracker;
+	public FProxyFetchTracker		tracker;
 	/** The URI of the download this progress bar shows */
-	private FreenetURI				key;
+	public FreenetURI				key;
 	/** The maxSize */
-	private long					maxSize;
+	public long					maxSize;
 	/** The FetchListener that gets notified when the download progresses */
 	private NotifierFetchListener	fetchListener;
 
-	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx) throws FetchException {
-		super("img", ctx);
+	private ParsedTag				originalImg;
+
+	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg) throws FetchException {
+		super("span", ctx);
+		long now = System.currentTimeMillis();
+		System.err.println("ImageElement creating for uri:" + key);
+		this.originalImg = originalImg;
 		this.tracker = tracker;
 		this.key = key;
 		this.maxSize = maxSize;
@@ -30,6 +38,7 @@ public class ImageElement extends BaseUpdateableElement {
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
 		tracker.makeFetcher(key, maxSize);
 		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
+		System.err.println("ImageElement creating finished in:" + (System.currentTimeMillis() - now) + " ms");
 	}
 
 	@Override
@@ -57,16 +66,36 @@ public class ImageElement extends BaseUpdateableElement {
 
 	@Override
 	public void updateState() {
+		System.err.println("Updating ImageElement for url:"+key);
 		children.clear();
-
-		FProxyFetchResult fr = tracker.getFetcher(key, maxSize).getResult();
+		FProxyFetchResult fr = null;
+		try {
+			fr = tracker.makeFetcher(key, maxSize).getResult();
+		} catch (FetchException fe) {
+			addChild("div", "error");
+			fe.printStackTrace();
+		}
 		if (fr == null) {
 			addChild("div", "No fetcher found");
 		} else {
 
-			int total = fr.requiredBlocks;
-			int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
-			addChild("div","Progress:"+fetchedPercent+"%");
+			if (fr.isFinished() && fr.hasData()) {
+				System.err.println("ImageElement is completed");
+				setContent(originalImg.toString());
+			} else if (fr.failed != null) {
+				System.err.println("ImageElement is errorous");
+				Map<String, String> attr = originalImg.getAttributesAsMap();
+				attr.put("src", "/static/error.png");
+				setContent(new ParsedTag(originalImg, attr).toString());
+				fr.failed.printStackTrace();
+			} else {
+				System.err.println("ImageElement is still in progress");
+				int total = fr.requiredBlocks;
+				int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
+				Map<String, String> attr = originalImg.getAttributesAsMap();
+				attr.put("src", "/static/50p.png");
+				setContent(new ParsedTag(originalImg, attr).toString());
+			}
 		}
 	}
 

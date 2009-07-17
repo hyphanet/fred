@@ -8,6 +8,7 @@ public class ReplacerUpdater implements IUpdater {
 
 	@Override
 	public void updated(String elementId, String content) {
+		FreenetJs.log("Replacing element id:"+elementId+" with content:"+content);
 		RootPanel.get(elementId).getElement().setInnerHTML(content);
 	}
 

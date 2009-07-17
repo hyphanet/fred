@@ -45,12 +45,14 @@ public class PushDataManager {
 	 *            - The id of the element that changed
 	 */
 	public synchronized void updateElement(String id) {
+		System.err.println("Element updated id:"+id);
 		boolean needsUpdate = false;
 		if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
 			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
 				UpdateEvent updateEvent = new UpdateEvent(reqId, id);
 				if (notificationList.contains(updateEvent) == false) {
 					notificationList.add(updateEvent);
+					System.err.println("Notification added");
 				}
 			}
 			needsUpdate = true;
