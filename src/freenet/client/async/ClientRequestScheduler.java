@@ -44,7 +44,7 @@ import freenet.support.io.NativeThread;
  */
 public class ClientRequestScheduler implements RequestScheduler {
 	
-	private final ClientRequestSchedulerCore schedCore;
+	private ClientRequestSchedulerCore schedCore;
 	final ClientRequestSchedulerNonPersistent schedTransient;
 	private final transient ClientRequestSelector selector;
 	
@@ -107,7 +107,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final Node node;
 	public final String name;
 	private final CooldownQueue transientCooldownQueue;
-	private final CooldownQueue persistentCooldownQueue;
+	private CooldownQueue persistentCooldownQueue;
 	final PrioritizedSerialExecutor databaseExecutor;
 	final DatastoreChecker datastoreChecker;
 	public final ClientContext clientContext;
@@ -121,9 +121,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, node.db, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, context);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs);
-		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
@@ -149,6 +147,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else
 			transientCooldownQueue = null;
 		jobRunner = clientContext.jobRunner;
+	}
+	
+	public void startCore(NodeClientCore core, ObjectContainer container) {
+		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
+		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	
 	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
@@ -625,7 +628,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
 		if(!isInsertScheduler) {
-			noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
+			if(persistentCooldownQueue != null)
+				noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
 			noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
 		}
 		// If anything has been re-added, the request starter will have been woken up.
