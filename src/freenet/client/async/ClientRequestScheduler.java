@@ -149,8 +149,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner = clientContext.jobRunner;
 	}
 	
-	public void startCore(NodeClientCore core, ObjectContainer container) {
-		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
+	public void startCore(NodeClientCore core, long nodeDBHandle, ObjectContainer container) {
+		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	

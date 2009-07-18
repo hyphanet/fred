@@ -157,7 +157,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private File persistentTempDir;
 	private boolean alwaysCommit;
 	
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, ObjectContainer container) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, long nodeDBHandle, ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
@@ -382,7 +382,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
+		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext, nodeDBHandle, container);
 		clientContext.init(requestStarters);
 		if(!killedDatabase) {
 			try {

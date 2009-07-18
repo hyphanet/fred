@@ -70,13 +70,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	 * @param executor 
 	 * @return
 	 */
-	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
-		final long nodeDBHandle = node.nodeDBHandle;
+	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, final long nodeDBHandle, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
 		if(selectorContainer == null) {
-			ClientRequestSchedulerCore core;
-			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
-			core.onStarted(selectorContainer, cooldownTime, sched, context);
-			return core;
+			return null;
 		}
 		ObjectSet<ClientRequestSchedulerCore> results = selectorContainer.query(new Predicate<ClientRequestSchedulerCore>() {
 			@Override
