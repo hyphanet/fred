@@ -27,10 +27,14 @@ public class MasterKeys {
 	// Currently we only encrypt the client cache
 	
 	final byte[] clientCacheMasterKey;
+	final byte[] databaseKey;
 	final long flags;
 	
-	public MasterKeys(byte[] clientCacheKey, long flags) {
+	final static long FLAG_ENCRYPT_DATABASE = 2;
+	
+	public MasterKeys(byte[] clientCacheKey, byte[] databaseKey, long flags) {
 		this.clientCacheMasterKey = clientCacheKey;
+		this.databaseKey = databaseKey;
 		this.flags = flags;
 	}
 
@@ -102,7 +106,10 @@ public class MasterKeys {
 				// In future the flags will tell us whether the database and the datastore are encrypted.
 				byte[] clientCacheKey = new byte[32];
 				dis.readFully(clientCacheKey);
-				MasterKeys ret = new MasterKeys(clientCacheKey, flags);
+				byte[] databaseKey = null;
+				databaseKey = new byte[32];
+				dis.readFully(databaseKey);
+				MasterKeys ret = new MasterKeys(clientCacheKey, databaseKey, flags);
 				clear(data);
 				clear(hash);
 				SHA256.returnMessageDigest(md);
@@ -123,6 +130,8 @@ public class MasterKeys {
 		// FIXME try{}, move declarations of sensitive data out, clear() in finally {}
 		byte[] clientCacheKey = new byte[32];
 		hardRandom.nextBytes(clientCacheKey);
+		byte[] databaseKey = new byte[32];
+		hardRandom.nextBytes(databaseKey);
 		byte[] iv = new byte[32];
 		hardRandom.nextBytes(iv);
 		byte[] salt = new byte[32];
@@ -130,13 +139,14 @@ public class MasterKeys {
 		FileOutputStream fos = new FileOutputStream(masterKeysFile);
 		long flags = 0;
 		byte[] flagBytes = Fields.longToBytes(flags);
-		byte[] data = new byte[flagBytes.length + clientCacheKey.length + HASH_LENGTH];
+		byte[] data = new byte[flagBytes.length + clientCacheKey.length + databaseKey.length + HASH_LENGTH];
 		System.arraycopy(flagBytes, 0, data, 0, flagBytes.length);
 		System.arraycopy(clientCacheKey, 0, data, flagBytes.length, clientCacheKey.length);
+		System.arraycopy(databaseKey, 0, data, flagBytes.length + clientCacheKey.length, databaseKey.length);
 		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, 0, flagBytes.length + clientCacheKey.length);
+		md.update(data, 0, flagBytes.length + clientCacheKey.length + databaseKey.length);
 		byte[] hash = md.digest();
-		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheKey.length, HASH_LENGTH);
+		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheKey.length + databaseKey.length, HASH_LENGTH);
 		
 //		System.err.println("Flag bytes: "+HexUtil.bytesToHex(flagBytes));
 //		System.err.println("Client cache key: "+HexUtil.bytesToHex(clientCacheKey));
@@ -165,7 +175,7 @@ public class MasterKeys {
 		fos.close();
 		clear(data);
 		clear(hash);
-		return new MasterKeys(clientCacheKey, flags);
+		return new MasterKeys(clientCacheKey, databaseKey, flags);
 	}
 
 	private static boolean arraysEqualTruncated(byte[] checkHash, byte[] hash, int length) {
@@ -185,7 +195,7 @@ public class MasterKeys {
 		System.err.println("Writing new master.keys file");
 		// Write it to a byte[], check size, then replace in-place atomically
 		
-		// New IV, new salt, same client cache key
+		// New IV, new salt, same client cache key, same database key
 		
 		byte[] iv = new byte[32];
 		hardRandom.nextBytes(iv);
@@ -194,17 +204,18 @@ public class MasterKeys {
 
 		byte[] flagBytes = Fields.longToBytes(flags);
 
-		byte[] data = new byte[iv.length + salt.length + flagBytes.length + clientCacheMasterKey.length + HASH_LENGTH];
+		byte[] data = new byte[iv.length + salt.length + flagBytes.length + clientCacheMasterKey.length + databaseKey.length + HASH_LENGTH];
 
 		System.arraycopy(salt, 0, data, 0, salt.length);
 		System.arraycopy(iv, 0, data, salt.length, iv.length);
 		
 		System.arraycopy(flagBytes, 0, data, salt.length + iv.length, flagBytes.length);
 		System.arraycopy(clientCacheMasterKey, 0, data, flagBytes.length + salt.length + iv.length, clientCacheMasterKey.length);
+		System.arraycopy(databaseKey, 0, data, flagBytes.length + salt.length + iv.length + clientCacheMasterKey.length, databaseKey.length);
 		MessageDigest md = SHA256.getMessageDigest();
-		md.update(data, salt.length + iv.length, flagBytes.length + clientCacheMasterKey.length);
+		md.update(data, salt.length + iv.length, flagBytes.length + clientCacheMasterKey.length + databaseKey.length);
 		byte[] hash = md.digest();
-		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheMasterKey.length + iv.length + salt.length, HASH_LENGTH);
+		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheMasterKey.length + databaseKey.length + iv.length + salt.length, HASH_LENGTH);
 		
 		byte[] pwd;
 		try {
