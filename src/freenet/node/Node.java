@@ -1171,6 +1171,15 @@ public class Node implements TimeSkewDetectorCallback {
 				db.rollback();
 				System.err.println("Closing database...");
 				db.close();
+				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+					try {
+						FileUtil.secureDelete(dbFileCrypt, random);
+					} catch (IOException e) {
+						// Ignore
+					} finally {
+						dbFileCrypt.delete();
+					}
+				}
 			}
 			
 		});
@@ -2468,7 +2477,8 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 	}
 
-	private void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+	public void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+		if(db != null) return;
 		System.out.println("Starting late database initialisation");
 		setupDatabase(databaseKey);
 		nodeDBHandle = darknetCrypto.getNodeHandle(db);
@@ -2561,12 +2571,18 @@ public class Node implements TimeSkewDetectorCallback {
 			if(dbFile.exists() || securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 			} else {
-				// Encrypted database
-				if(databaseKey == null) {
-					// Try with no password
-					MasterKeys keys = MasterKeys.read(masterKeysFile, random, "");
-					databaseKey = keys.databaseKey;
-					keys.clearAllNotDatabaseKey();
+				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+					databaseKey = new byte[32];
+					random.nextBytes(databaseKey);
+					FileUtil.secureDelete(dbFileCrypt, random);
+				} else {
+					// Encrypted database
+					if(databaseKey == null) {
+						// Try with no password
+						MasterKeys keys = MasterKeys.read(masterKeysFile, random, "");
+						databaseKey = keys.databaseKey;
+						keys.clearAllNotDatabaseKey();
+					}
 				}
 				IoAdapter baseAdapter = dbConfig.io();
 				if(Logger.shouldLog(Logger.DEBUG, this))

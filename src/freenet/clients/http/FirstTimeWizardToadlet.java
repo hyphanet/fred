@@ -634,6 +634,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
+			try {
+				core.node.lateSetupDatabase(null);
+			} catch (MasterKeysWrongPasswordException e) {
+				// Ignore, impossible???
+				System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : wrong password - this is impossible, it should have been handled by the other cases, suggest you remove master.keys");
+			} catch (MasterKeysFileTooBigException e) {
+				System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too big");
+			} catch (MasterKeysFileTooShortException e) {
+				System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too small");
+			}
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
 			return;
 		} else if(request.isPartSet("nnameF")) {
