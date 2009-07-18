@@ -662,24 +662,34 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	private void sendPersistenceDisabledError(ToadletContext ctx) {
-		try {
-			if(core.node.isStopping())
-				sendErrorPage(ctx, 200,
-						L10n.getString("QueueToadlet.shuttingDownTitle"),
-						L10n.getString("QueueToadlet.shuttingDown"));
-			else
-				sendErrorPage(ctx, 200, 
-						L10n.getString("QueueToadlet.persistenceBrokenTitle"),
-						L10n.getString("QueueToadlet.persistenceBroken",
-								new String[]{ "TEMPDIR", "DBFILE" },
-								new String[]{ FileUtil.getCanonicalFile(core.getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(core.node.getNodeDir())+File.separator+"node.db4o" }
-						));
-		} catch (ToadletContextClosedException e) {
-			// Ignore
-		} catch (IOException e) {
-			// Ignore
+	private void sendPersistenceDisabledError(ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		String title = l10n("awaitingPasswordTitle"+(uploads ? "Uploads" : "Downloads"));
+		if(core.node.awaitingPassword()) {
+			PageNode page = ctx.getPageMaker().getPageNode(title, ctx);
+			HTMLNode pageNode = page.outer;
+			HTMLNode contentNode = page.content;
+			
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", title, contentNode);
+			
+			SecurityLevelsToadlet.generatePasswordFormPage(false, container, infoboxContent, false, false, false, null, path());
+			
+			addHomepageLink(infoboxContent);
+			
+			writeHTMLReply(ctx, 500, "Internal Server Error", pageNode.generate());
+			return;
+
 		}
+		if(core.node.isStopping())
+			sendErrorPage(ctx, 200,
+					L10n.getString("QueueToadlet.shuttingDownTitle"),
+					L10n.getString("QueueToadlet.shuttingDown"));
+		else
+			sendErrorPage(ctx, 200, 
+					L10n.getString("QueueToadlet.persistenceBrokenTitle"),
+					L10n.getString("QueueToadlet.persistenceBroken",
+							new String[]{ "TEMPDIR", "DBFILE" },
+							new String[]{ FileUtil.getCanonicalFile(core.getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(core.node.getNodeDir())+File.separator+"node.db4o" }
+					));
 	}
 
 	private void writeError(String header, String message, ToadletContext context) throws ToadletContextClosedException, IOException {

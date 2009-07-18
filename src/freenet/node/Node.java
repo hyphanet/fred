@@ -2681,7 +2681,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		public HTMLNode getHTMLText() {
 			HTMLNode content = new HTMLNode("div");
-			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, false, false, null);
+			SecurityLevelsToadlet.generatePasswordFormPage(false, clientCore.getToadletContainer(), content, false, false, false, null, null);
 			return content;
 		}
 
@@ -5256,8 +5256,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public boolean awaitingPassword() {
 		if(clientCacheAwaitingPassword) return true;
-		
-		// TODO Auto-generated method stub
+		if(databaseAwaitingPassword) return true;
 		return false;
 	}
 }

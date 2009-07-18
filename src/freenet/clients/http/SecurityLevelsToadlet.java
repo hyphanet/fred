@@ -206,7 +206,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 										l10nSec("passwordWrongTitle"), contentNode).
 										addChild("div", "class", "infobox-content");
 								
-								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, false, true, newPhysicalLevel.name());
+								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, false, true, newPhysicalLevel.name(), null);
 								
 								addBackToSeclevelsLink(content);
 								
@@ -269,7 +269,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 										l10nSec("passwordWrongTitle"), contentNode).
 										addChild("div", "class", "infobox-content");
 									
-								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, true, false, newPhysicalLevel.name());
+								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, true, false, newPhysicalLevel.name(), null);
 								
 								addBackToSeclevelsLink(content);
 								
@@ -307,7 +307,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 								content.addChild("p", l10nSec("passwordNotZeroLength"));
 							}
 							
-							SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, false, true, false, newPhysicalLevel.name());
+							SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, false, true, false, newPhysicalLevel.name(), null);
 							
 							addBackToSeclevelsLink(content);
 							
@@ -376,6 +376,14 @@ public class SecurityLevelsToadlet extends Toadlet {
 					return;
 				}
 				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
+				if(request.isPartSet("redirect")) {
+					String to = request.getPartAsString("redirect", 100);
+					if(to.startsWith("/")) {
+						headers.put("Location", to);
+						ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+						return;
+					}
+				}
 				headers.put("Location", "/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
@@ -470,7 +478,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			content.addChild("p", l10nSec("passwordNotZeroLength"));
 		}
 		
-		SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, false, false, true, threatlevel);
+		SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, false, false, true, threatlevel, null);
 		
 		addBackToSeclevelsLink(content);
 		
@@ -674,14 +682,14 @@ public class SecurityLevelsToadlet extends Toadlet {
 				wasWrong ? l10nSec("passwordWrongTitle") : l10nSec("enterPasswordTitle"), contentNode).
 				addChild("div", "class", "infobox-content");
 		
-		generatePasswordFormPage(wasWrong, ctx.getContainer(), content, false, false, false, null);
+		generatePasswordFormPage(wasWrong, ctx.getContainer(), content, false, false, false, null, null);
 		
 		addHomepageLink(content);
 		
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
-	public static void generatePasswordFormPage(boolean wasWrong, ToadletContainer ctx, HTMLNode content, boolean forFirstTimeWizard, boolean forDowngrade, boolean forUpgrade, String physicalSecurityLevel) {
+	public static void generatePasswordFormPage(boolean wasWrong, ToadletContainer ctx, HTMLNode content, boolean forFirstTimeWizard, boolean forDowngrade, boolean forUpgrade, String physicalSecurityLevel, String redirect) {
 		if(forDowngrade) {
 			if(!wasWrong)
 				content.addChild("#", l10nSec("passwordForDecrypt"));
@@ -701,6 +709,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.physicalThreatLevel", physicalSecurityLevel });
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "true" });
 		}
+		if(redirect != null)
+			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "redirect", redirect });
 		form.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10nSec("passwordSubmit") });
 	}
 

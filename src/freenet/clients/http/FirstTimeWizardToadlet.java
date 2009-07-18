@@ -515,7 +515,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 								l10n("passwordWrongTitle"), contentNode).
 								addChild("div", "class", "infobox-content");
 						
-						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, true, newThreatLevel.name());
+						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, true, newThreatLevel.name(), null);
 						
 						addBackToPhysicalSeclevelsLink(content);
 						
@@ -542,7 +542,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						content.addChild("p", l10nSec("passwordNotZeroLength"));
 					}
 					
-					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, false, true, newThreatLevel.name());
+					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, false, true, newThreatLevel.name(), null);
 					
 					addBackToPhysicalSeclevelsLink(content);
 					
@@ -585,7 +585,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 								l10n("passwordWrongTitle"), contentNode).
 								addChild("div", "class", "infobox-content");
 						
-						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, false, newThreatLevel.name());
+						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, false, newThreatLevel.name(), null);
 						
 						addBackToPhysicalSeclevelsLink(content);
 						
@@ -614,7 +614,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						content.addChild("p", l10nSec("passwordNotZeroLength"));
 					}
 					
-					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, true, false, newThreatLevel.name());
+					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, true, false, newThreatLevel.name(), null);
 					
 					addBackToPhysicalSeclevelsLink(content);
 					
