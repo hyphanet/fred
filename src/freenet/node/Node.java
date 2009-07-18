@@ -494,11 +494,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
 	 * security reasons). */
-	public final ObjectContainer db;
+	public ObjectContainer db;
 	/** A fixed random number which identifies the top-level objects belonging to
 	 * this node, as opposed to any others that might be stored in the same database
 	 * (e.g. because of many-nodes-in-one-VM). */
-	public final long nodeDBHandle;
+	public long nodeDBHandle;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -1147,66 +1147,6 @@ public class Node implements TimeSkewDetectorCallback {
 		shutdownHook = new SemiOrderedShutdownHook();
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 		
-		/* FIXME: Backup the database! */
-		Configuration dbConfig = Db4o.newConfiguration();
-		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
-		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
-		 * This is unacceptable, hence btree freespace. */
-		dbConfig.freespace().useBTreeSystem();
-		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
-		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
-		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
-		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
-		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("priority").indexed(true);
-		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
-		dbConfig.objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
-		dbConfig.objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
-		dbConfig.objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
-		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
-		dbConfig.objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
-		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
-		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("index").indexed(true);
-		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("bucket").indexed(true);
-		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("factory").indexed(true);
-		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("isFree").indexed(true);
-		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
-		/*
-		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
-		 * internally through the TMap translator.
-		 */
-		// LAZY appears to cause ClassCastException's relating to db4o objects inside db4o code. :(
-		// Also it causes duplicates if we activate immediately.
-		// And the performance gain for e.g. RegisterMeRunner isn't that great.
-//		dbConfig.queries().evaluationMode(QueryEvaluationMode.LAZY);
-		dbConfig.messageLevel(1);
-		dbConfig.activationDepth(1);
-		/* TURN OFF SHUTDOWN HOOK.
-		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a
-		 * transaction hasn't commit()ed, it's not safe to commit it. For example,
-		 * a splitfile is started, gets half way through, then we shut down.
-		 * The shutdown hook commits the half-finished transaction. When we start
-		 * back up, we assume the whole transaction has been committed, and end
-		 * up only registering the proportion of segments for which a RegisterMe
-		 * has already been created. Yes, this has happened, yes, it sucks.
-		 * Add our own hook to rollback and close... */
-		dbConfig.automaticShutDown(false);
-		/* Block size 8 should have minimal impact since pointers are this
-		 * long, and allows databases of up to 16GB. 
-		 * FIXME make configurable by user. */
-		dbConfig.blockSize(8);
-		dbConfig.diagnostic().addListener(new DiagnosticListener() {
-			
-			public void onDiagnostic(Diagnostic arg0) {
-				if(arg0 instanceof ClassHasNoFields)
-					return; // Ignore
-				if(arg0 instanceof DiagnosticBase) {
-					DiagnosticBase d = (DiagnosticBase) arg0;
-					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
-				} else
-					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
-			}
-		});
-		
 		shutdownHook.addEarlyJob(new Thread() {
 			
 			@Override
@@ -1231,80 +1171,9 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		});
 		
-		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
-		System.err.println("Query activation depth: "+dbConfig.activationDepth());
-		ObjectContainer database;
 		dbFile = new File(nodeDir, "node.db4o");
-		try {
-			database = Db4o.openFile(dbConfig, dbFile.toString());
-			System.err.println("Opened database");
-		} catch (Db4oException e) {
-			database = null;
-			System.err.println("Failed to open database: "+e);
-			e.printStackTrace();
-		}
-		// DUMP DATABASE CONTENTS
-		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class) && database != null) {
-		try {
-		System.err.println("DUMPING DATABASE CONTENTS:");
-		ObjectSet<Object> contents = database.queryByExample(new Object());
-		Map<String,Integer> map = new HashMap<String, Integer>();
-		Iterator<Object> i = contents.iterator();
-		while(i.hasNext()) {
-			Object o = i.next();
-			String name = o.getClass().getName();
-			if((map.get(name)) != null) {
-				map.put(name, map.get(name)+1);
-			} else {
-				map.put(name, 1);
-			}
-			// Activated to depth 1
-			try {
-				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+database.ext().getID(o));
-			} catch (Throwable t) {
-				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
-			}
-			database.deactivate(o, 1);
-		}
-		int total = 0;
-		for(Map.Entry<String,Integer> entry : map.entrySet()) {
-			System.err.println(entry.getKey()+" : "+entry.getValue());
-			total += entry.getValue();
-		}
-		// Some structures e.g. collections are sensitive to the activation depth.
-		// If they are activated to depth 1, they are broken, and activating them to
-		// depth 2 does NOT un-break them! Hence we need to deactivate (above) and
-		// GC here...
-		System.gc();
-		System.runFinalization();
-		System.gc();
-		System.runFinalization();
-		System.err.println("END DATABASE DUMP: "+total+" objects");
-		} catch (Db4oException e) {
-			System.err.println("Unable to dump database contents. Treating as corrupt database.");
-			e.printStackTrace();
-			try {
-				database.rollback();
-			} catch (Throwable t) {} // ignore, closing
-			try {
-				database.close();
-			} catch (Throwable t) {} // ignore, closing
-			database = null;
-		} catch (IllegalArgumentException e) {
-			// Urrrrgh!
-			System.err.println("Unable to dump database contents. Treating as corrupt database.");
-			e.printStackTrace();
-			try {
-				database.rollback();
-			} catch (Throwable t) {} // ignore, closing
-			try {
-				database.close();
-			} catch (Throwable t) {} // ignore, closing
-			database = null;
-		}
-		}
-
-		db = database;
+		
+		setupDatabase();
 		
 		// Boot ID
 		bootID = random.nextLong();
@@ -2541,6 +2410,168 @@ public class Node implements TimeSkewDetectorCallback {
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
+
+	private void lateSetupDatabase() {
+		System.out.println("Starting late database initialisation");
+		setupDatabase();
+		nodeDBHandle = darknetCrypto.getNodeHandle(db);
+		
+		if(db != null) {
+			db.commit();
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
+		}
+		try {
+			if(!clientCore.lateInitDatabase(nodeDBHandle, db))
+				failLateInitDatabase();
+		} catch (NodeInitException e) {
+			failLateInitDatabase();
+		}
+	}
+	
+	private void failLateInitDatabase() {
+		System.err.println("Failed late initialisation of database, closing...");
+		db.close();
+		db = null;
+	}
+
+
+	private void setupDatabase() {
+		/* FIXME: Backup the database! */
+		Configuration dbConfig = Db4o.newConfiguration();
+		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
+		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
+		 * This is unacceptable, hence btree freespace. */
+		dbConfig.freespace().useBTreeSystem();
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
+		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
+		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("priority").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
+		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
+		dbConfig.objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
+		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("index").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("bucket").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("factory").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("isFree").indexed(true);
+		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
+		/*
+		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
+		 * internally through the TMap translator.
+		 */
+		// LAZY appears to cause ClassCastException's relating to db4o objects inside db4o code. :(
+		// Also it causes duplicates if we activate immediately.
+		// And the performance gain for e.g. RegisterMeRunner isn't that great.
+//		dbConfig.queries().evaluationMode(QueryEvaluationMode.LAZY);
+		dbConfig.messageLevel(1);
+		dbConfig.activationDepth(1);
+		/* TURN OFF SHUTDOWN HOOK.
+		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a
+		 * transaction hasn't commit()ed, it's not safe to commit it. For example,
+		 * a splitfile is started, gets half way through, then we shut down.
+		 * The shutdown hook commits the half-finished transaction. When we start
+		 * back up, we assume the whole transaction has been committed, and end
+		 * up only registering the proportion of segments for which a RegisterMe
+		 * has already been created. Yes, this has happened, yes, it sucks.
+		 * Add our own hook to rollback and close... */
+		dbConfig.automaticShutDown(false);
+		/* Block size 8 should have minimal impact since pointers are this
+		 * long, and allows databases of up to 16GB. 
+		 * FIXME make configurable by user. */
+		dbConfig.blockSize(8);
+		dbConfig.diagnostic().addListener(new DiagnosticListener() {
+			
+			public void onDiagnostic(Diagnostic arg0) {
+				if(arg0 instanceof ClassHasNoFields)
+					return; // Ignore
+				if(arg0 instanceof DiagnosticBase) {
+					DiagnosticBase d = (DiagnosticBase) arg0;
+					Logger.debug(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
+				} else
+					Logger.debug(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
+			}
+		});
+		
+		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
+		System.err.println("Query activation depth: "+dbConfig.activationDepth());
+		ObjectContainer database;
+		try {
+			database = Db4o.openFile(dbConfig, dbFile.toString());
+			System.err.println("Opened database");
+		} catch (Db4oException e) {
+			database = null;
+			System.err.println("Failed to open database: "+e);
+			e.printStackTrace();
+		}
+		// DUMP DATABASE CONTENTS
+		if(Logger.shouldLog(Logger.DEBUG, ClientRequestScheduler.class) && database != null) {
+		try {
+		System.err.println("DUMPING DATABASE CONTENTS:");
+		ObjectSet<Object> contents = database.queryByExample(new Object());
+		Map<String,Integer> map = new HashMap<String, Integer>();
+		Iterator<Object> i = contents.iterator();
+		while(i.hasNext()) {
+			Object o = i.next();
+			String name = o.getClass().getName();
+			if((map.get(name)) != null) {
+				map.put(name, map.get(name)+1);
+			} else {
+				map.put(name, 1);
+			}
+			// Activated to depth 1
+			try {
+				Logger.minor(this, "DATABASE: "+o.getClass()+":"+o+":"+database.ext().getID(o));
+			} catch (Throwable t) {
+				Logger.minor(this, "CAUGHT "+t+" FOR CLASS "+o.getClass());
+			}
+			database.deactivate(o, 1);
+		}
+		int total = 0;
+		for(Map.Entry<String,Integer> entry : map.entrySet()) {
+			System.err.println(entry.getKey()+" : "+entry.getValue());
+			total += entry.getValue();
+		}
+		// Some structures e.g. collections are sensitive to the activation depth.
+		// If they are activated to depth 1, they are broken, and activating them to
+		// depth 2 does NOT un-break them! Hence we need to deactivate (above) and
+		// GC here...
+		System.gc();
+		System.runFinalization();
+		System.gc();
+		System.runFinalization();
+		System.err.println("END DATABASE DUMP: "+total+" objects");
+		} catch (Db4oException e) {
+			System.err.println("Unable to dump database contents. Treating as corrupt database.");
+			e.printStackTrace();
+			try {
+				database.rollback();
+			} catch (Throwable t) {} // ignore, closing
+			try {
+				database.close();
+			} catch (Throwable t) {} // ignore, closing
+			database = null;
+		} catch (IllegalArgumentException e) {
+			// Urrrrgh!
+			System.err.println("Unable to dump database contents. Treating as corrupt database.");
+			e.printStackTrace();
+			try {
+				database.rollback();
+			} catch (Throwable t) {} // ignore, closing
+			try {
+				database.close();
+			} catch (Throwable t) {} // ignore, closing
+			database = null;
+		}
+		}
+
+		db = database;
+		
+	}
+
 
 	public void killMasterKeysFile() throws IOException {
 		MasterKeys.killMasterKeys(masterKeysFile, random);

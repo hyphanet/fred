@@ -121,7 +121,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs);
+		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, random);
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
@@ -184,7 +184,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void start(NodeClientCore core) {
-		schedCore.start(core);
+		if(schedCore != null)
+			schedCore.start(core);
 		queueFillRequestStarterQueue();
 	}
 	
@@ -829,7 +830,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void removePendingKeys(KeyListener getter, boolean complain) {
 		boolean found = schedTransient.removePendingKeys(getter);
-		found |= schedCore.removePendingKeys(getter);
+		if(schedCore != null)
+			found |= schedCore.removePendingKeys(getter);
 		if(complain && !found)
 			Logger.error(this, "Listener not found when removing: "+getter);
 	}
@@ -841,14 +843,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void removePendingKeys(HasKeyListener getter, boolean complain) {
 		boolean found = schedTransient.removePendingKeys(getter);
-		found |= schedCore.removePendingKeys(getter);
+		if(schedCore != null)
+			found |= schedCore.removePendingKeys(getter);
 		if(complain && !found)
 			Logger.error(this, "Listener not found when removing: "+getter);
 	}
 
 	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
 		schedTransient.reregisterAll(request, random, this, null, clientContext);
-		schedCore.reregisterAll(request, random, this, container, clientContext);
+		if(schedCore != null)
+			schedCore.reregisterAll(request, random, this, container, clientContext);
 		starter.wakeUp();
 	}
 	
@@ -892,6 +896,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		final Key key = block.getKey();
 		schedTransient.tripPendingKey(key, block, null, clientContext);
+		if(schedCore == null) return;
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {
 			try {
 				jobRunner.queue(new DBJob() {
@@ -1006,7 +1011,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			SendableGet[] reqs = container == null ? null : schedCore.requestsForKey(key, container, clientContext);
+			SendableGet[] reqs = container == null ? null : (schedCore == null ? null : schedCore.requestsForKey(key, container, clientContext));
 			SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
 			if(reqs == null && transientReqs == null) {
 				// Not an error as this can happen due to race conditions etc.
@@ -1123,10 +1128,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public long countPersistentWaitingKeys(ObjectContainer container) {
+		if(schedCore == null) return 0;
 		return schedCore.countWaitingKeys(container);
 	}
 	
 	public long countPersistentQueuedRequests(ObjectContainer container) {
+		if(schedCore == null) return 0;
 		return schedCore.countQueuedRequests(container, clientContext);
 	}
 
@@ -1145,15 +1152,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, null);
 	}
 
-	public byte[] saltKey(Key key) {
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(key.getRoutingKey());
-		md.update(schedCore.globalSalt);
-		byte[] ret = md.digest();
-		SHA256.returnMessageDigest(md);
-		return ret;
-	}
-
 	void addPersistentPendingKeys(KeyListener listener) {
 		schedCore.addPendingKeys(listener);
 	}
@@ -1169,6 +1167,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public boolean cacheInserts() {
 		return this.node.clientCore.cacheInserts();
+	}
+
+	public byte[] saltKey(boolean persistent, Key key) {
+		return persistent ? schedCore.saltKey(key) : schedTransient.saltKey(key);
 	}
 	
 }

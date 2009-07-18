@@ -92,8 +92,11 @@ public class USKManager implements RequestClient {
 		executor = core.getExecutor();
 	}
 
-	public void init(ObjectContainer container, ClientContext context) {
+	public void init(ClientContext context) {
 		this.context = context;
+	}
+
+	public void init(ObjectContainer container) {
 		if(container != null)
 			USKManagerPersistent.init(this, container, context);
 	}

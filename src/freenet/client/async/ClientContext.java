@@ -31,7 +31,7 @@ import freenet.support.io.PersistentTempBucketFactory;
  */
 public class ClientContext {
 	
-	public transient final FECQueue fecQueue;
+	public transient FECQueue fecQueue;
 	private transient ClientRequestScheduler sskFetchScheduler;
 	private transient ClientRequestScheduler chkFetchScheduler;
 	private transient ClientRequestScheduler sskInsertScheduler;
@@ -42,7 +42,7 @@ public class ClientContext {
 	public transient final BackgroundBlockEncoder backgroundBlockEncoder;
 	public transient final RandomSource random;
 	public transient final ArchiveManager archiveManager;
-	public transient final PersistentTempBucketFactory persistentBucketFactory;
+	public transient PersistentTempBucketFactory persistentBucketFactory;
 	public transient final BucketFactory tempBucketFactory;
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
@@ -50,7 +50,7 @@ public class ClientContext {
 	public transient final long bootID;
 	public transient final Ticker ticker;
 	public transient final FilenameGenerator fg;
-	public transient final FilenameGenerator persistentFG;
+	public transient FilenameGenerator persistentFG;
 	public transient final RealCompressor rc;
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
@@ -201,6 +201,15 @@ public class ClientContext {
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing ClientContext in database", new Exception("error"));
 		return false;
+	}
+
+	public void setFECQueue(FECQueue fecQueue2) {
+		this.fecQueue = fecQueue2;
+	}
+
+	public void setPersistentBucketFactory(PersistentTempBucketFactory persistentTempBucketFactory, FilenameGenerator persistentFilenameGenerator) {
+		this.persistentBucketFactory = persistentTempBucketFactory;
+		this.persistentFG = persistentFilenameGenerator;
 	}
 	
 }

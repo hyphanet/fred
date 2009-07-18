@@ -59,8 +59,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		});
 	}
 	
-	public final byte[] globalSalt;
-	
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
 	 * @param node
@@ -101,17 +99,18 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	}
 
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
-		super(forInserts, forSSKs);
+		super(forInserts, forSSKs, node.random);
 		this.nodeDBHandle = node.nodeDBHandle;
 		if(!forInserts) {
 			this.persistentCooldownQueue = new PersistentCooldownQueue();
 		} else {
 			this.persistentCooldownQueue = null;
 		}
-		globalSalt = new byte[32];
-		node.random.nextBytes(globalSalt);
+		this.globalSalt = null;
 	}
 
+	private final byte[] globalSalt;
+	
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		super.onStarted();
 		System.err.println("insert scheduler: "+isInsertScheduler);
@@ -120,6 +119,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		}
 		this.sched = sched;
 		this.initTime = System.currentTimeMillis();
+		hintGlobalSalt(globalSalt);
 		// We DO NOT want to rerun the query after consuming the initial set...
 		if(isInsertScheduler) {
 		preRegisterMeRunner = new DBJob() {
