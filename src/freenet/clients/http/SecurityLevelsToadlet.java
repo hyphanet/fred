@@ -468,7 +468,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	private static void addBackToSeclevelsLink(HTMLNode content) {
-		content.addChild("a", "href", PATH, l10nSec("backToSecurityLevels"));
+		content.addChild("p").addChild("a", "href", PATH, l10nSec("backToSecurityLevels"));
 	}
 
 	@Override
@@ -639,7 +639,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
 				l10nSec("passwordFileCorruptedTitle"), contentNode).
 				addChild("div", "class", "infobox-content");
-		content.addChild(l10nSec("passwordFileCorrupted", "file", masterPasswordFile));
+		content.addChild("p", l10nSec("passwordFileCorrupted", "file", masterPasswordFile));
 		
 		addHomepageLink(content);
 		
