@@ -500,7 +500,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if(pass != null && pass.length() > 0) {
 					try {
 						if(oldThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldThreatLevel == PHYSICAL_THREAT_LEVEL.LOW)
-							core.node.changeMasterPassword("", pass);
+							core.node.changeMasterPassword("", pass, true);
 						else
 							core.node.setMasterPassword(pass, true);
 					} catch (AlreadySetPasswordException e) {
@@ -557,7 +557,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if(pass != null && pass.length() > 0) {
 					// This is actually the OLD password ...
 					try {
-						core.node.changeMasterPassword(pass, "");
+						core.node.changeMasterPassword(pass, "", true);
 					} catch (IOException e) {
 						if(!core.node.getMasterPasswordFile().exists()) {
 							// Ok.
@@ -597,6 +597,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					} catch (MasterKeysFileTooShortException e) {
 						sendPasswordFileCorruptedPage(false, ctx, false, true);
 						return;
+					} catch (AlreadySetPasswordException e) {
+						System.err.println("Already set a password when changing it - maybe master.keys copied in at the wrong moment???");
 					}
 				} else if(core.node.getMasterPasswordFile().exists()) {
 					// We need the old password

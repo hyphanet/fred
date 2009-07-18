@@ -645,6 +645,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return startupToadlet;
 	}
 	
+	public boolean fproxyHasCompletedWizard() {
+		return fproxyHasCompletedWizard;
+	}
+	
 	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {
 		String path = uri.getPath();
 

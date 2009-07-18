@@ -201,6 +201,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 				blocksByRoutingKey.push(key, addFirst);
 			}
 			while(true) {
+				if(blocksByRoutingKey.isEmpty()) break;
 				DiskBlock block = blocksByRoutingKey.peekValue();
 				if(now - block.lastAccessed < maxLifetime && blocksByRoutingKey.size() < maxKeys) break;
 				if(blocks == null) blocks = new ArrayList<DiskBlock>();

@@ -331,15 +331,19 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					if(tempBucketFactory.isEncrypting()) {
 						tempBucketFactory.setEncryption(false);
 					}
+					if(persistentTempBucketFactory != null) {
 					if(persistentTempBucketFactory.isEncrypting()) {
 						persistentTempBucketFactory.setEncryption(false);
+					}
 					}
 				} else { // newLevel >= PHYSICAL_THREAT_LEVEL.NORMAL
 					if(!tempBucketFactory.isEncrypting()) {
 						tempBucketFactory.setEncryption(true);
 					}
+					if(persistentTempBucketFactory != null) {
 					if(!persistentTempBucketFactory.isEncrypting()) {
 						persistentTempBucketFactory.setEncryption(true);
+					}
 					}
 				}
 			}
@@ -481,6 +485,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				synchronized(NodeClientCore.this) {
 					if(!killedDatabase) return false;
 				}
+				if(NodeClientCore.this.node.awaitingPassword()) return false;
 				if(NodeClientCore.this.node.isStopping()) return false;
 				return true;
 			}

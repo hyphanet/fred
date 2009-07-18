@@ -155,7 +155,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 					String oldPassword = request.getPartAsString("oldPassword", MAX_PASSWORD_LENGTH);
 					if(password != null && oldPassword != null && password.length() > 0 && oldPassword.length() > 0) {
 						try {
-							core.node.changeMasterPassword(oldPassword, password);
+							core.node.changeMasterPassword(oldPassword, password, false);
 						} catch (MasterKeysWrongPasswordException e) {
 							sendChangePasswordForm(ctx, true, false, newPhysicalLevel.name());
 							return;
@@ -166,6 +166,11 @@ public class SecurityLevelsToadlet extends Toadlet {
 							return;
 						} catch (MasterKeysFileTooShortException e) {
 							sendPasswordFileCorruptedPage(false, ctx, false, true);
+							if(changedAnything)
+								core.storeConfig();
+							return;
+						} catch (AlreadySetPasswordException e) {
+							sendChangePasswordForm(ctx, false, true, newPhysicalLevel.name());
 							if(changedAnything)
 								core.storeConfig();
 							return;
@@ -185,9 +190,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 						if(password != null && password.length() > 0) {
 							try {
 								if(oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldPhysicalLevel == PHYSICAL_THREAT_LEVEL.LOW)
-									core.node.changeMasterPassword("", password);
+									core.node.changeMasterPassword("", password, false);
 								else
-									core.node.setMasterPassword(password, true);
+									core.node.setMasterPassword(password, false);
 							} catch (AlreadySetPasswordException e) {
 								sendChangePasswordForm(ctx, false, false, newPhysicalLevel.name());
 								return;
@@ -234,7 +239,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 						if(password != null && password.length() > 0) {
 							// This is actually the OLD password ...
 							try {
-								core.node.changeMasterPassword(password, "");
+								core.node.changeMasterPassword(password, "", false);
 							} catch (IOException e) {
 								if(!core.node.getMasterPasswordFile().exists()) {
 									// Ok.
@@ -279,6 +284,11 @@ public class SecurityLevelsToadlet extends Toadlet {
 								return;
 							} catch (MasterKeysFileTooShortException e) {
 								sendPasswordFileCorruptedPage(false, ctx, false, true);
+								if(changedAnything)
+									core.storeConfig();
+								return;
+							} catch (AlreadySetPasswordException e) {
+								sendChangePasswordForm(ctx, false, true, newPhysicalLevel.name());
 								if(changedAnything)
 									core.storeConfig();
 								return;

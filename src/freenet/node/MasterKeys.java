@@ -253,12 +253,25 @@ public class MasterKeys {
 		raf.close();
 	}
 
-	public void clearAllNotClientCacheKey() {
-		// So far nothing to do
-	}
-
 	public static void killMasterKeys(File masterKeysFile, RandomSource random) throws IOException {
 		FileUtil.secureDelete(masterKeysFile, random);
+	}
+
+	public void clearAllNotClientCacheKey() {
+		clear(databaseKey);
+	}
+
+	public void clearAllNotDatabaseKey() {
+		clear(clientCacheMasterKey);
+	}
+
+	public void clearAll() {
+		clear(clientCacheMasterKey);
+		clear(databaseKey);
+	}
+
+	public void clearAllNotClientCacheKeyOrDatabaseKey() {
+		// Do nothing. For now.
 	}
 
 }

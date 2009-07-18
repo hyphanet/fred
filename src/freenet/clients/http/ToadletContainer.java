@@ -78,5 +78,7 @@ public interface ToadletContainer {
 	public boolean isAdvancedModeEnabled();
 	
 	public void setAdvancedMode(boolean enabled);
+	
+	public boolean fproxyHasCompletedWizard();
 
 }

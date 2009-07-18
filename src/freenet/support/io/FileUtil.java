@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.util.Random;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.crypt.RandomSource;
@@ -345,7 +346,7 @@ final public class FileUtil {
 		return true;
 	}
 
-	public static void secureDelete(File file, RandomSource random) throws IOException {
+	public static void secureDelete(File file, Random random) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
 		if(!file.exists()) return;
 		long size = file.length();

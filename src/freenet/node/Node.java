@@ -35,6 +35,7 @@ import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
 import com.db4o.diagnostic.DiagnosticListener;
 import com.db4o.ext.Db4oException;
+import com.db4o.io.IoAdapter;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -54,6 +55,7 @@ import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
+import freenet.crypt.EncryptingIoAdapter;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
@@ -490,6 +492,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	private final File dbFile;
+	private final File dbFileCrypt;
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
@@ -609,6 +612,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private String clientCacheType;
 	/** Client cache could not be opened so is a RAMFS until the correct password is entered */
 	private boolean clientCacheAwaitingPassword;
+	private boolean databaseAwaitingPassword;
 	/** Client cache maximum cached keys for each type */
 	long maxClientCacheKeys;
 	/** Maximum size of the client cache. Kept to avoid rounding problems. */
@@ -1172,8 +1176,26 @@ public class Node implements TimeSkewDetectorCallback {
 		});
 		
 		dbFile = new File(nodeDir, "node.db4o");
+		dbFileCrypt = new File(nodeDir, "node.db4o.crypt");
 		
-		setupDatabase();
+		boolean dontCreate = (!dbFile.exists()) && (!dbFileCrypt.exists()) && (!toadlets.fproxyHasCompletedWizard());
+		
+		if(!dontCreate) {
+			try {
+				setupDatabase(null);
+			} catch (MasterKeysWrongPasswordException e2) {
+				System.out.println("Client database node.db4o is encrypted!");
+				databaseAwaitingPassword = true;
+			} catch (MasterKeysFileTooBigException e2) {
+				System.err.println("Unable to decrypt database: master.keys file too big!");
+			} catch (MasterKeysFileTooShortException e2) {
+				System.err.println("Unable to decrypt database: master.keys file too small!");
+			} catch (IOException e2) {
+				System.err.println("Unable to access master.keys file to decrypt database: "+e2);
+				e2.printStackTrace();
+			}
+		} else
+			System.out.println("Not creating node.db4o for now, waiting for config as to security level...");
 		
 		// Boot ID
 		bootID = random.nextLong();
@@ -2051,7 +2073,11 @@ public class Node implements TimeSkewDetectorCallback {
 					} catch (InvalidConfigValueException e) {
 						// Ignore
 					}
-					if(newLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM)
+					if(newLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+						synchronized(this) {
+							clientCacheAwaitingPassword = false;
+							databaseAwaitingPassword = false;
+						}
 						try {
 							killMasterKeysFile();
 						} catch (IOException e) {
@@ -2060,6 +2086,7 @@ public class Node implements TimeSkewDetectorCallback {
 							System.err.println(L10n.getString("SecurityLevels.cantDeletePasswordFile", "filename", masterKeysFile.getAbsolutePath()));
 							clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("SecurityLevels.cantDeletePasswordFileTitle"), L10n.getString("SecurityLevels.cantDeletePasswordFile"), L10n.getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
 						}
+					}
 				}
 				
 			});
@@ -2117,6 +2144,8 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 
+		if(databaseAwaitingPassword) createPasswordUserAlert();
+		
 		netid = new NetworkIDManager(this);
 		
 		if (storeType.equals("salt-hash")) {
@@ -2177,11 +2206,15 @@ public class Node implements TimeSkewDetectorCallback {
 
 		boolean startedClientCache = false;
 		
+		boolean shouldWriteConfig = false;
+		
+		byte[] databaseKey = null;
+		MasterKeys keys = null;
+		
 		for(int i=0;i<2 && !startedClientCache; i++) {
 		if (clientCacheType.equals("salt-hash")) {
 			
 			byte[] clientCacheKey = null;
-			MasterKeys keys;
 			try {
 				if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 					clientCacheKey = new byte[32];
@@ -2189,10 +2222,13 @@ public class Node implements TimeSkewDetectorCallback {
 				} else {
 					keys = MasterKeys.read(masterKeysFile, random, "");
 					clientCacheKey = keys.clientCacheMasterKey;
-					keys.clearAllNotClientCacheKey();
 					if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.HIGH) {
 						System.err.println("Physical threat level is set to HIGH but no password, resetting to NORMAL - probably timing glitch");
 						securityLevels.resetPhysicalThreatLevel(PHYSICAL_THREAT_LEVEL.NORMAL);
+						databaseKey = keys.databaseKey;
+						shouldWriteConfig = true;
+					} else {
+						keys.clearAllNotClientCacheKey();
 					}
 				}
 				initSaltHashClientCacheFS(suffix, false, clientCacheKey);
@@ -2224,6 +2260,25 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(!startedClientCache)
 			initRAMClientCacheFS();
+		
+		if(databaseKey != null)  {
+			try {
+				lateSetupDatabase(databaseKey);
+			} catch (MasterKeysWrongPasswordException e2) {
+				System.err.println("Impossible: "+e2);
+				e2.printStackTrace();
+			} catch (MasterKeysFileTooBigException e2) {
+				System.err.println("Impossible: "+e2);
+				e2.printStackTrace();
+			} catch (MasterKeysFileTooShortException e2) {
+				System.err.println("Impossible: "+e2);
+				e2.printStackTrace();
+			} catch (IOException e2) {
+				System.err.println("Unable to load database: "+e2);
+				e2.printStackTrace();
+			}
+			keys.clearAll();
+		}
 		
 		nodeConfig.register("useSlashdotCache", true, sortOrder++, true, false, "Node.useSlashdotCache", "Node.useSlashdotCacheLong", new BooleanCallback() {
 
@@ -2356,6 +2411,8 @@ public class Node implements TimeSkewDetectorCallback {
 		securityLevels.registerUserAlert(clientCore.alerts);
 		
 		nodeConfig.finishedInitialization();
+		if(shouldWriteConfig)
+			config.store();
 		writeNodeFile();
 		
 		// Initialize the plugin manager
@@ -2411,9 +2468,9 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 	}
 
-	private void lateSetupDatabase() {
+	private void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
 		System.out.println("Starting late database initialisation");
-		setupDatabase();
+		setupDatabase(databaseKey);
 		nodeDBHandle = darknetCrypto.getNodeHandle(db);
 		
 		if(db != null) {
@@ -2435,7 +2492,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private void setupDatabase() {
+	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
 		/* FIXME: Backup the database! */
 		Configuration dbConfig = Db4o.newConfiguration();
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
@@ -2499,8 +2556,25 @@ public class Node implements TimeSkewDetectorCallback {
 		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
 		System.err.println("Query activation depth: "+dbConfig.activationDepth());
 		ObjectContainer database;
+		
 		try {
-			database = Db4o.openFile(dbConfig, dbFile.toString());
+			if(dbFile.exists() || securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+				database = Db4o.openFile(dbConfig, dbFile.toString());
+			} else {
+				// Encrypted database
+				if(databaseKey == null) {
+					// Try with no password
+					MasterKeys keys = MasterKeys.read(masterKeysFile, random, "");
+					databaseKey = keys.databaseKey;
+					keys.clearAllNotDatabaseKey();
+				}
+				IoAdapter baseAdapter = dbConfig.io();
+				dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+				database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
+				synchronized(this) {
+					databaseAwaitingPassword = false;
+				}
+			}
 			System.err.println("Opened database");
 		} catch (Db4oException e) {
 			database = null;
@@ -2637,7 +2711,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 		public boolean isValid() {
 			synchronized(Node.this) {
-				return clientCacheAwaitingPassword;
+				return clientCacheAwaitingPassword || databaseAwaitingPassword;
 			}
 		}
 
@@ -5076,36 +5150,44 @@ public class Node implements TimeSkewDetectorCallback {
 		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			Logger.error(this, "Setting password while physical threat level is at MAXIMUM???");
 		MasterKeys keys = MasterKeys.read(masterKeysFile, random, password);
-		boolean noClear = false;
 		try {
-			synchronized(this) {
-				enteredPassword = true;
-				if(!clientCacheAwaitingPassword) {
-					if(inFirstTimeWizard) {
-						cachedClientCacheKey = keys.clientCacheMasterKey;
-						noClear = true;
-						// Wipe it if haven't specified datastore size in 10 minutes.
-						ps.queueTimedJob(new Runnable() {
-
-							public void run() {
-								synchronized(Node.this) {
-									MasterKeys.clear(cachedClientCacheKey);
-									cachedClientCacheKey = null;
-								}
-							}
-							
-						}, 10*60*1000);
-					}
-					return;
-				}
-			}
-			activatePasswordedClientCache(keys);
+			setPasswordInner(keys, inFirstTimeWizard);
 		} finally {
-			if(!noClear) keys.clearClientCacheKeys();
+			keys.clearAll();
 		}
-		
 	}
 	
+	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+		boolean wantClientCache = false;
+		boolean wantDatabase = false;
+		synchronized(this) {
+			enteredPassword = true;
+			if(!clientCacheAwaitingPassword) {
+				if(inFirstTimeWizard) {
+					byte[] copied = new byte[keys.clientCacheMasterKey.length];
+					System.arraycopy(keys.clientCacheMasterKey, 0, copied, 0, copied.length);
+					cachedClientCacheKey = copied;
+					// Wipe it if haven't specified datastore size in 10 minutes.
+					ps.queueTimedJob(new Runnable() {
+						public void run() {
+							synchronized(Node.this) {
+								MasterKeys.clear(cachedClientCacheKey);
+								cachedClientCacheKey = null;
+							}
+						}
+						
+					}, 10*60*1000);
+				}
+			} else wantClientCache = true;
+			wantDatabase = db == null;
+		}
+		if(wantClientCache)
+			activatePasswordedClientCache(keys);
+		if(wantDatabase)
+			lateSetupDatabase(keys.databaseKey);
+	}
+
+
 	private void activatePasswordedClientCache(MasterKeys keys) {
 		synchronized(this) {
 			if(clientCacheType.equals("ram")) {
@@ -5132,15 +5214,20 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCacheAwaitingPassword = false;
 		}
 		
-		finishInitSaltHashFS(suffix, clientCore);
 		executor.execute(migrate, "Migrate data from previous store");
 	}
 
-	public void changeMasterPassword(String oldPassword, String newPassword) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+	public void changeMasterPassword(String oldPassword, String newPassword, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException, AlreadySetPasswordException {
 		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
-		MasterKeys keys = MasterKeys.read(masterKeysFile, random, oldPassword);
-		keys.changePassword(masterKeysFile, newPassword, random);
+		if(masterKeysFile.exists()) {
+			MasterKeys keys = MasterKeys.read(masterKeysFile, random, oldPassword);
+			keys.changePassword(masterKeysFile, newPassword, random);
+			setPasswordInner(keys, inFirstTimeWizard);
+			keys.clearAll();
+		} else {
+			setMasterPassword(newPassword, inFirstTimeWizard);
+		}
 	}
 	
 	public class AlreadySetPasswordException extends Exception {
@@ -5164,5 +5251,13 @@ public class Node implements TimeSkewDetectorCallback {
 	public void finishPanic() {
 		WrapperManager.restart();
 		System.exit(0);
+	}
+
+
+	public boolean awaitingPassword() {
+		if(clientCacheAwaitingPassword) return true;
+		
+		// TODO Auto-generated method stub
+		return false;
 	}
 }
