@@ -26,6 +26,7 @@ public class PushNotificationToadlet extends Toadlet {
 			String elementRequestId = event.getRequestId();
 			String elementId = event.getElementId();
 			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(elementRequestId.getBytes()) + SEPARATOR + elementId);
+			System.err.println("Notification got:"+event);
 		} else {
 			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.FAILURE);
 		}

@@ -1,14 +1,11 @@
 package freenet.client;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.dom.client.Document;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.user.client.Window.ClosingHandler;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.SimplePanel;
 
 import freenet.client.connection.IConnectionManager;
 import freenet.client.connection.KeepaliveManager;
@@ -23,7 +20,7 @@ import freenet.client.update.DefaultUpdateManager;
  */
 public class FreenetJs implements EntryPoint {
 
-	public static boolean				isDebug	= false;
+	public static boolean				isDebug	= true;
 
 	public static String				requestId;
 
@@ -50,15 +47,20 @@ public class FreenetJs implements EntryPoint {
 
 	public static final void log(String msg) {
 		if (isDebug) {
-			// nativeLog(msg);
-			Panel logPanel = RootPanel.get("log");
+			try{
+			FreenetRequest.sendRequest("/logwriteback/", new QueryParameter("msg",URL.encode(msg)));
+			}catch(Exception e){
+				
+			}
+			//nativeLog(msg);
+			/*Panel logPanel = RootPanel.get("log");
 			if (logPanel == null) {
 				logPanel = new SimplePanel();
 				logPanel.getElement().setId("log");
 				logPanel.getElement().setAttribute("style", "display:none;");
 				Document.get().getElementsByTagName("body").getItem(0).appendChild(logPanel.getElement());
 			}
-			logPanel.add(new Label("{" + System.currentTimeMillis() + "}" + msg));
+			logPanel.add(new Label("{" + System.currentTimeMillis() + "}" + msg));*/
 		}
 	}
 

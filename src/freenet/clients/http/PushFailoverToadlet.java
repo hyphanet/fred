@@ -19,6 +19,7 @@ public class PushFailoverToadlet extends Toadlet {
 		String requestId = req.getParam("requestId");
 		String originalRequestId = req.getParam("originalRequestId");
 		boolean result = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.failover(originalRequestId, requestId);
+		System.err.println("Failover from:"+originalRequestId+" to:"+requestId+" with result:"+result);
 		writeHTMLReply(ctx, 200, "OK", result ? UpdaterConstants.SUCCESS : UpdaterConstants.FAILURE);
 	}
 

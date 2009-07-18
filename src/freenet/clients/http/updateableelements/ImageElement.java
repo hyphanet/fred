@@ -1,6 +1,7 @@
 package freenet.clients.http.updateableelements;
 
 import java.util.Map;
+import java.util.Random;
 
 import freenet.client.FetchException;
 import freenet.clients.http.FProxyFetchInProgress;
@@ -24,6 +25,8 @@ public class ImageElement extends BaseUpdateableElement {
 	private NotifierFetchListener	fetchListener;
 
 	private ParsedTag				originalImg;
+	
+	private int randomNumber=new Random().nextInt();
 
 	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg) throws FetchException {
 		super("span", ctx);
@@ -52,11 +55,11 @@ public class ImageElement extends BaseUpdateableElement {
 
 	@Override
 	public String getUpdaterId(String requestId) {
-		return getId(key);
+		return getId(key,randomNumber);
 	}
 
-	public static String getId(FreenetURI uri) {
-		return Base64.encodeStandard(("image[URI:" + uri.toString() + "]").getBytes());
+	public static String getId(FreenetURI uri,int randomNumber) {
+		return Base64.encodeStandard(("image[URI:" + uri.toString() + ",random:"+randomNumber+"]").getBytes());
 	}
 
 	@Override
@@ -93,7 +96,7 @@ public class ImageElement extends BaseUpdateableElement {
 				int total = fr.requiredBlocks;
 				int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
 				Map<String, String> attr = originalImg.getAttributesAsMap();
-				attr.put("src", "/static/50p.png");
+				attr.put("src", "/imagecreator/?text="+fetchedPercent+"%25");
 				setContent(new ParsedTag(originalImg, attr).toString());
 			}
 		}

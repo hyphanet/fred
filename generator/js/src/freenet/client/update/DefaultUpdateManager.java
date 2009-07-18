@@ -47,12 +47,14 @@ public class DefaultUpdateManager implements IUpdateManager {
 
 		@Override
 		public void onResponseReceived(Request request, Response response) {
+			FreenetJs.log("Data received");
 			if (response.getText().startsWith("SUCCESS") == false) {
 				FreenetJs.log("ERROR! BAD DATA");
 				FreenetJs.stop();
 			} else {
 				String updaterType = Base64.decode(response.getText().split("[:]")[1]);
 				String newContent = Base64.decode(response.getText().split("[:]")[2]);
+				FreenetJs.log("Element will be updated with type:"+updaterType+" and content:"+newContent);
 				updaters.get(updaterType).updated(elementId, newContent);
 			}
 		}

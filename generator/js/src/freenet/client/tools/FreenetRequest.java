@@ -27,7 +27,7 @@ public class FreenetRequest {
 	}
 
 	public static Request sendRequest(String path, QueryParameter[] parameters, RequestCallback callback) {
-		FreenetJs.log("AJAX:path="+path+" queryParams:"+Arrays.asList(parameters));
+		//FreenetJs.log("AJAX:path="+path+" queryParams:"+Arrays.asList(parameters));
 		if (parameters == null) {
 			parameters = new QueryParameter[1];
 		}

@@ -52,6 +52,9 @@ public class PushDataManager {
 				UpdateEvent updateEvent = new UpdateEvent(reqId, id);
 				if (notificationList.contains(updateEvent) == false) {
 					notificationList.add(updateEvent);
+					if(id.compareTo(TesterElement.getId(reqId, ""+0))==0){
+						System.err.println("First element notif added to:"+reqId);
+					}
 					System.err.println("Notification added");
 				}
 			}
@@ -84,7 +87,9 @@ public class PushDataManager {
 		// The request needs to be tracked
 		isKeepaliveReceived.put(requestUniqueId, true);
 		
-		awaitingNotifications.put(requestUniqueId, new ArrayList<UpdateEvent>());
+		if(awaitingNotifications.containsKey(requestUniqueId)==false){
+			awaitingNotifications.put(requestUniqueId, new ArrayList<UpdateEvent>());
+		}
 		// If the Cleaner isn't running, then we schedule it to clear this request if failing
 		if (isScheduled == false) {
 			System.err.println("Cleaner is queued(1) time:" + System.currentTimeMillis());
@@ -184,6 +189,9 @@ public class PushDataManager {
 			return null;
 		}
 		System.err.println("Getting notification, notification:"+awaitingNotifications.get(requestId).get(0)+",remaining:"+(awaitingNotifications.get(requestId).size()-1));
+		if(awaitingNotifications.get(requestId).get(0).elementId.compareTo(TesterElement.getId(requestId, ""+0))==0){
+			System.err.println("First element notif dispatched to:"+requestId);
+		}
 		return awaitingNotifications.get(requestId).remove(0);
 	}
 
@@ -200,6 +208,7 @@ public class PushDataManager {
 	 * @return Was a request deleted?
 	 */
 	private boolean deleteRequest(String requestId) {
+		System.err.println("DeleteRequest with requestId:"+requestId);
 		if (isKeepaliveReceived.containsKey(requestId) == false) {
 			return false;
 		}

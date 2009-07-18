@@ -344,14 +344,6 @@ public class RequestElement extends BaseUpdateableElement {
 		}
 		return progressCell;
 	}
-	
-	private HTMLNode createRecommendCell(PageMaker pageMaker, FreenetURI URI, ToadletContext ctx) {
-		HTMLNode recommendNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode shareForm = ctx.addFormChild(recommendNode, path, "recommendForm");
-		shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
-		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", L10n.getString("QueueToadlet.recommendToFriends") });
-		return recommendNode;
-	}
 
 	private class ProgressListener implements WhiteboardListener {
 
