@@ -2261,7 +2261,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!startedClientCache)
 			initRAMClientCacheFS();
 		
-		if(databaseKey != null)  {
+		if(db == null && databaseKey != null)  {
 			try {
 				lateSetupDatabase(databaseKey);
 			} catch (MasterKeysWrongPasswordException e2) {
@@ -2476,12 +2476,12 @@ public class Node implements TimeSkewDetectorCallback {
 		if(db != null) {
 			db.commit();
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
-		}
-		try {
-			if(!clientCore.lateInitDatabase(nodeDBHandle, db))
+			try {
+				if(!clientCore.lateInitDatabase(nodeDBHandle, db))
+					failLateInitDatabase();
+			} catch (NodeInitException e) {
 				failLateInitDatabase();
-		} catch (NodeInitException e) {
-			failLateInitDatabase();
+			}
 		}
 	}
 	
@@ -2569,6 +2569,8 @@ public class Node implements TimeSkewDetectorCallback {
 					keys.clearAllNotDatabaseKey();
 				}
 				IoAdapter baseAdapter = dbConfig.io();
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 				dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
 				database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
 				synchronized(this) {
@@ -5239,13 +5241,22 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	public void panic() {
-		db.close();
+		try {
+			db.close();
+		} catch (Throwable t) {
+			// Ignore
+		}
+		synchronized(this) {
+			db = null;
+		}
 		try {
 			FileUtil.secureDelete(dbFile, random);
+			FileUtil.secureDelete(dbFileCrypt, random);
 		} catch (IOException e) {
 			// Ignore
 		}
 		dbFile.delete();
+		dbFileCrypt.delete();
 	}
 	
 	public void finishPanic() {

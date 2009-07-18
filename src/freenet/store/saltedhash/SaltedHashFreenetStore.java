@@ -886,6 +886,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cipher.initialize(masterKey);
 				diskSalt = new byte[0x10];
 				cipher.encipher(newsalt, diskSalt);
+				if(logDEBUG)
+					Logger.debug(this, "Encrypting with "+HexUtil.bytesToHex(newsalt)+" from "+HexUtil.bytesToHex(diskSalt));
 			}
 			cipherManager = new CipherManager(newsalt, diskSalt);
 			bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
@@ -911,6 +913,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						cipher.initialize(masterKey);
 						salt = new byte[0x10];
 						cipher.decipher(diskSalt, salt);
+						if(logDEBUG)
+							Logger.debug(this, "Encrypting (new) with "+HexUtil.bytesToHex(salt)+" from "+HexUtil.bytesToHex(diskSalt));
 					}
 					
 					cipherManager = new CipherManager(salt, diskSalt);
