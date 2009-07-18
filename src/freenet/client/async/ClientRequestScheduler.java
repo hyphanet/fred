@@ -46,6 +46,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private final ClientRequestSchedulerCore schedCore;
 	final ClientRequestSchedulerNonPersistent schedTransient;
+	private final transient ClientRequestSelector selector;
 	
 	private static volatile boolean logMINOR;
 	
@@ -129,6 +130,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.random = random;
 		this.node = node;
 		this.clientContext = context;
+		selector = new ClientRequestSelector(forInserts, this);
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
@@ -399,7 +401,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		return schedCore.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, retryCount, clientContext, null);
+		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, retryCount, clientContext, null);
 	}
 	
 	/**
@@ -680,7 +682,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
+			SendableRequest request = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
 			if(request == null) {
 				synchronized(ClientRequestScheduler.this) {
 					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
@@ -1030,15 +1032,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public KeysFetchingLocally fetchingKeys() {
-		return schedCore;
+		return selector;
 	}
 
 	public void removeFetchingKey(Key key) {
-		schedCore.removeFetchingKey(key);
+		selector.removeFetchingKey(key);
 	}
 
 	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
-		schedCore.removeTransientInsertFetching(insert, token);
+		selector.removeTransientInsertFetching(insert, token);
 	}
 	
 	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
@@ -1105,15 +1107,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @return True unless the key was already present.
 	 */
 	public boolean addToFetching(Key key) {
-		return schedCore.addToFetching(key);
+		return selector.addToFetching(key);
 	}
 	
 	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
-		return schedCore.addTransientInsertFetching(insert, token);
+		return selector.addTransientInsertFetching(insert, token);
 	}
 	
 	public boolean hasFetchingKey(Key key) {
-		return schedCore.hasKey(key);
+		return selector.hasKey(key);
 	}
 
 	public long countPersistentWaitingKeys(ObjectContainer container) {

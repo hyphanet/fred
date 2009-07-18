@@ -172,7 +172,7 @@ abstract class ClientRequestSchedulerBase {
 	 * solution would be to sort by client before retry count, but that would be excessive 
 	 * IMHO; we DO want to avoid rerequesting keys we've tried many times before.
 	 */
-	protected int fixRetryCount(int retryCount) {
+	protected static int fixRetryCount(int retryCount) {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
