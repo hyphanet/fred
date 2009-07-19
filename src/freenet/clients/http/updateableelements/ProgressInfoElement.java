@@ -3,6 +3,7 @@ package freenet.clients.http.updateableelements;
 import freenet.clients.http.FProxyFetchInProgress;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
+import freenet.clients.http.FProxyFetchWaiter;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
@@ -35,8 +36,9 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	@Override
 	public void updateState() {
 		children.clear();
-
-		FProxyFetchResult fr = tracker.getFetcher(key, maxSize).getResult();
+		
+		FProxyFetchWaiter waiter=tracker.getFetcher(key, maxSize);
+		FProxyFetchResult fr = waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
 		}
@@ -59,6 +61,13 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		if (fr.goneToNetwork) addChild("p", FProxyToadlet.l10n("progressDownloading"));
 		else addChild("p", FProxyToadlet.l10n("progressCheckingStore"));
 		if (!fr.finalizedBlocks) addChild("p", FProxyToadlet.l10n("progressNotFinalized"));
+		
+		if(waiter!=null){
+			tracker.getFetchInProgress(key, maxSize).close(waiter);
+		}
+		if(fr!=null){
+			tracker.getFetchInProgress(key, maxSize).close(fr);
+		}
 	}
 
 	@Override

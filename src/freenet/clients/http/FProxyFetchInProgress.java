@@ -96,6 +96,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	 * because it fetches the page and then reloads it if it isn't a progress update. */
 	private long timeFailed;
 	
+	private boolean requestImmediateCancel=false;
+	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
 		this.tracker = tracker;
 		this.uri = key;
@@ -190,8 +192,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			} else return;
 			wakeWaiters(false);
 		}finally{
-			for(FProxyFetchListener l:listener){
-				l.onEvent();
+			synchronized (listener) {
+				for(FProxyFetchListener l:listener){
+					l.onEvent();
+				}
 			}
 		}
 	}
@@ -205,8 +209,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			w.wakeUp(finished);
 		}
 		if(finished==true){
-			for(FProxyFetchListener l:listener){
-				l.onEvent();
+			synchronized (listener) {
+				for(FProxyFetchListener l:listener){
+					l.onEvent();
+				}
 			}
 		}
 	}
@@ -259,8 +265,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public synchronized boolean canCancel() {
 		if(!waiters.isEmpty()) return false;
 		if(!results.isEmpty()) return false;
-		if(!listener.isEmpty()) return false;
-		if(lastTouched + LIFETIME >= System.currentTimeMillis()) {
+		synchronized (listener) {
+			if(!listener.isEmpty()) return false;
+		}
+		if(lastTouched + LIFETIME >= System.currentTimeMillis() && !requestImmediateCancel) {
 			if(logMINOR) Logger.minor(this, "Not able to cancel for "+this+" : "+uri+" : "+maxSize);
 			return false;
 		}
@@ -328,10 +336,21 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 	
 	public void addListener(FProxyFetchListener listener){
-		this.listener.add(listener);
+		synchronized (listener) {
+			System.err.println("Registered listener:"+listener);
+			this.listener.add(listener);
+		}
 	}
 	
 	public void removeListener(FProxyFetchListener listener){
-		this.listener.remove(listener);
+		synchronized (listener) {
+			System.err.println("Removed listener:"+listener);
+			this.listener.remove(listener);
+			System.err.println("can cancel now?:"+canCancel());
+		}
+	}
+	
+	public void requestImmediateCancel(){
+		requestImmediateCancel=true;
 	}
 }
