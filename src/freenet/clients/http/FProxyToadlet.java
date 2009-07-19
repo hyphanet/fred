@@ -53,6 +53,7 @@ import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -633,18 +634,37 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
 			if(data == null && fe == null) {
-			FetchResult result = fetch(key, maxSize, new RequestClient() {
-				public boolean persistent() {
-					return false;
+				FProxyFetchInProgress progress=fetchTracker.getFetchInProgress(key, maxSize);
+				if(progress!=null){
+						FProxyFetchWaiter waiter=progress.getWaiter();
+						FProxyFetchResult result=waiter.getResult();
+						try{
+						mimeType=result.mimeType;
+						data=result.data;
+						data=ctx.getBucketFactory().makeBucket(result.data.size());
+						BucketTools.copy(result.data, data);
+					}finally{
+						if(waiter!=null){
+							progress.close(waiter);
+						}
+						if(result!=null){
+							progress.close(result);
+						}
+					}
+				}else{
+					FetchResult result = fetch(key, maxSize, new RequestClient() {
+						public boolean persistent() {
+							return false;
+						}
+						public void removeFrom(ObjectContainer container) {
+							throw new UnsupportedOperationException();
+						} }); 
+					
+					// Now, is it safe?
+					
+					data = result.asBucket();
+					mimeType = result.getMimeType();
 				}
-				public void removeFrom(ObjectContainer container) {
-					throw new UnsupportedOperationException();
-				} }); 
-			
-			// Now, is it safe?
-			
-			data = result.asBucket();
-			mimeType = result.getMimeType();
 			} else if(fe != null) throw fe;
 			
 			

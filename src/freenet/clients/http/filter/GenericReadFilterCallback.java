@@ -20,7 +20,7 @@ import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.HTTPRequest;
 
-public class GenericReadFilterCallback implements FilterCallback {
+public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 	public static final HashSet<String> allowedProtocols;
 	
@@ -350,7 +350,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	
 	public String processTag(ParsedTag pt) {
 		if(trc!=null){
-			return trc.processTag(pt);
+			return trc.processTag(pt,this);
 		}else{
 			return null;
 		}

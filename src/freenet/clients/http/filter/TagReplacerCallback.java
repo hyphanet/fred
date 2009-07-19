@@ -21,14 +21,22 @@ public class TagReplacerCallback {
 		this.ctx=ctx;
 	}
 	
-	public String processTag(ParsedTag pt){
+	public String processTag(ParsedTag pt,URIProcessor uriProcessor){
 		if(pt.element.compareTo("img")==0){
 			for(int i=0;i<pt.unparsedAttrs.length;i++){
 				String attr=pt.unparsedAttrs[i];
 				String name=attr.substring(0,attr.indexOf("="));
 				String value=attr.substring(attr.indexOf("=")+2,attr.length()-1);
 				if(name.compareTo("src")==0){
-					String src=value.startsWith("/")?value.substring(1):value;
+					String src;
+					try{
+						src=uriProcessor.processURI(value,null,false,false);
+					}catch(CommentException ce){
+						src=value;
+					}
+					if(src.startsWith("/")){
+						src=src.substring(1);
+					}
 					try{
 						return new ImageElement(tracker, new FreenetURI(src), maxSize, ctx, pt).generate();
 					}catch(FetchException fe){
@@ -39,7 +47,6 @@ public class TagReplacerCallback {
 				}
 			}
 		}
-		//TODO:
 		return null;
 	}
 

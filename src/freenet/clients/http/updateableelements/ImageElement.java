@@ -107,7 +107,11 @@ public class ImageElement extends BaseUpdateableElement {
 					int total = fr.requiredBlocks;
 					int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
 					Map<String, String> attr = originalImg.getAttributesAsMap();
-					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25");
+					String sizePart=new String();
+					if(attr.containsKey("width") && attr.containsKey("height")){
+						sizePart="&width="+attr.get("width")+"&height="+attr.get("height");
+					}
+					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25"+sizePart);
 					setContent(new ParsedTag(originalImg, attr).toString());
 				}
 			}
