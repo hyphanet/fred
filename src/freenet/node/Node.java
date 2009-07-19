@@ -2689,12 +2689,12 @@ public class Node implements TimeSkewDetectorCallback {
 			return null;
 		}
 
-		public long getCreationTime() {
+		public long getUpdatedTime() {
 			return creationTime;
 		}
 
 		public FCPMessage getFCPMessage(String identifier) {
-			return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getCreationTime());
+			return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 		}
 
 		public HTMLNode getHTMLText() {
@@ -2726,6 +2726,10 @@ public class Node implements TimeSkewDetectorCallback {
 		public boolean isEventNotification() {
 			return false;
 		}
+
+                public boolean isEvent() {
+                        return false;
+                }
 
 		public boolean isValid() {
 			synchronized(Node.this) {
