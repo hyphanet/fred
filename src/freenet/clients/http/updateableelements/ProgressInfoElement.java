@@ -34,7 +34,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	}
 
 	@Override
-	public void updateState() {
+	public void updateState(boolean initial) {
 		children.clear();
 		
 		FProxyFetchWaiter waiter=tracker.getFetcher(key, maxSize);

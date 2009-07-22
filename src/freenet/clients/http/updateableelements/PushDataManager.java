@@ -109,7 +109,7 @@ public class PushDataManager {
 	public synchronized BaseUpdateableElement getRenderedElement(String requestId, String id) {
 		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
 			if (element.getUpdaterId(requestId).compareTo(id) == 0) {
-				element.updateState();
+				element.updateState(false);
 				return element;
 			}
 		}

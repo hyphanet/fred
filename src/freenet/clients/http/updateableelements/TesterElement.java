@@ -65,7 +65,7 @@ public class TesterElement extends BaseUpdateableElement {
 	}
 
 	@Override
-	public void updateState() {
+	public void updateState(boolean initial) {
 		children.clear();
 		addChild(new HTMLNode("div", "" + status));
 	}

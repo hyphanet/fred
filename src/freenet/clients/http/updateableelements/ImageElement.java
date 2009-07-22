@@ -1,7 +1,10 @@
 package freenet.clients.http.updateableelements;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Map.Entry;
 
 import freenet.client.FetchException;
 import freenet.clients.http.FProxyFetchInProgress;
@@ -13,6 +16,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.HTMLNode;
 
 public class ImageElement extends BaseUpdateableElement {
 
@@ -76,7 +80,7 @@ public class ImageElement extends BaseUpdateableElement {
 	}
 
 	@Override
-	public void updateState() {
+	public void updateState(boolean initial) {
 		System.err.println("Updating ImageElement for url:" + key);
 		children.clear();
 		FProxyFetchResult fr = null;
@@ -95,12 +99,12 @@ public class ImageElement extends BaseUpdateableElement {
 
 				if (fr.isFinished() && fr.hasData()) {
 					System.err.println("ImageElement is completed");
-					setContent(originalImg.toString());
+					addChild(makeHtmlNodeForParsedTag(originalImg));
 				} else if (fr.failed != null) {
 					System.err.println("ImageElement is errorous");
 					Map<String, String> attr = originalImg.getAttributesAsMap();
 					attr.put("src", "/static/error.png");
-					setContent(new ParsedTag(originalImg, attr).toString());
+					addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 					fr.failed.printStackTrace();
 				} else {
 					System.err.println("ImageElement is still in progress");
@@ -112,9 +116,10 @@ public class ImageElement extends BaseUpdateableElement {
 						sizePart="&width="+attr.get("width")+"&height="+attr.get("height");
 					}
 					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25"+sizePart);
-					setContent(new ParsedTag(originalImg, attr).toString());
+					addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 				}
 			}
+			addChild("noscript").addChild(makeHtmlNodeForParsedTag(originalImg));
 		} finally {
 			if(waiter!=null){
 				tracker.getFetchInProgress(key, maxSize).close(waiter);
@@ -123,6 +128,16 @@ public class ImageElement extends BaseUpdateableElement {
 				tracker.getFetchInProgress(key, maxSize).close(fr);
 			}
 		}
+	}
+	
+	private HTMLNode makeHtmlNodeForParsedTag(ParsedTag pt){
+		List<String> attributeNames=new ArrayList<String>();
+		List<String> attributeValues=new ArrayList<String>();
+		for(Entry<String, String> att:pt.getAttributesAsMap().entrySet()){
+			attributeNames.add(att.getKey());
+			attributeValues.add(att.getValue());
+		}
+		return new HTMLNode(pt.element, attributeNames.toArray(new String[]{}), attributeValues.toArray(new String[]{}));
 	}
 
 }

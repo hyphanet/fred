@@ -87,7 +87,7 @@ public class RequestElement extends BaseUpdateableElement {
 	}
 
 	@Override
-	public void updateState() {
+	public void updateState(boolean initial) {
 		children.clear();
 
 		ClientRequest clientRequest = server.getGlobalRequest(clientRequestId, container);

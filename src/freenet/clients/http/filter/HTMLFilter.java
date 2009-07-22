@@ -514,7 +514,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	public static class ParsedTag {
-		final String element;
+		public final String element;
 		public final String[] unparsedAttrs;
 		final boolean startSlash;
 		final boolean endSlash;

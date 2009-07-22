@@ -28,13 +28,14 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 		// We set the id to easily find the element
 		addAttribute("id", getUpdaterId(ctx.getUniqueId()));
 		// Updates the state, so the resulting page will have the actual state and content
-		updateState();
+		updateState(true);
 		// Notifies the manager that the element has been rendered
 		((SimpleToadletServer) ctx.getContainer()).pushDataManager.elementRendered(ctx.getUniqueId(), this);
 	}
 
-	/** Updates the state of the Node. The children should be removed and recreated. */
-	public abstract void updateState();
+	/** Updates the state of the Node. The children should be removed and recreated. 
+	 * @param initial - If this is the first update*/
+	public abstract void updateState(boolean initial);
 
 	/** Returns the id, that identifies the element. It can depend on the request, but it might not use it. */
 	public abstract String getUpdaterId(String requestId);
