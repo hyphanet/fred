@@ -75,6 +75,8 @@ public abstract class FCPMessage {
 			return new ListPeerNotesMessage(fs);
 		if(name.equals(ListPersistentRequestsMessage.NAME))
 			return new ListPersistentRequestsMessage(fs);
+		if(name.equals(LoadPlugin.NAME))
+			return new LoadPlugin(fs);
 		if(name.equals(ModifyConfig.NAME))
 			return new ModifyConfig(fs);
 		if(name.equals(ModifyPeer.NAME))
@@ -83,11 +85,15 @@ public abstract class FCPMessage {
 			return new ModifyPeerNote(fs);
 		if(name.equals(ModifyPersistentRequest.NAME))
 			return new ModifyPersistentRequest(fs);
+		if(name.equals(ReloadPlugin.NAME))
+			return new ReloadPlugin(fs);
 		if(name.equals(RemovePeer.NAME))
 			return new RemovePeer(fs);
 		if(name.equals(RemovePersistentRequest.NAME)
 				|| name.equals(RemovePersistentRequest.ALT_NAME))
 			return new RemovePersistentRequest(fs);
+		if(name.equals(RemovePlugin.NAME))
+			return new RemovePlugin(fs);
 		if(name.equals(ShutdownMessage.NAME))
 			return new ShutdownMessage();
 		if(name.equals(SubscribeFeedsMessage.NAME))
