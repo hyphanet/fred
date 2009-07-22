@@ -254,7 +254,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
 					context.writeData(tmpRange);
 				} else {
-					if(mimeType.compareTo("text/html")==0){
+					if(mimeType.startsWith("text/html")){
 						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, getPreHtmlStyle().getBytes().length+data.size()+getImagePushingScript(ctx.getUniqueId()).getBytes().length);
 						context.writeData(getPreHtmlStyle().getBytes());
 						context.writeData(data);
