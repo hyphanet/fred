@@ -28,6 +28,8 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.node.Ticker;
+import freenet.node.SecurityLevelListener;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
 import freenet.support.HTMLNode;
@@ -88,7 +90,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean enableActivelinks;
 	
 	// Something does not really belongs to here
-	static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
+	volatile static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
+	volatile static boolean noConfirmPanic;
 	public BookmarkManager bookmarkManager;				// move to WelcomeToadlet / BookmarkEditorToadlet ?
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
@@ -390,6 +393,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				}
 		});
 		
+		fproxyConfig.register("noConfirmPanic", false, configItemOrder++, true, true, "SimpleToadletServer.noConfirmPanic", "SimpleToadletServer.noConfirmPanicLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return SimpleToadletServer.noConfirmPanic;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(val == SimpleToadletServer.noConfirmPanic) return;
+						else SimpleToadletServer.noConfirmPanic = val;
+					}
+		});
+		
 		fproxyConfig.register("publicGatewayMode", false, configItemOrder++, true, true, "SimpleToadletServer.publicGatewayMode", "SimpleToadletServer.publicGatewayModeLong", new BooleanCallback() {
 
 			@Override
@@ -504,6 +522,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		doRobots = fproxyConfig.getBoolean("doRobots");
 		
 		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
+		SimpleToadletServer.noConfirmPanic = fproxyConfig.getBoolean("noConfirmPanic");
+		
 		this.bf = bucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");
@@ -585,6 +605,20 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	public void finishStart() {
+		core.node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL> () {
+
+			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+				if(newLevel != oldLevel && newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+					isPanicButtonToBeShown = false;
+				} else if(newLevel != oldLevel) {
+					isPanicButtonToBeShown = true;
+				}
+			}
+			
+		});
+	}
+	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullOnly) {
 		register(t, menu, urlPrefix, atFront, null, null, fullOnly, null);
 	}
@@ -615,6 +649,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public StartupToadlet getStartupToadlet() {
 		return startupToadlet;
+	}
+	
+	public boolean fproxyHasCompletedWizard() {
+		return fproxyHasCompletedWizard;
 	}
 	
 	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {

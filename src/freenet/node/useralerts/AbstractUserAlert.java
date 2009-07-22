@@ -151,7 +151,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	public Object getUserIdentifier() {
 		return userIdentifier;
 	}
-	
+
 	public String anchor() {
 		return Integer.toString(hashCode());
 	}
@@ -160,12 +160,16 @@ public abstract class AbstractUserAlert implements UserAlert {
 		return false;
 	}
 
-	public long getCreationTime()  {
+	public boolean isEvent() {
+		return false;
+	}
+
+	public long getUpdatedTime() {
 		return creationTime;
 	}
 
 	public FCPMessage getFCPMessage(String identifier) {
-		return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getCreationTime());
+		return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 	}
 
 }

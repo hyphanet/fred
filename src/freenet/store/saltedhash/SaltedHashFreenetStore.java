@@ -47,7 +47,6 @@ import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.support.BloomFilter;
-import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -90,6 +89,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final int fullKeyLength;
 	private final int dataBlockLength;
 	private final Random random;
+	private final File bloomFile;
 	
 	private long storeSize;
 	private int generation;
@@ -138,7 +138,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		newStore |= openStoreFiles(baseDir, name);
 
-		File bloomFile = new File(this.baseDir, name + ".bloom");
+		bloomFile = new File(this.baseDir, name + ".bloom");
 		bloomFilter = BloomFilter.createFilter(bloomFile, bloomFilterSize, bloomFilterK, bloomCounting);
 
 		System.err.println("Bloomfilter (" + bloomFilter + ") for " + name + " is loaded.");
@@ -886,8 +886,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cipher.initialize(masterKey);
 				diskSalt = new byte[0x10];
 				cipher.encipher(newsalt, diskSalt);
-				System.err.println("Encrypting store with "+HexUtil.bytesToHex(newsalt));
-				System.err.println("Writing: "+HexUtil.bytesToHex(diskSalt));
+				if(logDEBUG)
+					Logger.debug(this, "Encrypting with "+HexUtil.bytesToHex(newsalt)+" from "+HexUtil.bytesToHex(diskSalt));
 			}
 			cipherManager = new CipherManager(newsalt, diskSalt);
 			bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
@@ -913,7 +913,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						cipher.initialize(masterKey);
 						salt = new byte[0x10];
 						cipher.decipher(diskSalt, salt);
-						System.err.println("Encrypting store with "+HexUtil.bytesToHex(salt)+" diskSalt = "+HexUtil.bytesToHex(diskSalt));
+						if(logDEBUG)
+							Logger.debug(this, "Encrypting (new) with "+HexUtil.bytesToHex(salt)+" from "+HexUtil.bytesToHex(diskSalt));
 					}
 					
 					cipherManager = new CipherManager(salt, diskSalt);
@@ -1676,26 +1677,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	public class ShutdownDB implements Runnable {
 		public void run() {
-			shutdown = true;
-			lockManager.shutdown();
-
-			cleanerLock.lock();
-			try {
-				cleanerCondition.signalAll();
-				cleanerThread.interrupt();
-			} finally {
-				cleanerLock.unlock();
-			}
-
-			configLock.writeLock().lock();
-			try {
-				flushAndClose();
-				flags &= ~FLAG_DIRTY; // clean shutdown
-				writeConfigFile();
-			} finally {
-				configLock.writeLock().unlock();
-			}
-			System.out.println("Successfully closed store "+name);
+			close();
 		}
 	}
 
@@ -1711,6 +1693,30 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private long[] getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
 		return getOffsetFromDigestedKey(cipherManager.getDigestedKey(plainKey), storeSize);
+	}
+
+	public void close() {
+		shutdown = true;
+		lockManager.shutdown();
+
+		cleanerLock.lock();
+		try {
+			cleanerCondition.signalAll();
+			cleanerThread.interrupt();
+		} finally {
+			cleanerLock.unlock();
+		}
+
+		configLock.writeLock().lock();
+		try {
+			flushAndClose();
+			flags &= ~FLAG_DIRTY; // clean shutdown
+			writeConfigFile();
+		} finally {
+			configLock.writeLock().unlock();
+		}
+		cipherManager.shutdown();
+		System.out.println("Successfully closed store "+name);
 	}
 
 	/**
@@ -1822,5 +1828,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} finally {
 			configLock.readLock().unlock();
 		}
+	}
+
+	public void destruct() {
+		metaFile.delete();
+		hdFile.delete();
+		configFile.delete();
+		bloomFile.delete();
 	}
 }

@@ -7,7 +7,9 @@ import java.util.LinkedList;
 import java.util.List;
 import com.db4o.ObjectContainer;
 
+import freenet.crypt.RandomSource;
 import freenet.node.BaseSendableGet;
+import freenet.node.Node;
 import freenet.support.Logger;
 
 /**
@@ -20,8 +22,8 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
 	protected final List<BaseSendableGet>recentSuccesses;
 	
-	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs) {
-		super(forInserts, forSSKs);
+	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs, RandomSource random) {
+		super(forInserts, forSSKs, random);
 		this.sched = sched;
 		if(!forInserts)
 			recentSuccesses = new LinkedList<BaseSendableGet>();

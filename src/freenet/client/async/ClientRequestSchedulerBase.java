@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -11,10 +12,12 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
+import freenet.node.Node;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
@@ -75,11 +78,13 @@ abstract class ClientRequestSchedulerBase {
 
 	abstract boolean persistent();
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs) {
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, RandomSource random) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		keyListeners = new HashSet<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+		globalSalt = new byte[32];
+		random.nextBytes(globalSalt);
 	}
 	
 	/**
@@ -172,7 +177,7 @@ abstract class ClientRequestSchedulerBase {
 	 * solution would be to sort by client before retry count, but that would be excessive 
 	 * IMHO; we DO want to avoid rerequesting keys we've tried many times before.
 	 */
-	protected int fixRetryCount(int retryCount) {
+	protected static int fixRetryCount(int retryCount) {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
@@ -259,7 +264,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	public short getKeyPrio(Key key, short priority, ObjectContainer container, ClientContext context) {
-		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		assert(key instanceof NodeSSK == isSSKScheduler);
+		byte[] saltedKey = saltKey(key);
 		ArrayList<KeyListener> matches = null;
 		synchronized(this) {
 			for(KeyListener listener : keyListeners) {
@@ -285,7 +291,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	public boolean anyWantKey(Key key, ObjectContainer container, ClientContext context) {
-		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		assert(key instanceof NodeSSK == isSSKScheduler);
+		byte[] saltedKey = saltKey(key);
 		ArrayList<KeyListener> matches = null;
 		synchronized(this) {
 			for(KeyListener listener : keyListeners) {
@@ -304,7 +311,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	public synchronized boolean anyProbablyWantKey(Key key, ClientContext context) {
-		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		assert(key instanceof NodeSSK == isSSKScheduler);
+		byte[] saltedKey = saltKey(key);
 		for(KeyListener listener : keyListeners) {
 			if(listener.probablyWantKey(key, saltedKey))
 				return true;
@@ -321,7 +329,8 @@ abstract class ClientRequestSchedulerBase {
 			Logger.error(this, "Key "+key+" on scheduler ssk="+isSSKScheduler, new Exception("debug"));
 			return false;
 		}
-		byte[] saltedKey = sched.saltKey(key);
+		assert(key instanceof NodeSSK == isSSKScheduler);
+		byte[] saltedKey = saltKey(key);
 		ArrayList<KeyListener> matches = null;
 		synchronized(this) {
 			for(KeyListener listener : keyListeners) {
@@ -406,7 +415,8 @@ abstract class ClientRequestSchedulerBase {
 
 	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
 		ArrayList<SendableGet> list = null;
-		byte[] saltedKey = sched.saltKey(key);
+		assert(key instanceof NodeSSK == isSSKScheduler);
+		byte[] saltedKey = saltKey(key);
 		synchronized(this) {
 		for(KeyListener listener : keyListeners) {
 			if(!listener.probablyWantKey(key, saltedKey)) continue;
@@ -490,4 +500,21 @@ abstract class ClientRequestSchedulerBase {
 		}
 		return total;
 	}	
+	
+	public byte[] globalSalt;
+	
+	public byte[] saltKey(Key key) {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(key.getRoutingKey());
+		md.update(globalSalt);
+		byte[] ret = md.digest();
+		SHA256.returnMessageDigest(md);
+		return ret;
+	}
+	
+	protected void hintGlobalSalt(byte[] globalSalt2) {
+		if(globalSalt == null)
+			globalSalt = globalSalt2;
+	}
+
 }

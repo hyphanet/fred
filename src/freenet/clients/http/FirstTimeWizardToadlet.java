@@ -172,10 +172,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				HTMLNode inner = input.addChild("p").addChild("i");
 				L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
-					// Add password form
-					HTMLNode p = inner.addChild("p");
-					p.addChild("label", "id", "passwordBox", l10nSec("setPasswordLabel")+":");
-					p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+					if(core.node.securityLevels.getPhysicalThreatLevel() != level) {
+						// Add password form
+						HTMLNode p = inner.addChild("p");
+						p.addChild("label", "for", "passwordBox", l10nSec("setPasswordLabel")+":");
+						p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
+					}
 				}
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "physicalSecurityF", L10n.getString("FirstTimeWizardToadlet.continue")});
@@ -498,12 +500,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if(pass != null && pass.length() > 0) {
 					try {
 						if(oldThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldThreatLevel == PHYSICAL_THREAT_LEVEL.LOW)
-							core.node.changeMasterPassword("", pass);
+							core.node.changeMasterPassword("", pass, true);
 						else
 							core.node.setMasterPassword(pass, true);
 					} catch (AlreadySetPasswordException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						// Do nothing, already set a password.
 					} catch (MasterKeysWrongPasswordException e) {
 						System.err.println("Wrong password!");
 						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
@@ -514,17 +515,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 								l10n("passwordWrongTitle"), contentNode).
 								addChild("div", "class", "infobox-content");
 						
-						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, true, newThreatLevel.name());
+						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, true, newThreatLevel.name(), null);
 						
 						addBackToPhysicalSeclevelsLink(content);
 						
 						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 						return;
 					} catch (MasterKeysFileTooBigException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+						sendPasswordFileCorruptedPage(true, ctx, false, true);
 						return;
 					} catch (MasterKeysFileTooShortException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+						sendPasswordFileCorruptedPage(true, ctx, false, true);
 						return;
 					}
 				} else {
@@ -541,7 +542,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						content.addChild("p", l10nSec("passwordNotZeroLength"));
 					}
 					
-					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, false, true, newThreatLevel.name());
+					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, false, true, newThreatLevel.name(), null);
 					
 					addBackToPhysicalSeclevelsLink(content);
 					
@@ -556,7 +557,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if(pass != null && pass.length() > 0) {
 					// This is actually the OLD password ...
 					try {
-						core.node.changeMasterPassword(pass, "");
+						core.node.changeMasterPassword(pass, "", true);
 					} catch (IOException e) {
 						if(!core.node.getMasterPasswordFile().exists()) {
 							// Ok.
@@ -584,18 +585,20 @@ public class FirstTimeWizardToadlet extends Toadlet {
 								l10n("passwordWrongTitle"), contentNode).
 								addChild("div", "class", "infobox-content");
 						
-						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, false, newThreatLevel.name());
+						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, false, newThreatLevel.name(), null);
 						
 						addBackToPhysicalSeclevelsLink(content);
 						
 						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 						return;
 					} catch (MasterKeysFileTooBigException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(true, ctx, false, true);
+						sendPasswordFileCorruptedPage(true, ctx, false, true);
 						return;
 					} catch (MasterKeysFileTooShortException e) {
-						SecurityLevelsToadlet.sendPasswordFileCorruptedPage(false, ctx, false, true);
+						sendPasswordFileCorruptedPage(false, ctx, false, true);
 						return;
+					} catch (AlreadySetPasswordException e) {
+						System.err.println("Already set a password when changing it - maybe master.keys copied in at the wrong moment???");
 					}
 				} else if(core.node.getMasterPasswordFile().exists()) {
 					// We need the old password
@@ -611,7 +614,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						content.addChild("p", l10nSec("passwordNotZeroLength"));
 					}
 					
-					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, true, false, newThreatLevel.name());
+					SecurityLevelsToadlet.generatePasswordFormPage(false, ctx.getContainer(), content, true, true, false, newThreatLevel.name(), null);
 					
 					addBackToPhysicalSeclevelsLink(content);
 					
@@ -621,8 +624,26 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 
 			}
+			if(newThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+				try {
+					core.node.killMasterKeysFile();
+				} catch (IOException e) {
+					sendCantDeleteMasterKeysFile(ctx, newThreatLevel.name());
+					return;
+				}
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
+			try {
+				core.node.lateSetupDatabase(null);
+			} catch (MasterKeysWrongPasswordException e) {
+				// Ignore, impossible???
+				System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : wrong password - this is impossible, it should have been handled by the other cases, suggest you remove master.keys");
+			} catch (MasterKeysFileTooBigException e) {
+				System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too big");
+			} catch (MasterKeysFileTooShortException e) {
+				System.err.println("Failed starting up database while switching physical security level to "+newThreatLevel+" from "+oldThreatLevel+" : "+core.node.getMasterPasswordFile()+" is too small");
+			}
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
 			return;
 		} else if(request.isPartSet("nnameF")) {
@@ -671,9 +692,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
 	}
 	
+	private void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
+		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath()).generate());
+	}
+
 	private void addBackToPhysicalSeclevelsLink(HTMLNode content) {
-		// TODO Auto-generated method stub
-		
+		content.addChild("a", "href", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL, l10n("backToSecurityLevels"));
 	}
 
 	private String l10n(String key) {
@@ -819,6 +843,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			return shortSize;
 		}
+	}
+	
+	private void sendCantDeleteMasterKeysFile(ToadletContext ctx, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
+		HTMLNode pageNode = SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(ctx, core.node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel);
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	@Override

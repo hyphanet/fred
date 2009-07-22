@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.config.Config;
@@ -37,7 +39,7 @@ public class RequestStarterGroup {
 	public final ClientRequestScheduler sskPutScheduler;
 
 	private final NodeStats stats;
-	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs, ClientContext ctx) {
+	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs, ClientContext ctx, long dbHandle, ObjectContainer container) {
 		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
 		this.stats = core.nodeStats;
 		
@@ -49,6 +51,8 @@ public class RequestStarterGroup {
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request", fs == null ? null : fs.subset("CHKRequestThrottle"), 32768);
 		chkRequestStarter = new RequestStarter(core, chkRequestThrottle, "CHK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkFetchBytesSentAverage, stats.localChkFetchBytesReceivedAverage, false, false);
 		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, node, core, schedulerConfig, "CHKrequester", ctx);
+		if(container != null)
+			chkFetchScheduler.startCore(core, dbHandle, container);
 		chkRequestStarter.setScheduler(chkFetchScheduler);
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
@@ -56,12 +60,16 @@ public class RequestStarterGroup {
 		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert", fs == null ? null : fs.subset("CHKInsertThrottle"), 32768);
 		chkInsertStarter = new RequestStarter(core, chkInsertThrottle, "CHK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localChkInsertBytesSentAverage, stats.localChkInsertBytesReceivedAverage, true, false);
 		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, node, core, schedulerConfig, "CHKinserter", ctx);
+		if(container != null)
+			chkPutScheduler.startCore(core, dbHandle, container);
 		chkInsertStarter.setScheduler(chkPutScheduler);
 		chkInsertStarter.start();
 
 		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request", fs == null ? null : fs.subset("SSKRequestThrottle"), 1024);
 		sskRequestStarter = new RequestStarter(core, sskRequestThrottle, "SSK Request starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskFetchBytesSentAverage, stats.localSskFetchBytesReceivedAverage, false, true);
 		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, node, core, schedulerConfig, "SSKrequester", ctx);
+		if(container != null)
+			sskFetchScheduler.startCore(core, dbHandle, container);
 		sskRequestStarter.setScheduler(sskFetchScheduler);
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
@@ -69,11 +77,24 @@ public class RequestStarterGroup {
 		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert", fs == null ? null : fs.subset("SSKInsertThrottle"), 1024);
 		sskInsertStarter = new RequestStarter(core, sskInsertThrottle, "SSK Insert starter ("+portNumber+ ')', stats.requestOutputThrottle, stats.requestInputThrottle, stats.localSskInsertBytesSentAverage, stats.localSskFetchBytesReceivedAverage, true, true);
 		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, node, core, schedulerConfig, "SSKinserter", ctx);
+		if(container != null)
+			sskPutScheduler.startCore(core, dbHandle, container);
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
 		
 		schedulerConfig.finishedInitialization();
 		
+	}
+	
+	void lateStart(NodeClientCore core, long dbHandle, ObjectContainer container) {
+		chkFetchScheduler.startCore(core, dbHandle, container);
+		chkPutScheduler.startCore(core, dbHandle, container);
+		sskFetchScheduler.startCore(core, dbHandle, container);
+		sskPutScheduler.startCore(core, dbHandle, container);
+		chkFetchScheduler.start(core);
+		chkPutScheduler.start(core);
+		sskFetchScheduler.start(core);
+		sskPutScheduler.start(core);
 	}
 
 	public class MyRequestThrottle implements BaseRequestThrottle {

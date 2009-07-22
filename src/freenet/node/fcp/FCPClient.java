@@ -172,11 +172,11 @@ public class FCPClient {
 		}
 	}
 	
-	public void register(ClientRequest cg, boolean startLater, ObjectContainer container) throws IdentifierCollisionException {
+	public void register(ClientRequest cg, ObjectContainer container) throws IdentifierCollisionException {
 		assert(cg.persistenceType == persistenceType);
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Registering "+cg.getIdentifier()+(startLater ? " to start later" : ""));
+			Logger.minor(this, "Registering "+cg.getIdentifier());
 		if(container != null) {
 			container.activate(completedUnackedRequests, 2);
 			container.activate(runningPersistentRequests, 2);

@@ -39,7 +39,6 @@ public class Announcer {
 	private static boolean logMINOR;
 	private final Node node;
 	private final OpennetManager om;
-	private int status;
 	private static final int STATUS_LOADING = 0;
 	private static final int STATUS_CONNECTING_SEEDNODES = 1;
 	private static final int STATUS_NO_SEEDNODES = -1;
@@ -79,7 +78,6 @@ public class Announcer {
 
 	protected void start() {
 		if(!node.isOpennetEnabled()) return;
-		registerAlert();
 		int darkPeers = node.peers.getDarknetPeers().length;
 		int openPeers = node.peers.getOpennetPeers().length;
 		int oldOpenPeers = om.countOldOpennetPeers();
@@ -89,7 +87,7 @@ public class Announcer {
 			// So lets connect to a few seednodes, and attempt an announcement.
 			System.err.println("Attempting announcement to seednodes...");
 			synchronized(this) {
-				status = STATUS_LOADING;
+				registerEvent(STATUS_LOADING);
 				started = true;
 			}
 			connectSomeSeednodes();
@@ -111,8 +109,8 @@ public class Announcer {
 		}
 	}
 	
-	private void registerAlert() {
-		node.clientCore.alerts.register(new AnnouncementUserAlert());
+	private void registerEvent(int eventStatus) {
+		node.clientCore.alerts.register(new AnnouncementUserEvent(eventStatus));
 	}
 
 	private void connectSomeSeednodes() {
@@ -126,10 +124,10 @@ public class Announcer {
 			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) return;
 			timeAddedSeeds = now;
 			if(seeds.size() == 0) {
-				status = STATUS_NO_SEEDNODES;
+				registerEvent(STATUS_NO_SEEDNODES);
 				return;
 			} else {
-				status = STATUS_CONNECTING_SEEDNODES;
+				registerEvent(STATUS_CONNECTING_SEEDNODES);
 			}
 		}
 		// Try to connect to some seednodes.
@@ -544,7 +542,14 @@ public class Announcer {
 		node.executor.execute(sender, "Announcer to "+seed);
 	}
 
-	class AnnouncementUserAlert extends AbstractUserAlert {
+	class AnnouncementUserEvent extends AbstractUserAlert {
+
+		private final int status;
+
+		public AnnouncementUserEvent(int status) {
+			this.status = status;
+		}
+
 		public String dismissButtonText() {
 			return L10n.getString("UserAlert.hide");
 		}
@@ -560,10 +565,8 @@ public class Announcer {
 		public String getText() {
 			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceAlertIntro"));
-			int status;
 			boolean dontKnowAddress;
 			synchronized(this) {
-				status = Announcer.this.status;
 				dontKnowAddress = dontKnowOurIPAddress;
 			}
 			if(status == STATUS_NO_SEEDNODES) {
@@ -656,6 +659,10 @@ public class Announcer {
 
 		public boolean isEventNotification() {
 			return false;
+		}
+
+		public boolean isEvent() {
+			return true;
 		}
 
 	}

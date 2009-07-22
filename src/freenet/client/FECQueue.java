@@ -48,9 +48,13 @@ public class FECQueue implements OOMHook {
 	private transient int fecPoolCounter;
 	private transient PrioRunnable runner;
 	private transient DBJob cacheFillerJob;
-	private final long nodeDBHandle;
+	private long nodeDBHandle;
+	/** If we have delayed startup for the persistent client layer, we will have already created
+	 * a FECQueue. Therefore when we load the real one, we will point it to the old FECQueue. */
+	private transient FECQueue proxy;
+	private transient FECQueue proxiedFor;
 	
-    public static FECQueue create(final long nodeDBHandle, ObjectContainer container) {
+    public static FECQueue create(final long nodeDBHandle, ObjectContainer container, FECQueue transientQueue) {
     	@SuppressWarnings("serial")
 		ObjectSet<FECQueue> result = container.query(new Predicate<FECQueue>() {
 			@Override
@@ -62,16 +66,31 @@ public class FECQueue implements OOMHook {
 		if(result.hasNext()) {
 			FECQueue queue = result.next();
 			container.activate(queue, 1);
+			if(transientQueue != null)
+				queue.proxyInit(transientQueue, nodeDBHandle);
 			return queue;
 		} else {
 			FECQueue queue = new FECQueue(nodeDBHandle);
 			container.store(queue);
+			if(transientQueue != null)
+				queue.proxyInit(transientQueue, nodeDBHandle);
 			return queue;
 		}
 	}
 	
 	public FECQueue(long nodeDBHandle) {
 		this.nodeDBHandle = nodeDBHandle;
+	}
+
+	public synchronized void proxyInit(FECQueue oldQueue, long dbHandle) {
+		this.proxy = oldQueue;
+		oldQueue.persistentInit(dbHandle, this);
+	}
+	
+	private void persistentInit(long dbHandle, FECQueue fromDB) {
+		this.nodeDBHandle = dbHandle;
+		this.proxiedFor = fromDB;
+		queueCacheFiller();
 	}
 
 	/** Called after creating or deserializing the FECQueue. Initialises all the transient fields. */
@@ -104,6 +123,12 @@ public class FECQueue implements OOMHook {
 	}
 
 	public void addToQueue(FECJob job, FECCodec codec, ObjectContainer container) {
+		synchronized(this) {
+			if(proxy != null) {
+				proxy.addToQueue(job, codec, container);
+				return;
+			}
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: "+job+".");
@@ -290,7 +315,10 @@ public class FECQueue implements OOMHook {
 					Query query = container.query();
 					query.constrain(FECJob.class);
 					Constraint con = query.descend("priority").constrain(Short.valueOf(prio));
-					con.and(query.descend("queue").constrain(FECQueue.this).identity());
+					if(proxiedFor != null)
+						con.and(query.descend("queue").constrain(proxiedFor).identity());
+					else
+						con.and(query.descend("queue").constrain(FECQueue.this).identity());
 					query.descend("addedTime").orderAscending();
 					@SuppressWarnings("unchecked")
 					ObjectSet<FECJob> results = query.execute();
@@ -436,6 +464,9 @@ public class FECQueue implements OOMHook {
 	 */
 	public boolean cancel(FECJob job, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
+			if(proxy != null) {
+				return proxy.cancel(job, container, context);
+			}
 			for(int i=0;i<priorities;i++) {
 				transientQueue[i].remove(job);
 				persistentQueueCache[i].remove(job);

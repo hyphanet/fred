@@ -44,8 +44,9 @@ import freenet.support.io.NativeThread;
  */
 public class ClientRequestScheduler implements RequestScheduler {
 	
-	private final ClientRequestSchedulerCore schedCore;
+	private ClientRequestSchedulerCore schedCore;
 	final ClientRequestSchedulerNonPersistent schedTransient;
+	private final transient ClientRequestSelector selector;
 	
 	private static volatile boolean logMINOR;
 	
@@ -106,7 +107,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final Node node;
 	public final String name;
 	private final CooldownQueue transientCooldownQueue;
-	private final CooldownQueue persistentCooldownQueue;
+	private CooldownQueue persistentCooldownQueue;
 	final PrioritizedSerialExecutor databaseExecutor;
 	final DatastoreChecker datastoreChecker;
 	public final ClientContext clientContext;
@@ -120,15 +121,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, node.db, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, context);
-		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs);
-		persistentCooldownQueue = schedCore.persistentCooldownQueue;
+		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs, random);
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
 		this.clientContext = context;
+		selector = new ClientRequestSelector(forInserts, this);
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
@@ -147,6 +147,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else
 			transientCooldownQueue = null;
 		jobRunner = clientContext.jobRunner;
+	}
+	
+	public void startCore(NodeClientCore core, long nodeDBHandle, ObjectContainer container) {
+		schedCore = ClientRequestSchedulerCore.create(node, isInsertScheduler, isSSKScheduler, nodeDBHandle, container, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, clientContext);
+		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 	}
 	
 	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
@@ -179,7 +184,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void start(NodeClientCore core) {
-		schedCore.start(core);
+		if(schedCore != null)
+			schedCore.start(core);
 		queueFillRequestStarterQueue();
 	}
 	
@@ -399,7 +405,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		return schedCore.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, retryCount, clientContext, null);
+		return selector.removeFirstTransient(fuzz, random, offeredKeys, starter, schedTransient, prio, retryCount, clientContext, null);
 	}
 	
 	/**
@@ -623,7 +629,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
 		if(!isInsertScheduler) {
-			noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
+			if(persistentCooldownQueue != null)
+				noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
 			noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
 		}
 		// If anything has been re-added, the request starter will have been woken up.
@@ -680,7 +687,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		boolean addedMore = false;
 		while(true) {
-			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
+			SendableRequest request = selector.removeFirstInner(fuzz, random, offeredKeys, starter, schedCore, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
 			if(request == null) {
 				synchronized(ClientRequestScheduler.this) {
 					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
@@ -823,7 +830,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void removePendingKeys(KeyListener getter, boolean complain) {
 		boolean found = schedTransient.removePendingKeys(getter);
-		found |= schedCore.removePendingKeys(getter);
+		if(schedCore != null)
+			found |= schedCore.removePendingKeys(getter);
 		if(complain && !found)
 			Logger.error(this, "Listener not found when removing: "+getter);
 	}
@@ -835,14 +843,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public void removePendingKeys(HasKeyListener getter, boolean complain) {
 		boolean found = schedTransient.removePendingKeys(getter);
-		found |= schedCore.removePendingKeys(getter);
+		if(schedCore != null)
+			found |= schedCore.removePendingKeys(getter);
 		if(complain && !found)
 			Logger.error(this, "Listener not found when removing: "+getter);
 	}
 
 	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
 		schedTransient.reregisterAll(request, random, this, null, clientContext);
-		schedCore.reregisterAll(request, random, this, container, clientContext);
+		if(schedCore != null)
+			schedCore.reregisterAll(request, random, this, container, clientContext);
 		starter.wakeUp();
 	}
 	
@@ -886,6 +896,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		final Key key = block.getKey();
 		schedTransient.tripPendingKey(key, block, null, clientContext);
+		if(schedCore == null) return;
 		if(schedCore.anyProbablyWantKey(key, clientContext)) {
 			try {
 				jobRunner.queue(new DBJob() {
@@ -1000,7 +1011,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			SendableGet[] reqs = container == null ? null : schedCore.requestsForKey(key, container, clientContext);
+			SendableGet[] reqs = container == null ? null : (schedCore == null ? null : schedCore.requestsForKey(key, container, clientContext));
 			SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
 			if(reqs == null && transientReqs == null) {
 				// Not an error as this can happen due to race conditions etc.
@@ -1030,15 +1041,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public KeysFetchingLocally fetchingKeys() {
-		return schedCore;
+		return selector;
 	}
 
 	public void removeFetchingKey(Key key) {
-		schedCore.removeFetchingKey(key);
+		selector.removeFetchingKey(key);
 	}
 
 	public void removeTransientInsertFetching(SendableInsert insert, Object token) {
-		schedCore.removeTransientInsertFetching(insert, token);
+		selector.removeTransientInsertFetching(insert, token);
 	}
 	
 	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
@@ -1105,22 +1116,24 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @return True unless the key was already present.
 	 */
 	public boolean addToFetching(Key key) {
-		return schedCore.addToFetching(key);
+		return selector.addToFetching(key);
 	}
 	
 	public boolean addTransientInsertFetching(SendableInsert insert, Object token) {
-		return schedCore.addTransientInsertFetching(insert, token);
+		return selector.addTransientInsertFetching(insert, token);
 	}
 	
 	public boolean hasFetchingKey(Key key) {
-		return schedCore.hasKey(key);
+		return selector.hasKey(key);
 	}
 
 	public long countPersistentWaitingKeys(ObjectContainer container) {
+		if(schedCore == null) return 0;
 		return schedCore.countWaitingKeys(container);
 	}
 	
 	public long countPersistentQueuedRequests(ObjectContainer container) {
+		if(schedCore == null) return 0;
 		return schedCore.countQueuedRequests(container, clientContext);
 	}
 
@@ -1139,15 +1152,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, null);
 	}
 
-	public byte[] saltKey(Key key) {
-		MessageDigest md = SHA256.getMessageDigest();
-		md.update(key.getRoutingKey());
-		md.update(schedCore.globalSalt);
-		byte[] ret = md.digest();
-		SHA256.returnMessageDigest(md);
-		return ret;
-	}
-
 	void addPersistentPendingKeys(KeyListener listener) {
 		schedCore.addPendingKeys(listener);
 	}
@@ -1163,6 +1167,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public boolean cacheInserts() {
 		return this.node.clientCore.cacheInserts();
+	}
+
+	public byte[] saltKey(boolean persistent, Key key) {
+		return persistent ? schedCore.saltKey(key) : schedTransient.saltKey(key);
 	}
 	
 }

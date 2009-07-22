@@ -337,16 +337,7 @@ public class WelcomeToadlet extends Toadlet {
                     redirectToRoot(ctx);
                     return;
                 }
-                // Tell the user that the node is restarting
-                PageNode page = ctx.getPageMaker().getPageNode("Node Restart", false, ctx);
-                HTMLNode pageNode = page.outer;
-                HTMLNode headNode = page.headNode;
-                headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
-                HTMLNode contentNode = page.content;
-                ctx.getPageMaker().getInfobox("infobox-information", l10n("restartingTitle"), contentNode).
-                	addChild("#", l10n("restarting"));
-                writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-                Logger.normal(this, "Node is restarting");
+                sendRestartingPage(ctx);
                 return;
             } else if (request.getParam("newbookmark").length() > 0) {
             	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmAddBookmarkTitle"), ctx);
@@ -510,16 +501,33 @@ public class WelcomeToadlet extends Toadlet {
         this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
     }
 
-    @Override
+    private void sendRestartingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
+        writeHTMLReply(ctx, 200, "OK", sendRestartingPageInner(ctx).generate());
+	}
+    
+    static HTMLNode sendRestartingPageInner(ToadletContext ctx) {
+        // Tell the user that the node is restarting
+        PageNode page = ctx.getPageMaker().getPageNode("Node Restart", false, ctx);
+        HTMLNode pageNode = page.outer;
+        HTMLNode headNode = page.headNode;
+        headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
+        HTMLNode contentNode = page.content;
+        ctx.getPageMaker().getInfobox("infobox-information", l10n("restartingTitle"), contentNode).
+        	addChild("#", l10n("restarting"));
+        Logger.normal(WelcomeToadlet.class, "Node is restarting");
+        return pageNode;
+    }
+
+	@Override
 	public String supportedMethods() {
         return "GET, POST";
     }
 
-    private String l10n(String key) {
+    private static String l10n(String key) {
         return L10n.getString("WelcomeToadlet." + key);
     }
 
-    private String l10n(String key, String pattern, String value) {
+    private static String l10n(String key, String pattern, String value) {
         return L10n.getString("WelcomeToadlet." + key, new String[]{pattern}, new String[]{value});
     }
 

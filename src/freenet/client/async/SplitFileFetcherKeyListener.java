@@ -133,7 +133,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * @param keys
 	 */
 	void addKey(Key key, int segNo, ClientContext context) {
-		byte[] saltedKey = context.getChkFetchScheduler().saltKey(key);
+		byte[] saltedKey = context.getChkFetchScheduler().saltKey(persistent, key);
 		filter.addKey(saltedKey);
 		byte[] localSalted = localSaltKey(key);
 		segmentFilters[segNo].addKey(localSalted);
@@ -317,7 +317,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		for(int i=0;i<removeKeys.length;i++) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Removing key from bloom filter: "+removeKeys[i]);
-			byte[] salted = context.getChkFetchScheduler().saltKey(removeKeys[i]);
+			byte[] salted = context.getChkFetchScheduler().saltKey(persistent, removeKeys[i]);
 			if(filter.checkFilter(salted)) {
 				filter.removeKey(salted);
 			} else

@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
@@ -20,6 +21,7 @@ import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
 import freenet.support.io.NativeThread;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
@@ -32,10 +34,10 @@ import freenet.support.math.TrivialRunningAverage;
 public class NodeStats implements Persistable {
 
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
-	public static final long SUB_MAX_PING_TIME = 700;
+	public static final long DEFAULT_SUB_MAX_PING_TIME = 700;
 	/** Maximum overall average ping time. If ping is greater than this,
 	 * we reject all requests. */
-	public static final long MAX_PING_TIME = 1500;
+	public static final long DEFAULT_MAX_PING_TIME = 1500;
 	/** Maximum throttled packet delay. If the throttled packet delay is greater
 	 * than this, reject all packets. */
 	public static final long MAX_THROTTLE_DELAY = 3000;
@@ -45,7 +47,7 @@ public class NodeStats implements Persistable {
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY*2;
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
-	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = MAX_PING_TIME*2;
+	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = DEFAULT_MAX_PING_TIME*2;
 	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
 	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
@@ -62,6 +64,8 @@ public class NodeStats implements Persistable {
 	private int outgoingLocalRequestsAccounted = 0;
 	private final int[] outgoingRequestByLoc = new int[10];
 	private int outgoingRequestsAccounted = 0;
+	private volatile long subMaxPingTime;
+	private volatile long maxPingTime;
 	
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -302,6 +306,36 @@ public class NodeStats implements Persistable {
 			}
 		});
 		
+		statsConfig.register("maxPingTime", DEFAULT_MAX_PING_TIME, sortOrder++, true, true, "NodeStat.maxPingTime", "NodeStat.maxPingTimeLong", new LongCallback() {
+
+			@Override
+			public Long get() {
+				return maxPingTime;
+			}
+
+			@Override
+			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+				maxPingTime = val;
+			}
+			
+		}, false);
+		maxPingTime = statsConfig.getLong("maxPingTime");
+		
+		statsConfig.register("subMaxPingTime", DEFAULT_SUB_MAX_PING_TIME, sortOrder++, true, true, "NodeStat.subMaxPingTime", "NodeStat.subMaxPingTimeLong", new LongCallback() {
+
+			@Override
+			public Long get() {
+				return subMaxPingTime;
+			}
+
+			@Override
+			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+				subMaxPingTime = val;
+			}
+			
+		}, false);
+		subMaxPingTime = statsConfig.getLong("subMaxPingTime");
+		
 		// This is a *network* level setting, because it affects the rate at which we initiate local
 		// requests, which could be seen by distant nodes.
 		
@@ -496,7 +530,7 @@ public class NodeStats implements Persistable {
 		pingTime = nodePinger.averagePingTime();
 		synchronized(this) {
 			// Round trip time
-			if(pingTime > MAX_PING_TIME) {
+			if(pingTime > maxPingTime) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
@@ -504,8 +538,8 @@ public class NodeStats implements Persistable {
 					rejected(">MAX_PING_TIME", isLocal);
 					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
-			} else if(pingTime > SUB_MAX_PING_TIME) {
-				double x = ((pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
+			} else if(pingTime > subMaxPingTime) {
+				double x = ((pingTime - subMaxPingTime)) / (maxPingTime - subMaxPingTime);
 				if(hardRandom.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_PING_TIME", isLocal);
@@ -928,7 +962,7 @@ public class NodeStats implements Persistable {
 			} else {
 				bwlimitDelayAlertRelevant = false;
 			}
-			if(getNodeAveragePingTime() > MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) {
+			if(getNodeAveragePingTime() > 2*maxPingTime) {
 				if(firstNodeAveragePingTimeThresholdBreak == 0) {
 					firstNodeAveragePingTimeThresholdBreak = now;
 				}

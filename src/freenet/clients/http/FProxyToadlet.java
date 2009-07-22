@@ -42,6 +42,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -307,7 +308,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				option = optionList.addChild("li");
 				HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType(core.node) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
@@ -612,7 +613,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				ul.addChild("li").addChild("p", l10n("progressOptionZero"));
 				HTMLNode optionForm = ctx.addFormChild(ul.addChild("li").addChild("p"), "/downloads/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType() });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
 
@@ -705,7 +706,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					option = optionList.addChild("li");
 					optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType() });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 					if (mime != null) {
 						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
@@ -757,7 +758,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					option = optionList.addChild("li");
 					HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "dnfQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType() });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 					if (mime != null) {
 						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
@@ -791,6 +792,18 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(fr == null && data != null) data.free();
 			if(fr != null) fr.close();
 		}
+	}
+
+	private String getDownloadReturnType() {
+		return getDownloadReturnType(core.node);
+	}
+	
+	private static String getDownloadReturnType(Node node) {
+		if(node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW)
+			// Default to save to temp space
+			return "direct";
+		else
+			return "disk";
 	}
 
 	private boolean isBrowser(String ua) {
