@@ -86,7 +86,9 @@ public class FProxyFetchTracker implements Runnable {
 				for(int i=0;i<check.length;i++) {
 					progress = (FProxyFetchInProgress) check[i];
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-							|| progress.hasData()) return progress;
+							|| progress.hasData()){
+						return progress;
+					}
 				}
 			}
 		}
@@ -122,12 +124,13 @@ public class FProxyFetchTracker implements Runnable {
 				FreenetURI uri = (FreenetURI) e.nextElement();
 				// Really horrible hack, FIXME
 				Vector<FProxyFetchInProgress> list = (Vector<FProxyFetchInProgress>) fetchers.iterateAll(uri);
-				for(FProxyFetchInProgress f : list)
+				for(FProxyFetchInProgress f : list){
 					// FIXME remove on the fly, although cancel must wait
 					if(f.canCancel()) {
 						if(toRemove == null) toRemove = new ArrayList<FProxyFetchInProgress>();
 						toRemove.add(f);
 					}
+				}
 			}
 			if(toRemove != null)
 			for(FProxyFetchInProgress r : toRemove) {

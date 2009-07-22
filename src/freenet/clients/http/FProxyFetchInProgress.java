@@ -1,7 +1,9 @@
 package freenet.clients.http;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.db4o.ObjectContainer;
 
@@ -59,7 +61,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private final ArrayList<FProxyFetchWaiter> waiters;
 	private final ArrayList<FProxyFetchResult> results;
 	/** Gets notified with every change*/
-	private final List<FProxyFetchListener> listener=new ArrayList<FProxyFetchListener>();
+	private final List<FProxyFetchListener> listener=Collections.synchronizedList(new ArrayList<FProxyFetchListener>());
 	/** The data, if we have it */
 	private Bucket data;
 	/** Creation time */
@@ -192,10 +194,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			} else return;
 			wakeWaiters(false);
 		}finally{
-			synchronized (listener) {
-				for(FProxyFetchListener l:listener){
-					l.onEvent();
-				}
+			for(FProxyFetchListener l:new ArrayList<FProxyFetchListener>(listener)){
+				l.onEvent();
 			}
 		}
 	}
@@ -209,10 +209,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			w.wakeUp(finished);
 		}
 		if(finished==true){
-			synchronized (listener) {
-				for(FProxyFetchListener l:listener){
-					l.onEvent();
-				}
+			for(FProxyFetchListener l:new ArrayList<FProxyFetchListener>(listener)){
+				l.onEvent();
 			}
 		}
 	}
@@ -265,9 +263,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public synchronized boolean canCancel() {
 		if(!waiters.isEmpty()) return false;
 		if(!results.isEmpty()) return false;
-		synchronized (listener) {
-			if(!listener.isEmpty()) return false;
-		}
+		if(!listener.isEmpty()) return false;
 		if(lastTouched + LIFETIME >= System.currentTimeMillis() && !requestImmediateCancel) {
 			if(logMINOR) Logger.minor(this, "Not able to cancel for "+this+" : "+uri+" : "+maxSize);
 			return false;
@@ -336,18 +332,14 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 	
 	public void addListener(FProxyFetchListener listener){
-		synchronized (listener) {
-			System.err.println("Registered listener:"+listener);
-			this.listener.add(listener);
-		}
+		System.err.println("Registered listener:"+listener);
+		this.listener.add(listener);
 	}
 	
 	public void removeListener(FProxyFetchListener listener){
-		synchronized (listener) {
-			System.err.println("Removed listener:"+listener);
-			this.listener.remove(listener);
-			System.err.println("can cancel now?:"+canCancel());
-		}
+		System.err.println("Removed listener:"+listener);
+		this.listener.remove(listener);
+		System.err.println("can cancel now?:"+canCancel());
 	}
 	
 	public void requestImmediateCancel(){

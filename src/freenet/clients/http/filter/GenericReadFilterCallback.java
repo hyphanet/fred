@@ -209,6 +209,10 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			throw new CommentException(l10n("protocolNotEscaped", "protocol", uri.getScheme()));
 		}
 	}
+	
+	public String makeURIAbsolute(String uri) throws URISyntaxException{
+		return baseURI.resolve(URIPreEncoder.encodeURI(uri).normalize()).toASCIIString();
+	}
 
 	private static String l10n(String key, String pattern, String value) {
 		return L10n.getString("GenericReadFilterCallback."+key, pattern, value);

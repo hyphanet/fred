@@ -1,6 +1,7 @@
 package freenet.clients.http.filter;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 
 import freenet.client.FetchException;
 import freenet.clients.http.FProxyFetchTracker;
@@ -30,8 +31,10 @@ public class TagReplacerCallback {
 				if(name.compareTo("src")==0){
 					String src;
 					try{
-						src=uriProcessor.processURI(value,null,false,false);
+						src=uriProcessor.makeURIAbsolute(uriProcessor.processURI(value,null,false,false));
 					}catch(CommentException ce){
+						src=value;
+					}catch(URISyntaxException use){
 						src=value;
 					}
 					if(src.startsWith("/")){
