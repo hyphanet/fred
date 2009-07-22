@@ -83,6 +83,8 @@ public class ImageElement extends BaseUpdateableElement {
 	public void updateState(boolean initial) {
 		System.err.println("Updating ImageElement for url:" + key);
 		children.clear();
+		HTMLNode whenJsEnabled=new HTMLNode("span","class","jsonly");
+		addChild(whenJsEnabled);
 		FProxyFetchResult fr = null;
 		FProxyFetchWaiter waiter = null;
 		try {
@@ -90,21 +92,21 @@ public class ImageElement extends BaseUpdateableElement {
 				waiter = tracker.makeFetcher(key, maxSize);
 				fr = waiter.getResult();
 			} catch (FetchException fe) {
-				addChild("div", "error");
+				whenJsEnabled.addChild("div", "error");
 				fe.printStackTrace();
 			}
 			if (fr == null) {
-				addChild("div", "No fetcher found");
+				whenJsEnabled.addChild("div", "No fetcher found");
 			} else {
 
 				if (fr.isFinished() && fr.hasData()) {
 					System.err.println("ImageElement is completed");
-					addChild(makeHtmlNodeForParsedTag(originalImg));
+					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
 				} else if (fr.failed != null) {
 					System.err.println("ImageElement is errorous");
 					Map<String, String> attr = originalImg.getAttributesAsMap();
 					attr.put("src", "/static/error.png");
-					addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
+					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 					fr.failed.printStackTrace();
 				} else {
 					System.err.println("ImageElement is still in progress");
@@ -116,9 +118,10 @@ public class ImageElement extends BaseUpdateableElement {
 						sizePart="&width="+attr.get("width")+"&height="+attr.get("height");
 					}
 					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25"+sizePart);
-					addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
+					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 				}
 			}
+			//When js disabled
 			addChild("noscript").addChild(makeHtmlNodeForParsedTag(originalImg));
 		} finally {
 			if(waiter!=null){

@@ -254,9 +254,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
 					context.writeData(tmpRange);
 				} else {
-					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size()+getImagePushingScript(ctx.getUniqueId()).getBytes().length);
-					context.writeData(data);
-					context.writeData(getImagePushingScript(ctx.getUniqueId()).getBytes());
+					if(mimeType.compareTo("text/html")==0){
+						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, getPreHtmlStyle().getBytes().length+data.size()+getImagePushingScript(ctx.getUniqueId()).getBytes().length);
+						context.writeData(getPreHtmlStyle().getBytes());
+						context.writeData(data);
+						context.writeData(getImagePushingScript(ctx.getUniqueId()).getBytes());
+					}else{
+						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
+						context.writeData(data);
+					}
 				}
 			}
 		} catch (URISyntaxException use1) {
@@ -323,6 +329,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(toFree != null && !dontFreeData) toFree.free();
 			if(tmpRange != null) tmpRange.free();
 		}
+	}
+	
+	private static String getPreHtmlStyle(){
+		return "<noscript><style> .jsonly {display:none;}</style></noscript>";
 	}
 	
 	private static String getImagePushingScript(String requestId){
