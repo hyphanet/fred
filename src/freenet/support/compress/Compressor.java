@@ -4,6 +4,7 @@
 package freenet.support.compress;
 
 import java.io.IOException;
+import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
@@ -23,23 +24,66 @@ public interface Compressor {
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
 		LZMA("LZMA", new LZMACompressor(), (short)2);
-		
+
 		public final String name;
 		public final Compressor compressor;
 		public final short metadataID;
-		
+
 		COMPRESSOR_TYPE(String name, Compressor c, short metadataID) {
 			this.name = name;
 			this.compressor = c;
 			this.metadataID = metadataID;
 		}
-		
+
 		public static COMPRESSOR_TYPE getCompressorByMetadataID(short id) {
 			COMPRESSOR_TYPE[] values = values();
 			for(COMPRESSOR_TYPE current : values)
 				if(current.metadataID == id)
 					return current;
 			return null;
+		}
+
+		public static COMPRESSOR_TYPE getCompressorByName(String name) {
+			COMPRESSOR_TYPE[] values = values();
+			for(COMPRESSOR_TYPE current : values)
+				if(current.name == name)
+					return current;
+			return null;
+		}
+
+		/**
+		 * make a COMPRESSOR_TYPE[] from a descriptor string<BR>
+		 * the descriptor string is a comma separated list of numbers or names(can be mixed)<BR>
+		 * it is better to store the string in db4o instead of the compressors?<BR>
+		 * if the string is null/empty, it returns COMPRESSOR_TYPE.values() as default
+		 * @param compressordescriptor
+		 * @return
+		 * @throws InvalidCompressionCodecException 
+		 */
+		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor) throws InvalidCompressionCodecException {
+			if (compressordescriptor == null)
+				return COMPRESSOR_TYPE.values();
+			if (compressordescriptor.trim().length() == 0)
+				return COMPRESSOR_TYPE.values();
+			String[] codecs = compressordescriptor.split(",");
+			Vector<COMPRESSOR_TYPE> result = new Vector<COMPRESSOR_TYPE>();
+			for (String codec : codecs) {
+				COMPRESSOR_TYPE ct = getCompressorByName(codec);
+				if (ct == null) {
+					try {
+						ct = getCompressorByMetadataID(Short.parseShort(codec));
+					} catch (NumberFormatException nfe) {
+					}
+				}
+				if (ct == null) {
+					throw new InvalidCompressionCodecException("Unknown codec identifier: '"+codec+"'");
+				}
+				if (result.contains(ct)) {
+					throw new InvalidCompressionCodecException("Duplicate codec identifier: '"+codec+"'");
+				}
+				result.add(ct);
+			}
+			return result.toArray(new COMPRESSOR_TYPE[result.size()]);
 		}
 
 		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
@@ -65,11 +109,11 @@ public interface Compressor {
 			}
 			return compressor.decompress(dbuf, i, j, output);
 		}
-		
+
 		// DB4O VOODOO!
 		// Copies of the static fields get stored into the database.
 		// Really the solution is probably to store the codes only.
-		
+
 		private Compressor getOfficial() {
 			if(name.equals("GZIP")) return GZIP;
 			if(name.equals("BZIP2")) return BZIP2;
@@ -82,17 +126,17 @@ public interface Compressor {
 			if(isOfficial()) return false;
 			return true;
 		}
-		
+
 		public boolean objectCanActivate(ObjectContainer container) {
 			// Do not activate the official COMPRESSOR_TYPE's.
 			if(isOfficial()) return false;
 			return true;
 		}
-		
+
 		public boolean isOfficial() {
 			return this == GZIP || this == BZIP2 || this == LZMA;
 		}
-		
+
 	}
 
 	/**
