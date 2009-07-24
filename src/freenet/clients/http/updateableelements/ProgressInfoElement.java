@@ -10,6 +10,7 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.complexhtmlnodes.SecondCounterNode;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
+import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 
 /** This pushed element renders the information box when a page is downloading on the progress page. */
@@ -58,8 +59,12 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			addChild("br");
 			addChild(new SecondCounterNode(eta, false, "ETA: "));
 		}
-		addChild("br");
-		addChild(new SecondCounterNode(0, true, FProxyToadlet.l10n("lastRefresh")));
+		if(ctx.getContainer().isFProxyJavascriptEnabled()){
+			HTMLNode lastRefreshNode=new HTMLNode("span","class","jsonly");
+			lastRefreshNode.addChild("br");
+			lastRefreshNode.addChild(new SecondCounterNode(0, true, FProxyToadlet.l10n("lastRefresh")));
+			addChild(lastRefreshNode);
+		}
 		if (fr.goneToNetwork) addChild("p", FProxyToadlet.l10n("progressDownloading"));
 		else addChild("p", FProxyToadlet.l10n("progressCheckingStore"));
 		if (!fr.finalizedBlocks) addChild("p", FProxyToadlet.l10n("progressNotFinalized"));

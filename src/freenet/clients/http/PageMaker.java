@@ -197,6 +197,8 @@ public final class PageMaker {
 		HTMLNode headNode = htmlNode.addChild("head");
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
 		headNode.addChild("title", title + " - Freenet");
+		//To make something only rendered when javascript is on, then add the jsonly class to it
+		headNode.addChild("noscript").addChild("style"," .jsonly {display:none;}");
 		if(override == null)
 			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
 		else
