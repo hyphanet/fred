@@ -1,7 +1,5 @@
 package freenet.clients.http;
 
-import static freenet.clients.http.PushDataToadlet.SEPARATOR;
-
 import java.io.IOException;
 import java.net.URI;
 
@@ -9,11 +7,19 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.PushDataManager;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Base64;
+import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
+import static freenet.clients.http.PushDataToadlet.SEPARATOR;
 
 /** This toadlet provides notifications for clients. It will block until one is present. It requires the requestId parameter. */
 public class PushNotificationToadlet extends Toadlet {
 
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerClass(PushNotificationToadlet.class);
+	}
+	
 	protected PushNotificationToadlet(HighLevelSimpleClient client) {
 		super(client);
 	}
@@ -26,7 +32,9 @@ public class PushNotificationToadlet extends Toadlet {
 			String elementRequestId = event.getRequestId();
 			String elementId = event.getElementId();
 			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(elementRequestId.getBytes()) + SEPARATOR + elementId);
-			System.err.println("Notification got:"+event);
+			if(logMINOR){
+				Logger.minor(this,"Notification got:"+event);
+			}
 		} else {
 			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.FAILURE);
 		}

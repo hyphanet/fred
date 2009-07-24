@@ -332,14 +332,20 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	}
 	
 	public void addListener(FProxyFetchListener listener){
-		System.err.println("Registered listener:"+listener);
+		if(logMINOR){
+			Logger.minor(this,"Registered listener:"+listener);
+		}
 		this.listener.add(listener);
 	}
 	
 	public void removeListener(FProxyFetchListener listener){
-		System.err.println("Removed listener:"+listener);
+		if(logMINOR){
+			Logger.minor(this,"Removed listener:"+listener);
+		}
 		this.listener.remove(listener);
-		System.err.println("can cancel now?:"+canCancel());
+		if(logMINOR){
+			Logger.minor(this,"can cancel now?:"+canCancel());
+		}
 	}
 	
 	public void requestImmediateCancel(){

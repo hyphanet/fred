@@ -58,6 +58,8 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			addChild("br");
 			addChild(new SecondCounterNode(eta, false, "ETA: "));
 		}
+		addChild("br");
+		addChild(new SecondCounterNode(0, true, "Last update was:"));//LOC
 		if (fr.goneToNetwork) addChild("p", FProxyToadlet.l10n("progressDownloading"));
 		else addChild("p", FProxyToadlet.l10n("progressCheckingStore"));
 		if (!fr.finalizedBlocks) addChild("p", FProxyToadlet.l10n("progressNotFinalized"));
@@ -90,6 +92,11 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	@Override
 	public String getUpdaterType() {
 		return UpdaterConstants.PROGRESSBAR_UPDATER;
+	}
+	
+	@Override
+	public String toString() {
+		return "ProgressInfoElement[key:"+key+",maxSize:"+maxSize+",updaterId:"+getUpdaterId(null)+"]";
 	}
 
 }

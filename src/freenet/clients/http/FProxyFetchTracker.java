@@ -134,7 +134,9 @@ public class FProxyFetchTracker implements Runnable {
 			}
 			if(toRemove != null)
 			for(FProxyFetchInProgress r : toRemove) {
-				System.err.println("Removed fetchinprogress:"+r);
+				if(logMINOR){
+					Logger.minor(this,"Removed fetchinprogress:"+r);
+				}
 				fetchers.removeElement(r.uri, r);
 			}
 		}

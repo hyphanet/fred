@@ -6,12 +6,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.db4o.internal.fieldindex.OrIndexedLeaf;
-
 import freenet.node.Ticker;
+import freenet.support.Logger;
 
 /** A manager class that manages all the pushing. All it's public method must be synchronized to maintain consistency. */
 public class PushDataManager {
+	
+	private static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerClass(PushDataManager.class);
+	}
 
 	/** What notifications are waiting for the leader */
 	private Map<String, List<UpdateEvent>>				awaitingNotifications	= new HashMap<String, List<UpdateEvent>>();
@@ -45,17 +50,18 @@ public class PushDataManager {
 	 *            - The id of the element that changed
 	 */
 	public synchronized void updateElement(String id) {
-		System.err.println("Element updated id:"+id);
+		if(logMINOR){
+			Logger.minor(this,"Element updated id:"+id);
+		}
 		boolean needsUpdate = false;
 		if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
 			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
 				UpdateEvent updateEvent = new UpdateEvent(reqId, id);
 				if (notificationList.contains(updateEvent) == false) {
 					notificationList.add(updateEvent);
-					if(id.compareTo(TesterElement.getId(reqId, ""+0))==0){
-						System.err.println("First element notif added to:"+reqId);
+					if(logMINOR){
+						Logger.minor(this,"Notification added");
 					}
-					System.err.println("Notification added");
 				}
 			}
 			needsUpdate = true;
@@ -92,7 +98,9 @@ public class PushDataManager {
 		}
 		// If the Cleaner isn't running, then we schedule it to clear this request if failing
 		if (isScheduled == false) {
-			System.err.println("Cleaner is queued(1) time:" + System.currentTimeMillis());
+			if(logMINOR){
+				Logger.minor(this,"Cleaner is queued(1) time:" + System.currentTimeMillis());
+			}
 			cleaner.queueTimedJob(cleanerTask, "cleanerTask", getDelayInMs(), false, true);
 			isScheduled = true;
 		}
@@ -126,14 +134,20 @@ public class PushDataManager {
 	 * @return Was the failover successful?
 	 */
 	public synchronized boolean failover(String originalRequestId, String newRequestId) {
-		System.err.println("Failover in, original:"+originalRequestId+" new:"+newRequestId);
+		if(logMINOR){
+			Logger.minor(this,"Failover in, original:"+originalRequestId+" new:"+newRequestId);
+		}
 		if (awaitingNotifications.containsKey(originalRequestId)) {
 			awaitingNotifications.put(newRequestId, awaitingNotifications.remove(originalRequestId));
-			System.err.println("copied "+awaitingNotifications.get(newRequestId).size()+" notification:"+awaitingNotifications.get(newRequestId));
+			if(logMINOR){
+				Logger.minor(this,"copied "+awaitingNotifications.get(newRequestId).size()+" notification:"+awaitingNotifications.get(newRequestId));
+			}
 			notifyAll();
 			return true;
 		} else {
-			System.err.println("Does not contains key");
+			if(logMINOR){
+				Logger.minor(this,"Does not contains key");
+			}
 			return false;
 		}
 	}
@@ -146,11 +160,7 @@ public class PushDataManager {
 	 * @return Was a request deleted?
 	 */
 	public synchronized boolean leaving(String requestId) {
-		try {
-			return deleteRequest(requestId);
-		} finally {
-			System.err.println("Remaining pages num:" + pages.size());
-		}
+		return deleteRequest(requestId);
 	}
 
 	/**
@@ -177,7 +187,9 @@ public class PushDataManager {
 	 * @return The next notification when present
 	 */
 	public synchronized UpdateEvent getNextNotification(String requestId) {
-		System.err.println("Polling for notification:"+requestId);
+		if(logMINOR){
+			Logger.minor(this,"Polling for notification:"+requestId);
+		}
 		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0) {
 			try {
 				wait();
@@ -188,9 +200,8 @@ public class PushDataManager {
 		if (awaitingNotifications.get(requestId) == null) {
 			return null;
 		}
-		System.err.println("Getting notification, notification:"+awaitingNotifications.get(requestId).get(0)+",remaining:"+(awaitingNotifications.get(requestId).size()-1));
-		if(awaitingNotifications.get(requestId).get(0).elementId.compareTo(TesterElement.getId(requestId, ""+0))==0){
-			System.err.println("First element notif dispatched to:"+requestId);
+		if(logMINOR){
+			Logger.minor(this,"Getting notification, notification:"+awaitingNotifications.get(requestId).get(0)+",remaining:"+(awaitingNotifications.get(requestId).size()-1));
 		}
 		return awaitingNotifications.get(requestId).remove(0);
 	}
@@ -208,7 +219,9 @@ public class PushDataManager {
 	 * @return Was a request deleted?
 	 */
 	private boolean deleteRequest(String requestId) {
-		System.err.println("DeleteRequest with requestId:"+requestId);
+		if(logMINOR){
+			Logger.minor(this,"DeleteRequest with requestId:"+requestId);
+		}
 		if (isKeepaliveReceived.containsKey(requestId) == false) {
 			return false;
 		}
@@ -276,20 +289,30 @@ public class PushDataManager {
 	private class CleanerTimerTask implements Runnable {
 		public void run() {
 			synchronized (PushDataManager.this) {
-				System.err.println("Cleaner running:" + isKeepaliveReceived);
+				if(logMINOR){
+					Logger.minor(this,"Cleaner running:" + isKeepaliveReceived);
+				}
 				isScheduled = false;
-				System.err.println("Cleaner running time:" + System.currentTimeMillis());
+				if(logMINOR){
+					Logger.minor(this,"Cleaner running time:" + System.currentTimeMillis());
+				}
 				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {
 					if (entry.getValue() == false) {
-						System.err.println("Cleaner cleaned request:" + entry.getKey());
+						if(logMINOR){
+							Logger.minor(this,"Cleaner cleaned request:" + entry.getKey());
+						}
 						deleteRequest(entry.getKey());
 					} else {
-						System.err.println("Cleaner reseted request:" + entry.getKey());
+						if(logMINOR){
+							Logger.minor(this,"Cleaner reseted request:" + entry.getKey());
+						}
 						isKeepaliveReceived.put(entry.getKey(), false);
 					}
 				}
 				if (isKeepaliveReceived.size() != 0 && isScheduled == false) {
-					System.err.println("Cleaner is queued(2) time:" + System.currentTimeMillis());
+					if(logMINOR){
+						Logger.minor(this,"Cleaner is queued(2) time:" + System.currentTimeMillis());
+					}
 					cleaner.queueTimedJob(cleanerTask, "cleanerTask", getDelayInMs(), false, true);
 					isScheduled = true;
 				}

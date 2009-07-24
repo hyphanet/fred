@@ -100,5 +100,10 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	public String getUpdaterType() {
 		return UpdaterConstants.PROGRESSBAR_UPDATER;
 	}
+	
+	@Override
+	public String toString() {
+		return "ProgressBarElement[key:"+key+",maxSize:"+maxSize+",updaterId:"+getUpdaterId(null)+"]";
+	}
 
 }

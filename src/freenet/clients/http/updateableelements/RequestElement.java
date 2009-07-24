@@ -359,6 +359,11 @@ public class RequestElement extends BaseUpdateableElement {
 
 	}
 	
+	@Override
+	public String toString() {
+		return "RequestElement[clientRequestId:"+clientRequestId+"]";
+	}
+	
 	
 
 }

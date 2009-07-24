@@ -17,8 +17,15 @@ import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 
 public class ImageElement extends BaseUpdateableElement {
+
+	private static volatile boolean	logMINOR;
+
+	static {
+		Logger.registerClass(ImageElement.class);
+	}
 
 	/** The tracker that the Fetcher can be acquired */
 	public FProxyFetchTracker		tracker;
@@ -36,7 +43,9 @@ public class ImageElement extends BaseUpdateableElement {
 	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg) throws FetchException {
 		super("span", ctx);
 		long now = System.currentTimeMillis();
-		System.err.println("ImageElement creating for uri:" + key);
+		if (logMINOR) {
+			Logger.minor(this, "ImageElement creating for uri:" + key);
+		}
 		this.originalImg = originalImg;
 		this.tracker = tracker;
 		this.key = key;
@@ -44,20 +53,26 @@ public class ImageElement extends BaseUpdateableElement {
 		init();
 		// Creates and registers the FetchListener
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
-		FProxyFetchWaiter waiter=tracker.makeFetcher(key, maxSize);
+		FProxyFetchWaiter waiter = tracker.makeFetcher(key, maxSize);
 		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
 		tracker.getFetchInProgress(key, maxSize).close(waiter);
-		System.err.println("ImageElement creating finished in:" + (System.currentTimeMillis() - now) + " ms");
+		if (logMINOR) {
+			Logger.minor(this, "ImageElement creating finished in:" + (System.currentTimeMillis() - now) + " ms");
+		}
 	}
 
 	@Override
 	public void dispose() {
-		System.err.println("Disposing ImageElement");
+		if (logMINOR) {
+			Logger.minor(this, "Disposing ImageElement");
+		}
 		// Deregisters the FetchListener
 		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
 		if (progress != null) {
 			progress.removeListener(fetchListener);
-			System.err.println("canCancel():"+progress.canCancel());
+			if (logMINOR) {
+				Logger.minor(this, "canCancel():" + progress.canCancel());
+			}
 			progress.requestImmediateCancel();
 			if (progress.canCancel()) {
 				tracker.run();
@@ -81,9 +96,11 @@ public class ImageElement extends BaseUpdateableElement {
 
 	@Override
 	public void updateState(boolean initial) {
-		System.err.println("Updating ImageElement for url:" + key);
+		if (logMINOR) {
+			Logger.minor(this, "Updating ImageElement for url:" + key);
+		}
 		children.clear();
-		HTMLNode whenJsEnabled=new HTMLNode("span","class","jsonly");
+		HTMLNode whenJsEnabled = new HTMLNode("span", "class", "jsonly");
 		addChild(whenJsEnabled);
 		FProxyFetchResult fr = null;
 		FProxyFetchWaiter waiter = null;
@@ -100,47 +117,58 @@ public class ImageElement extends BaseUpdateableElement {
 			} else {
 
 				if (fr.isFinished() && fr.hasData()) {
-					System.err.println("ImageElement is completed");
+					if (logMINOR) {
+						Logger.minor(this, "ImageElement is completed");
+					}
 					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
 				} else if (fr.failed != null) {
-					System.err.println("ImageElement is errorous");
+					if (logMINOR) {
+						Logger.minor(this, "ImageElement is errorous");
+					}
 					Map<String, String> attr = originalImg.getAttributesAsMap();
 					attr.put("src", "/static/error.png");
 					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 					fr.failed.printStackTrace();
 				} else {
-					System.err.println("ImageElement is still in progress");
+					if (logMINOR) {
+						Logger.minor(this, "ImageElement is still in progress");
+					}
 					int total = fr.requiredBlocks;
 					int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
 					Map<String, String> attr = originalImg.getAttributesAsMap();
-					String sizePart=new String();
-					if(attr.containsKey("width") && attr.containsKey("height")){
-						sizePart="&width="+attr.get("width")+"&height="+attr.get("height");
+					String sizePart = new String();
+					if (attr.containsKey("width") && attr.containsKey("height")) {
+						sizePart = "&width=" + attr.get("width") + "&height=" + attr.get("height");
 					}
-					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25"+sizePart);
+					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25" + sizePart);
 					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
 				}
 			}
-			//When js disabled
+			// When js disabled
 			addChild("noscript").addChild(makeHtmlNodeForParsedTag(originalImg));
 		} finally {
-			if(waiter!=null){
+			if (waiter != null) {
 				tracker.getFetchInProgress(key, maxSize).close(waiter);
 			}
-			if(fr!=null){
+			if (fr != null) {
 				tracker.getFetchInProgress(key, maxSize).close(fr);
 			}
 		}
 	}
-	
-	private HTMLNode makeHtmlNodeForParsedTag(ParsedTag pt){
-		List<String> attributeNames=new ArrayList<String>();
-		List<String> attributeValues=new ArrayList<String>();
-		for(Entry<String, String> att:pt.getAttributesAsMap().entrySet()){
+
+	private HTMLNode makeHtmlNodeForParsedTag(ParsedTag pt) {
+		List<String> attributeNames = new ArrayList<String>();
+		List<String> attributeValues = new ArrayList<String>();
+		for (Entry<String, String> att : pt.getAttributesAsMap().entrySet()) {
 			attributeNames.add(att.getKey());
 			attributeValues.add(att.getValue());
 		}
-		return new HTMLNode(pt.element, attributeNames.toArray(new String[]{}), attributeValues.toArray(new String[]{}));
+		return new HTMLNode(pt.element, attributeNames.toArray(new String[] {}), attributeValues.toArray(new String[] {}));
+	}
+	
+	@Override
+	public String toString() {
+		return "ImageElement[key:"+key+",maxSize:"+maxSize+",originalImg:"+originalImg+",updaterId:"+getUpdaterId(null)+"]";
 	}
 
 }
