@@ -8,7 +8,13 @@ public class SecondCounterNode extends HTMLNode {
 	public SecondCounterNode(long initialValue, boolean ascending, String text) {
 		super("span", "class", ascending ? "needsIncrement" : "needsDecrement");
 		addChild("input", new String[] { "type", "value" }, new String[] { "hidden", "" + initialValue });
-		addChild("span", text);
-		addChild("span", TimeUtil.formatTime(initialValue));
+		if(text.contains("{0}")==false){
+			addChild("span", text);
+			addChild("span", TimeUtil.formatTime(initialValue));
+		}else{
+			addChild("span",text.substring(0, text.indexOf("{0}")));
+			addChild("span", TimeUtil.formatTime(initialValue));
+			addChild("span",text.substring(text.indexOf("{0}")+"{0}".length()));
+		}
 	}
 }

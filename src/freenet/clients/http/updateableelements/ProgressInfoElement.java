@@ -59,7 +59,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			addChild(new SecondCounterNode(eta, false, "ETA: "));
 		}
 		addChild("br");
-		addChild(new SecondCounterNode(0, true, "Last update was:"));//LOC
+		addChild(new SecondCounterNode(0, true, FProxyToadlet.l10n("lastRefresh")));
 		if (fr.goneToNetwork) addChild("p", FProxyToadlet.l10n("progressDownloading"));
 		else addChild("p", FProxyToadlet.l10n("progressCheckingStore"));
 		if (!fr.finalizedBlocks) addChild("p", FProxyToadlet.l10n("progressNotFinalized"));
