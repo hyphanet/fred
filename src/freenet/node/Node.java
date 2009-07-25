@@ -2082,6 +2082,13 @@ public class Node implements TimeSkewDetectorCallback {
 					} catch (InvalidConfigValueException e) {
 						// Ignore
 					}
+				}
+			});
+		}
+		
+		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
+
+			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
 					if(newLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
 						synchronized(this) {
 							clientCacheAwaitingPassword = false;
@@ -2099,7 +2106,8 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				
 			});
-		}
+		
+		
 		
 		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
 				new LongCallback() {
