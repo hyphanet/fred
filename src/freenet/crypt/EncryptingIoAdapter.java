@@ -42,7 +42,6 @@ public class EncryptingIoAdapter extends IoAdapter {
 		this.key = new byte[databaseKey.length];
 		System.arraycopy(databaseKey, 0, key, 0, databaseKey.length);
 		this.random = random;
-		baseAdapter.seek(0);
 		position = 0;
 		blockPosition = -1;
 		blockOutput = new byte[32];
@@ -90,7 +89,10 @@ public class EncryptingIoAdapter extends IoAdapter {
 	@Override
 	public IoAdapter open(String arg0, boolean arg1, long arg2, boolean arg3)
 			throws Db4oIOException {
-		return new EncryptingIoAdapter(baseAdapter.open(arg0, arg1, arg2, arg3), key, random);
+		EncryptingIoAdapter adapter =
+			new EncryptingIoAdapter(baseAdapter.open(arg0, arg1, arg2, arg3), key, random);
+		adapter.seek(0);
+		return adapter;
 	}
 
 	@Override

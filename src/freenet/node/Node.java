@@ -2,6 +2,7 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -36,6 +37,7 @@ import com.db4o.diagnostic.DiagnosticBase;
 import com.db4o.diagnostic.DiagnosticListener;
 import com.db4o.ext.Db4oException;
 import com.db4o.io.IoAdapter;
+import com.db4o.io.RandomAccessFileAdapter;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -502,6 +504,8 @@ public class Node implements TimeSkewDetectorCallback {
 	 * this node, as opposed to any others that might be stored in the same database
 	 * (e.g. because of many-nodes-in-one-VM). */
 	public long nodeDBHandle;
+	
+	private final boolean autoChangeDatabaseEncryption = true;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -2107,7 +2111,15 @@ public class Node implements TimeSkewDetectorCallback {
 				
 			});
 		
-		
+		if(securityLevels.physicalThreatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+			try {
+				killMasterKeysFile();
+			} catch (IOException e) {
+				String msg = "Unable to securely delete old master.keys file when switching to MAXIMUM seclevel!!";
+				System.err.println(msg);
+				throw new NodeInitException(NodeInitException.EXIT_CANT_WRITE_MASTER_KEYS, msg);
+			}
+		}
 		
 		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
 				new LongCallback() {
@@ -2576,32 +2588,110 @@ public class Node implements TimeSkewDetectorCallback {
 		ObjectContainer database;
 		
 		try {
-			if(dbFile.exists() || securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+			if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+				databaseKey = new byte[32];
+				random.nextBytes(databaseKey);
+				FileUtil.secureDelete(dbFileCrypt, random);
+				FileUtil.secureDelete(dbFile, random);
+				database = openCryptDatabase(dbConfig, databaseKey);
+			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+				// Just open it.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
-			} else {
-				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
-					databaseKey = new byte[32];
-					random.nextBytes(databaseKey);
-					FileUtil.secureDelete(dbFileCrypt, random);
-				} else {
-					// Encrypted database
-					if(databaseKey == null) {
-						// Try with no password
-						MasterKeys keys = MasterKeys.read(masterKeysFile, random, "");
-						databaseKey = keys.databaseKey;
-						keys.clearAllNotDatabaseKey();
+			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption) {
+				// Migrate the encrypted file to plaintext, if we have the key
+				if(databaseKey == null) {
+					// Try with no password
+					MasterKeys keys;
+					try {
+						keys = MasterKeys.read(masterKeysFile, random, "");
+					} catch (MasterKeysWrongPasswordException e) {
+						// User probably changed it in the config file
+						System.err.println("Unable to decrypt the node.db4o. Please enter the correct password and set the physical security level to LOW via the GUI.");
+						securityLevels.setThreatLevel(PHYSICAL_THREAT_LEVEL.HIGH);
+						throw e;
 					}
+					databaseKey = keys.databaseKey;
+					keys.clearAllNotDatabaseKey();
 				}
-				IoAdapter baseAdapter = dbConfig.io();
-				if(Logger.shouldLog(Logger.DEBUG, this))
-					Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
-				dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
-				database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
-				synchronized(this) {
-					databaseAwaitingPassword = false;
+				System.err.println("Decrypting the old node.db4o.crypt ...");
+				IoAdapter baseAdapter = new RandomAccessFileAdapter();
+				EncryptingIoAdapter adapter = 
+					new EncryptingIoAdapter(baseAdapter, databaseKey, random);
+				File tempFile = new File(dbFile.getPath()+".tmp");
+				tempFile.deleteOnExit();
+				FileOutputStream fos = new FileOutputStream(tempFile);
+				EncryptingIoAdapter readAdapter =
+					(EncryptingIoAdapter) adapter.open(dbFileCrypt.toString(), false, 0, true);
+				long length = readAdapter.getLength();
+				// Estimate approx 1 byte/sec.
+				WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+				byte[] buf = new byte[65536];
+				long read = 0;
+				while(read < length) {
+					int bytes = (int) Math.min(buf.length, length - read);
+					bytes = readAdapter.read(buf, bytes);
+					if(bytes < 0) throw new EOFException();
+					read += bytes;
+					fos.write(buf, 0, bytes);
 				}
+				fos.close();
+				readAdapter.close();
+				tempFile.renameTo(dbFile);
+				dbFileCrypt.delete();
+				database = Db4o.openFile(dbConfig, dbFile.toString());
+				System.err.println("Completed decrypting the old node.db4o.crypt.");
+			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption) {
+				// Migrate the unencrypted file to ciphertext.
+				// This will always succeed short of I/O errors.
+				if(databaseKey == null) {
+					// Try with no password
+					MasterKeys keys;
+					keys = MasterKeys.read(masterKeysFile, random, "");
+					databaseKey = keys.databaseKey;
+					keys.clearAllNotDatabaseKey();
+				}
+				System.err.println("Encrypting the old node.db4o ...");
+				IoAdapter baseAdapter = new RandomAccessFileAdapter();
+				EncryptingIoAdapter adapter = 
+					new EncryptingIoAdapter(baseAdapter, databaseKey, random);
+				File tempFile = new File(dbFileCrypt.getPath()+".tmp");
+				tempFile.delete();
+				tempFile.deleteOnExit();
+				EncryptingIoAdapter readAdapter =
+					(EncryptingIoAdapter) adapter.open(tempFile.getPath(), false, 0, false);
+				FileInputStream fis = new FileInputStream(dbFile);
+				long length = dbFile.length();
+				// Estimate approx 1 byte/sec.
+				WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+				byte[] buf = new byte[65536];
+				long read = 0;
+				while(read < length) {
+					int bytes = (int) Math.min(buf.length, length - read);
+					bytes = fis.read(buf, 0, bytes);
+					if(bytes < 0) throw new EOFException();
+					read += bytes;
+					readAdapter.write(buf, bytes);
+				}
+				fis.close();
+				readAdapter.close();
+				tempFile.renameTo(dbFileCrypt);
+				FileUtil.secureDelete(dbFile, random);
+				System.err.println("Completed encrypting the old node.db4o.");
+				database = openCryptDatabase(dbConfig, databaseKey);
+			} else if(dbFileCrypt.exists() && !dbFile.exists()) {
+				// Open encrypted, regardless of seclevel.
+				if(databaseKey == null) {
+					// Try with no password
+					MasterKeys keys;
+					keys = MasterKeys.read(masterKeysFile, random, "");
+					databaseKey = keys.databaseKey;
+					keys.clearAllNotDatabaseKey();
+				}
+				database = openCryptDatabase(dbConfig, databaseKey);
+			} else {
+				// Open unencrypted.
+				database = Db4o.openFile(dbConfig, dbFile.toString());
 			}
-			System.err.println("Opened database");
 		} catch (Db4oException e) {
 			database = null;
 			System.err.println("Failed to open database: "+e);
@@ -2670,6 +2760,19 @@ public class Node implements TimeSkewDetectorCallback {
 
 		db = database;
 		
+	}
+
+
+	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) {
+		IoAdapter baseAdapter = dbConfig.io();
+		if(Logger.shouldLog(Logger.DEBUG, this))
+			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
+		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		ObjectContainer database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
+		synchronized(this) {
+			databaseAwaitingPassword = false;
+		}
+		return database;
 	}
 
 
