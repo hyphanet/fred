@@ -7,7 +7,7 @@ import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.ReceivedStatusFeedMessage;
 import freenet.support.HTMLNode;
 
-public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends AbstractUserAlert {
+public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends AbstractUserEvent {
 
 	protected final Map<String, T> events;
 
@@ -15,19 +15,14 @@ public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends Ab
 		this.events = events;
 	}
 
-	protected StoringUserEvent(boolean userCanDismiss, String title, String text,
+	protected StoringUserEvent(Type eventType, boolean userCanDismiss, String title, String text,
 			String shortText, HTMLNode htmlText, short priorityClass,
 			boolean valid, String dismissButtonText,
 			boolean shouldUnregisterOnDismiss, Object userIdentifier, Map<String, T> events) {
-		super(userCanDismiss, title, text, shortText, htmlText, priorityClass,
+		super(eventType, userCanDismiss, title, text, shortText, htmlText, priorityClass,
 				valid, dismissButtonText, shouldUnregisterOnDismiss,
 				userIdentifier);
 		this.events = events;
-	}
-
-	@Override
-	public final boolean isEvent() {
-		return true;
 	}
 
 	public abstract String getEventText();

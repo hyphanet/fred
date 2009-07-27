@@ -54,6 +54,7 @@ import freenet.node.fcp.RequestCompletionCallback;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserEvent;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -1822,7 +1823,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		private final long size;
 
 		public GetCompletedEvent(String identifier, FreenetURI uri, long size) {
-			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedGets);
+			super(Type.GetCompleted, true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedGets);
 			this.identifier = identifier;
 			this.uri = uri;
 			this.size = size;
@@ -1879,7 +1880,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		private final long size;
 
 		public PutCompletedEvent(String identifier, FreenetURI uri, long size) {
-			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPuts);
+			super(Type.PutCompleted, true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPuts);
 			this.identifier = identifier;
 			this.uri = uri;
 			this.size = size;
@@ -1936,7 +1937,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		private final int files;
 
 		public PutDirCompletedEvent(String identifier, FreenetURI uri, long size, int files) {
-			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPutDirs);
+			super(Type.PutDirCompleted, true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPutDirs);
 			this.identifier = identifier;
 			this.uri = uri;
 			this.size = size;
@@ -1980,6 +1981,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return getTitle();
 		}
 
+		@Override
 		public String getEventText() {
 			return l10n("siteUploadSucceededTitle", "filename", uri.getPreferredFilename());
 		}

@@ -28,41 +28,48 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	private final Set<UserAlert> alerts;
 	private final NodeClientCore core;
 	private final Set<FeedCallback> subscribers;
-	private final Map<String, UserAlert> events;
+	private final Map<UserEvent.Type, UserEvent> events;
+	private final Set<UserEvent.Type> unregisteredEventTypes;
 	private long lastUpdated;
 
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
 		alerts = new TreeSet<UserAlert>(this);
 		subscribers = new CopyOnWriteArraySet<FeedCallback>();
-		events = new HashMap<String, UserAlert>();
+		events = new HashMap<UserEvent.Type, UserEvent>();
+		unregisteredEventTypes = new HashSet<UserEvent.Type>();
 		lastUpdated = System.currentTimeMillis();
 	}
 
-	public void register(final UserAlert alert) {
-		if(alert.isEvent()) {
-			String name = alert.getClass().getName();
-			//Only the latest event is displayed as an alert
-			synchronized(events) {
-				UserAlert lastEvent = events.get(name);
-				synchronized(alerts) {
-					if(lastEvent != null)
-						alerts.remove(lastEvent);
-					alerts.add(alert);
-				}
-				events.put(name, alert);
+	public void register(UserAlert alert) {
+		if(alert instanceof UserEvent)
+			register((UserEvent) alert);
+		synchronized (alerts) {
+			if (!alerts.contains(alert)) {
+				alerts.add(alert);
 				lastUpdated = System.currentTimeMillis();
 				notifySubscribers(alert);
 			}
 		}
-		else {
+	}
+
+	public void register(UserEvent event) {
+		// The event is ignored if it has been indefinitely unregistered
+		synchronized(unregisteredEventTypes) {
+			if(unregisteredEventTypes.contains(event.getEventType()))
+				return;
+		}
+		// Only the latest event is displayed as an alert
+		synchronized (events) {
+			UserEvent lastEvent = events.get(event.getEventType());
 			synchronized (alerts) {
-				if(!alerts.contains(alert)) {
-					alerts.add(alert);
-					lastUpdated = System.currentTimeMillis();
-					notifySubscribers(alert);
-				}
+				if (lastEvent != null)
+					alerts.remove(lastEvent);
+				alerts.add(event);
 			}
+			events.put(event.getEventType(), event);
+			lastUpdated = System.currentTimeMillis();
+			notifySubscribers(event);
 		}
 	}
 
@@ -78,8 +85,25 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	public void unregister(UserAlert alert) {
+		if(alert instanceof UserEvent)
+			unregister(((UserEvent)alert).getEventType());
 		synchronized (alerts) {
 			alerts.remove(alert);
+		}
+	}
+
+	public void unregister(UserEvent.Type eventType) {
+		if(eventType.unregisterIndefinitely())
+			synchronized (unregisteredEventTypes) {
+				unregisteredEventTypes.add(eventType);
+			}
+		synchronized (events) {
+			UserEvent latestEvent;
+			latestEvent = events.remove(eventType);
+			if(latestEvent != null)
+				synchronized(alerts) {
+					alerts.remove(latestEvent);
+				}
 		}
 	}
 

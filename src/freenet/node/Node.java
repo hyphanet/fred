@@ -2838,10 +2838,6 @@ public class Node implements TimeSkewDetectorCallback {
 			return false;
 		}
 
-                public boolean isEvent() {
-                        return false;
-                }
-
 		public boolean isValid() {
 			synchronized(Node.this) {
 				return clientCacheAwaitingPassword || databaseAwaitingPassword;

@@ -78,11 +78,6 @@ public interface UserAlert {
 	public boolean isEventNotification();
 
 	/**
-	 * @return True if this is an event. Only the last registered event is displayed.
-	 */
-	public boolean isEvent();
-
-	/**
 	 * @param The identifier of the subscription
 	 * @return A FCPMessage that is sent subscribing FCPClients
 	 */
