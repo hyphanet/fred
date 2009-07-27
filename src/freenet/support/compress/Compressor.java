@@ -51,6 +51,35 @@ public interface Compressor {
 			return null;
 		}
 
+		public static String getHelloCompressorDescriptor() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(COMPRESSOR_TYPE.values().length);
+			sb.append(" - ");
+			getCompressorDescriptor(sb);
+			return sb.toString();
+		}
+
+		public static String getCompressorDescriptor() {
+			StringBuilder sb = new StringBuilder();
+			getCompressorDescriptor(sb);
+			return sb.toString();
+		}
+
+		public static void getCompressorDescriptor(StringBuilder sb) {
+			COMPRESSOR_TYPE[] values = values();
+			boolean isfirst = true;
+			for(COMPRESSOR_TYPE current : values) {
+				if (isfirst)
+					isfirst = false;
+				else
+					sb.append(", ");
+				sb.append(current.name);
+				sb.append('(');
+				sb.append(current.metadataID);
+				sb.append(')');
+			}
+		}
+
 		/**
 		 * make a COMPRESSOR_TYPE[] from a descriptor string<BR>
 		 * the descriptor string is a comma separated list of numbers or names(can be mixed)<BR>
