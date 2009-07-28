@@ -164,7 +164,47 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			}
 
-			if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
+			if(request.isPartSet("delete_request") && (request.getPartAsString("delete_request", 32).length() > 0)) {
+				// Confirm box
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmDeleteTitle"), ctx);
+				HTMLNode inner = page.content;
+				HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmDeleteTitle"), inner);
+				HTMLNode infoList = content.addChild("ul");
+				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
+				String keyString = request.getPartAsString("key", MAX_KEY_LENGTH);
+				String type = request.getPartAsString("type", MAX_TYPE_LENGTH);
+				String size = request.getPartAsString("size", 50);
+				if(filename != null) {
+					HTMLNode line = infoList.addChild("li");
+					line.addChild("#", L10n.getString("FProxyToadlet.filenameLabel")+" ");
+					if(keyString != null) {
+						line.addChild("a", "href", "/"+keyString, filename);
+					} else {
+						line.addChild("#", filename);
+					}
+				}
+				if(type != null && !type.equals("")) {
+					
+					HTMLNode line = infoList.addChild("li");
+					boolean finalized = request.isPartSet("finalizedType");
+					line.addChild("#", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { type }));
+				}
+				if(size != null) {
+					HTMLNode line = infoList.addChild("li");
+					line.addChild("#", L10n.getString("FProxyToadlet.sizeLabel") + " " + size);
+				}
+				
+				content.addChild("p", l10n("confirmDelete"));
+				
+				HTMLNode deleteNode = content.addChild("p");
+				HTMLNode deleteForm = ctx.addFormChild(deleteNode, path(), "queueDeleteForm-" + identifier.hashCode());
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("Toadlet.yes") });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.no") });
+
+                this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
+			} else if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Removing "+identifier);
 				try {
@@ -1322,13 +1362,19 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		return recommendNode;
 	}
 
-	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier, ClientRequest clientRequest, ToadletContext ctx) {
+	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier, ClientRequest clientRequest, ToadletContext ctx, ObjectContainer container) {
 		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
 		HTMLNode deleteForm = ctx.addFormChild(deleteNode, path(), "queueDeleteForm-" + identifier.hashCode());
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-		if((clientRequest instanceof ClientGet) && !((ClientGet)clientRequest).isToDisk())
-			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.deleteFileFromTemp") });
-		else
+		if((clientRequest instanceof ClientGet) && !((ClientGet)clientRequest).isToDisk()) {
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", L10n.getString("QueueToadlet.deleteFileFromTemp") });
+			FreenetURI uri = ((ClientGet)clientRequest).getURI(container);
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", uri.toString(false, false) });
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "size", SizeUtil.formatSize(((ClientGet)clientRequest).getDataSize(container)) });
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", uri.getPreferredFilename() });
+			if(((ClientGet)clientRequest).isTotalFinalized(container))
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "finalized", "true" });
+		} else
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
 		
 		// If it's failed, offer to restart it
@@ -1507,7 +1553,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			container.activate(clientRequest, 1);
 			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
 
-			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier(), clientRequest, ctx));
+			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier(), clientRequest, ctx, container));
 
 			for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 				int column = columns[columnIndex];
