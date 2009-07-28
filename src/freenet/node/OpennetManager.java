@@ -549,7 +549,7 @@ public class OpennetManager {
 		return nodes[node.random.nextInt(nodes.length)];
 	}
 
-	public void purgeOldOpennetPeer(PeerNode source) {
+	public synchronized void purgeOldOpennetPeer(PeerNode source) {
 		oldPeers.remove(source);
 	}
 
