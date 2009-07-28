@@ -9,9 +9,11 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 
 public interface ClientGetCallback extends ClientBaseCallback {
-	/** Called on successful fetch */
+	/** Called on successful fetch. Caller should schedule a job on the Ticker
+	 * or Executor (on the ClientContext) if it needs to do much work. */
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container);
 
-	/** Called on failed/canceled fetch */
+	/** Called on failed/canceled fetch. Caller should schedule a job on the Ticker
+	 * or Executor (on the ClientContext) if it needs to do much work. */
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container);
 }
