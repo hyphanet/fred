@@ -41,6 +41,7 @@ import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
 import freenet.node.fcp.ClientPutDir;
@@ -249,6 +250,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
 				
+				String target = request.getPartAsString("target", 16);
+				if(target == null) target = "direct";
+				
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
 					
@@ -259,7 +263,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
-						fcp.makePersistentGlobalRequestBlocking(fetchURI, null, "forever", "disk");
+						fcp.makePersistentGlobalRequestBlocking(fetchURI, null, "forever", target);
 						success.add(currentKey);
 					} catch (Exception e) {
 						failure.add(currentKey);
@@ -1450,6 +1454,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		downloadForm.addChild("textarea", new String[] { "id", "name", "cols", "rows" }, new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
 		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", L10n.getString("QueueToadlet.download") });
+		if(core.node.securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+			downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "target", "disk" });
+		} else {
+			HTMLNode select = downloadForm.addChild("select", "name", "target");
+			select.addChild("option", "value", "disk", l10n("bulkDownloadSelectOptionDisk"));
+			select.addChild("option", new String[] { "value", "selected" }, new String[] { "direct", "true" }, l10n("bulkDownloadSelectOptionDirect"));
+		}
 		return downloadBox;
 	}
 	
