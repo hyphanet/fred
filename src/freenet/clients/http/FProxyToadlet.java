@@ -854,10 +854,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 
-	private String getDownloadReturnType() {
-		return getDownloadReturnType(core.node);
-	}
-	
 	private static String getDownloadReturnType(Node node) {
 		if(node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW)
 			// Default to save to temp space
