@@ -1326,7 +1326,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
 		HTMLNode deleteForm = ctx.addFormChild(deleteNode, path(), "queueDeleteForm-" + identifier.hashCode());
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
+		if((clientRequest instanceof ClientGet) && !((ClientGet)clientRequest).isToDisk())
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.deleteFileFromTemp") });
+		else
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
 		
 		// If it's failed, offer to restart it
 		
