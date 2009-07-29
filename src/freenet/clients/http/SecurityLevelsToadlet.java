@@ -182,7 +182,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 						return;
 					}
 				}
-				if(newPhysicalLevel != node.securityLevels.getPhysicalThreatLevel()) {
+				if(newPhysicalLevel != oldPhysicalLevel) {
 					// No confirmation for changes to physical threat level.
 					if(newPhysicalLevel == PHYSICAL_THREAT_LEVEL.HIGH && node.securityLevels.getPhysicalThreatLevel() != newPhysicalLevel) {
 						// Check for password
