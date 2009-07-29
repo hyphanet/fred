@@ -803,12 +803,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return -1;
 	}
 	
-	private long canAutoconfigureDatastoreSize() {
-		if(!config.get("node").getOption("storeSize").isDefault())
-			return -1;
+	// FIXME move to FileUtil
+	public static final long getFreeSpace(File dir) {
 		// Use JNI to find out the free space on this partition.
 		long freeSpace = -1;
-		File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
 		try {
 			Class<? extends File> c = dir.getClass();
 			Method m = c.getDeclaredMethod("getFreeSpace", new Class<?>[0]);
@@ -826,6 +824,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
 			freeSpace = -1;
 		}
+		return freeSpace;
+	}
+	
+	private long canAutoconfigureDatastoreSize() {
+		if(!config.get("node").getOption("storeSize").isDefault())
+			return -1;
+		
+		long freeSpace = getFreeSpace(core.node.getNodeDir());
 		
 		if(freeSpace <= 0)
 			return -1;

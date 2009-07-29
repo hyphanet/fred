@@ -47,6 +47,7 @@ import com.sleepycat.je.StatsConfig;
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.ConfigToadlet;
+import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
@@ -133,6 +134,7 @@ import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -2174,6 +2176,7 @@ public class Node implements TimeSkewDetectorCallback {
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 
 		if(databaseAwaitingPassword) createPasswordUserAlert();
+		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
 		
 		netid = new NetworkIDManager(this);
 		
@@ -2608,7 +2611,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
 				// Just open it.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
-			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption) {
+			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFileCrypt, false)) {
 				// Migrate the encrypted file to plaintext, if we have the key
 				if(databaseKey == null) {
 					// Try with no password
@@ -2651,7 +2654,7 @@ public class Node implements TimeSkewDetectorCallback {
 				dbFileCrypt.delete();
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 				System.err.println("Completed decrypting the old node.db4o.crypt.");
-			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption) {
+			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
 				if(databaseKey == null) {
@@ -2773,6 +2776,30 @@ public class Node implements TimeSkewDetectorCallback {
 		
 	}
 
+	private volatile boolean notEnoughSpaceForAutoCrypt = false;
+	private volatile boolean notEnoughSpaceIsCrypt = false;
+	private volatile long notEnoughSpaceMinimumSpace = 0;
+
+	private boolean enoughSpaceForAutoChangeEncryption(File file, boolean isCrypt) {
+		long freeSpace = FirstTimeWizardToadlet.getFreeSpace(file);
+		if(freeSpace == -1) {
+			return true; // We hope ... FIXME check the error handling ...
+		}
+		long minSpace = (long)(file.length() * 1.1) + 10*1024*1024;
+		if(freeSpace < minSpace) {
+			System.err.println(l10n(isCrypt ? "notEnoughSpaceToAutoEncrypt" : "notEnoughSpaceToAutoDecrypt", new String[] { "size", "file" }, new String[] { SizeUtil.formatSize(minSpace), dbFile.getAbsolutePath() }));
+			if(this.clientCore != null && this.clientCore.alerts != null)
+				createAutoCryptFailedUserAlert();
+			else {
+				notEnoughSpaceIsCrypt = isCrypt;
+				notEnoughSpaceForAutoCrypt = true;
+				notEnoughSpaceMinimumSpace = minSpace;
+			}
+			return false;
+		}
+		return true;
+	}
+
 
 	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) {
 		IoAdapter baseAdapter = dbConfig.io();
@@ -2875,6 +2902,15 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private void createPasswordUserAlert() {
 		this.clientCore.alerts.register(masterPasswordUserAlert);
+	}
+	
+	private void createAutoCryptFailedUserAlert() {
+		boolean isCrypt = notEnoughSpaceIsCrypt;
+		this.clientCore.alerts.register(new SimpleUserAlert(true, 
+				isCrypt ? l10n("notEnoughSpaceToAutoEncryptTitle") : l10n("notEnoughSpaceToAutoDecryptTitle"),
+				l10n((isCrypt ? "notEnoughSpaceToAutoEncrypt" : "notEnoughSpaceToAutoDecrypt"), new String[] { "size", "file" }, new String[] { SizeUtil.formatSize(notEnoughSpaceMinimumSpace), dbFile.getAbsolutePath() }),
+				isCrypt ? l10n("notEnoughSpaceToAutoEncryptTitle") : l10n("notEnoughSpaceToAutoDecryptTitle"),
+				isCrypt ? UserAlert.ERROR : UserAlert.WARNING));
 	}
 
 	private void initRAMClientCacheFS() {
