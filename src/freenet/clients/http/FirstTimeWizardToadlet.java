@@ -441,6 +441,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
+			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
 			return;
 		} else if(request.isPartSet("security-levels.friendsThreatLevel")) {
@@ -480,6 +481,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
+			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 			return;
 		} else if(request.isPartSet("security-levels.physicalThreatLevel")) {
