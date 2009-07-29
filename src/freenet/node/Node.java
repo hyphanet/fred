@@ -3969,10 +3969,10 @@ public class Node implements TimeSkewDetectorCallback {
 			if(canWriteDatastore || writeLocalToDatastore) {
 				double loc=block.getKey().toNormalizedDouble();
 				if(deep) {
-					chkDatastore.put(block, canWriteDatastore);
+					chkDatastore.put(block, !canWriteDatastore);
 					nodeStats.avgStoreLocation.report(loc);
 				}
-				chkDatacache.put(block, canWriteDatastore);
+				chkDatacache.put(block, !canWriteDatastore);
 				nodeStats.avgCacheLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
@@ -4013,9 +4013,9 @@ public class Node implements TimeSkewDetectorCallback {
 				sskSlashdotcache.put(block, overwrite, false);
 			if(canWriteDatastore || writeLocalToDatastore) {
 				if(deep) {
-					sskDatastore.put(block, overwrite, canWriteDatastore);
+					sskDatastore.put(block, overwrite, !canWriteDatastore);
 				}
-				sskDatacache.put(block, overwrite, canWriteDatastore);
+				sskDatacache.put(block, overwrite, !canWriteDatastore);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);

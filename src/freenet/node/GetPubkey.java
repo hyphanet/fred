@@ -145,10 +145,10 @@ public class GetPubkey {
 			// Cannot write to the store or cache if request started nearby.
 			if(!(canWriteDatastore || writeLocalToDatastore)) return;
 			if (deep) {
-				pubKeyDatastore.put(hash, key, canWriteDatastore);
+				pubKeyDatastore.put(hash, key, !canWriteDatastore);
 				pubKeyDatastore.fetch(hash, true);
 			}
-			pubKeyDatacache.put(hash, key, canWriteDatastore);
+			pubKeyDatacache.put(hash, key, !canWriteDatastore);
 			pubKeyDatacache.fetch(hash, true);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.
