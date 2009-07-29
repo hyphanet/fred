@@ -76,8 +76,6 @@ public class GetPubkey {
 				PubkeyStore pks = node.oldPKClientCache;
 				if(pks != null) key = pks.fetch(hash, false);
 			}
-			if(key == null && pubKeySlashdotcache != null && forULPR)
-				key = pubKeySlashdotcache.fetch(hash, false);
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
 			if(key == null)
 				key = pubKeyDatastore.fetch(hash, false);
@@ -91,6 +89,8 @@ public class GetPubkey {
 				PubkeyStore pks = node.oldPKCache;
 				if(pks != null) key = pks.fetch(hash, false);
 			}
+			if(key == null && pubKeySlashdotcache != null && forULPR)
+				key = pubKeySlashdotcache.fetch(hash, false);
 			if (key != null) {
 				// Just put into the in-memory cache
 				cacheKey(hash, key, false, false, false, forULPR, false);
