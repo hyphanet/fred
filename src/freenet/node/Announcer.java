@@ -19,9 +19,10 @@ import java.util.Vector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.L10n;
-import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.AbstractUserEvent;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserEvent;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -542,7 +543,7 @@ public class Announcer {
 		node.executor.execute(sender, "Announcer to "+seed);
 	}
 
-	class AnnouncementUserEvent extends AbstractUserAlert {
+	class AnnouncementUserEvent extends AbstractUserEvent {
 
 		private final int status;
 
@@ -661,8 +662,8 @@ public class Announcer {
 			return false;
 		}
 
-		public boolean isEvent() {
-			return true;
+		public UserEvent.Type getEventType() {
+			return UserEvent.Type.Announcer;
 		}
 
 	}

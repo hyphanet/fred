@@ -378,6 +378,7 @@ final public class FileUtil {
 				raf.getFD().sync();
 				// Then random data
 				random.nextBytes(buf);
+				raf.seek(0);
 				count = 0;
 				while(count < size) {
 					int written = (int) Math.min(buf.length, size - count);
@@ -385,6 +386,7 @@ final public class FileUtil {
 					count += written;
 				}
 				raf.getFD().sync();
+				raf.seek(0);
 				// Then 0's again
 				for(int i=0;i<buf.length;i++)
 					buf[i] = 0;

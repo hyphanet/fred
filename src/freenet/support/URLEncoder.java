@@ -14,6 +14,10 @@ public class URLEncoder {
 	// Moved here from FProxy by amphibian
 	final static String safeURLCharacters = "*-_./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
+	public final static String encode(String URL, String force, boolean ascii) {
+		return encode(URL, force, ascii, "");
+	}
+	
 	/**
 	 * Encode a string for inclusion in a URI.
 	 *
@@ -23,11 +27,11 @@ public class URLEncoder {
 	 * passing to something that needs ASCII (e.g. HTTP headers), set to false if you are using in an HTML page.
 	 * @return      Encoded version of string
 	 */
-	public final static String encode(String URL, String force, boolean ascii) {
+	public final static String encode(String URL, String force, boolean ascii, String extraSafeChars) {
 		StringBuilder enc = new StringBuilder(URL.length());
 		for (int i = 0; i < URL.length(); ++i) {
 			char c = URL.charAt(i);
-			if (((safeURLCharacters.indexOf(c) >= 0) || ((!ascii) && c >= 0200))
+			if (((safeURLCharacters.indexOf(c) >= 0) || ((!ascii) && c >= 0200) || extraSafeChars.indexOf(c) >= 0)
 					&& (force == null || force.indexOf(c) < 0)) {
 				enc.append(c);
 			} else {

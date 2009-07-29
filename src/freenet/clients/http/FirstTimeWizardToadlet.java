@@ -776,9 +776,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
 		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
-		if(downstreamBWLimit > 0 && downstreamBWLimit < 65536 || upstreamBWLimit > 0 && upstreamBWLimit < 8192) {
+		if((downstreamBWLimit > 0 && downstreamBWLimit < 65536) || (upstreamBWLimit > 0 && upstreamBWLimit < 8192)) {
 			// These are kilobits, not bits, per second, right?
 			// Assume the router is buggy and don't autoconfigure.
+			// Nothing that implements UPnP would be that slow.
 			System.err.println("Buggy router? downstream: "+downstreamBWLimit+" upstream: "+upstreamBWLimit+" - these are supposed to be in bits per second!");
 			return -1;
 		}

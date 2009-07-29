@@ -626,6 +626,8 @@ public class FreenetURI implements Cloneable {
 		return b.toString();
 	}
 
+	/** Encode to a user-friendly, incomplete string with ... replacing some of 
+	 * the base64. Allow spaces, foreign chars etc. */
 	public String toShortString() {
 		StringBuilder b = new StringBuilder();
 
@@ -638,14 +640,14 @@ public class FreenetURI implements Cloneable {
 		}
 
 		if(docName != null)
-			b.append(URLEncoder.encode(docName, "/", false));
+			b.append(URLEncoder.encode(docName, "/", false, " "));
 		if(keyType.equals("USK")) {
 			b.append('/');
 			b.append(suggestedEdition);
 		}
 		if(metaStr != null)
 			for(int i = 0; i < metaStr.length; i++) {
-				b.append('/').append(URLEncoder.encode(metaStr[i], "/", false));
+				b.append('/').append(URLEncoder.encode(metaStr[i], "/", false, " "));
 			}
 		return b.toString();
 	}

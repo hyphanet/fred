@@ -96,7 +96,7 @@ public class RequestElement extends BaseUpdateableElement {
 			setContent(UpdaterConstants.FINISHED);
 		} else {
 
-			addChild(createDeleteCell(clientRequest.getIdentifier(), clientRequest, ctx));
+			addChild(createDeleteCell(clientRequest.getIdentifier(), clientRequest, ctx, container));
 
 			for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 				int column = columns[columnIndex];
@@ -139,7 +139,7 @@ public class RequestElement extends BaseUpdateableElement {
 						addChild(createFilenameCell(((ClientPut) clientRequest).getOrigFilename(container)));
 					}
 				} else if (column == QueueToadlet.LIST_PRIORITY) {
-					addChild(createPriorityCell( clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses, advancedModeEnabled));
+					addChild(createPriorityCell(clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses, advancedModeEnabled));
 				} else if (column == QueueToadlet.LIST_FILES) {
 					addChild(createNumberCell(((ClientPutDir) clientRequest).getNumberOfFiles()));
 				} else if (column == QueueToadlet.LIST_TOTAL_SIZE) {
@@ -205,21 +205,30 @@ public class RequestElement extends BaseUpdateableElement {
 		return recommendNode;
 	}
 
-	private HTMLNode createDeleteCell(String identifier, ClientRequest clientRequest, ToadletContext ctx) {
+	private HTMLNode createDeleteCell(String identifier, ClientRequest clientRequest, ToadletContext ctx, ObjectContainer container) {
 		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
 		HTMLNode deleteForm = ctx.addFormChild(deleteNode, path, "queueDeleteForm-" + identifier.hashCode());
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
-
+		if((clientRequest instanceof ClientGet) && !((ClientGet)clientRequest).isToDisk()) {
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", L10n.getString("QueueToadlet.deleteFileFromTemp") });
+			FreenetURI uri = ((ClientGet)clientRequest).getURI(container);
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", uri.toString(false, false) });
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "size", SizeUtil.formatSize(((ClientGet)clientRequest).getDataSize(container)) });
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", uri.getPreferredFilename() });
+			if(((ClientGet)clientRequest).isTotalFinalized(container))
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "finalized", "true" });
+		} else
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
+		
 		// If it's failed, offer to restart it
-
-		if (clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
+		
+		if(clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
 			HTMLNode retryForm = ctx.addFormChild(deleteNode, path, "queueRestartForm-" + identifier.hashCode());
-			String restartName = L10n.getString(clientRequest instanceof ClientGet && ((ClientGet) clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
+			String restartName = L10n.getString(clientRequest instanceof ClientGet && ((ClientGet)clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
 		}
-
+		
 		return deleteNode;
 	}
 

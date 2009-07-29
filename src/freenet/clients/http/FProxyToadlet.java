@@ -314,11 +314,27 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				option = optionList.addChild("li");
 				HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType(core.node) });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
+				optionForm.addChild("#", " - ");
+				L10n.addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk", new String[] { "dir", "page", "/link" }, new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
+				
+				if(core.node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW) {
+					option = optionList.addChild("li");
+					optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "direct" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
+					optionForm.addChild("#", " - ");
+					L10n.addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace", new String[] { "page", "/link" }, new String[] { "<a href=\"/downloads\">", "</a>" });
+				}
+
 			}
+			
 
 			byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
 			context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
@@ -623,9 +639,22 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				ul.addChild("li").addChild("p", l10n("progressOptionZero"));
 				HTMLNode optionForm = ctx.addFormChild(ul.addChild("li").addChild("p"), "/downloads/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType() });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
+				optionForm.addChild("#", " - ");
+				L10n.addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk", new String[] { "dir", "page", "/link" }, new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
+
+				if(core.node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW) {
+					optionForm = ctx.addFormChild(ul.addChild("li").addChild("p"), "/downloads/", "tooBigQueueForm");
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "direct" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
+					optionForm.addChild("#", " - ");
+					L10n.addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace", new String[] { "page", "/link" }, new String[] { "<a href=\"/downloads\">", "</a>" });
+
+				}
 
 				ul.addChild("li").addChild("p").addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				
@@ -707,26 +736,45 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("explanationTitle"));
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("#", l10n("largeFileExplanationAndOptions"));
-				HTMLNode optionList = infoboxContent.addChild("ul");
+				HTMLNode optionTable = infoboxContent.addChild("table", "border", "0");
 				if(!restricted) {
-					option = optionList.addChild("li");
-					HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(), "get" });
+					option = optionTable.addChild("tr");
+					HTMLNode optionForm = option.addChild("td").addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(), "get" });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplay") });
-					option = optionList.addChild("li");
-					optionForm = ctx.addFormChild(option, "/downloads/", "tooBigQueueForm");
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplayButton") });
+					option.addChild("td", l10n("fetchLargeFileAnywayAndDisplay"));
+					option = optionTable.addChild("tr");
+					optionForm = ctx.addFormChild(option.addChild("td"), "/downloads/", "tooBigQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType() });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 					if (mime != null) {
 						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
 					}
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
+					L10n.addL10nSubstitution(optionForm.addChild("td"), "FProxyToadlet.downloadInBackgroundToDisk", new String[] { "dir", "page", "/link" }, new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
+					
+					if(core.node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW) {
+					
+						option = optionTable.addChild("tr");
+						
+						optionForm = ctx.addFormChild(option.addChild("td"), "/downloads/", "tooBigQueueForm");
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "direct" });
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+						if (mime != null) {
+							optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
+						}
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
+						L10n.addL10nSubstitution(option.addChild("td"), "FProxyToadlet.downloadInBackgroundToTempSpace", new String[] { "page", "/link" }, new String[] { "<a href=\"/downloads\">", "</a>" });
+					
+					}
 				}
-
-				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", L10n.getString("Toadlet.homepage") }, l10n("abortToHomepage"));
 				
-				option = optionList.addChild("li");
+
+				optionTable.addChild("tr").addChild("td", "colspan", "2").addChild("a", new String[] { "href", "title" }, new String[] { "/", L10n.getString("Toadlet.homepage") }, l10n("abortToHomepage"));
+				
+				option = optionTable.addChild("tr").addChild("td", "colspan", "2");
 				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -768,12 +816,30 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					option = optionList.addChild("li");
 					HTMLNode optionForm = ctx.addFormChild(option, "/downloads/", "dnfQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", getDownloadReturnType() });
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
 					if (mime != null) {
 						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
 					}
-					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk")});
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton")});
+					optionForm.addChild("#", " - ");
+					L10n.addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk", new String[] { "dir", "page", "/link" }, new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
+					
+					if(core.node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW) {
+						
+						option = optionList.addChild("li");
+						optionForm = ctx.addFormChild(option, "/downloads/", "dnfQueueForm");
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "direct" });
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+						if (mime != null) {
+							optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
+						}
+						optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton")});
+						optionForm.addChild("#", " - ");
+						L10n.addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace", new String[] { "page", "/link" }, new String[] { "<a href=\"/downloads\">", "</a>" });
+						
+					}
 					
 					optionList.addChild("li").
 						addChild("a", "href", getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"))).addChild("#", l10n("retryNow"));
@@ -804,10 +870,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 
-	private String getDownloadReturnType() {
-		return getDownloadReturnType(core.node);
-	}
-	
 	private static String getDownloadReturnType(Node node) {
 		if(node.securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW)
 			// Default to save to temp space

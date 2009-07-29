@@ -42,6 +42,7 @@ import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
 import freenet.node.fcp.ClientPutDir;
@@ -55,6 +56,7 @@ import freenet.node.fcp.RequestCompletionCallback;
 import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserEvent;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -163,7 +165,47 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			}
 
-			if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
+			if(request.isPartSet("delete_request") && (request.getPartAsString("delete_request", 32).length() > 0)) {
+				// Confirm box
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmDeleteTitle"), ctx);
+				HTMLNode inner = page.content;
+				HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmDeleteTitle"), inner);
+				HTMLNode infoList = content.addChild("ul");
+				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
+				String keyString = request.getPartAsString("key", MAX_KEY_LENGTH);
+				String type = request.getPartAsString("type", MAX_TYPE_LENGTH);
+				String size = request.getPartAsString("size", 50);
+				if(filename != null) {
+					HTMLNode line = infoList.addChild("li");
+					line.addChild("#", L10n.getString("FProxyToadlet.filenameLabel")+" ");
+					if(keyString != null) {
+						line.addChild("a", "href", "/"+keyString, filename);
+					} else {
+						line.addChild("#", filename);
+					}
+				}
+				if(type != null && !type.equals("")) {
+					
+					HTMLNode line = infoList.addChild("li");
+					boolean finalized = request.isPartSet("finalizedType");
+					line.addChild("#", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { type }));
+				}
+				if(size != null) {
+					HTMLNode line = infoList.addChild("li");
+					line.addChild("#", L10n.getString("FProxyToadlet.sizeLabel") + " " + size);
+				}
+				
+				content.addChild("p", l10n("confirmDelete"));
+				
+				HTMLNode deleteNode = content.addChild("p");
+				HTMLNode deleteForm = ctx.addFormChild(deleteNode, path(), "queueDeleteForm-" + identifier.hashCode());
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("Toadlet.yes") });
+				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.no") });
+
+                this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
+			} else if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Removing "+identifier);
 				try {
@@ -249,6 +291,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
 				
+				String target = request.getPartAsString("target", 16);
+				if(target == null) target = "direct";
+				
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
 					
@@ -259,7 +304,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
-						fcp.makePersistentGlobalRequestBlocking(fetchURI, null, "forever", "disk");
+						fcp.makePersistentGlobalRequestBlocking(fetchURI, null, "forever", target);
 						success.add(currentKey);
 					} catch (Exception e) {
 						failure.add(currentKey);
@@ -1181,7 +1226,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_RECOMMEND, LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_RECOMMEND, LIST_FILENAME, LIST_SIZE, LIST_PROGRESS, LIST_PRIORITY, LIST_KEY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, false, container));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_RECOMMEND, LIST_SIZE, LIST_PROGRESS, LIST_PRIORITY, LIST_KEY }, priorityClasses, advancedModeEnabled, false, container));
 			}
 		}
 		
@@ -1266,6 +1311,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		downloadForm.addChild("textarea", new String[] { "id", "name", "cols", "rows" }, new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
 		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", L10n.getString("QueueToadlet.download") });
+		if(core.node.securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+			downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "target", "disk" });
+		} else {
+			HTMLNode select = downloadForm.addChild("select", "name", "target");
+			select.addChild("option", "value", "disk", l10n("bulkDownloadSelectOptionDisk"));
+			select.addChild("option", new String[] { "value", "selected" }, new String[] { "direct", "true" }, l10n("bulkDownloadSelectOptionDirect"));
+		}
 		return downloadBox;
 	}
 	
@@ -1575,7 +1627,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		private final long size;
 
 		public GetCompletedEvent(String identifier, FreenetURI uri, long size) {
-			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedGets);
+			super(Type.GetCompleted, true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedGets);
 			this.identifier = identifier;
 			this.uri = uri;
 			this.size = size;
@@ -1632,7 +1684,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		private final long size;
 
 		public PutCompletedEvent(String identifier, FreenetURI uri, long size) {
-			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPuts);
+			super(Type.PutCompleted, true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPuts);
 			this.identifier = identifier;
 			this.uri = uri;
 			this.size = size;
@@ -1689,7 +1741,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		private final int files;
 
 		public PutDirCompletedEvent(String identifier, FreenetURI uri, long size, int files) {
-			super(true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPutDirs);
+			super(Type.PutDirCompleted, true, null, null, null, null, UserAlert.MINOR, true, L10n.getString("UserAlert.hide"), true, null, completedPutDirs);
 			this.identifier = identifier;
 			this.uri = uri;
 			this.size = size;
@@ -1733,6 +1785,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return getTitle();
 		}
 
+		@Override
 		public String getEventText() {
 			return l10n("siteUploadSucceededTitle", "filename", uri.getPreferredFilename());
 		}

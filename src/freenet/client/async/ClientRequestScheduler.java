@@ -625,7 +625,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	};
 	
+	private boolean fillingRequestStarterQueue;
+	
 	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
+		synchronized(this) {
+			if(fillingRequestStarterQueue) return;
+			fillingRequestStarterQueue = true;
+		}
+		try {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
 		if(!isInsertScheduler) {
@@ -710,6 +717,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(addedMore) starter.wakeUp();
 				return;
 			}
+		}
+		} finally {
+			fillingRequestStarterQueue = false;
 		}
 	}
 	
