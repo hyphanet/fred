@@ -111,10 +111,12 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		try {
 			T ret =
 				callback.construct(data, header, routingKey, fk, canReadClientCache, canReadSlashdotCache, null);
-			hits++;
-			if(!dontPromote) {
-				block.lastAccessed = System.currentTimeMillis();
-				blocksByRoutingKey.push(key, block);
+			synchronized(this) {
+				hits++;
+				if(!dontPromote) {
+					block.lastAccessed = System.currentTimeMillis();
+					blocksByRoutingKey.push(key, block);
+				}
 			}
 			if(logDEBUG) Logger.debug(this, "Block was last accessed "+(System.currentTimeMillis() - timeAccessed)+"ms ago");
 			return ret;
