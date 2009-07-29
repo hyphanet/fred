@@ -581,7 +581,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			HTMLNode inner = input.addChild("p").addChild("i");
 			L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
-				if(node.securityLevels.getPhysicalThreatLevel() == level) {
+				if(physicalLevel == level) {
 					addPasswordChangeForm(inner);
 				} else {
 					// Add password form
