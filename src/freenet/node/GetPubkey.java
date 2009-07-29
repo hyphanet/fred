@@ -93,7 +93,7 @@ public class GetPubkey {
 				key = pubKeySlashdotcache.fetch(hash, false);
 			if (key != null) {
 				// Just put into the in-memory cache
-				cacheKey(hash, key, false, false, false, forULPR, false);
+				cacheKey(hash, key, false, false, false, false, false);
 				if (logMINOR)
 					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from store");
 			}
