@@ -13,6 +13,8 @@ import freenet.keys.KeyVerifyException;
 import freenet.node.Ticker;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
+import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.TempBucketFactory;
 
@@ -27,6 +29,19 @@ import freenet.support.io.TempBucketFactory;
  */
 public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+	
 	private class DiskBlock {
 		Bucket data;
 		long lastAccessed;
@@ -75,12 +90,14 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		DiskBlock block;
+		long timeAccessed;
 		synchronized(this) {
 			block = blocksByRoutingKey.get(key);
 			if(block == null) {
 				misses++;
 				return null;
 			}
+			timeAccessed = block.lastAccessed;
 		}
 		InputStream in = block.data.getInputStream();
 		DataInputStream dis = new DataInputStream(in);
@@ -99,6 +116,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 				block.lastAccessed = System.currentTimeMillis();
 				blocksByRoutingKey.push(key, block);
 			}
+			if(logDEBUG) Logger.debug(this, "Block was last accessed "+(System.currentTimeMillis() - timeAccessed)+"ms ago");
 			return ret;
 		} catch (KeyVerifyException e) {
 			block.data.free();
