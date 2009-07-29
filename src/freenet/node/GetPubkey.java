@@ -130,13 +130,13 @@ public class GetPubkey {
 				cachedPubKeys.popKey();
 		}
 		try {
-			if (canWriteClientCache) {
+			if (canWriteClientCache && !(canWriteDatastore || writeLocalToDatastore)) {
 				if(pubKeyClientcache != null) {
 					pubKeyClientcache.put(hash, key, false);
 					pubKeyClientcache.fetch(hash, true);
 				}
 			}
-			if (forULPR) {
+			if (forULPR && !(canWriteDatastore || writeLocalToDatastore)) {
 				if(pubKeySlashdotcache!= null) {
 					pubKeySlashdotcache.put(hash, key, false);
 					pubKeySlashdotcache.fetch(hash, true);
