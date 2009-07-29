@@ -123,33 +123,8 @@ public class GetPubkey {
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		synchronized (cachedPubKeys) {
 			DSAPublicKey key2 = cachedPubKeys.get(w);
-			if ((key2 != null) && !key2.equals(key)) {
-				// FIXME is this test really needed?
-				// SHA-256 inside synchronized{} is a bad idea
-				// FIXME get rid
-				MessageDigest md256 = SHA256.getMessageDigest();
-				try {
-					byte[] hashCheck = md256.digest(key.asBytes());
-					if (Arrays.equals(hashCheck, hash)) {
-						Logger.error(this, "Hash is correct!!!");
-						// Verify the old key
-						byte[] oldHash = md256.digest(key2.asBytes());
-						if (Arrays.equals(oldHash, hash)) {
-							Logger.error(this,
-							        "Old hash is correct too!! - Bug in DSAPublicKey.equals() or SHA-256 collision!");
-						} else {
-							Logger.error(this, "Old hash is wrong!");
-							cachedPubKeys.removeKey(w);
-							cacheKey(hash, key, deep, canWriteClientCache, canWriteDatastore, forULPR, writeLocalToDatastore);
-						}
-					} else {
-						Logger.error(this, "New hash is wrong");
-					}
-				} finally {
-					SHA256.returnMessageDigest(md256);
-				}
+			if ((key2 != null) && !key2.equals(key))
 				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
-			}
 			cachedPubKeys.push(w, key);
 			while (cachedPubKeys.size() > MAX_MEMORY_CACHED_PUBKEYS)
 				cachedPubKeys.popKey();
