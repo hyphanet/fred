@@ -2534,6 +2534,7 @@ public class Node implements TimeSkewDetectorCallback {
 		db = null;
 	}
 
+	private boolean databaseEncrypted;
 
 	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
 		/* FIXME: Backup the database! */
@@ -2607,9 +2608,15 @@ public class Node implements TimeSkewDetectorCallback {
 				FileUtil.secureDelete(dbFileCrypt, random);
 				FileUtil.secureDelete(dbFile, random);
 				database = openCryptDatabase(dbConfig, databaseKey);
+				synchronized(this) {
+					databaseEncrypted = true;
+				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
 				// Just open it.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
+				synchronized(this) {
+					databaseEncrypted = false;
+				}
 			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFileCrypt, false)) {
 				// Migrate the encrypted file to plaintext, if we have the key
 				if(databaseKey == null) {
@@ -2653,6 +2660,9 @@ public class Node implements TimeSkewDetectorCallback {
 				dbFileCrypt.delete();
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 				System.err.println("Completed decrypting the old node.db4o.crypt.");
+				synchronized(this) {
+					databaseEncrypted = false;
+				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
@@ -2691,6 +2701,9 @@ public class Node implements TimeSkewDetectorCallback {
 				FileUtil.secureDelete(dbFile, random);
 				System.err.println("Completed encrypting the old node.db4o.");
 				database = openCryptDatabase(dbConfig, databaseKey);
+				synchronized(this) {
+					databaseEncrypted = true;
+				}
 			} else if(dbFileCrypt.exists() && !dbFile.exists()) {
 				// Open encrypted, regardless of seclevel.
 				if(databaseKey == null) {
@@ -2701,9 +2714,15 @@ public class Node implements TimeSkewDetectorCallback {
 					keys.clearAllNotDatabaseKey();
 				}
 				database = openCryptDatabase(dbConfig, databaseKey);
+				synchronized(this) {
+					databaseEncrypted = true;
+				}
 			} else {
 				// Open unencrypted.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
+				synchronized(this) {
+					databaseEncrypted = false;
+				}
 			}
 		} catch (Db4oException e) {
 			database = null;
@@ -5446,5 +5465,14 @@ public class Node implements TimeSkewDetectorCallback {
 		if(clientCacheAwaitingPassword) return true;
 		if(databaseAwaitingPassword) return true;
 		return false;
+	}
+
+
+	public boolean isDatabaseEncrypted() {
+		return databaseEncrypted;
+	}
+
+	public boolean hasDatabase() {
+		return db != null;
 	}
 }
