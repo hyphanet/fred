@@ -2340,12 +2340,23 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
 		
-		// LOW seclevel = writeLocalToDatastore
+		// LOW network *and* physical seclevel = writeLocalToDatastore
 		
 		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
+					writeLocalToDatastore = true;
+				else
+					writeLocalToDatastore = false;
+			}
+			
+		});
+		
+		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
+
+			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
 					writeLocalToDatastore = true;
 				else
 					writeLocalToDatastore = false;
