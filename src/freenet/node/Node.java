@@ -506,7 +506,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * (e.g. because of many-nodes-in-one-VM). */
 	public long nodeDBHandle;
 	
-	private final boolean autoChangeDatabaseEncryption = true;
+	private boolean autoChangeDatabaseEncryption = true;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -1119,6 +1119,26 @@ public class Node implements TimeSkewDetectorCallback {
 			String msg = "Could not find or create datastore directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
 		}
+		
+		nodeConfig.register("autoChangeDatabaseEncryption", true, sortOrder++, true, false, "Node.autoChangeDatabaseEncryption", "Node.autoChangeDatabaseEncryptionLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return autoChangeDatabaseEncryption;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					autoChangeDatabaseEncryption = val;
+				}
+			}
+			
+		});
+		
+		autoChangeDatabaseEncryption = nodeConfig.getBoolean("autoChangeDatabaseEncryption");
 		
 		// Location of master key
 		
@@ -5474,5 +5494,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public boolean hasDatabase() {
 		return db != null;
+	}
+
+
+	public synchronized boolean autoChangeDatabaseEncryption() {
+		return autoChangeDatabaseEncryption;
 	}
 }
