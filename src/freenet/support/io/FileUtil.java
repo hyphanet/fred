@@ -15,11 +15,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Method;
 import java.util.Random;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
+import freenet.support.SizeUtil;
 
 final public class FileUtil {
 	
@@ -405,4 +407,27 @@ final public class FileUtil {
 			throw new IOException("Unable to delete file");
 	}
 
+	public static final long getFreeSpace(File dir) {
+		// Use JNI to find out the free space on this partition.
+		long freeSpace = -1;
+		try {
+			Class<? extends File> c = dir.getClass();
+			Method m = c.getDeclaredMethod("getFreeSpace", new Class<?>[0]);
+			if(m != null) {
+				Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
+				if(lFreeSpace != null) {
+					freeSpace = lFreeSpace.longValue();
+					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
+				}
+			}
+		} catch(NoSuchMethodException e) {
+			// Ignore
+			freeSpace = -1;
+		} catch(Throwable t) {
+			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
+			freeSpace = -1;
+		}
+		return freeSpace;
+	}
+	
 }

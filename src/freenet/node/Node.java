@@ -47,7 +47,6 @@ import com.sleepycat.je.StatsConfig;
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.ConfigToadlet;
-import freenet.clients.http.FirstTimeWizardToadlet;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
@@ -2781,7 +2780,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private volatile long notEnoughSpaceMinimumSpace = 0;
 
 	private boolean enoughSpaceForAutoChangeEncryption(File file, boolean isCrypt) {
-		long freeSpace = FirstTimeWizardToadlet.getFreeSpace(file);
+		long freeSpace = FileUtil.getFreeSpace(file);
 		if(freeSpace == -1) {
 			return true; // We hope ... FIXME check the error handling ...
 		}
