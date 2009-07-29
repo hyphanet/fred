@@ -3940,7 +3940,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
-		store(block, false, canWriteClientCache, canWriteDatastore, false);
+		store(block, false, canWriteClientCache, canWriteDatastore, forULPR);
 	}
 
 	/**
