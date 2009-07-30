@@ -2905,26 +2905,26 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private void maybeDefragmentDatabase(Configuration dbConfig, File dbfile) throws IOException {
+	private void maybeDefragmentDatabase(Configuration dbConfig, File databaseFile) throws IOException {
 		
 		synchronized(this) {
 			if(!defragDatabaseOnStartup) return;
 		}
-		if(!dbfile.exists()) return;
-		long length = dbfile.length();
+		if(!databaseFile.exists()) return;
+		long length = databaseFile.length();
 		// Estimate approx 1 byte/sec.
 		WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
 		System.err.println("Defragmenting persistent downloads database.");
 		
-		File backupFile = new File(dbfile.getPath()+".tmp");
+		File backupFile = new File(databaseFile.getPath()+".tmp");
 		backupFile.delete();
 		backupFile.deleteOnExit();
 		
-		File tmpFile = new File(dbfile.getPath()+".map");
+		File tmpFile = new File(databaseFile.getPath()+".map");
 		tmpFile.delete();
 		tmpFile.deleteOnExit();
 		
-		DefragmentConfig config=new DefragmentConfig(dbfile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
+		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
 		config.storedClassFilter(new AvailableClassFilter());
 		config.db4oConfig(dbConfig);
 		Defragment.defrag(config);
