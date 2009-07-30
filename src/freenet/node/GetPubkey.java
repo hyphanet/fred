@@ -72,7 +72,7 @@ public class GetPubkey {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
 				key = pubKeyClientcache.fetch(hash, false);
-			if(pubKeyClientcache != null && canReadClientCache && key == null) {
+			if(node.oldPKClientCache != null && canReadClientCache && key == null) {
 				PubkeyStore pks = node.oldPKClientCache;
 				if(pks != null) key = pks.fetch(hash, false);
 			}
