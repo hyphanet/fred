@@ -31,6 +31,10 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
+import com.db4o.defragment.AvailableClassFilter;
+import com.db4o.defragment.BTreeIDMapping;
+import com.db4o.defragment.Defragment;
+import com.db4o.defragment.DefragmentConfig;
 import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
@@ -496,6 +500,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private final File dbFile;
 	private final File dbFileCrypt;
+	private boolean defragDatabaseOnStartup;
+	private boolean defragOnce;
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
@@ -1208,6 +1214,46 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			
 		});
+		
+		nodeConfig.register("defragDatabaseOnStartup", true, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return defragDatabaseOnStartup;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					defragDatabaseOnStartup = val;
+				}
+			}
+			
+		});
+		
+		defragDatabaseOnStartup = nodeConfig.getBoolean("defragDatabaseOnStartup");
+		
+		nodeConfig.register("defragOnce", true, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return defragOnce;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					defragOnce = val;
+				}
+			}
+			
+		});
+		
+		defragOnce = nodeConfig.getBoolean("defragOnce");
 		
 		dbFile = new File(nodeDir, "node.db4o");
 		dbFileCrypt = new File(nodeDir, "node.db4o.crypt");
@@ -2632,6 +2678,7 @@ public class Node implements TimeSkewDetectorCallback {
 					databaseEncrypted = true;
 				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				// Just open it.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 				synchronized(this) {
@@ -2686,6 +2733,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				if(databaseKey == null) {
 					// Try with no password
 					MasterKeys keys;
@@ -2738,6 +2786,7 @@ public class Node implements TimeSkewDetectorCallback {
 					databaseEncrypted = true;
 				}
 			} else {
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				// Open unencrypted.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 				synchronized(this) {
@@ -2814,6 +2863,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 	}
 
+
 	private volatile boolean notEnoughSpaceForAutoCrypt = false;
 	private volatile boolean notEnoughSpaceIsCrypt = false;
 	private volatile long notEnoughSpaceMinimumSpace = 0;
@@ -2839,16 +2889,62 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) {
+	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
 		IoAdapter baseAdapter = dbConfig.io();
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		
+		maybeDefragmentDatabase(dbConfig, dbFile);
+		
 		ObjectContainer database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
 		synchronized(this) {
 			databaseAwaitingPassword = false;
 		}
 		return database;
+	}
+
+
+	private void maybeDefragmentDatabase(Configuration dbConfig, File dbfile) throws IOException {
+		
+		synchronized(this) {
+			if(!defragDatabaseOnStartup) return;
+		}
+		long length = dbFile.length();
+		// Estimate approx 1 byte/sec.
+		WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+		System.err.println("Defragmenting persistent downloads database.");
+		
+		File backupFile = new File(dbfile.getPath()+".tmp");
+		backupFile.delete();
+		backupFile.deleteOnExit();
+		
+		File tmpFile = new File(dbfile.getPath()+".map");
+		tmpFile.delete();
+		tmpFile.deleteOnExit();
+		
+		DefragmentConfig config=new DefragmentConfig(dbfile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
+		config.storedClassFilter(new AvailableClassFilter());
+		config.db4oConfig(dbConfig);
+		Defragment.defrag(config);
+		System.err.println("Finalising defragmentation...");
+		FileUtil.secureDelete(tmpFile, random);
+		FileUtil.secureDelete(backupFile, random);
+		System.err.println("Defragment completed.");
+		
+		synchronized(this) {
+			if(!defragOnce) return;
+			defragDatabaseOnStartup = false;
+		}
+		// Store after startup
+		this.executor.execute(new Runnable() {
+
+			public void run() {
+				Node.this.config.store();
+			}
+			
+		}, "Store config");
+
 	}
 
 
