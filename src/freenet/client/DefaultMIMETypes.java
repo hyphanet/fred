@@ -744,6 +744,14 @@ public class DefaultMIMETypes {
 		addMIMEType((short)611, "x-conference/x-cooltalk", "ice");
 		addMIMEType((short)612, "x-world/x-vrml", "vrm vrml wrl", "vrml");
 		addMIMEType((short)613, "binary/zip-compressed", "zip");
+		addMIMEType((short)614, "video/ogg", "ogv");
+		addMIMEType((short)615, "video/matroska", "mkv");
+		addMIMEType((short)616, "video/flash", "flv");
+		addMIMEType((short)617, "video/ogg-media", "ogm");
+		addMIMEType((short)618, "application/x-7z-compressed", "7z");
+		addMIMEType((short)619, "audio/speex", "spx");
+		addMIMEType((short)620, "audio/ogg", "oga");
+		addMIMEType((short)621, "audio/flac", "flac");
 	}
 	
 	/** Guess a MIME type from a filename.
