@@ -2911,7 +2911,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(!defragDatabaseOnStartup) return;
 		}
 		if(!dbfile.exists()) return;
-		long length = dbFile.length();
+		long length = dbfile.length();
 		// Estimate approx 1 byte/sec.
 		WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
 		System.err.println("Defragmenting persistent downloads database.");
