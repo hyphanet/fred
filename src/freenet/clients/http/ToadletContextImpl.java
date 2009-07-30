@@ -366,9 +366,12 @@ public class ToadletContextImpl implements ToadletContext {
 					try {
 						
 						if ((t.supportedMethods()== null) || !(t.supportedMethods().contains(method))) {
-							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
-							ctx.close();
-						} else if(method.equals("GET")) {
+							Logger.error(t, "Method not supported: "+method+" on "+t, new Exception("error"));
+						}
+//							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
+//							ctx.close();
+						//} else 
+						if(method.equals("GET")) {
 							ctx.setActiveToadlet(t);
 							t.handleGet(uri, req, ctx);
 							ctx.close();
