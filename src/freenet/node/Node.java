@@ -2895,7 +2895,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
 		
-		maybeDefragmentDatabase(dbConfig, dbFile);
+		maybeDefragmentDatabase(dbConfig, dbFileCrypt);
 		
 		ObjectContainer database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
 		synchronized(this) {
