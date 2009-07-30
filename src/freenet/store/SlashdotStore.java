@@ -219,6 +219,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 			if(addFirst != null) {
 				addFirst.lastAccessed = now;
 				blocksByRoutingKey.push(key, addFirst);
+				writes++;
 			}
 			while(true) {
 				if(blocksByRoutingKey.isEmpty()) break;
