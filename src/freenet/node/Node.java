@@ -5356,6 +5356,7 @@ public class Node implements TimeSkewDetectorCallback {
 		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
 		div.addChild("p", "Slashdot/ULPR cache misses: CHK "+this.chkSlashdotcache.misses()+" pubkey "+this.pubKeySlashdotcache.misses()+" SSK "+this.sskSlashdotcache.misses());
 		div.addChild("p", "Slashdot/ULPR cache hits: CHK "+this.chkSlashdotcache.hits()+" pubkey "+this.pubKeySlashdotcache.hits()+" SSK "+this.sskSlashdotcache.hits());
+		div.addChild("p", "Slashdot/ULPR cache writes: CHK "+this.chkSlashdotcache.writes()+" pubkey "+this.pubKeySlashdotcache.writes()+" SSK "+this.sskSlashdotcache.writes());
 	}
 
 	private boolean enteredPassword;
