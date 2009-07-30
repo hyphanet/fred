@@ -133,23 +133,19 @@ public class GetPubkey {
 			if (canWriteClientCache && !(canWriteDatastore || writeLocalToDatastore)) {
 				if(pubKeyClientcache != null) {
 					pubKeyClientcache.put(hash, key, false);
-					pubKeyClientcache.fetch(hash, true);
 				}
 			}
 			if (forULPR && !(canWriteDatastore || writeLocalToDatastore)) {
 				if(pubKeySlashdotcache!= null) {
 					pubKeySlashdotcache.put(hash, key, false);
-					pubKeySlashdotcache.fetch(hash, true);
 				}
 			}
 			// Cannot write to the store or cache if request started nearby.
 			if(!(canWriteDatastore || writeLocalToDatastore)) return;
 			if (deep) {
 				pubKeyDatastore.put(hash, key, !canWriteDatastore);
-				pubKeyDatastore.fetch(hash, true);
 			}
 			pubKeyDatacache.put(hash, key, !canWriteDatastore);
-			pubKeyDatacache.fetch(hash, true);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: " + e, e);
