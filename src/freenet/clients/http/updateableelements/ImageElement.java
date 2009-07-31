@@ -110,7 +110,6 @@ public class ImageElement extends BaseUpdateableElement {
 				fr = waiter.getResult();
 			} catch (FetchException fe) {
 				whenJsEnabled.addChild("div", "error");
-				fe.printStackTrace();
 			}
 			if (fr == null) {
 				whenJsEnabled.addChild("div", "No fetcher found");
