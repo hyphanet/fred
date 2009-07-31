@@ -7,7 +7,9 @@ import freenet.client.FetchException;
 import freenet.clients.http.FProxyFetchTracker;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.filter.HTMLFilter.ParsedTag;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.clients.http.updateableelements.ImageElement;
+import freenet.clients.http.updateableelements.XmlAlertElement;
 import freenet.keys.FreenetURI;
 
 public class TagReplacerCallback {
@@ -50,6 +52,8 @@ public class TagReplacerCallback {
 						}
 					}
 				}
+			}else if(pt.element.compareTo("body")==0){
+				return "<body>".concat(new XmlAlertElement(ctx).generate());
 			}
 		}
 		return null;

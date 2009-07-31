@@ -101,7 +101,7 @@ public class ShortAlertElement extends BaseUpdateableElement {
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "events", sb.toString() });
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-events", UserAlertManager.l10n("dumpEventsButton") });
 		}
-		addChild(boxNode);
+		addChild(totalNumber>0?boxNode:new HTMLNode("div"));
 	}
 
 }

@@ -21,6 +21,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
+import freenet.clients.http.ajaxpush.DismissAlertToadlet;
 import freenet.clients.http.ajaxpush.LogWritebackToadlet;
 import freenet.clients.http.ajaxpush.PushLeavingToadlet;
 import freenet.clients.http.ajaxpush.PushTesterToadlet;
@@ -1112,6 +1113,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		LogWritebackToadlet logWritebackToadlet = new LogWritebackToadlet(client);
 		server.register(logWritebackToadlet, null, logWritebackToadlet.path(), true, false);
+		
+		DismissAlertToadlet dismissAlertToadlet = new DismissAlertToadlet(client);
+		server.register(dismissAlertToadlet, null, dismissAlertToadlet.path(), true, false);
 	}
 	
 	/**

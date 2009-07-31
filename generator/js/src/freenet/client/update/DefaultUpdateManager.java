@@ -1,7 +1,9 @@
 package freenet.client.update;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gwt.http.client.Request;
@@ -29,12 +31,25 @@ public class DefaultUpdateManager implements IUpdateManager {
 		updaters = Collections.unmodifiableMap(list);
 	}
 
+	private static final List<UpdateListener>	listeners	= new ArrayList<UpdateListener>();
+
+	public static void registerListener(UpdateListener listener) {
+		listeners.add(listener);
+	}
+
+	public static void deregisterListener(UpdateListener listener) {
+		listeners.remove(listener);
+	}
+
 	@Override
 	public void updated(String message) {
 		String elementId = message;
 		FreenetJs.log("DefaultUpdateManager updated:elementid:" + elementId);
 		FreenetRequest.sendRequest(IConnectionManager.dataPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
 				new QueryParameter("elementId", elementId) }, new UpdaterRequestCallback(elementId));
+		for (UpdateListener l : listeners) {
+			l.onUpdate();
+		}
 	}
 
 	private class UpdaterRequestCallback implements RequestCallback {
@@ -54,7 +69,7 @@ public class DefaultUpdateManager implements IUpdateManager {
 			} else {
 				String updaterType = Base64.decode(response.getText().split("[:]")[1]);
 				String newContent = Base64.decode(response.getText().split("[:]")[2]);
-				FreenetJs.log("Element will be updated with type:"+updaterType+" and content:"+newContent);
+				FreenetJs.log("Element will be updated with type:" + updaterType + " and content:" + newContent);
 				updaters.get(updaterType).updated(elementId, newContent);
 			}
 		}

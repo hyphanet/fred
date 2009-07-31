@@ -144,6 +144,27 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			}
 		}
 	}
+	
+	public boolean dismissByAnchor(String anchor){
+		boolean success=false;
+		UserAlert[] userAlerts = getAlerts();
+		for (int index = 0, count = userAlerts.length; index < count; index++) {
+			UserAlert userAlert = userAlerts[index];
+			if (userAlert.anchor().compareTo( anchor)==0) {
+				if (userAlert.userCanDismiss()) {
+					if (userAlert.shouldUnregisterOnDismiss()) {
+						userAlert.onDismiss();
+						unregister(userAlert);
+					} else {
+						userAlert.isValid(false);
+					}
+					notifyListeners();
+					success=true;
+				}
+			}
+		}
+		return success;
+	}
 
 	public UserAlert[] getAlerts() {
 		UserAlert[] a;
