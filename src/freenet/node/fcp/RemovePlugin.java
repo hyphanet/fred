@@ -7,29 +7,30 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.Node;
 import freenet.pluginmanager.PluginInfoWrapper;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 /**
- * can find a plugin that implements FredPluginFCP
+ * remove a plugin
  * 
  */
-public class GetPluginInfo extends FCPMessage {
+public class RemovePlugin extends FCPMessage {
 
-	static final String NAME = "GetPluginInfo";
+	static final String NAME = "RemovePlugin";
 
 	private final String identifier;
-	private final boolean detailed;
 	private final String plugname;
+	private final int maxWaitTime;
+	private final boolean purge;
 
-	public GetPluginInfo(SimpleFieldSet fs) throws MessageInvalidException {
+	public RemovePlugin(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
 		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "GetPluginInfo must contain an Identifier field", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain an Identifier field", null, false);
 		plugname = fs.get("PluginName");
 		if(plugname == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "GetPluginInfo must contain a PluginName field", identifier, false);
-		detailed = Fields.stringToBool(fs.get("Detailed"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must contain a PluginName field", identifier, false);
+		maxWaitTime = fs.getInt("MaxWaitTime", 0);
+		purge = fs.getBoolean("Purge", false);
 	}
 
 	@Override
@@ -43,17 +44,20 @@ public class GetPluginInfo extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		if(detailed && !handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetPluginInfo detailed requires full access", identifier, false);
+	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+		if(!handler.hasFullAccess()) {
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
 
 		PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
 		if (pi == null) {
 			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 		} else {
-			handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, detailed));
+			pi.stopPlugin(node.pluginManager, maxWaitTime);
+			if (purge) {
+				node.pluginManager.removeCachedCopy(pi.getFilename());
+			}
+			handler.outputHandler.queue(new PluginRemovedMessage(plugname, identifier));
 		}
 	}
 

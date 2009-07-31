@@ -31,6 +31,10 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
+import com.db4o.defragment.AvailableClassFilter;
+import com.db4o.defragment.BTreeIDMapping;
+import com.db4o.defragment.Defragment;
+import com.db4o.defragment.DefragmentConfig;
 import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
@@ -133,6 +137,7 @@ import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -495,6 +500,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private final File dbFile;
 	private final File dbFileCrypt;
+	private boolean defragDatabaseOnStartup;
+	private boolean defragOnce;
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
@@ -505,7 +512,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * (e.g. because of many-nodes-in-one-VM). */
 	public long nodeDBHandle;
 	
-	private final boolean autoChangeDatabaseEncryption = true;
+	private boolean autoChangeDatabaseEncryption = true;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -1119,6 +1126,26 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
 		}
 		
+		nodeConfig.register("autoChangeDatabaseEncryption", true, sortOrder++, true, false, "Node.autoChangeDatabaseEncryption", "Node.autoChangeDatabaseEncryptionLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return autoChangeDatabaseEncryption;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					autoChangeDatabaseEncryption = val;
+				}
+			}
+			
+		});
+		
+		autoChangeDatabaseEncryption = nodeConfig.getBoolean("autoChangeDatabaseEncryption");
+		
 		// Location of master key
 		
 		nodeConfig.register("masterKeyFile", "master.keys", sortOrder++, true, true, "Node.masterKeyFile", "Node.masterKeyFileLong",
@@ -1187,6 +1214,46 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			
 		});
+		
+		nodeConfig.register("defragDatabaseOnStartup", true, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return defragDatabaseOnStartup;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					defragDatabaseOnStartup = val;
+				}
+			}
+			
+		});
+		
+		defragDatabaseOnStartup = nodeConfig.getBoolean("defragDatabaseOnStartup");
+		
+		nodeConfig.register("defragOnce", true, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return defragOnce;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					defragOnce = val;
+				}
+			}
+			
+		});
+		
+		defragOnce = nodeConfig.getBoolean("defragOnce");
 		
 		dbFile = new File(nodeDir, "node.db4o");
 		dbFileCrypt = new File(nodeDir, "node.db4o.crypt");
@@ -2174,6 +2241,7 @@ public class Node implements TimeSkewDetectorCallback {
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, nodeDBHandle, db);
 
 		if(databaseAwaitingPassword) createPasswordUserAlert();
+		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
 		
 		netid = new NetworkIDManager(this);
 		
@@ -2340,12 +2408,23 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		writeLocalToDatastore = nodeConfig.getBoolean("writeLocalToDatastore");
 		
-		// LOW seclevel = writeLocalToDatastore
+		// LOW network *and* physical seclevel = writeLocalToDatastore
 		
 		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
 			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
-				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW)
+					writeLocalToDatastore = true;
+				else
+					writeLocalToDatastore = false;
+			}
+			
+		});
+		
+		securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
+
+			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW && securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW)
 					writeLocalToDatastore = true;
 				else
 					writeLocalToDatastore = false;
@@ -2521,6 +2600,7 @@ public class Node implements TimeSkewDetectorCallback {
 		db = null;
 	}
 
+	private boolean databaseEncrypted;
 
 	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
 		/* FIXME: Backup the database! */
@@ -2594,10 +2674,17 @@ public class Node implements TimeSkewDetectorCallback {
 				FileUtil.secureDelete(dbFileCrypt, random);
 				FileUtil.secureDelete(dbFile, random);
 				database = openCryptDatabase(dbConfig, databaseKey);
+				synchronized(this) {
+					databaseEncrypted = true;
+				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				// Just open it.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
-			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption) {
+				synchronized(this) {
+					databaseEncrypted = false;
+				}
+			} else if(dbFileCrypt.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFileCrypt, false)) {
 				// Migrate the encrypted file to plaintext, if we have the key
 				if(databaseKey == null) {
 					// Try with no password
@@ -2640,9 +2727,13 @@ public class Node implements TimeSkewDetectorCallback {
 				dbFileCrypt.delete();
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 				System.err.println("Completed decrypting the old node.db4o.crypt.");
-			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption) {
+				synchronized(this) {
+					databaseEncrypted = false;
+				}
+			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				if(databaseKey == null) {
 					// Try with no password
 					MasterKeys keys;
@@ -2678,6 +2769,9 @@ public class Node implements TimeSkewDetectorCallback {
 				FileUtil.secureDelete(dbFile, random);
 				System.err.println("Completed encrypting the old node.db4o.");
 				database = openCryptDatabase(dbConfig, databaseKey);
+				synchronized(this) {
+					databaseEncrypted = true;
+				}
 			} else if(dbFileCrypt.exists() && !dbFile.exists()) {
 				// Open encrypted, regardless of seclevel.
 				if(databaseKey == null) {
@@ -2688,9 +2782,16 @@ public class Node implements TimeSkewDetectorCallback {
 					keys.clearAllNotDatabaseKey();
 				}
 				database = openCryptDatabase(dbConfig, databaseKey);
+				synchronized(this) {
+					databaseEncrypted = true;
+				}
 			} else {
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				// Open unencrypted.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
+				synchronized(this) {
+					databaseEncrypted = false;
+				}
 			}
 		} catch (Db4oException e) {
 			database = null;
@@ -2763,16 +2864,88 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) {
+	private volatile boolean notEnoughSpaceForAutoCrypt = false;
+	private volatile boolean notEnoughSpaceIsCrypt = false;
+	private volatile long notEnoughSpaceMinimumSpace = 0;
+
+	private boolean enoughSpaceForAutoChangeEncryption(File file, boolean isCrypt) {
+		long freeSpace = FileUtil.getFreeSpace(file);
+		if(freeSpace == -1) {
+			return true; // We hope ... FIXME check the error handling ...
+		}
+		long minSpace = (long)(file.length() * 1.1) + 10*1024*1024;
+		if(freeSpace < minSpace) {
+			System.err.println(l10n(isCrypt ? "notEnoughSpaceToAutoEncrypt" : "notEnoughSpaceToAutoDecrypt", new String[] { "size", "file" }, new String[] { SizeUtil.formatSize(minSpace), dbFile.getAbsolutePath() }));
+			if(this.clientCore != null && this.clientCore.alerts != null)
+				createAutoCryptFailedUserAlert();
+			else {
+				notEnoughSpaceIsCrypt = isCrypt;
+				notEnoughSpaceForAutoCrypt = true;
+				notEnoughSpaceMinimumSpace = minSpace;
+			}
+			return false;
+		}
+		return true;
+	}
+
+
+	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
 		IoAdapter baseAdapter = dbConfig.io();
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		
+		maybeDefragmentDatabase(dbConfig, dbFileCrypt);
+		
 		ObjectContainer database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
 		synchronized(this) {
 			databaseAwaitingPassword = false;
 		}
 		return database;
+	}
+
+
+	private void maybeDefragmentDatabase(Configuration dbConfig, File databaseFile) throws IOException {
+		
+		synchronized(this) {
+			if(!defragDatabaseOnStartup) return;
+		}
+		if(!databaseFile.exists()) return;
+		long length = databaseFile.length();
+		// Estimate approx 1 byte/sec.
+		WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+		System.err.println("Defragmenting persistent downloads database.");
+		
+		File backupFile = new File(databaseFile.getPath()+".tmp");
+		backupFile.delete();
+		backupFile.deleteOnExit();
+		
+		File tmpFile = new File(databaseFile.getPath()+".map");
+		tmpFile.delete();
+		tmpFile.deleteOnExit();
+		
+		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
+		config.storedClassFilter(new AvailableClassFilter());
+		config.db4oConfig(dbConfig);
+		Defragment.defrag(config);
+		System.err.println("Finalising defragmentation...");
+		FileUtil.secureDelete(tmpFile, random);
+		FileUtil.secureDelete(backupFile, random);
+		System.err.println("Defragment completed.");
+		
+		synchronized(this) {
+			if(!defragOnce) return;
+			defragDatabaseOnStartup = false;
+		}
+		// Store after startup
+		this.executor.execute(new Runnable() {
+
+			public void run() {
+				Node.this.config.store();
+			}
+			
+		}, "Store config");
+
 	}
 
 
@@ -2864,6 +3037,15 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private void createPasswordUserAlert() {
 		this.clientCore.alerts.register(masterPasswordUserAlert);
+	}
+	
+	private void createAutoCryptFailedUserAlert() {
+		boolean isCrypt = notEnoughSpaceIsCrypt;
+		this.clientCore.alerts.register(new SimpleUserAlert(true, 
+				isCrypt ? l10n("notEnoughSpaceToAutoEncryptTitle") : l10n("notEnoughSpaceToAutoDecryptTitle"),
+				l10n((isCrypt ? "notEnoughSpaceToAutoEncrypt" : "notEnoughSpaceToAutoDecrypt"), new String[] { "size", "file" }, new String[] { SizeUtil.formatSize(notEnoughSpaceMinimumSpace), dbFile.getAbsolutePath() }),
+				isCrypt ? l10n("notEnoughSpaceToAutoEncryptTitle") : l10n("notEnoughSpaceToAutoDecryptTitle"),
+				isCrypt ? UserAlert.ERROR : UserAlert.WARNING));
 	}
 
 	private void initRAMClientCacheFS() {
@@ -3614,7 +3796,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * requests that don't get cached. */
 	boolean canWriteDatastoreRequest(short htl) {
-		return htl < (maxHTL - 2);
+		return htl <= (maxHTL - 2);
 	}
 
 	/** Can we write to the datastore for a given insert?
@@ -3625,7 +3807,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * inserts that don't get cached. */
 	boolean canWriteDatastoreInsert(short htl) {
-		return htl < (maxHTL - 3);
+		return htl <= (maxHTL - 3);
 	}
 
 	static class KeyHTLPair {
@@ -3855,7 +4037,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
-		store(block, false, canWriteClientCache, canWriteDatastore, false);
+		store(block, false, canWriteClientCache, canWriteDatastore, forULPR);
 	}
 
 	/**
@@ -3884,10 +4066,10 @@ public class Node implements TimeSkewDetectorCallback {
 			if(canWriteDatastore || writeLocalToDatastore) {
 				double loc=block.getKey().toNormalizedDouble();
 				if(deep) {
-					chkDatastore.put(block, canWriteDatastore);
+					chkDatastore.put(block, !canWriteDatastore);
 					nodeStats.avgStoreLocation.report(loc);
 				}
-				chkDatacache.put(block, canWriteDatastore);
+				chkDatacache.put(block, !canWriteDatastore);
 				nodeStats.avgCacheLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
@@ -3928,9 +4110,9 @@ public class Node implements TimeSkewDetectorCallback {
 				sskSlashdotcache.put(block, overwrite, false);
 			if(canWriteDatastore || writeLocalToDatastore) {
 				if(deep) {
-					sskDatastore.put(block, overwrite, canWriteDatastore);
+					sskDatastore.put(block, overwrite, !canWriteDatastore);
 				}
-				sskDatacache.put(block, overwrite, canWriteDatastore);
+				sskDatacache.put(block, overwrite, !canWriteDatastore);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -5261,12 +5443,17 @@ public class Node implements TimeSkewDetectorCallback {
 		HTMLNode div = storeSizeInfobox.addChild("div");
 		div.addChild("p", "Client cache max size: "+this.maxClientCacheKeys+" keys");
 		div.addChild("p", "Client cache size: CHK "+this.chkClientcache.keyCount()+" pubkey "+this.pubKeyClientcache.keyCount()+" SSK "+this.sskClientcache.keyCount());
+		div.addChild("p", "Client cache misses: CHK "+this.chkClientcache.misses()+" pubkey "+this.pubKeyClientcache.misses()+" SSK "+this.sskClientcache.misses());
+		div.addChild("p", "Client cache hits: CHK "+this.chkClientcache.hits()+" pubkey "+this.pubKeyClientcache.hits()+" SSK "+this.sskClientcache.hits());
 	}
 
 	public void drawSlashdotCacheBox(HTMLNode storeSizeInfobox) {
 		HTMLNode div = storeSizeInfobox.addChild("div");
 		div.addChild("p", "Slashdot/ULPR cache max size: "+maxSlashdotCacheKeys+" keys");
 		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
+		div.addChild("p", "Slashdot/ULPR cache misses: CHK "+this.chkSlashdotcache.misses()+" pubkey "+this.pubKeySlashdotcache.misses()+" SSK "+this.sskSlashdotcache.misses());
+		div.addChild("p", "Slashdot/ULPR cache hits: CHK "+this.chkSlashdotcache.hits()+" pubkey "+this.pubKeySlashdotcache.hits()+" SSK "+this.sskSlashdotcache.hits());
+		div.addChild("p", "Slashdot/ULPR cache writes: CHK "+this.chkSlashdotcache.writes()+" pubkey "+this.pubKeySlashdotcache.writes()+" SSK "+this.sskSlashdotcache.writes());
 	}
 
 	private boolean enteredPassword;
@@ -5396,5 +5583,19 @@ public class Node implements TimeSkewDetectorCallback {
 		if(clientCacheAwaitingPassword) return true;
 		if(databaseAwaitingPassword) return true;
 		return false;
+	}
+
+
+	public boolean isDatabaseEncrypted() {
+		return databaseEncrypted;
+	}
+
+	public boolean hasDatabase() {
+		return db != null;
+	}
+
+
+	public synchronized boolean autoChangeDatabaseEncryption() {
+		return autoChangeDatabaseEncryption;
 	}
 }

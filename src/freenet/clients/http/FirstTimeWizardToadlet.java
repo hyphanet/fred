@@ -441,6 +441,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
+			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
 			return;
 		} else if(request.isPartSet("security-levels.friendsThreatLevel")) {
@@ -480,6 +481,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				}
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
+			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 			return;
 		} else if(request.isPartSet("security-levels.physicalThreatLevel")) {
@@ -804,26 +806,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	private long canAutoconfigureDatastoreSize() {
 		if(!config.get("node").getOption("storeSize").isDefault())
 			return -1;
-		// Use JNI to find out the free space on this partition.
-		long freeSpace = -1;
-		File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
-		try {
-			Class<? extends File> c = dir.getClass();
-			Method m = c.getDeclaredMethod("getFreeSpace", new Class<?>[0]);
-			if(m != null) {
-				Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
-				if(lFreeSpace != null) {
-					freeSpace = lFreeSpace.longValue();
-					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
-				}
-			}
-		} catch(NoSuchMethodException e) {
-			// Ignore
-			freeSpace = -1;
-		} catch(Throwable t) {
-			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
-			freeSpace = -1;
-		}
+		
+		long freeSpace = FileUtil.getFreeSpace(core.node.getNodeDir());
 		
 		if(freeSpace <= 0)
 			return -1;

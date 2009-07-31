@@ -148,13 +148,6 @@ public class PproxyToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
-			if (request.isPartSet("dismiss-user-alert")) {
-				int userAlertHashCode = request.getIntPart("disable", -1);
-				core.alerts.dismissAlert(userAlertHashCode);
-				headers.put("Location", ".");
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				return;
-			}
 			if (request.isPartSet("cancel")){
 				headers.put("Location", "/plugins/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);

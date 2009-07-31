@@ -12,6 +12,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
+import freenet.support.MultiValueTable;
 import freenet.support.api.HTTPRequest;
 
 /**
@@ -31,7 +32,7 @@ public class UserAlertsToadlet extends Toadlet {
 
 	@Override
 	public String supportedMethods() {
-		return "GET";
+		return "GET POST";
 	}
 	
 	@Override
@@ -48,6 +49,24 @@ public class UserAlertsToadlet extends Toadlet {
         
         writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
+
+	@Override
+	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+
+		String pass = request.getPartAsString("formPassword", 32);
+		if((pass == null) || !pass.equals(node.clientCore.formPassword)) {
+			sendErrorPage(ctx, 403, "Forbidden", "Invalid form password.");
+		}
+		if (request.isPartSet("dismiss-user-alert")) {
+			int userAlertHashCode = request.getIntPart("disable", -1);
+			node.clientCore.alerts.dismissAlert(userAlertHashCode);
+		}
+		headers.put("Location", ".");
+		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+	}
+
 
 	protected String l10n(String name, String pattern, String value) {
 		return L10n.getString("UserAlertsToadlet."+name, pattern, value);

@@ -1311,8 +1311,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		downloadForm.addChild("textarea", new String[] { "id", "name", "cols", "rows" }, new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
 		downloadForm.addChild("br");
 		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", L10n.getString("QueueToadlet.download") });
-		if(core.node.securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+		PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
+		if(threatLevel == PHYSICAL_THREAT_LEVEL.LOW) {
 			downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "target", "disk" });
+		} else if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
+			downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "target", "direct" });
 		} else {
 			HTMLNode select = downloadForm.addChild("select", "name", "target");
 			select.addChild("option", "value", "disk", l10n("bulkDownloadSelectOptionDisk"));
