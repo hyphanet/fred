@@ -1056,7 +1056,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					ph.clearMetadata(container);
 					if(persistent())
 						container.activate(meta, 100);
-					Logger.minor(this, "Putting "+name);
+					if(logMINOR)
+						Logger.minor(this, "Putting "+name);
 					namesToByteArrays.put(name, meta);
 					if(logMINOR)
 						Logger.minor(this, "Putting PutHandler into base metadata: "+ph+" name "+name);
@@ -1066,9 +1067,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(persistent())
 					container.activate(o, 2); // Depth 1 doesn't load the elements...
 				namesToByteArrays.put(name, subMap);
-				if(logMINOR)
+				if(logMINOR) {
 					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
-				Logger.minor(this, "Putting directory: "+name);
+					Logger.minor(this, "Putting directory: "+name);
+				}
 				namesToByteArrays((HashMap<String, Object>)o, subMap, container);
 			} else
 				throw new IllegalStateException();
