@@ -1067,7 +1067,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.activate(o, 2); // Depth 1 doesn't load the elements...
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR)
-					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+container == null ? "null" : Boolean.toString(container.ext().isActive(o)));
+					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
 				Logger.minor(this, "Putting directory: "+name);
 				namesToByteArrays((HashMap<String, Object>)o, subMap, container);
 			} else
