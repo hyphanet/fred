@@ -64,59 +64,63 @@ public class LoadPlugin extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
 
-		String type = null;
-		if (urlType == null) {
-			if (node.pluginManager.isOfficialPlugin(pluginURL)) {
-				type = TYPENAME_OFFICIAL;
-			} else if (new File(pluginURL).exists()) {
-				type = TYPENAME_FILE;
-			} else {
-				try {
-					new FreenetURI(pluginURL);
-					type = TYPENAME_FREENET;
-				} catch (MalformedURLException e) {
-					// FIXME currently i have no idea how to auto detect a proper url,
-					// especially distinguish it from typos/mistakes. 
-					// so it is disabled for now. saces.
-//					try {
-//						URL url = new URL(pluginURL);
-//						url.getProtocol();
-//						TODO: sanitize checks for proper protocols
-//					} catch (MalformedURLException e1) {
-//					}
+		node.executor.execute(new Runnable() {
+			public void run() {
+				String type = null;
+				if (urlType == null) {
+					if (node.pluginManager.isOfficialPlugin(pluginURL)) {
+						type = TYPENAME_OFFICIAL;
+					} else if (new File(pluginURL).exists()) {
+						type = TYPENAME_FILE;
+					} else {
+						try {
+							new FreenetURI(pluginURL);
+							type = TYPENAME_FREENET;
+						} catch (MalformedURLException e) {
+							// FIXME currently i have no idea how to auto detect a proper url,
+							// especially distinguish it from typos/mistakes. 
+							// so it is disabled for now. saces.
+//							try {
+//								URL url = new URL(pluginURL);
+//								url.getProtocol();
+//								TODO: sanitize checks for proper protocols
+//							} catch (MalformedURLException e1) {
+//							}
+						}
+					}
+					if (type == null) {
+						handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.INVALID_FIELD, false, "Was not able to guess the URL type from URL, check the URL or add a 'URLType' field", identifier, false));
+						return;
+					}
+				} else {
+					type = urlType.toLowerCase();
+				}
+				PluginInfoWrapper pi;
+				if (TYPENAME_OFFICIAL.equals(type)) {
+					pi = node.pluginManager.startPluginOfficial(pluginURL, store);
+				} else if (TYPENAME_FILE.equals(type)) {
+					pi = node.pluginManager.startPluginFile(pluginURL, store);
+				} else if (TYPENAME_FREENET.equals(type)) {
+					pi = node.pluginManager.startPluginFreenet(pluginURL, store);
+				} else if (TYPENAME_URL.equals(type)) {
+					pi = node.pluginManager.startPluginURL(pluginURL, store);
+				} else {
+					Logger.error(this, "This should really not happen!", new Exception("FIXME"));
+					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.INTERNAL_ERROR, false, "This should really not happen! See logs for details.", identifier, false));
+					return;
+				}
+				if (pi == null) {
+					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ pluginURL + "' does not exist or is not a FCP plugin", identifier, false));
+				} else {
+					handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, true));
 				}
 			}
-			if (type == null) {
-				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Was not able to guess the URL type from URL, check the URL or add a 'URLType' field", identifier, false);
-			}
-		} else {
-			type = urlType.toLowerCase();
-		}
-
-		PluginInfoWrapper pi;
-		if (TYPENAME_OFFICIAL.equals(type)) {
-			pi = node.pluginManager.startPluginOfficial(pluginURL, store);
-		} else if (TYPENAME_FILE.equals(type)) {
-			pi = node.pluginManager.startPluginFile(pluginURL, store);
-		} else if (TYPENAME_FREENET.equals(type)) {
-			pi = node.pluginManager.startPluginFreenet(pluginURL, store);
-		} else if (TYPENAME_URL.equals(type)) {
-			pi = node.pluginManager.startPluginURL(pluginURL, store);
-		} else {
-			Logger.error(this, "This should really not happen!", new Exception("FIXME"));
-			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "This should really not happen! See logs for details.", identifier, false);
-		}
-
-		if (pi == null) {
-			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ pluginURL + "' does not exist or is not a FCP plugin", identifier, false));
-		} else {
-			handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, true));
-		}
+		}, "Load Plugin");
 	}
 
 	@Override

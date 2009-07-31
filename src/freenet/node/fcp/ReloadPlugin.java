@@ -46,27 +46,31 @@ public class ReloadPlugin extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
 
-		PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
-		if (pi == null) {
-			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
-		} else {
-			String source = pi.getFilename();
-			pi.stopPlugin(node.pluginManager, maxWaitTime);
-			if (purge) {
-				node.pluginManager.removeCachedCopy(pi.getFilename());
+		node.executor.execute(new Runnable() {
+			public void run() {
+				PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
+				if (pi == null) {
+					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
+				} else {
+					String source = pi.getFilename();
+					pi.stopPlugin(node.pluginManager, maxWaitTime);
+					if (purge) {
+						node.pluginManager.removeCachedCopy(pi.getFilename());
+					}
+					pi = node.pluginManager.startPluginAuto(source, store);
+					if (pi == null) {
+						handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
+					} else {
+						handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, true));
+					}
+				}
 			}
-			pi = node.pluginManager.startPluginAuto(source, store);
-			if (pi == null) {
-				handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
-			} else {
-				handler.outputHandler.queue(new PluginInfoMessage(pi, identifier, true));
-			}
-		}
+		}, "Reload plugin");
 	}
 
 	@Override

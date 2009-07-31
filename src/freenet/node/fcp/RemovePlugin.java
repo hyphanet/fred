@@ -44,21 +44,25 @@ public class RemovePlugin extends FCPMessage {
 	}
 
 	@Override
-	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+	public void run(final FCPConnectionHandler handler, final Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "LoadPlugin requires full access", identifier, false);
 		}
 
-		PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
-		if (pi == null) {
-			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
-		} else {
-			pi.stopPlugin(node.pluginManager, maxWaitTime);
-			if (purge) {
-				node.pluginManager.removeCachedCopy(pi.getFilename());
+		node.executor.execute(new Runnable() {
+			public void run() {
+				PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
+				if (pi == null) {
+					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
+				} else {
+					pi.stopPlugin(node.pluginManager, maxWaitTime);
+					if (purge) {
+						node.pluginManager.removeCachedCopy(pi.getFilename());
+					}
+					handler.outputHandler.queue(new PluginRemovedMessage(plugname, identifier));
+				}
 			}
-			handler.outputHandler.queue(new PluginRemovedMessage(plugname, identifier));
-		}
+		}, "Remove Plugin");
 	}
 
 	@Override
