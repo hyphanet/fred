@@ -31,9 +31,8 @@ public class TranslationToadlet extends Toadlet {
 		super(client);
 		this.core = core;
 	}
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
@@ -197,9 +196,8 @@ public class TranslationToadlet extends Toadlet {
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
-	
-	@Override
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
@@ -252,12 +250,7 @@ public class TranslationToadlet extends Toadlet {
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		return;
 	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
-	
+
 	private HTMLNode _setOrRemoveOverride(String key, boolean isOverriden, boolean showEverything) {
 		String value = L10n.getString(key, true);
 		

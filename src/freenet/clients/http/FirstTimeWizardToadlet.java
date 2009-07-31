@@ -3,18 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Method;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
-import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.MasterKeysFileTooBigException;
 import freenet.node.MasterKeysFileTooShortException;
@@ -68,9 +65,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	public static final String TOADLET_URL = "/wizard/";
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
@@ -380,8 +376,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		return L10n.getString("SecurityLevels."+key, pattern, value);
 	}
 
-	@Override
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMetodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
@@ -706,11 +701,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		return L10n.getString("FirstTimeWizardToadlet."+key);
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
-	
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);

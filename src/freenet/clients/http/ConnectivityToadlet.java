@@ -52,13 +52,7 @@ public class ConnectivityToadlet extends Toadlet {
 		this.core = core;
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-
-	@Override
-	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		final int mode = ctx.getPageMaker().parseMode(request, container);

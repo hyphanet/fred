@@ -42,9 +42,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 		this.core = core;
 		this.node = node;
 	}
-	
-	@Override
-    public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n
 			        .getString("Toadlet.unauthorized"));
@@ -489,8 +488,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		content.addChild("p").addChild("a", "href", PATH, l10nSec("backToSecurityLevels"));
 	}
 
-	@Override
-    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+    public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
@@ -634,11 +632,6 @@ public class SecurityLevelsToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return PATH;
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
 	}
 
 	private static final String l10n(String string) {

@@ -152,14 +152,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected boolean isReversed = false;
 	protected final DecimalFormat fix1 = new DecimalFormat("##0.0%");
 	public enum PeerAdditionReturnCodes{ OK, WRONG_ENCODING, CANT_PARSE, INTERNAL_ERROR, INVALID_SIGNATURE, TRY_TO_ADD_SELF, ALREADY_IN_REFERENCE}
-	
-	@Override
-	public String supportedMethods() {
-		if(this.acceptRefPosts())
-			return "GET, POST";
-		else
-			return "GET";
-	}
 
 	protected ConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(client);
@@ -177,9 +169,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		abstract public String getTitleKey();
 		abstract public String getExplanationKey();
 	}
-	
-	@Override
-	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+
+	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = getNoderef();
@@ -466,9 +457,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	
 	/** Where to redirect to if there is an error */
 	protected abstract String defaultRedirectLocation();
-	
-	@Override
-	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+
+	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		if(!acceptRefPosts()) {
@@ -647,7 +637,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	 */
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		// Do nothing - we only support adding nodes
-		handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
+		handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 
 	/**

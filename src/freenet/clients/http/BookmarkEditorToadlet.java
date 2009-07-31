@@ -151,8 +151,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		return bookmarks;
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx)
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
 		String editorTitle = L10n.getString("BookmarkEditorToadlet.title");
@@ -294,8 +293,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	@Override
-	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx)
+	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
 		PageNode page = pageMaker.getPageNode(L10n.getString("BookmarkEditorToadlet.title"), ctx);
@@ -409,11 +407,6 @@ public class BookmarkEditorToadlet extends Toadlet {
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", L10n.getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
 	}
 
 	@Override

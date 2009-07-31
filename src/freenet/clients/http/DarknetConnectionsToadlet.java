@@ -24,11 +24,6 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	DarknetConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(n, core, client);
 	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
 
 	private static String l10n(String string) {
 		return L10n.getString("DarknetConnectionsToadlet."+string);
@@ -379,7 +374,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			redirectHere(ctx);
 			return;
 		} else {
-			this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
+			this.handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 		}
 	}
 

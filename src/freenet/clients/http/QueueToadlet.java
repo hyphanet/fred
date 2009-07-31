@@ -111,9 +111,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			// The user will know soon enough
 		}
 	}
-	
-	@Override
-	public void handlePost(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+
+	public void handleMethodPOST(URI uri, HTTPRequest request, final ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		if(!core.hasLoadedQueue()) {
 			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx, false);
@@ -678,7 +677,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		} finally {
 			request.freeParts();
 		}
-		this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
+		this.handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 	}
 	
 	private void sendPanicingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -756,8 +755,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
-	@Override
-	public void handleGet(URI uri, final HTTPRequest request, final ToadletContext ctx) 
+	public void handleMethodGET(URI uri, final HTTPRequest request, final ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
 
 		// We ensure that we have a FCP server running
@@ -1621,11 +1619,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 		}
 		return table;
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
 	}
 
 	/**

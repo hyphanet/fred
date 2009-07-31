@@ -63,11 +63,6 @@ public class StatisticsToadlet extends Toadlet {
 		peers = node.peers;
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-
 	/**
 	 * Counts the peers in <code>peerNodes</code> that have the specified
 	 * status.
@@ -103,8 +98,7 @@ public class StatisticsToadlet extends Toadlet {
 		return count;
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));

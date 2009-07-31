@@ -20,14 +20,13 @@ public class StartupToadlet extends Toadlet {
 		this.staticToadlet = staticToadlet;
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		// If we don't disconnect we will have pipelining issues
 		ctx.forceDisconnect();
 
 		String path = uri.getPath();
 		if(path.startsWith(StaticToadlet.ROOT_URL) && staticToadlet != null)
-			staticToadlet.handleGet(uri, req, ctx);
+			staticToadlet.handleMethodGET(uri, req, ctx);
 		else {
 			String desc = L10n.getString("StartupToadlet.title");
 			PageNode page = ctx.getPageMaker().getPageNode(desc, false, ctx);
@@ -49,11 +48,6 @@ public class StartupToadlet extends Toadlet {
 			//TODO: send a Retry-After header ?
 			writeHTMLReply(ctx, 503, desc, pageNode.generate());
 		}
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 	public void setIsPRNGReady() {

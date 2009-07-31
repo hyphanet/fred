@@ -177,8 +177,7 @@ public class BrowserTestToadlet extends Toadlet {
 		"TTfltFP4CgA1VFFFraqAAAIANUIAYJzwRFRHhRVWT2eltVZbb8U1V1135bVX" +
 		"X38FNlhhhyW2WGOPRTZZZbEMCAA7====";
 	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		// Yes, we need that in order to test the browser (number of connections per server)
 		if (request.isParameterSet("wontload")) return;
 		else if (request.isParameterSet("mimeTest")){
@@ -213,11 +212,6 @@ public class BrowserTestToadlet extends Toadlet {
 		jsTest.addChild("script", "type", "text/javascript").addChild("%", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.gif';");
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 	@Override

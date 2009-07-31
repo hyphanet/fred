@@ -39,13 +39,7 @@ public class PproxyToadlet extends Toadlet {
 		this.core = core;
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
-
-	@Override
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx)
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
@@ -270,8 +264,7 @@ public class PproxyToadlet extends Toadlet {
 		return L10n.getString("PproxyToadlet."+key);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException {
 
 		//String basepath = "/plugins/";

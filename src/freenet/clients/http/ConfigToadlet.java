@@ -111,9 +111,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.node = node;
 		this.subConfig = subConfig;
 	}
-	
-	@Override
-    public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if (!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n
 			        .getString("Toadlet.unauthorized"));
@@ -223,8 +222,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		return L10n.getString("ConfigToadlet." + string);
 	}
 
-	@Override
-    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
@@ -316,12 +314,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
-	
-	@Override
-    public String supportedMethods() {
-		return "GET, POST";
-	}
-	
+
 	private HTMLNode addComboBox(EnumerableOptionCallback o, SubConfig sc, String name, boolean disabled) {
 		HTMLNode result;
 		if (disabled)

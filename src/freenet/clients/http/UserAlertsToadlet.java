@@ -30,13 +30,7 @@ public class UserAlertsToadlet extends Toadlet {
 	private UserAlertManager alerts;
 	private Node node;
 
-	@Override
-	public String supportedMethods() {
-		return "GET POST";
-	}
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if (!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
@@ -50,8 +44,7 @@ public class UserAlertsToadlet extends Toadlet {
         writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	@Override
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 

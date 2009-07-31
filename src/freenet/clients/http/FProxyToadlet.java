@@ -106,14 +106,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			};
 		fetchTracker = new FProxyFetchTracker(context, getClientImpl().getFetchContext(), this);
 	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
 
-	@Override
-	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
 		
 		if (ks.equals("/")||ks.startsWith("/servlet/")) {
@@ -402,8 +396,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		return false;
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest httprequest, ToadletContext ctx) 
+	public void handleMethodGET(URI uri, HTTPRequest httprequest, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
 
 		String ks = uri.getPath();

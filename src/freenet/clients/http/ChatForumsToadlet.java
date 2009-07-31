@@ -20,9 +20,8 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		this.alerts = alerts;
 		this.plugins = plugins;
 	}
-	
-	@Override
-    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
@@ -52,15 +51,9 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		return "/chat/";
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-
 	public boolean isEnabled(ToadletContext ctx) {
 		return !plugins.isPluginLoaded("plugins.Freetalk.Freetalk");
 	}
-
 
 	
 }

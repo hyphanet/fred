@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.net.URI;
 
-import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -45,6 +45,8 @@ import freenet.support.api.HTTPRequest;
  * FIXME Investigate servlet 3.0, which support continuations.
  */
 public abstract class Toadlet {
+	
+	public static final String HANDLE_METHOD_PREFIX = "handleMethod";
 
 	public abstract String path();
 	
@@ -61,22 +63,8 @@ public abstract class Toadlet {
 	private final HighLevelSimpleClient client;
 	ToadletContainer container;
 
-	/**
-	 * Handle a GET request.
-	 * If not overridden by the client, send 'Method not supported'
-	 * @param uri The URI (relative to this client's document root) to
-	 * be fetched.
-	 * @throws IOException 
-	 * @throws ToadletContextClosedException 
-	 */
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		handleUnhandledRequest(uri, null, ctx);
-	}
-	
-	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		handleUnhandledRequest(uri, null, ctx);
-	}
-	
+	private String supportedMethodsCache;
+
 	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
 		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
 		HTMLNode pageNode = page.outer;
@@ -87,7 +75,7 @@ public abstract class Toadlet {
 		infobox.addChild("div", "class", "infobox-content", l10n("notSupportedWithClass", "class", getClass().getName()));
 
 		MultiValueTable<String, String> hdrtbl = new MultiValueTable<String, String>();
-		hdrtbl.put("Allow", this.supportedMethods());
+		hdrtbl.put("Allow", findSupportedMethods());
 
 		StringBuilder pageBuffer = new StringBuilder();
 		pageNode.generate(pageBuffer);
@@ -106,11 +94,30 @@ public abstract class Toadlet {
 	/**
 	 * Which methods are supported by this Toadlet.
 	 * Should return a string containing the methods supported, separated by commas
-	 * For example: "GET, PUT" (in which case both 'handleGet()' and 'handlePut()'
-	 * must be overridden).
-	 */					
-	abstract public String supportedMethods();
-	
+	 * For example: "GET, PUT" (in which case both 'handleMethodGET()' and 'handleMethodPUT()'
+	 * must be implemented).
+	 */
+	String findSupportedMethods() {
+		if (supportedMethodsCache == null) {
+			Method methlist[] = this.getClass().getDeclaredMethods();
+			boolean isFirst = true;
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < methlist.length;i++) {  
+				Method m = methlist[i];
+				String name = m.getName();
+				if (name.startsWith(HANDLE_METHOD_PREFIX)) {
+					if (isFirst)
+						isFirst = false;
+					else
+						sb.append(", ");
+					sb.append(name.substring(HANDLE_METHOD_PREFIX.length()));
+				}
+			}
+			supportedMethodsCache = sb.toString();
+		}
+		return supportedMethodsCache;
+	}
+
 	/**
 	 * Client calls from the above messages to run a Freenet request.
 	 * This method may block (or suspend).

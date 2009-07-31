@@ -84,9 +84,7 @@ public class WelcomeToadlet extends Toadlet {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
         if (!ctx.isAllowedFullAccess()) {
             super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
@@ -305,8 +303,7 @@ public class WelcomeToadlet extends Toadlet {
         }
     }
 
-    @Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
         boolean advancedModeOutputEnabled = core.getToadletContainer().isAdvancedModeEnabled();
 
         if (ctx.isAllowedFullAccess()) {
@@ -516,11 +513,6 @@ public class WelcomeToadlet extends Toadlet {
         	addChild("#", l10n("restarting"));
         Logger.normal(WelcomeToadlet.class, "Node is restarting");
         return pageNode;
-    }
-
-	@Override
-	public String supportedMethods() {
-        return "GET, POST";
     }
 
     private static String l10n(String key) {

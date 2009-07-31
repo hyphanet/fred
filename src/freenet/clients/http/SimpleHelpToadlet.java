@@ -24,9 +24,8 @@ public class SimpleHelpToadlet extends Toadlet {
 	}
 	
 	final NodeClientCore core;
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 		
 		PageNode page = ctx.getPageMaker().getPageNode("Freenet " + L10n.getString("FProxyToadlet.help"), ctx);
@@ -73,11 +72,6 @@ public class SimpleHelpToadlet extends Toadlet {
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		
-	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 	@Override
