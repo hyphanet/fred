@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTrackerItem;
 import freenet.io.InetAddressAddressTrackerItem;
@@ -68,7 +69,7 @@ public class ConnectivityToadlet extends Toadlet {
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(new AlertElement(ctx));
 		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 
 		// our ports

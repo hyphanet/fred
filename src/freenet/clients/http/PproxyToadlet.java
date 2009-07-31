@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -302,7 +303,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 				HTMLNode contentNode = page.content;
 
-				contentNode.addChild(core.alerts.createSummary());
+				contentNode.addChild(new AlertElement(ctx));
 
 				UserAlert[] userAlerts = core.alerts.getAlerts();
 				for (int index = 0, count = userAlerts.length; index < count; index++) {

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.PacketThrottle;
@@ -246,7 +247,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 	
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(new AlertElement(ctx));
 		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 		
 		if(peerNodeStatuses.length>0){

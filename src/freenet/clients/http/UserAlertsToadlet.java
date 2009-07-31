@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -45,7 +46,7 @@ public class UserAlertsToadlet extends Toadlet {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
-        contentNode.addChild(alerts.createAlerts());
+        contentNode.addChild(new LongAlertElement(ctx));
         
         writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}

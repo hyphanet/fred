@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -34,7 +35,7 @@ public class SimpleHelpToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(new AlertElement(ctx));
 		
 		// Description infobox
 		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle"), contentNode);

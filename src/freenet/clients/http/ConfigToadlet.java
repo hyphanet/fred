@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.config.BooleanOption;
 import freenet.config.Config;
 import freenet.config.ConfigCallback;
@@ -237,7 +238,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(new AlertElement(ctx));
 		
 		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 		

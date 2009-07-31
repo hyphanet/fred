@@ -36,6 +36,7 @@ import freenet.client.TempFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.clients.http.updateableelements.RequestElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
@@ -749,7 +750,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		if(context.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(new AlertElement(context));
 		HTMLNode infoboxContent = pageMaker.getInfobox("infobox-error", header, contentNode);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
@@ -836,7 +837,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							HTMLNode contentNode = page.content;
 							/* add alert summary box */
 							if(ctx.isAllowedFullAccess())
-								contentNode.addChild(core.alerts.createSummary());
+								contentNode.addChild(new AlertElement(ctx));
 							HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", "Queued requests status", contentNode);
 							infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
 							infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
@@ -917,7 +918,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode contentNode = page.content;
 			/* add alert summary box */
 			if(ctx.isAllowedFullAccess())
-				contentNode.addChild(core.alerts.createSummary());
+				contentNode.addChild(new AlertElement(ctx));
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty"), contentNode);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
 			if(uploads)
@@ -1062,7 +1063,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(new AlertElement(ctx));
 		pageMaker.drawModeSelectionArray(core, this.container, contentNode, mode);
 		/* add file insert box */
 		if(uploads)

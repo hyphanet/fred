@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.clients.http.updateableelements.TesterElement;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -153,7 +154,7 @@ public class StatisticsToadlet extends Toadlet {
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(new AlertElement(ctx));
 		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 
 		double swaps = node.getSwaps();

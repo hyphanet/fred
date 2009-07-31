@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
@@ -25,7 +26,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(alerts.createSummary());
+		contentNode.addChild(new AlertElement(ctx));
 		
 		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode);
 		

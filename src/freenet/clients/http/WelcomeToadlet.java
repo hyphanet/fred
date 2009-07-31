@@ -19,6 +19,7 @@ import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.GenericReadFilterCallback;
+import freenet.clients.http.updateableelements.ShortAlertElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
@@ -424,7 +425,7 @@ public class WelcomeToadlet extends Toadlet {
 
         // Alerts
         if (ctx.isAllowedFullAccess()) {
-            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true));
+            contentNode.addChild(new ShortAlertElement(ctx, true, advancedModeOutputEnabled, l10n("alertsSummary")));
         }
 		
 		// Search Box
