@@ -492,6 +492,9 @@ public class PersistentBlobTempBucketFactory {
 	boolean maybeShrink(ObjectContainer container) {
 		
 		if(logMINOR) Logger.minor(this, "maybeShrink()");
+		
+		final short MOVE_BLOCKS_PER_MINUTE = 10;
+		
 		long now = System.currentTimeMillis();
 		
 		long newBlocks;
@@ -616,7 +619,7 @@ public class PersistentBlobTempBucketFactory {
 						} else break;
 						if(deactivateLastBucket)
 							container.deactivate(lastBucket, 1);
-						if(blocksMoved < 10) {
+						if(blocksMoved < MOVE_BLOCKS_PER_MINUTE) {
 							lastTag = null;
 							while(tags.hasNext() && (lastTag = tags.next()).bucket == null) {
 								Logger.error(this, "Last tag has no bucket! index "+lastTag.index);
@@ -632,7 +635,7 @@ public class PersistentBlobTempBucketFactory {
 					if(blocksMoved > 0) {
 						try {
 							raf.getFD().sync();
-							System.err.println("Moved "+blocksMoved+" in defrag and synced to disk");
+							Logger.normal(this, "Moved "+blocksMoved+" in defrag and synced to disk");
 						} catch (SyncFailedException e) {
 							System.err.println("Failed to sync to disk after defragging: "+e);
 							e.printStackTrace();
@@ -654,7 +657,7 @@ public class PersistentBlobTempBucketFactory {
 					queueMaybeShrink();
 					return false;
 				}
-				System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
+				Logger.normal(this, "Shrinking blob file from "+blocks+" to "+newBlocks);
 				for(long l = newBlocks; l <= blocks; l++) {
 					freeSlots.remove(l);
 					almostFreeSlots.remove(l);
@@ -737,7 +740,7 @@ public class PersistentBlobTempBucketFactory {
 
 	private boolean innerDefrag(PersistentBlobTempBucket lastBucket, PersistentBlobTempBucket shadow, PersistentBlobTempBucketTag lastTag, PersistentBlobTempBucketTag newTag, ObjectContainer container) {
 		// Do the move.
-		System.err.println("Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
+		Logger.minor(this, "Attempting to defragment: moving "+lastTag.index+" to "+newTag.index);
 		try {
 			byte[] blob = readSlot(lastTag.index);
 			writeSlot(newTag.index, blob);
