@@ -205,17 +205,15 @@ public class PluginManager {
 		}
 	}
 	// try to guess around...
-	public void startPluginAuto(final String pluginname, boolean store) {
+	public PluginInfoWrapper startPluginAuto(final String pluginname, boolean store) {
 
 		if(isOfficialPlugin(pluginname)) {
-			startPluginOfficial(pluginname, store);
-			return;
+			return startPluginOfficial(pluginname, store);
 		}
 
 		try {
 			new FreenetURI(pluginname); // test for MalformedURLException 
-			startPluginFreenet(pluginname, store);
-			return;
+			return startPluginFreenet(pluginname, store);
 		} catch(MalformedURLException e) {
 			// not a freenet key
 		}
@@ -223,86 +221,90 @@ public class PluginManager {
 		File[] roots = File.listRoots();
 		for(File f : roots) {
 			if(pluginname.startsWith(f.getName()) && new File(pluginname).exists()) {
-				startPluginFile(pluginname, store);
-				return;
+				return startPluginFile(pluginname, store);
 			}
 		}
 
-		startPluginURL(pluginname, store);
+		return startPluginURL(pluginname, store);
 	}
 
-	public void startPluginOfficial(final String pluginname, boolean store) {
-		realStartPlugin(new PluginDownLoaderOfficial(), pluginname, store);
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store) {
+		return realStartPlugin(new PluginDownLoaderOfficial(), pluginname, store);
 	}
 
-	public void startPluginFile(final String filename, boolean store) {
-		realStartPlugin(new PluginDownLoaderFile(), filename, store);
+	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
+		return realStartPlugin(new PluginDownLoaderFile(), filename, store);
 	}
 
-	public void startPluginURL(final String filename, boolean store) {
-		realStartPlugin(new PluginDownLoaderURL(), filename, store);
+	public PluginInfoWrapper startPluginURL(final String filename, boolean store) {
+		return realStartPlugin(new PluginDownLoaderURL(), filename, store);
 	}
 
-	public void startPluginFreenet(final String filename, boolean store) {
-		realStartPlugin(new PluginDownLoaderFreenet(client), filename, store);
+	public PluginInfoWrapper startPluginFreenet(final String filename, boolean store) {
+		return realStartPlugin(new PluginDownLoaderFreenet(client), filename, store);
 	}
 
-	private void realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store) {
+	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store) {
 		if(filename.trim().length() == 0)
-			return;
+			return null;
 		final PluginProgress pluginProgress = new PluginProgress(filename);
 		synchronized(startingPlugins) {
 			startingPlugins.add(pluginProgress);
 		}
-				Logger.normal(this, "Loading plugin: " + filename);
-				FredPlugin plug;
-				try {
-					plug = loadPlugin(pdl, filename);
-					if(plug == null) return; // Already loaded
-					pluginProgress.setProgress(PluginProgress.STARTING);
-					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
-					synchronized(pluginWrappers) {
-						pluginWrappers.add(pi);
-						pluginsFailedLoad.remove(filename);
-					}
-					Logger.normal(this, "Plugin loaded: " + filename);
-				} catch(PluginNotFoundException e) {
-					Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
-					String message = e.getMessage();
-					synchronized(pluginWrappers) {
-						pluginsFailedLoad.add(filename);
-					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e));
-				} catch(UnsupportedClassVersionError e) {
-					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
-					System.err.println("Could not load plugin " + filename + " : " + e);
-					e.printStackTrace();
-					System.err.println("Plugin " + filename + " appears to require a later JVM");
-					Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
-					synchronized(pluginWrappers) {
-						pluginsFailedLoad.add(filename);
-					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, l10n("pluginReqNewerJVMTitle", "name", filename)));
-				} catch(Throwable e) {
-					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
-					System.err.println("Could not load plugin " + filename + " : " + e);
-					e.printStackTrace();
-					System.err.println("Plugin " + filename + " is broken, but we want to retry after next startup");
-					Logger.error(this, "Plugin " + filename + " is broken, but we want to retry after next startup");
-					synchronized(pluginWrappers) {
-						pluginsFailedLoad.add(filename);
-					}
-					core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e));
-				} finally {
-					synchronized(startingPlugins) {
-						startingPlugins.remove(pluginProgress);
-					}
-				}
-				/* try not to destroy the config. */
-				synchronized(this) {
-					if(store)
-						core.storeConfig();
-				}
+		Logger.normal(this, "Loading plugin: " + filename);
+		FredPlugin plug;
+		PluginInfoWrapper pi = null;
+		try {
+			plug = loadPlugin(pdl, filename);
+			if (plug == null)
+				return null; // Already loaded
+			pluginProgress.setProgress(PluginProgress.STARTING);
+			pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
+			synchronized (pluginWrappers) {
+				pluginWrappers.add(pi);
+				pluginsFailedLoad.remove(filename);
+			}
+			Logger.normal(this, "Plugin loaded: " + filename);
+		} catch (PluginNotFoundException e) {
+			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
+			String message = e.getMessage();
+			synchronized (pluginWrappers) {
+				pluginsFailedLoad.add(filename);
+			}
+			core.alerts.register(new PluginLoadFailedUserAlert(filename,
+					pdl instanceof PluginDownLoaderOfficial, e));
+		} catch (UnsupportedClassVersionError e) {
+			Logger.error(this, "Could not load plugin " + filename + " : " + e,
+					e);
+			System.err.println("Could not load plugin " + filename + " : " + e);
+			e.printStackTrace();
+			System.err.println("Plugin " + filename + " appears to require a later JVM");
+			Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
+			synchronized (pluginWrappers) {
+				pluginsFailedLoad.add(filename);
+			}
+			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, l10n("pluginReqNewerJVMTitle", "name", filename)));
+		} catch (Throwable e) {
+			Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
+			System.err.println("Could not load plugin " + filename + " : " + e);
+			e.printStackTrace();
+			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
+			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
+			synchronized (pluginWrappers) {
+				pluginsFailedLoad.add(filename);
+			}
+			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e));
+		} finally {
+			synchronized (startingPlugins) {
+				startingPlugins.remove(pluginProgress);
+			}
+		}
+		/* try not to destroy the config. */
+		synchronized(this) {
+			if (store)
+				core.storeConfig();
+		}
+		return pi;
 	}
 
 	class PluginLoadFailedUserAlert extends AbstractUserAlert {

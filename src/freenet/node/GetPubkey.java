@@ -72,7 +72,7 @@ public class GetPubkey {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
 				key = pubKeyClientcache.fetch(hash, false);
-			if(pubKeyClientcache != null && canReadClientCache && key == null) {
+			if(node.oldPKClientCache != null && canReadClientCache && key == null) {
 				PubkeyStore pks = node.oldPKClientCache;
 				if(pks != null) key = pks.fetch(hash, false);
 			}
@@ -112,7 +112,7 @@ public class GetPubkey {
 	 * @param deep If true, we can store to the datastore rather than the cache.
 	 * @param canWriteClientCache If true, we can write to the client-cache. Only set if the 
 	 * request originated locally, and the client-cache option hasn't been turned off.
-	 * @param canWriteDatastore If true, we cannot *write to* the store or the cache. This 
+	 * @param canWriteDatastore If false, we cannot *write to* the store or the cache. This 
 	 * happens for high initial HTL on both local requests and requests started relatively 
 	 * nearby.
 	 * @param forULPR 
@@ -123,58 +123,29 @@ public class GetPubkey {
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		synchronized (cachedPubKeys) {
 			DSAPublicKey key2 = cachedPubKeys.get(w);
-			if ((key2 != null) && !key2.equals(key)) {
-				// FIXME is this test really needed?
-				// SHA-256 inside synchronized{} is a bad idea
-				// FIXME get rid
-				MessageDigest md256 = SHA256.getMessageDigest();
-				try {
-					byte[] hashCheck = md256.digest(key.asBytes());
-					if (Arrays.equals(hashCheck, hash)) {
-						Logger.error(this, "Hash is correct!!!");
-						// Verify the old key
-						byte[] oldHash = md256.digest(key2.asBytes());
-						if (Arrays.equals(oldHash, hash)) {
-							Logger.error(this,
-							        "Old hash is correct too!! - Bug in DSAPublicKey.equals() or SHA-256 collision!");
-						} else {
-							Logger.error(this, "Old hash is wrong!");
-							cachedPubKeys.removeKey(w);
-							cacheKey(hash, key, deep, canWriteClientCache, canWriteDatastore, forULPR, writeLocalToDatastore);
-						}
-					} else {
-						Logger.error(this, "New hash is wrong");
-					}
-				} finally {
-					SHA256.returnMessageDigest(md256);
-				}
+			if ((key2 != null) && !key2.equals(key))
 				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
-			}
 			cachedPubKeys.push(w, key);
 			while (cachedPubKeys.size() > MAX_MEMORY_CACHED_PUBKEYS)
 				cachedPubKeys.popKey();
 		}
 		try {
-			if (canWriteClientCache) {
+			if (canWriteClientCache && !(canWriteDatastore || writeLocalToDatastore)) {
 				if(pubKeyClientcache != null) {
 					pubKeyClientcache.put(hash, key, false);
-					pubKeyClientcache.fetch(hash, true);
 				}
 			}
-			if (forULPR) {
+			if (forULPR && !(canWriteDatastore || writeLocalToDatastore)) {
 				if(pubKeySlashdotcache!= null) {
 					pubKeySlashdotcache.put(hash, key, false);
-					pubKeySlashdotcache.fetch(hash, true);
 				}
 			}
 			// Cannot write to the store or cache if request started nearby.
 			if(!(canWriteDatastore || writeLocalToDatastore)) return;
 			if (deep) {
-				pubKeyDatastore.put(hash, key, canWriteDatastore);
-				pubKeyDatastore.fetch(hash, true);
+				pubKeyDatastore.put(hash, key, !canWriteDatastore);
 			}
-			pubKeyDatacache.put(hash, key, canWriteDatastore);
-			pubKeyDatacache.fetch(hash, true);
+			pubKeyDatacache.put(hash, key, !canWriteDatastore);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: " + e, e);

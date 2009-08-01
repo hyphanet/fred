@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentCooldownQueueItem {
@@ -30,7 +31,10 @@ public class PersistentCooldownQueueItem {
 	public void delete(ObjectContainer container) {
 		// client not our problem.
 		// parent not our problem.
-		key.removeFrom(container);
+		if(key != null)
+			key.removeFrom(container);
+		else
+			Logger.error(this, "No key to delete on "+this+" keyAsBytes="+keyAsBytes);
 		container.delete(this);
 	}
 }

@@ -31,6 +31,10 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.config.Configuration;
+import com.db4o.defragment.AvailableClassFilter;
+import com.db4o.defragment.BTreeIDMapping;
+import com.db4o.defragment.Defragment;
+import com.db4o.defragment.DefragmentConfig;
 import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
@@ -496,6 +500,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	private final File dbFile;
 	private final File dbFileCrypt;
+	private boolean defragDatabaseOnStartup;
+	private boolean defragOnce;
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
@@ -1208,6 +1214,46 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 			
 		});
+		
+		nodeConfig.register("defragDatabaseOnStartup", true, sortOrder++, false, true, "Node.defragDatabaseOnStartup", "Node.defragDatabaseOnStartupLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return defragDatabaseOnStartup;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					defragDatabaseOnStartup = val;
+				}
+			}
+			
+		});
+		
+		defragDatabaseOnStartup = nodeConfig.getBoolean("defragDatabaseOnStartup");
+		
+		nodeConfig.register("defragOnce", true, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				synchronized(Node.this) {
+					return defragOnce;
+				}
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				synchronized(Node.this) {
+					defragOnce = val;
+				}
+			}
+			
+		});
+		
+		defragOnce = nodeConfig.getBoolean("defragOnce");
 		
 		dbFile = new File(nodeDir, "node.db4o");
 		dbFileCrypt = new File(nodeDir, "node.db4o.crypt");
@@ -2632,6 +2678,7 @@ public class Node implements TimeSkewDetectorCallback {
 					databaseEncrypted = true;
 				}
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.LOW) {
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				// Just open it.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 				synchronized(this) {
@@ -2686,6 +2733,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} else if(dbFile.exists() && securityLevels.getPhysicalThreatLevel() != PHYSICAL_THREAT_LEVEL.LOW && autoChangeDatabaseEncryption && enoughSpaceForAutoChangeEncryption(dbFile, true)) {
 				// Migrate the unencrypted file to ciphertext.
 				// This will always succeed short of I/O errors.
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				if(databaseKey == null) {
 					// Try with no password
 					MasterKeys keys;
@@ -2738,6 +2786,7 @@ public class Node implements TimeSkewDetectorCallback {
 					databaseEncrypted = true;
 				}
 			} else {
+				maybeDefragmentDatabase(dbConfig, dbFile);
 				// Open unencrypted.
 				database = Db4o.openFile(dbConfig, dbFile.toString());
 				synchronized(this) {
@@ -2814,6 +2863,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 	}
 
+
 	private volatile boolean notEnoughSpaceForAutoCrypt = false;
 	private volatile boolean notEnoughSpaceIsCrypt = false;
 	private volatile long notEnoughSpaceMinimumSpace = 0;
@@ -2839,16 +2889,63 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) {
+	private ObjectContainer openCryptDatabase(Configuration dbConfig, byte[] databaseKey) throws IOException {
 		IoAdapter baseAdapter = dbConfig.io();
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Encrypting database with "+HexUtil.bytesToHex(databaseKey));
 		dbConfig.io(new EncryptingIoAdapter(baseAdapter, databaseKey, random));
+		
+		maybeDefragmentDatabase(dbConfig, dbFileCrypt);
+		
 		ObjectContainer database = Db4o.openFile(dbConfig, dbFileCrypt.toString());
 		synchronized(this) {
 			databaseAwaitingPassword = false;
 		}
 		return database;
+	}
+
+
+	private void maybeDefragmentDatabase(Configuration dbConfig, File databaseFile) throws IOException {
+		
+		synchronized(this) {
+			if(!defragDatabaseOnStartup) return;
+		}
+		if(!databaseFile.exists()) return;
+		long length = databaseFile.length();
+		// Estimate approx 1 byte/sec.
+		WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+		System.err.println("Defragmenting persistent downloads database.");
+		
+		File backupFile = new File(databaseFile.getPath()+".tmp");
+		backupFile.delete();
+		backupFile.deleteOnExit();
+		
+		File tmpFile = new File(databaseFile.getPath()+".map");
+		tmpFile.delete();
+		tmpFile.deleteOnExit();
+		
+		DefragmentConfig config=new DefragmentConfig(databaseFile.getPath(),backupFile.getPath(),new BTreeIDMapping(tmpFile.getPath()));
+		config.storedClassFilter(new AvailableClassFilter());
+		config.db4oConfig(dbConfig);
+		Defragment.defrag(config);
+		System.err.println("Finalising defragmentation...");
+		FileUtil.secureDelete(tmpFile, random);
+		FileUtil.secureDelete(backupFile, random);
+		System.err.println("Defragment completed.");
+		
+		synchronized(this) {
+			if(!defragOnce) return;
+			defragDatabaseOnStartup = false;
+		}
+		// Store after startup
+		this.executor.execute(new Runnable() {
+
+			public void run() {
+				Node.this.config.store();
+			}
+			
+		}, "Store config");
+
 	}
 
 
@@ -3699,7 +3796,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * requests that don't get cached. */
 	boolean canWriteDatastoreRequest(short htl) {
-		return htl < (maxHTL - 2);
+		return htl <= (maxHTL - 2);
 	}
 
 	/** Can we write to the datastore for a given insert?
@@ -3710,7 +3807,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * from other nodes which hasn't been decremented far enough yet, so it's not ONLY local
 	 * inserts that don't get cached. */
 	boolean canWriteDatastoreInsert(short htl) {
-		return htl < (maxHTL - 3);
+		return htl <= (maxHTL - 3);
 	}
 
 	static class KeyHTLPair {
@@ -3940,7 +4037,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
-		store(block, false, canWriteClientCache, canWriteDatastore, false);
+		store(block, false, canWriteClientCache, canWriteDatastore, forULPR);
 	}
 
 	/**
@@ -3969,10 +4066,10 @@ public class Node implements TimeSkewDetectorCallback {
 			if(canWriteDatastore || writeLocalToDatastore) {
 				double loc=block.getKey().toNormalizedDouble();
 				if(deep) {
-					chkDatastore.put(block, canWriteDatastore);
+					chkDatastore.put(block, !canWriteDatastore);
 					nodeStats.avgStoreLocation.report(loc);
 				}
-				chkDatacache.put(block, canWriteDatastore);
+				chkDatacache.put(block, !canWriteDatastore);
 				nodeStats.avgCacheLocation.report(loc);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
@@ -4013,9 +4110,9 @@ public class Node implements TimeSkewDetectorCallback {
 				sskSlashdotcache.put(block, overwrite, false);
 			if(canWriteDatastore || writeLocalToDatastore) {
 				if(deep) {
-					sskDatastore.put(block, overwrite, canWriteDatastore);
+					sskDatastore.put(block, overwrite, !canWriteDatastore);
 				}
-				sskDatacache.put(block, overwrite, canWriteDatastore);
+				sskDatacache.put(block, overwrite, !canWriteDatastore);
 			}
 			if(canWriteDatastore || forULPR || useSlashdotCache)
 				failureTable.onFound(block);
@@ -5356,6 +5453,7 @@ public class Node implements TimeSkewDetectorCallback {
 		div.addChild("p", "Slashdot/ULPR cache size: CHK "+this.chkSlashdotcache.keyCount()+" pubkey "+this.pubKeySlashdotcache.keyCount()+" SSK "+this.sskSlashdotcache.keyCount());
 		div.addChild("p", "Slashdot/ULPR cache misses: CHK "+this.chkSlashdotcache.misses()+" pubkey "+this.pubKeySlashdotcache.misses()+" SSK "+this.sskSlashdotcache.misses());
 		div.addChild("p", "Slashdot/ULPR cache hits: CHK "+this.chkSlashdotcache.hits()+" pubkey "+this.pubKeySlashdotcache.hits()+" SSK "+this.sskSlashdotcache.hits());
+		div.addChild("p", "Slashdot/ULPR cache writes: CHK "+this.chkSlashdotcache.writes()+" pubkey "+this.pubKeySlashdotcache.writes()+" SSK "+this.sskSlashdotcache.writes());
 	}
 
 	private boolean enteredPassword;
