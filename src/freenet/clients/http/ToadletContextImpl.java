@@ -311,18 +311,19 @@ public class ToadletContextImpl implements ToadletContext {
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
-				 * if we're handling a POST, copy the data into a bucket now,
+				 * copy the data into a bucket now,
 				 * before we go into the redirect loop
 				 */
 				
 				Bucket data;
 				
-				if(method.equals("POST")) {
-					String slen = headers.get("content-length");
-					if(slen == null) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
-						return;
-					}
+				String slen = headers.get("content-length");
+				// POST must have data
+				if (method.equals("POST") && (slen == null)) {
+					sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
+					return;
+				}
+				if (slen != null) {
 					long len;
 					try {
 						len = Integer.parseInt(slen);
@@ -331,14 +332,17 @@ public class ToadletContextImpl implements ToadletContext {
 						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("cannotParseContentLengthWithError", "error", e.toString()), true, null);
 						return;
 					}
-					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) { 
-
-					data = bf.makeBucket(len);
-					BucketTools.copyFrom(data, is, len);
+					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {
+						data = bf.makeBucket(len);
+						BucketTools.copyFrom(data, is, len);
 					} else {
 						FileUtil.skipFully(is, len);
-						ctx.sendMethodNotAllowed("POST", true);
-						ctx.close();
+						if (method.equals("POST")) {
+							ctx.sendMethodNotAllowed("POST", true);
+							ctx.close();
+						} else {
+							sendError(sock.getOutputStream(), 403, "Forbidden", "Payload forbidden in this configuration", true, null);
+						}
 						return;
 					}
 				} else {
