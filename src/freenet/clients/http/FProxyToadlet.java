@@ -220,6 +220,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if (forceDownload) {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
+				// really the above should be enough, but ...
 				// was application/x-msdownload, but some unix browsers offer to open that in Wine as default!
 				// it is important that this type not be understandable, but application/octet-stream doesn't work.
 				// see http://onjava.com/pub/a/onjava/excerpt/jebp_3/index3.html
