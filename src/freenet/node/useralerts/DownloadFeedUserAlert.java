@@ -1,35 +1,36 @@
 package freenet.node.useralerts;
 
+import java.lang.ref.WeakReference;
+
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
+import freenet.node.PeerNode;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.ReceivedDownloadFeedMessage;
 import freenet.support.HTMLNode;
 
 public class DownloadFeedUserAlert extends AbstractUserAlert {
-	private final DarknetPeerNode sourcePeerNode;
+	private final WeakReference<PeerNode> peerRef;
 	private final FreenetURI uri;
-	private final String sourceNodeName;
-	private final String targetNodeName;
 	private final int fileNumber;
 	private final String description;
 	private final long composed;
 	private final long sent;
 	private final long received;
+	private String sourceNodeName;
 
-	public DownloadFeedUserAlert(DarknetPeerNode sourcePeerNode, String sourceNodeName, String targetNodeName,
+	public DownloadFeedUserAlert(DarknetPeerNode sourcePeerNode, 
 			String description, int fileNumber, FreenetURI uri, long composed, long sent, long received) {
 		super(true, null, null, null, null, UserAlert.MINOR, true, null, true, null);
-		this.sourcePeerNode = sourcePeerNode;
 		this.description = description;
 		this.uri = uri;
-		this.sourceNodeName = sourceNodeName;
-		this.targetNodeName = targetNodeName;
 		this.fileNumber = fileNumber;
 		this.composed = composed;
 		this.sent = sent;
 		this.received = received;
+		peerRef = sourcePeerNode.getWeakRef();
+		sourceNodeName = sourcePeerNode.getName();
 	}
 
 	@Override
@@ -85,12 +86,22 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public void onDismiss() {
-		sourcePeerNode.deleteExtraPeerDataFile(fileNumber);
+		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
+		if(pn != null)
+			pn.deleteExtraPeerDataFile(fileNumber);
 	}
 
 	@Override
 	public FCPMessage getFCPMessage(String identifier) {
 		return new ReceivedDownloadFeedMessage(identifier, getTitle(), getShortText(), getText(),
-				sourceNodeName, targetNodeName, composed, sent, received, uri, description);
+				sourceNodeName, composed, sent, received, uri, description);
+	}
+
+	@Override
+	public boolean isValid() {
+		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
+		if(pn != null)
+			sourceNodeName = pn.getName();
+		return true;
 	}
 }

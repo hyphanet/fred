@@ -9,15 +9,13 @@ public abstract class ReceivedN2NFeedMessage extends ReceivedFeedMessage {
 
 	protected final String identifier;
 	protected final String sourceNodeName;
-	protected final String targetNodeName;
 	protected final long composed, sent, received;
 
 	public ReceivedN2NFeedMessage(String identifier, String header, String shortText, String text,
-			String sourceNodeName, String targetNodeName, long composed, long sent, long received) {
+			String sourceNodeName, long composed, long sent, long received) {
 		super(identifier, header, shortText, text);
 		this.identifier = identifier;
 		this.sourceNodeName = sourceNodeName;
-		this.targetNodeName = targetNodeName;
 		this.composed = composed;
 		this.sent = sent;
 		this.received = received;
@@ -27,7 +25,6 @@ public abstract class ReceivedN2NFeedMessage extends ReceivedFeedMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		fs.putSingle("SourceNodeName", sourceNodeName);
-		fs.putSingle("TargetNodeName", targetNodeName);
 		if (composed != -1)
 			fs.put("TimeComposed", composed);
 		if (sent != -1)

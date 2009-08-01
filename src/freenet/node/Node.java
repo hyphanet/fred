@@ -4808,8 +4808,6 @@ public class Node implements TimeSkewDetectorCallback {
 			SimpleFieldSet fs = null;
 			try {
 				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
-				fs.putOverwrite("source_nodename", Base64.encode(darkSource.getName().getBytes("UTF-8")));
-				fs.putOverwrite("target_nodename", Base64.encode(getMyName().getBytes("UTF-8")));
 			} catch (UnsupportedEncodingException e) {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			} catch (IOException e) {

@@ -16,9 +16,9 @@ public class ReceivedBookmarkFeed extends ReceivedN2NFeedMessage {
 	private final boolean hasAnActivelink;
 
 	public ReceivedBookmarkFeed(String identifier, String header, String shortText, String text,
-			String sourceNodeName, String targetNodeName, long composed, long sent, long received,
+			String sourceNodeName, long composed, long sent, long received,
 			String name, FreenetURI URI, String description, boolean hasAnActivelink) {
-		super(identifier, header, shortText, text, sourceNodeName, targetNodeName, composed, sent, received);
+		super(identifier, header, shortText, text, sourceNodeName, composed, sent, received);
 		this.name = name;
 		this.URI = URI;
 		this.description = description;
