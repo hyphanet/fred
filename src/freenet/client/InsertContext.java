@@ -29,10 +29,16 @@ public class InsertContext {
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
 	public boolean canWriteClientCache;
-	
+	/** a string that contains the codecs to use/try
+	 * if the string is null it defaults to COMPRESSOR_TYPES.Values(),
+	 * so old persistent inserts are not affected after update.
+	 * @see Compressor.COMPRESSOR_TYPES#getCompressorsArray(String compressordescriptor)
+	 */
+	public String compressorDescriptor;
+
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests, boolean canWriteClientCache) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, boolean canWriteClientCache, String compressorDescriptor) {
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
 		dontCompress = false;
@@ -45,6 +51,7 @@ public class InsertContext {
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.canWriteClientCache = canWriteClientCache;
+		this.compressorDescriptor = compressorDescriptor;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -59,6 +66,7 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
+		this.compressorDescriptor = ctx.compressorDescriptor;
 	}
 
 	public void removeFrom(ObjectContainer container) {

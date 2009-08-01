@@ -17,6 +17,8 @@ import freenet.support.api.BucketFactory;
  * This is for single-file compression (gzip, bzip2) as opposed to archives.
  */
 public interface Compressor {
+	
+	public static final String DEFAULT_COMPRESSORDESCRIPTOR = null;
 
 	public enum COMPRESSOR_TYPE implements Compressor {
 		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
@@ -46,7 +48,7 @@ public interface Compressor {
 		public static COMPRESSOR_TYPE getCompressorByName(String name) {
 			COMPRESSOR_TYPE[] values = values();
 			for(COMPRESSOR_TYPE current : values)
-				if(current.name == name)
+				if(current.name.equals(name))
 					return current;
 			return null;
 		}
@@ -90,13 +92,21 @@ public interface Compressor {
 		 * @throws InvalidCompressionCodecException 
 		 */
 		public static COMPRESSOR_TYPE[] getCompressorsArray(String compressordescriptor) throws InvalidCompressionCodecException {
+			COMPRESSOR_TYPE[] result = getCompressorsArrayNoDefault(compressordescriptor);
+			if (result == null)
+				return COMPRESSOR_TYPE.values();
+			return result;
+		}
+
+		public static COMPRESSOR_TYPE[] getCompressorsArrayNoDefault(String compressordescriptor) throws InvalidCompressionCodecException {
 			if (compressordescriptor == null)
-				return COMPRESSOR_TYPE.values();
+				return null;
 			if (compressordescriptor.trim().length() == 0)
-				return COMPRESSOR_TYPE.values();
+				return null;
 			String[] codecs = compressordescriptor.split(",");
 			Vector<COMPRESSOR_TYPE> result = new Vector<COMPRESSOR_TYPE>();
 			for (String codec : codecs) {
+				codec = codec.trim();
 				COMPRESSOR_TYPE ct = getCompressorByName(codec);
 				if (ct == null) {
 					try {
@@ -105,10 +115,10 @@ public interface Compressor {
 					}
 				}
 				if (ct == null) {
-					throw new InvalidCompressionCodecException("Unknown codec identifier: '"+codec+"'");
+					throw new InvalidCompressionCodecException("Unknown compression codec identifier: '"+codec+"'");
 				}
 				if (result.contains(ct)) {
-					throw new InvalidCompressionCodecException("Duplicate codec identifier: '"+codec+"'");
+					throw new InvalidCompressionCodecException("Duplicate compression codec identifier: '"+codec+"'");
 				}
 				result.add(ct);
 			}

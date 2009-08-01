@@ -38,6 +38,7 @@ import freenet.node.SendableRequestSender;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
@@ -135,7 +136,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.activate(sourceData, 1);
 		}
 		try {
-			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength);
+			return innerEncode(random, uri, sourceData, isMetadata, compressionCodec, sourceLength, ctx.compressorDescriptor);
 		} catch (KeyEncodeException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e, e);
 			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
@@ -144,17 +145,19 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		} catch (IOException e) {
 			Logger.error(SingleBlockInserter.class, "Caught "+e+" encoding data "+sourceData, e);
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+		} catch (InvalidCompressionCodecException e) {
+			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		}
 			
 	}
 	
-	protected static ClientKeyBlock innerEncode(RandomSource random, FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException {
+	protected static ClientKeyBlock innerEncode(RandomSource random, FreenetURI uri, Bucket sourceData, boolean isMetadata, short compressionCodec, int sourceLength, String compressorDescriptor) throws InsertException, CHKEncodeException, IOException, SSKEncodeException, MalformedURLException, InvalidCompressionCodecException {
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
-			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength);
+			return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, compressorDescriptor);
 		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
 			InsertableClientSSK ik = InsertableClientSSK.create(uri);
-			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random);
+			return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random, compressorDescriptor);
 		} else {
 			throw new InsertException(InsertException.INVALID_URI, "Unknown keytype "+uriType, null);
 		}
@@ -473,7 +476,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				BlockItem block = (BlockItem) req.token;
 				try {
 					try {
-						b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength);
+						b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, ctx.compressorDescriptor);
 					} catch (CHKEncodeException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
 					} catch (SSKEncodeException e) {
@@ -483,6 +486,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					} catch (InsertException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
 					} catch (IOException e) {
+						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+					} catch (InvalidCompressionCodecException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
 					}
 					if (b==null) {

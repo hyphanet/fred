@@ -25,6 +25,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.math.RunningAverage;
@@ -131,9 +132,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 	insertKey = InsertableClientSSK.create(testKey);
                 	fetchKey = ClientKSK.create(testKey);
                 	
-                	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random);
+                	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
                 } else {
-                	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length);
+                	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
                 	insertKey = fetchKey = block.getClientKey();
                 	testKey = insertKey.getURI();
                 }

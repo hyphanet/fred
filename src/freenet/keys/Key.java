@@ -21,6 +21,7 @@ import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -32,7 +33,7 @@ import freenet.support.io.BucketTools;
  * Base class for node keys.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public abstract class Key implements WritableToDataOutputStream, Comparable {
+public abstract class Key implements WritableToDataOutputStream, Comparable<Key> {
 
     final int hash;
     double cachedNormalizedDouble;
@@ -187,7 +188,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
     	short compressionAlgorithm;
     }
     
-    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, int MAX_COMPRESSED_DATA_LENGTH, boolean shortLength) throws KeyEncodeException, IOException {
+    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, int MAX_COMPRESSED_DATA_LENGTH, boolean shortLength, String compressordescriptor) throws KeyEncodeException, IOException, InvalidCompressionCodecException {
     	byte[] finalData = null;
         short compressionAlgorithm = -1;
         int maxCompressedDataLength = MAX_COMPRESSED_DATA_LENGTH;
@@ -209,7 +210,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
         	} else {
         		if (sourceData.size() > maxCompressedDataLength) {
 					// Determine the best algorithm
-					for (COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
+        			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressordescriptor);
+					for (COMPRESSOR_TYPE comp : comps) {
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(
