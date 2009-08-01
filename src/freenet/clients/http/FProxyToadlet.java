@@ -220,7 +220,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if (forceDownload) {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
-				context.sendReplyHeaders(200, "OK", headers, "application/x-msdownload", data.size());
+				// was application/x-msdownload, but some unix browsers offer to open that in Wine as default!
+				context.sendReplyHeaders(200, "OK", headers, "application/x-download", data.size());
 				context.writeData(data);
 			} else {
 				// Send the data, intact
