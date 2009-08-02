@@ -97,7 +97,7 @@ public abstract class Toadlet {
 	 * For example: "GET, PUT" (in which case both 'handleMethodGET()' and 'handleMethodPUT()'
 	 * must be implemented).
 	 */
-	final String findSupportedMethods() {
+	public final String findSupportedMethods() {
 		if (supportedMethodsCache == null) {
 			Method methlist[] = this.getClass().getDeclaredMethods();
 			boolean isFirst = true;
