@@ -389,29 +389,7 @@ public class ToadletContextImpl implements ToadletContext {
 					            m.invoke(t, arglist);
 					         } catch (InvocationTargetException ite) {
 					        	 throw ite.getCause();
-//					         } catch (Throwable e) {
-//					            System.err.println(methodName);
-//					            System.err.println(t);
-//					            e.printStackTrace();
 					         }
-						
-//							if ((t.findSupportedMethods().contains(method))) {
-//								Logger.error(t, "Method not supported: "+method+" on "+t, new Exception("error"));
-//							}
-//							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
-//							ctx.close();
-							//} else 
-//							if(method.equals("GET")) {
-//								ctx.setActiveToadlet(t);
-//								t.handleGet(uri, req, ctx);
-//								ctx.close();
-//							} else if(method.equals("POST")) {
-//								ctx.setActiveToadlet(t);
-//								t.handlePost(uri, req, ctx);
-//							} else {
-//								ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
-//								ctx.close();
-//							}
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;
