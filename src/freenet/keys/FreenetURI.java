@@ -572,7 +572,7 @@ public class FreenetURI implements Cloneable {
 	@Override
 	public String toString() {
 		if (toStringCache == null)
-			toStringCache = toString(false, false).intern()/* + "#"+super.toString()+"#"+uniqueHashCode*/;
+			toStringCache = toString(false, false)/* + "#"+super.toString()+"#"+uniqueHashCode*/;
 		return toStringCache;
 	}
 
