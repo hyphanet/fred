@@ -1,5 +1,7 @@
 package freenet.clients.http;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
@@ -11,6 +13,7 @@ import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.api.HTTPRequest;
 
 public class OpennetConnectionsToadlet extends ConnectionsToadlet implements LinkEnabledCallback {
 
@@ -149,6 +152,16 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	@Override
 	public String path() {
 		return "/strangers/";
+	}
+
+	@Override
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, 	RedirectException {
+		super.handleMethodGET(uri, request, ctx);
+	}
+
+	@Override
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		super.handleMethodPOST(uri, request, ctx);
 	}
 		
 }

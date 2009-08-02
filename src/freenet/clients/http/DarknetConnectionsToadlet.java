@@ -399,4 +399,14 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return "/friends/";
 	}
 
+	@Override
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		super.handleMethodGET(uri, request, ctx);
+	}
+
+	@Override
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		super.handleMethodPOST(uri, request, ctx);
+	}
+
 }
