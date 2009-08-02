@@ -370,7 +370,14 @@ public class ToadletContextImpl implements ToadletContext {
 							ctx.sendNoToadletError(ctx.shouldDisconnect);
 							break;
 						}
-					
+
+						// if the Toadlet does not support the method, we don't need to parse the data
+						// also due this pre check a 'NoSuchMethodException' should never appear
+						if (!(t.findSupportedMethods().contains(method))) {
+							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
+							break;
+						}
+
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 						try {
 							String methodName = "handleMethod" + method;
