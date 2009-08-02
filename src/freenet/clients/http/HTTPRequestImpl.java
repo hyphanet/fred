@@ -689,4 +689,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return method;
 	}
 
+	public Bucket getRawData() {
+		return data;
+	}
+
 }
