@@ -375,12 +375,11 @@ public class ToadletContextImpl implements ToadletContext {
 						try {
 							String methodName = "handleMethod" + method;
 							try {
-					            Class c = t.getClass();
+					            Class<? extends Toadlet> c = t.getClass();
 					            Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
 					            ctx.setActiveToadlet(t);
 					            Object arglist[] = new Object[] {uri, req, ctx};
 					            m.invoke(t, arglist);
-					        
 					         } catch (InvocationTargetException ite) {
 					        	 throw ite.getCause();
 //					         } catch (Throwable e) {
