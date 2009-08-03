@@ -17,6 +17,8 @@ public class FCPConnectionOutputHandler implements Runnable {
 
 	final FCPConnectionHandler handler;
 	final LinkedList<FCPMessage> outQueue;
+	// Synced on outQueue
+	private boolean closedOutputQueue;
 	
 	public FCPConnectionOutputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
@@ -52,7 +54,10 @@ public class FCPConnectionOutputHandler implements Runnable {
 				closed = handler.isClosed();
 				synchronized(outQueue) {
 					if(outQueue.isEmpty()) {
-						if(closed) break;
+						if(closed) {
+							closedOutputQueue = true;
+							break;
+						}
 						os.flush();
 						try {
 							outQueue.wait();
@@ -81,12 +86,12 @@ public class FCPConnectionOutputHandler implements Runnable {
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
-		if(handler.isClosed()) {
-			Logger.error(this, "Closed already: "+this+" queueing message "+msg);
-			// FIXME throw something???
-			return;
-		}
 		synchronized(outQueue) {
+			if(closedOutputQueue) {
+				Logger.error(this, "Closed already: "+this+" queueing message "+msg);
+				// FIXME throw something???
+				return;
+			}
 			outQueue.add(msg);
 			outQueue.notifyAll();
 		}
@@ -103,6 +108,9 @@ public class FCPConnectionOutputHandler implements Runnable {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {}
+			synchronized(outQueue) {
+				if(closedOutputQueue) return;
+			}
 		}
 	}
 
