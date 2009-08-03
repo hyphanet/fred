@@ -56,6 +56,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 					if(outQueue.isEmpty()) {
 						if(closed) {
 							closedOutputQueue = true;
+							outQueue.notifyAll();
 							break;
 						}
 						os.flush();
@@ -100,16 +101,16 @@ public class FCPConnectionOutputHandler implements Runnable {
 	public void onClosed() {
 		synchronized(outQueue) {
 			outQueue.notifyAll();
-		}
-		// Give a chance to the output handler to flush
-		// its queue before the socket is closed
-		// @see #2019 - nextgens
-		while(!outQueue.isEmpty()) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {}
-			synchronized(outQueue) {
+			// Give a chance to the output handler to flush
+			// its queue before the socket is closed
+			// @see #2019 - nextgens
+			while(!outQueue.isEmpty()) {
 				if(closedOutputQueue) return;
+				try {
+					outQueue.wait();
+				} catch (InterruptedException e) {
+					continue;
+				}
 			}
 		}
 	}
