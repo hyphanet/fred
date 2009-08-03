@@ -31,7 +31,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
-
+import freenet.clients.http.annotation.AllowData;
 /**
  * ToadletContext implementation, including all the icky HTTP parsing etc.
  * An actual ToadletContext object represents a request, after we have parsed the 
@@ -41,7 +41,13 @@ import freenet.support.io.TooLongException;
  */
 public class ToadletContextImpl implements ToadletContext {
 	
-	private static final Class HANDLE_PARAMETERS[] = new Class[] {URI.class, HTTPRequest.class, ToadletContext.class};
+	private static final Class<?> HANDLE_PARAMETERS[] = new Class[] {URI.class, HTTPRequest.class, ToadletContext.class};
+
+	/* methods listed here are *not* configurable with
+	 * AllowData annotation
+	 */
+	private static final String METHODS_MUST_HAVE_DATA = "POST";
+	private static final String METHODS_CANNOT_HAVE_DATA = "";
 	
 	private final MultiValueTable<String,String> headers;
 	private final OutputStream sockOutputStream;
@@ -316,13 +322,29 @@ public class ToadletContextImpl implements ToadletContext {
 				 */
 				
 				Bucket data;
-				
+
+				boolean methodIsConfigurable = true;
+
 				String slen = headers.get("content-length");
-				// POST must have data
-				if (method.equals("POST") && (slen == null)) {
-					sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
-					return;
+
+				if (METHODS_MUST_HAVE_DATA.contains(method)) {
+					// <method> must have data
+					methodIsConfigurable = false;
+					if (slen == null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
+						ctx.close();
+						return;
+					}
+				} else if (METHODS_CANNOT_HAVE_DATA.contains(method)) {
+					// <method> can not have data
+					methodIsConfigurable = false;
+					if (slen != null) {
+						sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+						ctx.close();
+						return;
+					}
 				}
+
 				if (slen != null) {
 					long len;
 					try {
@@ -330,6 +352,7 @@ public class ToadletContextImpl implements ToadletContext {
 						if(len < 0) throw new NumberFormatException("content-length less than 0");
 					} catch (NumberFormatException e) {
 						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("cannotParseContentLengthWithError", "error", e.toString()), true, null);
+						ctx.close();
 						return;
 					}
 					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {
@@ -339,10 +362,10 @@ public class ToadletContextImpl implements ToadletContext {
 						FileUtil.skipFully(is, len);
 						if (method.equals("POST")) {
 							ctx.sendMethodNotAllowed("POST", true);
-							ctx.close();
 						} else {
-							sendError(sock.getOutputStream(), 403, "Forbidden", "Payload forbidden in this configuration", true, null);
+							sendError(sock.getOutputStream(), 403, "Forbidden", "Content not allowed in this configuration", true, null);
 						}
+						ctx.close();
 						return;
 					}
 				} else {
@@ -382,14 +405,30 @@ public class ToadletContextImpl implements ToadletContext {
 						try {
 							String methodName = "handleMethod" + method;
 							try {
-					            Class<? extends Toadlet> c = t.getClass();
-					            Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
-					            ctx.setActiveToadlet(t);
-					            Object arglist[] = new Object[] {uri, req, ctx};
-					            m.invoke(t, arglist);
-					         } catch (InvocationTargetException ite) {
-					        	 throw ite.getCause();
-					         }
+								Class<? extends Toadlet> c = t.getClass();
+								Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
+								if (methodIsConfigurable) {
+									AllowData anno = m.getAnnotation(AllowData.class);
+									if (anno == null) {
+										if (data != null) {
+											sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+											ctx.close();
+											return;
+										}
+									} else if (anno.value()) {
+										if (data == null) {
+											sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
+											ctx.close();
+											return;
+										}
+									}
+								}
+								ctx.setActiveToadlet(t);
+								Object arglist[] = new Object[] {uri, req, ctx};
+								m.invoke(t, arglist);
+							} catch (InvocationTargetException ite) {
+								throw ite.getCause();
+							}
 						} catch (RedirectException re) {
 							uri = re.newuri;
 							redirect = true;
