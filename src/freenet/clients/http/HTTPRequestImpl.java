@@ -693,4 +693,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return data;
 	}
 
+	public String getHeader(String name) {
+		return this.headers.get(name);
+	}
+
 }

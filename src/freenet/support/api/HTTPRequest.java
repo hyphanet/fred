@@ -130,5 +130,7 @@ public interface HTTPRequest {
 	public String getMethod();
 
 	public Bucket getRawData();
+	
+	public String getHeader(String name);
 
 }
