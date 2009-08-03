@@ -133,4 +133,6 @@ public interface HTTPRequest {
 	
 	public String getHeader(String name);
 
+	public int getContentLength();
+
 }
