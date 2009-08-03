@@ -83,6 +83,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 		if(msg == null) throw new NullPointerException();
 		if(handler.isClosed()) {
 			Logger.error(this, "Closed already: "+this+" queueing message "+msg);
+			// FIXME throw something???
 			return;
 		}
 		synchronized(outQueue) {
