@@ -331,16 +331,16 @@ public class ToadletContextImpl implements ToadletContext {
 					// <method> must have data
 					methodIsConfigurable = false;
 					if (slen == null) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
-						ctx.close();
+						ctx.shouldDisconnect = true;
+						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
 						return;
 					}
 				} else if (METHODS_CANNOT_HAVE_DATA.contains(method)) {
 					// <method> can not have data
 					methodIsConfigurable = false;
 					if (slen != null) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
-						ctx.close();
+						ctx.shouldDisconnect = true;
+						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
 						return;
 					}
 				}
@@ -351,8 +351,8 @@ public class ToadletContextImpl implements ToadletContext {
 						len = Integer.parseInt(slen);
 						if(len < 0) throw new NumberFormatException("content-length less than 0");
 					} catch (NumberFormatException e) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("cannotParseContentLengthWithError", "error", e.toString()), true, null);
-						ctx.close();
+						ctx.shouldDisconnect = true;
+						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
 						return;
 					}
 					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {
