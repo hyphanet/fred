@@ -48,6 +48,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 */
 	private static final String METHODS_MUST_HAVE_DATA = "POST";
 	private static final String METHODS_CANNOT_HAVE_DATA = "";
+	private static final String METHODS_RESTRICTED_MODE = "GET POST";
 	
 	private final MultiValueTable<String,String> headers;
 	private final OutputStream sockOutputStream;
@@ -373,7 +374,14 @@ public class ToadletContextImpl implements ToadletContext {
 					// the compiler happy
 					data = null;
 				}
-				
+
+				if (!container.enableExtendedMethodHandling()) {
+					if (!METHODS_RESTRICTED_MODE.contains(method)) {
+						sendError(sock.getOutputStream(), 403, "Forbidden", "Method not allowed in this configuration", true, null);
+						return;
+					}
+				}
+
 				// Handle it.
 				try {
 					boolean redirect = true;

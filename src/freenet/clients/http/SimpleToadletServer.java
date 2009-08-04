@@ -86,6 +86,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean enablePersistentConnections;
 	private boolean enableInlinePrefetch;
 	private boolean enableActivelinks;
+	private boolean enableExtendedMethodHandling;
 	
 	// Something does not really belongs to here
 	volatile static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
@@ -341,6 +342,19 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSOverrideCallback());
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
+		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
+				new BooleanCallback() {
+					@Override
+					public Boolean get() {
+						return enableExtendedMethodHandling;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(get().equals(val)) return;
+						enableExtendedMethodHandling = val;
+					}
+		});
 		fproxyConfig.register("javascriptEnabled", true, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("hasCompletedWizard", false, configItemOrder++, true, false, "SimpleToadletServer.hasCompletedWizard", "SimpleToadletServer.hasCompletedWizardLong",
@@ -820,6 +834,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public boolean enableInlinePrefetch() {
 		return enableInlinePrefetch;
+	}
+
+	public boolean enableExtendedMethodHandling() {
+		return enableExtendedMethodHandling;
 	}
 
 	public synchronized boolean allowPosts() {

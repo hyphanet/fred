@@ -55,6 +55,8 @@ public interface ToadletContainer {
 
 	public boolean enableInlinePrefetch();
 
+	public boolean enableExtendedMethodHandling();
+
 	/** Get the BucketFactory */
 	public BucketFactory getBucketFactory();
 
