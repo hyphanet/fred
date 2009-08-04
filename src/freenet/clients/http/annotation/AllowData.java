@@ -26,5 +26,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention( RUNTIME )
 @Documented
 public @interface AllowData {
-	boolean value();
+	boolean value() default false;
 }
