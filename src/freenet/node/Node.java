@@ -2711,7 +2711,7 @@ public class Node implements TimeSkewDetectorCallback {
 					(EncryptingIoAdapter) adapter.open(dbFileCrypt.toString(), false, 0, true);
 				long length = readAdapter.getLength();
 				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+				WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
 				byte[] buf = new byte[65536];
 				long read = 0;
 				while(read < length) {
@@ -2753,7 +2753,7 @@ public class Node implements TimeSkewDetectorCallback {
 				FileInputStream fis = new FileInputStream(dbFile);
 				long length = dbFile.length();
 				// Estimate approx 1 byte/sec.
-				WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+				WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
 				byte[] buf = new byte[65536];
 				long read = 0;
 				while(read < length) {
@@ -2913,7 +2913,7 @@ public class Node implements TimeSkewDetectorCallback {
 		if(!databaseFile.exists()) return;
 		long length = databaseFile.length();
 		// Estimate approx 1 byte/sec.
-		WrapperManager.signalStarting((int)Math.max(24*60*60*1000, length));
+		WrapperManager.signalStarting((int)Math.min(24*60*60*1000, 300*1000+length));
 		System.err.println("Defragmenting persistent downloads database.");
 		
 		File backupFile = new File(databaseFile.getPath()+".tmp");
@@ -4808,8 +4808,6 @@ public class Node implements TimeSkewDetectorCallback {
 			SimpleFieldSet fs = null;
 			try {
 				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
-				fs.putOverwrite("source_nodename", Base64.encode(darkSource.getName().getBytes("UTF-8")));
-				fs.putOverwrite("target_nodename", Base64.encode(getMyName().getBytes("UTF-8")));
 			} catch (UnsupportedEncodingException e) {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			} catch (IOException e) {

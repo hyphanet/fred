@@ -17,6 +17,8 @@ public class FCPConnectionOutputHandler implements Runnable {
 
 	final FCPConnectionHandler handler;
 	final LinkedList<FCPMessage> outQueue;
+	// Synced on outQueue
+	private boolean closedOutputQueue;
 	
 	public FCPConnectionOutputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
@@ -52,7 +54,11 @@ public class FCPConnectionOutputHandler implements Runnable {
 				closed = handler.isClosed();
 				synchronized(outQueue) {
 					if(outQueue.isEmpty()) {
-						if(closed) break;
+						if(closed) {
+							closedOutputQueue = true;
+							outQueue.notifyAll();
+							break;
+						}
 						os.flush();
 						try {
 							outQueue.wait();
@@ -82,6 +88,11 @@ public class FCPConnectionOutputHandler implements Runnable {
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
 		if(msg == null) throw new NullPointerException();
 		synchronized(outQueue) {
+			if(closedOutputQueue) {
+				Logger.error(this, "Closed already: "+this+" queueing message "+msg);
+				// FIXME throw something???
+				return;
+			}
 			outQueue.add(msg);
 			outQueue.notifyAll();
 		}
@@ -90,14 +101,17 @@ public class FCPConnectionOutputHandler implements Runnable {
 	public void onClosed() {
 		synchronized(outQueue) {
 			outQueue.notifyAll();
-		}
-		// Give a chance to the output handler to flush
-		// its queue before the socket is closed
-		// @see #2019 - nextgens
-		while(!outQueue.isEmpty()) {
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {}
+			// Give a chance to the output handler to flush
+			// its queue before the socket is closed
+			// @see #2019 - nextgens
+			while(!outQueue.isEmpty()) {
+				if(closedOutputQueue) return;
+				try {
+					outQueue.wait();
+				} catch (InterruptedException e) {
+					continue;
+				}
+			}
 		}
 	}
 

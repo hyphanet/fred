@@ -1,16 +1,17 @@
 package freenet.node.useralerts;
 
+import java.lang.ref.WeakReference;
+
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
+import freenet.node.PeerNode;
 import freenet.node.fcp.ReceivedBookmarkFeed;
 import freenet.support.HTMLNode;
 
 public class BookmarkFeedUserAlert extends AbstractUserAlert {
-	private final DarknetPeerNode sourcePeerNode;
+	private final WeakReference<PeerNode> peerRef;
 	private final FreenetURI uri;
-	private final String sourceNodeName;
-	private final String targetNodeName;
 	private final int fileNumber;
 	private final String name;
 	private final String description;
@@ -18,22 +19,22 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	private final long composed;
 	private final long sent;
 	private final long received;
+	private String sourceNodeName;
 
-	public BookmarkFeedUserAlert(DarknetPeerNode sourcePeerNode, String sourceNodeName, String targetNodeName,
+	public BookmarkFeedUserAlert(DarknetPeerNode sourcePeerNode,
 			String name, String description, boolean hasAnActivelink, int fileNumber, FreenetURI uri,
 			long composed, long sent, long received) {
 		super(true, null, null, null, null, UserAlert.MINOR, true, null, true, null);
-		this.sourcePeerNode = sourcePeerNode;
 		this.name = name;
 		this.description = description;
 		this.uri = uri;
-		this.sourceNodeName = sourceNodeName;
-		this.targetNodeName = targetNodeName;
 		this.fileNumber = fileNumber;
 		this.hasAnActivelink = hasAnActivelink;
 		this.composed = composed;
 		this.sent = sent;
 		this.received = received;
+		peerRef = sourcePeerNode.getWeakRef();
+		sourceNodeName = sourcePeerNode.getName();
 	}
 
 	@Override
@@ -96,12 +97,21 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public void onDismiss() {
-		sourcePeerNode.deleteExtraPeerDataFile(fileNumber);
+		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
+		if(pn != null)
+			pn.deleteExtraPeerDataFile(fileNumber);
 	}
 
 	@Override
 	public ReceivedBookmarkFeed getFCPMessage(String identifier) {
-		return new ReceivedBookmarkFeed(identifier, getTitle(), getShortText(), getText(), sourceNodeName,
-				targetNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
+		return new ReceivedBookmarkFeed(identifier, getTitle(), getShortText(), getText(), sourceNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
+	}
+
+	@Override
+	public boolean isValid() {
+		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
+		if(pn != null)
+			sourceNodeName = pn.getName();
+		return true;
 	}
 }

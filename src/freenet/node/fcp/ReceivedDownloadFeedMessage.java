@@ -13,9 +13,9 @@ public class ReceivedDownloadFeedMessage extends ReceivedN2NFeedMessage {
 	private final String description;
 
 	public ReceivedDownloadFeedMessage(String identifier, String header, String shortText, String text,
-			String sourceNodeName, String targetNodeName, long composed, long sent, long received,
+			String sourceNodeName, long composed, long sent, long received,
 			FreenetURI URI, String description) {
-		super(identifier, header, shortText, text, sourceNodeName, targetNodeName, composed, sent, received);
+		super(identifier, header, shortText, text, sourceNodeName, composed, sent, received);
 		this.URI = URI;
 		this.description = description;
 	}

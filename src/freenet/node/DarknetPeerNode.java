@@ -1275,7 +1275,6 @@ public class DarknetPeerNode extends PeerNode {
 
 			}
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_BOOKMARK);
-		System.err.println(fs.toString());
 		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
 		setPeerNodeStatus(System.currentTimeMillis());
 		return getPeerNodeStatus();
@@ -1315,136 +1314,71 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public int sendFileOfferAccepted(long uid) {
-		// FIXME: perhaps can be refactored to use sendNodeToNodeMessage()
-		storeOffers();
 		long now = System.currentTimeMillis();
+		storeOffers();
+
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_ACCEPTED);
-		try {
-			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
-			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
-			fs.put("composedTime", now);
-			fs.put("sentTime", now);
-			fs.put("uid", uid);
-			if(logMINOR)
-				Logger.minor(this, "Sending node to node message (file offer accepted):\n"+fs);
-			Message n2ntm;
-			n2ntm = DMT.createNodeToNodeMessage(
-					Node.N2N_MESSAGE_TYPE_FPROXY, fs
-							.toString().getBytes("UTF-8"));
-			try {
-				sendAsync(n2ntm, null, node.nodeStats.nodeToNodeCounter);
-			} catch (NotConnectedException e) {
-				fs.removeValue("sentTime");
-				queueN2NM(fs);
-				setPeerNodeStatus(System.currentTimeMillis());
-				return getPeerNodeStatus();
-			}
-			this.setPeerNodeStatus(System.currentTimeMillis());
-			return getPeerNodeStatus();
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		fs.put("uid", uid);
+		if(logMINOR)
+			Logger.minor(this, "Sending node to node message (file offer accepted):\n"+fs);
+
+
+		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
+		setPeerNodeStatus(System.currentTimeMillis());
+		return getPeerNodeStatus();
 	}
 
 	public int sendFileOfferRejected(long uid) {
-		// FIXME: perhaps can be refactored to use sendNodeToNodeMessage()
-		storeOffers();
 		long now = System.currentTimeMillis();
+		storeOffers();
+
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER_REJECTED);
-		try {
-			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
-			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
-			fs.put("composedTime", now);
-			fs.put("sentTime", now);
-			fs.put("uid", uid);
-			if(logMINOR)
-				Logger.minor(this, "Sending node to node message (file offer rejected):\n"+fs);
-			Message n2ntm;
-			n2ntm = DMT.createNodeToNodeMessage(
-					Node.N2N_MESSAGE_TYPE_FPROXY, fs
-							.toString().getBytes("UTF-8"));
-			try {
-				sendAsync(n2ntm, null, node.nodeStats.nodeToNodeCounter);
-			} catch (NotConnectedException e) {
-				fs.removeValue("sentTime");
-				queueN2NM(fs);
-				setPeerNodeStatus(System.currentTimeMillis());
-				return getPeerNodeStatus();
-			}
-			this.setPeerNodeStatus(System.currentTimeMillis());
-			return getPeerNodeStatus();
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		fs.put("uid", uid);
+		if(logMINOR)
+			Logger.minor(this, "Sending node to node message (file offer rejected):\n"+fs);
+
+		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
+		setPeerNodeStatus(System.currentTimeMillis());
+		return getPeerNodeStatus();
 	}
 
 	public int sendFileOffer(File filename, String message) throws IOException {
-		// FIXME: perhaps can be refactored to use sendNodeToNodeMessage()
+		long now = System.currentTimeMillis();
+		long uid = node.random.nextLong();
 		String fnam = filename.getName();
 		String mime = DefaultMIMETypes.guessMIMEType(fnam, false);
-		long uid = node.random.nextLong();
 		RandomAccessThing data = new RandomAccessFileWrapper(filename, "r");
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
 		synchronized(this) {
 			myFileOffersByUID.put(uid, fo);
 		}
 		storeOffers();
-		long now = System.currentTimeMillis();
+
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("n2nType", Node.N2N_MESSAGE_TYPE_FPROXY);
+		fo.toFieldSet(fs);
+		if(logMINOR)
+			Logger.minor(this, "Sending node to node message (file offer):\n"+fs);
+
 		fs.put("type", Node.N2N_TEXT_MESSAGE_TYPE_FILE_OFFER);
-		try {
-			fs.putSingle("source_nodename", Base64.encode(node.getMyName().getBytes("UTF-8")));
-			fs.putSingle("target_nodename", Base64.encode(getName().getBytes("UTF-8")));
-			fs.put("composedTime", now);
-			fs.put("sentTime", now);
-			fo.toFieldSet(fs);
-			if(logMINOR)
-				Logger.minor(this, "Sending node to node message (file offer):\n"+fs);
-			Message n2ntm;
-			int status = getPeerNodeStatus();
-			n2ntm = DMT.createNodeToNodeMessage(
-					Node.N2N_MESSAGE_TYPE_FPROXY, fs
-							.toString().getBytes("UTF-8"));
-			try {
-				sendAsync(n2ntm, null, node.nodeStats.nodeToNodeCounter);
-			} catch (NotConnectedException e) {
-				fs.removeValue("sentTime");
-				queueN2NM(fs);
-				setPeerNodeStatus(System.currentTimeMillis());
-				return getPeerNodeStatus();
-			}
-			return status;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		sendNodeToNodeMessage(fs, Node.N2N_MESSAGE_TYPE_FPROXY, true, now, true);
+		setPeerNodeStatus(System.currentTimeMillis());
+		return getPeerNodeStatus();
 	}
 
 	public void handleFproxyN2NTM(SimpleFieldSet fs, int fileNumber) {
-		String sourceNodeName = null;
-		String targetNodeName = null;
 		String text = null;
-		long composedTime;
-		long sentTime;
-		long receivedTime;
+		long composedTime = fs.getLong("composedTime", -1);
+		long sentTime = fs.getLong("sentTime", -1);
+		long receivedTime = fs.getLong("receivedTime", -1);
 	  	try {
-			sourceNodeName = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
-			targetNodeName = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
 			text = new String(Base64.decode(fs.get("text")));
-			composedTime = fs.getLong("composedTime", -1);
-			sentTime = fs.getLong("sentTime", -1);
-			receivedTime = fs.getLong("receivedTime", -1);
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
-		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, sourceNodeName, targetNodeName, text, fileNumber, composedTime, sentTime, receivedTime);
+		N2NTMUserAlert userAlert = new N2NTMUserAlert(this, text, fileNumber, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);
 	}
 
@@ -1542,65 +1476,46 @@ public class DarknetPeerNode extends PeerNode {
 	}
 
 	public void handleFproxyBookmarkFeed(SimpleFieldSet fs, int fileNumber) {
-		String sourceNodeName = null;
-		String targetNodeName = null;
 		String name = fs.get("Name");
 		String description = null;
 		FreenetURI uri = null;
-		boolean hasAnActiveLink;
-		long composedTime;
-		long sentTime;
-		long receivedTime;
-		composedTime = fs.getLong("composedTime", -1);
-		sentTime = fs.getLong("sentTime", -1);
-		receivedTime = fs.getLong("receivedTime", -1);
-		hasAnActiveLink = fs.getBoolean("hasAnActivelink", false);
+		boolean hasAnActiveLink = fs.getBoolean("hasAnActivelink", false);
+		long composedTime = fs.getLong("composedTime", -1);
+		long sentTime = fs.getLong("sentTime", -1);
+		long receivedTime = fs.getLong("receivedTime", -1);
 		try {
-			sourceNodeName = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
-			targetNodeName = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
 			if(fs.get("Description") != null)
 				description = new String(Base64.decode(fs.get("Description")));
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Malformed URI in N2NTM Bookmark Feed message");
-                        return;
+			return;
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
-		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, sourceNodeName, targetNodeName, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
+		BookmarkFeedUserAlert userAlert = new BookmarkFeedUserAlert(this, name, description, hasAnActiveLink, fileNumber, uri, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);
 	}
 
 	public void handleFproxyDownloadFeed(SimpleFieldSet fs, int fileNumber) {
-		String sourceNodeName = null;
-		String targetNodeName = null;
 		FreenetURI uri = null;
 		String description = null;
-		long composedTime;
-		long sentTime;
-		long receivedTime;
-		composedTime = fs.getLong("composedTime", -1);
-		sentTime = fs.getLong("sentTime", -1);
-		receivedTime = fs.getLong("receivedTime", -1);
+		long composedTime = fs.getLong("composedTime", -1);
+		long sentTime = fs.getLong("sentTime", -1);
+		long receivedTime = fs.getLong("receivedTime", -1);
 		try {
-			sourceNodeName = new String(Base64.decode(fs.get("source_nodename")), "UTF-8");
-			targetNodeName = new String(Base64.decode(fs.get("target_nodename")), "UTF-8");
 			if(fs.get("Description") != null)
 				description = new String(Base64.decode(fs.get("Description")));
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Malformed URI in N2NTM File Feed message");
-                        return;
+			return;
 		} catch (IllegalBase64Exception e) {
 			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
 			return;
-		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
-		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, sourceNodeName, targetNodeName, description, fileNumber, uri, composedTime, sentTime, receivedTime);
+		DownloadFeedUserAlert userAlert = new DownloadFeedUserAlert(this, description, fileNumber, uri, composedTime, sentTime, receivedTime);
 		node.clientCore.alerts.register(userAlert);
 	}
 
