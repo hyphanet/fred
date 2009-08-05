@@ -46,13 +46,17 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	public void register(UserAlert alert) {
 		if(alert instanceof UserEvent)
 			register((UserEvent) alert);
+		boolean needNotification=false;
 		synchronized (alerts) {
 			if (!alerts.contains(alert)) {
 				alerts.add(alert);
 				lastUpdated = System.currentTimeMillis();
 				notifySubscribers(alert);
-				notifyListeners();
+				needNotification=true;
 			}
+		}
+		if(needNotification){
+			notifyListeners();
 		}
 	}
 
