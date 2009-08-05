@@ -124,10 +124,7 @@ public class ImageElement extends BaseUpdateableElement {
 					if (logMINOR) {
 						Logger.minor(this, "ImageElement is errorous");
 					}
-					Map<String, String> attr = originalImg.getAttributesAsMap();
-					attr.put("src", "/static/error.png");
-					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
-					fr.failed.printStackTrace();
+					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
 				} else {
 					if (logMINOR) {
 						Logger.minor(this, "ImageElement is still in progress");
