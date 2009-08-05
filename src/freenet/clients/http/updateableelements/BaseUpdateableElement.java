@@ -8,7 +8,7 @@ import freenet.support.HTMLNode;
 public abstract class BaseUpdateableElement extends HTMLNode {
 
 	/** The context of the request */
-	ToadletContext	ctx;
+	protected ToadletContext	ctx;
 
 	public BaseUpdateableElement(String name, ToadletContext ctx) {
 		this(name, new String[] {}, new String[] {}, ctx);

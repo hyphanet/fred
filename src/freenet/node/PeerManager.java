@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
@@ -109,6 +110,8 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_CONN_ERROR = 12;
 	public static final int PEER_NODE_STATUS_DISCONNECTING = 13;
 	public static final int PEER_NODE_STATUS_ROUTING_DISABLED = 14;
+	
+	private List<PeerStatusChangeListener> listeners=new CopyOnWriteArrayList<PeerStatusChangeListener>();
 
 	/**
 	 * Create a PeerManager by reading a list of peers from
@@ -280,6 +283,7 @@ public class PeerManager {
 			}
 		}
 
+		notifyPeerStatusChangeListeners();
 		return true;
 	}
 
@@ -338,6 +342,7 @@ public class PeerManager {
 		pn.onRemove();
 		if(isInPeers)
 			updatePMUserAlert();
+		notifyPeerStatusChangeListeners();
 		return true;
 	}
 
@@ -351,6 +356,7 @@ public class PeerManager {
 		}
 		for(int i = 0; i < oldPeers.length; i++)
 			oldPeers[i].onRemove();
+		notifyPeerStatusChangeListeners();
 		return true;
 	}
 
@@ -1728,6 +1734,7 @@ public class PeerManager {
 			connectedPeers = keep.toArray(new PeerNode[conn.size()]);
 		}
 		updatePMUserAlert();
+		notifyPeerStatusChangeListeners();
 	}
 
 	public PeerNode containsPeer(PeerNode pn) {
@@ -1881,5 +1888,30 @@ public class PeerManager {
 	private void incrementSelectionSamples(long now, PeerNode pn) {
 		// TODO: reimplement with a bit field to spare memory
 		pn.incrementNumberOfSelections(now);
+	}
+	
+	private void notifyPeerStatusChangeListeners(){
+		for(PeerStatusChangeListener l:listeners){
+			l.onPeerStatusChange();
+			for(PeerNode pn:myPeers){
+				pn.registerPeerNodeStatusChangeListener(l);
+			}
+		}
+		
+	}
+	
+	public void addPeerStatusChangeListener(PeerStatusChangeListener listener){
+		listeners.add(listener);
+		for(PeerNode pn:myPeers){
+			pn.registerPeerNodeStatusChangeListener(listener);
+		}
+	}
+	
+	public void removePeerStatusChangeListener(PeerStatusChangeListener listener){
+		listeners.remove(listener);
+	}
+	
+	public static interface PeerStatusChangeListener{
+		public void onPeerStatusChange();
 	}
 }

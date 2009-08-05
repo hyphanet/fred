@@ -97,6 +97,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
 	public PushDataManager pushDataManager; 
+	public IntervalPusherManager intervalPushManager;
 	
 	// Config Callbacks
 	private class FProxySSLCallback extends BooleanCallback  {
@@ -303,6 +304,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		pushDataManager=new PushDataManager(getTicker());
+		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
 		bookmarkManager = new BookmarkManager(core);
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
