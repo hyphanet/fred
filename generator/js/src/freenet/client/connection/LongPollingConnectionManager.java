@@ -67,6 +67,7 @@ public class LongPollingConnectionManager implements IConnectionManager {
 						updateManager.updated(response.getText().substring("SUCCESS:".length()));
 					}
 					if(response.getText().startsWith(UpdaterConstants.FAILURE)){
+						FreenetJs.isPushingCancelledExpected=true;
 						FreenetJs.stop();
 					}
 					scheduleNextRequest();

@@ -1,8 +1,6 @@
 package freenet.client;
 
 import com.google.gwt.core.client.EntryPoint;
-import com.google.gwt.http.client.URL;
-import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.Window.ClosingEvent;
 import com.google.gwt.user.client.Window.ClosingHandler;
@@ -12,9 +10,7 @@ import freenet.client.connection.IConnectionManager;
 import freenet.client.connection.KeepaliveManager;
 import freenet.client.connection.SharedConnectionManager;
 import freenet.client.dynamics.TimeIncrementer;
-import freenet.client.messages.Message;
 import freenet.client.messages.MessageManager;
-import freenet.client.messages.Priority;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
@@ -24,7 +20,7 @@ import freenet.client.update.DefaultUpdateManager;
  */
 public class FreenetJs implements EntryPoint {
 
-	public static boolean				isDebug	= true;
+	public static boolean				isDebug						= true;
 
 	public static String				requestId;
 
@@ -32,10 +28,13 @@ public class FreenetJs implements EntryPoint {
 
 	private static IConnectionManager	keepaliveManager;
 
+	public static boolean				isPushingCancelledExpected	= false;
+
 	public void onModuleLoad() {
 		Window.addWindowClosingHandler(new ClosingHandler() {
 			@Override
 			public void onWindowClosing(ClosingEvent event) {
+				isPushingCancelledExpected=true;
 				FreenetRequest.sendRequest(UpdaterConstants.leavingPath, new QueryParameter("requestId", requestId));
 				cm.closeConnection();
 			}
@@ -51,25 +50,22 @@ public class FreenetJs implements EntryPoint {
 	}
 
 	public static final void log(String msg) {
-		try{
-		if (isDebug) {
-			/*try{
-			FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",URL.encode(msg)));
-			}catch(Exception e){
-				
-			}*/
-			nativeLog(msg);
-			/*Panel logPanel = RootPanel.get("log");
-			if (logPanel == null) {
-				logPanel = new SimplePanel();
-				logPanel.getElement().setId("log");
-				logPanel.getElement().setAttribute("style", "display:none;");
-				Document.get().getElementsByTagName("body").getItem(0).appendChild(logPanel.getElement());
+		try {
+			if (isDebug) {
+				/*
+				 * try{ FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",URL.encode(msg))); }catch(Exception e){
+				 * 
+				 * }
+				 */
+				nativeLog(msg);
+				/*
+				 * Panel logPanel = RootPanel.get("log"); if (logPanel == null) { logPanel = new SimplePanel(); logPanel.getElement().setId("log");
+				 * logPanel.getElement().setAttribute("style", "display:none;"); Document.get().getElementsByTagName("body").getItem(0).appendChild(logPanel.getElement()); }
+				 * logPanel.add(new Label("{" + System.currentTimeMillis() + "}" + msg));
+				 */
 			}
-			logPanel.add(new Label("{" + System.currentTimeMillis() + "}" + msg));*/
-		}
-		}catch(Exception e){
-			
+		} catch (Exception e) {
+
 		}
 	}
 

@@ -23,7 +23,9 @@ public class KeepaliveManager implements IConnectionManager {
 	public void closeConnection() {
 		timer.cancel();
 		if (cancelled == false) {
-			MessageManager.get().addMessage(new Message("Pushing cancelled", Priority.ERROR, null));// LOC
+			if (FreenetJs.isPushingCancelledExpected == false) {
+				MessageManager.get().addMessage(new Message("Pushing cancelled", Priority.ERROR, null));// LOC
+			}
 			cancelled = true;
 		}
 	}
