@@ -17,8 +17,6 @@ public class HTMLNode implements XMLCharacterClasses {
 	protected final String name;
 
 	private String content;
-	
-	private boolean escapeContent=true;
 
 	private final Map<String, String> attributes = new HashMap<String, String>();
 
@@ -166,11 +164,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	public StringBuilder generate(StringBuilder tagBuffer) {
 		if("#".equals(name)) {
 			if(content != null) {
-				if(escapeContent){
-					HTMLEncoder.encodeToBuffer(content, tagBuffer);
-				}else{
-					tagBuffer.append(content);
-				}
+				HTMLEncoder.encodeToBuffer(content, tagBuffer);
 				return tagBuffer;
 			}
 			
@@ -247,11 +241,6 @@ public class HTMLNode implements XMLCharacterClasses {
 	
 	public List<HTMLNode> getChildren(){
 		return children;
-	}
-	
-	public HTMLNode disableContentEscaping(){
-		escapeContent=false;
-		return this;
 	}
 
 	/**
