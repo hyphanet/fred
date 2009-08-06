@@ -662,6 +662,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					throw new PermanentRedirectException(new URI(FirstTimeWizardToadlet.TOADLET_URL));
 				} catch(URISyntaxException e) { throw new Error(e); }
 				
+			} else {
+				// Assume it's okay.
+				fproxyHasCompletedWizard = true;
 			}
 		}
 
