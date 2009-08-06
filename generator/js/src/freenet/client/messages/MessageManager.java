@@ -6,6 +6,9 @@ import java.util.List;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
+import com.google.gwt.http.client.Request;
+import com.google.gwt.http.client.RequestCallback;
+import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -104,7 +107,16 @@ public class MessageManager implements UpdateListener {
 				@Override
 				public void onMouseDown(MouseDownEvent event) {
 					if (m.getAnchor() != null) {
-						FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()));
+						FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()),new RequestCallback() {
+							@Override
+							public void onResponseReceived(Request request, Response response) {
+								removeMessage(m);
+							}
+							
+							@Override
+							public void onError(Request request, Throwable exception) {
+							}
+						});
 					}else{
 						messages.remove(m);
 						redrawMessages();
