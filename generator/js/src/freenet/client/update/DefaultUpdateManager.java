@@ -7,14 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gwt.http.client.Request;
-import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
-import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 
 import freenet.client.FreenetJs;
 import freenet.client.UpdaterConstants;
-import freenet.client.connection.IConnectionManager;
 import freenet.client.tools.Base64;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;

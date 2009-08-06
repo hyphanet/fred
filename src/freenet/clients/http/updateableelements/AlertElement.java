@@ -5,46 +5,15 @@ import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.node.useralerts.UserEventListener;
 import freenet.support.HTMLNode;
 
-public class AlertElement extends BaseUpdateableElement {
+public class AlertElement extends BaseAlertElement {
 
-	private final UserEventListener listener;
-	
-	private final ToadletContext ctx;
-	
 	public AlertElement(ToadletContext ctx){
 		super("div",ctx);
-		this.ctx=ctx;
 		init();
-		listener=new UserEventListener() {
-			public void alertsChanged() {
-				((SimpleToadletServer) AlertElement.this.ctx.getContainer()).pushDataManager.updateElement(getId());
-			}
-		};
-		((SimpleToadletServer)ctx.getContainer()).getCore().alerts.registerListener(listener);
 	}
 	
-	@Override
-	public void dispose() {
-		((SimpleToadletServer)ctx.getContainer()).getCore().alerts.deregisterListener(listener);
-	}
-
-	@Override
-	public String getUpdaterId(String requestId) {
-		return getId();
-	}
-	
-	private static String getId(){
-		return AlertElement.class.getSimpleName();
-	}
-
-	@Override
-	public String getUpdaterType() {
-		return UpdaterConstants.REPLACER_UPDATER;
-	}
-
 	@Override
 	public void updateState(boolean initial) {
 		children.clear();

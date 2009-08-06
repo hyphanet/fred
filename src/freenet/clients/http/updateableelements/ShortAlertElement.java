@@ -1,18 +1,12 @@
 package freenet.clients.http.updateableelements;
 
 import freenet.clients.http.SimpleToadletServer;
-import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.node.useralerts.UserEventListener;
 import freenet.support.HTMLNode;
 
-public class ShortAlertElement extends BaseUpdateableElement {
-
-	private final UserEventListener listener;
-	
-	private final ToadletContext ctx;
+public class ShortAlertElement extends BaseAlertElement {
 	
 	private boolean drawDumpEventsForm;
 	
@@ -22,36 +16,10 @@ public class ShortAlertElement extends BaseUpdateableElement {
 	
 	public ShortAlertElement(ToadletContext ctx,boolean drawDumpEventsForm,boolean advancedMode,String title){
 		super("div",ctx);
-		this.ctx=ctx;
 		this.drawDumpEventsForm=drawDumpEventsForm;
 		this.advancedMode=advancedMode;
 		this.title=title;
 		init();
-		listener=new UserEventListener() {
-			public void alertsChanged() {
-				((SimpleToadletServer) ShortAlertElement.this.ctx.getContainer()).pushDataManager.updateElement(getId());
-			}
-		};
-		((SimpleToadletServer)ctx.getContainer()).getCore().alerts.registerListener(listener);
-	}
-	
-	@Override
-	public void dispose() {
-		((SimpleToadletServer)ctx.getContainer()).getCore().alerts.deregisterListener(listener);
-	}
-
-	@Override
-	public String getUpdaterId(String requestId) {
-		return getId();
-	}
-	
-	private static String getId(){
-		return ShortAlertElement.class.getSimpleName();
-	}
-
-	@Override
-	public String getUpdaterType() {
-		return UpdaterConstants.REPLACER_UPDATER;
 	}
 
 	@Override
