@@ -53,7 +53,9 @@ public class TagReplacerCallback {
 					}
 				}
 			}else if(pt.element.compareTo("body")==0){
-				return "<body>".concat(new XmlAlertElement(ctx).generate());
+				return "<body>".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\""+ctx.getUniqueId()+"\" name=\"requestId\"/>"));
+			}else if(pt.element.compareTo("head")==0){
+				return "<head><script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script>";
 			}
 		}
 		return null;

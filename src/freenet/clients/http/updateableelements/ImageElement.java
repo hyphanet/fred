@@ -91,7 +91,7 @@ public class ImageElement extends BaseUpdateableElement {
 
 	@Override
 	public String getUpdaterType() {
-		return UpdaterConstants.PROGRESSBAR_UPDATER;
+		return UpdaterConstants.IMAGE_ELEMENT_UPDATER;
 	}
 
 	@Override
@@ -100,7 +100,7 @@ public class ImageElement extends BaseUpdateableElement {
 			Logger.minor(this, "Updating ImageElement for url:" + key);
 		}
 		children.clear();
-		HTMLNode whenJsEnabled = new HTMLNode("span", "class", "jsonly");
+		HTMLNode whenJsEnabled = new HTMLNode("span", "class", "jsonly ImageElement");
 		addChild(whenJsEnabled);
 		FProxyFetchResult fr = null;
 		FProxyFetchWaiter waiter = null;
@@ -138,6 +138,8 @@ public class ImageElement extends BaseUpdateableElement {
 					}
 					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25" + sizePart);
 					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
+					whenJsEnabled.addChild("input", new String[]{"type","name","value"}, new String[]{"hidden","fetchedBlocks",String.valueOf(fr.fetchedBlocks)});
+					whenJsEnabled.addChild("input", new String[]{"type","name","value"}, new String[]{"hidden","requiredBlocks",String.valueOf(fr.requiredBlocks)});
 				}
 			}
 			// When js disabled

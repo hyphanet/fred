@@ -264,10 +264,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.writeData(tmpRange);
 				} else {
 					if(mimeType.startsWith("text/html")){
-						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, getPreHtmlStyle().getBytes().length+data.size()+getImagePushingScript(ctx.getUniqueId()).getBytes().length);
+						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, getPreHtmlStyle().getBytes().length+data.size());
 						context.writeData(getPreHtmlStyle().getBytes());
 						context.writeData(data);
-						context.writeData(getImagePushingScript(ctx.getUniqueId()).getBytes());
 					}else{
 						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
 						context.writeData(data);
@@ -362,28 +361,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 	private static String getPreHtmlStyle(){
 		return "<noscript><style> .jsonly {display:none;}</style></noscript>";
 	}
-	
-	private static String getImagePushingScript(String requestId){
-		return "<script id=\"loaderScript\">\n"+
-"var requestIdNode=document.createElement('input');\n"+
-"requestIdNode.type='hidden';\n"+
-"requestIdNode.id='requestId';\n"+
-"requestIdNode.name='requestId';\n"+
-"requestIdNode.value='"+requestId+"';\n"+
-"document.getElementsByTagName('body')[0].appendChild(requestIdNode);\n"+
-"\n"+
-"var head=document.getElementsByTagName('head')[0];\n"+
-"if(head==null){\n"+
-"	var htmlNode=document.getElementsByTagName('html')[0];\n"+
-"	var head=document.createElement('head');\n"+
-"	htmlNode.appendChild(head);\n"+
-"}\n"+
-"var scriptNode=document.createElement('script');\n"+
-"scriptNode.type='text/javascript';\n"+
-"scriptNode.src='/static/loadgwt.js';\n"+
-"head.appendChild(scriptNode);\n"+
-"</script>";
-		}
 	
 	public static String l10n(String msg) {
 		return L10n.getString("FProxyToadlet."+msg);

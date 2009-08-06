@@ -58,6 +58,20 @@ public class MessageManager implements UpdateListener {
 		messages.remove(message);
 		redrawMessages();
 	}
+	
+	public int getMessagePosition(Message msg){
+		return messages.indexOf(msg);
+	}
+	
+	public void replaceMessageAtPosition(int position,Message msg){
+		messages.remove(position);
+		messages.add(position, msg);
+		redrawMessages();
+	}
+	
+	public boolean isMessagePresent(Message msg){
+		return messages.contains(msg);
+	}
 
 	private void redrawMessages() {
 		messagesPanel.clear();
@@ -90,6 +104,9 @@ public class MessageManager implements UpdateListener {
 				public void onMouseDown(MouseDownEvent event) {
 					if (m.getAnchor() != null) {
 						FreenetRequest.sendRequest("/dismissalert/", new QueryParameter("anchor", m.getAnchor()));
+					}else{
+						messages.remove(m);
+						redrawMessages();
 					}
 				}
 			});

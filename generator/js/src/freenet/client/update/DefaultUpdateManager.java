@@ -19,19 +19,23 @@ import freenet.client.tools.Base64;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.updaters.IUpdater;
+import freenet.client.updaters.ImageElementUpdater;
 import freenet.client.updaters.ProgressBarUpdater;
 
 public class DefaultUpdateManager implements IUpdateManager {
 	public static final String					SEPARATOR	= ":";
 
 	private static final Map<String, IUpdater>	updaters;
+
+	private static final List<UpdateListener>	listeners	= new ArrayList<UpdateListener>();
+	
 	static {
 		Map<String, IUpdater> list = new HashMap<String, IUpdater>();
 		list.put(UpdaterConstants.PROGRESSBAR_UPDATER, new ProgressBarUpdater());
+		list.put(UpdaterConstants.IMAGE_ELEMENT_UPDATER, new ImageElementUpdater());
 		updaters = Collections.unmodifiableMap(list);
 	}
 
-	private static final List<UpdateListener>	listeners	= new ArrayList<UpdateListener>();
 
 	public static void registerListener(UpdateListener listener) {
 		listeners.add(listener);

@@ -24,7 +24,7 @@ import freenet.client.update.DefaultUpdateManager;
  */
 public class FreenetJs implements EntryPoint {
 
-	public static boolean				isDebug	= false;
+	public static boolean				isDebug	= true;
 
 	public static String				requestId;
 
