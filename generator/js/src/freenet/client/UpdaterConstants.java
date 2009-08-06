@@ -1,4 +1,5 @@
 package freenet.client;
+/** This file is generated. Do not modify.*/
 
 public class UpdaterConstants {
 	public static final String	FINISHED					= "Finished";
