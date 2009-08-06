@@ -1,10 +1,14 @@
-package freenet.clients.http;
+package freenet.clients.http.ajaxpush;
 
 import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.ClientGetter;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.Toadlet;
+import freenet.clients.http.ToadletContext;
+import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.BaseUpdateableElement;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Base64;
@@ -23,7 +27,7 @@ public class PushDataToadlet extends Toadlet {
 	/** The separator char that separates the response's parts. It must not be present at the BASE64 alphabet. */
 	public static final String	SEPARATOR	= ":";
 
-	protected PushDataToadlet(HighLevelSimpleClient client) {
+	public PushDataToadlet(HighLevelSimpleClient client) {
 		super(client);
 	}
 

@@ -1,10 +1,14 @@
-package freenet.clients.http;
+package freenet.clients.http.ajaxpush;
 
 import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.ClientGetter;
+import freenet.clients.http.RedirectException;
+import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.Toadlet;
+import freenet.clients.http.ToadletContext;
+import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -18,7 +22,7 @@ public class PushFailoverToadlet extends Toadlet {
 		Logger.registerClass(PushFailoverToadlet.class);
 	}
 	
-	protected PushFailoverToadlet(HighLevelSimpleClient client) {
+	public PushFailoverToadlet(HighLevelSimpleClient client) {
 		super(client);
 	}
 
