@@ -8,6 +8,8 @@ public class UpdaterConstants {
 
 	public static final String	IMAGE_ELEMENT_UPDATER		= "ImageElementUpdater";
 
+	public static final String	REPLACER_UPDATER			= "ReplacerUpdater";
+
 	public static final int		KEEPALIVE_INTERVAL_SECONDS	= 10;
 
 	public static final String	SUCCESS						= "SUCCESS";

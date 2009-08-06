@@ -21,6 +21,7 @@ import freenet.client.tools.QueryParameter;
 import freenet.client.updaters.IUpdater;
 import freenet.client.updaters.ImageElementUpdater;
 import freenet.client.updaters.ProgressBarUpdater;
+import freenet.client.updaters.ReplacerUpdater;
 
 public class DefaultUpdateManager implements IUpdateManager {
 	public static final String					SEPARATOR	= ":";
@@ -33,6 +34,7 @@ public class DefaultUpdateManager implements IUpdateManager {
 		Map<String, IUpdater> list = new HashMap<String, IUpdater>();
 		list.put(UpdaterConstants.PROGRESSBAR_UPDATER, new ProgressBarUpdater());
 		list.put(UpdaterConstants.IMAGE_ELEMENT_UPDATER, new ImageElementUpdater());
+		list.put(UpdaterConstants.REPLACER_UPDATER, new ReplacerUpdater());
 		updaters = Collections.unmodifiableMap(list);
 	}
 

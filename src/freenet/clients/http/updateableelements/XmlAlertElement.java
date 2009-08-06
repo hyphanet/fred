@@ -42,7 +42,7 @@ public class XmlAlertElement extends BaseUpdateableElement {
 
 	@Override
 	public String getUpdaterType() {
-		return UpdaterConstants.PROGRESSBAR_UPDATER;
+		return UpdaterConstants.REPLACER_UPDATER;
 	}
 
 	@Override

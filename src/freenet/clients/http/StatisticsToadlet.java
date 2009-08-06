@@ -1011,7 +1011,7 @@ public class StatisticsToadlet extends Toadlet {
 			
 			@Override
 			public String getUpdaterType() {
-				return UpdaterConstants.PROGRESSBAR_UPDATER;
+				return UpdaterConstants.REPLACER_UPDATER;
 			}
 			
 			@Override
@@ -1552,7 +1552,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		@Override
 		public String getUpdaterType() {
-			return UpdaterConstants.PROGRESSBAR_UPDATER;
+			return UpdaterConstants.REPLACER_UPDATER;
 		}
 		
 	}
