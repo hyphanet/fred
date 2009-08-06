@@ -656,12 +656,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		if(core != null && core.node != null && !fproxyHasCompletedWizard) {
 			if(!(core.node.isOpennetEnabled() || core.node.getPeerNodes().length > 0)) {
 				
-			if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
-				path.startsWith(StaticToadlet.ROOT_URL)))
-				try {
-					throw new PermanentRedirectException(new URI(FirstTimeWizardToadlet.TOADLET_URL));
-				} catch(URISyntaxException e) { throw new Error(e); }
-				
+				if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
+						path.startsWith(StaticToadlet.ROOT_URL)))
+					try {
+						throw new PermanentRedirectException(new URI(FirstTimeWizardToadlet.TOADLET_URL));
+					} catch(URISyntaxException e) { throw new Error(e); }
+					
 			} else {
 				// Assume it's okay.
 				fproxyHasCompletedWizard = true;
