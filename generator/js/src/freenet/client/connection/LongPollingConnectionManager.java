@@ -56,7 +56,7 @@ public class LongPollingConnectionManager implements IConnectionManager {
 
 	private void sendRequest() {
 		if (running == true) {
-			sentRequest = FreenetRequest.sendRequest(IConnectionManager.notificationPath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
+			sentRequest = FreenetRequest.sendRequest(UpdaterConstants.notificationPath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
 
 				@Override
 				public void onResponseReceived(Request request, Response response) {

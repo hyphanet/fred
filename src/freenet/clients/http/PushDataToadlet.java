@@ -44,7 +44,7 @@ public class PushDataToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/pushdata/";
+		return UpdaterConstants.dataPath;
 	}
 
 	@Override

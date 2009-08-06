@@ -49,7 +49,7 @@ public class DefaultUpdateManager implements IUpdateManager {
 	public void updated(String message) {
 		String elementId = message;
 		FreenetJs.log("DefaultUpdateManager updated:elementid:" + elementId);
-		FreenetRequest.sendRequest(IConnectionManager.dataPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
+		FreenetRequest.sendRequest(UpdaterConstants.dataPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
 				new QueryParameter("elementId", elementId) }, new UpdaterRequestCallback(elementId));
 		for (UpdateListener l : listeners) {
 			l.onUpdate();

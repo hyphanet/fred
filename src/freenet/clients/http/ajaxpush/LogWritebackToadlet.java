@@ -9,6 +9,7 @@ import freenet.clients.http.RedirectException;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
@@ -22,7 +23,6 @@ public class LogWritebackToadlet extends Toadlet {
 	
 	public LogWritebackToadlet(HighLevelSimpleClient client) {
 		super(client);
-		// TODO Auto-generated constructor stub
 	}
 	
 	@Override
@@ -35,7 +35,7 @@ public class LogWritebackToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/logwriteback/";
+		return UpdaterConstants.logWritebackPath;
 	}
 
 	@Override

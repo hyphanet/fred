@@ -42,7 +42,7 @@ public class PushNotificationToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/pushnotifications/";
+		return UpdaterConstants.notificationPath;
 	}
 
 	@Override

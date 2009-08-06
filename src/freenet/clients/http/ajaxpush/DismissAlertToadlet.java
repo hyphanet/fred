@@ -24,7 +24,6 @@ public class DismissAlertToadlet extends Toadlet {
 
 	public DismissAlertToadlet(HighLevelSimpleClient client) {
 		super(client);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -39,7 +38,7 @@ public class DismissAlertToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/dismissalert/";
+		return UpdaterConstants.dismissAlertPath;
 	}
 
 	@Override

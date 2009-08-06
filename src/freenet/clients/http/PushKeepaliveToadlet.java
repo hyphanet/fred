@@ -38,7 +38,7 @@ public class PushKeepaliveToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/keepalive/";
+		return UpdaterConstants.keepalivePath;
 	}
 
 	@Override

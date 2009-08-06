@@ -36,7 +36,7 @@ public class FreenetJs implements EntryPoint {
 		Window.addWindowClosingHandler(new ClosingHandler() {
 			@Override
 			public void onWindowClosing(ClosingEvent event) {
-				FreenetRequest.sendRequest(IConnectionManager.leavingPath, new QueryParameter("requestId", requestId));
+				FreenetRequest.sendRequest(UpdaterConstants.leavingPath, new QueryParameter("requestId", requestId));
 				cm.closeConnection();
 			}
 		});
@@ -54,7 +54,7 @@ public class FreenetJs implements EntryPoint {
 		try{
 		if (isDebug) {
 			/*try{
-			FreenetRequest.sendRequest("/logwriteback/", new QueryParameter("msg",URL.encode(msg)));
+			FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",URL.encode(msg)));
 			}catch(Exception e){
 				
 			}*/

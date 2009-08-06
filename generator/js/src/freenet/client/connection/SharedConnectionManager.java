@@ -4,6 +4,7 @@ import com.google.gwt.user.client.Cookies;
 import com.google.gwt.user.client.Timer;
 
 import freenet.client.FreenetJs;
+import freenet.client.UpdaterConstants;
 import freenet.client.tools.Base64;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
@@ -47,7 +48,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 					followerNotifierTimer.cancel();
 					String originalLeader = Cookies.getCookie(LEADER_NAME);
 					if (originalLeader != null) {
-						FreenetRequest.sendRequest(IConnectionManager.failoverPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
+						FreenetRequest.sendRequest(UpdaterConstants.failoverPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
 								new QueryParameter("originalRequestId", originalLeader) });
 					}
 					startLeading();

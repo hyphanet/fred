@@ -35,7 +35,7 @@ public class PushFailoverToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/failover/";
+		return UpdaterConstants.failoverPath;
 	}
 
 	@Override

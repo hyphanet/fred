@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.ClientGetter;
 import freenet.clients.http.RedirectException;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.Toadlet;
@@ -42,7 +41,7 @@ public class PushLeavingToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/leaving/";
+		return UpdaterConstants.leavingPath;
 	}
 
 	@Override

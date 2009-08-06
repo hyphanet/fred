@@ -36,7 +36,7 @@ public class KeepaliveManager implements IConnectionManager {
 	private class KeepaliveTimer extends Timer {
 		@Override
 		public void run() {
-			FreenetRequest.sendRequest(IConnectionManager.keepalivePath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
+			FreenetRequest.sendRequest(UpdaterConstants.keepalivePath, new QueryParameter("requestId", FreenetJs.requestId), new RequestCallback() {
 
 				@Override
 				public void onResponseReceived(Request request, Response response) {

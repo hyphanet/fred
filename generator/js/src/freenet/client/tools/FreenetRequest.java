@@ -10,8 +10,6 @@ import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 
-import freenet.client.FreenetJs;
-
 public class FreenetRequest {
 
 	public static Request sendRequest(String path, QueryParameter[] parameters) {
@@ -27,7 +25,7 @@ public class FreenetRequest {
 	}
 
 	public static Request sendRequest(String path, QueryParameter[] parameters, RequestCallback callback) {
-		//FreenetJs.log("AJAX:path="+path+" queryParams:"+Arrays.asList(parameters));
+		// FreenetJs.log("AJAX:path="+path+" queryParams:"+Arrays.asList(parameters));
 		if (parameters == null) {
 			parameters = new QueryParameter[1];
 		}

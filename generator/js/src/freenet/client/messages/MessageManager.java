@@ -14,6 +14,7 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
 import freenet.client.FreenetJs;
+import freenet.client.UpdaterConstants;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
@@ -103,7 +104,7 @@ public class MessageManager implements UpdateListener {
 				@Override
 				public void onMouseDown(MouseDownEvent event) {
 					if (m.getAnchor() != null) {
-						FreenetRequest.sendRequest("/dismissalert/", new QueryParameter("anchor", m.getAnchor()));
+						FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()));
 					}else{
 						messages.remove(m);
 						redrawMessages();
