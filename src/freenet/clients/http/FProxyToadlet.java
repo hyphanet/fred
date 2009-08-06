@@ -28,7 +28,7 @@ import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
-import freenet.clients.http.filter.TagReplacerCallback;
+import freenet.clients.http.filter.PushingTagReplacerCallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.clients.http.updateableelements.ProgressBarElement;
@@ -160,7 +160,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null,new TagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx));
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null,new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx));
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;
