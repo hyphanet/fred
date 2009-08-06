@@ -26,6 +26,8 @@ public class ContentFilter {
 
 	static final Hashtable<String, MIMEType> mimeTypesByName = new Hashtable<String, MIMEType>();
 	
+	public static String[] HTML_MIME_TYPES=new String[]{"text/xhtml", "text/xml+xhtml", "application/xhtml+xml"};
+	
 	static {
 		init();
 	}
@@ -73,7 +75,7 @@ public class ContentFilter {
 				false, null, null));
 		
 		// HTML - dangerous if not filtered
-		register(new MIMEType("text/html", "html", new String[] { "text/xhtml", "text/xml+xhtml", "application/xhtml+xml" }, new String[] { "htm" },
+		register(new MIMEType("text/html", "html", HTML_MIME_TYPES, new String[] { "htm" },
 				false, false /* maybe? */, new HTMLFilter(), null /* FIXME */, 
 				true, true, true, true, true, true, 
 				l10n("textHtmlReadAdvice"),
