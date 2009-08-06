@@ -18,6 +18,7 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 
 import freenet.client.FreenetJs;
 import freenet.client.UpdaterConstants;
+import freenet.client.l10n.L10n;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
@@ -102,7 +103,7 @@ public class MessageManager implements UpdateListener {
 			Label msgLabel = new Label(m.getMsg());
 			hpanel.add(msgLabel);
 			msgLabel.getElement().getParentElement().getStyle().setProperty("border", "none");
-			Anchor hideElement = new Anchor("hide");// LOC
+			Anchor hideElement = new Anchor(L10n.get("hide"));
 			hideElement.addMouseDownHandler(new MouseDownHandler() {
 				@Override
 				public void onMouseDown(MouseDownEvent event) {

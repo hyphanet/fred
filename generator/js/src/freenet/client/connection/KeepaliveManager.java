@@ -7,6 +7,7 @@ import com.google.gwt.user.client.Timer;
 
 import freenet.client.FreenetJs;
 import freenet.client.UpdaterConstants;
+import freenet.client.l10n.L10n;
 import freenet.client.messages.Message;
 import freenet.client.messages.MessageManager;
 import freenet.client.messages.Priority;
@@ -24,7 +25,7 @@ public class KeepaliveManager implements IConnectionManager {
 		timer.cancel();
 		if (cancelled == false) {
 			if (FreenetJs.isPushingCancelledExpected == false) {
-				MessageManager.get().addMessage(new Message("Pushing cancelled", Priority.ERROR, null));// LOC
+				MessageManager.get().addMessage(new Message(L10n.get("pushingCancelled"), Priority.ERROR, null));// LOC
 			}
 			cancelled = true;
 		}

@@ -10,6 +10,7 @@ import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.updateableelements.ImageElement;
 import freenet.clients.http.updateableelements.XmlAlertElement;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n;
 
 public class PushingTagReplacerCallback implements TagReplacerCallback{
 
@@ -21,6 +22,16 @@ public class PushingTagReplacerCallback implements TagReplacerCallback{
 		this.tracker = tracker;
 		this.maxSize = maxSize;
 		this.ctx = ctx;
+	}
+	
+	public static String getClientSideLocalizationScript(){
+		StringBuilder l10nBuilder=new StringBuilder("var l10n={\n");
+		for(String key:L10n.getAllNamesWithPrefix("ClientSide.GWT")){
+			l10nBuilder.append(key.substring("ClientSide.GWT".length()+1)+": \""+L10n.getString(key)+"\",\n");
+		}
+		String l10n=l10nBuilder.substring(0, l10nBuilder.length()-2);
+		l10n=l10n.concat("\n};");
+		return l10n;
 	}
 
 	public String processTag(ParsedTag pt, URIProcessor uriProcessor) {
@@ -52,7 +63,9 @@ public class PushingTagReplacerCallback implements TagReplacerCallback{
 					}
 				}
 			}else if(pt.element.compareTo("body")==0){
-				return "<body>".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\""+ctx.getUniqueId()+"\" name=\"requestId\"/>"));
+
+				
+				return "<body>".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\""+ctx.getUniqueId()+"\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>"));
 			}else if(pt.element.compareTo("head")==0){
 				return "<head><script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script>";
 			}

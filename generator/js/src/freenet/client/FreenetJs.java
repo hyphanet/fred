@@ -34,7 +34,7 @@ public class FreenetJs implements EntryPoint {
 		Window.addWindowClosingHandler(new ClosingHandler() {
 			@Override
 			public void onWindowClosing(ClosingEvent event) {
-				isPushingCancelledExpected=true;
+				isPushingCancelledExpected = true;
 				FreenetRequest.sendRequest(UpdaterConstants.leavingPath, new QueryParameter("requestId", requestId));
 				cm.closeConnection();
 			}

@@ -5,6 +5,7 @@ import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.NodeList;
 import com.google.gwt.user.client.ui.RootPanel;
 
+import freenet.client.l10n.L10n;
 import freenet.client.messages.Message;
 import freenet.client.messages.MessageManager;
 import freenet.client.messages.Priority;
@@ -51,7 +52,7 @@ public class ImageElementUpdater extends ReplacerUpdater {
 	}
 
 	private Message makeProgressMsg(int fetched, int total) {
-		return new Message("Image Progress:" + fetched + "/" + total, Priority.MINOR, null);// LOC
+		return new Message(L10n.get("imageprogress") + fetched + "/" + total, Priority.MINOR, null);
 	}
 
 	private int[] getProgressForElement(Element image) {

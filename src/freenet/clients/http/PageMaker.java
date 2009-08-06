@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import freenet.clients.http.filter.PushingTagReplacerCallback;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.FredPluginL10n;
@@ -222,6 +223,8 @@ public final class PageMaker {
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		//Add a hidden input that has the request's id
 		bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
+		bodyNode.addChild("script",new String[]{"type","language"},new String[]{"text/javascript","javascript"}).addChild("%", PushingTagReplacerCallback.getClientSideLocalizationScript());
+		
 		
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");

@@ -7,6 +7,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.MissingResourceException;
 
 import freenet.clients.http.TranslationToadlet;
@@ -419,6 +422,18 @@ public class L10n {
 
 	public static String getString(String key, String pattern, String value) {
 		return getString(key, new String[] { pattern }, new String[] { value }); // FIXME code efficiently!
+	}
+	
+	public static String[] getAllNamesWithPrefix(String prefix){
+		List<String> toReturn=new ArrayList<String>();
+		Iterator<String> it= fallbackTranslation.keyIterator();
+		while(it.hasNext()){
+			String key=it.next();
+			if(key.startsWith(prefix)){
+				toReturn.add(key);
+			}
+		}
+		return toReturn.toArray(new String[toReturn.size()]);
 	}
 
 }
