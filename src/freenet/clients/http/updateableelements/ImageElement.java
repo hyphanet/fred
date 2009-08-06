@@ -66,18 +66,22 @@ public class ImageElement extends BaseUpdateableElement {
 		if (logMINOR) {
 			Logger.minor(this, "Disposing ImageElement");
 		}
-		// Deregisters the FetchListener
-		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
-		if (progress != null) {
-			progress.removeListener(fetchListener);
-			if (logMINOR) {
-				Logger.minor(this, "canCancel():" + progress.canCancel());
+		((SimpleToadletServer) ctx.getContainer()).getTicker().queueTimedJob(new Runnable() {
+			public void run() {
+				// Deregisters the FetchListener
+				FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
+				if (progress != null) {
+					progress.removeListener(fetchListener);
+					if (logMINOR) {
+						Logger.minor(this, "canCancel():" + progress.canCancel());
+					}
+					progress.requestImmediateCancel();
+					if (progress.canCancel()) {
+						tracker.run();
+					}
+				}
 			}
-			progress.requestImmediateCancel();
-			if (progress.canCancel()) {
-				tracker.run();
-			}
-		}
+		}, 0);
 	}
 
 	@Override
@@ -138,8 +142,8 @@ public class ImageElement extends BaseUpdateableElement {
 					}
 					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25" + sizePart);
 					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
-					whenJsEnabled.addChild("input", new String[]{"type","name","value"}, new String[]{"hidden","fetchedBlocks",String.valueOf(fr.fetchedBlocks)});
-					whenJsEnabled.addChild("input", new String[]{"type","name","value"}, new String[]{"hidden","requiredBlocks",String.valueOf(fr.requiredBlocks)});
+					whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fetchedBlocks", String.valueOf(fr.fetchedBlocks) });
+					whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "requiredBlocks", String.valueOf(fr.requiredBlocks) });
 				}
 			}
 			// When js disabled
@@ -163,10 +167,10 @@ public class ImageElement extends BaseUpdateableElement {
 		}
 		return new HTMLNode(pt.element, attributeNames.toArray(new String[] {}), attributeValues.toArray(new String[] {}));
 	}
-	
+
 	@Override
 	public String toString() {
-		return "ImageElement[key:"+key+",maxSize:"+maxSize+",originalImg:"+originalImg+",updaterId:"+getUpdaterId(null)+"]";
+		return "ImageElement[key:" + key + ",maxSize:" + maxSize + ",originalImg:" + originalImg + ",updaterId:" + getUpdaterId(null) + "]";
 	}
 
 }
