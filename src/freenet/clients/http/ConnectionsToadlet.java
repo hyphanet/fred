@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.complexhtmlnodes.SecondCounterNode;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.clients.http.updateableelements.BaseUpdateableElement;
 import freenet.clients.http.updateableelements.UpdaterConstants;
@@ -832,9 +833,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			idle = peerNodeStatus.getPeerAddedTime();
 		}
 		if(!peerNodeStatus.isConnected() && (now - idle) > (2 * 7 * 24 * 60 * 60 * (long) 1000)) { // 2 weeks
-			peerRow.addChild("td", "class", "peer-idle").addChild("span", "class", "peer_idle_old", idleToString(now, idle));
+			peerRow.addChild("td","class","peer-idle").addChild("span","class","peer_idle_old").addChild(new SecondCounterNode(now-idle, true, ""));
 		} else {
-			peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
+			peerRow.addChild("td","class","peer-idle").addChild(new SecondCounterNode(now-idle, true,""));
 		}
 
 		if(hasPrivateNoteColumn())
