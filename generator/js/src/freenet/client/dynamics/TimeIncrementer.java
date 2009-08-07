@@ -32,7 +32,9 @@ public class TimeIncrementer implements IDynamic{
 					if(classAttr!=null && classAttr.compareTo("needsDecrement")==0){
 						Element inputElement=e.getElementsByTagName("input").getItem(0);
 						int current=Integer.parseInt(inputElement.getAttribute("value"));
-						current-=1000;
+						if(current>=1000){
+							current-=1000;
+						}
 						inputElement.setAttribute("value", ""+current);
 						e.getElementsByTagName("span").getItem(1).setInnerText(TimeUtil.formatTime(current, 2));
 					}
