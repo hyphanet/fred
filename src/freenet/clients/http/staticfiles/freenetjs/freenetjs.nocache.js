@@ -228,11 +228,11 @@ function freenetjs(){
   $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'selectingPermutation'});
   if (!strongName) {
     try {
-      unflattenKeylistIntoAnswers(['ie6'], 'CA875322F1A9159E3CF7832AA31D67FB.cache.html');
-      unflattenKeylistIntoAnswers(['gecko1_8'], '1A27BC064623B2FD97D71C1D1AE971D1.cache.html');
-      unflattenKeylistIntoAnswers(['opera'], 'A246F4DD70059D7051FE4C1B445F259B.cache.html');
-      unflattenKeylistIntoAnswers(['safari'], 'CCDE6DA1D33EF4C32DAC24AACF7CECC7.cache.html');
-      unflattenKeylistIntoAnswers(['gecko'], 'DE42ADEF5DEC24437F223E811B98EB5B.cache.html');
+      unflattenKeylistIntoAnswers(['ie6'], '6C8C60B57F92514DA859B54E44229A25.cache.html');
+      unflattenKeylistIntoAnswers(['gecko1_8'], 'BED66DDDF183AABE3128432B3FFD1D46.cache.html');
+      unflattenKeylistIntoAnswers(['opera'], '50A223BEC6A9CA6C89A48CD2940914A4.cache.html');
+      unflattenKeylistIntoAnswers(['safari'], 'DC38F554767E4CCFB2A32FD0C338C77C.cache.html');
+      unflattenKeylistIntoAnswers(['gecko'], '8153CC694660702E7003AC420CCC5AFD.cache.html');
       strongName = answers[computePropValue('user.agent')];
     }
      catch (e) {

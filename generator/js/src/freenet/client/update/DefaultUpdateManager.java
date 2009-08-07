@@ -15,6 +15,7 @@ import freenet.client.UpdaterConstants;
 import freenet.client.tools.Base64;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
+import freenet.client.updaters.ConnectionsListUpdater;
 import freenet.client.updaters.IUpdater;
 import freenet.client.updaters.ImageElementUpdater;
 import freenet.client.updaters.ProgressBarUpdater;
@@ -32,6 +33,7 @@ public class DefaultUpdateManager implements IUpdateManager {
 		list.put(UpdaterConstants.PROGRESSBAR_UPDATER, new ProgressBarUpdater());
 		list.put(UpdaterConstants.IMAGE_ELEMENT_UPDATER, new ImageElementUpdater());
 		list.put(UpdaterConstants.REPLACER_UPDATER, new ReplacerUpdater());
+		list.put(UpdaterConstants.CONNECTIONS_TABLE_UPDATER, new ConnectionsListUpdater());
 		updaters = Collections.unmodifiableMap(list);
 	}
 

@@ -7,6 +7,8 @@ public class UpdaterConstants {
 
 	public static final String	IMAGE_ELEMENT_UPDATER		= "ImageElementUpdater";
 
+	public static final String	CONNECTIONS_TABLE_UPDATER	= "ConnectionsList";
+
 	public static final String	REPLACER_UPDATER			= "ReplacerUpdater";
 
 	public static final int		KEEPALIVE_INTERVAL_SECONDS	= 10;
