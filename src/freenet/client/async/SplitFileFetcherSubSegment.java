@@ -55,6 +55,24 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	private static boolean logMINOR;
 	private boolean cancelled;
 	
+	public boolean isStorageBroken(ObjectContainer container) {
+		if(!container.ext().isActive(this))
+			throw new IllegalStateException("Must be activated first!");
+		if(segment == null) {
+			Logger.error(this, "No segment");
+			return true;
+		}
+		if(ctx == null) {
+			Logger.error(this, "No fetch context");
+			return true;
+		}
+		if(blockNums == null) {
+			Logger.error(this, "No block nums");
+			return true;
+		}
+		return false;
+	}
+	
 	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, ClientRequester parent, int retryCount) {
 		super(parent);
 		this.segment = segment;

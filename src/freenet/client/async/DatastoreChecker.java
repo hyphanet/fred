@@ -136,6 +136,12 @@ public class DatastoreChecker implements PrioRunnable {
 				try {
 					BlockSet blocks = item.blocks;
 					container.activate(getter, 1);
+					if(getter.isStorageBroken(container)) {
+						Logger.error(this, "Getter is broken as stored: "+getter);
+						container.delete(getter);
+						container.delete(item);
+						continue;
+					}
 					boolean dontCache = getter.dontCache(container);
 					ClientRequestScheduler sched = getter.getScheduler(context);
 					synchronized(this) {
