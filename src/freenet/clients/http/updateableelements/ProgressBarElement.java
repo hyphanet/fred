@@ -50,7 +50,7 @@ public class ProgressBarElement extends BaseUpdateableElement {
 			setContent(UpdaterConstants.FINISHED);
 		} else {
 			int total = fr.requiredBlocks;
-			int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
+			int fetchedPercent = Math.min((int) (fr.fetchedBlocks / (double) total * 100),100);
 			int failedPercent = (int) (fr.failedBlocks / (double) total * 100);
 			int fatallyFailedPercent = (int) (fr.fatallyFailedBlocks / (double) total * 100);
 

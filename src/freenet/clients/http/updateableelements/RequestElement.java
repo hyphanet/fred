@@ -332,7 +332,7 @@ public class RequestElement extends BaseUpdateableElement {
 			int minPercent = (int) (min / (double) total * 100);
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
-			String fetchedPercentString=nf.format((int) ((fetched / (double) min) * 1000) / 10.0);
+			String fetchedPercentString=nf.format(Math.min((int) ((fetched / (double) min) * 1000) / 10.0,100));
 			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
 			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercentString + "%;" });
 
