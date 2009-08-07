@@ -330,22 +330,24 @@ public class RequestElement extends BaseUpdateableElement {
 			int failedPercent = (int) (failed / (double) total * 100);
 			int fatallyFailedPercent = (int) (fatallyFailed / (double) total * 100);
 			int minPercent = (int) (min / (double) total * 100);
-			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
-			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
-
-			if (failed > 0) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
-			if (fatallyFailed > 0) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
-			if ((fetched + failed + fatallyFailed) < min) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-min",
-					"width: " + (minPercent - fetchedPercent) + "%;" });
-
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
+			String fetchedPercentString=nf.format((int) ((fetched / (double) min) * 1000) / 10.0);
+			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
+			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercentString + "%;" });
+
+			//if (failed > 0) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
+			//if (fatallyFailed > 0) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
+			//if ((fetched + failed + fatallyFailed) < min) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-min",
+			//		"width: " + (minPercent - fetchedPercent) + "%;" });
+
+
 			String prefix = '(' + Integer.toString(fetched) + "/ " + Integer.toString(min) + "): ";
 			if (finalized) {
 				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized",
-						prefix + L10n.getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0) + '%');
+						prefix + L10n.getString("QueueToadlet.progressbarAccurate") },  fetchedPercentString + '%');
 			} else {
-				String text = nf.format((int) ((fetched / (double) min) * 1000) / 10.0) + '%';
+				String text = fetchedPercentString + '%';
 				if (!finalized) text = "" + fetched + " (" + text + "??)";
 				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized",
 						prefix + L10n.getString(upload ? "QueueToadlet.uploadProgressbarNotAccurate" : "QueueToadlet.progressbarNotAccurate") }, text);
