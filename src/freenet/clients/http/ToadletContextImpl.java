@@ -221,6 +221,12 @@ public class ToadletContextImpl implements ToadletContext {
 		return sdf.format(new Date(time));
 	}
 	
+	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+		sdf.setTimeZone(TZ_UTC);
+		return sdf.parse(httpDate);
+	}
+	
 	/** Fix key case to be conformant to HTTP expectations.
 	 * Note that HTTP is case insensitive on header names, but we may as well
 	 * send something as close to the spec as possible in case of broken clients... 
