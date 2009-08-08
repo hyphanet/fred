@@ -713,38 +713,41 @@ public class PluginManager {
 		/** Minimum getRealVersion(). If the plugin is older than this, we will fail
 		 * the load. */
 		final long minimumVersion;
+		/** Does it use XML? If so, if the JVM is vulnerable, then don't load it */
+		final boolean usesXML;
 		
-		OfficialPluginDescription(String name, boolean essential, long minVer) {
+		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML) {
 			this.name = name;
 			this.essential = essential;
 			this.minimumVersion = minVer;
+			this.usesXML = usesXML;
 		}
 	}
 	
 	static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
 	
 	static {
-		addOfficialPlugin("Echo");
-		addOfficialPlugin("Freemail", false, 12);
-		addOfficialPlugin("HelloWorld");
-		addOfficialPlugin("HelloFCP");
-		addOfficialPlugin("JSTUN", true, 2);
-		addOfficialPlugin("KeyExplorer", false, 4010);
-		addOfficialPlugin("MDNSDiscovery", false, 2);
-		addOfficialPlugin("SNMP");
-		addOfficialPlugin("TestGallery");
-		addOfficialPlugin("ThawIndexBrowser", false, 2);
-		addOfficialPlugin("UPnP", true, 10003);
-		addOfficialPlugin("XMLLibrarian", false, 22);
-		addOfficialPlugin("XMLSpider", false, 37);
+		addOfficialPlugin("Echo", false);
+		addOfficialPlugin("Freemail", false, 12, true);
+		addOfficialPlugin("HelloWorld", false);
+		addOfficialPlugin("HelloFCP", false);
+		addOfficialPlugin("JSTUN", true, 2, false);
+		addOfficialPlugin("KeyExplorer", false, 4010, false);
+		addOfficialPlugin("MDNSDiscovery", false, 2, false);
+		addOfficialPlugin("SNMP", false);
+		addOfficialPlugin("TestGallery", false);
+		addOfficialPlugin("ThawIndexBrowser", false, 2, true);
+		addOfficialPlugin("UPnP", true, 10003, false);
+		addOfficialPlugin("XMLLibrarian", false, 22, true);
+		addOfficialPlugin("XMLSpider", false, 37, true);
 	}
 	
-	static void addOfficialPlugin(String name) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1));
+	static void addOfficialPlugin(String name, boolean usesXML) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML));
 	}
 	
-	static void addOfficialPlugin(String name, boolean essential, long minVer) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer));
+	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML));
 	}
 	
 	/**
@@ -879,6 +882,7 @@ public class PluginManager {
 				}
 		}
 		
+		boolean remoteCodeExecVuln = node.xmlRemoteCodeExecVuln();
 		// we do quite a lot inside the lock, use a dedicated one
 		synchronized (pluginLoadSyncObject) {
 			/* now get the manifest file. */
@@ -963,6 +967,7 @@ public class PluginManager {
 						}
 					}
 					
+					// FIXME l10n the PluginNotFoundException errors.
 					if(ver < minVer) {
 						System.err.println("Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
 						Logger.error(this, "Failed to load plugin "+name+" : TOO OLD: need at least version "+minVer+" but is "+ver);
@@ -985,6 +990,9 @@ public class PluginManager {
 						}
 						throw new PluginNotFoundException("plugin too old: need at least version "+minVer);
 					}
+					
+					if(desc.usesXML && remoteCodeExecVuln)
+						throw new PluginNotFoundException("plugin cannot be loaded because your JVM is dangerously old; plugin uses XML and your JVM has remote code execution vulnerabilities in its XML parser");
 
 				}
 				

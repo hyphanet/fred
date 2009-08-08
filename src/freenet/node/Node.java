@@ -3034,6 +3034,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		
 	};
+	private boolean xmlRemoteCodeExec;
 	
 	private void createPasswordUserAlert() {
 		this.clientCore.alerts.register(masterPasswordUserAlert);
@@ -3535,12 +3536,12 @@ public class Node implements TimeSkewDetectorCallback {
 			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138759
 			// Fixed in 1.5.0_10 and 1.4.2_13
 			
-			boolean is142 = jvmVersion.startsWith("1.4.2_");
 			boolean is150 = jvmVersion.startsWith("1.5.0_");
+			boolean is160 = jvmVersion.startsWith("1.6.0_");
 			
 			boolean spuriousOOMs = false;
 			
-			if(is142 || is150) {
+			if(is150 || is160) {
 				String[] split = jvmVersion.split("_");
 				String secondPart = split[1];
 				if(secondPart.indexOf("-") != -1) {
@@ -3549,15 +3550,13 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				int subver = Integer.parseInt(secondPart);
 				
-				Logger.minor(this, "JVM version: "+jvmVersion+" subver: "+subver+" from "+secondPart+" is142="+is142+" is150="+is150);
+				Logger.minor(this, "JVM version: "+jvmVersion+" subver: "+subver+" from "+secondPart);
 				
-				if(is142) {
-					if(subver < 13)
-						spuriousOOMs = true;
-				} else /*if(is150)*/ {
-					if(subver < 10)
-						spuriousOOMs = true;
-				}
+				if(is150 && subver < 10)
+					spuriousOOMs = true;
+				
+				if(is150 && subver < 15 || is160 && subver < 20)
+					xmlRemoteCodeExec = true;
 			}
 			
 			if(spuriousOOMs) {
@@ -3596,7 +3595,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 				});
 			}
-		
+			
+			if(xmlRemoteCodeExec) {
+				System.err.println("Please upgrade your Java to 1.6.0 update 15 or 1.5.0 update 20 IMMEDIATELY!");
+				System.err.println("Freenet plugins using XML, including the search function, and Freenet client applications such as Thaw which use XML are vulnerable to remote code execution!");
+				
+				clientCore.alerts.register(new SimpleUserAlert(false, l10n("sunJVMxmlRemoteCodeExecTitle"), l10n("sunJVMxmlRemoteCodeExec"), l10n("sunJVMxmlRemoteCodeExecTitle"), UserAlert.CRITICAL_ERROR));
+			}
+			
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
 			//Note that Sun does not produce VMs for the Macintosh operating system, dont ask the user to find one...
 		} else {
@@ -3621,6 +3627,10 @@ public class Node implements TimeSkewDetectorCallback {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
 		
+	}
+	
+	public boolean xmlRemoteCodeExecVuln() {
+		return xmlRemoteCodeExec;
 	}
 
 	public static boolean checkForGCJCharConversionBug() {	
