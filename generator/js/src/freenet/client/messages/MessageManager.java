@@ -81,25 +81,29 @@ public class MessageManager implements UpdateListener {
 	private void redrawMessages() {
 		messagesPanel.clear();
 		FreenetJs.log("REDRAWING MESSAGES");
-		switch (getMaxPriorityPresent()) {
-			case MINOR:
-				messagesPanel.getElement().getStyle().setProperty("background", "green");
-				break;
-			case WARNING:
-				messagesPanel.getElement().getStyle().setProperty("background", "yellow");
-				break;
-			case ERROR:
-				messagesPanel.getElement().getStyle().setProperty("background", "orange");
-				break;
-			case CRITICAL:
-				messagesPanel.getElement().getStyle().setProperty("background", "red");
-				break;
-		}
-
+		messagesPanel.getElement().getStyle().setProperty("background", "white");
 		for (int i = 0; i < messages.size(); i++) {
 			final Message m = messages.get(i);
 			FreenetJs.log("REDRAWING MESSAGE:"+m.getMsg());
 			HorizontalPanel hpanel = new HorizontalPanel();
+			switch(m.getPriority()){
+				case MINOR:
+					hpanel.getElement().getStyle().setProperty("background", "green");
+					break;
+				case WARNING:
+					hpanel.getElement().getStyle().setProperty("background", "yellow");
+					break;
+				case ERROR:
+					hpanel.getElement().getStyle().setProperty("background", "orange");
+					break;
+				case CRITICAL:
+					hpanel.getElement().getStyle().setProperty("background", "red");
+					break;
+			}
+			hpanel.getElement().getStyle().setProperty("width", "100%");
+			hpanel.getElement().getStyle().setProperty("height", "100%");
+			hpanel.getElement().getStyle().setProperty("display", "block");
+			
 			Label msgLabel = new Label(m.getMsg());
 			hpanel.add(msgLabel);
 			msgLabel.getElement().getParentElement().getStyle().setProperty("border", "none");

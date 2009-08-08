@@ -3245,18 +3245,6 @@ function $addMessage(this$static, msg){
   $redrawMessages(this$static);
 }
 
-function $getMaxPriorityPresent(this$static){
-  var currentMax, m, m$iterator;
-  currentMax = ($clinit_140() , MINOR);
-  for (m$iterator = $AbstractList$IteratorImpl(new AbstractList$IteratorImpl(), this$static.messages); m$iterator.i < m$iterator.this$0.size_0();) {
-    m = dynamicCast($next_0(m$iterator), 20);
-    if (m.priority.ordinal - currentMax.ordinal > 0) {
-      currentMax = m.priority;
-    }
-  }
-  return currentMax;
-}
-
 function $onUpdate(this$static){
   var alert_0, anchor, i, m, m$iterator, priority, title;
   if (get_0('alerts')) {
@@ -3294,23 +3282,27 @@ function $redrawMessages(this$static){
   var hideElement, hpanel, i, m, msgLabel;
   $clear(this$static.messagesPanel);
   log('REDRAWING MESSAGES');
-  switch ($getMaxPriorityPresent(this$static).ordinal) {
-    case 0:
-      this$static.messagesPanel.element.style['background'] = 'green';
-      break;
-    case 1:
-      this$static.messagesPanel.element.style['background'] = 'yellow';
-      break;
-    case 2:
-      this$static.messagesPanel.element.style['background'] = 'orange';
-      break;
-    case 3:
-      this$static.messagesPanel.element.style['background'] = 'red';
-  }
+  this$static.messagesPanel.element.style['background'] = 'white';
   for (i = 0; i < this$static.messages.size; ++i) {
     m = dynamicCast($get_1(this$static.messages, i), 20);
     log('REDRAWING MESSAGE:' + m.msg);
     hpanel = $HorizontalPanel(new HorizontalPanel());
+    switch (m.priority.ordinal) {
+      case 0:
+        hpanel.element.style['background'] = 'green';
+        break;
+      case 1:
+        hpanel.element.style['background'] = 'yellow';
+        break;
+      case 2:
+        hpanel.element.style['background'] = 'orange';
+        break;
+      case 3:
+        hpanel.element.style['background'] = 'red';
+    }
+    hpanel.element.style['width'] = '100%';
+    hpanel.element.style['height'] = '100%';
+    hpanel.element.style['display'] = 'block';
     msgLabel = $Label(new Label(), m.msg);
     $add_1(hpanel, msgLabel);
     $getParentElement(($clinit_7() , msgLabel.element)).style['border'] = 'none';
