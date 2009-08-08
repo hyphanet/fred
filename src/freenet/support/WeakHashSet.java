@@ -6,15 +6,17 @@ import java.util.Iterator;
 import java.util.WeakHashMap;
 
 public class WeakHashSet<E> extends AbstractSet<E> {
+
 	private final WeakHashMap<E, Object> map;
-	
+	private final static Object placeholder = new Object();
+
 	public WeakHashSet() {
 		map = new WeakHashMap<E, Object>();
 	}
 
 	@Override
     public boolean add(E key) {
-		return map.put(key, null) == null;
+		return map.put(key, placeholder) == null;
 	}
 
 	@Override
