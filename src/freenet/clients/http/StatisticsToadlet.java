@@ -1055,7 +1055,7 @@ public class StatisticsToadlet extends Toadlet {
 				
 				HTMLNode activityList = drawActivity(activityInfoboxContent, node);
 				int numARKFetchers = node.getNumARKFetchers();
-				if (showArkFetchers && numARKFetchers > 0) {
+				if (activityList!=null && showArkFetchers && numARKFetchers > 0) {
 					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 				}
 
