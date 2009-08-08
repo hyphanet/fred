@@ -19,12 +19,12 @@ import freenet.support.api.HTTPRequest;
  */
 public class PushLeavingToadlet extends Toadlet {
 
-	private static volatile boolean logMINOR;
-	
+	private static volatile boolean	logMINOR;
+
 	static {
 		Logger.registerClass(PushLeavingToadlet.class);
 	}
-	
+
 	public PushLeavingToadlet(HighLevelSimpleClient client) {
 		super(client);
 	}
@@ -33,8 +33,8 @@ public class PushLeavingToadlet extends Toadlet {
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		boolean deleted = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.leaving(requestId);
-		if(logMINOR){
-			Logger.minor(this,"Page leaving. requestid:" + requestId + " deleted:" + deleted);
+		if (logMINOR) {
+			Logger.minor(this, "Page leaving. requestid:" + requestId + " deleted:" + deleted);
 		}
 		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS);
 	}

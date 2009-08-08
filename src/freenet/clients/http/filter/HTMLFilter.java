@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
 
-import javax.smartcardio.ATR;
-
 import freenet.l10n.L10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
@@ -441,6 +439,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			t = t.sanitize(pc);
 			if(pc.noOutput) return; // sanitize has done all the work we are interested in
 			if (t != null) {
+				//If the tag needs replacement, then replace it
 				String newContent=pc.cb.processTag(t);
 				if(newContent!=null){
 					w.write(newContent);

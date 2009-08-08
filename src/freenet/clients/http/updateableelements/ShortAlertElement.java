@@ -6,6 +6,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 
+/** Pushed alert summary box*/
 public class ShortAlertElement extends BaseAlertElement {
 	
 	private boolean drawDumpEventsForm;

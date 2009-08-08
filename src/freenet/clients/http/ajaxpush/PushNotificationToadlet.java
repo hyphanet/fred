@@ -18,12 +18,12 @@ import freenet.support.api.HTTPRequest;
 /** This toadlet provides notifications for clients. It will block until one is present. It requires the requestId parameter. */
 public class PushNotificationToadlet extends Toadlet {
 
-	private static volatile boolean logMINOR;
-	
+	private static volatile boolean	logMINOR;
+
 	static {
 		Logger.registerClass(PushNotificationToadlet.class);
 	}
-	
+
 	public PushNotificationToadlet(HighLevelSimpleClient client) {
 		super(client);
 	}
@@ -35,9 +35,9 @@ public class PushNotificationToadlet extends Toadlet {
 		if (event != null) {
 			String elementRequestId = event.getRequestId();
 			String elementId = event.getElementId();
-			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(elementRequestId.getBytes()) + PushDataToadlet.SEPARATOR + elementId);
-			if(logMINOR){
-				Logger.minor(this,"Notification got:"+event);
+			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS + ":" + Base64.encodeStandard(elementRequestId.getBytes()) + UpdaterConstants.SEPARATOR + elementId);
+			if (logMINOR) {
+				Logger.minor(this, "Notification got:" + event);
 			}
 		} else {
 			writeHTMLReply(ctx, 200, "OK", UpdaterConstants.FAILURE);

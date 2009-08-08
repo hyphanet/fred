@@ -17,7 +17,6 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -54,10 +53,8 @@ import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.fcp.NotAllowedException;
 import freenet.node.fcp.RequestCompletionCallback;
-import freenet.node.fcp.ClientPut.COMPRESS_STATE;
 import freenet.node.useralerts.StoringUserEvent;
 import freenet.node.useralerts.UserAlert;
-import freenet.node.useralerts.UserEvent;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -1363,6 +1360,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		for (ClientRequest clientRequest : requests) {
 			container.activate(clientRequest, 1);
+			//We add pushed RequestElements that represents one file
 			table.addChild(new RequestElement(fcp,clientRequest, columns, path(), container, advancedModeEnabled, priorityClasses, isUpload, ctx,hasFriends));
 		}
 		return table;

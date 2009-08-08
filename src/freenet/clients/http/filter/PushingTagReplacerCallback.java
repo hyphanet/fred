@@ -12,31 +12,52 @@ import freenet.clients.http.updateableelements.XmlAlertElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 
-public class PushingTagReplacerCallback implements TagReplacerCallback{
+/** This TagReplcaerCallback adds pushing support for freesites, and replaces their img's to pushed ones */
+public class PushingTagReplacerCallback implements TagReplacerCallback {
 
+	/** The FProxyFetchTracker */
 	private FProxyFetchTracker	tracker;
+	/** The maxSize used for fetching */
 	private long				maxSize;
+	/** The current ToadletContext */
 	private ToadletContext		ctx;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param tracker
+	 *            - The FProxyFetchTracker
+	 * @param maxSize
+	 *            - The maxSize used for fetching
+	 * @param ctx
+	 *            - The current ToadletContext
+	 */
 	public PushingTagReplacerCallback(FProxyFetchTracker tracker, long maxSize, ToadletContext ctx) {
 		this.tracker = tracker;
 		this.maxSize = maxSize;
 		this.ctx = ctx;
 	}
-	
-	public static String getClientSideLocalizationScript(){
-		StringBuilder l10nBuilder=new StringBuilder("var l10n={\n");
-		for(String key:L10n.getAllNamesWithPrefix("ClientSide.GWT")){
-			l10nBuilder.append(key.substring("ClientSide.GWT".length()+1)+": \""+L10n.getString(key)+"\",\n");
+
+	/**
+	 * Returns the javascript code that initializes the l10n on the client side. It must be inserted to the page.
+	 * 
+	 * @return The javascript code that needs to be inserted in order to l10n work
+	 */
+	public static String getClientSideLocalizationScript() {
+		StringBuilder l10nBuilder = new StringBuilder("var l10n={\n");
+		for (String key : L10n.getAllNamesWithPrefix("ClientSide.GWT")) {
+			l10nBuilder.append(key.substring("ClientSide.GWT".length() + 1) + ": \"" + L10n.getString(key) + "\",\n");
 		}
-		String l10n=l10nBuilder.substring(0, l10nBuilder.length()-2);
-		l10n=l10n.concat("\n};");
+		String l10n = l10nBuilder.substring(0, l10nBuilder.length() - 2);
+		l10n = l10n.concat("\n};");
 		return l10n;
 	}
 
 	public String processTag(ParsedTag pt, URIProcessor uriProcessor) {
+		// If javascript is disabled, then it won't need pushing
 		if (ctx.getContainer().isFProxyJavascriptEnabled()) {
 			if (pt.element.compareTo("img") == 0) {
+				// Img's needs to be replaced with pushed ImageElement's
 				for (int i = 0; i < pt.unparsedAttrs.length; i++) {
 					String attr = pt.unparsedAttrs[i];
 					String name = attr.substring(0, attr.indexOf("="));
@@ -44,6 +65,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback{
 					if (name.compareTo("src") == 0) {
 						String src;
 						try {
+							// We need absolute URI
 							src = uriProcessor.makeURIAbsolute(uriProcessor.processURI(value, null, false, false));
 						} catch (CommentException ce) {
 							src = value;
@@ -54,6 +76,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback{
 							src = src.substring(1);
 						}
 						try {
+							// Create the ImageElement
 							return new ImageElement(tracker, new FreenetURI(src), maxSize, ctx, pt).generate();
 						} catch (FetchException fe) {
 							return null;
@@ -62,11 +85,11 @@ public class PushingTagReplacerCallback implements TagReplacerCallback{
 						}
 					}
 				}
-			}else if(pt.element.compareTo("body")==0){
-
-				
-				return "<body>".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\""+ctx.getUniqueId()+"\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>"));
-			}else if(pt.element.compareTo("head")==0){
+			} else if (pt.element.compareTo("body") == 0) {
+				// After the <body>, we need to insert the requestId and the l10n script
+				return "<body>".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\"" + ctx.getUniqueId() + "\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>"));
+			} else if (pt.element.compareTo("head") == 0) {
+				// After the <head>, we need to add GWT support
 				return "<head><script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script>";
 			}
 		}

@@ -5,7 +5,6 @@ import java.text.NumberFormat;
 
 import com.db4o.ObjectContainer;
 
-import freenet.clients.http.PageMaker;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
@@ -23,10 +22,13 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 
+/** This element is a row in the download/uploads page.*/
 public class RequestElement extends BaseUpdateableElement {
 
+	/** The server*/
 	private FCPServer			server;
 
+	/** The id of the request thats information is shown in this row*/
 	private String				clientRequestId;
 
 	private int[]				columns;
@@ -41,8 +43,10 @@ public class RequestElement extends BaseUpdateableElement {
 
 	private boolean				isUpload;
 
+	/** The listener that gets notified when progress change for this request*/
 	private ProgressListener	progressListener;
 
+	/** Was it finished last time? Needed to reload the browser if it just finished*/
 	private boolean				wasFinished	= false;
 	
 	private boolean hasFriends;
@@ -64,6 +68,7 @@ public class RequestElement extends BaseUpdateableElement {
 
 		init();
 
+		//registers the listener to the Whiteboard
 		server.getWhiteboard().addListener(clientRequest.getIdentifier(), progressListener);
 	}
 

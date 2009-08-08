@@ -96,7 +96,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
+	
+	/** The PushDataManager handles all the pushing tasks*/
 	public PushDataManager pushDataManager; 
+	
+	/** The IntervalPusherManager handles interval pushing*/
 	public IntervalPusherManager intervalPushManager;
 	
 	// Config Callbacks

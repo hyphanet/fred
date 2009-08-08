@@ -8,16 +8,13 @@ import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.clients.http.updateableelements.BaseUpdateableElement;
-import freenet.clients.http.updateableelements.PushDataManager;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -29,7 +26,6 @@ import freenet.node.NodeStats;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.RequestStarterGroup;
-import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
@@ -1527,10 +1523,13 @@ public class StatisticsToadlet extends Toadlet {
 		return "/stats/";
 	}
 	
+	/** This class is the base for most of the pushed elements in this page. These are updated at intervals*/
 	private static abstract class StatisticsUpdateableElement extends BaseUpdateableElement{
 
+		/** The element needs a unique id*/
 		private String updaterId=String.valueOf(new Random().nextInt());
 		
+		/** The current ToadletContext*/
 		private ToadletContext ctx;
 		
 		private StatisticsUpdateableElement(ToadletContext ctx){

@@ -21,13 +21,16 @@ import freenet.client.updaters.ImageElementUpdater;
 import freenet.client.updaters.ProgressBarUpdater;
 import freenet.client.updaters.ReplacerUpdater;
 
+/** This UpdateManager provides the default pushing functionality */
 public class DefaultUpdateManager implements IUpdateManager {
-	public static final String					SEPARATOR	= ":";
 
+	/** The registered Updater that will be used to update different elements */
 	private static final Map<String, IUpdater>	updaters;
 
-	private static final List<UpdateListener>	listeners	= new ArrayList<UpdateListener>();
-	
+	/** The listeners that will be notified when update occurs */
+	private static final List<IUpdateListener>	listeners	= new ArrayList<IUpdateListener>();
+
+	// Initializes the updaters
 	static {
 		Map<String, IUpdater> list = new HashMap<String, IUpdater>();
 		list.put(UpdaterConstants.PROGRESSBAR_UPDATER, new ProgressBarUpdater());
@@ -37,28 +40,44 @@ public class DefaultUpdateManager implements IUpdateManager {
 		updaters = Collections.unmodifiableMap(list);
 	}
 
-
-	public static void registerListener(UpdateListener listener) {
+	/**
+	 * registers a listener that will be notified when update occurs
+	 * 
+	 * @param listener
+	 *            - The listener to be registered
+	 */
+	public static void registerListener(IUpdateListener listener) {
 		listeners.add(listener);
 	}
 
-	public static void deregisterListener(UpdateListener listener) {
+	/**
+	 * Removes a listener
+	 * 
+	 * @param listener
+	 *            - The listener to be removed
+	 */
+	public static void deregisterListener(IUpdateListener listener) {
 		listeners.remove(listener);
 	}
 
 	@Override
 	public void updated(String message) {
+		// Identifies the element
 		String elementId = message;
 		FreenetJs.log("DefaultUpdateManager updated:elementid:" + elementId);
+		// Sends a request asking for data for the updated element
 		FreenetRequest.sendRequest(UpdaterConstants.dataPath, new QueryParameter[] { new QueryParameter("requestId", FreenetJs.requestId),
 				new QueryParameter("elementId", elementId) }, new UpdaterRequestCallback(elementId));
-		for (UpdateListener l : listeners) {
+		// Notifies the listeners
+		for (IUpdateListener l : listeners) {
 			l.onUpdate();
 		}
 	}
 
+	/** A request callback that handles the response for element data */
 	private class UpdaterRequestCallback implements RequestCallback {
 
+		/** The element's id that is updating */
 		private final String	elementId;
 
 		private UpdaterRequestCallback(String elementId) {
@@ -69,12 +88,16 @@ public class DefaultUpdateManager implements IUpdateManager {
 		public void onResponseReceived(Request request, Response response) {
 			FreenetJs.log("Data received");
 			if (response.getText().startsWith("SUCCESS") == false) {
+				// If something bad happened, we stop the pushing
 				FreenetJs.log("ERROR! BAD DATA");
 				FreenetJs.stop();
 			} else {
+				// The Updater type
 				String updaterType = Base64.decode(response.getText().split("[:]")[1]);
+				// The new content
 				String newContent = Base64.decode(response.getText().split("[:]")[2]);
 				FreenetJs.log("Element will be updated with type:" + updaterType + " and content:" + newContent);
+				// Update the element with the given updater with the got content
 				updaters.get(updaterType).updated(elementId, newContent);
 			}
 		}

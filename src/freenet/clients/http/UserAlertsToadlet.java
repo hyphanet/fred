@@ -25,10 +25,8 @@ public class UserAlertsToadlet extends Toadlet {
 	UserAlertsToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
 		this.node = node;
-		this.alerts = core.alerts;
 	}
 	
-	private UserAlertManager alerts;
 	private Node node;
 
 	@Override

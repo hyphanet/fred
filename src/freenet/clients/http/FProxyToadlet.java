@@ -1,10 +1,8 @@
 package freenet.clients.http;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.SocketException;
@@ -268,6 +266,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.writeData(tmpRange);
 				} else {
 					if(Arrays.asList(ContentFilter.HTML_MIME_TYPES).contains(mimeType)){
+						//For HTML files, we need to append some style data, to provide safe fallback when js is disabled at the client
+						//It adds support for the 'jsonly' css class, that will be only shown when javascript is enabled in the browser
 						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, getPreHtmlStyle().getBytes().length+data.size());
 						context.writeData(getPreHtmlStyle().getBytes());
 						context.writeData(data);
@@ -672,6 +672,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
 			if(data == null && fe == null) {
+				//If we don't have the data, then check if an FProxyFetchInProgress has. It can happen when one FetchInProgress downloaded an image
+				//asynchronously, then loads it. This way a FetchInprogress will have the full image, and no need to block.
 				FProxyFetchInProgress progress=fetchTracker.getFetchInProgress(key, maxSize);
 				if(progress!=null){
 						FProxyFetchWaiter waiter=progress.getWaiter();
@@ -690,6 +692,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						}
 					}
 				}else{
+					//If we don't have the data, then we need to fetch it and block until it is available
 					FetchResult result = fetch(key, maxSize, new RequestClient() {
 						public boolean persistent() {
 							return false;

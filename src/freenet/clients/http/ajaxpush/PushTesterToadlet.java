@@ -22,8 +22,8 @@ public class PushTesterToadlet extends Toadlet {
 	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		PageNode pageNode = ctx.getPageMaker().getPageNode("Push tester", false, ctx);
-		for(int i=0;i<3;i++){
-			pageNode.content.addChild(new TesterElement(ctx, String.valueOf(i),i*2));
+		for (int i = 0; i < 3; i++) {
+			pageNode.content.addChild(new TesterElement(ctx, String.valueOf(i), i * 2));
 		}
 		writeHTMLReply(ctx, 200, "OK", pageNode.outer.generate());
 	}

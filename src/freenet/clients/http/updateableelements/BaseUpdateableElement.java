@@ -33,8 +33,12 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 		((SimpleToadletServer) ctx.getContainer()).pushDataManager.elementRendered(ctx.getUniqueId(), this);
 	}
 
-	/** Updates the state of the Node. The children should be removed and recreated. 
-	 * @param initial - If this is the first update*/
+	/**
+	 * Updates the state of the Node. The children should be removed and recreated.
+	 * 
+	 * @param initial
+	 *            - If this is the first update
+	 */
 	public abstract void updateState(boolean initial);
 
 	/** Returns the id, that identifies the element. It can depend on the request, but it might not use it. */

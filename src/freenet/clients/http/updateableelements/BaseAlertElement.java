@@ -4,6 +4,7 @@ import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
 import freenet.node.useralerts.UserEventListener;
 
+/** Base class for the alert boxes */
 public abstract class BaseAlertElement extends BaseUpdateableElement {
 
 	public BaseAlertElement(String name, ToadletContext ctx) {

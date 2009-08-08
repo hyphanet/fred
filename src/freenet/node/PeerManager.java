@@ -111,6 +111,7 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_DISCONNECTING = 13;
 	public static final int PEER_NODE_STATUS_ROUTING_DISABLED = 14;
 	
+	/** The list of listeners that needs to be notified when peers' statuses changed*/
 	private List<PeerStatusChangeListener> listeners=new CopyOnWriteArrayList<PeerStatusChangeListener>();
 
 	/**
@@ -1890,6 +1891,7 @@ public class PeerManager {
 		pn.incrementNumberOfSelections(now);
 	}
 	
+	/** Notifies the listeners about status change*/
 	private void notifyPeerStatusChangeListeners(){
 		for(PeerStatusChangeListener l:listeners){
 			l.onPeerStatusChange();
@@ -1897,9 +1899,10 @@ public class PeerManager {
 				pn.registerPeerNodeStatusChangeListener(l);
 			}
 		}
-		
 	}
 	
+	/** Registers a listener to be notified when peers' statuses changes
+	 * @param listener - the listener to be registered*/
 	public void addPeerStatusChangeListener(PeerStatusChangeListener listener){
 		listeners.add(listener);
 		for(PeerNode pn:myPeers){
@@ -1907,11 +1910,15 @@ public class PeerManager {
 		}
 	}
 	
+	/** Removes a listener
+	 * @param listener - The listener to be removed*/
 	public void removePeerStatusChangeListener(PeerStatusChangeListener listener){
 		listeners.remove(listener);
 	}
 	
+	/** A listener interface that can be used to be notified about peer status change events*/
 	public static interface PeerStatusChangeListener{
+		/** Peers status have changed*/
 		public void onPeerStatusChange();
 	}
 }

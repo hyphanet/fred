@@ -7,6 +7,7 @@ import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
+/** A pushed element that writes the alerts in XML format*/
 public class XmlAlertElement extends BaseAlertElement {
 
 	public XmlAlertElement(ToadletContext ctx) {

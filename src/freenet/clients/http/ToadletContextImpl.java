@@ -47,7 +47,10 @@ public class ToadletContextImpl implements ToadletContext {
 	private final InetAddress remoteAddr;
 	private boolean sentReplyHeaders;
 	private volatile Toadlet activeToadlet;
+	
+	/** The unique id of the request*/
 	private final String uniqueId;
+	
 	private URI uri;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
@@ -67,6 +70,7 @@ public class ToadletContextImpl implements ToadletContext {
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
+		//Generate an unique id
 		uniqueId=String.valueOf(new Random().nextLong());
 	}
 	

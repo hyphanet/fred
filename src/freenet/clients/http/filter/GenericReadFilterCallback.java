@@ -352,6 +352,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		return null;
 	}
 	
+	/** Processes a tag. It calls the TagReplacerCallback if present.
+	 * @param pt - The tag, that needs to be processed
+	 * @return The replacement for the tag, or null, if no replacement needed*/
 	public String processTag(ParsedTag pt) {
 		if(trc!=null){
 			return trc.processTag(pt,this);

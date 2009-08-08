@@ -17,12 +17,18 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
+/** This toadlet creates a png image with the specified text. */
 public class ImageCreatorToadlet extends Toadlet {
 
+	/** The default width */
 	public static final int		DEFAULT_WIDTH	= 100;
 
+	/** The default height */
 	public static final int		DEFAULT_HEIGHT	= 100;
 
+	/**
+	 * The last modification time of the class, it is required for the client-side cache. If anyone makes modifications to this class, this needs to be updated
+	 */
 	public static final Date	LAST_MODIFIED	= new Date(1248256659000l);
 
 	protected ImageCreatorToadlet(HighLevelSimpleClient client) {
@@ -32,23 +38,32 @@ public class ImageCreatorToadlet extends Toadlet {
 	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean needsGeneration = true;
+		// If the browser has requested this image, then it will send this header
 		if (ctx.getHeaders().containsKey("if-modified-since")) {
 			try {
+				// If the received date is equal to the last modification of this class, then it doesn't need regeneration
 				if (ToadletContextImpl.parseHTTPDate(ctx.getHeaders().get("if-modified-since")).compareTo(LAST_MODIFIED) == 0) {
+					// So we just send the NOT_MODIFIED response, and skip the generation
 					ctx.sendReplyHeaders(304, "Not Modified", null, "image/png", 0, LAST_MODIFIED);
 					needsGeneration = false;
 				}
 			} catch (ParseException pe) {
+				// If something goes wrong, we regenerate
 			}
 		}
 		if (needsGeneration) {
+			// The text that will be drawn
 			String text = req.getParam("text");
+			// If width or height is specified, we use it, if not, then we use the default
 			int requiredWidth = req.getParam("width").compareTo("") != 0 ? Integer.parseInt(req.getParam("width")) : DEFAULT_WIDTH;
 			int requiredHeight = req.getParam("height").compareTo("") != 0 ? Integer.parseInt(req.getParam("height")) : DEFAULT_HEIGHT;
+			// This is the image we are making
 			BufferedImage buffer = new BufferedImage(requiredWidth, requiredHeight, BufferedImage.TYPE_INT_RGB);
 			Graphics2D g2 = buffer.createGraphics();
 			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			FontRenderContext fc = g2.getFontRenderContext();
+			// We then specify the maximum font size that fits in the image
+			// For this, we start at 1, and increase it, until it overflows. This-1 will be the font size
 			float size = 1;
 			g2.setFont(g2.getFont().deriveFont(size));
 			int width = 0;
@@ -61,17 +76,16 @@ public class ImageCreatorToadlet extends Toadlet {
 				height = (int) bounds.getHeight();
 				g2.setFont(g2.getFont().deriveFont(++size));
 			}
-
-			// prepare some output
 			g2.setFont(g2.getFont().deriveFont(size - 1));
 			Rectangle2D bounds = g2.getFont().getStringBounds(text, fc);
-			g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			// actually do the drawing
 			g2.setColor(new Color(0, 0, 0));
 			g2.fillRect(0, 0, width, height);
 			g2.setColor(new Color(255, 255, 255));
+			// We position it to the center. Note that this is not the upper left corner
 			g2.drawString(text, (int) (requiredWidth / 2 - bounds.getWidth() / 2), (int) (requiredHeight / 2 + bounds.getHeight() / 4));
 
+			// Write the data, and send the modification data to let the client cache it
 			Bucket data = ctx.getBucketFactory().makeBucket(-1);
 			ImageIO.write(buffer, "png", data.getOutputStream());
 			ctx.sendReplyHeaders(200, "OK", null, "image/png", data.size(), LAST_MODIFIED);

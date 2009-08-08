@@ -1,6 +1,6 @@
 package freenet.node.fcp.whiteboard;
 
-/** A WhiteboardListener can be registered the Whiteboard, and will be notified when an event occurs. */
+/** A WhiteboardListener can be registered to the Whiteboard, and will be notified when an event occurs. */
 public interface WhiteboardListener {
 
 	/**

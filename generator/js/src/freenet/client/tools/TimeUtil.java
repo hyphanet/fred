@@ -1,6 +1,6 @@
 package freenet.client.tools;
 
-
+/** Copied from Freenet*/
 public class TimeUtil {
 	
 	/**

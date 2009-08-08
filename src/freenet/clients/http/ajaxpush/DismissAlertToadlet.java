@@ -14,6 +14,7 @@ import freenet.support.HTMLDecoder;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
+/** This toadlet is used to dismiss alerts from the client side */
 public class DismissAlertToadlet extends Toadlet {
 
 	private static volatile boolean	logMINOR;
@@ -28,10 +29,12 @@ public class DismissAlertToadlet extends Toadlet {
 
 	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		// The anchor is used to identify the alert
 		String anchor = HTMLDecoder.decode(req.getParam("anchor"));
 		if (logMINOR) {
 			Logger.minor(this, "Dismissing alert with anchor:" + anchor);
 		}
+		// Dismiss the alert
 		boolean success = ((SimpleToadletServer) ctx.getContainer()).getCore().alerts.dismissByAnchor(anchor);
 		writeHTMLReply(ctx, 200, "OK", success ? UpdaterConstants.SUCCESS : UpdaterConstants.FAILURE);
 	}

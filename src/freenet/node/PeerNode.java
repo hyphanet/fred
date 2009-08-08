@@ -346,6 +346,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
 	private int listeningHandshakeBurstSize;
 	
+	/** The set of the listeners that needs to be notified when status changes. It uses WeakReference, so there is no need to deregister*/
 	private Set<WeakReference<PeerManager.PeerStatusChangeListener>> listeners=new CopyOnWriteArraySet<WeakReference<PeerStatusChangeListener>>();
 	
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
@@ -4386,6 +4387,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return countFailedRevocationTransfers;
 	}
 	
+	/** Registers a listener that will be notified when status changes. Only the WeakReference of it is stored, so there is no need for deregistering
+	 * @param listener - The listener to be registered*/
 	public void registerPeerNodeStatusChangeListener(PeerManager.PeerStatusChangeListener listener){
 		listeners.add(new WeakReference<PeerManager.PeerStatusChangeListener>(listener) {
 			@SuppressWarnings("unchecked")
@@ -4401,6 +4404,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		purgeListeners();
 	}
 	
+	/** Removes dead elements from the listeners set*/
 	private void purgeListeners(){
 		for(WeakReference<PeerManager.PeerStatusChangeListener> l:listeners){
 			if(l.get()==null){
@@ -4409,6 +4413,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	
+	/** Notifies the listeners that status has been changed*/
 	private void notifyPeerNodeStatusChangeListeners(){
 		for(WeakReference<PeerManager.PeerStatusChangeListener> l:listeners){
 			if(l.get()!=null){

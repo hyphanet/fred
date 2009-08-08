@@ -3,7 +3,6 @@ package freenet.clients.http;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.db4o.ObjectContainer;
 
@@ -20,10 +19,7 @@ import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
-import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.keys.FreenetURI;
-import freenet.node.NodeClientCore;
-import freenet.node.NodeStarter;
 import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -97,7 +93,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** Show even non-fatal failures for 5 seconds. Necessary for javascript to work,
 	 * because it fetches the page and then reloads it if it isn't a progress update. */
 	private long timeFailed;
-	
+	/** If this is set, then it can be removed instantly, doesn't need to wait for 30sec*/
 	private boolean requestImmediateCancel=false;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
@@ -331,6 +327,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		hasWaited = true;
 	}
 	
+	/** Adds a listener that will be notified when a change occurs to this fetch
+	 * @param listener - The listener to be added*/
 	public void addListener(FProxyFetchListener listener){
 		if(logMINOR){
 			Logger.minor(this,"Registered listener:"+listener);
@@ -338,6 +336,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		this.listener.add(listener);
 	}
 	
+	/** Removes a listener
+	 * @param listener - The listener to be removed*/
 	public void removeListener(FProxyFetchListener listener){
 		if(logMINOR){
 			Logger.minor(this,"Removed listener:"+listener);
@@ -348,6 +348,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		}
 	}
 	
+	/** Allows the fetch to be removed immediately*/
 	public void requestImmediateCancel(){
 		requestImmediateCancel=true;
 	}

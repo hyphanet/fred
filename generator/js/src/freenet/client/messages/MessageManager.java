@@ -22,11 +22,14 @@ import freenet.client.l10n.L10n;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
-import freenet.client.update.UpdateListener;
+import freenet.client.update.IUpdateListener;
 
-public class MessageManager implements UpdateListener {
+/** This manager singleton class manages the message panel in the page */
+public class MessageManager implements IUpdateListener {
+	/** The singleton instance */
 	private static MessageManager	instance	= null;
 
+	/** Returns the singleton instance */
 	public static MessageManager get() {
 		if (instance == null) {
 			instance = new MessageManager();
@@ -34,59 +37,109 @@ public class MessageManager implements UpdateListener {
 		return instance;
 	}
 
+	/** The messages that are currently displayed */
 	private List<Message>	messages		= new ArrayList<Message>();
 
+	/** The panel where messages are displayed */
 	private VerticalPanel	messagesPanel	= new VerticalPanel();
 
 	private MessageManager() {
+		// Initializes the messages panel and places it to the page
 		messagesPanel.getElement().setId("messagesPanel");
 		messagesPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
 		messagesPanel.getElement().getStyle().setProperty("position", "fixed");
 		messagesPanel.getElement().getStyle().setProperty("top", "0px");
 		messagesPanel.getElement().getStyle().setProperty("width", "100%");
 		RootPanel.get().add(messagesPanel);
+		// Registers for push events
 		DefaultUpdateManager.registerListener(this);
+		// Updates the messages
 		onUpdate();
 	}
 
+	/**
+	 * Adds a message to the panel
+	 * 
+	 * @param msg
+	 *            - The message to add
+	 */
 	public void addMessage(Message msg) {
 		messages.add(msg);
 		redrawMessages();
 	}
 
+	/**
+	 * Removes a message at a given position
+	 * 
+	 * @param position
+	 *            - The position of the message that is removed
+	 */
 	public void removeMessage(int position) {
 		messages.remove(position);
 		redrawMessages();
 	}
 
+	/**
+	 * Removes a message
+	 * 
+	 * @param message
+	 *            - The message that will be removed
+	 */
 	public void removeMessage(Message message) {
 		messages.remove(message);
 		redrawMessages();
 	}
-	
-	public int getMessagePosition(Message msg){
+
+	/**
+	 * Gets the position of a message
+	 * 
+	 * @param msg
+	 *            - The message which position will be returned
+	 * @return The position of the message
+	 */
+	public int getMessagePosition(Message msg) {
 		return messages.indexOf(msg);
 	}
-	
-	public void replaceMessageAtPosition(int position,Message msg){
+
+	/**
+	 * Replaces a message with a new one at a given position
+	 * 
+	 * @param position
+	 *            - The position, which will be replaced
+	 * @param msg
+	 *            - The message that will replace the original
+	 */
+	public void replaceMessageAtPosition(int position, Message msg) {
 		messages.remove(position);
 		messages.add(position, msg);
 		redrawMessages();
 	}
-	
-	public boolean isMessagePresent(Message msg){
+
+	/**
+	 * Checks if a message is currently shown
+	 * 
+	 * @param msg
+	 *            - The message to search for
+	 * @return Whether the message is present
+	 */
+	public boolean isMessagePresent(Message msg) {
 		return messages.contains(msg);
 	}
 
+	/** Redraw the messages panel */
 	private void redrawMessages() {
+		// Clear it first
 		messagesPanel.clear();
 		FreenetJs.log("REDRAWING MESSAGES");
 		messagesPanel.getElement().getStyle().setProperty("background", "white");
+		// Cycle through the messages
 		for (int i = 0; i < messages.size(); i++) {
 			final Message m = messages.get(i);
-			FreenetJs.log("REDRAWING MESSAGE:"+m.getMsg());
+			FreenetJs.log("REDRAWING MESSAGE:" + m.getMsg());
+			// The panel which will hold the message
 			HorizontalPanel hpanel = new HorizontalPanel();
-			switch(m.getPriority()){
+			// Sets the background color based on the priority
+			switch (m.getPriority()) {
 				case MINOR:
 					hpanel.getElement().getStyle().setProperty("background", "green");
 					break;
@@ -100,29 +153,36 @@ public class MessageManager implements UpdateListener {
 					hpanel.getElement().getStyle().setProperty("background", "red");
 					break;
 			}
+			// Sets some css properties
 			hpanel.getElement().getStyle().setProperty("width", "100%");
 			hpanel.getElement().getStyle().setProperty("height", "100%");
 			hpanel.getElement().getStyle().setProperty("display", "block");
-			
+
+			// The short description label
 			Label msgLabel = new Label(m.getMsg());
 			hpanel.add(msgLabel);
 			msgLabel.getElement().getParentElement().getStyle().setProperty("border", "none");
+			// The hide link, it will hide the message if clicked on
 			Anchor hideElement = new Anchor(L10n.get("hide"));
 			hideElement.addMouseDownHandler(new MouseDownHandler() {
 				@Override
 				public void onMouseDown(MouseDownEvent event) {
+					// Only send a request if the message is originated from the server
 					if (m.getAnchor() != null) {
-						FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()),new RequestCallback() {
+						FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()), new RequestCallback() {
 							@Override
 							public void onResponseReceived(Request request, Response response) {
+								// When a response is got, the server is already removed the message. We can remove it too safely
 								removeMessage(m);
 							}
-							
+
 							@Override
 							public void onError(Request request, Throwable exception) {
+								// Don't do anything. If the server removed the message, it will push the change, if not, the user will try again
 							}
 						});
-					}else{
+					} else {
+						// If it is originated from the client, then simply hide it
 						messages.remove(m);
 						redrawMessages();
 					}
@@ -131,28 +191,22 @@ public class MessageManager implements UpdateListener {
 			hpanel.add(hideElement);
 			hideElement.getElement().getParentElement().getStyle().setProperty("border", "none");
 
+			// Adds the message to the panel
 			messagesPanel.add(hpanel);
 		}
 	}
 
-	private Priority getMaxPriorityPresent() {
-		Priority currentMax = Priority.MINOR;
-		for (Message m : messages) {
-			if (m.getPriority().compareTo(currentMax) > 0) {
-				currentMax = m.getPriority();
-			}
-		}
-		return currentMax;
-	}
-
 	@Override
 	public void onUpdate() {
+		// If an XmlAlertElement is present, then refresh the messages
 		if (RootPanel.get("alerts") != null) {
+			// Remove all server originated messages
 			for (Message m : new ArrayList<Message>(messages)) {
 				if (m.getAnchor() != null) {
 					removeMessage(m);
 				}
 			}
+			// Redraw the messages from the XML
 			for (int i = 0; i < RootPanel.get("alerts").getElement().getElementsByTagName("alert").getLength(); i++) {
 				Element alert = RootPanel.get("alerts").getElement().getElementsByTagName("alert").getItem(i);
 				String anchor = alert.getElementsByTagName("anchor").getItem(0).getInnerText();

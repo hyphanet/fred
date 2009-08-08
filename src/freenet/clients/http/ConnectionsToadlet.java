@@ -329,8 +329,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			//The whole table is pushed
 			peerTableInfobox.addChild(new BaseUpdateableElement("div",ctx) {
 				
+				/** The listener to be notified when connections change*/
 				PeerManager.PeerStatusChangeListener listener=new PeerManager.PeerStatusChangeListener() {
 					
 					public void onPeerStatusChange() {
@@ -340,6 +342,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				
 				{
 					init();
+					//It is pushed every now and then too
 					((SimpleToadletServer)ctx.getContainer()).intervalPushManager.registerUpdateableElement(this);
 					peers.addPeerStatusChangeListener(listener);
 				}
@@ -469,6 +472,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
+	/** Return the title of the page.
+	 * @param peerNodeStatuses - The statuses of the neighbour peers
+	 * @return The title of the page*/
 	private String getTitle(PeerNodeStatus[] peerNodeStatuses){
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);

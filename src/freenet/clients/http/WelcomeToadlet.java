@@ -85,7 +85,6 @@ public class WelcomeToadlet extends Toadlet {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 

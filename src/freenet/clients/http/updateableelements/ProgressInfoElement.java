@@ -37,8 +37,8 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	@Override
 	public void updateState(boolean initial) {
 		children.clear();
-		
-		FProxyFetchWaiter waiter=tracker.getFetcher(key, maxSize);
+
+		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize);
 		FProxyFetchResult fr = waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
@@ -59,8 +59,8 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			addChild("br");
 			addChild(new SecondCounterNode(eta, false, "ETA: "));
 		}
-		if(ctx.getContainer().isFProxyJavascriptEnabled()){
-			HTMLNode lastRefreshNode=new HTMLNode("span","class","jsonly");
+		if (ctx.getContainer().isFProxyJavascriptEnabled()) {
+			HTMLNode lastRefreshNode = new HTMLNode("span", "class", "jsonly");
 			lastRefreshNode.addChild("br");
 			lastRefreshNode.addChild(new SecondCounterNode(0, true, FProxyToadlet.l10n("lastRefresh")));
 			addChild(lastRefreshNode);
@@ -68,11 +68,11 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		if (fr.goneToNetwork) addChild("p", FProxyToadlet.l10n("progressDownloading"));
 		else addChild("p", FProxyToadlet.l10n("progressCheckingStore"));
 		if (!fr.finalizedBlocks) addChild("p", FProxyToadlet.l10n("progressNotFinalized"));
-		
-		if(waiter!=null){
+
+		if (waiter != null) {
 			tracker.getFetchInProgress(key, maxSize).close(waiter);
 		}
-		if(fr!=null){
+		if (fr != null) {
 			tracker.getFetchInProgress(key, maxSize).close(fr);
 		}
 	}
@@ -98,10 +98,10 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	public String getUpdaterType() {
 		return UpdaterConstants.REPLACER_UPDATER;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "ProgressInfoElement[key:"+key+",maxSize:"+maxSize+",updaterId:"+getUpdaterId(null)+"]";
+		return "ProgressInfoElement[key:" + key + ",maxSize:" + maxSize + ",updaterId:" + getUpdaterId(null) + "]";
 	}
 
 }

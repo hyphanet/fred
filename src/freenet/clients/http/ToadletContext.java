@@ -91,6 +91,8 @@ public interface ToadletContext {
 	
 	Toadlet activeToadlet();
 	
+	/** Returns the unique id of this request
+	 * @return The unique id*/
 	public String getUniqueId();
 	
 	public URI getUri();

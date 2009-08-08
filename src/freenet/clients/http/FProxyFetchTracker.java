@@ -49,7 +49,7 @@ public class FProxyFetchTracker implements Runnable {
 		 * fetchers inside that lock, hence avoid a race condition. FetchInProgress 
 		 * lock is always taken last. */
 		synchronized(fetchers) {
-			FProxyFetchWaiter waiter=getFetcher(key, maxSize);
+			FProxyFetchWaiter waiter=makeWaiterForFetchInProgress(key, maxSize);
 			if(waiter!=null){
 				return waiter;
 			}
@@ -70,7 +70,7 @@ public class FProxyFetchTracker implements Runnable {
 		// FIXME get rid of fetchers over some age
 	}
 	
-	public FProxyFetchWaiter getFetcher(FreenetURI key,long maxSize){
+	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key,long maxSize){
 		FProxyFetchInProgress progress=getFetchInProgress(key, maxSize);
 		if(progress!=null){
 			return progress.getWaiter();
@@ -78,6 +78,10 @@ public class FProxyFetchTracker implements Runnable {
 		return null;
 	}
 	
+	/** Gets an FProxyFetchInProgress identified by the URI and the maxsize. If no such FetchInProgress exists, then returns null.
+	 * @param key - The URI of the fetch
+	 * @param maxSize - The maxSize of the fetch
+	 * @return The FetchInProgress if found, null otherwise*/
 	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize){
 		FProxyFetchInProgress progress;
 		synchronized (fetchers) {

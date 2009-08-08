@@ -28,6 +28,8 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	private final Set<UserAlert> alerts;
 	private final NodeClientCore core;
 	private final Set<FeedCallback> subscribers;
+	
+	/** Listeners that will be notified when the alerts list is changed*/
 	private final Set<UserEventListener> listeners;
 	private final Map<UserEvent.Type, UserEvent> events;
 	private final Set<UserEvent.Type> unregisteredEventTypes;
@@ -92,6 +94,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		}, "UserAlertManager callback executor");
 	}
 	
+	/** Notifies the listeners that alerts are changed*/
 	private void notifyListeners(){
 		for(UserEventListener l:listeners){
 			l.alertsChanged();
@@ -149,6 +152,8 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		}
 	}
 	
+	/** Dismisses an alert identified by it's anchor
+	 * @param anchor - The anchor that identifies the alert*/
 	public boolean dismissByAnchor(String anchor){
 		boolean success=false;
 		UserAlert[] userAlerts = getAlerts();
@@ -266,10 +271,14 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		subscribers.remove(subscriber);
 	}
 	
+	/** Registers a listener that will be notified when alerts changed
+	 * @param listener - The listener to be registered*/
 	public void registerListener(UserEventListener listener){
 		listeners.add(listener);
 	}
 	
+	/** Removes a listener
+	 * @param listener - The listener to be removed*/
 	public void deregisterListener(UserEventListener listener){
 		listeners.remove(listener);
 	}
