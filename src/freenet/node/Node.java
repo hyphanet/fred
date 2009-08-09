@@ -3555,7 +3555,7 @@ public class Node implements TimeSkewDetectorCallback {
 				if(is150 && subver < 10)
 					spuriousOOMs = true;
 				
-				if(is150 && subver < 15 || is160 && subver < 20)
+				if(is150 && subver < 20 || is160 && subver < 15)
 					xmlRemoteCodeExec = true;
 			}
 			
