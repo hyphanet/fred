@@ -19,13 +19,19 @@
 package freenet.support;
 
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Time formatting utility.
  * Formats milliseconds into a week/day/hour/second/milliseconds string.
  */
 public class TimeUtil {
-	
+
+	public static final TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+
 	/**
 	 * It converts a given time interval into a 
 	 * week/day/hour/second.milliseconds string.
@@ -123,4 +129,17 @@ public class TimeUtil {
     public static String formatTime(long timeInterval, int maxTerms) {
         return formatTime(timeInterval, maxTerms, false);
     }
+
+	/**
+	 * Helper to format time HTTP conform
+	 * @param time
+	 * @return
+	 */
+	public static String makeHTTPDate(long time) {
+		// For HTTP, GMT == UTC
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+		sdf.setTimeZone(TZ_UTC);
+		return sdf.format(new Date(time));
+	}
+
 }
