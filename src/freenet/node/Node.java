@@ -14,6 +14,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
@@ -3522,14 +3524,41 @@ public class Node implements TimeSkewDetectorCallback {
 		String jvmVendor = System.getProperty("java.vm.vendor");
 		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
 		String javaVersion = System.getProperty("java.version");
+		String jvmName = System.getProperty("java.vm.name");
+		String jvmVersion = System.getProperty("java.vm.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
+		
+		boolean isOpenJDK = false;
+		
+		if(jvmName.startsWith("OpenJDK ")) {
+			isOpenJDK = true;
+			if(javaVersion.startsWith("1.6.0") && jvmVersion.startsWith("1.4.0-b")) {
+				int subver = Integer.parseInt(jvmVersion.substring("1.4.0-b".length()));
+				if(subver < 15) {
+					File javaDir = new File(System.getProperty("java.home"));
+					
+					// Assume that if the java home dir has been updated since August 11th, we have the fix.
+					
+					final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+					_cal.set(2009, Calendar.AUGUST, 11, 0, 0, 0);
+					if(javaDir.exists() && javaDir.isDirectory() && javaDir.lastModified() > _cal.getTimeInMillis()) {
+						System.err.println("Your Java appears to have been updated, we probably do not have the XML bug (http://www.cert.fi/en/reports/2009/vulnerability2009085.html).");
+					} else {
+						System.err.println("Old version of OpenJDK detected. It is possible that your Java may be vulnerable to a remote code execution vulnerability. Please update your operating system ASAP. We will not disable plugins because we cannot be sure whether there is a problem.");
+						System.err.println("See here: http://www.cert.fi/en/reports/2009/vulnerability2009085.html");
+						clientCore.alerts.register(new SimpleUserAlert(false, l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), UserAlert.ERROR));
+					}
+
+				}
+			}
+		}
 		
 		boolean isApple;
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
-		if(jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (isApple = jvmVendor.startsWith("Apple "))) {
+		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (isApple = jvmVendor.startsWith("Apple ")))) {
 			// Sun bugs
 			
 			// Spurious OOMs
