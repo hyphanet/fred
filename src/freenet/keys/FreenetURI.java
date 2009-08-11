@@ -838,6 +838,9 @@ public class FreenetURI implements Cloneable {
 		return out.toString();
 	}
 
+	/**
+	** Returns a <b>new</b> FreenetURI with the given parameter changed.
+	*/
 	public FreenetURI setSuggestedEdition(long newEdition) {
 		return new FreenetURI(
 			keyType,
@@ -849,6 +852,9 @@ public class FreenetURI implements Cloneable {
 			newEdition);
 	}
 
+	/**
+	** Returns a <b>new</b> FreenetURI with the given parameter changed.
+	*/
 	public FreenetURI setKeyType(String newKeyType) {
 		return new FreenetURI(
 			newKeyType,
@@ -860,6 +866,9 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
+	/**
+	** Returns a <b>new</b> FreenetURI with the given parameter changed.
+	*/
 	public FreenetURI setRoutingKey(byte[] newRoutingKey) {
 		return new FreenetURI(
 			keyType,
