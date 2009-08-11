@@ -3525,9 +3525,11 @@ public class Node implements TimeSkewDetectorCallback {
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 		
+		boolean isApple;
+		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
-		if(jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun "))) {
+		if(jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (isApple = jvmVendor.startsWith("Apple "))) {
 			// Sun bugs
 			
 			// Spurious OOMs
