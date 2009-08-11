@@ -3533,9 +3533,22 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		if(jvmName.startsWith("OpenJDK ")) {
 			isOpenJDK = true;
-			if(javaVersion.startsWith("1.6.0") && jvmVersion.startsWith("1.4.0-b")) {
-				int subver = Integer.parseInt(jvmVersion.substring("1.4.0-b".length()));
-				if(subver < 15) {
+			if(javaVersion.startsWith("1.6.0")) {
+				String subverString;
+				if(jvmVersion.startsWith("14.0-b"))
+					subverString = jvmVersion.substring("14.0-b".length());
+				else if(jvmVersion.startsWith("1.6.0_0-b"))
+					subverString = jvmVersion.substring("1.6.0_0-b".length());
+				else
+					subverString = null;
+				if(subverString != null) {
+					int subver;
+					try {
+						subver = Integer.parseInt(subverString);
+					} catch (NumberFormatException e) {
+						subver = -1;
+					}
+				if(subver > -1 && subver < 15) {
 					File javaDir = new File(System.getProperty("java.home"));
 					
 					// Assume that if the java home dir has been updated since August 11th, we have the fix.
@@ -3550,6 +3563,7 @@ public class Node implements TimeSkewDetectorCallback {
 						clientCore.alerts.register(new SimpleUserAlert(false, l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), UserAlert.ERROR));
 					}
 
+				}
 				}
 			}
 		}
