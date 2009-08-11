@@ -3521,11 +3521,11 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		String jvmVendor = System.getProperty("java.vm.vendor");
 		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
-		String jvmVersion = System.getProperty("java.version");
+		String javaVersion = System.getProperty("java.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 		
-		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
+		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
 		if(jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun "))) {
 			// Sun bugs
@@ -3536,13 +3536,13 @@ public class Node implements TimeSkewDetectorCallback {
 			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138759
 			// Fixed in 1.5.0_10 and 1.4.2_13
 			
-			boolean is150 = jvmVersion.startsWith("1.5.0_");
-			boolean is160 = jvmVersion.startsWith("1.6.0_");
+			boolean is150 = javaVersion.startsWith("1.5.0_");
+			boolean is160 = javaVersion.startsWith("1.6.0_");
 			
 			boolean spuriousOOMs = false;
 			
 			if(is150 || is160) {
-				String[] split = jvmVersion.split("_");
+				String[] split = javaVersion.split("_");
 				String secondPart = split[1];
 				if(secondPart.indexOf("-") != -1) {
 					split = secondPart.split("-");
@@ -3550,7 +3550,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				int subver = Integer.parseInt(secondPart);
 				
-				Logger.minor(this, "JVM version: "+jvmVersion+" subver: "+subver+" from "+secondPart);
+				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
 				
 				if(is150 && subver < 10)
 					spuriousOOMs = true;
@@ -3608,8 +3608,8 @@ public class Node implements TimeSkewDetectorCallback {
 		} else {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
 				try {
-					jvmVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
-					int jvmVersionInt = Integer.parseInt(jvmVersion);
+					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
+					int jvmVersionInt = Integer.parseInt(javaVersion);
 						
 					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
 						jvmHasGCJCharConversionBug=true;
@@ -3620,7 +3620,7 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}
 
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, jvmVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, javaVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
 		}
 			
 		if(!isUsingWrapper()) {
