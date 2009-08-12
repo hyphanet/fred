@@ -779,7 +779,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				container.activate(segment, 1);
 				container.activate(segment.blockFetchContext, 1);
 			}
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, segment.blockFetchContext.blocks, true);
+			BlockSet blocks = segment.blockFetchContext.blocks;
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
