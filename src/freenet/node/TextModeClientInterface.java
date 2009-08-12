@@ -25,11 +25,15 @@ import java.util.HashMap;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.async.ClientGetter;
+import freenet.client.async.DumperSnoopMetadata;
 import freenet.client.events.EventDumper;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
@@ -142,6 +146,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("Freenet 0.7.5 Build #").append(Version.buildNumber()).append(" r" + Version.cvsRevision + "\r\n");
         sb.append("Enter one of the following commands:\r\n");
         sb.append("GET:<Freenet key> - Fetch a key\r\n");
+        sb.append("DUMP:<Freenet key> - Dump metadata for a key\r\n");
         sb.append("PUT:\\r\\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
         sb.append("PUT:<text> - Put a single line of text to a CHK and return the key.\r\n");
         sb.append("GETCHK:\\r\\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.\r\n");
@@ -269,6 +274,66 @@ public class TextModeClientInterface implements Runnable {
             	if(e.newURI != null)
                     outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
 			}
+        } else if(uline.startsWith("DUMP:")) {
+	            // Should have a key next
+	            String key = line.substring("DUMP:".length()).trim();
+	            Logger.normal(this, "Key: "+key);
+	            FreenetURI uri;
+	            try {
+	                uri = new FreenetURI(key);
+	                Logger.normal(this, "Key: "+uri);
+	            } catch (MalformedURLException e2) {
+	                outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
+			outsb.append("\r\n");
+			out.write(outsb.toString().getBytes());
+			out.flush();
+	                return false;
+	            }
+	            try {
+	            	FetchContext context = client.getFetchContext();
+	        		FetchWaiter fw = new FetchWaiter();
+	        		ClientGetter get = new ClientGetter(fw, uri, context, RequestStarter.INTERACTIVE_PRIORITY_CLASS, (RequestClient)client, null, null);
+	        		get.setMetaSnoop(new DumperSnoopMetadata());
+	            	get.start(null, n.clientCore.clientContext);
+					FetchResult result = fw.waitForCompletion();
+					ClientMetadata cm = result.getMetadata();
+	                outsb.append("Content MIME type: ").append(cm.getMIMEType());
+					Bucket data = result.asBucket();
+					// FIXME limit it above
+					if(data.size() > 32*1024) {
+						System.err.println("Data is more than 32K: "+data.size());
+						outsb.append("Data is more than 32K: ").append(data.size());
+						outsb.append("\r\n");
+						out.write(outsb.toString().getBytes());
+						out.flush();
+						return false;
+					}
+					byte[] dataBytes = BucketTools.toByteArray(data);
+					boolean evil = false;
+					for(int i=0;i<dataBytes.length;i++) {
+						// Look for escape codes
+						if(dataBytes[i] == '\n') continue;
+						if(dataBytes[i] == '\r') continue;
+						if(dataBytes[i] < 32) evil = true;
+					}
+					if(evil) {
+						System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+						outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+						outsb.append("\r\n");
+						out.write(outsb.toString().getBytes());
+						out.flush();
+						return false;
+					}
+					outsb.append("Data:\r\n");
+					outsb.append(new String(dataBytes));
+				} catch (FetchException e) {
+	                outsb.append("Error: ").append(e.getMessage()).append("\r\n");
+	            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
+	            		outsb.append(e.errorCodes.toVerboseString());
+	            	}
+	            	if(e.newURI != null)
+	                    outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
+				}
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
             String key = line.substring("GETFILE:".length()).trim();

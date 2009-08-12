@@ -1172,4 +1172,42 @@ public class Metadata implements Cloneable {
 			return result;
 		}
 	}
+
+	public String dump() {
+		StringBuffer sb = new StringBuffer();
+		dump(0, sb);
+		return sb.toString();
+	}
+	
+	public void dump(int indent, StringBuffer sb) {
+		dumpline(indent, sb, "");
+		dumpline(indent, sb, "Document type: "+documentType);
+		dumpline(indent, sb, "Flags: sf="+splitfile+" dbr="+dbr+" noMIME="+noMIME+" cmime="+compressedMIME+" extra="+extraMetadata+"fullkeys="+fullKeys);
+		if(archiveType != null)
+			dumpline(indent, sb, "Archive type: "+archiveType);
+		if(compressionCodec != null)
+			dumpline(indent, sb, "Compression codec: "+compressionCodec);
+		if(simpleRedirectKey != null)
+			dumpline(indent, sb, "Simple redirect: "+simpleRedirectKey);
+		if(splitfile) {
+			dumpline(indent, sb, "Splitfile algorithm: "+splitfileAlgorithm);
+			dumpline(indent, sb, "Splitfile blocks: "+splitfileBlocks);
+			dumpline(indent, sb, "Splitfile blocks: "+splitfileCheckBlocks);
+		}
+		if(targetName != null)
+			dumpline(indent, sb, "Target name: "+targetName);
+		
+		if(manifestEntries != null) {
+			for(Map.Entry<String, Metadata> entry : manifestEntries.entrySet()) {
+				dumpline(indent, sb, "Entry: "+entry.getKey()+":");
+				entry.getValue().dump(indent + 1, sb);
+			}
+		}
+	}
+
+	private void dumpline(int indent, StringBuffer sb, String string) {
+		for(int i=0;i<indent;i++) sb.append(' ');
+		sb.append(string);
+		sb.append("\n");
+	}
 }
