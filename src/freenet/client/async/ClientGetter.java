@@ -56,6 +56,7 @@ public class ClientGetter extends BaseClientGetter {
 	private String expectedMIME;
 	private long expectedSize;
 	private boolean finalizedMetadata;
+	private SnoopMetadata snoopMeta;
 	
 	@Deprecated
 	public ClientGetter(ClientCallback client,
@@ -495,5 +496,17 @@ public class ClientGetter extends BaseClientGetter {
 			returnBucket.removeFrom(container);
 		}
 		super.removeFrom(container, context);
+	}
+
+	public SnoopMetadata getMetaSnoop() {
+		return snoopMeta;
+	}
+	
+	/** Set a callback to snoop on metadata during fetches. Call this before 
+	 * starting the request. */
+	public SnoopMetadata setMetaSnoop(SnoopMetadata newSnoop) {
+		SnoopMetadata old = snoopMeta;
+		snoopMeta = newSnoop;
+		return old;
 	}
 }

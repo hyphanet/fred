@@ -55,6 +55,24 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	private static boolean logMINOR;
 	private boolean cancelled;
 	
+	public boolean isStorageBroken(ObjectContainer container) {
+		if(!container.ext().isActive(this))
+			throw new IllegalStateException("Must be activated first!");
+		if(segment == null) {
+			Logger.error(this, "No segment");
+			return true;
+		}
+		if(ctx == null) {
+			Logger.error(this, "No fetch context");
+			return true;
+		}
+		if(blockNums == null) {
+			Logger.error(this, "No block nums");
+			return true;
+		}
+		return false;
+	}
+	
 	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, ClientRequester parent, int retryCount) {
 		super(parent);
 		this.segment = segment;
@@ -761,6 +779,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				container.activate(segment, 1);
 				container.activate(segment.blockFetchContext, 1);
 			}
+			// Wierd NPEs, test for why...
+			if(segment == null) throw new NullPointerException();
 			getScheduler(context).register(null, new SendableGet[] { this }, persistent, container, segment.blockFetchContext.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);

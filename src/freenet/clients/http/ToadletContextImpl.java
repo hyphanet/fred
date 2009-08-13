@@ -22,6 +22,7 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.TimeUtil;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -172,16 +173,16 @@ public class ToadletContextImpl implements ToadletContext {
 			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
 		} else {
 			// use an expiry time of 1 day, somewhat arbitrarily
-			expiresTime = makeHTTPDate(mTime.getTime() + (24 * 60 * 60 * 1000));
+			expiresTime = TimeUtil.makeHTTPDate(mTime.getTime() + (24 * 60 * 60 * 1000));
 		}
 		mvt.put("expires", expiresTime);
 		
-		String nowString = makeHTTPDate(System.currentTimeMillis());
+		String nowString = TimeUtil.makeHTTPDate(System.currentTimeMillis());
 		String lastModString;
 		if (mTime == null) {
 			lastModString = nowString;
 		} else {
-			lastModString = makeHTTPDate(mTime.getTime());
+			lastModString = TimeUtil.makeHTTPDate(mTime.getTime());
 		}
 		
 		mvt.put("last-modified", lastModString);
@@ -217,13 +218,6 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
-	
-	private static String makeHTTPDate(long time) {
-		// For HTTP, GMT == UTC
-		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
-		sdf.setTimeZone(TZ_UTC);
-		return sdf.format(new Date(time));
-	}
 	
 	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
 		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);

@@ -72,6 +72,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private final Bucket returnBucket;
 	/** If true, success/failure is immediately reported to the client, and therefore we can check TOO_MANY_PATH_COMPONENTS. */
 	private final boolean isFinal;
+	private final SnoopMetadata metaSnoop;
 
 	/** Create a new SingleFileFetcher and register self.
 	 * Called when following a redirect, or direct from ClientGet.
@@ -109,6 +110,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
+		if(parent instanceof ClientGetter)
+			metaSnoop = ((ClientGetter)parent).getMetaSnoop();
+		else
+			metaSnoop = null;
 	}
 
 	/** Copy constructor, modifies a few given fields, don't call schedule().
@@ -140,6 +145,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>(fetcher.decompressors);
 		if(fetcher.uri == null) throw new NullPointerException();
 		this.uri = persistent ? fetcher.uri.clone() : fetcher.uri;
+		if(parent instanceof ClientGetter)
+			metaSnoop = ((ClientGetter)parent).getMetaSnoop();
+		else
+			metaSnoop = null;
 	}
 
 	// Process the completed data. May result in us going to a
@@ -347,6 +356,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				return;
 			// So a SingleKeyListener isn't created.
 			finished = true;
+		}
+		if(metaSnoop != null) {
+			if(persistent)
+				container.activate(metaSnoop, 1);
+			if(metaSnoop.snoopMetadata(metadata, container, context)) {
+				cancel(container, context);
+				if(persistent)
+					container.deactivate(metaSnoop, 1);
+				return;
+			}
+			if(persistent)
+				container.deactivate(metaSnoop, 1);
 		}
 		while(true) {
 			if(metadata.isSimpleManifest()) {

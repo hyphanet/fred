@@ -909,6 +909,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(toSchedule != null && !toSchedule.isEmpty()) {
 			for(SplitFileFetcherSubSegment sub : toSchedule) {
+				if(persistent)
+					if(!container.ext().isActive(sub)) {
+						// Inexplicable NPEs in reschedule() called from here, lets check this...
+						container.activate(sub, 1);
+						Logger.error(this, "Sub-segment somehow got deactivated?!", new Exception("error"));
+					}
 				sub.reschedule(container, context);
 				if(persistent && sub != seg) container.deactivate(sub, 1);
 			}
