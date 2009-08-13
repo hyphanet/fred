@@ -57,6 +57,7 @@ public class ClientGetter extends BaseClientGetter {
 	private long expectedSize;
 	private boolean finalizedMetadata;
 	private SnoopMetadata snoopMeta;
+	private SnoopBucket snoopBucket;
 	
 	@Deprecated
 	public ClientGetter(ClientCallback client,
@@ -507,6 +508,18 @@ public class ClientGetter extends BaseClientGetter {
 	public SnoopMetadata setMetaSnoop(SnoopMetadata newSnoop) {
 		SnoopMetadata old = snoopMeta;
 		snoopMeta = newSnoop;
+		return old;
+	}
+
+	public SnoopBucket getBucketSnoop() {
+		return snoopBucket;
+	}
+
+	/** Set a callback to snoop on buckets during fetches. Call this before 
+	 * starting the request. */
+	public SnoopBucket setBucketSnoop(SnoopBucket newSnoop) {
+		SnoopBucket old = snoopBucket;
+		snoopBucket = newSnoop;
 		return old;
 	}
 }
