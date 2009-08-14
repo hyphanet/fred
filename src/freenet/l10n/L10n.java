@@ -425,6 +425,9 @@ public class L10n {
 	}
 	
 	public static String[] getAllNamesWithPrefix(String prefix){
+		if(fallbackTranslation==null){
+			return new String[]{};
+		}
 		List<String> toReturn=new ArrayList<String>();
 		Iterator<String> it= fallbackTranslation.keyIterator();
 		while(it.hasNext()){
