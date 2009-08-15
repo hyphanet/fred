@@ -660,17 +660,23 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
 			if(data == null && fe == null) {
+				boolean needsFetch=true;
 				//If we don't have the data, then check if an FProxyFetchInProgress has. It can happen when one FetchInProgress downloaded an image
 				//asynchronously, then loads it. This way a FetchInprogress will have the full image, and no need to block.
 				FProxyFetchInProgress progress=fetchTracker.getFetchInProgress(key, maxSize);
 				if(progress!=null){
-						FProxyFetchWaiter waiter=progress.getWaiter();
-						FProxyFetchResult result=waiter.getResult();
-						try{
-						mimeType=result.mimeType;
-						data=result.data;
-						data=ctx.getBucketFactory().makeBucket(result.data.size());
-						BucketTools.copy(result.data, data);
+					FProxyFetchWaiter waiter=null;
+					FProxyFetchResult result=null;
+					try{
+						waiter=progress.getWaiter();
+						result=waiter.getResult();
+						if(result.failed==null){
+							mimeType=result.mimeType;
+							data=result.data;
+							data=ctx.getBucketFactory().makeBucket(result.data.size());
+							BucketTools.copy(result.data, data);
+							needsFetch=false;
+						}
 					}finally{
 						if(waiter!=null){
 							progress.close(waiter);
@@ -679,7 +685,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 							progress.close(result);
 						}
 					}
-				}else{
+				}
+				if(needsFetch){
 					//If we don't have the data, then we need to fetch it and block until it is available
 					FetchResult result = fetch(key, maxSize, new RequestClient() {
 						public boolean persistent() {
