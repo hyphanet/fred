@@ -265,16 +265,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.sendReplyHeaders(206, "Partial content", retHdr, mimeType, tmpRange.size());
 					context.writeData(tmpRange);
 				} else {
-					if(Arrays.asList(ContentFilter.HTML_MIME_TYPES).contains(mimeType)){
-						//For HTML files, we need to append some style data, to provide safe fallback when js is disabled at the client
-						//It adds support for the 'jsonly' css class, that will be only shown when javascript is enabled in the browser
-						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, getPreHtmlStyle().getBytes().length+data.size());
-						context.writeData(getPreHtmlStyle().getBytes());
-						context.writeData(data);
-					}else{
-						context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
-						context.writeData(data);
-					}
+					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
+					context.writeData(data);
 				}
 			}
 		} catch (URISyntaxException use1) {
@@ -360,10 +352,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(toFree != null && !dontFreeData) toFree.free();
 			if(tmpRange != null) tmpRange.free();
 		}
-	}
-	
-	private static String getPreHtmlStyle(){
-		return "<noscript><style> .jsonly {display:none;}</style></noscript>";
 	}
 	
 	public static String l10n(String msg) {
