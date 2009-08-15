@@ -14,6 +14,7 @@ import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -25,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import com.db4o.foundation.Collections4;
 import com.sun.corba.se.impl.ior.OldPOAObjectKeyTemplate;
 
 import net.i2p.util.NativeBigInteger;
@@ -74,6 +76,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.WeakHashSet;
 import freenet.support.WouldBlockException;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
@@ -347,7 +350,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int listeningHandshakeBurstSize;
 	
 	/** The set of the listeners that needs to be notified when status changes. It uses WeakReference, so there is no need to deregister*/
-	private Set<WeakReference<PeerManager.PeerStatusChangeListener>> listeners=new CopyOnWriteArraySet<WeakReference<PeerStatusChangeListener>>();
+	private Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
 	
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
 	protected NodeCrypto crypto;
@@ -4390,37 +4393,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Registers a listener that will be notified when status changes. Only the WeakReference of it is stored, so there is no need for deregistering
 	 * @param listener - The listener to be registered*/
 	public void registerPeerNodeStatusChangeListener(PeerManager.PeerStatusChangeListener listener){
-		listeners.add(new WeakReference<PeerManager.PeerStatusChangeListener>(listener) {
-			@SuppressWarnings("unchecked")
-			@Override
-			public boolean equals(Object obj) {
-				if(obj!=null && get()!=null && obj instanceof WeakReference<?> && ((WeakReference<PeerManager.PeerStatusChangeListener>)obj).get()!=null && ((WeakReference<PeerManager.PeerStatusChangeListener>)obj).get().equals(get())){
-					return true;
-				}else{
-					return false;
-				}
-			}
-		});
-		purgeListeners();
-	}
-	
-	/** Removes dead elements from the listeners set*/
-	private void purgeListeners(){
-		for(WeakReference<PeerManager.PeerStatusChangeListener> l:listeners){
-			if(l.get()==null){
-				listeners.remove(l);
-			}
-		}
+		listeners.add(listener);
 	}
 	
 	/** Notifies the listeners that status has been changed*/
 	private void notifyPeerNodeStatusChangeListeners(){
-		for(WeakReference<PeerManager.PeerStatusChangeListener> l:listeners){
-			if(l.get()!=null){
-				l.get().onPeerStatusChange();
+		synchronized (listeners) {
+			for(PeerManager.PeerStatusChangeListener l:listeners){
+				l.onPeerStatusChange();
 			}
 		}
-		purgeListeners();
 	}
 	
 }
