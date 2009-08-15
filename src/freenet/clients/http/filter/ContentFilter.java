@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 
@@ -27,7 +28,7 @@ public class ContentFilter {
 	static final Hashtable<String, MIMEType> mimeTypesByName = new Hashtable<String, MIMEType>();
 	
 	/** The HTML mime types are defined here, to allow other modules to identify it*/
-	public static String[] HTML_MIME_TYPES=new String[]{"text/xhtml", "text/xml+xhtml", "application/xhtml+xml"};
+	public static String[] HTML_MIME_TYPES=new String[]{"text/html", "text/xhtml", "text/xml+xhtml", "application/xhtml+xml"};
 	
 	static {
 		init();
@@ -76,7 +77,7 @@ public class ContentFilter {
 				false, null, null));
 		
 		// HTML - dangerous if not filtered
-		register(new MIMEType("text/html", "html", HTML_MIME_TYPES, new String[] { "htm" },
+		register(new MIMEType(HTML_MIME_TYPES[0], "html", Arrays.asList(HTML_MIME_TYPES).subList(1, HTML_MIME_TYPES.length).toArray(new String[HTML_MIME_TYPES.length-1]), new String[] { "htm" },
 				false, false /* maybe? */, new HTMLFilter(), null /* FIXME */, 
 				true, true, true, true, true, true, 
 				l10n("textHtmlReadAdvice"),
