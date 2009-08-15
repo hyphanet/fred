@@ -697,8 +697,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				trySendProgress(progress, null, container);
 			}
 		}finally{
-			//Notify the whiteboard
-			if(client!=null){
+			//Notify the whiteboard, but only if it is persisted longer than the connection
+			if(persistenceType!=PERSIST_CONNECTION){
 				client.getWhiteboard().event(getIdentifier(), this);
 			}
 		}
