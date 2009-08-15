@@ -698,7 +698,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			}
 		}finally{
 			//Notify the whiteboard
-			client.getWhiteboard().event(getIdentifier(), this);
+			if(client!=null){
+				client.getWhiteboard().event(getIdentifier(), this);
+			}
 		}
 	}
 
