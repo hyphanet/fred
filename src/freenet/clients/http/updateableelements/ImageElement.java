@@ -67,22 +67,17 @@ public class ImageElement extends BaseUpdateableElement {
 		if (logMINOR) {
 			Logger.minor(this, "Disposing ImageElement");
 		}
-		((SimpleToadletServer) ctx.getContainer()).getTicker().queueTimedJob(new Runnable() {
-			public void run() {
-				// Deregisters the FetchListener
-				FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
-				if (progress != null) {
-					progress.removeListener(fetchListener);
-					if (logMINOR) {
-						Logger.minor(this, "canCancel():" + progress.canCancel());
-					}
-					progress.requestImmediateCancel();
-					if (progress.canCancel()) {
-						tracker.run();
-					}
-				}
+		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
+		if (progress != null) {
+			progress.removeListener(fetchListener);
+			if (logMINOR) {
+				Logger.minor(this, "canCancel():" + progress.canCancel());
 			}
-		}, 0);
+			progress.requestImmediateCancel();
+			if (progress.canCancel()) {
+				tracker.run();
+			}
+		}
 	}
 
 	@Override
