@@ -57,6 +57,8 @@ public class ImageElementUpdater extends ReplacerUpdater {
 					MessageManager.get().addMessage(newMsg);
 				}
 				lastMessage = newMsg;
+			}else if(lastMessage!=null){
+				MessageManager.get().removeMessage(lastMessage);
 			}
 		}
 	}

@@ -162,6 +162,12 @@ public class MessageManager implements IUpdateListener {
 			Label msgLabel = new Label(m.getMsg());
 			hpanel.add(msgLabel);
 			msgLabel.getElement().getParentElement().getStyle().setProperty("border", "none");
+			if(m.getAnchor()!=null){
+				Anchor showElement =new Anchor(L10n.get("show"),"/alerts/#"+m.getAnchor());
+				hpanel.add(showElement);
+				showElement.getElement().getParentElement().getStyle().setProperty("border", "none");
+			}
+			
 			if (m.isCanDismiss()) {
 				// The hide link, it will hide the message if clicked on
 				Anchor hideElement = new Anchor(L10n.get("hide"));

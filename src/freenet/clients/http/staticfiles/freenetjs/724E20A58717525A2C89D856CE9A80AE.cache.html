@@ -2343,12 +2343,26 @@ function $clinit_88(){
   $clinit_91();
 }
 
-function $Anchor_0(this$static, text){
+function $Anchor(this$static){
   $clinit_88();
   $setElement(this$static, ($clinit_7() , $doc).createElement('a'));
   this$static.element['className'] = 'gwt-Anchor';
-  $setInnerText(this$static.element, text);
+  return this$static;
+}
+
+function $Anchor_0(this$static, text){
+  $clinit_88();
+  $Anchor(this$static);
+  $setInnerText(($clinit_7() , this$static.element), text);
   this$static.element.href = 'javascript:';
+  return this$static;
+}
+
+function $Anchor_1(this$static, text, href){
+  $clinit_88();
+  $Anchor(this$static);
+  $setInnerText(($clinit_7() , this$static.element), text);
+  this$static.element.href = href;
   return this$static;
 }
 
@@ -3376,7 +3390,7 @@ function $onUpdate(this$static){
 }
 
 function $redrawMessages(this$static){
-  var hideElement, hpanel, i, m, msgLabel;
+  var hideElement, hpanel, i, m, msgLabel, showElement;
   $clear(this$static.messagesPanel);
   log('REDRAWING MESSAGES');
   this$static.messagesPanel.element.style['background'] = 'white';
@@ -3403,6 +3417,11 @@ function $redrawMessages(this$static){
     msgLabel = $Label(new Label(), m.msg);
     $add_1(hpanel, msgLabel);
     $getParentElement(($clinit_7() , msgLabel.element)).style['border'] = 'none';
+    if (m.anchor != null) {
+      showElement = $Anchor_1(new Anchor(), ($clinit_137() , $get(dict, 'show')), '/alerts/#' + m.anchor);
+      $add_1(hpanel, showElement);
+      $getParentElement(showElement.element).style['border'] = 'none';
+    }
     if (m.canDismiss) {
       hideElement = $Anchor_0(new Anchor(), ($clinit_137() , $get(dict, 'hide')));
       $addDomHandler(hideElement, $MessageManager$1(new MessageManager$1(), this$static, m), ($clinit_31() , TYPE));
@@ -3946,6 +3965,9 @@ function updated_0(elementId, content){
         $addMessage(get_1(), newMsg);
       }
       this.lastMessage = newMsg;
+    }
+     else if (this.lastMessage) {
+      $removeMessage(get_1(), this.lastMessage);
     }
   }
 }
