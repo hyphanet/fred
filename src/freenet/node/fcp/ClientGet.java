@@ -457,7 +457,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(client != null)
 				client.notifySuccess(this, container);
 		}finally{
-			client.getWhiteboard().event(getIdentifier(), this);
+			//Notify the whiteboard, but only if it is persisted longer than the connection
+			if(persistenceType!=PERSIST_CONNECTION){
+				client.getWhiteboard().event(getIdentifier(), this);
+			}
 		}
 	}
 
@@ -605,7 +608,10 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			if(persistenceType == PERSIST_FOREVER)
 				container.store(this);
 		}finally{
-			client.getWhiteboard().event(getIdentifier(), this);
+			//Notify the whiteboard, but only if it is persisted longer than the connection
+			if(persistenceType!=PERSIST_CONNECTION){
+				client.getWhiteboard().event(getIdentifier(), this);
+			}
 		}
 	}
 

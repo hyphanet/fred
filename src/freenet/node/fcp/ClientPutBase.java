@@ -158,7 +158,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(client != null)
 				client.notifySuccess(this, container);
 		}finally{
-			client.getWhiteboard().event(getIdentifier(), this);
+			//Notify the whiteboard, but only if it is persisted longer than the connection
+			if(persistenceType!=PERSIST_CONNECTION){
+				client.getWhiteboard().event(getIdentifier(), this);
+			}
 		}
 	}
 
@@ -178,7 +181,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(client != null)
 				client.notifyFailure(this, container);
 		}finally{
-			client.getWhiteboard().event(getIdentifier(), this);
+			//Notify the whiteboard, but only if it is persisted longer than the connection
+			if(persistenceType!=PERSIST_CONNECTION){
+				client.getWhiteboard().event(getIdentifier(), this);
+			}
 		}
 	}
 
