@@ -112,7 +112,7 @@ public class ImageElement extends BaseUpdateableElement {
 		try {
 			try {
 				waiter = tracker.makeFetcher(key, maxSize);
-				fr = waiter.getResult();
+				fr = waiter.getResultFast();
 			} catch (FetchException fe) {
 				whenJsEnabled.addChild("div", "error");
 			}

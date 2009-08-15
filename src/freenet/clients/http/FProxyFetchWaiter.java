@@ -32,6 +32,11 @@ public class FProxyFetchWaiter {
 		progress.setHasWaited();
 		return progress.innerGetResult(waited);
 	}
+	
+	/** Returns the result, without waiting*/
+	public FProxyFetchResult getResultFast(){
+		return progress.innerGetResult(false);
+	}
 
 	public void close() {
 		progress.close(this);
