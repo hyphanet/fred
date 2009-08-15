@@ -75,7 +75,7 @@ public class Version {
 	public static final int lastGoodStableBuild = 1;
 
 	/** Revision number of Version.java as read from CVS */
-	public static final String cvsRevision = "@custom@";
+	public static final String cvsRevision = "build01230-15-gda91";
 	
 	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
 	

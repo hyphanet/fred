@@ -42,7 +42,7 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(l10n("fileURI")).append("\n").append(uri).append("\n");
-		if(description != null && !description.isEmpty())
+		if(description != null && description.length() != 0)
 			sb.append(l10n("fileDescription")).append("\n").append(description);
 		return sb.toString();
 	}
@@ -56,7 +56,7 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 		alertNode.addChild("a", "href", "/" + uri).addChild("#", uri.toShortString());
-		if (description != null && !description.isEmpty()) {
+		if (description != null && description.length() != 0) {
 			String[] lines = description.split("\n");
 			alertNode.addChild("br");
 			alertNode.addChild("br");
