@@ -295,7 +295,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				}
 			}
 		}finally{
-			client.getWhiteboard().event(getIdentifier(), this);
+			//Notify the whiteboard, but only if it is persisted longer than the connection
+			if(persistenceType!=PERSIST_CONNECTION){
+				client.getWhiteboard().event(getIdentifier(), this);
+			}
 		}
 	}
 
