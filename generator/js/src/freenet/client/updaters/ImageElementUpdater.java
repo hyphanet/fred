@@ -71,7 +71,7 @@ public class ImageElementUpdater extends ReplacerUpdater {
 	 * @return The message to be shown in the messages panel
 	 */
 	private Message makeProgressMsg(int fetched, int total) {
-		return new Message(L10n.get("imageprogress") + fetched + "/" + total, Priority.MINOR, null);
+		return new Message(L10n.get("imageprogress") + fetched + "/" + total, Priority.MINOR, null,true);
 	}
 
 	/**

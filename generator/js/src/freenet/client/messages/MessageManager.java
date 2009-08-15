@@ -162,34 +162,36 @@ public class MessageManager implements IUpdateListener {
 			Label msgLabel = new Label(m.getMsg());
 			hpanel.add(msgLabel);
 			msgLabel.getElement().getParentElement().getStyle().setProperty("border", "none");
-			// The hide link, it will hide the message if clicked on
-			Anchor hideElement = new Anchor(L10n.get("hide"));
-			hideElement.addMouseDownHandler(new MouseDownHandler() {
-				@Override
-				public void onMouseDown(MouseDownEvent event) {
-					// Only send a request if the message is originated from the server
-					if (m.getAnchor() != null) {
-						FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()), new RequestCallback() {
-							@Override
-							public void onResponseReceived(Request request, Response response) {
-								// When a response is got, the server is already removed the message. We can remove it too safely
-								removeMessage(m);
-							}
+			if (m.isCanDismiss()) {
+				// The hide link, it will hide the message if clicked on
+				Anchor hideElement = new Anchor(L10n.get("hide"));
+				hideElement.addMouseDownHandler(new MouseDownHandler() {
+					@Override
+					public void onMouseDown(MouseDownEvent event) {
+						// Only send a request if the message is originated from the server
+						if (m.getAnchor() != null) {
+							FreenetRequest.sendRequest(UpdaterConstants.dismissAlertPath, new QueryParameter("anchor", m.getAnchor()), new RequestCallback() {
+								@Override
+								public void onResponseReceived(Request request, Response response) {
+									// When a response is got, the server is already removed the message. We can remove it too safely
+									removeMessage(m);
+								}
 
-							@Override
-							public void onError(Request request, Throwable exception) {
-								// Don't do anything. If the server removed the message, it will push the change, if not, the user will try again
-							}
-						});
-					} else {
-						// If it is originated from the client, then simply hide it
-						messages.remove(m);
-						redrawMessages();
+								@Override
+								public void onError(Request request, Throwable exception) {
+									// Don't do anything. If the server removed the message, it will push the change, if not, the user will try again
+								}
+							});
+						} else {
+							// If it is originated from the client, then simply hide it
+							messages.remove(m);
+							redrawMessages();
+						}
 					}
-				}
-			});
-			hpanel.add(hideElement);
-			hideElement.getElement().getParentElement().getStyle().setProperty("border", "none");
+				});
+				hpanel.add(hideElement);
+				hideElement.getElement().getParentElement().getStyle().setProperty("border", "none");
+			}
 
 			// Adds the message to the panel
 			messagesPanel.add(hpanel);
@@ -226,7 +228,7 @@ public class MessageManager implements IUpdateListener {
 						break;
 				}
 				String title = alert.getElementsByTagName("alertTitle").getItem(0).getInnerText();
-				addMessage(new Message(title, priority, anchor));
+				addMessage(new Message(title, priority, anchor, Boolean.parseBoolean(alert.getElementsByTagName("canDismiss").getItem(0).getInnerText())));
 			}
 		}
 	}

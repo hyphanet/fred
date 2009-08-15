@@ -12,11 +12,15 @@ public class Message {
 	/** The anchor of the message, if originated from server side, or null, if client side */
 	private String		anchor;
 
-	public Message(String msg, Priority priority, String anchor) {
+	/** The message can be hided? */
+	private boolean		canDismiss;
+
+	public Message(String msg, Priority priority, String anchor, boolean canDismiss) {
 		super();
 		this.msg = msg;
 		this.priority = priority;
 		this.anchor = anchor;
+		this.canDismiss = canDismiss;
 	}
 
 	public String getMsg() {
@@ -31,6 +35,10 @@ public class Message {
 		return anchor;
 	}
 
+	public boolean isCanDismiss() {
+		return canDismiss;
+	}
+
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Message) {
@@ -40,4 +48,5 @@ public class Message {
 			return false;
 		}
 	}
+
 }

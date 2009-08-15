@@ -32,7 +32,7 @@ public class KeepaliveManager implements IConnectionManager {
 		// If it wasn't cancelled, then we show a message about pushing cancelled. It makes sure that this message shows only once
 		if (cancelled == false) {
 			if (FreenetJs.isPushingCancelledExpected == false) {
-				MessageManager.get().addMessage(new Message(L10n.get("pushingCancelled"), Priority.ERROR, null));
+				MessageManager.get().addMessage(new Message(L10n.get("pushingCancelled"), Priority.ERROR, null,true));
 			}
 			cancelled = true;
 		}

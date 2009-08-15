@@ -32,6 +32,7 @@ public class XmlAlertElement extends BaseAlertElement {
 			alertNode.addChild(new HTMLNode("shortDescription", HTMLEncoder.encode(alert.getShortText())));
 			alertNode.addChild(new HTMLNode("priority", String.valueOf(alert.getPriorityClass())));
 			alertNode.addChild(new HTMLNode("anchor", HTMLEncoder.encode(alert.anchor())));
+			alertNode.addChild(new HTMLNode("canDismiss",String.valueOf(alert.userCanDismiss())));
 			alertsNode.addChild(alertNode);
 		}
 
