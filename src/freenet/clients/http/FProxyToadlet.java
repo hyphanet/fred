@@ -670,7 +670,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					try{
 						waiter=progress.getWaiter();
 						result=waiter.getResult();
-						if(result.failed==null){
+						if(result.failed==null && result.data!=null){
 							mimeType=result.mimeType;
 							data=result.data;
 							data=ctx.getBucketFactory().makeBucket(result.data.size());
