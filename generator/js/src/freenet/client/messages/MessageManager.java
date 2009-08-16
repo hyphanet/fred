@@ -21,11 +21,9 @@ import freenet.client.UpdaterConstants;
 import freenet.client.l10n.L10n;
 import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
-import freenet.client.update.DefaultUpdateManager;
-import freenet.client.update.IUpdateListener;
 
 /** This manager singleton class manages the message panel in the page */
-public class MessageManager implements IUpdateListener {
+public class MessageManager {
 	/** The singleton instance */
 	private static MessageManager	instance	= null;
 
@@ -51,10 +49,8 @@ public class MessageManager implements IUpdateListener {
 		messagesPanel.getElement().getStyle().setProperty("top", "0px");
 		messagesPanel.getElement().getStyle().setProperty("width", "100%");
 		RootPanel.get().add(messagesPanel);
-		// Registers for push events
-		DefaultUpdateManager.registerListener(this);
 		// Updates the messages
-		onUpdate();
+		updateMessages();
 	}
 
 	/**
@@ -162,12 +158,12 @@ public class MessageManager implements IUpdateListener {
 			Label msgLabel = new Label(m.getMsg());
 			hpanel.add(msgLabel);
 			msgLabel.getElement().getParentElement().getStyle().setProperty("border", "none");
-			if(m.getAnchor()!=null){
-				Anchor showElement =new Anchor(L10n.get("show"),"/alerts/#"+m.getAnchor());
+			if (m.getAnchor() != null) {
+				Anchor showElement = new Anchor(L10n.get("show"), "/alerts/#" + m.getAnchor());
 				hpanel.add(showElement);
 				showElement.getElement().getParentElement().getStyle().setProperty("border", "none");
 			}
-			
+
 			if (m.isCanDismiss()) {
 				// The hide link, it will hide the message if clicked on
 				Anchor hideElement = new Anchor(L10n.get("hide"));
@@ -204,8 +200,7 @@ public class MessageManager implements IUpdateListener {
 		}
 	}
 
-	@Override
-	public void onUpdate() {
+	public void updateMessages() {
 		// If an XmlAlertElement is present, then refresh the messages
 		if (RootPanel.get("alerts") != null) {
 			// Remove all server originated messages

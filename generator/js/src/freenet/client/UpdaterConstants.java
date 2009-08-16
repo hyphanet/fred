@@ -16,6 +16,9 @@ public class UpdaterConstants {
 
 	/** Simply replaces the element */
 	public static final String	REPLACER_UPDATER			= "ReplacerUpdater";
+
+	/** Replaces the element, and updates the messages */
+	public static final String	XMLALERT_UPDATER			= "XmlAlertUpdater";
 	// End of Updaters
 
 	public static final int		KEEPALIVE_INTERVAL_SECONDS	= 10;

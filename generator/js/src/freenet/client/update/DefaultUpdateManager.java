@@ -20,6 +20,7 @@ import freenet.client.updaters.IUpdater;
 import freenet.client.updaters.ImageElementUpdater;
 import freenet.client.updaters.ProgressBarUpdater;
 import freenet.client.updaters.ReplacerUpdater;
+import freenet.client.updaters.XmlAlertUpdater;
 
 /** This UpdateManager provides the default pushing functionality */
 public class DefaultUpdateManager implements IUpdateManager {
@@ -37,6 +38,7 @@ public class DefaultUpdateManager implements IUpdateManager {
 		list.put(UpdaterConstants.IMAGE_ELEMENT_UPDATER, new ImageElementUpdater());
 		list.put(UpdaterConstants.REPLACER_UPDATER, new ReplacerUpdater());
 		list.put(UpdaterConstants.CONNECTIONS_TABLE_UPDATER, new ConnectionsListUpdater());
+		list.put(UpdaterConstants.XMLALERT_UPDATER, new XmlAlertUpdater());
 		updaters = Collections.unmodifiableMap(list);
 	}
 

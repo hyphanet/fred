@@ -38,5 +38,10 @@ public class XmlAlertElement extends BaseAlertElement {
 
 		addChild(alertsNode);
 	}
+	
+	@Override
+	public String getUpdaterType() {
+		return UpdaterConstants.XMLALERT_UPDATER;
+	}
 
 }
