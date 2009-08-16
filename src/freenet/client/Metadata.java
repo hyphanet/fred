@@ -1182,7 +1182,7 @@ public class Metadata implements Cloneable {
 	public void dump(int indent, StringBuffer sb) {
 		dumpline(indent, sb, "");
 		dumpline(indent, sb, "Document type: "+documentType);
-		dumpline(indent, sb, "Flags: sf="+splitfile+" dbr="+dbr+" noMIME="+noMIME+" cmime="+compressedMIME+" extra="+extraMetadata+"fullkeys="+fullKeys);
+		dumpline(indent, sb, "Flags: sf="+splitfile+" dbr="+dbr+" noMIME="+noMIME+" cmime="+compressedMIME+" extra="+extraMetadata+" fullkeys="+fullKeys);
 		if(archiveType != null)
 			dumpline(indent, sb, "Archive type: "+archiveType);
 		if(compressionCodec != null)

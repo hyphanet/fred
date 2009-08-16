@@ -331,7 +331,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		// Why? Becuase it's all protected by formPassword anyway.
 		// FIXME whitelist? Most things are okay if the user is prompted for a confirmation...
 		// FIXME what about /downloads/ /friends/ etc?
-		if(action.equals("/")) 
+		// Allow access to Library for searching, form passwords are used for actions such as adding bookmarks
+		if(action.equals("/") || action.equals("/library/"))
 			return action;
 		try {
 			URI uri = URIPreEncoder.encodeURI(action);

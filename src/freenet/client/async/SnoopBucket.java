@@ -5,11 +5,11 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.Metadata;
+import freenet.support.api.Bucket;
 
-public interface SnoopMetadata {
+public interface SnoopBucket {
 
-	/** Spy on the metadata as a file is being fetched. Return true to cancel the request. */
-	public boolean snoopMetadata(Metadata meta, ObjectContainer container, ClientContext context);
+	/** Spy on the bucket as a file is being fetched. Return true to cancel the request. */
+	public boolean snoopBucket(Bucket data, boolean isMetadata, ObjectContainer container, ClientContext context);
 	
 }

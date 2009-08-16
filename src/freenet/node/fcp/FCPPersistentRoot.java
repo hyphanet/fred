@@ -40,9 +40,15 @@ public class FCPPersistentRoot {
 			System.err.println("Loaded FCP persistent root.");
 			FCPPersistentRoot root = set.next();
 			container.activate(root, 2);
-			root.globalForeverClient.init(container);
-			root.globalForeverClient.setWhiteboard(whiteboard);
-			return root;
+			if(root.globalForeverClient == null) {
+				System.err.println("AAAAAAAAAAAAARGH!!!!!!");
+				System.err.println("FCPPersistentRoot exists but no globalForeverClient!");
+				container.delete(root);
+			} else {
+				root.globalForeverClient.init(container);
+				root.globalForeverClient.setWhiteboard(whiteboard);
+				return root;
+			}
 		}
 		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, whiteboard, container);
 		container.store(root);
