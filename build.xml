@@ -93,6 +93,7 @@
 
 		<!-- Create the Version file with patched revision number in ${build} -->
 		<copy file="${src}/freenet/node/Version.java" tofile="${build}/freenet/node/Version.java"/>
+		<delete file="${build}/freenet/node/Version.class"/>
 		<replace file="${build}/freenet/node/Version.java">
 			<replacefilter token="@custom@" value="${git.revision}"/>
 		</replace>
@@ -113,6 +114,14 @@
 			<include name="net/i2p/util/*.java"/>
 			<exclude name="**/package-info.java"/>
 			<exclude name="freenet/node/Version.java"/>
+		</javac>
+
+		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
+		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
+			<classpath>
+				<path refid="lib.path"/>
+			</classpath>
+			<include name="freenet/node/Version.java"/>
 		</javac>
 
 		<!-- Copy web interface static files to the build dir -->
