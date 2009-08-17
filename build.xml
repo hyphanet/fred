@@ -91,15 +91,18 @@
 		<!-- Create the time stamp -->
 		<tstamp/>
 
-		<!-- Create the Version file -->
-		<copy file="${src}/freenet/node/Version.src.java" tofile="${src}/freenet/node/Version.java"/>
-		<replace file="${src}/freenet/node/Version.java">
+		<!-- Create the Version file with patched revision number in ${build} -->
+		<copy file="${src}/freenet/node/Version.java" tofile="${build}/freenet/node/Version.java"/>
+		<replace file="${build}/freenet/node/Version.java">
 			<replacefilter token="@custom@" value="${git.revision}"/>
 		</replace>
 
 		<!-- Create the build directory structure used by compile -->
-
 		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
+			<!-- tell javac to find Version.java in ${build}, not ${src} -->
+			<sourcepath>
+				<pathelement path="${build}"/>
+			</sourcepath>
 			<compilerarg value="-Xlint"/>
 			<classpath>
 				<path refid="lib.path"/>
@@ -108,8 +111,9 @@
 			<include name="freenet/**/*.java"/>
 			<include name="net/i2p/util/*.java"/>
 			<exclude name="**/package-info.java"/>
-			<exclude name="freenet/node/Version.src.java"/>
+			<exclude name="freenet/node/Version.java"/>
 		</javac>
+
 		<!-- Copy web interface static files to the build dir -->
 		<copy todir="${build}/freenet/clients/http/staticfiles">
 			<fileset dir="${src}/freenet/clients/http/staticfiles"/>
@@ -121,8 +125,6 @@
 			</fileset>
 		</copy>
 
-		<!-- Delete the temporary Version file -->
-		<delete file="${src}/freenet/node/Version.java"/>
 	</target>
 
 
