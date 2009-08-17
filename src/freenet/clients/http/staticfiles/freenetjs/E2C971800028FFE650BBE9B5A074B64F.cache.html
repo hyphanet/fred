@@ -5877,7 +5877,7 @@ function init(){
   cm = $SharedConnectionManager(new SharedConnectionManager(), ($clinit_148() , new DefaultUpdateManager()));
   keepaliveManager = $KeepaliveManager(new KeepaliveManager());
   $openConnection_0(cm);
-  $scheduleRepeating(keepaliveManager.timer, 10000);
+  $scheduleRepeating(keepaliveManager.timer, 1000000);
   $scheduleRepeating(($clinit_135() , $clinit_78() , new TimeIncrementer$1()), 1000);
   get_1();
 }
