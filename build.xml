@@ -91,6 +91,10 @@
 		<!-- Create the time stamp -->
 		<tstamp/>
 
+                <!-- Restore the good @custom@ Version file to its original location
+                     in case the previous build failed.-->
+		<move file="${src}/freenet/node/Version.src.java" tofile="${src}/freenet/node/Version.java" failonerror="false" />
+
 		<!-- Create the Version file with parsed version, and backup
                      the good file with @custom@.-->
 
