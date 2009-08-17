@@ -40,7 +40,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("Node", "Fred");
 		sfs.putSingle("Version", Version.getVersionString());
 		sfs.put("Build", Version.buildNumber());
-		sfs.putSingle("Revision", Version.cvsRevision);
+		sfs.putSingle("Revision", Version.cvsRevision());
 		sfs.put("ExtBuild", NodeStarter.extBuildNumber);
 		sfs.putSingle("ExtRevision", NodeStarter.extRevisionNumber);
 		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));

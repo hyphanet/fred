@@ -96,7 +96,7 @@ public class PacketSender implements Runnable, Ticker {
 		Logger.normal(this, "Starting PacketSender");
 		System.out.println("Starting PacketSender");
 		long now = System.currentTimeMillis();
-		long transition = Version.transitionTime;
+		long transition = Version.transitionTime();
 		if(now < transition)
 			queueTimedJob(new Runnable() {
 
