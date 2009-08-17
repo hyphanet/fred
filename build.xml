@@ -91,9 +91,10 @@
 		<!-- Create the time stamp -->
 		<tstamp/>
 
-		<!-- Create the Version file -->
+		<!-- Create the Version file with parsed version, and backup
+                     the good file with @custom@.-->
 
-		<copy file="${src}/freenet/node/Version.src.java" tofile="${src}/freenet/node/Version.java"/>
+		<copy file="${src}/freenet/node/Version.java" tofile="${src}/freenet/node/Version.src.java"/>
 		<replace file="${src}/freenet/node/Version.java">
 			<replacefilter token="@custom@" value="${git.revision}"/>
 		</replace>
@@ -122,8 +123,8 @@
 			</fileset>
 		</copy>
 
-		<!-- Delete the temporary Version file -->
-		<delete file="${src}/freenet/node/Version.java"/>
+		<!-- Restore the good @custom@ Version file to its original location -->
+		<move file="${src}/freenet/node/Version.src.java" tofile="${src}/freenet/node/Version.java"/>
 	</target>
 
 
