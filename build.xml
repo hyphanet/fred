@@ -96,14 +96,15 @@
 		<replace file="${build}/freenet/node/Version.java">
 			<replacefilter token="@custom@" value="${git.revision}"/>
 		</replace>
+		<echo message="Updated build version to ${git.revision} in ${build}/freenet/node/Version.java"/>
 
 		<!-- Create the build directory structure used by compile -->
 		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
+			<compilerarg value="-Xlint"/>
 			<!-- tell javac to find Version.java in ${build}, not ${src} -->
 			<sourcepath>
 				<pathelement path="${build}"/>
 			</sourcepath>
-			<compilerarg value="-Xlint"/>
 			<classpath>
 				<path refid="lib.path"/>
 			</classpath>
