@@ -48,6 +48,7 @@ public class MessageManager {
 		messagesPanel.getElement().getStyle().setProperty("position", "fixed");
 		messagesPanel.getElement().getStyle().setProperty("top", "0px");
 		messagesPanel.getElement().getStyle().setProperty("width", "100%");
+		messagesPanel.getElement().setId("messagesPanel");
 		RootPanel.get().add(messagesPanel);
 		// Updates the messages
 		updateMessages();
@@ -60,6 +61,10 @@ public class MessageManager {
 	 *            - The message to add
 	 */
 	public void addMessage(Message msg) {
+		//Disabled showing fproxy messages. This is TEMPORARY!
+		if(msg.getAnchor()!=null){
+			return;
+		}
 		messages.add(msg);
 		redrawMessages();
 	}
