@@ -5193,7 +5193,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.crypto.portNumber;
 	}
 
-	OpennetManager getOpennet() {
+	public OpennetManager getOpennet() {
 		return opennet;
 	}
 	
