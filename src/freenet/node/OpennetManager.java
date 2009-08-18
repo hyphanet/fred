@@ -96,12 +96,14 @@ public class OpennetManager {
 	
 	/** Enable scaling of peers with bandwidth? */
 	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
-	/** Target bandwidth usage - above this, we use MAX_PEERS_FOR_SCALING */
-	public static final int TARGET_BANDWIDTH_USAGE = 20*1024; // 20 peers at 20K/sec.
+	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
+	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 18 at 
+	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K. */
+	public static final double SCALING_CONSTANT = 12.0;
 	/** Minimum number of peers */
 	public static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers */
-	public static final int MAX_PEERS_FOR_SCALING = 20;
+	public static final int MAX_PEERS_FOR_SCALING = 40;
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
 	public static final int PANIC_MAX_PEERS = 40;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
@@ -559,13 +561,10 @@ public class OpennetManager {
 		int max = node.getMaxOpennetPeers();
 		if(ENABLE_PEERS_PER_KB_OUTPUT) {
 			int obwLimit = node.getOutputBandwidthLimit();
-			if(obwLimit >= TARGET_BANDWIDTH_USAGE) {
-				max = Math.min(max, MAX_PEERS_FOR_SCALING);
-			} else {
-				int limit = Math.min(max, obwLimit * MAX_PEERS_FOR_SCALING / TARGET_BANDWIDTH_USAGE);
-				if(limit < MIN_PEERS_FOR_SCALING) limit = MIN_PEERS_FOR_SCALING;
-				max = Math.min(max, limit);
-			}
+			int targetPeers = (int)Math.round(Math.min(MAX_PEERS_FOR_SCALING, Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0)));
+			if(targetPeers < MIN_PEERS_FOR_SCALING)
+				targetPeers = MIN_PEERS_FOR_SCALING;
+			if(targetPeers > max) targetPeers = max; // Allow user to reduce it.
 		}
 		return max - node.peers.countConnectedDarknetPeers();
 	}
