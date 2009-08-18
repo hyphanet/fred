@@ -90,7 +90,6 @@ public class ImageCreatorToadlet extends Toadlet {
 			Bucket data = ctx.getBucketFactory().makeBucket(-1);
 			ImageIO.write(buffer, "png", data.getOutputStream());
 			MultiValueTable<String, String> headers=new MultiValueTable<String, String>();
-			headers.put("Cache-Control", "no-store");
 			ctx.sendReplyHeaders(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
 			ctx.writeData(data);
 		}
