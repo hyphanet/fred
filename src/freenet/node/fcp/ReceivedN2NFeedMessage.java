@@ -7,14 +7,12 @@ import freenet.support.SimpleFieldSet;
 
 public abstract class ReceivedN2NFeedMessage extends ReceivedFeedMessage {
 
-	protected final String identifier;
 	protected final String sourceNodeName;
 	protected final long composed, sent, received;
 
-	public ReceivedN2NFeedMessage(String identifier, String header, String shortText, String text,
+	public ReceivedN2NFeedMessage(String header, String shortText, String text,
 			String sourceNodeName, long composed, long sent, long received) {
-		super(identifier, header, shortText, text);
-		this.identifier = identifier;
+		super(header, shortText, text);
 		this.sourceNodeName = sourceNodeName;
 		this.composed = composed;
 		this.sent = sent;
@@ -42,7 +40,7 @@ public abstract class ReceivedN2NFeedMessage extends ReceivedFeedMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, getName()
-				+ " goes from server to client not the other way around", identifier, false);
+				+ " goes from server to client not the other way around", null, false);
 	}
 
 }

@@ -103,8 +103,8 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public ReceivedBookmarkFeed getFCPMessage(String identifier) {
-		return new ReceivedBookmarkFeed(identifier, getTitle(), getShortText(), getText(), sourceNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
+	public ReceivedBookmarkFeed getFCPMessage() {
+		return new ReceivedBookmarkFeed(getTitle(), getShortText(), getText(), sourceNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
 	}
 
 	@Override

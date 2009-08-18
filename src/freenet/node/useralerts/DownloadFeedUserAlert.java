@@ -92,8 +92,8 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public FCPMessage getFCPMessage(String identifier) {
-		return new ReceivedDownloadFeedMessage(identifier, getTitle(), getShortText(), getText(),
+	public FCPMessage getFCPMessage() {
+		return new ReceivedDownloadFeedMessage(getTitle(), getShortText(), getText(),
 				sourceNodeName, composed, sent, received, uri, description);
 	}
 

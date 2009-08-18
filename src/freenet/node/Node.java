@@ -2954,8 +2954,8 @@ public class Node implements TimeSkewDetectorCallback {
 			return creationTime;
 		}
 
-		public FCPMessage getFCPMessage(String identifier) {
-			return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
+		public FCPMessage getFCPMessage() {
+			return new ReceivedStatusFeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 		}
 
 		public HTMLNode getHTMLText() {

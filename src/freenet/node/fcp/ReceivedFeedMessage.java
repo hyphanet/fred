@@ -11,13 +11,11 @@ import freenet.support.SimpleFieldSet;
 public abstract class ReceivedFeedMessage extends FCPMessage {
 
 	public static final String NAME="ReceivedStatusFeed";
-	private final String identifier;
 	private final String header;
 	private final String shortText;
 	private final String text;
 
-	public ReceivedFeedMessage(String identifier, String header, String shortText, String text) {
-		this.identifier = identifier;
+	public ReceivedFeedMessage(String header, String shortText, String text) {
 		this.header = header;
 		this.shortText = shortText;
 		this.text = text;
@@ -26,7 +24,6 @@ public abstract class ReceivedFeedMessage extends FCPMessage {
 	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.putSingle("Identifier", identifier);
 		try {
 			if(header != null)
 				fs.putSingle("Header", Base64.encode(header.getBytes("UTF-8")));
@@ -53,7 +50,7 @@ public abstract class ReceivedFeedMessage extends FCPMessage {
 	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, getName()
-				+ " goes from server to client not the other way around", identifier, false);
+				+ " goes from server to client not the other way around", null, false);
 	}
 
 }

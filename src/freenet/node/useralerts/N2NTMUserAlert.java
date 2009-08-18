@@ -111,8 +111,8 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public FCPMessage getFCPMessage(String identifier) {
-		return new ReceivedTextFeedMessage(identifier, getTitle(),
+	public FCPMessage getFCPMessage() {
+		return new ReceivedTextFeedMessage(getTitle(),
 				getShortText(), getText(), sourceNodeName,
 				composedTime, sentTime, receivedTime, messageText);
 	}

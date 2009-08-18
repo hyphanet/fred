@@ -12,10 +12,10 @@ public class ReceivedDownloadFeedMessage extends ReceivedN2NFeedMessage {
 	private final FreenetURI URI;
 	private final String description;
 
-	public ReceivedDownloadFeedMessage(String identifier, String header, String shortText, String text,
+	public ReceivedDownloadFeedMessage(String header, String shortText, String text,
 			String sourceNodeName, long composed, long sent, long received,
 			FreenetURI URI, String description) {
-		super(identifier, header, shortText, text, sourceNodeName, composed, sent, received);
+		super(header, shortText, text, sourceNodeName, composed, sent, received);
 		this.URI = URI;
 		this.description = description;
 	}

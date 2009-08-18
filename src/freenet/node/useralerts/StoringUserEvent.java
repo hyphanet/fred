@@ -40,8 +40,8 @@ public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends Ab
 	}
 
 	@Override
-	public FCPMessage getFCPMessage(String identifier) {
-		return new ReceivedStatusFeedMessage(identifier, getEventText(), getEventText(), getEventText(), getPriorityClass(), getUpdatedTime());
+	public FCPMessage getFCPMessage() {
+		return new ReceivedStatusFeedMessage(getEventText(), getEventText(), getEventText(), getPriorityClass(), getUpdatedTime());
 	}
 
 	@Override

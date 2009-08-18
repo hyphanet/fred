@@ -14,11 +14,9 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import freenet.client.async.FeedCallback;
-import freenet.clients.http.PageMaker;
-import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -29,7 +27,7 @@ import freenet.support.Logger;
 public class UserAlertManager implements Comparator<UserAlert> {
 	private final Set<UserAlert> alerts;
 	private final NodeClientCore core;
-	private final Set<FeedCallback> subscribers;
+	private final Set<FCPConnectionHandler> subscribers;
 	private final Map<UserEvent.Type, UserEvent> events;
 	private final Set<UserEvent.Type> unregisteredEventTypes;
 	private long lastUpdated;
@@ -37,7 +35,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
 		alerts = new TreeSet<UserAlert>(this);
-		subscribers = new CopyOnWriteArraySet<FeedCallback>();
+		subscribers = new CopyOnWriteArraySet<FCPConnectionHandler>();
 		events = new HashMap<UserEvent.Type, UserEvent>();
 		unregisteredEventTypes = new HashSet<UserEvent.Type>();
 		lastUpdated = System.currentTimeMillis();
@@ -80,8 +78,8 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		// callbacks may take some time
 		core.clientContext.mainExecutor.execute(new Runnable() {
 			public void run() {
-				for (FeedCallback subscriber : subscribers)
-					subscriber.sendReply(alert.getFCPMessage(subscriber.getIdentifier()));
+				for (FCPConnectionHandler subscriber : subscribers)
+					subscriber.outputHandler.queue(alert.getFCPMessage());
 			}
 		}, "UserAlertManager callback executor");
 	}
@@ -359,11 +357,21 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		}
 	}
 
-	public void subscribe(FeedCallback subscriber) {
+	public void watch(final FCPConnectionHandler subscriber) {
+                subscribers.add(subscriber);
+		// Run off-thread, because of locking, and because client
+		// callbacks may take some time
+		core.clientContext.mainExecutor.execute(new Runnable() {
+			public void run() {
+				for (UserAlert alert : getAlerts())
+                                        if(alert.isValid())
+					    subscriber.outputHandler.queue(alert.getFCPMessage());
+			}
+		}, "UserAlertManager callback executor");
 		subscribers.add(subscriber);
 	}
 
-	public void unsubscribe(FeedCallback subscriber) {
+	public void unwatch(FCPConnectionHandler subscriber) {
 		subscribers.remove(subscriber);
 	}
 
