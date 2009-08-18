@@ -168,7 +168,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			 * @see http://archives.freenetproject.org/message/20080718.144240.359e16d3.en.html
 			 */
 			if((OpennetManager.MAX_PEERS_FOR_SCALING < locs.length) && (source.isOpennet())) {
-				if(locs.length > OpennetManager.MAX_PEERS_FOR_SCALING * 2) {
+				if(locs.length > OpennetManager.PANIC_MAX_PEERS) {
 					// This can't happen by accident
 					Logger.error(this, "We received "+locs.length+ " locations from "+source.toString()+"! That should *NOT* happen! Possible attack!");
 					source.forceDisconnect(true);

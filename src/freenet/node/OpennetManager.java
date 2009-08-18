@@ -102,6 +102,8 @@ public class OpennetManager {
 	public static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers */
 	public static final int MAX_PEERS_FOR_SCALING = 20;
+	/** Maximum number of peers for purposes of FOAF attack/sanity check */
+	public static final int PANIC_MAX_PEERS = 40;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = 31 * 24 * 60 * 60 * 1000;
 	
