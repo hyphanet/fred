@@ -20,7 +20,7 @@ public class UpdaterConstants {
 	public static final String	XMLALERT_UPDATER			= "XmlAlertUpdater";
 	// End of Updaters
 
-	public static final int		KEEPALIVE_INTERVAL_SECONDS	= 1000;
+	public static final int		KEEPALIVE_INTERVAL_SECONDS	= 60;
 
 	public static final String	SUCCESS						= "SUCCESS";
 

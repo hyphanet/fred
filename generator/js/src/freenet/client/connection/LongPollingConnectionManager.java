@@ -56,7 +56,7 @@ public class LongPollingConnectionManager implements IConnectionManager {
 				// When run, send a request
 				sendRequest();
 			}
-		}.schedule(Math.min((int) Math.pow(2, (numOfFailedRequests++)), 10000));// Waits more if requests failing, but a max at 10sec
+		}.schedule(Math.max(Math.min((int) Math.pow(2, (numOfFailedRequests++)), 10000),50));// Waits more if requests failing, but a max at 10sec
 		FreenetJs.log("Next request scheduled");
 	}
 

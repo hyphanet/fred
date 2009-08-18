@@ -14,6 +14,7 @@ import java.text.ParseException;
 import javax.imageio.ImageIO;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.support.MultiValueTable;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
@@ -88,7 +89,9 @@ public class ImageCreatorToadlet extends Toadlet {
 			// Write the data, and send the modification data to let the client cache it
 			Bucket data = ctx.getBucketFactory().makeBucket(-1);
 			ImageIO.write(buffer, "png", data.getOutputStream());
-			ctx.sendReplyHeaders(200, "OK", null, "image/png", data.size(), LAST_MODIFIED);
+			MultiValueTable<String, String> headers=new MultiValueTable<String, String>();
+			headers.put("Cache-Control", "no-store");
+			ctx.sendReplyHeaders(200, "OK", headers, "image/png", data.size(), LAST_MODIFIED);
 			ctx.writeData(data);
 		}
 	}

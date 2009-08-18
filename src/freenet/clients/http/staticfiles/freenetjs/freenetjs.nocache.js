@@ -183,10 +183,16 @@ function freenetjs(){
       return 'safari';
     }
      else if (ua.indexOf('msie') != -1) {
-      var result_0 = /msie ([0-9]+)\.([0-9]+)/.exec(ua);
-      if (result_0 && result_0.length == 3) {
-        if (makeVersion(result_0) >= 6000) {
-          return 'ie6';
+      if (document.documentMode >= 8) {
+        return 'ie8';
+      }
+       else {
+        var result_0 = /msie ([0-9]+)\.([0-9]+)/.exec(ua);
+        if (result_0 && result_0.length == 3) {
+          var v = makeVersion(result_0);
+          if (v >= 6000) {
+            return 'ie6';
+          }
         }
       }
     }
@@ -201,7 +207,7 @@ function freenetjs(){
     return 'unknown';
   }
   ;
-  values['user.agent'] = {gecko:0, gecko1_8:1, ie6:2, opera:3, safari:4};
+  values['user.agent'] = {gecko:0, gecko1_8:1, ie6:2, ie8:3, opera:4, safari:5};
   freenetjs.onScriptLoad = function(){
     if (frameInjected) {
       loadDone = true;
@@ -228,11 +234,12 @@ function freenetjs(){
   $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'selectingPermutation'});
   if (!strongName) {
     try {
-      unflattenKeylistIntoAnswers(['ie6'], 'E2C971800028FFE650BBE9B5A074B64F.cache.html');
-      unflattenKeylistIntoAnswers(['gecko1_8'], 'CE2AE4B1CC724EFECE957E4396F33E89.cache.html');
-      unflattenKeylistIntoAnswers(['opera'], '334A597413AC67E67A1B0EA9F0903A7D.cache.html');
-      unflattenKeylistIntoAnswers(['safari'], 'BDCD08B75401D5B731B39826C2FDF64B.cache.html');
-      unflattenKeylistIntoAnswers(['gecko'], '50F0E8FAE1364693D114D740B2B7ACB5.cache.html');
+      unflattenKeylistIntoAnswers(['ie6'], 'FA1E9E528B1F0FBB97EFC9FEE3885727.cache.html');
+      unflattenKeylistIntoAnswers(['ie8'], 'BB0D89679A287D0D9E2FD2CE598A53C4.cache.html');
+      unflattenKeylistIntoAnswers(['gecko1_8'], '7FD0365F7C607D7D6054314D4F858FD0.cache.html');
+      unflattenKeylistIntoAnswers(['opera'], '9A7CF8A0DF460D22072FA4665B71BDE5.cache.html');
+      unflattenKeylistIntoAnswers(['safari'], '6CE61A603FE277ED9005A69ACC376D57.cache.html');
+      unflattenKeylistIntoAnswers(['gecko'], '450C409F3E63C4AAA743660305B2A843.cache.html');
       strongName = answers[computePropValue('user.agent')];
     }
      catch (e) {

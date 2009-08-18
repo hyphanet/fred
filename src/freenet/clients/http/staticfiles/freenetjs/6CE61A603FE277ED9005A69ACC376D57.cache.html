@@ -1,6 +1,6 @@
 <html>
 <head><script>
-var $gwt_version = "1.6.4";
+var $gwt_version = "1.7.0";
 var $wnd = parent;
 var $doc = $wnd.document;
 var $moduleName, $moduleBase;
@@ -2995,7 +2995,7 @@ function $openConnection(this$static){
 }
 
 function $scheduleNextRequest(this$static){
-  $schedule($LongPollingConnectionManager$1(new LongPollingConnectionManager$1(), this$static), min_0(round_int(Math.pow(2, this$static.numOfFailedRequests++)), 10000));
+  $schedule($LongPollingConnectionManager$1(new LongPollingConnectionManager$1(), this$static), max(min_0(round_int(Math.pow(2, this$static.numOfFailedRequests++)), 10000), 50));
   log('Next request scheduled');
 }
 
@@ -4348,6 +4348,10 @@ function $clinit_176(){
 }
 
 var hexLookup;
+function max(x_0, y){
+  return x_0 > y?x_0:y;
+}
+
 function min_0(x_0, y){
   return x_0 < y?x_0:y;
 }
@@ -6000,7 +6004,7 @@ function init(){
   cm = $SharedConnectionManager(new SharedConnectionManager(), ($clinit_149() , new DefaultUpdateManager()));
   keepaliveManager = $KeepaliveManager(new KeepaliveManager());
   $openConnection_0(cm);
-  $scheduleRepeating(keepaliveManager.timer, 1000000);
+  $scheduleRepeating(keepaliveManager.timer, 60000);
   $scheduleRepeating(($clinit_136() , $clinit_78() , new TimeIncrementer$1()), 1000);
   get_1();
 }

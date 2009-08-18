@@ -11,6 +11,7 @@ import freenet.clients.http.FProxyFetchInProgress;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
 import freenet.clients.http.FProxyFetchWaiter;
+import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.filter.HTMLFilter.ParsedTag;
@@ -41,7 +42,9 @@ public class ImageElement extends BaseUpdateableElement {
 
 	private int						randomNumber	= new Random().nextInt();
 
-	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg) throws FetchException {
+	private boolean					wasError		= false;
+
+	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg) {
 		super("span", ctx);
 		long now = System.currentTimeMillis();
 		if (logMINOR) {
@@ -54,9 +57,29 @@ public class ImageElement extends BaseUpdateableElement {
 		init();
 		// Creates and registers the FetchListener
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
-		FProxyFetchWaiter waiter = tracker.makeFetcher(key, maxSize);
-		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
-		tracker.getFetchInProgress(key, maxSize).close(waiter);
+		((SimpleToadletServer) ctx.getContainer()).getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				try {
+					FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize);
+					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
+					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
+				} catch (FetchException fe) {
+					if (fe.newURI != null) {
+						try {
+							ImageElement.this.key = fe.newURI;
+							FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize);
+							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
+							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
+						} catch (FetchException fe2) {
+							wasError = true;
+						}
+					}
+				}
+				fetchListener.onEvent();
+			}
+		}, 0);
+
 		if (logMINOR) {
 			Logger.minor(this, "ImageElement creating finished in:" + (System.currentTimeMillis() - now) + " ms");
 		}
@@ -102,54 +125,71 @@ public class ImageElement extends BaseUpdateableElement {
 		children.clear();
 		HTMLNode whenJsEnabled = new HTMLNode("span", "class", "jsonly ImageElement");
 		addChild(whenJsEnabled);
-		FProxyFetchResult fr = null;
-		FProxyFetchWaiter waiter = null;
-		try {
-			try {
-				waiter = tracker.makeFetcher(key, maxSize);
-				fr = waiter.getResultFast();
-			} catch (FetchException fe) {
-				whenJsEnabled.addChild("div", "error");
-			}
-			if (fr == null) {
-				whenJsEnabled.addChild("div", "No fetcher found");
+		// When js disabled
+		addChild("noscript").addChild(makeHtmlNodeForParsedTag(originalImg));
+		if (initial) {
+			if (wasError) {
+				whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
 			} else {
-
-				if (fr.isFinished() && fr.hasData()) {
-					if (logMINOR) {
-						Logger.minor(this, "ImageElement is completed");
-					}
-					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
-				} else if (fr.failed != null) {
-					if (logMINOR) {
-						Logger.minor(this, "ImageElement is errorous");
-					}
-					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
-				} else {
-					if (logMINOR) {
-						Logger.minor(this, "ImageElement is still in progress");
-					}
-					int total = fr.requiredBlocks;
-					int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
-					Map<String, String> attr = originalImg.getAttributesAsMap();
-					String sizePart = new String();
-					if (attr.containsKey("width") && attr.containsKey("height")) {
-						sizePart = "&width=" + attr.get("width") + "&height=" + attr.get("height");
-					}
-					attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25" + sizePart);
-					whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
-					whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fetchedBlocks", String.valueOf(fr.fetchedBlocks) });
-					whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "requiredBlocks", String.valueOf(fr.requiredBlocks) });
+				Map<String, String> attr = originalImg.getAttributesAsMap();
+				String sizePart = new String();
+				if (attr.containsKey("width") && attr.containsKey("height")) {
+					sizePart = "&width=" + attr.get("width") + "&height=" + attr.get("height");
 				}
+				attr.put("src", "/imagecreator/?text=+"+FProxyToadlet.l10n("imageinitializing")+"+" + sizePart);
+				whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
+				whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fetchedBlocks", String.valueOf(0) });
+				whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "requiredBlocks", String.valueOf(1) });
+
 			}
-			// When js disabled
-			addChild("noscript").addChild(makeHtmlNodeForParsedTag(originalImg));
-		} finally {
-			if (waiter != null) {
-				tracker.getFetchInProgress(key, maxSize).close(waiter);
-			}
-			if (fr != null) {
-				tracker.getFetchInProgress(key, maxSize).close(fr);
+		} else {
+			FProxyFetchResult fr = null;
+			FProxyFetchWaiter waiter = null;
+			try {
+				try {
+					waiter = tracker.makeFetcher(key, maxSize);
+					fr = waiter.getResultFast();
+				} catch (FetchException fe) {
+					whenJsEnabled.addChild("div", "error");
+				}
+				if (fr == null) {
+					whenJsEnabled.addChild("div", "No fetcher found");
+				} else {
+
+					if (fr.isFinished() && fr.hasData()) {
+						if (logMINOR) {
+							Logger.minor(this, "ImageElement is completed");
+						}
+						whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
+					} else if (fr.failed != null) {
+						if (logMINOR) {
+							Logger.minor(this, "ImageElement is errorous");
+						}
+						whenJsEnabled.addChild(makeHtmlNodeForParsedTag(originalImg));
+					} else {
+						if (logMINOR) {
+							Logger.minor(this, "ImageElement is still in progress");
+						}
+						int total = fr.requiredBlocks;
+						int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
+						Map<String, String> attr = originalImg.getAttributesAsMap();
+						String sizePart = new String();
+						if (attr.containsKey("width") && attr.containsKey("height")) {
+							sizePart = "&width=" + attr.get("width") + "&height=" + attr.get("height");
+						}
+						attr.put("src", "/imagecreator/?text=" + fetchedPercent + "%25" + sizePart);
+						whenJsEnabled.addChild(makeHtmlNodeForParsedTag(new ParsedTag(originalImg, attr)));
+						whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fetchedBlocks", String.valueOf(fr.fetchedBlocks) });
+						whenJsEnabled.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "requiredBlocks", String.valueOf(fr.requiredBlocks) });
+					}
+				}
+			} finally {
+				if (waiter != null) {
+					tracker.getFetchInProgress(key, maxSize).close(waiter);
+				}
+				if (fr != null) {
+					tracker.getFetchInProgress(key, maxSize).close(fr);
+				}
 			}
 		}
 	}

@@ -22,7 +22,7 @@ public class TesterElement extends BaseUpdateableElement {
 	String			id;
 
 	public TesterElement(ToadletContext ctx, String id, int max) {
-		super("div", ctx);
+		super("div","style","float:left;", ctx);
 		this.id = id;
 		this.ctx = ctx;
 		this.maxStatus = max;
@@ -67,7 +67,7 @@ public class TesterElement extends BaseUpdateableElement {
 	@Override
 	public void updateState(boolean initial) {
 		children.clear();
-		addChild(new HTMLNode("div", "" + status));
+		addChild(new HTMLNode("img", "src","/imagecreator/?text="+status+"&width="+Math.min(status+30,300)+"&height="+Math.min(status+30,300)));
 	}
 
 }
