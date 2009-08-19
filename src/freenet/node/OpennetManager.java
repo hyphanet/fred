@@ -559,15 +559,20 @@ public class OpennetManager {
 		oldPeers.remove(source);
 	}
 
-	protected int getNumberOfConnectedPeersToAim() {
+	public int getNumberOfConnectedPeersToAimIncludingDarknet() {
 		int max = node.getMaxOpennetPeers();
 		if(ENABLE_PEERS_PER_KB_OUTPUT) {
 			int obwLimit = node.getOutputBandwidthLimit();
 			int targetPeers = (int)Math.round(Math.min(MAX_PEERS_FOR_SCALING, Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0)));
 			if(targetPeers < MIN_PEERS_FOR_SCALING)
 				targetPeers = MIN_PEERS_FOR_SCALING;
-			if(targetPeers > max) targetPeers = max; // Allow user to reduce it.
+			if(max > targetPeers) max = targetPeers; // Allow user to reduce it.
 		}
+		return max;
+	}
+	
+	public int getNumberOfConnectedPeersToAim() {
+		int max = getNumberOfConnectedPeersToAimIncludingDarknet();
 		return max - node.peers.countConnectedDarknetPeers();
 	}
 

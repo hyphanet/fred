@@ -1797,7 +1797,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
-		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
+		opennetConfig.register("maxOpennetPeers", OpennetManager.MAX_PEERS_FOR_SCALING, 1, true, false, "Node.maxOpennetPeers",
 				"Node.maxOpennetPeersLong", new IntCallback() {
 					@Override
 					public Integer get() {
@@ -1813,9 +1813,9 @@ public class Node implements TimeSkewDetectorCallback {
 		, false);
 		
 		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
-		if(maxOpennetPeers > 20) {
-			Logger.error(this, "maxOpennetPeers may not be over 20");
-			maxOpennetPeers = 20;
+		if(maxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) {
+			Logger.error(this, "maxOpennetPeers may not be over "+OpennetManager.MAX_PEERS_FOR_SCALING);
+			maxOpennetPeers = OpennetManager.MAX_PEERS_FOR_SCALING;
 		}
 		
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true, securityLevels);
@@ -3584,8 +3584,6 @@ public class Node implements TimeSkewDetectorCallback {
 			boolean is150 = javaVersion.startsWith("1.5.0_");
 			boolean is160 = javaVersion.startsWith("1.6.0_");
 			
-			boolean spuriousOOMs = false;
-			
 			if(is150 || is160) {
 				String[] split = javaVersion.split("_");
 				String secondPart = split[1];
@@ -3597,48 +3595,8 @@ public class Node implements TimeSkewDetectorCallback {
 				
 				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
 				
-				if(is150 && subver < 10)
-					spuriousOOMs = true;
-				
 				if(is150 && subver < 20 || is160 && subver < 15)
 					xmlRemoteCodeExec = true;
-			}
-			
-			if(spuriousOOMs) {
-				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6 (recommended). This version is buggy and may cause spurious OutOfMemoryErrors.");
-				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, null, UserAlert.ERROR, true, null, false, null) {
-
-					@Override
-					public HTMLNode getHTMLText() {
-						HTMLNode n = new HTMLNode("div");
-						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
-								new String[] { "link", "/link", "version" },
-								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">", 
-								"</a>", HTMLEncoder.encode(System.getProperty("java.version")) });
-						return n;
-					}
-
-					@Override
-					public String getText() {
-						return l10n("buggyJVM", "version", System.getProperty("java.version"));
-					}
-
-					@Override
-					public String getTitle() {
-						return l10n("buggyJVMTitle");
-					}
-
-					@Override
-					public void isValid(boolean validity) {
-						// Ignore
-					}
-
-					@Override
-					public String getShortText() {
-						return l10n("buggyJVMShort", "version", System.getProperty("java.version"));
-					}
-
-				});
 			}
 			
 			if(xmlRemoteCodeExec) {
@@ -5193,7 +5151,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.crypto.portNumber;
 	}
 
-	OpennetManager getOpennet() {
+	public OpennetManager getOpennet() {
 		return opennet;
 	}
 	
