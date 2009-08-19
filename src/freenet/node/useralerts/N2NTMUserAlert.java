@@ -3,50 +3,55 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import java.lang.ref.WeakReference;
 import java.text.DateFormat;
 import java.util.Date;
 
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
+import freenet.node.PeerNode;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.ReceivedTextFeedMessage;
 import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
 public class N2NTMUserAlert extends AbstractUserAlert {
-	private DarknetPeerNode sourcePeerNode;
-	private String sourceNodename;
-	private String targetNodeName;
-	private String messageText;
-	private int fileNumber;
-	private long composedTime;
-	private long sentTime;
-	private long receivedTime;
+	private final WeakReference<PeerNode> peerRef;
+	private final String messageText;
+	private final int fileNumber;
+	private final long composedTime;
+	private final long sentTime;
+	private final long receivedTime;
+	private String sourceNodeName;
+	private String sourcePeer;
 
-	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode, String source, String target, String message,
-			int fileNumber, long composedTime, long sentTime, long receivedTime) {
+	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode,
+			String message, int fileNumber, long composedTime, long sentTime,
+			long receivedTime) {
 		super(true, null, null, null, null, UserAlert.MINOR, true, null, true, null);
-		this.sourcePeerNode = sourcePeerNode;
-		this.sourceNodename = source;
-		this.targetNodeName = target;
 		this.messageText = message;
 		this.fileNumber = fileNumber;
 		this.composedTime = composedTime;
 		this.sentTime = sentTime;
 		this.receivedTime = receivedTime;
+		peerRef = sourcePeerNode.getWeakRef();
+		sourceNodeName = sourcePeerNode.getName();
+		sourcePeer = sourcePeerNode.getPeer().toString();
 	}
 
 	@Override
 	public String getTitle() {
-		return l10n("title", new String[] { "number", "peername", "peer" }, new String[] {
-				Integer.toString(fileNumber), sourcePeerNode.getName(),
-				sourcePeerNode.getPeer().toString() });
+		return l10n("title", new String[] { "number", "peername", "peer" },
+				new String[] { Integer.toString(fileNumber),
+						sourceNodeName,
+						sourcePeer });
 	}
 
 	@Override
 	public String getText() {
-		return l10n("header", new String[] { "from", "composed", "sent", "received" }, new String[] {
-				sourceNodename, DateFormat.getInstance().format(new Date(composedTime)),
+		return l10n("header", new String[] { "from", "composed", "sent",
+				"received" }, new String[] { sourceNodeName,
+				DateFormat.getInstance().format(new Date(composedTime)),
 				DateFormat.getInstance().format(new Date(sentTime)),
 				DateFormat.getInstance().format(new Date(receivedTime)) })
 				+ ": " + messageText;
@@ -54,24 +59,30 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String getShortText() {
-		return l10n("headerShort", "from", sourceNodename);
+		return l10n("headerShort", "from", sourceNodeName);
 	}
 
 	@Override
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
-		alertNode.addChild("p", l10n("header", new String[] { "from", "composed", "sent", "received" },
-				new String[] { sourceNodename, DateFormat.getInstance().format(new Date(composedTime)),
-						DateFormat.getInstance().format(new Date(sentTime)),
-						DateFormat.getInstance().format(new Date(receivedTime)) }));
+		alertNode.addChild("p", l10n("header", new String[] { "from",
+				"composed", "sent", "received" }, new String[] {
+				sourceNodeName,
+				DateFormat.getInstance().format(new Date(composedTime)),
+				DateFormat.getInstance().format(new Date(sentTime)),
+				DateFormat.getInstance().format(new Date(receivedTime)) }));
 		String[] lines = messageText.split("\n");
 		for (int i = 0, c = lines.length; i < c; i++) {
 			alertNode.addChild("#", lines[i]);
 			if (i != lines.length - 1)
 				alertNode.addChild("br");
 		}
-		alertNode.addChild("p").addChild("a", "href",
-				"/send_n2ntm/?peernode_hashcode=" + sourcePeerNode.hashCode(), l10n("reply"));
+		
+		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
+		if(pn != null)
+			alertNode.addChild("p").addChild("a", "href",
+					"/send_n2ntm/?peernode_hashcode=" + pn.hashCode(),
+					l10n("reply"));
 		return alertNode;
 	}
 
@@ -94,13 +105,26 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 
 	@Override
 	public void onDismiss() {
-		sourcePeerNode.deleteExtraPeerDataFile(fileNumber);
+		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
+		if(pn != null)
+			pn.deleteExtraPeerDataFile(fileNumber);
 	}
 
 	@Override
 	public FCPMessage getFCPMessage(String identifier) {
-		return new ReceivedTextFeedMessage(identifier, getTitle(), getShortText(), getText(), sourceNodename,
-				targetNodeName, composedTime, sentTime, receivedTime, messageText);
+		return new ReceivedTextFeedMessage(identifier, getTitle(),
+				getShortText(), getText(), sourceNodeName,
+				composedTime, sentTime, receivedTime, messageText);
+	}
+
+	@Override
+	public boolean isValid() {
+		DarknetPeerNode pn = (DarknetPeerNode) peerRef.get();
+		if(pn != null) {
+			sourceNodeName = pn.getName();
+			sourcePeer = pn.getPeer().toString();
+		}
+		return true;
 	}
 
 }

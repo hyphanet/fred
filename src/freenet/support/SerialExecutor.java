@@ -25,12 +25,12 @@ public class SerialExecutor implements Executor {
 
 	private volatile boolean threadWaiting;
 	private volatile boolean threadStarted;
-	
+
 	private String name;
 	private Executor realExecutor;
-	
+
 	private static final int NEWJOB_TIMEOUT = 5*60*1000;
-	
+
 	private final Runnable runner = new PrioRunnable() {
 
 		public int getPriority() {
@@ -66,15 +66,15 @@ public class SerialExecutor implements Executor {
 				}
 			}
 		}
-		
+
 	};
-	
+
 	public SerialExecutor(int priority) {
 		jobs = new LinkedBlockingQueue<Runnable>();
 		this.priority = priority;
 		this.syncLock = new Object();
 	}
-	
+
 	public void start(Executor realExecutor, String name) {
 		this.realExecutor=realExecutor;
 		this.name=name;
@@ -83,7 +83,7 @@ public class SerialExecutor implements Executor {
 				reallyStart();
 		}
 	}
-	
+
 	private void reallyStart() {
 		synchronized (syncLock) {
 		threadStarted=true;
@@ -92,7 +92,11 @@ public class SerialExecutor implements Executor {
 			Logger.minor(this, "Starting thread... " + name + " : " + runner);
 		realExecutor.execute(runner, name);
 	}
-	
+
+	public void execute(Runnable job) {
+		execute(job, "<noname>");
+	}
+
 	public void execute(Runnable job, String jobName) {
 		if (logMINOR)
 			Logger.minor(this, "Running " + jobName + " : " + job + " started=" + threadStarted + " waiting="

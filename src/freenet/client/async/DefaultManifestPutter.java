@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Set;
 
 import freenet.client.InsertContext;
@@ -12,30 +13,33 @@ import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.ContainerSizeEstimator;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.ContainerSizeEstimator.ContainerSize;
 
 /**
- * The default manifest putter. It should be choosen if no alternative putter
+ * <P>The default manifest putter. It should be choosen if no alternative putter
  * is given. Its also the replacment for SimpleManifestPutter, thats not longer
- * simple!<BR/>
- * 
- * pack limits:
- *   max container size: 2MB (default transparent passtrought for fproxy)
- *   max container item size: 1MB. Items &gt;1MB are inserted as externals.
+ * simple!
+ *
+ * <P>default doc:
+ * defaultName is just the name, without any '/'!<BR>
+ * each item <defaultdocname> is the default doc in the corresponding dir
+ 
+ * <P>pack limits:
+ * <UL>
+ * <LI>max container size: 2MB (default transparent passtrought for fproxy)
+ * <LI>max container item size: 1MB. Items &gt;1MB are inserted as externals.
  *                            exception: see rule 1)
- *   container size spare: 15KB. No crystal ball is perfect, so we have space
+ * <LI>container size spare: 15KB. No crystal ball is perfect, so we have space
  *                         for 'unexpected' metadata.
- * 
- * pack rules:
- * 
- *   1) If all items fits into a container, they goes into container.
+ * </UL>
+ * <P>pack rules:
+ * <OL>
+ * <LI>If all items fits into a container, they goes into container.
  *   Sample: A 1,6MB file and ten 3KB files goes into the same container
- *   
- *   2) RTFS :P
- * 
- * pack hints for clients:
+ * <LI>RTFS :P
+ * </OL>
+ * pack hints for clients:<BR>
  * 
  *   If the files in the site root directory fits into a container, they are in
  *   the root container (the first fetched container)</BR>
@@ -45,21 +49,14 @@ import freenet.support.ContainerSizeEstimator.ContainerSize;
  */
 
 public class DefaultManifestPutter extends BaseManifestPutter {
-	
+
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
-	
+
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
-			@Override
-			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-			}
-		});
+		Logger.registerClass(DefaultManifestPutter.class);
 	}
-	
+
 	// the 'physical' limit for container size
 	public static final long DEFAULT_MAX_CONTAINERSIZE = 2048*1024;  
 	public static final long DEFAULT_MAX_CONTAINERITEMSIZE = 1024*1024;
@@ -77,10 +74,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	 * @see freenet.client.async.BaseManifestPutter#makePutHandlers(java.util.HashMap, java.util.HashMap)
 	 */
 	@Override
-	protected void makePutHandlers(HashMap<String,Object> manifestElements, HashMap<String, Object> putHandlersByName) {
+	protected void makePutHandlers(HashMap<String,Object> manifestElements, String defaultName) {
 		verifyManifest(manifestElements);
-		//makePutHandlers(getRootContainer(), manifestElements, "");
-		makePutHandlers(getRootContainer(), manifestElements, "", DEFAULT_MAX_CONTAINERSIZE, null);
+		makePutHandlers(getRootContainer(), manifestElements, defaultName, "", DEFAULT_MAX_CONTAINERSIZE, null);
 	}
 	
 	/**
@@ -112,7 +108,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 	 * @param parentName
 	 * @return the size of items in container
 	 */
-	private long makePutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String prefix, long maxSize, String parentName) {
+	private long makePutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix, long maxSize, String parentName) {
 	//(HashMap<String, Object> md, PluginReplySender replysender, String identifier, long maxSize, boolean doInsert, String parentName) throws InsertException {
 		System.out.println("STAT: handling "+((parentName==null)?"<root>?": parentName));
 		//if (doInsert && (parentName == null)) throw new IllegalStateException("Parent name cant be null for insert!");
@@ -128,17 +124,17 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		if (wholeSize.getSizeTotalNoLimit() <= maxSize) {
 			// that was easy. the whole tree fits into current container (without externals!)
 			System.out.println("PackStat2: the whole tree (unlimited) fits into container (no externals)");
-			makeEveryThingUnlimitedPutHandlers(containerBuilder, manifestElements, prefix);
+			makeEveryThingUnlimitedPutHandlers(containerBuilder, manifestElements, defaultName, prefix);
 			return wholeSize.getSizeTotalNoLimit();
 		}
 
 		if (wholeSize.getSizeTotal() <= maxSize) {
 			// that was easy. the whole tree fits into current container (with externals)
 			System.out.println("PackStat2: the whole tree fits into container (with externals)");
-			makeEveryThingPutHandlers(containerBuilder, manifestElements, prefix);
+			makeEveryThingPutHandlers(containerBuilder, manifestElements, defaultName, prefix);
 			return wholeSize.getSizeTotal();
 		}
-		
+
 		Set<String> keyset = manifestElements.keySet();
 		long tmpSize = 0;
 		// step two
@@ -154,7 +150,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					Object o = manifestElements.get(name);
 					if (o instanceof ManifestElement) {
 						ManifestElement me = (ManifestElement)o;
-						containerBuilder.addItem(name, prefix+name, me.getMimeTypeOverride(), me.getData());
+						containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
 					}
 				}
 				tmpSize = wholeSize.getSizeFilesNoLimit();
@@ -164,9 +160,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					if (o instanceof ManifestElement) {
 						ManifestElement me = (ManifestElement)o;
 						if (me.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE)
-							containerBuilder.addExternal(name, me.getMimeTypeOverride(), me.getData());
+							containerBuilder.addExternal(name, me.getData(), me.getMimeTypeOverride(), name.equals(defaultName));
 						else
-							containerBuilder.addItem(name, prefix+name, me.getMimeTypeOverride(), me.getData());
+							containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
 					}
 				}
 				tmpSize = wholeSize.getSizeFiles();
@@ -181,11 +177,11 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					if (tmpSize < maxSize) {
 						containerBuilder.pushCurrentDir();
 						containerBuilder.makeSubDirCD(name);
-						tmpSize += makePutHandlers(containerBuilder, hm, "", maxSize-tmpSize, name);
+						tmpSize += makePutHandlers(containerBuilder, hm, defaultName, "", maxSize-tmpSize, name);
 						containerBuilder.popCurrentDir();
 					} else {
 						ContainerBuilder subC = containerBuilder.makeSubContainer(name);
-						makePutHandlers(subC, hm, "", DEFAULT_MAX_CONTAINERSIZE, name);
+						makePutHandlers(subC, hm, defaultName, "", DEFAULT_MAX_CONTAINERSIZE, name);
 					}
 				}
 			}
@@ -207,7 +203,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 						HashMap<String, Object> hm = (HashMap<String, Object>)o;
 						containerBuilder.pushCurrentDir();
 						containerBuilder.makeSubDirCD(name);
-						makeEveryThingUnlimitedPutHandlers(containerBuilder, hm, prefix);
+						makeEveryThingUnlimitedPutHandlers(containerBuilder, hm, defaultName, prefix);
 						containerBuilder.popCurrentDir();
 					}
 				}
@@ -221,7 +217,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 						HashMap<String, Object> hm = (HashMap<String, Object>)o;
 						containerBuilder.pushCurrentDir();
 						containerBuilder.makeSubDirCD(name);
-						makeEveryThingPutHandlers(containerBuilder, hm, prefix);
+						makeEveryThingPutHandlers(containerBuilder, hm, defaultName, prefix);
 						containerBuilder.popCurrentDir();
 					}
 				}
@@ -236,7 +232,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 					@SuppressWarnings("unchecked")
 					HashMap<String, Object> hm = (HashMap<String, Object>)o;
 					ContainerBuilder subC = containerBuilder.makeSubContainer(name);
-					makePutHandlers(subC, hm, "", DEFAULT_MAX_CONTAINERSIZE, name);
+					makePutHandlers(subC, hm, defaultName, "", DEFAULT_MAX_CONTAINERSIZE, name);
 					tmpSize += 512;
 				}
 			}
@@ -249,7 +245,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			if (o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement)o;
 				if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (maxSize-tmpSize))) {
-					containerBuilder.addItem(name, name, me.getMimeTypeOverride(), me.getData());
+					containerBuilder.addItem(name, prefix+name, me, name.equals(defaultName));
 					tmpSize += ContainerSizeEstimator.tarItemSize(me.getSize());
 				} else {
 					tmpSize += 512;
@@ -257,7 +253,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				}
 			}
 		}
-			
+
 		// group files left into external archives ('CHK@.../name' redirects)
 		while (!itemsLeft.isEmpty()) {
 			System.out.println("ItemsLeft checker: "+itemsLeft.size());
@@ -267,7 +263,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				Set<String> lKeySetset = itemsLeft.keySet();
 				for (String lname:lKeySetset) {
 					ManifestElement me = (ManifestElement)itemsLeft.get(lname);
-					containerBuilder.addExternal(lname, me.getMimeTypeOverride(), me.getData());
+					containerBuilder.addExternal(lname, me.getData(), me.getMimeTypeOverride(), lname.equals(defaultName));
 				}
 				itemsLeft.clear();
 				continue;
@@ -283,7 +279,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				Set<String> lKeySetset = itemsLeft.keySet();
 				for (String lname:lKeySetset) {
 					ManifestElement me = (ManifestElement)itemsLeft.get(lname);
-					containerBuilder.addArchiveItem(archive, lname, lname, me.getMimeTypeOverride(), me.getData());
+					containerBuilder.addArchiveItem(archive, lname, me, lname.equals(defaultName));
 				}
 				itemsLeft.clear();
 				continue;
@@ -294,7 +290,7 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				Set<String> lKeySetset = itemsLeft.keySet();
 				for (String lname:lKeySetset) {
 					ManifestElement me = (ManifestElement)itemsLeft.get(lname);
-					containerBuilder.addExternal(lname, me.getMimeTypeOverride(), me.getData());
+					containerBuilder.addExternal(lname, me.getData(), me.getMimeTypeOverride(), lname.equals(defaultName));
 				}
 				itemsLeft.clear();
 				continue;
@@ -302,67 +298,58 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 
 			// fill up a archive
 			long archiveLimit = DEFAULT_CONTAINERSIZE_SPARE;
-			Set<String> lKeySetset = itemsLeft.keySet();
 			ContainerBuilder archive = makeArchive();
-			for (String lname:lKeySetset) {
+			
+			Iterator<String> iter = itemsLeft.keySet().iterator();
+			while (iter.hasNext()) {
+				String lname = iter.next();
 				ManifestElement me = (ManifestElement)itemsLeft.get(lname);
 				if ((me.getSize() > -1) && (me.getSize() <= DEFAULT_MAX_CONTAINERITEMSIZE) && (me.getSize() < (DEFAULT_MAX_CONTAINERSIZE-archiveLimit))) {
-					containerBuilder.addArchiveItem(archive, lname, lname, me.getMimeTypeOverride(), me.getData());
+					containerBuilder.addArchiveItem(archive, lname, me, lname.equals(defaultName));
 					tmpSize += 512;
 					archiveLimit += ContainerSizeEstimator.tarItemSize(me.getSize());
-					lKeySetset.remove(lname);
+					iter.remove();
 				} 
 			}
 		}
 		return tmpSize;
 	}
-	
-	private void makeEveryThingUnlimitedPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String prefix) {
-		// files first
+
+	private void makeEveryThingUnlimitedPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix) {
 		for (String name: manifestElements.keySet()) {
 			Object o = manifestElements.get(name);
 			if(o instanceof ManifestElement) {
 				ManifestElement element = (ManifestElement) o;
-				containerBuilder.addItem(name, prefix+name, element.getMimeTypeOverride(), element.getData());
-			}
-		}	
-		// subdirs
-		for (String name: manifestElements.keySet()) {
-			Object o = manifestElements.get(name);
-			if(o instanceof HashMap) {
+				containerBuilder.addItem(name, prefix+name, element, name.equals(defaultName));
+			} else {
 				@SuppressWarnings("unchecked")
 				HashMap<String,Object> hm = (HashMap<String,Object>)o;
 				containerBuilder.pushCurrentDir();
 				containerBuilder.makeSubDirCD(name);
-				makeEveryThingUnlimitedPutHandlers(containerBuilder, hm, "");
+				makeEveryThingUnlimitedPutHandlers(containerBuilder, hm, defaultName, "");
 				containerBuilder.popCurrentDir();
 			}
 		}
 	}
-	
-	private void makeEveryThingPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String prefix) {
-		// files first
+
+	private void makeEveryThingPutHandlers(ContainerBuilder containerBuilder, HashMap<String,Object> manifestElements, String defaultName, String prefix) {
 		for (String name: manifestElements.keySet()) {
 			Object o = manifestElements.get(name);
 			if(o instanceof ManifestElement) {
 				ManifestElement element = (ManifestElement) o;
 				if (element.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE)
-					containerBuilder.addExternal(name, element.getMimeTypeOverride(), element.getData());
+					containerBuilder.addExternal(name, element.getData(), element.getMimeTypeOverride(), name.equals(defaultName));
 				else
-					containerBuilder.addItem(name, prefix+name, element.getMimeTypeOverride(), element.getData());
-			}
-		}	
-		// subdirs
-		for (String name: manifestElements.keySet()) {
-			Object o = manifestElements.get(name);
-			if(o instanceof HashMap) {
+					containerBuilder.addItem(name, prefix+name, element, name.equals(defaultName));
+				continue;
+			} else {
 				@SuppressWarnings("unchecked")
 				HashMap<String,Object> hm = (HashMap<String,Object>)o;
 				containerBuilder.pushCurrentDir();
 				containerBuilder.makeSubDirCD(name);
-				makeEveryThingPutHandlers(containerBuilder, hm, "");
+				makeEveryThingPutHandlers(containerBuilder, hm, defaultName, "");
 				containerBuilder.popCurrentDir();
 			}
-		}
+		}	
 	}
 }

@@ -471,7 +471,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode versionContent = ctx.getPageMaker().getInfobox("infobox-information", l10n("versionHeader"), contentNode);
         versionContent.addChild("#",
                 L10n.getString("WelcomeToadlet.version", new String[]{"fullVersion", "build", "rev"},
-                new String[]{Version.publicVersion, Integer.toString(Version.buildNumber()), Version.cvsRevision}));
+                new String[]{Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision()}));
         versionContent.addChild("br");
         if (NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER) {
             versionContent.addChild("#",

@@ -1179,6 +1179,7 @@ public class PeerManager {
 			try {
 				w.write(sb);
 				w.flush();
+				fos.getFD().sync();
 				w.close();
 				w = null;
 

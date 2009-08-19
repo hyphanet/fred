@@ -34,6 +34,8 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 
@@ -74,7 +76,7 @@ public class RealNodeULPRTest extends RealNodeTest {
     public static final int DARKNET_PORT_BASE = RealNodeSecretPingTest.DARKNET_PORT_END;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
-    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
+    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException, InvalidCompressionCodecException {
         System.err.println("ULPR test");
         System.err.println();
     	String testName = "realNodeULPRTest";
@@ -161,9 +163,9 @@ public class RealNodeULPRTest extends RealNodeTest {
         	insertKey = InsertableClientSSK.create(testKey);
         	fetchKey = ClientKSK.create(testKey);
         	
-        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random);
+        	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
         } else {
-        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length);
+        	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
         	insertKey = fetchKey = block.getClientKey();
         	testKey = insertKey.getURI();
         }

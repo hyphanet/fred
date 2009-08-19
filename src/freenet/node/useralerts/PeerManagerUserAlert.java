@@ -31,7 +31,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public static final int MIN_CONN_ALERT_THRESHOLD = 3;
 	
 	/** How many connected peers we can have without getting alerted about too many */
-	public static final int MAX_CONN_ALERT_THRESHOLD = 30;
+	public static final int MAX_CONN_ALERT_THRESHOLD = 40;
 	
 	/** How many disconnected peers we can have without getting alerted about too many */
 	public static final int MAX_DISCONN_PEER_ALERT_THRESHOLD = 50;

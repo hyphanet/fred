@@ -2,6 +2,7 @@
 /build
 /build-test
 /freenet-*
+/javadoc
 /junitvmwatcher*
 /lib
 .classpath

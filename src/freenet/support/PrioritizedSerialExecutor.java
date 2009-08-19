@@ -10,7 +10,7 @@ import freenet.support.io.NativeThread;
 
 public class PrioritizedSerialExecutor implements Executor {
 	private static volatile boolean logMINOR;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
@@ -19,28 +19,28 @@ public class PrioritizedSerialExecutor implements Executor {
 			}
 		});
 	}
-	
+
 	private final LinkedList<Runnable>[] jobs;
 	private final int priority;
 	private final int defaultPriority;
 	private boolean waiting;
 	private final boolean invertOrder;
 	private final Map<String, Long> timeByJobClasses = new HashMap<String, Long>();
-	
+
 	private String name;
 	private Executor realExecutor;
 	private boolean running;
 	private final ExecutorIdleCallback callback;
-	
+
 	private static final int DEFAULT_JOB_TIMEOUT = 5*60*1000;
 	private final int jobTimeout;
 
 	private final Runner runner = new Runner();
-	
+
 	class Runner implements PrioRunnable {
 
 		Thread current;
-		
+
 		public int getPriority() {
 			return priority;
 		}
@@ -142,11 +142,11 @@ public class PrioritizedSerialExecutor implements Executor {
 			}
 			return null;
 		}
-		
+
 	};
-	
+
 	/**
-	 * 
+	 *
 	 * @param priority
 	 * @param internalPriorityCount
 	 * @param defaultPriority
@@ -162,11 +162,11 @@ public class PrioritizedSerialExecutor implements Executor {
 		this.jobTimeout = jobTimeout;
 		this.callback = callback;
 	}
-	
+
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder) {
 		this(priority, internalPriorityCount, defaultPriority, invertOrder, DEFAULT_JOB_TIMEOUT, null);
 	}
-	
+
 	public void start(Executor realExecutor, String name) {
 		this.realExecutor=realExecutor;
 		this.name=name;
@@ -182,7 +182,7 @@ public class PrioritizedSerialExecutor implements Executor {
 				reallyStart();
 		}
 	}
-	
+
 	private void reallyStart() {
 		synchronized(jobs) {
 			if(running) {
@@ -194,7 +194,11 @@ public class PrioritizedSerialExecutor implements Executor {
 			realExecutor.execute(runner, name);
 		}
 	}
-	
+
+	public void execute(Runnable job) {
+		execute(job, "<noname>");
+	}
+
 	public void execute(Runnable job, String jobName) {
 		int prio = defaultPriority;
 		if(job instanceof PrioRunnable)
@@ -204,7 +208,7 @@ public class PrioritizedSerialExecutor implements Executor {
 
 	public void execute(Runnable job, int prio, String jobName) {
 		synchronized(jobs) {
-			if(logMINOR) 
+			if(logMINOR)
 				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
@@ -216,7 +220,7 @@ public class PrioritizedSerialExecutor implements Executor {
 
 	public void executeNoDupes(Runnable job, int prio, String jobName) {
 		synchronized(jobs) {
-			if(logMINOR) 
+			if(logMINOR)
 				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
 			if(jobs[prio].contains(job)) {
 				if(logMINOR)
@@ -234,7 +238,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	public void execute(Runnable job, String jobName, boolean fromTicker) {
 		execute(job, jobName);
 	}
-	
+
 	public int[] runningThreads() {
 		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		if (running)
@@ -255,7 +259,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		Thread running = Thread.currentThread();
 		synchronized(jobs) {
 			if(runner == null) return false;
-			return runner.current == running; 
+			return runner.current == running;
 		}
 	}
 

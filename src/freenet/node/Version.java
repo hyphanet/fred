@@ -11,6 +11,24 @@ import freenet.support.Logger;
 
 /**
  * Central spot for stuff related to the versioning of the codebase.
+ *
+ * Note: when using the fields of this class, you must note that the Java
+ * compiler compiles <b>constant final static</b> fields into the class
+ * definitions of classes that use them. This might not be the most appropriate
+ * behaviour when, eg. creating a class that reports statistics.
+ *
+ * A final static field can be made "non-constant" in the eyes of the compiler
+ * by initialising it with the results of a method, eg <code>T identity(T o)
+ * { T o; }</code>; however the "constant" behaviour might be required in some
+ * cases. A more flexible solution is to add a method that returns the field,
+ * eg {@link #publicVersion()}, and choose between the method and the field
+ * as necessary.
+ *
+ * <pre>$ grep -R "\WVersion\.\w*[^(a-zA-Z]" src</pre>
+ *
+ * can be used to find the places in the source code whose logic needs to be
+ * checked for this.
+ *
  */
 public class Version {
 
@@ -18,11 +36,11 @@ public class Version {
 	public static final String nodeName = "Fred";
 
 	/** The current tree version.
-	 * FIXME: This is part of the node compatibility computations, so cannot be 
+	 * FIXME: This is part of the node compatibility computations, so cannot be
 	 * safely changed!!! Hence publicVersion ... */
 	public static final String nodeVersion = "0.7";
-	
-	/** The version for publicity purposes i.e. the version of the node that has 
+
+	/** The version for publicity purposes i.e. the version of the node that has
 	 * been released. */
 	public static final String publicVersion = "0.7.5";
 
@@ -30,26 +48,50 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1227;
+	private static final int buildNumber = 1230;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 1222;
-	private static final int newLastGoodBuild = 1224;
+	private static final int oldLastGoodBuild = 1224;
+	private static final int newLastGoodBuild = 1229;
 	static final long transitionTime;
-	
+
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2009, Calendar.AUGUST, 7, 0, 0, 0 );
+		_cal.set( 2009, Calendar.AUGUST, 14, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
 	}
-	
+
 	/**
+	 * Use this method when you want the value returned to be the run-time
+	 * version, not the build-time version.
+	 *
+	 * For example, if you compile your class, then modify this class and
+	 * compile it (the build script does this automatically), but don't
+	 * re-compile your original class, then that will still have the old
+	 * version compiled into it, since it is a static constant.
+	 *
 	 * @return The build number (not SVN revision number) of this node.
 	 */
 	public static final int buildNumber() {
 		return buildNumber;
 	}
+
+	/**
+	 * Analogous to {@link #buildNumber()} but for {@link #publicVersion}.
+	 */
+	public static final String publicVersion() {
+		return publicVersion;
+	}
+
+	/**
+	 * Analogous to {@link #buildNumber()} but for {@link #transitionTime}.
+	 */
+	public static final long transitionTime() {
+		return transitionTime;
+	}
+
+
 
 	/**
 	 * @return The lowest build number with which the node will connect and exchange
@@ -61,7 +103,7 @@ public class Version {
 		else
 			return oldLastGoodBuild;
 	}
-	
+
 	/** The highest reported build of fred */
 	public static int highestSeenBuild = buildNumber;
 
@@ -76,9 +118,16 @@ public class Version {
 
 	/** Revision number of Version.java as read from CVS */
 	public static final String cvsRevision = "@custom@";
-	
+
+	/**
+	 * Analogous to {@link #buildNumber()} but for {@link #cvsRevision}.
+	 */
+	public static final String cvsRevision() {
+		return cvsRevision;
+	}
+
 	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
-	
+
 	/**
 	 * @return the node's version designators as an array
 	 */
@@ -87,20 +136,20 @@ public class Version {
 			{ nodeName, nodeVersion, protocolVersion, "" + buildNumber };
 		return ret;
 	}
-	
+
 	public static final String[] getLastGoodVersion() {
 		String[] ret =
 			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild() };
 		return ret;
 	}
-	
+
 	/**
 	 * @return the version string that should be presented in the NodeReference
 	 */
 	public static final String getVersionString() {
 		return Fields.commaList(getVersion());
 	}
-	
+
 	/**
 	 * @return is needed for the freeviz
 	 */
@@ -259,7 +308,7 @@ public class Version {
 	 */
 	public static final String explainBadVersion(String version) {
 		String[] v = Fields.commaList(version);
-		
+
 		if ((v.length < 3) || !goodProtocol(v[2])) {
 			return "Required protocol version is "
 						+ protocolVersion

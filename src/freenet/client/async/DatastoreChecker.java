@@ -133,44 +133,59 @@ public class DatastoreChecker implements PrioRunnable {
 					container.delete(item);
 					continue;
 				}
-				BlockSet blocks = item.blocks;
-				container.activate(getter, 1);
-				boolean dontCache = getter.dontCache(container);
-				ClientRequestScheduler sched = getter.getScheduler(context);
-				synchronized(this) {
-					if(persistentGetters[prio].contains(getter)) continue;
-				}
-				Key[] keys = getter.listKeys(container);
-				// FIXME check the store bloom filter using store.probablyInStore().
-				item.chosenBy = context.bootID;
-				container.store(item);
-				synchronized(this) {
-					if(persistentGetters[prio].contains(getter)) continue;
-					ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
-					for(Key key : keys) {
-						key = key.cloneKey();
-						finalKeysToCheck.add(key);
+				try {
+					BlockSet blocks = item.blocks;
+					container.activate(getter, 1);
+					if(getter.isStorageBroken(container)) {
+						Logger.error(this, "Getter is broken as stored: "+getter);
+						container.delete(getter);
+						container.delete(item);
+						continue;
 					}
-					Key[] finalKeys =
-						finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]);
-					persistentKeys[prio].add(finalKeys);
-					persistentGetters[prio].add(getter);
-					persistentDontCache[prio].add(dontCache);
-					persistentSchedulers[prio].add(sched);
-					persistentCheckerItems[prio].add(item);
-					persistentBlockSets[prio].add(blocks);
-					if(totalSize == 0)
-						notifyAll();
-					totalSize += finalKeys.length;
-					if(totalSize > MAX_PERSISTENT_KEYS) {
-						boolean full = trimPersistentQueue(prio, container);
-						notifyAll();
-						if(full) return;
-					} else {
-						notifyAll();
+					boolean dontCache = getter.dontCache(container);
+					ClientRequestScheduler sched = getter.getScheduler(context);
+					synchronized(this) {
+						if(persistentGetters[prio].contains(getter)) continue;
+					}
+					Key[] keys = getter.listKeys(container);
+					// FIXME check the store bloom filter using store.probablyInStore().
+					item.chosenBy = context.bootID;
+					container.store(item);
+					synchronized(this) {
+						if(persistentGetters[prio].contains(getter)) continue;
+						ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
+						for(Key key : keys) {
+							key = key.cloneKey();
+							finalKeysToCheck.add(key);
+						}
+						Key[] finalKeys =
+							finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]);
+						persistentKeys[prio].add(finalKeys);
+						persistentGetters[prio].add(getter);
+						persistentDontCache[prio].add(dontCache);
+						persistentSchedulers[prio].add(sched);
+						persistentCheckerItems[prio].add(item);
+						persistentBlockSets[prio].add(blocks);
+						if(totalSize == 0)
+							notifyAll();
+						totalSize += finalKeys.length;
+						if(totalSize > MAX_PERSISTENT_KEYS) {
+							boolean full = trimPersistentQueue(prio, container);
+							notifyAll();
+							if(full) return;
+						} else {
+							notifyAll();
+						}
+					}
+					container.deactivate(getter, 1);
+				} catch (NullPointerException e) {
+					Logger.error(this, "NPE for getter in DatastoreChecker: "+e+" - probably leftover data from an incomplete deletion", e);
+					try {
+						Logger.error(this, "Getter: "+getter);
+					} catch (Throwable t) {
+						// Ignore
 					}
 				}
-				container.deactivate(getter, 1);
 			}
 		}
 	}

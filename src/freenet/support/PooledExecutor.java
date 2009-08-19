@@ -50,6 +50,10 @@ public class PooledExecutor implements Executor {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
+	public void execute(Runnable job) {
+		execute(job, "<noname>");
+	}
+
 	public void execute(Runnable job, String jobName) {
 		execute(job, jobName, false);
 	}
@@ -146,7 +150,7 @@ public class PooledExecutor implements Executor {
 	public int getWaitingThreadsCount() {
 		return waitingThreadsCount;
 	}
-	
+
 	private static class Job {
 		private Runnable runnable;
 		private String name;

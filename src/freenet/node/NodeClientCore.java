@@ -15,6 +15,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
+import freenet.client.async.BandwidthStatsPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
@@ -76,6 +77,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.compress.Compressor;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
@@ -97,7 +99,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		});
 	}
-	
+
+	public final BandwidthStatsPutter bandwidthStatsPutter;
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -221,7 +224,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			String msg = "Could not find or create temporary directory (filename generator)";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
-		
+
+		this.bandwidthStatsPutter = new BandwidthStatsPutter(this.node);
+		if (container != null) {
+			bandwidthStatsPutter.restorePreviousData(container);
+			this.getTicker().queueTimedJob(new Runnable() {
+				public void run() {
+					try {
+						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+						getTicker().queueTimedJob(this, BandwidthStatsPutter.OFFSET);
+					} catch (DatabaseDisabledException e) {
+						// Should be safe to ignore.
+					}
+				}
+			}, BandwidthStatsPutter.OFFSET);
+		}
+
 		uskManager = new USKManager(this);
 
 		// Persistent temp files
@@ -314,7 +332,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
 						0, 2, 1, 0, 0, new SimpleEventProducer(),
-						!Node.DONT_CACHE_LOCAL_REQUESTS, false), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor);
 		compressor.setClientContext(clientContext);
@@ -655,6 +673,19 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return false;
 			}
 		}
+
+		bandwidthStatsPutter.restorePreviousData(container);
+		this.getTicker().queueTimedJob(new Runnable() {
+			public void run() {
+				try {
+					queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+					getTicker().queueTimedJob(this, BandwidthStatsPutter.OFFSET);
+				} catch (DatabaseDisabledException e) {
+					// Should be safe to ignore.
+				}
+			}
+		}, BandwidthStatsPutter.OFFSET);
+
 		// CONCURRENCY: We need everything to have hit its various memory locations.
 		// How to ensure this?
 		// FIXME This is a hack!!
@@ -738,6 +769,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		} catch (DatabaseDisabledException e) {
 			// Safe to ignore
 		}
+
 		persister.start();
 		
 		storeChecker.start(node.executor, "Datastore checker");
@@ -770,7 +802,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return NativeThread.LOW_PRIORITY;
 			}
 		}, "Startup completion thread");
-		
+
 		if(!killedDatabase)
 			clientDatabaseExecutor.start(node.executor, "Client database access thread");
 	}

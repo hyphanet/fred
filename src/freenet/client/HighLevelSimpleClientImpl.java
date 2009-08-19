@@ -30,6 +30,7 @@ import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
 import freenet.support.io.NullPersistentFileTracker;
@@ -181,7 +182,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
 		return insert(insert, getCHKOnly, filenameHint, isMetadata, ctx, (ClientPutCallback) cb);
 	}
-	
+
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priorityClass,
@@ -237,7 +238,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public FetchContext getFetchContext() {
 		return getFetchContext(-1);
 	}
-	
+
 	public FetchContext getFetchContext(long overrideMaxSize) {
 		long maxLength = curMaxLength;
 		long maxTempLength = curMaxTempLength;
@@ -260,7 +261,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				eventProducer, cacheLocalRequests, CAN_WRITE_CLIENT_CACHE_INSERTS);
+				eventProducer, cacheLocalRequests, CAN_WRITE_CLIENT_CACHE_INSERTS, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

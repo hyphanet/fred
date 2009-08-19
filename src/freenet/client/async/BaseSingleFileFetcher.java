@@ -331,6 +331,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		if(finished) return null;
 		if(cancelled) return null;
+		if(key == null) {
+			Logger.error(this, "Key is null - left over BSSF? on "+this+" in makeKeyListener()", new Exception("error"));
+			if(persistent) container.delete(this);
+			return null;
+		}
 		Key newKey = key.getNodeKey().cloneKey();
 		short prio = parent.getPriorityClass();
 		boolean dontCache = !ctx.cacheLocalRequests;

@@ -1356,7 +1356,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	protected ClientCHKBlock encodeBucket(Bucket copyBucket) throws CHKEncodeException, IOException {
-		return ClientCHKBlock.encode(copyBucket, false, true, (short)-1, CHKBlock.DATA_LENGTH);
+		return ClientCHKBlock.encode(copyBucket, false, true, (short)-1, CHKBlock.DATA_LENGTH, parent.ctx.compressorDescriptor);
 	}
 
 	@Override

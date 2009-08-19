@@ -72,6 +72,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private final Bucket returnBucket;
 	/** If true, success/failure is immediately reported to the client, and therefore we can check TOO_MANY_PATH_COMPONENTS. */
 	private final boolean isFinal;
+	private final SnoopMetadata metaSnoop;
+	private final SnoopBucket bucketSnoop;
 
 	/** Create a new SingleFileFetcher and register self.
 	 * Called when following a redirect, or direct from ClientGet.
@@ -109,6 +111,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
+		if(parent instanceof ClientGetter) {
+			metaSnoop = ((ClientGetter)parent).getMetaSnoop();
+			bucketSnoop = ((ClientGetter)parent).getBucketSnoop();
+		}
+		else {
+			metaSnoop = null;
+			bucketSnoop = null;
+		}
 	}
 
 	/** Copy constructor, modifies a few given fields, don't call schedule().
@@ -140,6 +150,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>(fetcher.decompressors);
 		if(fetcher.uri == null) throw new NullPointerException();
 		this.uri = persistent ? fetcher.uri.clone() : fetcher.uri;
+		if(parent instanceof ClientGetter) {
+			metaSnoop = ((ClientGetter)parent).getMetaSnoop();
+			bucketSnoop = ((ClientGetter)parent).getBucketSnoop();
+		}
+		else {
+			metaSnoop = null;
+			bucketSnoop = null;
+		}
 	}
 
 	// Process the completed data. May result in us going to a
@@ -183,6 +201,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Block "+(block.isMetadata() ? "is metadata" : "is not metadata")+" on "+this);
+
+		if(bucketSnoop != null) {
+			if(persistent)
+				container.activate(bucketSnoop, 1);
+			if(bucketSnoop.snoopBucket(data, block.isMetadata(), container, context)) {
+				cancel(container, context);
+				if(persistent)
+					container.deactivate(bucketSnoop, 1);
+				data.free();
+				return;
+			}
+			if(persistent)
+				container.deactivate(bucketSnoop, 1);
+		}
+
 		if(!block.isMetadata()) {
 			onSuccess(new FetchResult(clientMetadata, data), container, context);
 		} else {
@@ -349,6 +382,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			finished = true;
 		}
 		while(true) {
+			if(metaSnoop != null) {
+				if(persistent)
+					container.activate(metaSnoop, 1);
+				if(metaSnoop.snoopMetadata(metadata, container, context)) {
+					cancel(container, context);
+					if(persistent)
+						container.deactivate(metaSnoop, 1);
+					return;
+				}
+				if(persistent)
+					container.deactivate(metaSnoop, 1);
+			}
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;

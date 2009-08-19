@@ -19,6 +19,7 @@ import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
 import freenet.node.NodeStats;
+import freenet.node.OpennetManager;
 import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.RequestStarterGroup;
@@ -237,7 +238,7 @@ public class StatisticsToadlet extends Toadlet {
 			drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, 
 					numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, 
 					numberOfBursting, numberOfListening, numberOfListenOnly, numberOfSeedServers, numberOfSeedClients,
-					numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
+					numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting, node);
 
 			// Bandwidth box
 			HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -361,7 +362,7 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
 		versionInfoboxList.addChild("li", L10n.getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
-				new String[] { Version.publicVersion, Integer.toString(Version.buildNumber()), Version.cvsRevision }));
+				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }));
 		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
 			versionInfoboxList.addChild("li", L10n.getString("WelcomeToadlet.extVersionWithRecommended", 
 					new String[] { "build", "recbuild", "rev" }, 
@@ -699,7 +700,7 @@ public class StatisticsToadlet extends Toadlet {
 			int numberOfRoutingBackedOff, int numberOfTooNew, int numberOfTooOld, int numberOfDisconnected, 
 			int numberOfNeverConnected, int numberOfDisabled, int numberOfBursting, int numberOfListening, 
 			int numberOfListenOnly, int numberOfSeedServers, int numberOfSeedClients, int numberOfRoutingDisabled, 
-			int numberOfClockProblem, int numberOfConnError, int numberOfDisconnecting) {
+			int numberOfClockProblem, int numberOfConnError, int numberOfDisconnecting, Node node) {
 		
 		peerStatsInfobox.addChild("div", "class", "infobox-header", l10n("peerStatsTitle"));
 		HTMLNode peerStatsContent = peerStatsInfobox.addChild("div", "class", "infobox-content");
@@ -797,6 +798,11 @@ public class StatisticsToadlet extends Toadlet {
 			peerStatsRoutingDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_routing_disabled", l10nDark("routingDisabled"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("routingDisabledShort"));
 			peerStatsRoutingDisabledListItem.addChild("span", ":\u00a0" + numberOfRoutingDisabled);
 		}
+		OpennetManager om = node.getOpennet();
+		if(om != null) {
+			peerStatsList.addChild("li", l10n("maxTotalPeers")+": "+om.getNumberOfConnectedPeersToAimIncludingDarknet());
+			peerStatsList.addChild("li", l10n("maxOpennetPeers")+": "+om.getNumberOfConnectedPeersToAim());
+		}
 	}
 
 	private static String l10n(String key) {
@@ -842,6 +848,8 @@ public class StatisticsToadlet extends Toadlet {
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayload = node.getTotalPayloadSent();
 		long total_payload_rate = totalPayload / nodeUptimeSeconds;
+		long overall_total_out = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesOut;
+		long overall_total_in = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesIn;
 		int percent = (int) (100 * totalPayload / total[0]);
 		long[] rate = node.nodeStats.getNodeIOStats();
 		long delta = (rate[5] - rate[2]) / 1000;
@@ -857,9 +865,11 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("inputRate", new String[] { "rate", "max" }, new String[] { SizeUtil.formatSize(input_rate, true), SizeUtil.formatSize(inputBandwidthLimit, true) }));
 			activityList.addChild("li", l10n("outputRate", new String[] { "rate", "max" }, new String[] { SizeUtil.formatSize(output_rate, true), SizeUtil.formatSize(outputBandwidthLimit, true) }));
 		}
-		activityList.addChild("li", l10n("totalInput", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[1], true), SizeUtil.formatSize(total_input_rate, true) }));
-		activityList.addChild("li", l10n("totalOutput", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[0], true), SizeUtil.formatSize(total_output_rate, true) } ));
+		activityList.addChild("li", l10n("totalInputSession", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[1], true), SizeUtil.formatSize(total_input_rate, true) }));
+		activityList.addChild("li", l10n("totalOutputSession", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[0], true), SizeUtil.formatSize(total_output_rate, true) } ));
 		activityList.addChild("li", l10n("payloadOutput", new String[] { "total", "rate", "percent" }, new String[] { SizeUtil.formatSize(totalPayload, true), SizeUtil.formatSize(total_payload_rate, true), Integer.toString(percent) } ));
+		activityList.addChild("li", l10n("totalInput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_in, true) }));
+		activityList.addChild("li", l10n("totalOutput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_out, true) } ));
 		if(isAdvancedModeEnabled) {
 			long totalBytesSentCHKRequests = node.nodeStats.getCHKRequestTotalBytesSent();
 			long totalBytesSentSSKRequests = node.nodeStats.getSSKRequestTotalBytesSent();

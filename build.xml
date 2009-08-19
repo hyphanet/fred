@@ -15,18 +15,27 @@
 	<property name="test" location="test"/>
 	<property name="build" location="build"/>
 	<property name="build-test" location="build-test"/>
-	<property name="lib"	location="lib"/>
+	<property name="lib" location="lib"/>
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="javadoc" location="javadoc"/>
 	<property name="minExtVersion" value="-1"/>
 	<property name="recommendedExtVersion" value="-1"/>
+	<property name="version.src" value="freenet/node/Version.java" />
+	<property name="version.build" value="freenet/node/Version.class" />
 	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
 	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
 	<condition property="executable" value="jflex.bat" else="jflex">
 		<os family="windows"/>
 	</condition>
-		
+
+	<path id="lib.path">
+		<pathelement location="${freenet-ext.location}"/>
+		<pathelement location="gnu-crypto.jar"/>
+		<pathelement location="javax-security.jar"/>
+		<pathelement location="javax-crypto.jar"/>
+	</path>
+
 	<assertions>
 		<enable/>
 	</assertions>
@@ -71,8 +80,8 @@
 	<target name="get-extjar" depends="env" unless="freenet-ext.present"
 		description="Download some external libraries which Freenet relies on">
 		<mkdir dir="${lib}"/>
-		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar" 
-			dest="${freenet-ext.location}" 
+		<get src="http://checksums.freenetproject.org/cc/freenet-ext.jar"
+			dest="${freenet-ext.location}"
 			verbose="true"
 			usetimestamp="true"/>
 		<property name="freenet-ext.present" value="true"/>
@@ -84,28 +93,39 @@
 		<!-- Create the time stamp -->
 		<tstamp/>
 
-		<!-- Update the Version file -->
-
-		<replace file="${src}/freenet/node/Version.java">
+		<!-- Create the Version file with patched revision number in ${build} -->
+		<copy file="${src}/${version.src}" tofile="${build}/${version.src}" overwrite="true" />
+		<delete file="${build}/${version.build}" quiet="true" />
+		<replace file="${build}/${version.src}">
 			<replacefilter token="@custom@" value="${git.revision}"/>
 		</replace>
+		<echo message="Updated build version to ${git.revision} in ${build}/${version.src}"/>
 
 		<!-- Create the build directory structure used by compile -->
-
 		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
-			<classpath>
-				<pathelement location="${freenet-ext.location}"/>
-				<pathelement location="gnu-crypto.jar"/>
-				<pathelement location="javax-security.jar"/>
-				<pathelement location="javax-crypto.jar"/>
-			</classpath>
 			<compilerarg value="-Xlint"/>
-
+			<!-- tell javac to find Version.java in ${build}, not ${src} -->
+			<sourcepath>
+				<pathelement path="${build}"/>
+			</sourcepath>
+			<classpath>
+				<path refid="lib.path"/>
+			</classpath>
 			<!-- following a very temporary list of files to be build -->
 			<include name="freenet/**/*.java"/>
 			<include name="net/i2p/util/*.java"/>
 			<exclude name="**/package-info.java"/>
+			<exclude name="${version.src}"/>
 		</javac>
+
+		<!-- Force compile of Version.java in case compile of ${src} didn't trigger it -->
+		<javac srcdir="${build}" destdir="${build}" debug="on" optimize="on" source="1.5" target="1.5">
+			<classpath>
+				<path refid="lib.path"/>
+			</classpath>
+			<include name="${version.src}"/>
+		</javac>
+
 		<!-- Copy web interface static files to the build dir -->
 		<copy todir="${build}/freenet/clients/http/staticfiles">
 			<fileset dir="${src}/freenet/clients/http/staticfiles"/>
@@ -117,17 +137,12 @@
 			</fileset>
 		</copy>
 
-		<!-- Reset the Version file -->
-		<replace file="${src}/freenet/node/Version.java">
-			<replacefilter token="${git.revision}" value="@custom@"/>
-		</replace>
 	</target>
 
 
 	<!-- ================================================== -->
 
-	<target name="dist" depends="compile,unit"
-		description="generate the distribution" >
+	<target name="dist" depends="compile,unit" description="generate the distribution" >
 		<!-- Create the distribution directory -->
 		<jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${build}">
 			<manifest>
@@ -140,11 +155,12 @@
 					<attribute name="Specification-Version" value="0.7.5"/>
 					<attribute name="Specification-Vendor" value="freenetproject.org"/>
 					<attribute name="Implementation-Title" value="Freenet"/>
-					<attribute name="Implementation-Version" value="0.7.5 ${TODAY} ${git.revision}"/> 
+					<attribute name="Implementation-Version" value="0.7.5 ${TODAY} ${git.revision}"/>
 					<attribute name="Implementation-Vendor" value="Freenetproject.org"/>
 				</section>
 			</manifest>
-		</jar>    
+			<exclude name="${version.src}"/>
+		</jar>
 	</target>
 
 	<!-- ================================================== -->
@@ -155,8 +171,8 @@
 
 		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.5" target="1.5">
 			<classpath>
+				<path refid="lib.path"/>
 				<pathelement path="${build}"/>
-				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${junit.location}"/>
 			</classpath>
 			<compilerarg value="-Xlint"/>
@@ -171,9 +187,9 @@
 	<target name="unit" depends="unit-build" if="junit.present" unless="skip_tests">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
+				<path refid="lib.path"/>
 				<pathelement path="${build}"/>
 				<pathelement path="${build-test}"/>
-				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${junit.location}"/>
 			</classpath>
 
@@ -207,6 +223,10 @@
 	<target name="javadoc">
 		<javadoc sourcepath="${src}" destdir="${javadoc}">
 			<fileset dir="${src}" includes="**/*.java" />
+			<classpath>
+				<pathelement location="${freenet-ext.location}"/>
+			</classpath>
+			<link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
 		</javadoc>
 	</target>
 </project>

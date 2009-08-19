@@ -21,6 +21,7 @@ import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
+import freenet.support.compress.Compressor;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
@@ -131,7 +132,7 @@ public class RAMSaltMigrationTest extends TestCase {
 	private ClientCHKBlock encodeBlock(String test) throws CHKEncodeException, IOException {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
-		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size());
+		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
 
 

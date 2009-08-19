@@ -14,6 +14,7 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.Vector;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
@@ -975,7 +977,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
-		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
+		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
@@ -1795,7 +1797,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
-		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
+		opennetConfig.register("maxOpennetPeers", OpennetManager.MAX_PEERS_FOR_SCALING, 1, true, false, "Node.maxOpennetPeers",
 				"Node.maxOpennetPeersLong", new IntCallback() {
 					@Override
 					public Integer get() {
@@ -1811,9 +1813,9 @@ public class Node implements TimeSkewDetectorCallback {
 		, false);
 		
 		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
-		if(maxOpennetPeers > 20) {
-			Logger.error(this, "maxOpennetPeers may not be over 20");
-			maxOpennetPeers = 20;
+		if(maxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) {
+			Logger.error(this, "maxOpennetPeers may not be over "+OpennetManager.MAX_PEERS_FOR_SCALING);
+			maxOpennetPeers = OpennetManager.MAX_PEERS_FOR_SCALING;
 		}
 		
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true, securityLevels);
@@ -3034,6 +3036,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		
 	};
+	private boolean xmlRemoteCodeExec;
 	
 	private void createPasswordUserAlert() {
 		this.clientCore.alerts.register(masterPasswordUserAlert);
@@ -3448,8 +3451,8 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
 			System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
 		}
-		Logger.normal(this, "Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		System.out.println("Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+		Logger.normal(this, "Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision());
+		System.out.println("Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision());
 		Logger.normal(this, "FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
 		System.out.println("FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
 		// Start services
@@ -3520,13 +3523,56 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		String jvmVendor = System.getProperty("java.vm.vendor");
 		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
-		String jvmVersion = System.getProperty("java.version");
+		String javaVersion = System.getProperty("java.version");
+		String jvmName = System.getProperty("java.vm.name");
+		String jvmVersion = System.getProperty("java.vm.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 		
-		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
+		boolean isOpenJDK = false;
 		
-		if(jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun "))) {
+		if(jvmName.startsWith("OpenJDK ")) {
+			isOpenJDK = true;
+			if(javaVersion.startsWith("1.6.0")) {
+				String subverString;
+				if(jvmVersion.startsWith("14.0-b"))
+					subverString = jvmVersion.substring("14.0-b".length());
+				else if(jvmVersion.startsWith("1.6.0_0-b"))
+					subverString = jvmVersion.substring("1.6.0_0-b".length());
+				else
+					subverString = null;
+				if(subverString != null) {
+					int subver;
+					try {
+						subver = Integer.parseInt(subverString);
+					} catch (NumberFormatException e) {
+						subver = -1;
+					}
+				if(subver > -1 && subver < 15) {
+					File javaDir = new File(System.getProperty("java.home"));
+					
+					// Assume that if the java home dir has been updated since August 11th, we have the fix.
+					
+					final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+					_cal.set(2009, Calendar.AUGUST, 11, 0, 0, 0);
+					if(javaDir.exists() && javaDir.isDirectory() && javaDir.lastModified() > _cal.getTimeInMillis()) {
+						System.err.println("Your Java appears to have been updated, we probably do not have the XML bug (http://www.cert.fi/en/reports/2009/vulnerability2009085.html).");
+					} else {
+						System.err.println("Old version of OpenJDK detected. It is possible that your Java may be vulnerable to a remote code execution vulnerability. Please update your operating system ASAP. We will not disable plugins because we cannot be sure whether there is a problem.");
+						System.err.println("See here: http://www.cert.fi/en/reports/2009/vulnerability2009085.html");
+						clientCore.alerts.register(new SimpleUserAlert(false, l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), l10n("openJDKMightBeVulnerableXML"), UserAlert.ERROR));
+					}
+
+				}
+				}
+			}
+		}
+		
+		boolean isApple;
+		
+		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+javaVersion+", OS name: "+osName+", OS version: "+osVersion);
+		
+		if((!isOpenJDK) && (jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun ")) || (isApple = jvmVendor.startsWith("Apple ")))) {
 			// Sun bugs
 			
 			// Spurious OOMs
@@ -3535,13 +3581,11 @@ public class Node implements TimeSkewDetectorCallback {
 			// http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=2138759
 			// Fixed in 1.5.0_10 and 1.4.2_13
 			
-			boolean is142 = jvmVersion.startsWith("1.4.2_");
-			boolean is150 = jvmVersion.startsWith("1.5.0_");
+			boolean is150 = javaVersion.startsWith("1.5.0_");
+			boolean is160 = javaVersion.startsWith("1.6.0_");
 			
-			boolean spuriousOOMs = false;
-			
-			if(is142 || is150) {
-				String[] split = jvmVersion.split("_");
+			if(is150 || is160) {
+				String[] split = javaVersion.split("_");
 				String secondPart = split[1];
 				if(secondPart.indexOf("-") != -1) {
 					split = secondPart.split("-");
@@ -3549,61 +3593,26 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 				int subver = Integer.parseInt(secondPart);
 				
-				Logger.minor(this, "JVM version: "+jvmVersion+" subver: "+subver+" from "+secondPart+" is142="+is142+" is150="+is150);
+				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
 				
-				if(is142) {
-					if(subver < 13)
-						spuriousOOMs = true;
-				} else /*if(is150)*/ {
-					if(subver < 10)
-						spuriousOOMs = true;
-				}
+				if(is150 && subver < 20 || is160 && subver < 15)
+					xmlRemoteCodeExec = true;
 			}
 			
-			if(spuriousOOMs) {
-				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6 (recommended). This version is buggy and may cause spurious OutOfMemoryErrors.");
-				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, null, UserAlert.ERROR, true, null, false, null) {
-
-					@Override
-					public HTMLNode getHTMLText() {
-						HTMLNode n = new HTMLNode("div");
-						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
-								new String[] { "link", "/link", "version" },
-								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">", 
-								"</a>", HTMLEncoder.encode(System.getProperty("java.version")) });
-						return n;
-					}
-
-					@Override
-					public String getText() {
-						return l10n("buggyJVM", "version", System.getProperty("java.version"));
-					}
-
-					@Override
-					public String getTitle() {
-						return l10n("buggyJVMTitle");
-					}
-
-					@Override
-					public void isValid(boolean validity) {
-						// Ignore
-					}
-
-					@Override
-					public String getShortText() {
-						return l10n("buggyJVMShort", "version", System.getProperty("java.version"));
-					}
-
-				});
+			if(xmlRemoteCodeExec) {
+				System.err.println("Please upgrade your Java to 1.6.0 update 15 or 1.5.0 update 20 IMMEDIATELY!");
+				System.err.println("Freenet plugins using XML, including the search function, and Freenet client applications such as Thaw which use XML are vulnerable to remote code execution!");
+				
+				clientCore.alerts.register(new SimpleUserAlert(false, l10n("sunJVMxmlRemoteCodeExecTitle"), l10n("sunJVMxmlRemoteCodeExec"), l10n("sunJVMxmlRemoteCodeExecTitle"), UserAlert.CRITICAL_ERROR));
 			}
-		
+			
 		} else if (jvmVendor.startsWith("Apple ") || jvmVendor.startsWith("\"Apple ")) {
 			//Note that Sun does not produce VMs for the Macintosh operating system, dont ask the user to find one...
 		} else {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
 				try {
-					jvmVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
-					int jvmVersionInt = Integer.parseInt(jvmVersion);
+					javaVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
+					int jvmVersionInt = Integer.parseInt(javaVersion);
 						
 					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true
 						jvmHasGCJCharConversionBug=true;
@@ -3614,13 +3623,17 @@ public class Node implements TimeSkewDetectorCallback {
 				}
 			}
 
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, jvmVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, javaVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
 		}
 			
 		if(!isUsingWrapper()) {
 			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
 		
+	}
+	
+	public boolean xmlRemoteCodeExecVuln() {
+		return xmlRemoteCodeExec;
 	}
 
 	public static boolean checkForGCJCharConversionBug() {	
@@ -4808,8 +4821,6 @@ public class Node implements TimeSkewDetectorCallback {
 			SimpleFieldSet fs = null;
 			try {
 				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
-				fs.putOverwrite("source_nodename", Base64.encode(darkSource.getName().getBytes("UTF-8")));
-				fs.putOverwrite("target_nodename", Base64.encode(getMyName().getBytes("UTF-8")));
 			} catch (UnsupportedEncodingException e) {
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			} catch (IOException e) {
@@ -5140,7 +5151,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.crypto.portNumber;
 	}
 
-	OpennetManager getOpennet() {
+	public OpennetManager getOpennet() {
 		return opennet;
 	}
 	

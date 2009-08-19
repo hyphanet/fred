@@ -63,7 +63,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -71,13 +71,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
 		ctx.canWriteClientCache = canWriteClientCache;
+		ctx.compressorDescriptor = compressorDescriptor;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
 			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -85,6 +86,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
 		ctx.canWriteClientCache = canWriteClientCache;
+		ctx.compressorDescriptor = compressorDescriptor;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
@@ -103,6 +105,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
+		ctx.compressorDescriptor = fs.get("Codecs");
 		String genURI = fs.get("GeneratedURI");
 		if(genURI != null)
 			generatedURI = new FreenetURI(genURI);
@@ -444,6 +447,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		fs.putSingle("ClientName", client.name);
 		fs.putSingle("ClientToken", clientToken);
 		fs.putSingle("DontCompress", Boolean.toString(ctx.dontCompress));
+		if (ctx.compressorDescriptor != null)
+			fs.putSingle("Codecs", ctx.compressorDescriptor);
 		fs.putSingle("MaxRetries", Integer.toString(ctx.maxInsertRetries));
 		fs.putSingle("Finished", Boolean.toString(finished));
 		fs.putSingle("Succeeded", Boolean.toString(succeeded));

@@ -113,5 +113,16 @@ public abstract class SendableGet extends BaseSendableGet {
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.delete(this);
 	}
+
+	/** Caller must activate to depth 1 before calling */
+	public boolean isStorageBroken(ObjectContainer container) {
+		if(!container.ext().isActive(this))
+			throw new IllegalStateException("Must be activated first!");
+		if(!persistent) {
+			Logger.error(this, "Not persistent?!");
+			return true;
+		}
+		return false;
+	}
 	
 }
