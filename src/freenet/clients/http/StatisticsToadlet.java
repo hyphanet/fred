@@ -848,6 +848,8 @@ public class StatisticsToadlet extends Toadlet {
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayload = node.getTotalPayloadSent();
 		long total_payload_rate = totalPayload / nodeUptimeSeconds;
+		long overall_total_out = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesOut;
+		long overall_total_in = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesIn;
 		int percent = (int) (100 * totalPayload / total[0]);
 		long[] rate = node.nodeStats.getNodeIOStats();
 		long delta = (rate[5] - rate[2]) / 1000;
@@ -863,9 +865,11 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("inputRate", new String[] { "rate", "max" }, new String[] { SizeUtil.formatSize(input_rate, true), SizeUtil.formatSize(inputBandwidthLimit, true) }));
 			activityList.addChild("li", l10n("outputRate", new String[] { "rate", "max" }, new String[] { SizeUtil.formatSize(output_rate, true), SizeUtil.formatSize(outputBandwidthLimit, true) }));
 		}
-		activityList.addChild("li", l10n("totalInput", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[1], true), SizeUtil.formatSize(total_input_rate, true) }));
-		activityList.addChild("li", l10n("totalOutput", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[0], true), SizeUtil.formatSize(total_output_rate, true) } ));
+		activityList.addChild("li", l10n("totalInputSession", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[1], true), SizeUtil.formatSize(total_input_rate, true) }));
+		activityList.addChild("li", l10n("totalOutputSession", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[0], true), SizeUtil.formatSize(total_output_rate, true) } ));
 		activityList.addChild("li", l10n("payloadOutput", new String[] { "total", "rate", "percent" }, new String[] { SizeUtil.formatSize(totalPayload, true), SizeUtil.formatSize(total_payload_rate, true), Integer.toString(percent) } ));
+		activityList.addChild("li", l10n("totalInput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_in, true) }));
+		activityList.addChild("li", l10n("totalOutput", new String[] { "total" }, new String[] { SizeUtil.formatSize(overall_total_out, true) } ));
 		if(isAdvancedModeEnabled) {
 			long totalBytesSentCHKRequests = node.nodeStats.getCHKRequestTotalBytesSent();
 			long totalBytesSentSSKRequests = node.nodeStats.getSSKRequestTotalBytesSent();

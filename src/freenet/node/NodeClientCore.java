@@ -15,6 +15,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
+import freenet.client.async.BandwidthStatsPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
@@ -97,7 +98,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		});
 	}
-	
+
+	public final BandwidthStatsPutter bandwidthStatsPutter;
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -221,7 +223,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			String msg = "Could not find or create temporary directory (filename generator)";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
-		
+
+		this.bandwidthStatsPutter = new BandwidthStatsPutter(this.node);
+		if (container != null) {
+			bandwidthStatsPutter.restorePreviousData(container);
+			this.getTicker().queueTimedJob(new Runnable() {
+				public void run() {
+					try {
+						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+						getTicker().queueTimedJob(this, BandwidthStatsPutter.OFFSET);
+					} catch (DatabaseDisabledException e) {
+						// Should be safe to ignore.
+					}
+				}
+			}, BandwidthStatsPutter.OFFSET);
+		}
+
 		uskManager = new USKManager(this);
 
 		// Persistent temp files
@@ -655,6 +672,19 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return false;
 			}
 		}
+
+		bandwidthStatsPutter.restorePreviousData(container);
+		this.getTicker().queueTimedJob(new Runnable() {
+			public void run() {
+				try {
+					queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+					getTicker().queueTimedJob(this, BandwidthStatsPutter.OFFSET);
+				} catch (DatabaseDisabledException e) {
+					// Should be safe to ignore.
+				}
+			}
+		}, BandwidthStatsPutter.OFFSET);
+
 		// CONCURRENCY: We need everything to have hit its various memory locations.
 		// How to ensure this?
 		// FIXME This is a hack!!
@@ -738,6 +768,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		} catch (DatabaseDisabledException e) {
 			// Safe to ignore
 		}
+
 		persister.start();
 		
 		storeChecker.start(node.executor, "Datastore checker");
@@ -770,7 +801,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return NativeThread.LOW_PRIORITY;
 			}
 		}, "Startup completion thread");
-		
+
 		if(!killedDatabase)
 			clientDatabaseExecutor.start(node.executor, "Client database access thread");
 	}
