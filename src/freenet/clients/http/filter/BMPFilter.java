@@ -185,8 +185,8 @@ public class BMPFilter implements ContentDataFilter {
 	}
 
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {
-		
-		String message = "";
+		// Throw an exception
+		String message = l10n("notBMP");
 		if(reason != null) message += ' ' + reason;
 		if(shortReason != null)
 			message += " - (" + shortReason + ')';
