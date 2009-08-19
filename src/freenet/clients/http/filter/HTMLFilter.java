@@ -332,8 +332,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append("&gt;");
 							} else if (c == '<') {
 								b.append("&lt;");
-							} else if (c=='&') {
-								b.append("&amp;");
+//							} else if (c=='&') {
+//								b.append("&amp;");
 							} else if (c== '\u00A0') {
 								b.append("&nbsp;");
 							}
@@ -349,8 +349,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append("&lt;");
 							} else if (c == '>') {
 								b.append("&gt;");
-							}else if (c=='&') {
-								b.append("&amp;");
+//							}else if (c=='&') {
+//								b.append("&amp;");
 							} else if (c== '\u00A0') {
 								b.append("&nbsp;");
 							} 
