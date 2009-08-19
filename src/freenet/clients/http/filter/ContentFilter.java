@@ -58,6 +58,16 @@ public class ContentFilter {
 				true, false, new PNGFilter(true, true, true), null, false, false, false, false, true, false,
 				l10n("imagePngReadAdvice"),
 				l10n("imagePngWriteAdvice"), false, null, null));
+
+
+		// BMP - has a filter
+		// Reference: http://filext.com/file-extension/BMP
+		register(new MIMEType("image/bmp", "bmp", new String[] { "image/x-bmp","image/x-bitmap","image/x-xbitmap","image/x-win-bitmap","image/x-windows-bmp","image/ms-bmp","image/x-ms-bmp","application/bmp","application/x-bmp","application/x-win-bitmap"  }, new String[0],
+				true, false, new BMPFilter(), null, false, false, false, false, true, false,
+				l10n("imageBMPReadAdvice"),
+				l10n("imageBMPWriteAdvice"), false, null, null));	
+
+
 		
 		// ICO - probably safe - FIXME check this out, write filters
 		register(new MIMEType("image/x-icon", "ico", new String[] { "image/vnd.microsoft.icon", "image/ico", "application/ico"}, 
