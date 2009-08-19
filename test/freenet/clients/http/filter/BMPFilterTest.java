@@ -46,7 +46,7 @@ public class BMPFilterTest extends TestCase {
 			} 	
 
 			catch (FileNotFoundException e) {
-				System.out.println(filename + " not found, test skipped");
+				assertFalse(filename +" not found in BMP test", false);
 				continue;
 			}
 			catch (IOException e) {
