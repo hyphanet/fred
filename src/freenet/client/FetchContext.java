@@ -29,7 +29,6 @@ public class FetchContext implements Cloneable {
 	/** Maximum number of containers to fetch during a request */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
-	public int maxSplitfileThreads;
 	/** Maximum number of retries (after the original attempt) for a splitfile block */
 	public int maxSplitfileBlockRetries;
 	/** Maximum number of retries (after the original attempt) for a non-splitfile block */
@@ -70,7 +69,7 @@ public class FetchContext implements Cloneable {
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
-			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
+			boolean dontEnterImplicitArchives, 
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
@@ -85,7 +84,6 @@ public class FetchContext implements Cloneable {
 		this.maxArchiveRestarts = maxArchiveRestarts;
 		this.maxArchiveLevels = maxArchiveLevels;
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
-		this.maxSplitfileThreads = maxSplitfileThreads;
 		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
 		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
 		this.maxUSKRetries = maxUSKRetries;
@@ -136,7 +134,6 @@ public class FetchContext implements Cloneable {
 		this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 		this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 		this.maxRecursionLevel = ctx.maxRecursionLevel;
-		this.maxSplitfileThreads = ctx.maxSplitfileThreads;
 		this.returnZIPManifests = ctx.returnZIPManifests;
 		this.canWriteClientCache = ctx.canWriteClientCache;
 
@@ -146,7 +143,6 @@ public class FetchContext implements Cloneable {
 			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
 			this.dontEnterImplicitArchives = true;
-			this.maxSplitfileThreads = 0;
 			this.allowSplitfiles = false;
 			this.followRedirects = false;
 			this.maxDataBlocksPerSegment = 0;

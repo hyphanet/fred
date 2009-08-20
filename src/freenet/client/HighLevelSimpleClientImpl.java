@@ -55,8 +55,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final int MAX_ARCHIVE_LEVELS = 4;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
-	/** Number of threads used by a splitfile fetch */
-	static final int SPLITFILE_THREADS = 20;
 	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
 	// for interactive requests mostly.
 	/** Number of retries allowed per block in a splitfile. */
@@ -248,7 +246,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return 			
 			new FetchContext(maxLength, maxTempLength, curMaxMetadataLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES, 
-				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
+				SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, eventProducer, 
