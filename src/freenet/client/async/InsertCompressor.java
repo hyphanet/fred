@@ -43,6 +43,7 @@ public class InsertCompressor implements CompressJob {
 	/** BucketFactory */
 	public final BucketFactory bucketFactory;
 	public final boolean persistent;
+	public final String compressorDescriptor;
 	private transient boolean scheduled;
 	private static volatile boolean logMINOR;
 	
@@ -63,6 +64,7 @@ public class InsertCompressor implements CompressJob {
 		this.minSize = minSize2;
 		this.bucketFactory = bf;
 		this.persistent = persistent;
+		this.compressorDescriptor = inserter.ctx.compressorDescriptor;
 	}
 
 	public void init(ObjectContainer container, final ClientContext ctx) {
@@ -114,7 +116,7 @@ public class InsertCompressor implements CompressJob {
 		// Stop when run out of algorithms, or the compressed data fits in a single block.
 		try {
 			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024);
-			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(inserter.ctx.compressorDescriptor);
+			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor);
 			for (final COMPRESSOR_TYPE comp : comps) {
 				boolean shouldFreeOnFinally = true;
 				Bucket result = null;

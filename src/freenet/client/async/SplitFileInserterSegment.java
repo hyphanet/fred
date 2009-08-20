@@ -489,7 +489,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						deactivate = !container.ext().isActive(dataBlocks[i]);
 						if(deactivate) container.activate(dataBlocks[i], 1);
 					}
-					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i]).getClientKey();
+					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i], parent.ctx.compressorDescriptor).getClientKey();
 					if(deactivate) container.deactivate(dataBlocks[i], 1);
 					onEncode(i, key, container, context);
 				} catch (CHKEncodeException e) {
@@ -510,7 +510,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							deactivate = !container.ext().isActive(checkBlocks[i]);
 							if(deactivate) container.activate(checkBlocks[i], 1);
 						}
-						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i]).getClientKey();
+						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i], parent.ctx.compressorDescriptor).getClientKey();
 						if(deactivate) container.deactivate(checkBlocks[i], 1);
 						onEncode(i+dataBlocks.length, key, container, context);
 					} catch (CHKEncodeException e) {
@@ -1289,18 +1289,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return 0;
 	}
 
-	@Override
-	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
-		return new SendableRequestSender() {
-
-			public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
+	class MySendableRequestSender implements SendableRequestSender {
+		private final String compressorDescriptor;
+		MySendableRequestSender(String compressorDescriptor2) {
+			compressorDescriptor = compressorDescriptor2;
+		}
+		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
 				try {
 					BlockItem block = (BlockItem) req.token;
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: "+SplitFileInserterSegment.this+" block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
-						b = encodeBucket(block.copyBucket);
+						b = encodeBucket(block.copyBucket, compressorDescriptor);
 					} catch (CHKEncodeException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (MalformedURLException e) {
@@ -1352,11 +1353,24 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				return true;
 			}
 			
-		};
+		
+	}
+	
+	@Override
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		SendableRequestSender result;
+		if(persistent) {
+			container.activate(parent, 1);
+		}
+		result = new MySendableRequestSender(parent.ctx.compressorDescriptor);
+		if(persistent) {
+			container.activate(parent, 1);
+		}
+		return result;
 	}
 
-	protected ClientCHKBlock encodeBucket(Bucket copyBucket) throws CHKEncodeException, IOException {
-		return ClientCHKBlock.encode(copyBucket, false, true, (short)-1, CHKBlock.DATA_LENGTH, parent.ctx.compressorDescriptor);
+	protected ClientCHKBlock encodeBucket(Bucket copyBucket, String compressorDescriptor) throws CHKEncodeException, IOException {
+		return ClientCHKBlock.encode(copyBucket, false, true, (short)-1, CHKBlock.DATA_LENGTH, compressorDescriptor);
 	}
 
 	@Override

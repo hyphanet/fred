@@ -463,97 +463,105 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public synchronized boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
+
+	class MySendableRequestSender implements SendableRequestSender {
+
+		final String compressorDescriptor;
+
+		MySendableRequestSender() {
+			compressorDescriptor = ctx.compressorDescriptor;
+		}
+
+		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
+			// Ignore keyNum, key, since we're only sending one block.
+			ClientKeyBlock b;
+			ClientKey key = null;
+			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
+			BlockItem block = (BlockItem) req.token;
+			try {
+				try {
+					b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, compressorDescriptor);
+				} catch (CHKEncodeException e) {
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+				} catch (SSKEncodeException e) {
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+				} catch (MalformedURLException e) {
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+				} catch (InsertException e) {
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+				} catch (IOException e) {
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+				} catch (InvalidCompressionCodecException e) {
+					throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
+				}
+				if (b==null) {
+					Logger.error(this, "Asked to send empty block on "+SingleBlockInserter.this, new Exception("error"));
+					return false;
+				}
+				key = b.getClientKey();
+				final ClientKey k = key;
+				if(block.persistent) {
+				context.jobRunner.queue(new DBJob() {
+
+					public boolean run(ObjectContainer container, ClientContext context) {
+						if(!container.ext().isStored(SingleBlockInserter.this)) return false;
+						container.activate(SingleBlockInserter.this, 1);
+						onEncode(k, container, context);
+						container.deactivate(SingleBlockInserter.this, 1);
+						return false;
+					}
+					
+				}, NativeThread.NORM_PRIORITY+1, false);
+				} else {
+					context.mainExecutor.execute(new Runnable() {
+
+						public void run() {
+							onEncode(k, null, context);
+						}
+						
+					}, "Got URI");
+					
+				}
+				core.realPut(b, req.cacheLocalRequests, req.canWriteClientCache);
+			} catch (LowLevelPutException e) {
+				if(e.code == LowLevelPutException.COLLISION) {
+					// Collision
+					try {
+						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true, true, req.canWriteClientCache, false);
+						byte[] data = collided.memoryDecode(true);
+						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
+						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
+							if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data: "+SingleBlockInserter.this);
+							req.onInsertSuccess(context);
+							return true;
+						}
+					} catch (KeyVerifyException e1) {
+						Logger.error(this, "Caught "+e1+" when checking collision!", e1);
+					} catch (KeyDecodeException e1) {
+						Logger.error(this, "Caught "+e1+" when checking collision!", e1);
+					} catch (IOException e1) {
+						Logger.error(this, "Caught "+e1+" when checking collision!", e1);
+					}
+				}
+				req.onFailure(e, context);
+				if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
+				return true;
+			} catch (DatabaseDisabledException e) {
+				// Impossible, and nothing to do.
+				Logger.error(this, "Running persistent insert but database is disabled!");
+			} finally {
+				block.copyBucket.free();
+			}
+			if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded: "+SingleBlockInserter.this);
+			req.onInsertSuccess(context);
+			return true;
+		}
+	}
+
 	
 	@Override
 	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
-		return new SendableRequestSender() {
-
-			public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
-				// Ignore keyNum, key, since we're only sending one block.
-				ClientKeyBlock b;
-				ClientKey key = null;
-				if(SingleBlockInserter.logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
-				BlockItem block = (BlockItem) req.token;
-				try {
-					try {
-						b = innerEncode(context.random, block.uri, block.copyBucket, block.isMetadata, block.compressionCodec, block.sourceLength, ctx.compressorDescriptor);
-					} catch (CHKEncodeException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
-					} catch (SSKEncodeException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
-					} catch (MalformedURLException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
-					} catch (InsertException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
-					} catch (IOException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
-					} catch (InvalidCompressionCodecException e) {
-						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage(), e);
-					}
-					if (b==null) {
-						Logger.error(this, "Asked to send empty block on "+SingleBlockInserter.this, new Exception("error"));
-						return false;
-					}
-					key = b.getClientKey();
-					final ClientKey k = key;
-					if(block.persistent) {
-					context.jobRunner.queue(new DBJob() {
-
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(SingleBlockInserter.this)) return false;
-							container.activate(SingleBlockInserter.this, 1);
-							onEncode(k, container, context);
-							container.deactivate(SingleBlockInserter.this, 1);
-							return false;
-						}
-						
-					}, NativeThread.NORM_PRIORITY+1, false);
-					} else {
-						context.mainExecutor.execute(new Runnable() {
-
-							public void run() {
-								onEncode(k, null, context);
-							}
-							
-						}, "Got URI");
-						
-					}
-					core.realPut(b, req.cacheLocalRequests, req.canWriteClientCache);
-				} catch (LowLevelPutException e) {
-					if(e.code == LowLevelPutException.COLLISION) {
-						// Collision
-						try {
-							ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true, true, req.canWriteClientCache, false);
-							byte[] data = collided.memoryDecode(true);
-							byte[] inserting = BucketTools.toByteArray(block.copyBucket);
-							if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
-								if(SingleBlockInserter.logMINOR) Logger.minor(this, "Collided with identical data: "+SingleBlockInserter.this);
-								req.onInsertSuccess(context);
-								return true;
-							}
-						} catch (KeyVerifyException e1) {
-							Logger.error(this, "Caught "+e1+" when checking collision!", e1);
-						} catch (KeyDecodeException e1) {
-							Logger.error(this, "Caught "+e1+" when checking collision!", e1);
-						} catch (IOException e1) {
-							Logger.error(this, "Caught "+e1+" when checking collision!", e1);
-						}
-					}
-					req.onFailure(e, context);
-					if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
-					return true;
-				} catch (DatabaseDisabledException e) {
-					// Impossible, and nothing to do.
-					Logger.error(this, "Running persistent insert but database is disabled!");
-				} finally {
-					block.copyBucket.free();
-				}
-				if(SingleBlockInserter.logMINOR) Logger.minor(this, "Request succeeded: "+SingleBlockInserter.this);
-				req.onInsertSuccess(context);
-				return true;
-			}
-			
-		};
+		return new MySendableRequestSender();
 	}
 
 	@Override
