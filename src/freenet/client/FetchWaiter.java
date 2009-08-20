@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 
+/** Provides a blocking wrapper for a fetch. Used for simple blocking APIs such as HighLevelSimpleClient. */
 public class FetchWaiter implements ClientGetCallback {
 
 	private FetchResult result;
@@ -28,6 +29,7 @@ public class FetchWaiter implements ClientGetCallback {
 		notifyAll();
 	}
 
+	/** Wait for the request to complete, return the results, throw if it failed. */
 	public synchronized FetchResult waitForCompletion() throws FetchException {
 		while(!finished) {
 			try {

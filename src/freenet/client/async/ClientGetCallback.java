@@ -8,6 +8,9 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 
+/** Internal callback interface for requests. Methods are called on the database thread if the request
+ * is persistent, otherwise on whatever thread completed the request (therefore with a null container).
+ */
 public interface ClientGetCallback extends ClientBaseCallback {
 	/** Called on successful fetch. Caller should schedule a job on the Ticker
 	 * or Executor (on the ClientContext) if it needs to do much work. */

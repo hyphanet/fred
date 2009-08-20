@@ -11,8 +11,10 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 /**
- * Generic exception thrown by a Fetcher. All other exceptions are converted to one of
- * these to tell the client.
+ * Thrown when a high-level request (fetch) fails. Indicates why, whether it is worth retrying, and may give a 
+ * new URI to try, the expected size of the file, its expected MIME type, and whether these are reliable.
+ * For most failure modes, except INTERNAL_ERROR there will be no stack trace, or it will be unhelpful or 
+ * inaccurate. 
  */
 public class FetchException extends Exception {
 	private static volatile boolean logMINOR;
@@ -23,27 +25,39 @@ public class FetchException extends Exception {
 
 	private static final long serialVersionUID = -1106716067841151962L;
 	
+	/** Failure mode */
 	public final int mode;
 	
+	/** Try this URI instead. If we fetch a USK and there is a more recent version, for example, we will get
+	 * a FetchException, but it will give a new URI to try so we can update our links, bookmarks, or convert
+	 * it to an HTTP Permanent Redirect. */
 	public final FreenetURI newURI;
 	
+	/** The expected size of the data had the fetch succeeded, or -1. May not be accurate. If retrying 
+	 * after TOO_BIG, you need to set the temporary and final data limits to at least this big! */
 	public final long expectedSize;
 	
+	/** The expected final MIME type, or null. */
 	String expectedMimeType;
 	
+	/** If true, the expected MIME type and size are probably accurate. */
 	boolean finalizedSizeAndMimeType;
 	
+	/** Do we know the expected MIME type of the data? */
 	public String getExpectedMimeType() {
 		return expectedMimeType;
 	}
 
+	/** Do we have any idea of the final size of the data? */
 	public boolean finalizedSize() {
 		return finalizedSizeAndMimeType;
 	}
 	
-	/** For collection errors */
+	/** If there are many failures, usually in a splitfile fetch, tracks the number of failures of each 
+	 * type. */
 	public final FailureCodeTracker errorCodes;
 	
+	/** Extra information about the failure. */
 	public final String extraMessage;
 	
 	/** Get the failure mode. */
@@ -288,6 +302,7 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
+	/** Get the (localised) short name of this failure mode. */
 	public static String getShortMessage(int mode) {
 		String ret = L10n.getString("FetchException.shortError."+mode);
 		if(ret == null)
@@ -315,6 +330,7 @@ public class FetchException extends Exception {
 		return sb.toString();
 	}
 	
+	/** Get the (localised) long explanation for this failure mode. */
 	public static String getMessage(int mode) {
 		String ret = L10n.getString("FetchException.longError."+mode);
 		if(ret == null)
@@ -395,6 +411,7 @@ public class FetchException extends Exception {
 		return isFatal(mode);
 	}
 
+	/** Is an error mode fatal i.e. is there no point retrying? */
 	@SuppressWarnings("deprecation")
 	public static boolean isFatal(int mode) {
 		switch(mode) {
@@ -448,10 +465,12 @@ public class FetchException extends Exception {
 		}
 	}
 
+	/** Call to indicate the expected size and MIME type are unreliable. */
 	public void setNotFinalizedSize() {
 		this.finalizedSizeAndMimeType = false;
 	}
 
+	/** Remove from the database. */
 	public void removeFrom(ObjectContainer container) {
 		if(errorCodes != null)
 			errorCodes.removeFrom(container);

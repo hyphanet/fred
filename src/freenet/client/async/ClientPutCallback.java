@@ -8,6 +8,10 @@ import com.db4o.ObjectContainer;
 import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
 
+/** Internal callback interface for inserts (including site inserts). Methods are called on the 
+ * database thread if the request is persistent, otherwise on whatever thread completed the request 
+ * (therefore with a null container).
+ */
 public interface ClientPutCallback extends ClientBaseCallback {
 	/** Called when URI is know (e.g. after encode all CHK blocks) */
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);

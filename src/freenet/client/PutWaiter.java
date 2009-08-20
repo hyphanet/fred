@@ -7,6 +7,7 @@ import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
+/** Provides a blocking wrapper for an insert. Used for simple blocking APIs such as HighLevelSimpleClient. */
 public class PutWaiter implements ClientPutCallback {
 
 	private boolean finished;
@@ -35,6 +36,7 @@ public class PutWaiter implements ClientPutCallback {
 		Logger.error(this, "URI already set: "+this.uri+" but new URI: "+uri, new Exception("error"));
 	}
 
+	/** Waits for the insert to finish, returns the URI generated, throws if it failed. */
 	public synchronized FreenetURI waitForCompletion() throws InsertException {
 		while(!finished) {
 			try {
