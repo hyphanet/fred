@@ -95,10 +95,31 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.binaryBlob = binaryBlob;
 	}
 
+	/** Start the insert.
+	 * @param earlyEncode If true, try to find the final URI as quickly as possible, and insert the upper
+	 * layers as soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
+	 * because an attacker can usually only identify the datastream once he has the top block, or once you
+	 * have announced the key.
+	 * @param container The database. If the insert is persistent, this must be non-null, and we must be 
+	 * running on the database thread. This is true for all methods taking a container parameter.
+	 * @param context Contains some useful transient fields such as the schedulers.
+	 * @throws InsertException If the insert cannot be started for some reason.
+	 */
 	public void start(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
 		start(earlyEncode, false, container, context);
 	}
 	
+	/** Start the insert.
+	 * @param earlyEncode If true, try to find the final URI as quickly as possible, and insert the upper
+	 * layers as soon as we can, rather than waiting for the lower layers. The default behaviour is safer,
+	 * because an attacker can usually only identify the datastream once he has the top block, or once you
+	 * have announced the key.
+	 * @param restart If true, restart the insert even though it has completed before.
+	 * @param container The database. If the insert is persistent, this must be non-null, and we must be 
+	 * running on the database thread. This is true for all methods taking a container parameter.
+	 * @param context Contains some useful transient fields such as the schedulers.
+	 * @throws InsertException If the insert cannot be started for some reason.
+	 */
 	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
 		if(persistent())
 			container.activate(client, 1);
@@ -211,6 +232,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
+	/** Called when the insert succeeds. */
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(client, 1);
@@ -237,6 +259,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onSuccess(this, container);
 	}
 
+	/** Called when the insert fails. */
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "onFailure() for "+this+" : "+state+" : "+e, e);
 		if(persistent())
@@ -259,6 +282,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onFailure(e, this, container);
 	}
 
+	/** Called when significant milestones are passed. */
 	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		if(persistent())
@@ -266,6 +290,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onMajorProgress(container);
 	}
 	
+	/** Called when we know the final URI of the insert. */
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(client, 1);
@@ -284,6 +309,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onGeneratedURI(uri, this, container);
 	}
 
+	/** Cancel the insert. Will call onFailure() if it is not already cancelled, so the callback will 
+	 * normally be called. */
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -304,16 +331,20 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 	}
 	
+	/** Has the insert completed already? */
 	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 
+	/** Get the final URI to the inserted data */
 	@Override
 	public FreenetURI getURI() {
 		return uri;
 	}
 
+	/** Called when a ClientPutState transitions to a new state. If this is the current state, then we update
+	 * it, but it might also be a subsidiary state, in which case we ignore it. */
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(newState == null) throw new NullPointerException();
 		
@@ -329,6 +360,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
 	}
 
+	/** Called when we have generated metadata for the insert. This should not happen, because we should
+	 * insert the metadata! */
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
@@ -340,6 +373,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 	
+	/** Notify listening clients that an insert has been sent to the network. */
 	@Override
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
@@ -349,18 +383,22 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), container, context);
 	}
 
+	/** Called when we know exactly how many blocks will be needed. */
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized(container, context);
 	}
 
+	/** Called (sometimes) when enough of the data has been inserted that the file can now be fetched. Not
+	 * very useful unless earlyEncode was enabled. */
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		if(persistent())
 			container.activate(client, 1);
 		client.onFetchable(this, container);
 	}
 
+	/** Can we restart the insert? */
 	public boolean canRestart() {
 		if(currentState != null && !finished) {
 			Logger.minor(this, "Cannot restart because not finished for "+uri);
@@ -370,6 +408,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
+	/** Restart the insert. 
+	 * @param earlyEncode See the description on @link start().
+	 * @param container The database. If the insert is persistent, this must be non-null, and we must be 
+	 * running on the database thread. This is true for all places where we pass in an ObjectContainer.
+	 * @return True if the insert restarted successfully.
+	 * @throws InsertException If the insert could not be restarted for some reason.
+	 * */
 	public boolean restart(boolean earlyEncode, ObjectContainer container, ClientContext context) throws InsertException {
 		return start(earlyEncode, true, container, context);
 	}
@@ -379,6 +424,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		// Ignore, at the moment
 	}
 
+	/** Remove the ClientPutter from the database. */
 	@Override
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(cm, 2);
