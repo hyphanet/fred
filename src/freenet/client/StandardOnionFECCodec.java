@@ -16,22 +16,22 @@ import freenet.support.Logger;
 public class StandardOnionFECCodec extends FECCodec {
 	// REDFLAG: How big is one of these?
 	private static int MAX_CACHED_CODECS = 8;
-	
+
 	static boolean noNative;
 
 	private static final LRUHashtable recentlyUsedCodecs = new LRUHashtable();
-	
+
 	private static class MyKey {
 		/** Number of input blocks */
 		int k;
 		/** Number of output blocks, including input blocks */
 		int n;
-		
+
 		public MyKey(int n, int k) {
 			this.n = n;
 			this.k = k;
 		}
-		
+
 		@Override
 		public boolean equals(Object o) {
 			if(o instanceof MyKey) {
@@ -39,7 +39,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				return (key.n == n) && (key.k == k);
 			} else return false;
 		}
-		
+
 		@Override
 		public int hashCode() {
 			return (n << 16) + k;
@@ -63,12 +63,12 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	public StandardOnionFECCodec(int k, int n) {
 		super(k, n);
-		
+
 		loadFEC();
-		
+
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
-	
+
 	@Override
 	protected void loadFEC() {
 		synchronized(this) {
@@ -78,18 +78,21 @@ public class StandardOnionFECCodec extends FECCodec {
 		if(!noNative) {
 			try {
 				fec2 = new Native8Code(k,n);
+				System.out.println("Loaded native FEC.");
+				Logger.normal(this, "Loaded native FEC.");
+
 			} catch (Throwable t) {
 				if(!noNative) {
 					System.err.println("Failed to load native FEC: "+t);
 					t.printStackTrace();
 				}
 				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+ ')', t);
-				
+
 				if(t instanceof UnsatisfiedLinkError)
 					noNative = true;
 			}
 		}
-		
+
 		if (fec2 != null){
 			synchronized(this) {
 			fec = fec2;
@@ -111,7 +114,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	public int countCheckBlocks() {
 		return n-k;
 	}
-	
+
 	@Override
 	public String toString() {
 		return super.toString()+":n="+n+",k="+k;
