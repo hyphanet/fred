@@ -21,20 +21,34 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/** A high level insert. */
 public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
 
+	/** Callback for when the insert completes. */
 	final ClientPutCallback client;
+	/** The data to insert. */
 	final Bucket data;
+	/** The URI to insert it to. Can be CHK@. */
 	final FreenetURI targetURI;
+	/** The ClientMetadata i.e. the MIME type and any other client-visible metadata. */
 	final ClientMetadata cm;
+	/** Config settings for this insert - what kind of splitfile to use if needed etc. */
 	final InsertContext ctx;
+	/** Target filename. If specified, we create manifest metadata so that the file can be accessed at
+	 * [ final key ] / [ target filename ]. */
 	final String targetFilename;
+	/** The current state of the insert. */
 	private ClientPutState currentState;
+	/** Whether the insert has finished. */
 	private boolean finished;
+	/** If true, don't actually insert the data, just figure out what the final key would be. */
 	private final boolean getCHKOnly;
+	/** Are we inserting metadata? */
 	private final boolean isMetadata;
 	private boolean startedStarting;
+	/** Are we inserting a binary blob? */
 	private final boolean binaryBlob;
+	/** The final URI for the data. */
 	private FreenetURI uri;
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
