@@ -56,6 +56,15 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		Logger.registerClass(BaseManifestPutter.class);
 	}
 
+	/**
+	 * ArchivePutHandler - wrapper for ContainerInserter
+	 * 
+	 * Archives are not part of the site structure, they are used to group files that
+	 * not fit into a container (for example a directory with brazilion files it)
+	 * Archives are always inserted as CHK, references to items in it
+	 * are normal redirects to CHK@blah,blub,AA/nameinarchive
+	 *
+	 */
 	private final class ArchivePutHandler extends PutHandler {
 
 		private ArchivePutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, boolean getCHKOnly) {
@@ -118,6 +127,14 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		}
 	}
 
+	/**
+	 * ContainerPutHandler - wrapper for ContainerInserter
+	 * 
+	 * Containers are an integral part of the site structure, they are 
+	 * inserted as CHK, the root container is inserted at targetURI.
+	 * references to items in it are ARCHIVE_INTERNAL_REDIRECT
+	 * 
+	 */
 	private final class ContainerPutHandler extends PutHandler {
 
 		private ContainerPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, HashMap<String, Object> data, FreenetURI insertURI, Object object, boolean getCHKOnly, HashSet<PutHandler> runningMap) {
@@ -891,6 +908,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	private ContainerPutHandler rootContainerPutHandler;
 	private HashSet<PutHandler> containerPutHandlers;
 	private HashMap<PutHandler, HashSet<PutHandler>> perContainerPutHandlersWaitingForMetadata;
+	/**
+	 * PutHandler: the *PutHandler
+	 * HashMap<String, Object>: the 'metadata dir' that contains the item inserted by PutHandler
+	 * the *PutHandler fills in its result here (Metadata)
+	 */
 	private HashMap<PutHandler, HashMap<String, Object>> putHandlersTransformMap;
 	private HashMap<ArchivePutHandler, Vector<PutHandler>> putHandlersArchiveTransformMap;
 
