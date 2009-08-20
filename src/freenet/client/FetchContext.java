@@ -20,25 +20,38 @@ public class FetchContext implements Cloneable {
 	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
 	public static final int SPLITFILE_DEFAULT_MASK = 2;
 	public static final int SET_RETURN_ARCHIVES = 4;
-	/** Low-level client to send low-level requests to. */
+	/** Maximum length of the final returned data */
 	public long maxOutputLength;
+	/** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
 	public long maxTempLength;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
+	/** Maximum number of containers to fetch during a request */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
 	public int maxSplitfileThreads;
+	/** Maximum number of retries (after the original attempt) for a splitfile block */
 	public int maxSplitfileBlockRetries;
+	/** Maximum number of retries (after the original attempt) for a non-splitfile block */
 	public int maxNonSplitfileRetries;
 	public final int maxUSKRetries;
+	/** Whether to download splitfiles */
 	public boolean allowSplitfiles;
+	/** Whether to follow simple redirects */
 	public boolean followRedirects;
+	/** If true, only read from the datastore and caches, do not send the request to the network */
 	public boolean localRequestOnly;
+	/** If true, send the request to the network without checking whether the data is in the local store */
 	public boolean ignoreStore;
+	/** Client events will be published to this, you can subscribe to them */
 	public final ClientEventProducer eventProducer;
 	public int maxMetadataSize;
+	/** Maximum number of data blocks per segment for splitfiles */
 	public int maxDataBlocksPerSegment;
+	/** Maximum number of check blocks per segment for splitfiles. Will be reduced proportionally if there
+	 * are fewer data blocks. */
 	public int maxCheckBlocksPerSegment;
+	/** Whether the data returned should be cached */
 	public boolean cacheLocalRequests;
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
@@ -46,8 +59,13 @@ public class FetchContext implements Cloneable {
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public final BlockSet blocks;
+	/** If non-null, the request will be stopped if it has a MIME type that is not one of these, 
+	 * or has no MIME type. */
 	public Set allowedMIMETypes;
+	/** Do we have responsibility for removing the ClientEventProducer from the database? */
 	private final boolean hasOwnEventProducer;
+	/** Can this request write to the client-cache? We don't store all requests in the client cache,
+	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
 	public boolean canWriteClientCache;
 	
 	public FetchContext(long curMaxLength, 
