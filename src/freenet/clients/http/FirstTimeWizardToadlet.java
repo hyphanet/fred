@@ -376,7 +376,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		return L10n.getString("SecurityLevels."+key, pattern, value);
 	}
 
-	public void handleMetodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
