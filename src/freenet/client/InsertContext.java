@@ -21,7 +21,6 @@ public class InsertContext {
 	public boolean dontCompress;
 	public final short splitfileAlgorithm;
 	public int maxInsertRetries;
-	final int maxSplitInsertThreads;
 	public final int consecutiveRNFsCountAsSuccess;
 	public final int splitfileSegmentDataBlocks;
 	public final int splitfileSegmentCheckBlocks;
@@ -37,7 +36,7 @@ public class InsertContext {
 	public String compressorDescriptor;
 
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
-			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
+			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean cacheLocalRequests, boolean canWriteClientCache, String compressorDescriptor) {
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
@@ -45,7 +44,6 @@ public class InsertContext {
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
 		this.maxInsertRetries = maxRetries;
-		this.maxSplitInsertThreads = maxThreads;
 		this.eventProducer = eventProducer;
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
@@ -61,7 +59,6 @@ public class InsertContext {
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
 		this.maxInsertRetries = ctx.maxInsertRetries;
-		this.maxSplitInsertThreads = ctx.maxSplitInsertThreads;
 		this.eventProducer = producer;
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
