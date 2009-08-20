@@ -32,6 +32,7 @@ import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
 /**
+ * Insert a bunch of files as single Archive with .metadata
  * pack the container/archive, then hand it off to SimpleFileInserter
  *
  * TODO persistence
@@ -77,9 +78,11 @@ public class ContainerInserter implements ClientPutState {
 	private final boolean dontCompress;
 
 	/**
+	 * Insert a bunch of files as single Archive with .metadata
+	 * 
 	 * @param metadata2 
 	 * @param archiveType2 
-	 * @param targetURI2 
+	 * @param targetURI2 The caller need to clone it for persistance
 	 * @param token2 
 	 * @param getCHKOnly2 
 	 * @param earlyEncode2 
