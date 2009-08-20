@@ -35,16 +35,25 @@ public interface HighLevelSimpleClient {
 
 	/**
 	 * Blocking fetch of a URI with a configurable max-size.
+	 * @param maxSize The maximum size in bytes of the return data or any intermediary data processed
+	 * to obtain the final output (e.g. containers).
 	 */
 	public FetchResult fetch(FreenetURI uri, long maxSize) throws FetchException;
 	
 	/**
 	 * Blocking fetch of a URI with a configurable max-size and context object.
+	 * @param context Used mainly for scheduling, we round-robin between request clients within a given
+	 * priority and retry count. Also indicates whether the request is persistent, and if so, can remove it.
 	 */
 	public FetchResult fetch(FreenetURI uri, long maxSize, RequestClient context) throws FetchException;
 	
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
+	 * Will return immediately, the callback will be called later.
+	 * @param callback Will be called when the request completes, fails, etc. If the request is persistent
+	 * this will be called on the database thread with a container parameter.
+	 * @param fctx Fetch context so you can customise the search process.
+	 * @return The ClientGetter object, which will have been started already.
 	 */
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
 	
@@ -60,6 +69,10 @@ public interface HighLevelSimpleClient {
 
 	/**
 	 * Non-blocking insert.
+	 * @param isMetadata If true, insert metadata.
+	 * @param cb Will be called when the insert completes. If the request is persistent
+	 * this will be called on the database thread with a container parameter. 
+	 * @param ctx Insert context so you can customise the insertion process.
 	 */
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException;
 
@@ -76,11 +89,17 @@ public interface HighLevelSimpleClient {
 	 */
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException;
 	
+	/**
+	 * Get the FetchContext so you can customise the search process. Has settings for all sorts of things
+	 * such as how many times to retry each block, whether to follow redirects, whether to open containers,
+	 * etc.
+	 */
 	public FetchContext getFetchContext();
 	public FetchContext getFetchContext(long size);
 
 	/**
-	 * Get an InsertContext.
+	 * Get an InsertContext. Has settings for controlling the insertion process, for example which
+	 * compression algorithms to try.
 	 * @param forceNonPersistent If true, force the request to use the non-persistent
 	 * bucket pool.
 	 */
@@ -112,9 +131,8 @@ public interface HighLevelSimpleClient {
 
 	/**
 	 * Prefetch a key at a very low priority. If it hasn't been fetched within the timeout, 
-	 * kill the fetch. 
-	 * @param uri
-	 * @param timeout
+	 * kill the fetch.
+	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null. 
 	 */
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes);
 
