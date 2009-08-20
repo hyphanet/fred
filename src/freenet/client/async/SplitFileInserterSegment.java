@@ -481,6 +481,23 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public void tryEncode(ObjectContainer container, ClientContext context) {
+		boolean deactivateParent = false;
+		boolean deactivateParentCtx = false;
+		if(persistent) {
+			deactivateParent = !container.ext().isActive(parent);
+			deactivateParentCtx = !container.ext().isActive(parent.ctx);
+			if (deactivateParent)
+				container.activate(parent, 1);
+			if (deactivateParentCtx)
+				container.activate(parent.ctx, 1);
+		}
+		String compressorDescriptor = parent.ctx.compressorDescriptor;
+		if(persistent) {
+			if (deactivateParent)
+				container.activate(parent, 1);
+			if (deactivateParentCtx)
+				container.activate(parent.ctx, 1);
+		}
 		for(int i=0;i<dataBlocks.length;i++) {
 			if(dataURIs[i] == null && dataBlocks[i] != null) {
 				try {
@@ -489,16 +506,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						deactivate = !container.ext().isActive(dataBlocks[i]);
 						if(deactivate) container.activate(dataBlocks[i], 1);
 					}
-					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i], parent.ctx.compressorDescriptor).getClientKey();
+					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i], compressorDescriptor).getClientKey();
 					if(deactivate) container.deactivate(dataBlocks[i], 1);
 					onEncode(i, key, container, context);
 				} catch (CHKEncodeException e) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);						
+					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 				} catch (IOException e) {
 					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				}
 			} else if(dataURIs[i] == null && dataBlocks[i] == null) {
-				fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);					
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);
 			}
 		}
 		if(encoded) {
@@ -510,16 +527,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							deactivate = !container.ext().isActive(checkBlocks[i]);
 							if(deactivate) container.activate(checkBlocks[i], 1);
 						}
-						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i], parent.ctx.compressorDescriptor).getClientKey();
+						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i], compressorDescriptor).getClientKey();
 						if(deactivate) container.deactivate(checkBlocks[i], 1);
 						onEncode(i+dataBlocks.length, key, container, context);
 					} catch (CHKEncodeException e) {
-						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);						
+						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);	
 					} catch (IOException e) {
 						fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 					}
 				} else if(checkURIs[i] == null && checkBlocks[i] == null) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);					
+					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);	
 				}
 			}
 		}
@@ -1359,14 +1376,22 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	@Override
 	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
 		SendableRequestSender result;
+		boolean deactivateParent = false;
+		boolean deactivateParentCtx = false;
 		if(persistent) {
-			container.activate(parent, 1);
-			container.activate(parent.ctx, 1);
+			deactivateParent = !container.ext().isActive(parent);
+			deactivateParentCtx = !container.ext().isActive(parent.ctx);
+			if (deactivateParent)
+				container.activate(parent, 1);
+			if (deactivateParentCtx)
+				container.activate(parent.ctx, 1);
 		}
 		result = new MySendableRequestSender(parent.ctx.compressorDescriptor);
 		if(persistent) {
-			container.deactivate(parent.ctx, 1);
-			container.deactivate(parent, 1);
+			if (deactivateParent)
+				container.deactivate(parent, 1);
+			if (deactivateParentCtx)
+				container.deactivate(parent.ctx, 1);
 		}
 		return result;
 	}
