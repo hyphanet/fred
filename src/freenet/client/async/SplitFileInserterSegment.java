@@ -1361,10 +1361,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		SendableRequestSender result;
 		if(persistent) {
 			container.activate(parent, 1);
+			container.activate(parent.ctx, 1);
 		}
 		result = new MySendableRequestSender(parent.ctx.compressorDescriptor);
 		if(persistent) {
-			container.activate(parent, 1);
+			container.deactivate(parent.ctx, 1);
+			container.deactivate(parent, 1);
 		}
 		return result;
 	}
