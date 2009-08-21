@@ -53,6 +53,10 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		mName = myName;
 	}
 	
+	/**
+	 * Tells this TransferThread to start it's execution. You have to call this after constructing an object of an implementing class - it must not
+	 * be called in the constructors of implementing classes.
+	 */
 	public void start() {
 		mNode.executor.execute(this, mName);
 		Logger.debug(this, "Started.");
