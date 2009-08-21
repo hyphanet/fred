@@ -78,8 +78,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		if(!noNative) {
 			try {
 				fec2 = new Native8Code(k,n);
-				System.out.println("Loaded native FEC.");
-				Logger.normal(this, "Loaded native FEC.");
+				Logger.minor(this, "Loaded native FEC.");
 
 			} catch (Throwable t) {
 				if(!noNative) {
