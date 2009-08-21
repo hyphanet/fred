@@ -84,6 +84,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		CHKStore newStore = new CHKStore();
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, new SemiOrderedShutdownHook(), true, true, ticker, null);
+		saltStore.start(null);
 		
 		ramStore.migrateTo(newStore, false);
 		
@@ -113,6 +114,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		CHKStore newStore = new CHKStore();
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, new SemiOrderedShutdownHook(), true, true, ticker, storeKey);
+		saltStore.start(null);
 		
 		ramStore.migrateTo(newStore, false);
 		
