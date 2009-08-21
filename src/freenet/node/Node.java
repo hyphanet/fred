@@ -338,37 +338,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(type.equals("ram")) {
 				Runnable migrate = new MigrateOldStoreData(false);
 				synchronized(this) { // Serialise this part.
-					String suffix = getStoreSuffix();
-					if (val.equals("salt-hash")) {
-						try {
-							initSaltHashFS(suffix, true, null);
-						} catch (NodeInitException e) {
-							Logger.error(this, "Unable to create new store", e);
-							System.err.println("Unable to create new store: "+e);
-							e.printStackTrace();
-							// FIXME l10n both on the NodeInitException and the wrapper message
-							throw new InvalidConfigValueException("Unable to create new store: "+e);
-						}
-					} else if (val.equals("bdb-index")) {
-						try {
-							initBDBFS(suffix);
-						} catch (NodeInitException e) {
-							Logger.error(this, "Unable to create new store", e);
-							System.err.println("Unable to create new store: "+e);
-							e.printStackTrace();
-							// FIXME l10n both on the NodeInitException and the wrapper message
-							throw new InvalidConfigValueException("Unable to create new store: "+e);
-						}
-					} else {
-						initRAMFS();
-					}
-					
-					if (storeType.equals("salt-hash")) {
-						finishInitSaltHashFS(suffix, clientCore);
-					}
-					synchronized(Node.this) {
-						storeType = val;
-					}
+					makeStore(val);
 				}
 				executor.execute(migrate, "Migrate data from previous store");
 			} else {
@@ -896,6 +866,38 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 	}
+
+	public void makeStore(String val) throws InvalidConfigValueException {
+		String suffix = getStoreSuffix();
+		if (val.equals("salt-hash")) {
+			try {
+				initSaltHashFS(suffix, true, null);
+			} catch (NodeInitException e) {
+				Logger.error(this, "Unable to create new store", e);
+				System.err.println("Unable to create new store: "+e);
+				e.printStackTrace();
+				// FIXME l10n both on the NodeInitException and the wrapper message
+				throw new InvalidConfigValueException("Unable to create new store: "+e);
+			}
+		} else if (val.equals("bdb-index")) {
+			try {
+				initBDBFS(suffix);
+			} catch (NodeInitException e) {
+				Logger.error(this, "Unable to create new store", e);
+				System.err.println("Unable to create new store: "+e);
+				e.printStackTrace();
+				// FIXME l10n both on the NodeInitException and the wrapper message
+				throw new InvalidConfigValueException("Unable to create new store: "+e);
+			}
+		} else {
+			initRAMFS();
+		}
+		
+		synchronized(Node.this) {
+			storeType = val;
+		}
+	}
+
 
 	private String newName() {
 		return "Node id|"+random.nextLong();
@@ -3076,7 +3078,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private String getStoreSuffix() {
 		return "-" + getDarknetPortNumber();
 	}
-
+	
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
 		((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
 		((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
@@ -3192,28 +3194,42 @@ public class Node implements TimeSkewDetectorCallback {
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
-			CHKStore chkDatastore = new CHKStore();
-			SaltedHashFreenetStore chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore, dontResizeOnStart, masterKey);
-			this.chkDatastore = chkDatastore;
-			CHKStore chkDatacache = new CHKStore();
-			SaltedHashFreenetStore chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache, dontResizeOnStart, masterKey);
-			this.chkDatacache = chkDatacache;
-			PubkeyStore pubKeyDatastore = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
-			this.pubKeyDatastore = pubKeyDatastore;
-			PubkeyStore pubKeyDatacache = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
-			this.pubKeyDatacache = pubKeyDatacache;
-			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
-			Logger.normal(this, "Initializing SSK Datastore");
-			System.out.println("Initializing SSK Datastore");
-			SSKStore sskDatastore = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore, dontResizeOnStart, masterKey);
-			this.sskDatastore = sskDatastore;
-			SSKStore sskDatacache = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache, dontResizeOnStart, masterKey);
-			this.sskDatacache = sskDatacache;
+			final CHKStore chkDatastore = new CHKStore();
+			final SaltedHashFreenetStore chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore, dontResizeOnStart, masterKey);
+			final CHKStore chkDatacache = new CHKStore();
+			final SaltedHashFreenetStore chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache, dontResizeOnStart, masterKey);
+			final PubkeyStore pubKeyDatastore = new PubkeyStore();
+			final SaltedHashFreenetStore pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
+			final PubkeyStore pubKeyDatacache = new PubkeyStore();
+			final SaltedHashFreenetStore pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
+			final SSKStore sskDatastore = new SSKStore(getPubKey);
+			final SaltedHashFreenetStore sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore, dontResizeOnStart, masterKey);
+			final SSKStore sskDatacache = new SSKStore(getPubKey);
+			final SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache, dontResizeOnStart, masterKey);
 
+			executor.execute(new Runnable() {
+
+				public void run() {
+					chkDataFS.start(ps);
+					chkCacheFS.start(ps);
+					pubkeyDataFS.start(ps);
+					pubkeyCacheFS.start(ps);
+					sskDataFS.start(ps);
+					sskCacheFS.start(ps);
+					
+					Node.this.chkDatastore = chkDatastore;
+					Node.this.chkDatacache = chkDatacache;
+					Node.this.pubKeyDatastore = pubKeyDatastore;
+					Node.this.pubKeyDatacache = pubKeyDatacache;
+					getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
+					Node.this.sskDatastore = sskDatastore;
+					Node.this.sskDatacache = sskDatacache;
+					
+					finishInitSaltHashFS(suffix, clientCore);
+				}
+				
+			});
+			
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
 				tryMigrate(chkDataFS, "chk", true, suffix);
@@ -3265,7 +3281,9 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private SaltedHashFreenetStore makeClientcache(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
-		return makeStore(bloomFilterSizeInM, type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
+		SaltedHashFreenetStore store = makeStore(bloomFilterSizeInM, type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
+		store.start(ps);
+		return store;
 	}
 	
 	private SaltedHashFreenetStore makeStore(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {

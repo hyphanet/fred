@@ -102,7 +102,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	        throws IOException {
 		SaltedHashFreenetStore store = new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
 		        shutdownHook, preallocate, resizeOnStart, masterKey);
-		store.start(exec);
 		return store;
 	}
 
@@ -194,7 +193,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags+" bloom size = "+bloomFilterSize+" keys = "+maxKeys);
 	}
 	
-	private void start(Ticker ticker) {
+	public void start(Ticker ticker) {
+		
+		long storeFileSize = Math.max(storeSize, prevStoreSize);
+		
+		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
+		setStoreFileSize(storeFileSize, true);
+		
 		if(ticker == null) {
 			cleanerThread.start();
 		} else
@@ -632,11 +637,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		hdFC = hdRAF.getChannel();
 		hdFC.lock();
 
-		long storeFileSize = Math.max(storeSize, prevStoreSize);
-		
-		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
-		setStoreFileSize(storeFileSize, true);
-		
 		return newStore;
 	}
 
