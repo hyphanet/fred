@@ -429,9 +429,6 @@ public class Node implements TimeSkewDetectorCallback {
 						initNoClientCacheFS();
 					}
 					
-					if (type.equals("salt-hash")) {
-						finishInitSaltHashFS(suffix, clientCore);
-					}
 					synchronized(Node.this) {
 						clientCacheType = val;
 					}
@@ -2228,6 +2225,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		
 		if (storeType.equals("salt-hash")) {
+			initRAMFS();
 			initSaltHashFS(suffix, false, null);
 		} else if (storeType.equals("bdb-index")) {
 			initBDBFS(suffix);
@@ -2243,10 +2241,6 @@ public class Node implements TimeSkewDetectorCallback {
 		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
 		
 		netid = new NetworkIDManager(this);
-		
-		if (storeType.equals("salt-hash")) {
-			finishInitSaltHashFS(suffix, clientCore);
-		}
 		
 		// Client cache
 		
