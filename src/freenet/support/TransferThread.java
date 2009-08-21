@@ -53,7 +53,7 @@ public abstract class TransferThread implements PrioRunnable, ClientGetCallback,
 		mName = myName;
 	}
 	
-	protected void start() {
+	public void start() {
 		mNode.executor.execute(this, mName);
 		Logger.debug(this, "Started.");
 	}
