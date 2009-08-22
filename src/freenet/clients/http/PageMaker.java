@@ -313,6 +313,26 @@ public final class PageMaker {
 		return new PageNode(pageNode, headNode, contentDiv);
 	}
 
+	public InfoboxNode getInfobox(String header) {
+		return getInfobox(header, null, false);
+	}
+
+	public InfoboxNode getInfobox(HTMLNode header) {
+		return getInfobox(header, null, false);
+	}
+
+	public InfoboxNode getInfobox(String category, String header) {
+		return getInfobox(category, header, null, false);
+	}
+
+	public HTMLNode getInfobox(String category, String header, HTMLNode parent) {
+		return getInfobox(category, header, parent, null, false);
+	}
+
+	public InfoboxNode getInfobox(String category, HTMLNode header) {
+		return getInfobox(category, header, null, false);
+	}
+
 	public InfoboxNode getInfobox(String header, String title, boolean isUnique) {
 		if (header == null) throw new NullPointerException();
 		return getInfobox(new HTMLNode("#", header), title, isUnique);
