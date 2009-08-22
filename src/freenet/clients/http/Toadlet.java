@@ -96,10 +96,14 @@ public abstract class Toadlet {
 	 * Should return a string containing the methods supported, separated by commas
 	 * For example: "GET, PUT" (in which case both 'handleMethodGET()' and 'handleMethodPUT()'
 	 * must be implemented).
+	 *
+	 * IMPORTANT: This will discover inherited methods because of getMethod()
+	 * below. If you do not want to expose a method implemented by a parent
+	 * class, then *OVERRIDE THIS METHOD*.
 	 */
 	public final String findSupportedMethods() {
 		if (supportedMethodsCache == null) {
-			Method methlist[] = this.getClass().getDeclaredMethods();
+			Method methlist[] = this.getClass().getMethods();
 			boolean isFirst = true;
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < methlist.length;i++) {  
