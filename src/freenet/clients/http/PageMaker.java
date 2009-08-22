@@ -336,10 +336,7 @@ public final class PageMaker {
 	}
 
 	/**
-	 * Returns an infobox with the given style and header. If you retrieve an
-	 * infobox from this method, be sure to retrieve the matching content node
-	 * with {@link #getContentNode(HTMLNode)} otherwise your layout will be
-	 * destroyed (and you will get memory leaks).
+	 * Returns an infobox with the given style and header.
 	 * 
 	 * @param category
 	 *            The CSS styles, separated by a space (' ')
