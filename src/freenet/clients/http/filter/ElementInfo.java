@@ -30,5 +30,12 @@ public class ElementInfo {
 		
 		return VOID_ELEMENTS.contains(element);
 	}
+	
+	/** These elements are frequently used one after the other, and are invalid inside each other.
+	 * AFAICS only <li>. */
+	public static boolean tryAutoClose(String element) {
+		if("li".equals(element)) return true;
+		return false;
+	}
 
 }

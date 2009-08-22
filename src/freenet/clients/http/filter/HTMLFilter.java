@@ -159,7 +159,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				return null;
 		}
 		
-
+		public String peekTopElement() {
+			return openElements.peek();
+		}
 
 		Bucket run(Bucket temp) throws IOException, DataFilterException {
 
@@ -670,6 +672,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public void write(Writer w,HTMLParseContext pc) throws IOException {
 			if(!startSlash)
 			{
+				if(ElementInfo.tryAutoClose(element) && element.equals(pc.peekTopElement()))
+					pc.closeXHTMLTag(element, w);
 				if(pc.getisXHTLM() &&  !ElementInfo.isVoidElement(element))
 					pc.pushElementInStack(element);
 				htmlwrite(w,pc);
