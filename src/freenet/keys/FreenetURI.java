@@ -413,6 +413,7 @@ public class FreenetURI implements Cloneable {
 		if (logDEBUG) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
 
+	/** Dump the individual components of the key to System.out. */
 	public void decompose() {
 		String r = routingKey == null ? "none" : HexUtil.bytesToHex(routingKey);
 		String k = cryptoKey == null ? "none" : HexUtil.bytesToHex(cryptoKey);
