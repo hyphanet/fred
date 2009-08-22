@@ -509,7 +509,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						HTMLNode contentNode = page.content;
 						
 						HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-								l10n("passwordWrongTitle"), contentNode).
+								l10n("passwordWrongTitle"), contentNode, null, true).
 								addChild("div", "class", "infobox-content");
 						
 						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, true, newThreatLevel.name(), null);
@@ -532,7 +532,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					HTMLNode contentNode = page.content;
 					
 					HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-							l10nSec("enterPasswordTitle"), contentNode).
+							l10nSec("enterPasswordTitle"), contentNode, null, true).
 							addChild("div", "class", "infobox-content");
 					
 					if(pass != null && pass.length() == 0) {
@@ -579,7 +579,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						HTMLNode contentNode = page.content;
 						
 						HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-								l10n("passwordWrongTitle"), contentNode).
+								l10n("passwordWrongTitle"), contentNode, null, true).
 								addChild("div", "class", "infobox-content");
 						
 						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, false, newThreatLevel.name(), null);
@@ -604,7 +604,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					HTMLNode contentNode = page.content;
 					
 					HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-							l10nSec("passwordForDecryptTitle"), contentNode).
+							l10nSec("passwordForDecryptTitle"), contentNode, null, true).
 							addChild("div", "class", "infobox-content");
 					
 					if(pass != null && pass.length() == 0) {

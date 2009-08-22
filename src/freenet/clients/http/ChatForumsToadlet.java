@@ -28,7 +28,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		
 		contentNode.addChild(alerts.createSummary());
 		
-		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode);
+		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "chat-list", true);
 		
 		contentBox.addChild("p", l10n("content1"));
 		HTMLNode ul = contentBox.addChild("ul");

@@ -36,11 +36,11 @@ public class StartupToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 
 			if(!isPRNGReady) {
-				HTMLNode prngInfoboxContent = ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("StartupToadlet.entropyErrorTitle"), contentNode);
+				HTMLNode prngInfoboxContent = ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("StartupToadlet.entropyErrorTitle"), contentNode, null, true);
 				prngInfoboxContent.addChild("#", L10n.getString("StartupToadlet.entropyErrorContent"));
 			}
 
-			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode);
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 			infoboxContent.addChild("#", L10n.getString("StartupToadlet.isStartingUp"));
 
 			WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);

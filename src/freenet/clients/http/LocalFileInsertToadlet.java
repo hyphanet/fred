@@ -73,7 +73,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 		if(!core.allowUploadFrom(thisPath)) {
 			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()), toadletContext);
-			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content).
+			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content, "access-denied", true).
 				addChild("#", l10n("dirAccessDenied"));
 
 			thisPath = currentPath;

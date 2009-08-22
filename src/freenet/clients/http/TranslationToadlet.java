@@ -139,7 +139,7 @@ public class TranslationToadlet extends Toadlet {
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
-			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("removeOverrideWarningTitle"), contentNode);
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-warning", l10n("removeOverrideWarningTitle"), contentNode, "translation-override", true);
 			content.addChild("p").addChild("#",
 					L10n.getString("TranslationToadlet.confirmRemoveOverride", new String[] { "key", "value" },
 							new String[] { key, L10n.getString(key) }));

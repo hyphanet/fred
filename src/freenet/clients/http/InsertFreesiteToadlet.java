@@ -26,7 +26,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 		
 		contentNode.addChild(alerts.createSummary());
 		
-		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode);
+		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "freesite-insert", true);
 		
 		contentBox.addChild("p", l10n("content1"));
 		L10n.addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.content2", new String[] { "jsite-http", "jsite-freenet", "jsite-freenet-version", "jsite-info", "/link"},

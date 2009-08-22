@@ -36,11 +36,11 @@ public class SimpleHelpToadlet extends Toadlet {
 			contentNode.addChild(core.alerts.createSummary());
 		
 		// Description infobox
-		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle"), contentNode);
+		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle"), contentNode, "freenet-description", true);
 		helpScreenContent1.addChild("#", L10n.getString("SimpleHelpToadlet.descriptionText"));
 		
 		// Definitions infobox
-		HTMLNode helpScreenContent2 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle"), contentNode);
+		HTMLNode helpScreenContent2 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle"), contentNode, "freenet-definitions", true);
 		
 		HTMLNode table = helpScreenContent2.addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
        
@@ -66,7 +66,7 @@ public class SimpleHelpToadlet extends Toadlet {
 		
 		
 		// Port forwarding, etc.	
-		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle"), contentNode);
+		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle"), contentNode, "freenet-connectivity", true);
 		helpScreenContent3.addChild("#", L10n.getString("SimpleHelpToadlet.connectivityText"));
 		
 		

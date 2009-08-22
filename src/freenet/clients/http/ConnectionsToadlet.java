@@ -568,7 +568,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				}
 			}
 
-			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition"), contentNode);
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox",l10n("reportOfNodeAddition"), contentNode, "node-added", true);
 			infoboxContent.addChild(detailedStatusBox);
 			if(!isOpennet())
 				infoboxContent.addChild("p").addChild("a", "href", "/addfriend/", l10n("addAnotherFriend"));

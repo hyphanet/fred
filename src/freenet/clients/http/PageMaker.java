@@ -27,7 +27,7 @@ public final class PageMaker {
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
-                MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
+		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
 		
 		public static final String[] possibleValues = {
 			BOXED.code,
@@ -36,7 +36,7 @@ public final class PageMaker {
 			CLEAN_STATIC.code,
 			GRAYANDBLUE.code,
 			SKY.code,
-                        MINIMALBLUE.code
+			MINIMALBLUE.code
 		};
 		
 		public final String code;  // the internal name
@@ -313,24 +313,24 @@ public final class PageMaker {
 		return new PageNode(pageNode, headNode, contentDiv);
 	}
 
-	public InfoboxNode getInfobox(String header) {
+	public InfoboxNode getInfobox(String header, String title, boolean isUnique) {
 		if (header == null) throw new NullPointerException();
-		return getInfobox(new HTMLNode("#", header));
+		return getInfobox(new HTMLNode("#", header), title, isUnique);
 	}
 	
-	public InfoboxNode getInfobox(HTMLNode header) {
+	public InfoboxNode getInfobox(HTMLNode header, String title, boolean isUnique) {
 		if (header == null) throw new NullPointerException();
-		return getInfobox(null, header);
+		return getInfobox(null, header, title, isUnique);
 	}
 
-	public InfoboxNode getInfobox(String category, String header) {
+	public InfoboxNode getInfobox(String category, String header, String title, boolean isUnique) {
 		if (header == null) throw new NullPointerException();
-		return getInfobox(category, new HTMLNode("#", header));
+		return getInfobox(category, new HTMLNode("#", header), title, isUnique);
 	}
 
 	/** Create an infobox, attach it to the given parent, and return the content node. */
-	public HTMLNode getInfobox(String category, String header, HTMLNode parent) {
-		InfoboxNode node = getInfobox(category, header);
+	public HTMLNode getInfobox(String category, String header, HTMLNode parent, String title, boolean isUnique) {
+		InfoboxNode node = getInfobox(category, header, title, isUnique);
 		parent.addChild(node.outer);
 		return node.content;
 	}
@@ -344,9 +344,25 @@ public final class PageMaker {
 	 *            The header HTML node
 	 * @return The infobox
 	 */
-	public InfoboxNode getInfobox(String category, HTMLNode header) {
+	public InfoboxNode getInfobox(String category, HTMLNode header, String title, boolean isUnique) {
 		if (header == null) throw new NullPointerException();
-		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (' ' + category)));
+
+		StringBuffer classes = new StringBuffer("infobox");
+		if(category != null) {
+			classes.append(" ");
+			classes.append(category);
+		}
+		if(title != null && !isUnique) {
+			classes.append(" ");
+			classes.append(title);
+		}
+
+		HTMLNode infobox = new HTMLNode("div", "class", classes.toString());
+
+		if(title != null && isUnique) {
+			infobox.addAttribute("id", title);
+		}
+
 		infobox.addChild("div", "class", "infobox-header").addChild(header);
 		return new InfoboxNode(infobox, infobox.addChild("div", "class", "infobox-content"));
 	}
