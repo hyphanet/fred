@@ -425,6 +425,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		int styleScriptRecurseCount = 0;
 		String currentStyleScriptChunk = "";
 		StringBuilder writeAfterTag = new StringBuilder(1024);
+
+		public void closeXHTMLTag(String element, Writer w) throws IOException {
+			// Assume that missing closes are way more common than extra closes.
+			if(element.equals(openElements.peek()))
+				w.write("</"+openElements.pop()+">");
+			else {
+				if(openElements.contains(element)) {
+					while(true) {
+						String top = openElements.pop();
+						w.write("</"+top+">");
+						if(top.equals(element)) return;
+					}
+				} // Else it has already been closed.
+			}
+		}
 	}
 
 
@@ -663,9 +678,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			{
 				if(pc.getisXHTLM())
 				{
-					String lastElement=pc.popElementFromStack();
-					if(lastElement!=null)
-						w.write("</"+lastElement+">");
+					pc.closeXHTMLTag(element, w);
 				}
 				else
 				{
