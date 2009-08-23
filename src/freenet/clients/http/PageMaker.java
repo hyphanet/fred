@@ -27,7 +27,9 @@ public final class PageMaker {
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
-		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
+		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue"),
+		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs");
+
 		
 		public static final String[] possibleValues = {
 			BOXED.code,
@@ -36,7 +38,8 @@ public final class PageMaker {
 			CLEAN_STATIC.code,
 			GRAYANDBLUE.code,
 			SKY.code,
-			MINIMALBLUE.code
+			MINIMALBLUE.code,
+			MINIMALISTIC.code
 		};
 		
 		public final String code;  // the internal name

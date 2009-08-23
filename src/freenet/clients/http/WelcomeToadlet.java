@@ -441,10 +441,17 @@ public class WelcomeToadlet extends Toadlet {
 			// Warn that search plugin is not loaded.
 			L10n.addL10nSubstitution(searchBoxContent, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/\">", "</a>" });
 		}
-			
+
+        // Fetch-a-key box
+        HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
+        fetchKeyContent.addAttribute("id", "keyfetchbox");
+        HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
+        fetchKeyForm.addChild("#", l10n("keyRequestLabel") + ' ');
+        fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
+        fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});			
 
         // Bookmarks
-        HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+        HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal bookmarks-box");
         HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
         bookmarkBoxHeader.addChild("a", "title", L10n.getString("BookmarkEditorToadlet.myBookmarksExplanation"), L10n.getString("BookmarkEditorToadlet.myBookmarksTitle"));
         if (ctx.isAllowedFullAccess()) {
@@ -458,14 +465,6 @@ public class WelcomeToadlet extends Toadlet {
                 
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
         addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
-
-        // Fetch-a-key box
-        HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
-        fetchKeyContent.addAttribute("id", "keyfetchbox");
-        HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
-        fetchKeyForm.addChild("#", l10n("keyRequestLabel") + ' ');
-        fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
-        fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});
 
         // Version info and Quit Form
         HTMLNode versionContent = ctx.getPageMaker().getInfobox("infobox-information", l10n("versionHeader"), contentNode, "freenet-version", true);
