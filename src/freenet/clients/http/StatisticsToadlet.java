@@ -848,6 +848,7 @@ public class StatisticsToadlet extends Toadlet {
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayload = node.getTotalPayloadSent();
 		long total_payload_rate = totalPayload / nodeUptimeSeconds;
+		node.clientCore.bandwidthStatsPutter.updateData();
 		long overall_total_out = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesOut;
 		long overall_total_in = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesIn;
 		int percent = (int) (100 * totalPayload / total[0]);

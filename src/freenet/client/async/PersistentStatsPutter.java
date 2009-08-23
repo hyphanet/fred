@@ -9,20 +9,21 @@ import freenet.node.Node;
 import freenet.support.BandwidthStatsContainer;
 
 /**
- * Add/alter the BandwidthStatsContainer contained in the database, so that
+ * Add/alter the containers contained in the database, so that
  * the upload/download statistics persist.
  * 
  * @author Artefact2
  */
-public class BandwidthStatsPutter implements DBJob {
+public class PersistentStatsPutter implements DBJob {
 	public static final int OFFSET = 60000;
 
 	private Node n;
 	private long latestNodeBytesOut = 0;
 	private long latestNodeBytesIn = 0;
-	private BandwidthStatsContainer latest = new BandwidthStatsContainer();
+	private BandwidthStatsContainer latestBW = new BandwidthStatsContainer();
+	private BandwidthStatsContainer latestBWStored = new BandwidthStatsContainer();
 
-	public BandwidthStatsPutter(Node n) {
+	public PersistentStatsPutter(Node n) {
 		this.n = n;
 	}
 
@@ -62,29 +63,36 @@ public class BandwidthStatsPutter implements DBJob {
 			}
 		}
 
-		this.latest = highestBSC;
+		this.latestBWStored = highestBSC;
+		this.latestBW = this.latestBWStored;
 
 		container.commit();
 	}
 
 	public BandwidthStatsContainer getLatestData() {
-		return this.latest;
+		return this.latestBW;
+	}
+
+	public void updateData() {
+		// Update our values
+		// 0 : total bytes out, 1 : total bytes in
+		long[] nodeBW = this.n.collector.getTotalIO();
+		this.latestBW.totalBytesOut += nodeBW[0] - this.latestNodeBytesOut;
+		this.latestBW.totalBytesIn += nodeBW[1] - this.latestNodeBytesIn;
+		this.latestBW.creationTime = System.currentTimeMillis();
+		this.latestNodeBytesOut = nodeBW[0];
+		this.latestNodeBytesIn = nodeBW[1];
 	}
 
 	public boolean run(ObjectContainer container, ClientContext context) {
-		container.delete(this.latest);
+		container.delete(this.latestBWStored);
 
-		// Update our BW values
-		// 0 : total bytes out, 1 : total bytes in
-		long[] nodeBW = this.n.collector.getTotalIO();
-		this.latest.totalBytesOut += nodeBW[0] - this.latestNodeBytesOut;
-		this.latest.totalBytesIn += nodeBW[1] - this.latestNodeBytesIn;
-		this.latest.creationTime = System.currentTimeMillis();
-		this.latestNodeBytesOut = nodeBW[0];
-		this.latestNodeBytesIn = nodeBW[1];
+		this.updateData();
 
-		container.store(this.latest);
+		container.store(this.latestBW);
 		container.commit();
+
+		this.latestBWStored = this.latestBW;
 
 		return false;
 	}

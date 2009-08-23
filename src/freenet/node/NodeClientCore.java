@@ -15,7 +15,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
-import freenet.client.async.BandwidthStatsPutter;
+import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
@@ -100,7 +100,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		});
 	}
 
-	public final BandwidthStatsPutter bandwidthStatsPutter;
+	public final PersistentStatsPutter bandwidthStatsPutter;
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -225,19 +225,19 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
-		this.bandwidthStatsPutter = new BandwidthStatsPutter(this.node);
+		this.bandwidthStatsPutter = new PersistentStatsPutter(this.node);
 		if (container != null) {
 			bandwidthStatsPutter.restorePreviousData(container);
 			this.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
 					try {
 						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
-						getTicker().queueTimedJob(this, BandwidthStatsPutter.OFFSET);
+						getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
 					} catch (DatabaseDisabledException e) {
 						// Should be safe to ignore.
 					}
 				}
-			}, BandwidthStatsPutter.OFFSET);
+			}, PersistentStatsPutter.OFFSET);
 		}
 
 		uskManager = new USKManager(this);
@@ -679,12 +679,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void run() {
 				try {
 					queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
-					getTicker().queueTimedJob(this, BandwidthStatsPutter.OFFSET);
+					getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
 				} catch (DatabaseDisabledException e) {
 					// Should be safe to ignore.
 				}
 			}
-		}, BandwidthStatsPutter.OFFSET);
+		}, PersistentStatsPutter.OFFSET);
 
 		// CONCURRENCY: We need everything to have hit its various memory locations.
 		// How to ensure this?
