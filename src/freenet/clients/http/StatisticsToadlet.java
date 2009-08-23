@@ -107,6 +107,8 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		final SubConfig nodeConfig = node.config.get("node");
 
+		node.clientCore.bandwidthStatsPutter.updateData();
+
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
 		Arrays.sort(peerNodeStatuses, new Comparator<PeerNodeStatus>() {
@@ -229,7 +231,7 @@ public class StatisticsToadlet extends Toadlet {
 			/* node status overview box */
 			if(mode >= PageMaker.MODE_ADVANCED) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
-				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, now, swaps, noSwaps);
+				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, node.clientCore.bandwidthStatsPutter.getLatestUptimeData().totalUptime, now, swaps, noSwaps);
 			}
 
 			// Peer statistics box
@@ -848,9 +850,8 @@ public class StatisticsToadlet extends Toadlet {
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayload = node.getTotalPayloadSent();
 		long total_payload_rate = totalPayload / nodeUptimeSeconds;
-		node.clientCore.bandwidthStatsPutter.updateData();
-		long overall_total_out = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesOut;
-		long overall_total_in = node.clientCore.bandwidthStatsPutter.getLatestData().totalBytesIn;
+		long overall_total_out = node.clientCore.bandwidthStatsPutter.getLatestBWData().totalBytesOut;
+		long overall_total_in = node.clientCore.bandwidthStatsPutter.getLatestBWData().totalBytesIn;
 		int percent = (int) (100 * totalPayload / total[0]);
 		long[] rate = node.nodeStats.getNodeIOStats();
 		long delta = (rate[5] - rate[2]) / 1000;
@@ -973,7 +974,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 	}
 
-	private void drawOverviewBox(HTMLNode overviewInfobox, long nodeUptimeSeconds, long now, double swaps, double noSwaps) {
+	private void drawOverviewBox(HTMLNode overviewInfobox, long nodeUptimeSeconds, long nodeUptimeTotal, long now, double swaps, double noSwaps) {
 		
 		overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
 		HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
@@ -1006,7 +1007,6 @@ public class StatisticsToadlet extends Toadlet {
 		
 		double routingMissDistance =  stats.routingMissDistance.currentValue();
 		double backedOffPercent =  stats.backedOffPercent.currentValue();
-		String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 		overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 		overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
 		overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + darknetSizeEstimateSession + "\u00a0nodes");
@@ -1026,7 +1026,8 @@ public class StatisticsToadlet extends Toadlet {
 		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
 			overviewList.addChild("li", "avrConnPeersPerNode:\u00a0" + fix6p6.format(numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps)) + "\u00a0peers");
 		}
-		overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
+		overviewList.addChild("li", "nodeUptimeSession:\u00a0" + TimeUtil.formatTime(nodeUptimeSeconds * 1000));
+		overviewList.addChild("li", "nodeUptimeTotal:\u00a0" + TimeUtil.formatTime(nodeUptimeTotal));
 		overviewList.addChild("li", "routingMissDistance:\u00a0" + fix1p4.format(routingMissDistance));
 		overviewList.addChild("li", "backedOffPercent:\u00a0" + fix3p1pct.format(backedOffPercent));
 		overviewList.addChild("li", "pInstantReject:\u00a0" + fix3p1pct.format(stats.pRejectIncomingInstantly()));
