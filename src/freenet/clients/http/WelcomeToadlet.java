@@ -56,6 +56,10 @@ public class WelcomeToadlet extends Toadlet {
     }
 
     private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks, ToadletContext ctx) {
+		if(ctx.getPageMaker().getTheme().forceActivelinks) {
+			noActiveLinks = false;
+		}
+
         List<BookmarkItem> items = cat.getItems();
         if (items.size() > 0) {
             // FIXME CSS noborder ...
@@ -85,11 +89,10 @@ public class WelcomeToadlet extends Toadlet {
     }
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-
         if (!ctx.isAllowedFullAccess()) {
             super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
             return;
-        }
+		}
 
         String passwd = request.getPartAsString("formPassword", 32);
         boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
@@ -442,14 +445,10 @@ public class WelcomeToadlet extends Toadlet {
 			L10n.addL10nSubstitution(searchBoxContent, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/\">", "</a>" });
 		}
 
-        // Fetch-a-key box
-        HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
-        fetchKeyContent.addAttribute("id", "keyfetchbox");
-        HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
-        fetchKeyForm.addChild("#", l10n("keyRequestLabel") + ' ');
-        fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
-        fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});			
-
+        if (ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+            this.putFetchKeyBox(ctx, contentNode);
+        }
+        
         // Bookmarks
         HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal bookmarks-box");
         HTMLNode bookmarkBoxHeader = bookmarkBox.addChild("div", "class", "infobox-header");
@@ -465,6 +464,10 @@ public class WelcomeToadlet extends Toadlet {
                 
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
         addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
+
+        if (!ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
+            this.putFetchKeyBox(ctx, contentNode);
+        }
 
         // Version info and Quit Form
         HTMLNode versionContent = ctx.getPageMaker().getInfobox("infobox-information", l10n("versionHeader"), contentNode, "freenet-version", true);
@@ -496,6 +499,16 @@ public class WelcomeToadlet extends Toadlet {
 
         this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
     }
+
+	private void putFetchKeyBox(ToadletContext ctx, HTMLNode contentNode) {
+		// Fetch-a-key box
+		HTMLNode fetchKeyContent = ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel"), contentNode, "fetch-key", true);
+		fetchKeyContent.addAttribute("id", "keyfetchbox");
+		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
+		fetchKeyForm.addChild("#", l10n("keyRequestLabel") + ' ');
+		fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
+		fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});
+	}
 
     private void sendRestartingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
         writeHTMLReply(ctx, 200, "OK", sendRestartingPageInner(ctx).generate());

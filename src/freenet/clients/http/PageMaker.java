@@ -28,7 +28,7 @@ public final class PageMaker {
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue"),
-		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs");
+		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true);
 
 		
 		public static final String[] possibleValues = {
@@ -45,11 +45,23 @@ public final class PageMaker {
 		public final String code;  // the internal name
 		public final String name;  // the name in "human form"
 		public final String description; // description
+		public final boolean forceActivelinks;
+		public final boolean fetchKeyBoxAboveBookmarks ;
 		
 		private THEME(String code, String name, String description) {
 			this.code = code;
 			this.name = name;
 			this.description = description;
+			this.forceActivelinks = false;
+			this.fetchKeyBoxAboveBookmarks = false;
+		}
+
+		private THEME(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks) {
+			this.code = code;
+			this.name = name;
+			this.description = description;
+			this.forceActivelinks = forceActivelinks;
+			this.fetchKeyBoxAboveBookmarks = fetchKeyBoxAboveBookmarks;
 		}
 
 		public static THEME themeFromName(String cssName) {
@@ -314,6 +326,10 @@ public final class PageMaker {
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
 		return new PageNode(pageNode, headNode, contentDiv);
+	}
+
+	public THEME getTheme() {
+		return this.theme;
 	}
 
 	public InfoboxNode getInfobox(String header) {

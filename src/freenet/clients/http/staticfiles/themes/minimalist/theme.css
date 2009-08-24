@@ -671,7 +671,32 @@ body, div#content {
 }
 
 div#content div.infobox.infobox-summary-status-box {
+	position: absolute;
+	top: 2em;
+	right: 5px;
+	padding: 0;
+	margin: 0;
+}
+
+div#content div.infobox.infobox-summary-status-box div.infobox-header,
+div#content div.infobox.infobox-summary-status-box div.infobox-content {
+	padding: 0;
+	margin: 0;
+}
+
+div#content div.infobox.infobox-summary-status-box div.infobox-content li {
 	display: none;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	margin-right: 5px;
+}
+
+div#content div.infobox.infobox-summary-status-box:hover div.infobox-content li {
+	display: block;
+}
+
+div#content div.infobox.infobox-summary-status-box div.infobox-content li.alert-summary-text-error {
+	display: block;
 }
 
 div#content {
@@ -683,33 +708,31 @@ div.infobox {
 	background-color: #EEF;
 	border: 3px solid #CCF;
 	color: black;
-	border-top: none;
 }
 
 div.infobox div.infobox-header {
 	background-color: #CCF;
 	color: black;
 	padding: 3px;
+	padding-top: 0;
 	border: none;
 }
 
-/* D88 error */
-
-div.infobox-warning {
+div.infobox-warning, div.infobox.infobox-summary-status-box {
 	border-color: #FFFC66;
 	background-color: #FFFEC0;
 }
 
-div.infobox-warning div.infobox-header {
+div.infobox-warning div.infobox-header, div.infobox.infobox-summary-status-box div.infobox-header {
 	background-color: #FFFC66;
 }
 
-div.infobox-error {
+div.infobox-error, div.infobox.infobox-summary-status-box.infobox-error {
 	border-color: #D88;
 	background-color: #DCC;
 }
 
-div.infobox-error div.infobox-header {
+div.infobox-error div.infobox-header, div.infobox.infobox-summary-status-box.infobox-error div.infobox-header {
 	background-color: #D88;
 }
 
