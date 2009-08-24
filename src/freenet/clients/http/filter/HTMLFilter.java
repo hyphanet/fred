@@ -160,6 +160,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		
 		public String peekTopElement() {
+			if(openElements.isEmpty()) return null;
 			return openElements.peek();
 		}
 
@@ -430,6 +431,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		public void closeXHTMLTag(String element, Writer w) throws IOException {
 			// Assume that missing closes are way more common than extra closes.
+			if(openElements.isEmpty()) return;
 			if(element.equals(openElements.peek()))
 				w.write("</"+openElements.pop()+">");
 			else {
