@@ -64,14 +64,27 @@ public abstract class ClientRequester {
 		return ret;
 	}
 
+	/** Cancel the request. Subclasses must implement to actually tell the
+	 * ClientGetState's or ClientPutState's to cancel.
+	 * @param container The database. Must be non-null if the request or 
+	 * insert is persistent, in which case we must be on the database thread.
+	 * @param context The ClientContext object including essential but 
+	 * non-persistent objects such as the schedulers.
+	 */
 	public abstract void cancel(ObjectContainer container, ClientContext context);
 
+	/** Is the request or insert cancelled? */
 	public boolean isCancelled() {
 		return cancelled;
 	}
 
+	/** Get the URI for the request or insert. For a request this is set at
+	 * creation, but for an insert, it is set when we know what the final 
+	 * URI will be. */
 	public abstract FreenetURI getURI();
 
+	/** Is the request or insert completed (succeeded, failed, or 
+	 * cancelled, which is a kind of failure)? */
 	public abstract boolean isFinished();
 	
 	private final int hashCode;
@@ -96,8 +109,17 @@ public abstract class ClientRequester {
 	protected int minSuccessBlocks;
 	/** Has totalBlocks stopped growing? */
 	protected boolean blockSetFinalized;
+	/** Has at least one block been scheduled to be sent to the network? 
+	 * Requests can be satisfied entirely from the datastore sometimes. */
 	protected boolean sentToNetwork;
 
+	/** The set of blocks has been finalised, total will not change any
+	 * more. Notify clients.
+	 * @param container The database. Must be non-null if the request or 
+	 * insert is persistent, in which case we must be on the database thread.
+	 * @param context The ClientContext object including essential but 
+	 * non-persistent objects such as the schedulers.
+	 */
 	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(blockSetFinalized) return;

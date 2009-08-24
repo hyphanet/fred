@@ -11,9 +11,8 @@ import freenet.support.api.Bucket;
 
 /**
  * Simple read-only array bucket. Just an adapter class to save some RAM.
- * Not the same as ArrayBucket, which can't take a (byte[], offset, len) in
- * constructor (unless we waste some RAM there by using an object to store these
- * instead of storing the byte[]'s directly).
+ * Wraps a byte[], offset, length into a Bucket. Read-only. ArrayBucket on
+ * the other hand is a chain of byte[]'s.
  */
 public class SimpleReadOnlyArrayBucket implements Bucket {
 

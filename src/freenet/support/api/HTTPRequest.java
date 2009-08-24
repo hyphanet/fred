@@ -3,6 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.api;
 
+/** A parsed HTTP request (GET or POST). Request parameters are parameters
+ * encoded into the URI, or part of a POST form which is encoded as 
+ * application/x-www-form-urlencoded. Parts are parameters (including files)
+ * uploaded in a POST in multipart/form-data. Use of the former encoding for
+ * POSTs is strongly discouraged as it has character set issues. We do 
+ * support methods other than GET and POST for e.g. WebDAV, but they are not
+ * common. */
 public interface HTTPRequest {
 
 	/**
@@ -13,7 +20,7 @@ public interface HTTPRequest {
 
 	/**
 	 * 
-	 * @return true if the query string was totally empty
+	 * @return false if the query string was totally empty
 	 */
 	public boolean hasParameters();
 
@@ -85,6 +92,7 @@ public interface HTTPRequest {
 	 */
 	public int getIntParam(String name, int defaultValue);
 
+	/** Get a part as an integer with a default value if it is not set. */
 	public int getIntPart(String name, int defaultValue);
 
 	/**
@@ -109,30 +117,42 @@ public interface HTTPRequest {
 	 */
 	public int[] getMultipleIntParam(String name);
 
+	/** Get a file uploaded in the HTTP request. */
 	public HTTPUploadedFile getUploadedFile(String name);
 
+	/** Get a part as a Bucket. Parts can be very large, as they are POST
+	 * data from multipart/form-data and can include uploaded files. */
 	public Bucket getPart(String name);
 
+	/** Is a part set with the given name? */
 	public boolean isPartSet(String name);
 
 	/**
-	 * Get a request part as a String. Parameters are passed in through the URL; parts are 
-	 * passed in through attached data.
-	 */
+	 * Get a request part as a String. Parts are passed in through attached
+	 * data in a POST in multipart/form-data encoding; parameters are 
+	 * passed in through the URI. */
 	public String getPartAsString(String name, int maxlength);
 
+	/** Get a request part as bytes. */
 	public byte[] getPartAsBytes(String name, int maxlength);
 
+	/** Free all the parts. They may be stored on disk so it is important
+	 * that this be called at some point. */
 	public void freeParts();
 
+	/** Get a part as a long, with a default value if it is not set. */
 	public long getLongParam(String name, long defaultValue);
 
+	/** Get the HTTP method, typically GET or POST. */
 	public String getMethod();
 
+	/** Get the original uploaded raw data for a POST. */
 	public Bucket getRawData();
 	
+	/** Get the value of a specific header on the request. */
 	public String getHeader(String name);
 
+	/** Get the length of the original uploaded raw data for a POST. */
 	public int getContentLength();
 
 }
