@@ -141,21 +141,29 @@ public abstract class Toadlet {
 		return client.insert(insert, getCHKOnly, filenameHint);
 	}
 
-	/**
+	/*
 	 * Client calls to write a reply to the HTTP requestor.
 	 */
+	
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
 		ctx.sendReplyHeaders(code, desc, null, mimeType, length);
 		ctx.writeData(data, offset, length);
 	}
 
 	/**
-	 * Client calls to write a reply to the HTTP requestor.
+	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket! 
+	 * 
+	 * FIXME: For all references to this function, check whether they free() the Bucket.
 	 */
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, Bucket data) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, mimeType, desc, null, data);
 	}
 	
+	/**
+	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket!
+	 * 
+	 * FIXME: For all references to this function, check whether they free() the Bucket.
+	 */
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, Bucket data) throws ToadletContextClosedException, IOException {
 		context.sendReplyHeaders(code, desc, headers, mimeType, data.size());
 		context.writeData(data);

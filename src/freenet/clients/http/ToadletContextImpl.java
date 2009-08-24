@@ -519,6 +519,11 @@ public class ToadletContextImpl implements ToadletContext {
 		writeData(data, 0, data.length);
 	}
 	
+	/**
+	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket!
+	 * 
+	 * FIXME: For all references to this function, check whether they free() the Bucket.
+	 */
 	public void writeData(Bucket data) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		BucketTools.copyTo(data, sockOutputStream, Long.MAX_VALUE);
