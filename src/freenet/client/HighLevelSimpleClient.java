@@ -136,6 +136,11 @@ public interface HighLevelSimpleClient {
 	 */
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes);
 
+	/**
+	 * Prefetch a key at the given priority. If it hasn't been fetched within the timeout, 
+	 * kill the fetch.
+	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null. 
+	 */
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio);
 	
 }

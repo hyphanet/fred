@@ -47,8 +47,7 @@ public class FetchContext implements Cloneable {
 	public int maxMetadataSize;
 	/** Maximum number of data blocks per segment for splitfiles */
 	public int maxDataBlocksPerSegment;
-	/** Maximum number of check blocks per segment for splitfiles. Will be reduced proportionally if there
-	 * are fewer data blocks. */
+	/** Maximum number of check blocks per segment for splitfiles. */
 	public int maxCheckBlocksPerSegment;
 	/** Whether the data returned should be cached */
 	public boolean cacheLocalRequests;

@@ -19,14 +19,27 @@ public class InsertContext {
 	public final PersistentFileTracker persistentFileTracker;
 	/** If true, don't try to compress the data */
 	public boolean dontCompress;
+	/** Splitfile algorithm. */
 	public final short splitfileAlgorithm;
+	/** Maximum number of retries (after the initial attempt) for each block
+	 * inserted. */
 	public int maxInsertRetries;
+	/** On a very small network, any insert will RNF. Therefore we allow 
+	 * some number of RNFs to equal success. */
 	public final int consecutiveRNFsCountAsSuccess;
+	/** Maximum number of data blocks per segment for splitfiles */
 	public final int splitfileSegmentDataBlocks;
+	/** Maximum number of check blocks per segment for splitfiles. Will be reduced proportionally if there
+	 * are fewer data blocks. */
 	public final int splitfileSegmentCheckBlocks;
+	/** Client events will be published to this, you can subscribe to them */
 	public final ClientEventProducer eventProducer;
-	/** Interesting tradeoff, see comments at top of Node.java. */
+	/** Whether to cache local requests in the datastore. Interesting 
+	 * tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
+	/** Can this insert write to the client-cache? We don't store all requests in the client cache,
+	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. Plus, 
+	 * local inserts are not written to the client-cache by default for privacy reasons. */
 	public boolean canWriteClientCache;
 	/** a string that contains the codecs to use/try
 	 * if the string is null it defaults to COMPRESSOR_TYPES.Values(),

@@ -27,11 +27,19 @@ public abstract class ClientRequester {
 	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
 	
 	// FIXME move the priority classes from RequestStarter here
+	/** Priority class of the request or insert. */
 	protected short priorityClass;
+	/** Has the request or insert been cancelled? */
 	protected boolean cancelled;
+	/** The RequestClient, used to determine whether this request is 
+	 * persistent, and also we round-robin between different RequestClient's
+	 * in scheduling within a given priority class and retry count. */
 	protected final RequestClient client;
+	/** The set of queued low-level requests or inserts for this request or
+	 * insert. */
 	protected final SendableRequestSet requests;
 
+	/** What is our priority class? */
 	public short getPriorityClass() {
 		return priorityClass;
 	}
@@ -45,12 +53,17 @@ public abstract class ClientRequester {
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 	}
 
+	/** Cancel the request. Inner method, callers should actually tell the
+	 * ClientGetState or whatever to cancel itself: this does not do 
+	 * anything apart from set a flag!
+	 * @return Whether we were already cancelled.
+	 */
 	public synchronized boolean cancel() {
 		boolean ret = cancelled;
 		cancelled = true;
 		return ret;
 	}
-	
+
 	public abstract void cancel(ObjectContainer container, ClientContext context);
 
 	public boolean isCancelled() {
