@@ -53,12 +53,12 @@ public abstract class ClientRequester {
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 	}
 
-	/** Cancel the request. Inner method, callers should actually tell the
-	 * ClientGetState or whatever to cancel itself: this does not do 
+	/** Cancel the request. Inner method, subclasses should actually tell 
+	 * the ClientGetState or whatever to cancel itself: this does not do 
 	 * anything apart from set a flag!
 	 * @return Whether we were already cancelled.
 	 */
-	public synchronized boolean cancel() {
+	protected synchronized boolean cancel() {
 		boolean ret = cancelled;
 		cancelled = true;
 		return ret;
