@@ -537,7 +537,15 @@ public abstract class Logger {
 		if(logger instanceof LoggerHookChain)
 			return (LoggerHookChain) logger;
 		else {
+			Logger oldLogger = logger;
+			if(!(oldLogger instanceof VoidLogger)) {
+				if(!(oldLogger instanceof LoggerHook))
+					throw new IllegalStateException("The old logger is not a VoidLogger and is not a LoggerHook either!");
+			}
 			setupChain();
+			if(!(oldLogger instanceof VoidLogger)) {
+				((LoggerHookChain)logger).addHook((LoggerHook)oldLogger);
+			}
 			return (LoggerHookChain) logger;
 		}
 	}
