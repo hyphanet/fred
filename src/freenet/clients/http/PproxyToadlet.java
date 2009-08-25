@@ -154,7 +154,7 @@ public class PproxyToadlet extends Toadlet {
 				if (request.isPartSet("purge")) {
 					pm.removeCachedCopy(pluginSpecification);
 				}
-				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
+				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx, this.node);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
@@ -166,7 +166,7 @@ public class PproxyToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
+				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx, this.node);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
@@ -186,7 +186,7 @@ public class PproxyToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
-				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx);
+				PageNode page = pageMaker.getPageNode(l10n("plugins"), ctx, this.node);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 				HTMLNode reloadContent = pageMaker.getInfobox("infobox infobox-query", l10n("reloadPluginTitle"), contentNode, "plugin-reload", true);
@@ -287,7 +287,7 @@ public class PproxyToadlet extends Toadlet {
 
 				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
-				PageNode page = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx, this.node);
 				HTMLNode pageNode = page.outer;
 				if (loadingPlugins.hasNext()) {
 					/* okay, add a refresh. */

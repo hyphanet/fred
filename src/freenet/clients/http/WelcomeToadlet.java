@@ -108,7 +108,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
             // false for no navigation bars, because that would be very silly
-            PageNode page = ctx.getPageMaker().getPageNode(l10n("updatingTitle"), ctx);
+            PageNode page = ctx.getPageMaker().getPageNode(l10n("updatingTitle"), ctx, this.node);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
             HTMLNode content = ctx.getPageMaker().getInfobox("infobox-information", l10n("updatingTitle"), contentNode, null, true);
@@ -130,7 +130,7 @@ public class WelcomeToadlet extends Toadlet {
             headers.put("Location", url == null ? "/" : url);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         } else if (request.getPartAsString("update", 32).length() > 0) {
-        	PageNode page = ctx.getPageMaker().getPageNode(l10n("nodeUpdateConfirmTitle"), ctx);
+        	PageNode page = ctx.getPageMaker().getPageNode(l10n("nodeUpdateConfirmTitle"), ctx, this.node);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
             HTMLNode content = ctx.getPageMaker().getInfobox("infobox-query", l10n("nodeUpdateConfirmTitle"), contentNode, "update-node-confirm", true);
@@ -144,7 +144,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
-            PageNode page = ctx.getPageMaker().getPageNode(l10n("threadDumpTitle"), ctx);
+            PageNode page = ctx.getPageMaker().getPageNode(l10n("threadDumpTitle"), ctx, this.node);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
             if (node.isUsingWrapper()) {
@@ -196,7 +196,7 @@ public class WelcomeToadlet extends Toadlet {
 
             Bucket bucket = request.getPart("filename");
 
-            PageNode page = ctx.getPageMaker().getPageNode(l10n("insertedTitle"), ctx);
+            PageNode page = ctx.getPageMaker().getPageNode(l10n("insertedTitle"), ctx, this.node);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
             HTMLNode content;
@@ -237,7 +237,7 @@ public class WelcomeToadlet extends Toadlet {
             request.freeParts();
             bucket.free();
         } else if (request.isPartSet("exit")) {
-        	PageNode page = ctx.getPageMaker().getPageNode(l10n("shutdownConfirmTitle"), ctx);
+        	PageNode page = ctx.getPageMaker().getPageNode(l10n("shutdownConfirmTitle"), ctx, this.node);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
             HTMLNode content = ctx.getPageMaker().getInfobox("infobox-query", l10n("shutdownConfirmTitle"), contentNode, "shutdown-confirm", true);
@@ -263,7 +263,7 @@ public class WelcomeToadlet extends Toadlet {
                     }, 1);
             return;
         } else if (request.isPartSet("restart")) {
-        	PageNode page = ctx.getPageMaker().getPageNode(l10n("restartConfirmTitle"), ctx);
+        	PageNode page = ctx.getPageMaker().getPageNode(l10n("restartConfirmTitle"), ctx, this.node);
             HTMLNode pageNode = page.outer;
             HTMLNode contentNode = page.content;
             HTMLNode content = ctx.getPageMaker().getInfobox("infobox-query", l10n("restartConfirmTitle"), contentNode, "restart-confirm", true);
@@ -322,7 +322,7 @@ public class WelcomeToadlet extends Toadlet {
                     return;
                 }
                 // Tell the user that the node is shutting down
-                PageNode page = ctx.getPageMaker().getPageNode("Node Shutdown", false, ctx);
+                PageNode page = ctx.getPageMaker().getPageNode("Node Shutdown", false, ctx, this.node);
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
                 ctx.getPageMaker().getInfobox("infobox-information", l10n("shutdownDone"), contentNode, "shutdown-progressing", true).
@@ -340,7 +340,7 @@ public class WelcomeToadlet extends Toadlet {
                 sendRestartingPage(ctx);
                 return;
             } else if (request.getParam("newbookmark").length() > 0) {
-            	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmAddBookmarkTitle"), ctx);
+            	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmAddBookmarkTitle"), ctx, this.node);
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
                 HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", l10n("confirmAddBookmarkSubTitle"), contentNode, "add-bookmark-confirm", true);
@@ -386,7 +386,7 @@ public class WelcomeToadlet extends Toadlet {
                 this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
                 return;
             } else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
-            	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), ctx);
+            	PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmExternalLinkTitle"), ctx, this.node);
                 HTMLNode pageNode = page.outer;
                 HTMLNode contentNode = page.content;
                 HTMLNode warnboxContent = ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmExternalLinkSubTitle"), contentNode, "confirm-external-link", true);
@@ -403,7 +403,7 @@ public class WelcomeToadlet extends Toadlet {
             }
         }
 
-        PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageFullTitleWithName", "name", node.getMyName()), ctx);
+        PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageFullTitleWithName", "name", node.getMyName()), ctx, this.node);
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
 
@@ -424,7 +424,7 @@ public class WelcomeToadlet extends Toadlet {
 
         // Alerts
         if (ctx.isAllowedFullAccess()) {
-            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true));
+			contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true));
         }
 		
 		// Search Box
@@ -511,12 +511,12 @@ public class WelcomeToadlet extends Toadlet {
 	}
 
     private void sendRestartingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        writeHTMLReply(ctx, 200, "OK", sendRestartingPageInner(ctx).generate());
+        writeHTMLReply(ctx, 200, "OK", sendRestartingPageInner(ctx, this.node).generate());
 	}
     
-    static HTMLNode sendRestartingPageInner(ToadletContext ctx) {
+    static HTMLNode sendRestartingPageInner(ToadletContext ctx, Node node) {
         // Tell the user that the node is restarting
-        PageNode page = ctx.getPageMaker().getPageNode("Node Restart", false, ctx);
+        PageNode page = ctx.getPageMaker().getPageNode("Node Restart", false, ctx, node);
         HTMLNode pageNode = page.outer;
         HTMLNode headNode = page.headNode;
         headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});

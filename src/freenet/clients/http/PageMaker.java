@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import freenet.node.SecurityLevels;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -9,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -28,7 +31,7 @@ public final class PageMaker {
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue"),
-		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true);
+		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true, true);
 
 		
 		public static final String[] possibleValues = {
@@ -46,22 +49,20 @@ public final class PageMaker {
 		public final String name;  // the name in "human form"
 		public final String description; // description
 		public final boolean forceActivelinks;
-		public final boolean fetchKeyBoxAboveBookmarks ;
+		public final boolean fetchKeyBoxAboveBookmarks;
+		public final boolean showStatusBar;
 		
 		private THEME(String code, String name, String description) {
-			this.code = code;
-			this.name = name;
-			this.description = description;
-			this.forceActivelinks = false;
-			this.fetchKeyBoxAboveBookmarks = false;
+			this(code, name, description, false, false, false);
 		}
 
-		private THEME(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks) {
+		private THEME(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks, boolean showStatusBar) {
 			this.code = code;
 			this.name = name;
 			this.description = description;
 			this.forceActivelinks = forceActivelinks;
 			this.fetchKeyBoxAboveBookmarks = fetchKeyBoxAboveBookmarks;
+			this.showStatusBar = showStatusBar;
 		}
 
 		public static THEME themeFromName(String cssName) {
@@ -201,11 +202,11 @@ public final class PageMaker {
 		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", name }, name);
 	}
 	
-	public PageNode getPageNode(String title, ToadletContext ctx) {
-		return getPageNode(title, true, ctx);
+	public PageNode getPageNode(String title, ToadletContext ctx, Node node) {
+		return getPageNode(title, true, ctx, node);
 	}
 
-	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
+	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx, Node node) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage().isoCode);
@@ -232,6 +233,64 @@ public final class PageMaker {
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
+
+		if (this.getTheme().showStatusBar) {
+			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar");
+
+			if(node != null) {
+				final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
+				if(alerts != null) {
+					statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
+					statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				}
+			}
+
+			statusBarDiv.addChild("div", "id", "statusbar-language", L10n.getSelectedLanguage().fullName);
+			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+			final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
+			if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
+				switchMode.addAttribute("class", "simple");
+				switchMode.addChild("a", "href", "?mode=1", L10n.getString("StatusBar.switchToSimpleMode"));
+			} else {
+				switchMode.addAttribute("class", "advanced");
+				switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
+			}
+			
+			if(node != null) {
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", L10n.getString("SecurityLevels.statusBarPrefix"));
+
+				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()));
+				network.addAttribute("title", L10n.getString("SecurityLevels.networkThreatLevelShort"));
+				network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
+
+				final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()));
+				friends.addAttribute("title", L10n.getString("SecurityLevels.friendsThreatLevelShort"));
+				friends.addAttribute("class", node.securityLevels.getFriendsThreatLevel().toString().toLowerCase());
+
+				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
+				physical.addAttribute("title", L10n.getString("SecurityLevels.physicalThreatLevelShort"));
+				physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
+
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+
+				final int connectedPeers = node.peers.countConnectedPeers();
+				final HTMLNode peers = statusBarDiv.addChild("div", "id", "statusbar-peers", connectedPeers + " Peers");
+
+				if(connectedPeers == 0) {
+					peers.addAttribute("class", "no-peers");
+				} else if(connectedPeers < 4) {
+					peers.addAttribute("class", "very-few-peers");
+				} else if(connectedPeers < 7) {
+					peers.addAttribute("class", "few-peers");
+				} else if(connectedPeers < 10) {
+					peers.addAttribute("class", "avg-peers");
+				} else {
+					peers.addAttribute("class", "lots-of-peers");
+				}
+			}
+		}
+
 		topBarDiv.addChild("h1", title);
 		if (renderNavigationLinks) {
 			SubMenu selected = null;

@@ -673,7 +673,7 @@ body, div#content {
 div#content div.infobox.infobox-summary-status-box {
 	position: absolute;
 	top: 2em;
-	right: 5px;
+	left: 5px;
 	padding: 0;
 	margin: 0;
 }
@@ -736,7 +736,105 @@ div.infobox-error div.infobox-header, div.infobox.infobox-summary-status-box.inf
 	background-color: #D88;
 }
 
+/* status bar */
+div#statusbar div {
+	float: left;
+}
+
+div#statusbar div.separator {
+	width: 1px;
+	background-color: #CCF;
+	margin-left: 15px;
+	margin-right: 15px;
+}
+
+div#statusbar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 1.5em;
+	padding-top: 0.25em;
+	border-top: 1px solid #CCF;
+	margin-left: 5px;
+	margin-right: 5px;
+	padding-left: 15px;
+	padding-right: 15px;
+	background-color: white;
+}
+
+div#statusbar div#statusbar-peers {
+	font-weight: bold;
+}
+
+div#statusbar div#statusbar-peers.no-peers {
+	color: #700;
+}
+
+div#statusbar div#statusbar-peers.very-few-peers {
+	color: #700;
+}
+
+div#statusbar div#statusbar-peers.few-peers {
+	color: #FA0;
+}
+
+div#statusbar div#statusbar-peers.avg-peers {
+	color: #FA0;
+}
+
+div#statusbar div#statusbar-peers.lots-of-peers {
+	color: green;
+}
+
+div#statusbar div#statusbar-seclevels a {
+	text-decoration: none;
+	padding-left: 5px;
+}
+
+div#statusbar div#statusbar-seclevels a.low {
+	color: #700;
+}
+
+div#statusbar div#statusbar-seclevels a.normal {
+	color: #b66700;
+}
+
+div#statusbar div#statusbar-seclevels a.high {
+	color: green;
+}
+
+div#statusbar div#statusbar-seclevels a.maximum {
+	color: #d9bd00;
+}
+
+div#content div.infobox-summary-status-box, div#content div#messages-summary-box,
+div#statusbar div#statusbar-alerts div.infobox-header {
+	display: none;
+}
+
+div#statusbar div#statusbar-alerts.contains-error, div#statusbar div#statusbar-alerts.contains-error a {
+	background-color: #ff7f7f;
+}
+
+div#statusbar div#statusbar-alerts.contains-warning, div#statusbar div#statusbar-alerts.contains-warning a,
+div#statusbar div#statusbar-alerts.contains-alert, div#statusbar div#statusbar-alerts.contains-alert a{
+	background-color: yellow;
+}
+
+div#statusbar div#statusbar-alerts.contains-information, div#statusbar div#statusbar-alerts.contains-information a {
+	color: blue;
+}
+
+body {
+	padding-bottom: 1.5em;
+}
+
 /* welcome page tweaks */
+
+p.click-for-more {
+	display: none;
+}
 
 div#search-freenet {
 	border: none;
@@ -866,4 +964,10 @@ div#freenet-version div.infobox-content form input[type=submit] {
 	border: none;
 	font-size: 0.9em;
 	border: 1px solid #CCF;
+}
+
+div#content div.infobox-error.infobox-summary-detailed,
+div#content div.infobox-error.infobox-summary-detailed div.infobox-header,
+div#content div.infobox-error.infobox-summary-detailed div.infobox-content {
+	display: block;
 }

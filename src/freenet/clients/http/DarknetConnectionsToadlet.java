@@ -159,7 +159,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx, this.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -328,7 +328,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
 						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
-						PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx, this.node);
 						HTMLNode pageNode = page.outer;
 						HTMLNode contentNode = page.content;
 						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode, "darknet-remove-node", true);

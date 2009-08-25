@@ -20,7 +20,7 @@ public class InsertFreesiteToadlet extends Toadlet {
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx, null);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		

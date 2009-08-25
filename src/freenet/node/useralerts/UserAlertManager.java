@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import freenet.client.async.FeedCallback;
+import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.Base64;
@@ -205,7 +206,11 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		if(maxLevel == Short.MAX_VALUE)
 			return new HTMLNode("#", "");
 		if(events < 2) drawDumpEventsForm = false;
-		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-summary-status-box");
+		final String additionnalClasses;
+		if(advancedMode) {
+			additionnalClasses = " infobox-summary-detailed";
+		} else additionnalClasses = "";
+		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-summary-status-box" + additionnalClasses);
 		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
 		HTMLNode contentNode = boxNode.addChild("div", "class", "infobox-content infobox-summary-status-content");
 		if(!advancedMode)
@@ -275,10 +280,14 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		}
 	}
 
+	public HTMLNode createSummary() {
+		return createSummary(false);
+	}
+
 	/**
 	 * Write the alert summary as HTML to a StringBuilder
 	 */
-	public HTMLNode createSummary() {
+	public HTMLNode createSummary(boolean oneLine) {
 		short highestLevel = 99;
 		int numberOfCriticalError = 0;
 		int numberOfError = 0;
@@ -303,11 +312,15 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				numberOfMinor++;
 			totalNumber++;
 		}
-		
+
+		if(totalNumber == 0 && oneLine)
+			return null;
+
 		if (totalNumber == 0)
 			return new HTMLNode("#", "");
 		
 		boolean separatorNeeded = false;
+		String separator = oneLine?", ":" | ";
 		int messageTypes=0;
 		StringBuilder alertSummaryString = new StringBuilder(1024);
 		if (numberOfCriticalError != 0) {
@@ -317,46 +330,49 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		}
 		if (numberOfError != 0) {
 			if (separatorNeeded)
-				alertSummaryString.append(" | ");
+				alertSummaryString.append(separator);
 			alertSummaryString.append(l10n("errorCountLabel")).append(' ').append(numberOfError);
 			separatorNeeded = true;
 			messageTypes++;
 		}
 		if (numberOfWarning != 0) {
 			if (separatorNeeded)
-				alertSummaryString.append(" | ");
+				alertSummaryString.append(separator);
 			alertSummaryString.append(l10n("warningCountLabel")).append(' ').append(numberOfWarning);
 			separatorNeeded = true;
 			messageTypes++;
 		}
 		if (numberOfMinor != 0) {
 			if (separatorNeeded)
-				alertSummaryString.append(" | ");
+				alertSummaryString.append(separator);
 			alertSummaryString.append(l10n("minorCountLabel")).append(' ').append(numberOfMinor);
 			separatorNeeded = true;
 			messageTypes++;
 		}
-		if (messageTypes != 1) {
+		if (messageTypes != 1 && !oneLine) {
 			if (separatorNeeded)
-				alertSummaryString.append(" | ");
+				alertSummaryString.append(separator);
 			alertSummaryString.append(l10n("totalLabel")).append(' ').append(totalNumber);
 		}
 		HTMLNode summaryBox = null;
 
+		String classes = oneLine?"alerts-line contains-":"infobox infobox-";
+		
 		if (highestLevel <= UserAlert.CRITICAL_ERROR)
-			summaryBox = new HTMLNode("div", "class", "infobox infobox-error");
+			summaryBox = new HTMLNode("div", "class", classes + "error");
 		else if (highestLevel <= UserAlert.ERROR)
-			summaryBox = new HTMLNode("div", "class", "infobox infobox-alert");
+			summaryBox = new HTMLNode("div", "class", classes + "alert");
 		else if (highestLevel <= UserAlert.WARNING)
-			summaryBox = new HTMLNode("div", "class", "infobox infobox-warning");
+			summaryBox = new HTMLNode("div", "class", classes + "warning");
 		else if (highestLevel <= UserAlert.MINOR)
-			summaryBox = new HTMLNode("div", "class", "infobox infobox-information");
+			summaryBox = new HTMLNode("div", "class", classes + "information");
 		summaryBox.addChild("div", "class", "infobox-header", l10n("alertsTitle"));
 		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
-		summaryContent.addChild("#", " ");
+		summaryContent.addChild("#", separator);
 		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
 				new String[] { "link", "/link" },
 				new String[] { "<a href=\"/alerts/\">", "</a>" });
+		summaryBox.addAttribute("id", "messages-summary-box");
 		return summaryBox;
 	}
 

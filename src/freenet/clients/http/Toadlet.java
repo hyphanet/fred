@@ -66,7 +66,7 @@ public abstract class Toadlet {
 	private String supportedMethodsCache;
 
 	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
-		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
+		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext, null);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
@@ -249,7 +249,7 @@ public abstract class Toadlet {
 	 * Send a slightly more complex error page.
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, HTMLNode message) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx, null);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -273,7 +273,7 @@ public abstract class Toadlet {
 	 * @throws ToadletContextClosedException If the context has already been closed.
 	 */
 	protected void sendErrorPage(ToadletContext ctx, String desc, String message, Throwable t) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(desc, ctx, null);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		

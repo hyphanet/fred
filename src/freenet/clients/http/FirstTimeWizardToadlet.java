@@ -75,7 +75,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
 		
 		if(currentStep == WIZARD_STEP.BROWSER_WARNING) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("browserWarningPageTitle"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("browserWarningPageTitle"), false, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -92,7 +92,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), false, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -119,7 +119,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.SECURITY_FRIENDS) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), false, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -146,7 +146,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.SECURITY_PHYSICAL) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("physicalSecurityPageTitle"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("physicalSecurityPageTitle"), false, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -186,7 +186,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 				return;
 			}
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -206,7 +206,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {
 			// Attempt to skip one step if possible
 			int autodetectedLimit = canAutoconfigureBandwidth();
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -247,7 +247,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		} else if(currentStep == WIZARD_STEP.DATASTORE_SIZE) {
 			// Attempt to skip one step if possible
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -289,7 +289,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.MISC) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("stepMiscTitle"), true, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("stepMiscTitle"), true, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -322,7 +322,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}else if(currentStep == WIZARD_STEP.CONGRATZ) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -348,7 +348,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return;
 		}
 		
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageTitle"), false, ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("homepageTitle"), false, ctx, this.core.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -404,7 +404,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if((newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM || newThreatLevel == NETWORK_THREAT_LEVEL.HIGH)) {
 				if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
 					(!request.isPartSet("security-levels.networkThreatLevel.tryConfirm"))) {
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), ctx, this.core.node);
 					HTMLNode pageNode = page.outer;
 					HTMLNode content = page.content;
 					
@@ -452,7 +452,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if((newThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)) {
 				if((!request.isPartSet("security-levels.friendsThreatLevel.confirm")) &&
 					(!request.isPartSet("security-levels.friendsThreatLevel.tryConfirm"))) {
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), ctx, this.core.node);
 					HTMLNode pageNode = page.outer;
 					HTMLNode content = page.content;
 					
@@ -504,7 +504,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						// Do nothing, already set a password.
 					} catch (MasterKeysWrongPasswordException e) {
 						System.err.println("Wrong password!");
-						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx, this.core.node);
 						HTMLNode pageNode = page.outer;
 						HTMLNode contentNode = page.content;
 						
@@ -527,7 +527,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				} else {
 					// Must set a password!
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx, this.core.node);
 					HTMLNode pageNode = page.outer;
 					HTMLNode contentNode = page.content;
 					
@@ -574,7 +574,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						}
 					} catch (MasterKeysWrongPasswordException e) {
 						System.err.println("Wrong password!");
-						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx, this.core.node);
 						HTMLNode pageNode = page.outer;
 						HTMLNode contentNode = page.content;
 						
@@ -599,7 +599,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				} else if(core.node.getMasterPasswordFile().exists()) {
 					// We need the old password
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx, this.core.node);
 					HTMLNode pageNode = page.outer;
 					HTMLNode contentNode = page.content;
 					
@@ -690,7 +690,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	private void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
-		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath()).generate());
+		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath(), core.node).generate());
 	}
 
 	private void addBackToPhysicalSeclevelsLink(HTMLNode content) {
@@ -821,7 +821,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	private void sendCantDeleteMasterKeysFile(ToadletContext ctx, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(ctx, core.node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel);
+		HTMLNode pageNode = SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(ctx, core.node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel, this.core.node);
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 

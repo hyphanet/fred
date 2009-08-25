@@ -76,7 +76,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
 						if(warning != null) {
 							if(pageNode == null) {
-								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx, this.node);
 								pageNode = page.outer;
 								content = page.content;
 								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
@@ -114,7 +114,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newFriendsLevel, confirm);
 						if(warning != null) {
 							if(pageNode == null) {
-								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx, this.node);
 								pageNode = page.outer;
 								content = page.content;
 								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
@@ -197,7 +197,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 								return;
 							} catch (MasterKeysWrongPasswordException e) {
 								System.err.println("Wrong password!");
-								PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx);
+								PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx, this.node);
 								pageNode = page.outer;
 								HTMLNode contentNode = page.content;
 								
@@ -260,7 +260,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 								}
 							} catch (MasterKeysWrongPasswordException e) {
 								System.err.println("Wrong password!");
-								PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordForDecryptTitle"), ctx);
+								PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordForDecryptTitle"), ctx, this.node);
 								pageNode = page.outer;
 								HTMLNode contentNode = page.content;
 								
@@ -294,7 +294,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 							}
 						} else if(core.node.getMasterPasswordFile().exists()) {
 							// We need the old password
-							PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordForDecryptTitle"), ctx);
+							PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordForDecryptTitle"), ctx, this.node);
 							pageNode = page.outer;
 							HTMLNode contentNode = page.content;
 							
@@ -401,12 +401,12 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 	
 	private void sendCantDeleteMasterKeysFile(ToadletContext ctx, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = sendCantDeleteMasterKeysFileInner(ctx, node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel);
+		HTMLNode pageNode = sendCantDeleteMasterKeysFileInner(ctx, node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel, this.node);
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	static HTMLNode sendCantDeleteMasterKeysFileInner(ToadletContext ctx, String filename, boolean forFirstTimeWizard, String physicalSecurityLevel) {
-		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("cantDeletePasswordFileTitle"), ctx);
+	static HTMLNode sendCantDeleteMasterKeysFileInner(ToadletContext ctx, String filename, boolean forFirstTimeWizard, String physicalSecurityLevel, Node node) {
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("cantDeletePasswordFileTitle"), ctx, node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -432,7 +432,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	private void sendChangePasswordForm(ToadletContext ctx, boolean wrongPassword, boolean emptyPassword, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
 		
 		// Must set a password!
-		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("changePasswordTitle"), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("changePasswordTitle"), ctx, this.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -465,7 +465,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	private void sendPasswordPage(ToadletContext ctx, boolean emptyPassword, String threatlevel) throws ToadletContextClosedException, IOException {
 		
 		// Must set a password!
-		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("setPasswordTitle"), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("setPasswordTitle"), ctx, this.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -495,7 +495,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 			return;
 		}
 		
-		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("SecurityLevelsToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("SecurityLevelsToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx, this.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -647,7 +647,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 	
 	void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
-		HTMLNode page = sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, node.getMasterPasswordFile().getPath());
+		HTMLNode page = sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, node.getMasterPasswordFile().getPath(), node);
 		writeHTMLReply(ctx, 500, "Internal Server Error", page.generate());
 	}
 	
@@ -656,8 +656,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 	 * @param forFirstTimeWizard The user has tried to set a password in the first-time wizard on the physical security levels page.
 	 * If neither of the above are set, the user is just trying to unlock an existing master keys file, which sadly has been corrupted. :(
 	 * @param ctx */
-	static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile) {
-		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordFileCorruptedTitle"), ctx);
+	static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile, Node node) {
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordFileCorruptedTitle"), ctx, node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -681,7 +681,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	 * @throws ToadletContextClosedException 
 	 */
 	private void sendPasswordFormPage(boolean wasWrong, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordPageTitle"), ctx, this.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		

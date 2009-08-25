@@ -5,6 +5,7 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
@@ -14,15 +15,17 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
 	private final UserAlertManager alerts;
 	private final PluginManager plugins;
+	private final Node node;
 	
-	protected ChatForumsToadlet(HighLevelSimpleClient client, UserAlertManager alerts, PluginManager plugins) {
+	protected ChatForumsToadlet(HighLevelSimpleClient client, UserAlertManager alerts, PluginManager plugins, Node node) {
 		super(client);
 		this.alerts = alerts;
 		this.plugins = plugins;
+		this.node = node;
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx, this.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		

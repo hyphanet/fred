@@ -52,7 +52,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		
 		PageMaker pageMaker = ctx.getPageMaker();
 		
-		PageNode page = pageMaker.getPageNode(l10n("title"), ctx);
+		PageNode page = pageMaker.getPageNode(l10n("title"), ctx, this.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		

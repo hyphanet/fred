@@ -151,7 +151,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				mimeType = fo.type;
 				
 				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
-					PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
+					PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context, core.node);
 					HTMLNode pageNode = page.outer;
 					HTMLNode contentNode = page.content;
 					
@@ -257,7 +257,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			use1.printStackTrace();
 			Logger.error(FProxyToadlet.class, "could not create URI", use1);
 		} catch (UnsafeContentTypeException e) {
-			PageNode page = context.getPageMaker().getPageNode(l10n("dangerousContentTitle"), context);
+			PageNode page = context.getPageMaker().getPageNode(l10n("dangerousContentTitle"), context, core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
@@ -506,7 +506,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		try {
 			key = new FreenetURI(ks);
 		} catch (MalformedURLException e) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("invalidKeyTitle"), ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("invalidKeyTitle"), ctx, this.core.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
@@ -568,7 +568,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(logMINOR) Logger.minor(this, "Still in progress");
 				// Still in progress
 				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
-				PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx, this.core.node);
 				HTMLNode pageNode = page.outer;
 				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
 				HTMLNode headNode=page.headNode;
@@ -711,7 +711,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				Toadlet.writePermanentRedirect(ctx, msg,
 					getLink(e.newURI, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload")));
 			} else if(e.mode == FetchException.TOO_BIG) {
-				PageNode page = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx, this.core.node);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 				
@@ -775,7 +775,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
-				PageNode page = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode), ctx, this.core.node);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 
@@ -1045,7 +1045,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
 		server.register(opennetToadlet, "FProxyToadlet.categoryStatus", "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 		
-		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, core.alerts, node.pluginManager);
+		ChatForumsToadlet chatForumsToadlet = new ChatForumsToadlet(client, core.alerts, node.pluginManager, core.node);
 		server.register(chatForumsToadlet, "FProxyToadlet.categoryChat", "/chat/", true, "FProxyToadlet.chatForumsTitle", "FProxyToadlet.chatForums", true, chatForumsToadlet);
 		
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);

@@ -229,7 +229,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		final int mode = ctx.getPageMaker().parseMode(request, container);
 		
-		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(getPageTitle(titleCountString, node.getMyName()), ctx, this.node);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -551,7 +551,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				results.put(result, results.get(result)+1);
 			}
 			
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("reportOfNodeAddition"), ctx, this.node);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
