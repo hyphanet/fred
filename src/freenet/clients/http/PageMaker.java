@@ -248,14 +248,17 @@ public final class PageMaker {
 			}
 
 			statusBarDiv.addChild("div", "id", "statusbar-language", L10n.getSelectedLanguage().fullName);
-			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-			final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
-			if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
-				switchMode.addAttribute("class", "simple");
-				switchMode.addChild("a", "href", "?mode=1", L10n.getString("StatusBar.switchToSimpleMode"));
-			} else {
-				switchMode.addAttribute("class", "advanced");
-				switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
+	
+			if(node.clientCore != null) {
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
+				if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
+					switchMode.addAttribute("class", "simple");
+					switchMode.addChild("a", "href", "?mode=1", L10n.getString("StatusBar.switchToSimpleMode"));
+				} else {
+					switchMode.addAttribute("class", "advanced");
+					switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
+				}
 			}
 			
 			if(node != null && node.clientCore != null) {
