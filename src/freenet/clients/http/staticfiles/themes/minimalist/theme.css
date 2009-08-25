@@ -664,45 +664,115 @@ td.n2ntm-send-failed {
 	background-color: #f0fef0;
 }
 
-/* minimalistic additions */
+/* *****************************************************************
+ *                     minimalistic additions
+ * *****************************************************************/
 
-body, div#content {
-	background-color: white;
-}
+/* *****************************************************************
+ *                     general layout settings
+ * *****************************************************************/
 
-div#content div.infobox.infobox-summary-status-box {
-	position: absolute;
-	top: 2em;
-	left: 5px;
-	padding: 0;
-	margin: 0;
-}
-
-div#content div.infobox.infobox-summary-status-box div.infobox-header,
-div#content div.infobox.infobox-summary-status-box div.infobox-content {
-	padding: 0;
-	margin: 0;
-}
-
-div#content div.infobox.infobox-summary-status-box div.infobox-content li {
+a.bookmark-title,
+p.click-for-more,
+span.freenet-full-version,
+span.freenet-ext-version,
+div.bookmarks-box li.cat, div#freenet-version div.infobox-header,
+div.bookmarks-box div.infobox-header span.edit-bracket,
+div.bookmarks-box div.infobox-header a.bookmarks-header-text,
+div#content div.infobox-summary-status-box,
+div#content div#messages-summary-box,
+div#content div.infobox.infobox-summary-status-box div.infobox-content li,
+div#fetch-key div.infobox-header,
+div#fetch-key div form div span,
+div#freenet-version div.infobox-content br,
+div#search-freenet div.infobox-header span,
+div#statusbar div#statusbar-alerts div.infobox-header {
 	display: none;
-	margin-top: 5px;
-	margin-bottom: 5px;
-	margin-right: 5px;
 }
 
-div#content div.infobox.infobox-summary-status-box:hover div.infobox-content li {
-	display: block;
+div.bookmarks-box tr,
+div.bookmarks-box tr td,
+div.bookmarks-box ul#bookmarks,
+div.bookmarks-box table,
+div.bookmarks-box li,
+div.bookmarks-box td a img,
+div#freenet-version div.infobox-content form,
+div#freenet-version div.infobox-content div {
+	display: inline;
 }
 
+div.bookmarks-box a img,
+div#content div.infobox-error.infobox-summary-detailed,
+div#content div.infobox-error.infobox-summary-detailed div.infobox-header,
+div#content div.infobox-error.infobox-summary-detailed div.infobox-content,
+div#content div.infobox.infobox-summary-status-box:hover div.infobox-content li,
 div#content div.infobox.infobox-summary-status-box div.infobox-content li.alert-summary-text-error {
 	display: block;
+}
+
+body,
+div.bookmarks-box,
+div.bookmarks-box div,
+div#freenet-version,
+div#freenet-version div.infobox-content form input[type=submit],
+div#search-freenet,
+div#search-freenet .infobox-header,
+div#search-freenet form input[type=submit],
+div#fetch-key,
+div#fetch-key div.infobox-content form div input[type=submit],
+div#statusbar,
+div#content {
+	background-color: white !important;
+}
+
+div.bookmarks-box,
+div.bookmarks-box div.infobox-header,
+div.bookmarks-box *,
+div.bookmarks-box tr, 
+div.bookmarks-box tr td, 
+div.bookmarks-box ul#bookmarks, 
+div.bookmarks-box table, 
+div.bookmarks-box li,
+div#content div.infobox.infobox-summary-status-box,
+div#content div.infobox.infobox-summary-status-box div.infobox-header,
+div#content div.infobox.infobox-summary-status-box div.infobox-content,
+div#search-freenet,
+div#search-freenet .infobox-header,
+div#fetch-key {
+	margin: 0;
+}
+
+div.infobox-header,
+div.bookmarks-box,
+div.bookmarks-box
+div.bookmarks-box *,
+div.bookmarks-box tr,
+div.bookmarks-box tr td,
+div.bookmarks-box ul#bookmarks,
+div.bookmarks-box table,
+div.bookmarks-box li,
+div#content div.infobox.infobox-summary-status-box,
+div#content div.infobox.infobox-summary-status-box div.infobox-header,
+div#content div.infobox.infobox-summary-status-box div.infobox-content,
+div#search-freenet,
+div#search-freenet .infobox-header,
+div#fetch-key,
+div#freenet-version div.infobox-content form input[type=submit] {
+	padding: 0;
 }
 
 div#content {
 	border-top: 1px solid #CCF;
 	padding-top: 5px;
 }
+
+body {
+	padding-bottom: 1.5em;
+}
+
+/* *****************************************************************
+ *                     infoboxes settings
+ * *****************************************************************/
 
 div.infobox {
 	background-color: #EEF;
@@ -736,17 +806,21 @@ div.infobox-error div.infobox-header, div.infobox.infobox-summary-status-box.inf
 	background-color: #D88;
 }
 
-/* status bar */
-div#statusbar div {
-	float: left;
+div#content div.infobox.infobox-summary-status-box {
+	position: absolute;
+	top: 2em;
+	left: 5px;
 }
 
-div#statusbar div.separator {
-	width: 1px;
-	background-color: #CCF;
-	margin-left: 15px;
-	margin-right: 15px;
+div#content div.infobox.infobox-summary-status-box div.infobox-content li {
+	margin-top: 5px;
+	margin-bottom: 5px;
+	margin-right: 5px;
 }
+
+/* *****************************************************************
+ *                     statusbar settings
+ * *****************************************************************/
 
 div#statusbar {
 	position: fixed;
@@ -760,7 +834,17 @@ div#statusbar {
 	margin-right: 5px;
 	padding-left: 15px;
 	padding-right: 15px;
-	background-color: white;
+}
+
+div#statusbar div {
+	float: left;
+}
+
+div#statusbar div.separator {
+	width: 1px;
+	background-color: #CCF;
+	margin-left: 15px;
+	margin-right: 15px;
 }
 
 div#statusbar div#statusbar-peers {
@@ -808,11 +892,6 @@ div#statusbar div#statusbar-seclevels a.maximum {
 	color: #d9bd00;
 }
 
-div#content div.infobox-summary-status-box, div#content div#messages-summary-box,
-div#statusbar div#statusbar-alerts div.infobox-header {
-	display: none;
-}
-
 div#statusbar div#statusbar-alerts.contains-error, div#statusbar div#statusbar-alerts.contains-error a {
 	background-color: #ff7f7f;
 }
@@ -826,37 +905,27 @@ div#statusbar div#statusbar-alerts.contains-information, div#statusbar div#statu
 	color: blue;
 }
 
-body {
-	padding-bottom: 1.5em;
-}
-
-/* welcome page tweaks */
-
-p.click-for-more {
-	display: none;
-}
+/* *****************************************************************
+ *                 welcome page specific settings
+ * *****************************************************************/
 
 div#search-freenet {
 	border: none;
 	text-align: center;
-	background-color: white;
-	margin: 0;
-	padding: 0;
 	padding-top:10%;
 }
 
-div#search-freenet .infobox-content {
-	font-size: 0px;
-}
-
-div#search-freenet form {
+div#search-freenet span {
 	font-size: 0.9em;
+	display: block;
+	width: 450px;
+	font-style: italic;
+	margin: auto;
 }
 
 div#search-freenet form input[type=submit], div#fetch-key div.infobox-content form div input[type=submit] {
 	border: 1px solid blue;
 	color: blue;
-	background-color: white;
 	margin-left: 3px;
 	width: 110px;
 }
@@ -870,36 +939,24 @@ div#search-freenet form input[type=text], div#fetch-key div.infobox-content form
 div#search-freenet .infobox-header {
 	text-align: center;
 	border: none;
-	margin: 0;
-	padding: 0;
-	font-size: 0px;
 	height: 65px;
-	background-color: white;
 	background-repeat: no-repeat;
 	background-position: center;
-	background-image: url(/static/themes/minimalist/freenetlogo.png); 
+	background-image: url(/static/themes/minimalist/freenetlogo.png);
 }
 
-div.bookmarks-box, div.bookmarks-box div.infobox-header, div.bookmarks-box * {
+div.bookmarks-box, div.bookmarks-box *{
 	border: none;
-	background-color: white;
-	text-align: center;	
-	font-size: 0px;
-	padding: 0;
-	margin: 0;
+	text-align: center;
 }
 
-div.bookmarks-box li.cat {
-	display: none;
+div.bookmarks-box div.infobox-content ul {
+	width: 600px;
+	margin: auto; 
 }
 
 div.bookmarks-box td a img {
-	display: inline;
 	border: none;
-}
-
-div.bookmarks-box a, div.bookmarks-box div.infobox-header {
-	font-size: 0px;
 }
 
 div.bookmarks-box div.infobox-header a.interfacelink {
@@ -907,67 +964,27 @@ div.bookmarks-box div.infobox-header a.interfacelink {
 	color: #88D;
 }
 
-div.bookmarks-box tr, div.bookmarks-box tr td, div.bookmarks-box ul#bookmarks, div.bookmarks-box table, 
-div.bookmarks-box li {
-	display: inline;
-	padding: 0;
-	margin: 0;
-}
-
 div.bookmarks-box a img {
 	padding: 1px;
 	width: 108px;
 	height: 36px;
-	display: block;
-}
-
-div#fetch-key div.infobox-header {
-	display: none;
 }
 
 div#fetch-key {
-	background-color: white;
 	border: none;
 	text-align: center;
-	padding: 0;
-	margin: 0;
-}
-
-div#fetch-key div.infobox-content form div {
-	font-size: 0px;
-}
-
-div#freenet-version div.infobox-header {
-	display: none;
 }
 
 div#freenet-version {
-	background-color: white;
 	border: none;
 	text-align: center;
 	margin-top: 10px;
 }
 
-div#freenet-version div.infobox-content {
-	font-size: 0px;
-}
-
-div#freenet-version div.infobox-content form, div#freenet-version div.infobox-content div {
-	display: inline;
-}
-
 div#freenet-version div.infobox-content form input[type=submit] {
 	margin-right: 8px;
-	padding: 0;
 	color: #CCF;
-	background-color: white;
 	border: none;
 	font-size: 0.9em;
 	border: 1px solid #CCF;
-}
-
-div#content div.infobox-error.infobox-summary-detailed,
-div#content div.infobox-error.infobox-summary-detailed div.infobox-header,
-div#content div.infobox-error.infobox-summary-detailed div.infobox-content {
-	display: block;
 }
