@@ -500,6 +500,11 @@ public final class PageMaker {
 	}
 	
 	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
+		if(this.getTheme().showStatusBar) {
+			// We use the status bar, no need to show this.
+			return mode;
+		}
+
 		// FIXME style this properly?
 		HTMLNode table = contentNode.addChild("table", "border", "1");
 		HTMLNode row = table.addChild("tr");

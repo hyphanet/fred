@@ -55,6 +55,7 @@ import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.ConfigToadlet;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.PageMaker;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -2508,8 +2509,10 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		});
-		
-		securityLevels.registerUserAlert(clientCore.alerts);
+
+		if(!PageMaker.THEME.themeFromName(this.config.get("fproxy").getString("css")).showStatusBar) {
+			securityLevels.registerUserAlert(clientCore.alerts);
+		}
 		
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
