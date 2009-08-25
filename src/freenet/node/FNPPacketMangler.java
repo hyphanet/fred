@@ -2688,7 +2688,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public String dismissButtonText() {
-			return l10n("Hide");
+			return L10n.getString("UserAlert.Hide");
 		}
 
 		public short getPriorityClass() {
