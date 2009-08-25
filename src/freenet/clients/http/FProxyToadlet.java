@@ -788,6 +788,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				option.addChild("a", "href", '/' + key.toString(), getFilename(key, e.getExpectedMimeType()));
 
 				String mime = writeSizeAndMIME(fileInformationList, e);
+				infobox = contentNode.addChild("div", "class", "infobox infobox-error");
 				infobox.addChild("div", "class", "infobox-header", l10n("explanationTitle"));
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("p", l10n("unableToRetrieve"));
@@ -797,7 +798,8 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(e.errorCodes != null) {
 					infoboxContent.addChild("p").addChild("pre").addChild("#", e.errorCodes.toVerboseString());
 				}
-				
+
+				infobox = contentNode.addChild("div", "class", "infobox infobox-error");
 				infobox.addChild("div", "class", "infobox-header", l10n("options"));
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				
