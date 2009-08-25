@@ -2688,7 +2688,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public String dismissButtonText() {
-			return null;
+			return l10n("Hide");
 		}
 
 		public short getPriorityClass() {
@@ -2766,7 +2766,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public boolean userCanDismiss() {
-			return false;
+			return true;
 		}
 
 	};
