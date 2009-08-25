@@ -805,4 +805,8 @@ public class OpennetManager {
 	public int getNetworkSizeEstimate(long timestamp) {
 		return knownIds.countValuesAfter(timestamp);
 	}
+
+	public int getAnnouncementThreshold() {
+		return announcer.getAnnouncementThreshold();
+	}
 }

@@ -3,7 +3,8 @@ package freenet.node.simulator;
 import freenet.node.Node;
 
 public class TestUtil {
-	static boolean waitForNodes(Node node, int targetPeers) throws InterruptedException {
+	static boolean waitForNodes(Node node) throws InterruptedException {
+		int targetPeers = node.getOpennet().getAnnouncementThreshold();
 		// Wait until we have 10 connected nodes...
 		int seconds = 0;
 		boolean success = false;

@@ -17,7 +17,6 @@ import freenet.support.io.FileUtil;
 
 public class BootstrapSeedTest {
 
-	public static int TARGET_PEERS = 10;
 	public static int EXIT_NO_SEEDNODES = 257;
 	public static int EXIT_FAILED_TARGET = 258;
 	public static int EXIT_THREW_SOMETHING = 259;
@@ -62,6 +61,7 @@ public class BootstrapSeedTest {
         node.start(true);
         // Wait until we have 10 connected nodes...
         int seconds = 0;
+		int targetPeers = node.getOpennet().getAnnouncementThreshold();
         while(seconds < 600) {
         	Thread.sleep(1000);
         	int seeds = node.peers.countSeednodes();
@@ -71,14 +71,14 @@ public class BootstrapSeedTest {
         	System.err.println(""+seconds+" : seeds: "+seeds+", connected: "+seedConns
         			+" opennet: peers: "+opennetPeers+", connected: "+opennetConns);
         	seconds++;
-        	if(opennetConns >= TARGET_PEERS) {
+        	if(opennetConns >= targetPeers) {
         		long timeTaken = System.currentTimeMillis()-startTime;
-        		System.out.println("Completed bootstrap ("+TARGET_PEERS+" peers) in "+timeTaken+"ms ("+TimeUtil.formatTime(timeTaken)+")");
+        		System.out.println("Completed bootstrap ("+targetPeers+" peers) in "+timeTaken+"ms ("+TimeUtil.formatTime(timeTaken)+")");
         		node.park();
         		System.exit(0);
         	}
         }
-        System.err.println("Failed to reach target peers count "+TARGET_PEERS+" in 5 minutes.");
+        System.err.println("Failed to reach target peers count "+targetPeers+" in 5 minutes.");
 		node.park();
         System.exit(EXIT_FAILED_TARGET);
 	    } catch (Throwable t) {

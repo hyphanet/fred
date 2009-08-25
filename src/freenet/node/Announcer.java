@@ -254,12 +254,17 @@ public class Announcer {
 	private final Object timeGotEnoughPeersLock = new Object();
 	private boolean killedAnnouncementTooOld;
 	
+	public int getAnnouncementThreshold() {
+		// First, do we actually need to announce?
+		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
+		return target;
+	}
+	
 	/** @return True if we have enough peers that we don't need to announce. */
 	boolean enoughPeers() {
 		// Do we want to send an announcement to the node?
 		int opennetCount = node.peers.countConnectedOpennetPeers();
-		// First, do we actually need to announce?
-		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
+		int target = getAnnouncementThreshold();
 		if(opennetCount >= target) {
 			if(logMINOR)
 				Logger.minor(this, "We have enough opennet peers: "+opennetCount+" > "+target+" since "+(System.currentTimeMillis()-timeGotEnoughPeers)+" ms");

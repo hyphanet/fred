@@ -48,7 +48,6 @@ import freenet.support.io.FileUtil;
  * @author sdiz
  */
 public class LongTermPushPullTest {
-	private static final int TARGET_PEERS = 10;
 	private static final int TEST_SIZE = 64 * 1024;
 
 	private static final int EXIT_NO_SEEDNODES = 257;
@@ -107,7 +106,7 @@ public class LongTermPushPullTest {
 			// Start it
 			node.start(true);
 			long t1 = System.currentTimeMillis();
-			if (!TestUtil.waitForNodes(node, TARGET_PEERS)) {
+			if (!TestUtil.waitForNodes(node)) {
 				exitCode = EXIT_FAILED_TARGET;
 				return;
 			}
@@ -153,7 +152,7 @@ public class LongTermPushPullTest {
 			node2.start(true);
 
 			t1 = System.currentTimeMillis();
-			if (!TestUtil.waitForNodes(node2, TARGET_PEERS)) {
+			if (!TestUtil.waitForNodes(node2)) {
 				exitCode = EXIT_FAILED_TARGET;
 				return;
 			}
