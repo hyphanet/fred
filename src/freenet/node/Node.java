@@ -1006,7 +1006,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// FProxy config needs to be here too
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
 		try {
-			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor);
+			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor, this);
 			fproxyConfig.finishedInitialization();
 			toadlets.start();
 		} catch (IOException e4) {

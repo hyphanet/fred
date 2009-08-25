@@ -42,7 +42,7 @@ public class N2NTMToadlet extends Toadlet {
 
 		if (request.isParameterSet("peernode_hashcode")) {
 			PageNode page = ctx.getPageMaker().getPageNode(
-					l10n("sendMessage"), ctx, this.node);
+					l10n("sendMessage"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 
@@ -136,7 +136,7 @@ public class N2NTMToadlet extends Toadlet {
 				return;
 			}
 			PageNode page =  ctx.getPageMaker().getPageNode(
-					l10n("processingSend"), ctx, this.node);
+					l10n("processingSend"), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class",

@@ -56,7 +56,7 @@ public class ConnectivityToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		final int mode = ctx.getPageMaker().parseMode(request, container);
-		PageNode page = pageMaker.getPageNode(L10n.getString("ConnectivityToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx, this.node);
+		PageNode page = pageMaker.getPageNode(L10n.getString("ConnectivityToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 

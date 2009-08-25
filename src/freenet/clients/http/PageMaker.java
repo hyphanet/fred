@@ -85,6 +85,7 @@ public final class PageMaker {
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
 	private File override;
+	private final Node node;
 	
 	private List<SubMenu> menuList = new ArrayList<SubMenu>();
 	private Map<String, SubMenu> subMenus = new HashMap<String, SubMenu>();
@@ -140,8 +141,9 @@ public final class PageMaker {
 		}
 	}
 	
-	protected PageMaker(THEME t) {
+	protected PageMaker(THEME t, Node n) {
 		setTheme(t);
+		this.node = n;
 	}
 	
 	void setOverride(File f) {
@@ -202,11 +204,11 @@ public final class PageMaker {
 		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", name }, name);
 	}
 	
-	public PageNode getPageNode(String title, ToadletContext ctx, Node node) {
-		return getPageNode(title, true, ctx, node);
+	public PageNode getPageNode(String title, ToadletContext ctx) {
+		return getPageNode(title, true, ctx);
 	}
 
-	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx, Node node) {
+	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage().isoCode);
@@ -237,7 +239,7 @@ public final class PageMaker {
 		if (this.getTheme().showStatusBar) {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar");
 
-			if(node != null) {
+			if(node != null && node.clientCore != null) {
 				final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
 				if(alerts != null) {
 					statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
@@ -256,7 +258,7 @@ public final class PageMaker {
 				switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
 			}
 			
-			if(node != null) {
+			if(node != null && node.clientCore != null) {
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", L10n.getString("SecurityLevels.statusBarPrefix"));
 

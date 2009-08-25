@@ -72,7 +72,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
 		if(!core.allowUploadFrom(thisPath)) {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()), toadletContext, this.core.node);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()), toadletContext);
 			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content, "access-denied", true).
 				addChild("#", l10n("dirAccessDenied"));
 
@@ -97,7 +97,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			// Known safe at this point
 			currentPath = thisPath;
 
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext, this.core.node);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())
@@ -180,7 +180,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 				}
 			}
 		} else {
-			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext, this.core.node);
+			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())

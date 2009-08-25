@@ -25,6 +25,7 @@ import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevelListener;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
@@ -319,9 +320,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor) throws IOException, InvalidConfigValueException {
+	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor, Node node) throws IOException, InvalidConfigValueException {
 
 		this.executor = executor;
+		this.core = node.clientCore;
 		
 		int configItemOrder = 0;
 		
@@ -541,7 +543,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		cssTheme = THEME.themeFromName(cssName);
-		pageMaker = new PageMaker(cssTheme);
+		pageMaker = new PageMaker(cssTheme, node);
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));

@@ -156,7 +156,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		PageMaker pageMaker = ctx.getPageMaker();
 		String editorTitle = L10n.getString("BookmarkEditorToadlet.title");
 		String error = L10n.getString("BookmarkEditorToadlet.error");
-		PageNode page = pageMaker.getPageNode(editorTitle, ctx, this.core.node);
+		PageNode page = pageMaker.getPageNode(editorTitle, ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode content = page.content;
 		String originalBookmark = req.getParam("bookmark");
@@ -296,7 +296,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
-		PageNode page = pageMaker.getPageNode(L10n.getString("BookmarkEditorToadlet.title"), ctx, this.core.node);
+		PageNode page = pageMaker.getPageNode(L10n.getString("BookmarkEditorToadlet.title"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode content = page.content;
 
