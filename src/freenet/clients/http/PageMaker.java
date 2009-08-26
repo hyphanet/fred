@@ -237,7 +237,7 @@ public final class PageMaker {
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 
 		if (this.getTheme().showStatusBar) {
-			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar");
+			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
 			if(node != null && node.clientCore != null) {
 				final HTMLNode alerts = node.clientCore.alerts.createSummary(true);

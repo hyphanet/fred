@@ -156,7 +156,7 @@ div#navbar ul li:hover ul, div#navbar ul li ul:hover {
 	top: 1em;
 	left: 0;
 	width: 170px;
-	z-index: 20;
+	z-index: 19;
 	overflow: hidden;
 }
 
@@ -721,6 +721,7 @@ div#search-freenet form input[type=submit],
 div#fetch-key,
 div#fetch-key div.infobox-content form div input[type=submit],
 div#statusbar,
+div#statusbar-container,
 div#content {
 	background-color: white !important;
 }
@@ -738,6 +739,8 @@ div#content div.infobox.infobox-summary-status-box div.infobox-header,
 div#content div.infobox.infobox-summary-status-box div.infobox-content,
 div#search-freenet,
 div#search-freenet .infobox-header,
+div#statusbar,
+div#statusbar-container,
 div#fetch-key {
 	margin: 0;
 }
@@ -757,6 +760,8 @@ div#content div.infobox.infobox-summary-status-box div.infobox-content,
 div#search-freenet,
 div#search-freenet .infobox-header,
 div#fetch-key,
+div#statusbar,
+div#statusbar-container,
 div#freenet-version div.infobox-content form input[type=submit] {
 	padding: 0;
 }
@@ -767,6 +772,7 @@ div#content {
 }
 
 body {
+	/* Height of the status bar (+ some margin) */
 	padding-bottom: 1.5em;
 }
 
@@ -778,7 +784,7 @@ div.infobox {
 	background-color: #EEF;
 	border: 3px solid #CCF;
 	color: black;
-	overflow: auto;
+	width: auto;
 }
 
 div.infobox div.infobox-header {
@@ -823,11 +829,15 @@ div#content div.infobox.infobox-summary-status-box div.infobox-content li {
  *                     statusbar settings
  * *****************************************************************/
 
-div#statusbar {
+div#statusbar-container {
 	position: fixed;
 	bottom: 0;
 	left: 0;
 	right: 0;
+	z-index: 18;
+}
+
+div#statusbar {
 	height: 1.5em;
 	padding-top: 0.25em;
 	border-top: 1px solid #CCF;
@@ -835,7 +845,6 @@ div#statusbar {
 	margin-right: 5px;
 	padding-left: 15px;
 	padding-right: 15px;
-	z-index: 10;
 }
 
 div#statusbar div {
