@@ -15,6 +15,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import freenet.client.async.FeedCallback;
+import freenet.clients.http.PageMaker;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
@@ -166,16 +167,22 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			else return -1;
 		}
 	}
-	
+
+	public HTMLNode createAlerts() {
+		return createAlerts(false);
+	}
+
 	/**
 	 * Write the alerts as HTML.
 	 */
-	public HTMLNode createAlerts() {
+	public HTMLNode createAlerts(boolean onlyShowErrors) {
 		HTMLNode alertsNode = new HTMLNode("div");
 		UserAlert[] alerts = getAlerts();
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
+			if(onlyShowErrors && alert.getPriorityClass() > alert.ERROR)
+				continue;
 			if (!alert.isValid())
 				continue;
 			totalNumber++;
@@ -281,7 +288,11 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	public HTMLNode createSummary() {
-		return createSummary(false);
+		if(!PageMaker.THEME.themeFromName(this.core.node.config.get("fproxy").getString("css")).showStatusBar) {
+			return createSummary(false);
+		} else {
+			return createAlerts(true);
+		}
 	}
 
 	/**
@@ -323,12 +334,12 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		String separator = oneLine?", ":" | ";
 		int messageTypes=0;
 		StringBuilder alertSummaryString = new StringBuilder(1024);
-		if (numberOfCriticalError != 0) {
+		if (numberOfCriticalError != 0 && !oneLine) {
 			alertSummaryString.append(l10n("criticalErrorCountLabel")).append(' ').append(numberOfCriticalError);
 			separatorNeeded = true;
 			messageTypes++;
 		}
-		if (numberOfError != 0) {
+		if (numberOfError != 0 && !oneLine) {
 			if (separatorNeeded)
 				alertSummaryString.append(separator);
 			alertSummaryString.append(l10n("errorCountLabel")).append(' ').append(numberOfError);
@@ -358,9 +369,9 @@ public class UserAlertManager implements Comparator<UserAlert> {
 
 		String classes = oneLine?"alerts-line contains-":"infobox infobox-";
 		
-		if (highestLevel <= UserAlert.CRITICAL_ERROR)
+		if (highestLevel <= UserAlert.CRITICAL_ERROR && !oneLine)
 			summaryBox = new HTMLNode("div", "class", classes + "error");
-		else if (highestLevel <= UserAlert.ERROR)
+		else if (highestLevel <= UserAlert.ERROR && !oneLine)
 			summaryBox = new HTMLNode("div", "class", classes + "alert");
 		else if (highestLevel <= UserAlert.WARNING)
 			summaryBox = new HTMLNode("div", "class", classes + "warning");
