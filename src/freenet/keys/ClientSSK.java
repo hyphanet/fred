@@ -18,6 +18,11 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
+/** Client-level SSK, i.e. a low level SSK with the decryption key needed to
+ * decrypt the data once it is fetched. Note that you can only use this to
+ * *REQUEST* keys, not to *INSERT* them, because it only has the public key
+ * and not the private key, @see InsertableClientSSK.
+ */
 public class ClientSSK extends ClientKey {
 
 	/** Crypto type */

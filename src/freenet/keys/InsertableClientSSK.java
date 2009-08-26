@@ -28,6 +28,7 @@ import freenet.keys.Key.Compressed;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
 
+/** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {
 
 	public final DSAPrivateKey privKey;

@@ -8,6 +8,7 @@ import java.io.IOException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
+/** A KeyBlock with a ClientKey. Can be decoded. */
 public interface ClientKeyBlock extends KeyBlock {
 
 	/** Decode with the key
