@@ -63,12 +63,6 @@ public interface KeyListener {
 	 */
 	short getPriorityClass(ObjectContainer container);
 
-	/**
-	 * @return True if when checking the datastore on initial registration, we
-	 * should not promote any blocks found.
-	 */
-	public abstract boolean dontCache();
-
 	public long countKeys();
 
 	/**

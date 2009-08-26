@@ -1434,10 +1434,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 
-	public boolean dontCache(ObjectContainer container) {
-		return !blockFetchContext.cacheLocalRequests;
-	}
-
 	public short getPriorityClass(ObjectContainer container) {
 		if(persistent)
 			container.activate(parent, 1);

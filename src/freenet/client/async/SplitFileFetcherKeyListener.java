@@ -62,7 +62,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * few more false positives. On a fast node with slow disk, writing on every 
 	 * completed block could become a major bottleneck. */
 	private static final int WRITE_DELAY = 60*1000;
-	private final boolean dontCache;
 	private short prio;
 	/** Used only if we reach the per-segment bloom filters. The overall bloom
 	 * filters use the global salt. */
@@ -75,13 +74,12 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * should be created from scratch.
 	 * @throws IOException 
 	 */
-	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, boolean dontCache, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter) throws IOException {
+	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter) throws IOException {
 		fetcher = parent;
 		this.persistent = persistent;
 		this.keyCount = keyCount;
 		this.mainBloomFile = bloomFile;
 		this.altBloomFile = altBloomFile;
-		this.dontCache = dontCache;
 		assert(localSalt.length == 32);
 		if(persistent) {
 			this.localSalt = new byte[32];
@@ -236,10 +234,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			}
 		}
 		return found;
-	}
-
-	public boolean dontCache() {
-		return dontCache;
 	}
 
 	public HasKeyListener getHasKeyListener() {

@@ -34,9 +34,6 @@ public class InsertContext {
 	public final int splitfileSegmentCheckBlocks;
 	/** Client events will be published to this, you can subscribe to them */
 	public final ClientEventProducer eventProducer;
-	/** Whether to cache local requests in the datastore. Interesting 
-	 * tradeoff, see comments at top of Node.java. */
-	public final boolean cacheLocalRequests;
 	/** Can this insert write to the client-cache? We don't store all requests in the client cache,
 	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. Plus, 
 	 * local inserts are not written to the client-cache by default for privacy reasons. */
@@ -50,7 +47,7 @@ public class InsertContext {
 
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests, boolean canWriteClientCache, String compressorDescriptor) {
+			ClientEventProducer eventProducer, boolean canWriteClientCache, String compressorDescriptor) {
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
 		dontCompress = false;
@@ -60,7 +57,6 @@ public class InsertContext {
 		this.eventProducer = eventProducer;
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
-		this.cacheLocalRequests = cacheLocalRequests;
 		this.canWriteClientCache = canWriteClientCache;
 		this.compressorDescriptor = compressorDescriptor;
 	}
@@ -75,7 +71,6 @@ public class InsertContext {
 		this.eventProducer = producer;
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
-		this.cacheLocalRequests = ctx.cacheLocalRequests;
 		this.compressorDescriptor = ctx.compressorDescriptor;
 	}
 

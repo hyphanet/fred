@@ -23,17 +23,15 @@ public abstract class ChosenBlock {
 	/** The client-layer key to be fetched, null if not a SendableGet */
 	public transient final ClientKey ckey;
 	public transient final boolean localRequestOnly;
-	public transient final boolean cacheLocalRequests;
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
 	
-	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean cacheLocalRequests, boolean ignoreStore, boolean canWriteClientCache, RequestScheduler sched) {
+	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, RequestScheduler sched) {
 		this.token = token;
 		if(token == null) throw new NullPointerException();
 		this.key = key;
 		this.ckey = ckey;
 		this.localRequestOnly = localRequestOnly;
-		this.cacheLocalRequests = cacheLocalRequests;
 		this.ignoreStore = ignoreStore;
 		this.canWriteClientCache = canWriteClientCache;
 	}

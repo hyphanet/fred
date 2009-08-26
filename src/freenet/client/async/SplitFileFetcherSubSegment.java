@@ -84,18 +84,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	@Override
-	public boolean dontCache(ObjectContainer container) {
-		if(persistent) container.activate(ctx, 1);
-		if(ctx == null) {
-			if(segment != null)
-				Logger.error(this, "CTX=NULL BUT SEGMENT != NULL!");
-			else
-				Logger.error(this, "CTX=NULL AND SEGMENT = NULL on "+this);
-		}
-		return !ctx.cacheLocalRequests;
-	}
-
-	@Override
 	public FetchContext getContext() {
 		return ctx;
 	}

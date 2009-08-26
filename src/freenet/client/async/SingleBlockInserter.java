@@ -522,12 +522,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					}, "Got URI");
 					
 				}
-				core.realPut(b, req.cacheLocalRequests, req.canWriteClientCache);
+				core.realPut(b, req.canWriteClientCache);
 			} catch (LowLevelPutException e) {
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
 					try {
-						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true, true, req.canWriteClientCache, false);
+						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true, true, false);
 						byte[] data = collided.memoryDecode(true);
 						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
 						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
@@ -756,20 +756,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		container.delete(this);
 	}
 
-	@Override
-	public boolean cacheInserts(ObjectContainer container) {
-		boolean deactivate = false;
-		if(persistent) {
-			deactivate = !container.ext().isActive(ctx);
-			if(deactivate)
-				container.activate(ctx, 1);
-		}
-		boolean retval = ctx.cacheLocalRequests;
-		if(deactivate)
-			container.deactivate(ctx, 1);
-		return retval;
-	}
-	
 	@Override
 	public boolean canWriteClientCache(ObjectContainer container) {
 		boolean deactivate = false;

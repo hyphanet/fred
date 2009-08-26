@@ -186,10 +186,6 @@ public class BinaryBlobInserter implements ClientPutState {
 			maybeFinish(container, context);
 		}
 		
-		@Override
-		public boolean shouldCache() {
-			return ctx.cacheLocalRequests;
-		}
 	}
 
 	public void maybeFinish(ObjectContainer container, ClientContext context) {

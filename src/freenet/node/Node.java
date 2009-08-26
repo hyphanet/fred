@@ -495,21 +495,6 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Log config handler */
 	public static LoggingConfigHandler logConfigHandler;
 	
-	/** If true, local requests and inserts aren't cached.
-	 * This opens up a glaring vulnerability; connected nodes
-	 * can then probe the store, and if the node doesn't have the
-	 * content, they know for sure that it was a local request.
-	 * HOWEVER, if we don't do this, then a non-full seized 
-	 * datastore will contain everything requested by the user...
-	 * Also, remote probing is possible by peers, although it is
-	 * more difficult, and leaves more plausible deniability,
-	 * than the first attack.
-	 * 
-	 * So it may be useful on some darknets, and is useful for 
-	 * debugging, but in general should be off on opennet and 
-	 * most darknets.
-	 */
-	public static final boolean DONT_CACHE_LOCAL_REQUESTS = false;
 	public static final int PACKETS_IN_BLOCK = 32;
 	public static final int PACKET_SIZE = 1024;
 	public static final double DECREMENT_AT_MIN_PROB = 0.25;
@@ -3728,11 +3713,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * cannot write to the datastore.
 	 * @return A KeyBlock for the key requested or null.
 	 */
-	private KeyBlock makeRequestLocal(Key key, long uid, boolean promoteCache, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean offersOnly) {
+	private KeyBlock makeRequestLocal(Key key, long uid, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean offersOnly) {
 		KeyBlock kb = null;
 
 		if (key instanceof NodeCHK) {
-			kb = fetch((NodeCHK) key, !promoteCache, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+			kb = fetch((NodeCHK) key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 		} else if (key instanceof NodeSSK) {
 			NodeSSK sskKey = (NodeSSK) key;
 			DSAPublicKey pubKey = sskKey.getPubKey();
@@ -3749,7 +3734,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (pubKey != null) {
 				if (logMINOR)
 					Logger.minor(this, "Got pubkey: " + pubKey);
-				kb = fetch(sskKey, !promoteCache, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+				kb = fetch(sskKey, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 			} else {
 				if (logMINOR)
 					Logger.minor(this, "Not found because no pubkey: " + uid);
@@ -3783,12 +3768,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache) {
+	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache) {
 		boolean canWriteDatastore = canWriteDatastoreRequest(htl);
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
 		if(!ignoreStore) {
-			KeyBlock kb = makeRequestLocal(key, uid, cache, canReadClientCache, canWriteClientCache, canWriteDatastore, offersOnly);
+			KeyBlock kb = makeRequestLocal(key, uid, canReadClientCache, canWriteClientCache, canWriteDatastore, offersOnly);
 			if (kb != null)
 				return kb;
 		}
@@ -3931,11 +3916,11 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public KeyBlock fetch(Key key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+	public KeyBlock fetch(Key key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		if(key instanceof NodeSSK)
-			return fetch((NodeSSK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
+			return fetch((NodeSSK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
 		else if(key instanceof NodeCHK)
-			return fetch((NodeCHK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
+			return fetch((NodeCHK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
 		else throw new IllegalArgumentException();
 	}
 	
@@ -4270,7 +4255,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean cache, boolean canWriteClientCache) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		CHKInsertSender is = null;
@@ -4281,8 +4266,6 @@ public class Node implements TimeSkewDetectorCallback {
 			if(logMINOR) Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-		if(fromStore && !cache)
-			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
 		is.start();
 		if(logMINOR) Logger.minor(this, is.toString()+" for "+kh.toString());
@@ -4302,13 +4285,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, boolean cache, boolean canWriteClientCache, boolean canWriteDatastore) {
+			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
-		if(cache)
-			getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
+		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
@@ -4319,8 +4301,6 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-		if(fromStore && !cache)
-			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
 		is.start();
 		Logger.minor(this, is.toString()+" for "+kh.toString());
@@ -4649,26 +4629,26 @@ public class Node implements TimeSkewDetectorCallback {
 		return testnetEnabled;
 	}
 
-	public ClientKeyBlock fetchKey(ClientKey key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyVerifyException {
+	public ClientKeyBlock fetchKey(ClientKey key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyVerifyException {
 		if(key instanceof ClientCHK)
-			return fetch((ClientCHK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore);
+			return fetch((ClientCHK)key, canReadClientCache, canWriteClientCache, canWriteDatastore);
 		else if(key instanceof ClientSSK)
-			return fetch((ClientSSK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore);
+			return fetch((ClientSSK)key, canReadClientCache, canWriteClientCache, canWriteDatastore);
 		else
 			throw new IllegalStateException("Don't know what to do with "+key);
 	}
 
-	public ClientKeyBlock fetch(ClientSSK clientSSK, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws SSKVerifyException {
+	public ClientKeyBlock fetch(ClientSSK clientSSK, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws SSKVerifyException {
 		DSAPublicKey key = clientSSK.getPubKey();
 		if(key == null) {
 			key = getPubKey.getKey(clientSSK.pubKeyHash, canReadClientCache, false);
 		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
-		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 		if(block == null) {
 			if(logMINOR)
-				Logger.minor(this, "Could not find key for "+clientSSK+" (dontPromote="+dontPromote+")");
+				Logger.minor(this, "Could not find key for "+clientSSK);
 			return null;
 		}
 		// Move the pubkey to the top of the LRU, and fix it if it
@@ -4677,8 +4657,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return ClientSSKBlock.construct(block, clientSSK);
 	}
 
-	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws CHKVerifyException {
-		CHKBlock block = fetch(clientCHK.getNodeCHK(), dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws CHKVerifyException {
+		CHKBlock block = fetch(clientCHK.getNodeCHK(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 		if(block == null) return null;
 		return new ClientCHKBlock(block, clientCHK);
 	}

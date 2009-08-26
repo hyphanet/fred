@@ -49,8 +49,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
-	/** See comments in Node */
-	private final boolean cacheLocalRequests;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final int MAX_ARCHIVE_LEVELS = 4;
@@ -85,7 +83,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	
 	
-	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
@@ -96,7 +94,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
-		this.cacheLocalRequests = cacheLocalRequests;
 		this.persistentBucketFactory = node.persistentTempBucketFactory;
 	}
 	
@@ -250,7 +247,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, eventProducer, 
-				cacheLocalRequests, false, CAN_WRITE_CLIENT_CACHE);
+				false, CAN_WRITE_CLIENT_CACHE);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
@@ -258,7 +255,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				eventProducer, cacheLocalRequests, CAN_WRITE_CLIENT_CACHE_INSERTS, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
+				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

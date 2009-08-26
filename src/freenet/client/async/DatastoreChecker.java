@@ -44,7 +44,6 @@ public class DatastoreChecker implements PrioRunnable {
 	 * when we have checked the keys lists. PARTIAL: When we run out we 
 	 * will look up some more DatastoreCheckerItem's. Deactivated. */
 	private final ArrayList<SendableGet>[] persistentGetters;
-	private final ArrayList<Boolean>[] persistentDontCache;
 	private final ArrayList<ClientRequestScheduler>[] persistentSchedulers;
 	private final ArrayList<DatastoreCheckerItem>[] persistentCheckerItems;
 	private final ArrayList<BlockSet>[] persistentBlockSets;
@@ -73,9 +72,6 @@ public class DatastoreChecker implements PrioRunnable {
 		persistentGetters = new ArrayList[priorities];
 		for(int i=0;i<priorities;i++)
 			persistentGetters[i] = new ArrayList<SendableGet>();
-		persistentDontCache = new ArrayList[priorities];
-		for(int i=0;i<priorities;i++)
-			persistentDontCache[i] = new ArrayList<Boolean>();
 		persistentSchedulers = new ArrayList[priorities];
 		for(int i=0;i<priorities;i++)
 			persistentSchedulers[i] = new ArrayList<ClientRequestScheduler>();
@@ -142,7 +138,6 @@ public class DatastoreChecker implements PrioRunnable {
 						container.delete(item);
 						continue;
 					}
-					boolean dontCache = getter.dontCache(container);
 					ClientRequestScheduler sched = getter.getScheduler(context);
 					synchronized(this) {
 						if(persistentGetters[prio].contains(getter)) continue;
@@ -162,7 +157,6 @@ public class DatastoreChecker implements PrioRunnable {
 							finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]);
 						persistentKeys[prio].add(finalKeys);
 						persistentGetters[prio].add(getter);
-						persistentDontCache[prio].add(dontCache);
 						persistentSchedulers[prio].add(sched);
 						persistentCheckerItems[prio].add(item);
 						persistentBlockSets[prio].add(blocks);
@@ -210,7 +204,6 @@ public class DatastoreChecker implements PrioRunnable {
 						container.store(item);
 					}
 					persistentSchedulers[i].clear();
-					persistentDontCache[i].clear();
 					persistentGetters[i].clear();
 					persistentKeys[i].clear();
 					persistentBlockSets[i].clear();
@@ -230,7 +223,6 @@ public class DatastoreChecker implements PrioRunnable {
 						int idx = persistentKeys[i].size() - 1;
 						DatastoreCheckerItem item = persistentCheckerItems[i].remove(idx);
 						persistentSchedulers[i].remove(idx);
-						persistentDontCache[i].remove(idx);
 						persistentGetters[i].remove(idx);
 						Key[] keys = persistentKeys[i].remove(idx);
 						persistentBlockSets[i].remove(idx);
@@ -274,7 +266,6 @@ public class DatastoreChecker implements PrioRunnable {
 	public void queuePersistentRequest(SendableGet getter, BlockSet blocks, ObjectContainer container) {
 		Key[] checkKeys = getter.listKeys(container);
 		short prio = getter.getPriorityClass(container);
-		boolean dontCache = getter.dontCache(container);
 		ClientRequestScheduler sched = getter.getScheduler(context);
 		DatastoreCheckerItem item = new DatastoreCheckerItem(getter, context.nodeDBHandle, prio, blocks);
 		container.store(item);
@@ -298,7 +289,6 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 			persistentGetters[prio].add(getter);
 			persistentKeys[prio].add(finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]));
-			persistentDontCache[prio].add(dontCache);
 			persistentSchedulers[prio].add(sched);
 			persistentCheckerItems[prio].add(item);
 			persistentBlockSets[prio].add(blocks);
@@ -321,7 +311,6 @@ public class DatastoreChecker implements PrioRunnable {
 		Key[] keys = null;
 		SendableGet getter = null;
 		boolean persistent = false;
-		boolean dontCache = false;
 		ClientRequestScheduler sched = null;
 		DatastoreCheckerItem item = null;
 		BlockSet blocks = null;
@@ -363,7 +352,6 @@ public class DatastoreChecker implements PrioRunnable {
 						keys = persistentKeys[prio].remove(0);
 						getter = persistentGetters[prio].remove(0);
 						persistent = true;
-						dontCache = persistentDontCache[prio].remove(0);
 						sched = persistentSchedulers[prio].remove(0);
 						item = persistentCheckerItems[prio].remove(0);
 						blocks = persistentBlockSets[prio].remove(0);
@@ -388,7 +376,6 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 		}
 		if(!persistent) {
-			dontCache = getter.dontCache(null);
 			sched = getter.getScheduler(context);
 		}
 		boolean anyValid = false;
@@ -397,7 +384,7 @@ public class DatastoreChecker implements PrioRunnable {
 			if(blocks != null)
 				block = blocks.get(key);
 			if(blocks == null)
-				block = node.fetch(key, dontCache, true, true, false, false);
+				block = node.fetch(key, true, true, false, false);
 			if(block != null) {
 				if(logMINOR) Logger.minor(this, "Found key");
 				if(key instanceof NodeSSK)

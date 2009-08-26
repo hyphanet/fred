@@ -49,8 +49,6 @@ public class FetchContext implements Cloneable {
 	public int maxDataBlocksPerSegment;
 	/** Maximum number of check blocks per segment for splitfiles. */
 	public int maxCheckBlocksPerSegment;
-	/** Whether the data returned should be cached */
-	public boolean cacheLocalRequests;
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
@@ -73,7 +71,7 @@ public class FetchContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests, 
+			ClientEventProducer producer, 
 			boolean ignoreTooManyPathComponents, boolean canWriteClientCache) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
@@ -92,7 +90,6 @@ public class FetchContext implements Cloneable {
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
-		this.cacheLocalRequests = cacheLocalRequests;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
 		hasOwnEventProducer = true;
@@ -118,7 +115,6 @@ public class FetchContext implements Cloneable {
 
 		this.allowedMIMETypes = ctx.allowedMIMETypes;
 		this.maxUSKRetries = ctx.maxUSKRetries;
-		this.cacheLocalRequests = ctx.cacheLocalRequests;
 		this.localRequestOnly = ctx.localRequestOnly;
 		this.maxArchiveLevels = ctx.maxArchiveLevels;
 		this.maxMetadataSize = ctx.maxMetadataSize;

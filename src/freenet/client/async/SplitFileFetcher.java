@@ -278,7 +278,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(logMINOR)
 			Logger.minor(this, "Creating block filter for "+this+": keys="+(splitfileDataBlocks.length+splitfileCheckBlocks.length)+" main bloom size "+mainBloomFilterSizeBytes+" bytes, K="+mainBloomK+", filename="+mainBloomFile+" alt bloom filter: filename="+altBloomFile+" segments: "+segments.length+" each is "+perSegmentBloomFilterSizeBytes+" bytes k="+perSegmentK);
 		try {
-			tempListener = new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, !fetchContext.cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
+			tempListener = new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
 		}
@@ -610,7 +610,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			}
 			File main;
 			File alt;
-			boolean cacheLocalRequests;
 			if(fetchContext == null) {
 				Logger.error(this, "fetchContext deleted without splitfile being deleted!");
 				return null;
@@ -622,19 +621,15 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				alt = new File(altBloomFile.getPath());
 				container.deactivate(mainBloomFile, 1);
 				container.deactivate(altBloomFile, 1);
-				container.activate(fetchContext, 1);
-				cacheLocalRequests = fetchContext.cacheLocalRequests;
-				container.deactivate(fetchContext, 1);
 			} else {
 				main = null;
 				alt = null;
-				cacheLocalRequests = fetchContext.cacheLocalRequests;
 			}
 			try {
 				if(logMINOR)
 					Logger.minor(this, "Attempting to read Bloom filter for "+this+" main file="+main+" alt file="+alt);
 				tempListener =
-					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, !cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false);
+					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false);
 			} catch (IOException e) {
 				Logger.error(this, "Unable to read Bloom filter for "+this+" attempting to reconstruct...", e);
 				main.delete();
@@ -650,7 +645,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 				try {
 					tempListener = 
-						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, !fetchContext.cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
+						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
 				} catch (IOException e1) {
 					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to reconstruct Bloom filters: "+e1, e1));
 				}

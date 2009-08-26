@@ -11,15 +11,13 @@ public class SingleKeyListener implements KeyListener {
 	
 	private final Key key;
 	private final BaseSingleFileFetcher fetcher;
-	private final boolean dontCache;
 	private boolean done;
 	private short prio;
 	private final boolean persistent;
 
-	public SingleKeyListener(Key key, BaseSingleFileFetcher fetcher, boolean dontCache, short prio, boolean persistent) {
+	public SingleKeyListener(Key key, BaseSingleFileFetcher fetcher, short prio, boolean persistent) {
 		this.key = key;
 		this.fetcher = fetcher;
-		this.dontCache = dontCache;
 		this.prio = prio;
 		this.persistent = persistent;
 	}
@@ -33,10 +31,6 @@ public class SingleKeyListener implements KeyListener {
 			ClientContext context) {
 		if(!key.equals(this.key)) return -1;
 		else return prio;
-	}
-
-	public boolean dontCache() {
-		return dontCache;
 	}
 
 	public HasKeyListener getHasKeyListener() {

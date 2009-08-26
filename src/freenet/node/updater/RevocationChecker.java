@@ -50,7 +50,6 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		ctxRevocation = core.makeClient((short)0, true).getFetchContext();
 		ctxRevocation.allowSplitfiles = false;
-		ctxRevocation.cacheLocalRequests = false;
 		ctxRevocation.maxArchiveLevels = 1;
 		// big enough ?
 		ctxRevocation.maxOutputLength = NodeUpdateManager.MAX_REVOCATION_KEY_LENGTH;
