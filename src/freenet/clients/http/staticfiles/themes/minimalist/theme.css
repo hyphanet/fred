@@ -778,6 +778,7 @@ div.infobox {
 	background-color: #EEF;
 	border: 3px solid #CCF;
 	color: black;
+	overflow: auto;
 }
 
 div.infobox div.infobox-header {
@@ -834,6 +835,7 @@ div#statusbar {
 	margin-right: 5px;
 	padding-left: 15px;
 	padding-right: 15px;
+	z-index: 10;
 }
 
 div#statusbar div {
