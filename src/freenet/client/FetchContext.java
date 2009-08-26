@@ -29,9 +29,16 @@ public class FetchContext implements Cloneable {
 	/** Maximum number of containers to fetch during a request */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
-	/** Maximum number of retries (after the original attempt) for a splitfile block */
+	/** Maximum number of retries (after the original attempt) for a 
+	 * splitfile block. -1 = try forever or until success or a fatal error. 
+	 * Note that after every 3 attempts the request is put on the cooldown 
+	 * queue for 30 minutes, so the cost of retries = -1 is really not that high. */
 	public int maxSplitfileBlockRetries;
-	/** Maximum number of retries (after the original attempt) for a non-splitfile block */
+	/** Maximum number of retries (after the original attempt) for a 
+	 * non-splitfile block. -1 = try forever or until success or a fatal 
+	 * error.. Note that after every 3 attempts the request is put on the 
+	 * cooldown queue for 30 minutes, so the cost of retries = -1 is 
+	 * really not that high. */
 	public int maxNonSplitfileRetries;
 	public final int maxUSKRetries;
 	/** Whether to download splitfiles */

@@ -22,7 +22,8 @@ public class InsertContext implements Cloneable {
 	/** Splitfile algorithm. */
 	public final short splitfileAlgorithm;
 	/** Maximum number of retries (after the initial attempt) for each block
-	 * inserted. */
+	 * inserted. -1 = retry forever or until it succeeds (subject to 
+	 * consecutiveRNFsCountAsSuccess) or until a fatal error. */
 	public int maxInsertRetries;
 	/** On a very small network, any insert will RNF. Therefore we allow 
 	 * some number of RNFs to equal success. */
