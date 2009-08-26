@@ -492,7 +492,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
-		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), l10n("startingUpShort"), UserAlert.MINOR));
+		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), l10n("startingUpShort"), UserAlert.ERROR));
 		this.alerts.register(new SimpleUserAlert(true, L10n.getString("QueueToadlet.persistenceBrokenTitle"),
 				L10n.getString("QueueToadlet.persistenceBroken",
 						new String[]{ "TEMPDIR", "DBFILE" },
