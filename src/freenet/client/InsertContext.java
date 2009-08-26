@@ -13,7 +13,7 @@ import freenet.support.io.PersistentFileTracker;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-public class InsertContext {
+public class InsertContext implements Cloneable {
 
 	public final BucketFactory persistentBucketFactory;
 	public final PersistentFileTracker persistentFileTracker;
@@ -72,6 +72,17 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.compressorDescriptor = ctx.compressorDescriptor;
+	}
+	
+	/** Make public, but just call parent for a field for field copy */
+	@Override
+	public InsertContext clone() {
+		try {
+			return (InsertContext) super.clone();
+		} catch (CloneNotSupportedException e) {
+			// Impossible
+			throw new Error(e);
+		}
 	}
 
 	public void removeFrom(ObjectContainer container) {
