@@ -2494,10 +2494,6 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		});
-
-		if(!PageMaker.THEME.themeFromName(this.config.get("fproxy").getString("css")).showStatusBar) {
-			securityLevels.registerUserAlert(clientCore.alerts);
-		}
 		
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)

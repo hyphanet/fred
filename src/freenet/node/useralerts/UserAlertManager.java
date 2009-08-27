@@ -169,19 +169,19 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	public HTMLNode createAlerts() {
-		return createAlerts(false);
+		return createAlerts(true);
 	}
 
 	/**
 	 * Write the alerts as HTML.
 	 */
-	public HTMLNode createAlerts(boolean onlyShowErrors) {
+	public HTMLNode createAlerts(boolean showOnlyErrors) {
 		HTMLNode alertsNode = new HTMLNode("div");
 		UserAlert[] alerts = getAlerts();
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
-			if(onlyShowErrors && alert.getPriorityClass() > alert.ERROR)
+			if(showOnlyErrors && alert.getPriorityClass() > alert.ERROR)
 				continue;
 			if (!alert.isValid())
 				continue;
@@ -193,59 +193,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			return new HTMLNode("#", "");
 		}
 		return alertsNode;
-	}
-
-	/**
-	 * Write each alert in uber-concise form as HTML, with a link to 
-	 * /alerts/[ anchor pointing to the real alert].
-	 */
-	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm) {
-		UserAlert[] currentAlerts = getAlerts();
-		short maxLevel = Short.MAX_VALUE;
-		int events = 0;
-		for(int i=0;i<currentAlerts.length;i++) {
-			if (!currentAlerts[i].isValid())
-				continue;
-			short level = currentAlerts[i].getPriorityClass();
-			if(level < maxLevel) maxLevel = level;
-			if(currentAlerts[i].isEventNotification()) events++;
-		}
-		if(maxLevel == Short.MAX_VALUE)
-			return new HTMLNode("#", "");
-		if(events < 2) drawDumpEventsForm = false;
-		final String additionnalClasses;
-		if(advancedMode) {
-			additionnalClasses = " infobox-summary-detailed";
-		} else additionnalClasses = "";
-		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-summary-status-box" + additionnalClasses);
-		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
-		HTMLNode contentNode = boxNode.addChild("div", "class", "infobox-content infobox-summary-status-content");
-		if(!advancedMode)
-			contentNode.addChild("p", "class", "click-for-more", l10n("clickForMore"));
-		HTMLNode alertsNode = contentNode.addChild("ul", "class", "alert-summary");
-		int totalNumber = 0;
-		for (int i = 0; i < currentAlerts.length; i++) {
-			UserAlert alert = currentAlerts[i];
-			if (!alert.isValid())
-				continue;
-			HTMLNode listItem = alertsNode.addChild("li", "class", "alert-summary-text-"+getAlertLevelName(alert.getPriorityClass()));
-			listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getShortText());
-			totalNumber++;
-		}
-		if(drawDumpEventsForm) {
-			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
-			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-			StringBuilder sb = new StringBuilder();
-			for(int i=0;i<currentAlerts.length;i++) {
-				if(!currentAlerts[i].isEventNotification()) continue;
-				if(sb.length() != 0)
-					sb.append(",");
-				sb.append(currentAlerts[i].anchor());
-			}
-			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "events", sb.toString() });
-			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-events", l10n("dumpEventsButton") });
-		}
-		return boxNode;
 	}
 	
 	/**
@@ -288,11 +235,9 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	public HTMLNode createSummary() {
-		if(!PageMaker.THEME.themeFromName(this.core.node.config.get("fproxy").getString("css")).showStatusBar) {
-			return createSummary(false);
-		} else {
-			return createAlerts(true);
-		}
+		// This method is called by the toadlets when they want to show
+		// a summary of alerts. With a status bar, we only show full errors here.
+		return createAlerts(true);
 	}
 
 	/**
@@ -329,7 +274,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 
 		if (totalNumber == 0)
 			return new HTMLNode("#", "");
-		
+
 		boolean separatorNeeded = false;
 		String separator = oneLine?", ":" | ";
 		int messageTypes=0;
@@ -350,7 +295,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			if (separatorNeeded)
 				alertSummaryString.append(separator);
 			if(oneLine) {
-				alertSummaryString.append(numberOfWarning).append(' ').append(l10n("warningCountLabel").replace(":", ""));
+			alertSummaryString.append(numberOfWarning).append(' ').append(l10n("warningCountLabel").replace(":", ""));
 			} else {
 				alertSummaryString.append(l10n("warningCountLabel")).append(' ').append(numberOfWarning);
 			}
@@ -376,7 +321,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		HTMLNode summaryBox = null;
 
 		String classes = oneLine?"alerts-line contains-":"infobox infobox-";
-		
+
 		if (highestLevel <= UserAlert.CRITICAL_ERROR && !oneLine)
 			summaryBox = new HTMLNode("div", "class", classes + "error");
 		else if (highestLevel <= UserAlert.ERROR && !oneLine)

@@ -238,7 +238,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 		
 		if(peerNodeStatuses.length>0){
 			

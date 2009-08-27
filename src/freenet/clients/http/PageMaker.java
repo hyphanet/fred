@@ -24,14 +24,14 @@ import freenet.support.io.FileUtil;
 public final class PageMaker {
 	
 	public enum THEME {
-		BOXED("boxed", "Boxed", "", false, false, true),
-		CLEAN("clean", "Clean", "Mr. Proper", false, false, true),
-		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false, true),
-		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false, true),
-		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false, true),
-		SKY("sky", "Sky", "", false, false, true),
-		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false, true),
-		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true, true);
+		BOXED("boxed", "Boxed", "", false, false),
+		CLEAN("clean", "Clean", "Mr. Proper", false, false),
+		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false),
+		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false),
+		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false),
+		SKY("sky", "Sky", "", false, false),
+		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false),
+		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true);
 
 		
 		public static final String[] possibleValues = {
@@ -58,22 +58,17 @@ public final class PageMaker {
 		 * infobox on the welcome page.
 		 */
 		public final boolean fetchKeyBoxAboveBookmarks;
-		/**
-		 * If true, a status bar is shown.
-		 */
-		public final boolean showStatusBar;
 		
 		private THEME(String code, String name, String description) {
-			this(code, name, description, false, false, false);
+			this(code, name, description, false, false);
 		}
 
-		private THEME(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks, boolean showStatusBar) {
+		private THEME(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks) {
 			this.code = code;
 			this.name = name;
 			this.description = description;
 			this.forceActivelinks = forceActivelinks;
 			this.fetchKeyBoxAboveBookmarks = fetchKeyBoxAboveBookmarks;
-			this.showStatusBar = showStatusBar;
 		}
 
 		public static THEME themeFromName(String cssName) {
@@ -247,63 +242,61 @@ public final class PageMaker {
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 
-		if (this.getTheme().showStatusBar) {
-			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
+		final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
-			if(node != null && node.clientCore != null) {
-				final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
-				if(alerts != null) {
-					statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
-					statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-				}
+		if (node != null && node.clientCore != null) {
+			final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
+			if (alerts != null) {
+				statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 			}
+		}
 
-			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", L10n.getSelectedLanguage().fullName);
-	
-			if(node.clientCore != null) {
-				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
-				if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
-					switchMode.addAttribute("class", "simple");
-					switchMode.addChild("a", "href", "?mode=1", L10n.getString("StatusBar.switchToSimpleMode"));
-				} else {
-					switchMode.addAttribute("class", "advanced");
-					switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
-				}
+		statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", L10n.getSelectedLanguage().fullName);
+
+		if (node.clientCore != null) {
+			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+			final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
+			if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
+				switchMode.addAttribute("class", "simple");
+				switchMode.addChild("a", "href", "?mode=1", L10n.getString("StatusBar.switchToSimpleMode"));
+			} else {
+				switchMode.addAttribute("class", "advanced");
+				switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
 			}
-			
-			if(node != null && node.clientCore != null) {
-				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", L10n.getString("SecurityLevels.statusBarPrefix"));
+		}
 
-				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()));
-				network.addAttribute("title", L10n.getString("SecurityLevels.networkThreatLevelShort"));
-				network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
+		if (node != null && node.clientCore != null) {
+			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+			final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", L10n.getString("SecurityLevels.statusBarPrefix"));
 
-				final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()));
-				friends.addAttribute("title", L10n.getString("SecurityLevels.friendsThreatLevelShort"));
-				friends.addAttribute("class", node.securityLevels.getFriendsThreatLevel().toString().toLowerCase());
+			final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()));
+			network.addAttribute("title", L10n.getString("SecurityLevels.networkThreatLevelShort"));
+			network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
 
-				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
-				physical.addAttribute("title", L10n.getString("SecurityLevels.physicalThreatLevelShort"));
-				physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
+			final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()));
+			friends.addAttribute("title", L10n.getString("SecurityLevels.friendsThreatLevelShort"));
+			friends.addAttribute("class", node.securityLevels.getFriendsThreatLevel().toString().toLowerCase());
 
-				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+			final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
+			physical.addAttribute("title", L10n.getString("SecurityLevels.physicalThreatLevelShort"));
+			physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
 
-				final int connectedPeers = node.peers.countConnectedPeers();
-				final HTMLNode peers = statusBarDiv.addChild("div", "id", "statusbar-peers", connectedPeers + " Peers");
+			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 
-				if(connectedPeers == 0) {
-					peers.addAttribute("class", "no-peers");
-				} else if(connectedPeers < 4) {
-					peers.addAttribute("class", "very-few-peers");
-				} else if(connectedPeers < 7) {
-					peers.addAttribute("class", "few-peers");
-				} else if(connectedPeers < 10) {
-					peers.addAttribute("class", "avg-peers");
-				} else {
-					peers.addAttribute("class", "lots-of-peers");
-				}
+			final int connectedPeers = node.peers.countConnectedPeers();
+			final HTMLNode peers = statusBarDiv.addChild("div", "id", "statusbar-peers", connectedPeers + " Peers");
+
+			if (connectedPeers == 0) {
+				peers.addAttribute("class", "no-peers");
+			} else if (connectedPeers < 4) {
+				peers.addAttribute("class", "very-few-peers");
+			} else if (connectedPeers < 7) {
+				peers.addAttribute("class", "few-peers");
+			} else if (connectedPeers < 10) {
+				peers.addAttribute("class", "avg-peers");
+			} else {
+				peers.addAttribute("class", "lots-of-peers");
 			}
 		}
 
@@ -505,42 +498,6 @@ public final class PageMaker {
 				container.setAdvancedMode(false);
 		}
 		
-		return mode;
-	}
-	
-	/** Call this to actually put in the mode selection links */
-	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode) {
-		return drawModeSelectionArray(core, container, contentNode, mode, -1, null, null);
-	}
-	
-	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
-		if(this.getTheme().showStatusBar) {
-			// We use the status bar, no need to show this.
-			return mode;
-		}
-
-		// FIXME style this properly?
-		HTMLNode table = contentNode.addChild("table", "border", "1");
-		HTMLNode row = table.addChild("tr");
-		HTMLNode cell = row.addChild("td");
-		
-		if(alternateMode > -1) {
-			if(mode != alternateMode)
-				cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode="+alternateMode, L10n.getString(alternateModeTooltipKey) }, L10n.getString(alternateModeTitleKey));
-			else
-				cell.addChild("b", "title", L10n.getString(alternateModeTooltipKey), L10n.getString(alternateModeTitleKey));
-			cell = row.addChild("td");
-		}
-		
-		if(mode != MODE_SIMPLE)
-			cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode=1", l10n("modeSimpleTooltip") }, l10n("modeSimple"));
-		else
-			cell.addChild("b", "title", l10n("modeSimpleTooltip"), l10n("modeSimple"));
-		cell = row.addChild("td");
-		if(mode != MODE_ADVANCED)
-			cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode=2", l10n("modeAdvancedTooltip") }, l10n("modeAdvanced"));
-		else
-			cell.addChild("b", "title", l10n("modeAdvancedTooltip"), l10n("modeAdvanced"));
 		return mode;
 	}
 	

@@ -24,7 +24,6 @@ span.freenet-ext-version,
 div.bookmarks-box li.cat, div#freenet-version div.infobox-header,
 div.bookmarks-box div.infobox-header span.edit-bracket,
 div.bookmarks-box div.infobox-header a.bookmarks-header-text,
-div#content div.infobox.infobox-summary-status-box div.infobox-content li,
 div#content div#messages-summary-box,
 div#fetch-key div.infobox-header,
 div#fetch-key div form div span,
@@ -45,10 +44,7 @@ div#freenet-version div.infobox-content div {
 	display: inline;
 }
 
-div.bookmarks-box a img,
-div#content div.infobox.infobox-summary-status-box:hover div.infobox-content li,
-div#content div.infobox.infobox-summary-status-box div.infobox-content li.alert-summary-text-error,
-div#content div.infobox.infobox-summary-status-box div.infobox-content li.alert-summary-text-alert {
+div.bookmarks-box a img {
 	display: block;
 }
 

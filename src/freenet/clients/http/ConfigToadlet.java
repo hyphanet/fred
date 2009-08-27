@@ -237,8 +237,6 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
-		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
-		
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", l10n("title"));
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");

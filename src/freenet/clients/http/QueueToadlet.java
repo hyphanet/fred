@@ -1060,7 +1060,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		pageMaker.drawModeSelectionArray(core, this.container, contentNode, mode);
 		/* add file insert box */
 		if(uploads)
 		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));

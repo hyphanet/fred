@@ -150,7 +150,6 @@ public class StatisticsToadlet extends Toadlet {
 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
-		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();
