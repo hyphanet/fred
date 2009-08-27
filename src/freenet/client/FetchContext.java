@@ -31,13 +31,23 @@ public class FetchContext implements Cloneable {
 	public boolean dontEnterImplicitArchives;
 	/** Maximum number of retries (after the original attempt) for a 
 	 * splitfile block. -1 = try forever or until success or a fatal error. 
-	 * Note that after every 3 attempts the request is put on the cooldown 
-	 * queue for 30 minutes, so the cost of retries = -1 is really not that high. */
+	 * A fatal error is either an internal error (problem with the node) or
+	 * something resulting from the original data being corrupt as inserted.
+	 * So with retries = -1 we will not report Data not found, Route not
+	 * found, All data not found, etc, because these are nonfatal errors and
+	 * we will retry. Note that after every 3 attempts the request is put 
+	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is 
+	 * really not that high. */
 	public int maxSplitfileBlockRetries;
 	/** Maximum number of retries (after the original attempt) for a 
 	 * non-splitfile block. -1 = try forever or until success or a fatal 
-	 * error.. Note that after every 3 attempts the request is put on the 
-	 * cooldown queue for 30 minutes, so the cost of retries = -1 is 
+	 * error.. -1 = try forever or until success or a fatal error. 
+	 * A fatal error is either an internal error (problem with the node) or
+	 * something resulting from the original data being corrupt as inserted.
+	 * So with retries = -1 we will not report Data not found, Route not
+	 * found, All data not found, etc, because these are nonfatal errors and
+	 * we will retry. Note that after every 3 attempts the request is put 
+	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is 
 	 * really not that high. */
 	public int maxNonSplitfileRetries;
 	public final int maxUSKRetries;
