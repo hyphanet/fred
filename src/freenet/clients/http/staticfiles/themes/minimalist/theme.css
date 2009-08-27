@@ -705,8 +705,12 @@ div.bookmarks-box a img,
 div#content div.infobox-error.infobox-summary-detailed,
 div#content div.infobox-error.infobox-summary-detailed div.infobox-header,
 div#content div.infobox-error.infobox-summary-detailed div.infobox-content,
+div#content div.infobox-alert.infobox-summary-detailed,
+div#content div.infobox-alert.infobox-summary-detailed div.infobox-header,
+div#content div.infobox-alert.infobox-summary-detailed div.infobox-content,
 div#content div.infobox.infobox-summary-status-box:hover div.infobox-content li,
-div#content div.infobox.infobox-summary-status-box div.infobox-content li.alert-summary-text-error {
+div#content div.infobox.infobox-summary-status-box div.infobox-content li.alert-summary-text-error,
+div#content div.infobox.infobox-summary-status-box div.infobox-content li.alert-summary-text-alert {
 	display: block;
 }
 
@@ -811,6 +815,15 @@ div.infobox-error, div.infobox.infobox-summary-status-box.infobox-error {
 
 div.infobox-error div.infobox-header, div.infobox.infobox-summary-status-box.infobox-error div.infobox-header {
 	background-color: #D88;
+}
+
+div.infobox-alert, div.infobox.infobox-summary-status-box.infobox-alert {
+	border-color: #B488DD;
+	background-color: #C9B9DD;
+}
+
+div.infobox-alert div.infobox-header, div.infobox.infobox-summary-status-box.infobox-alert div.infobox-header {
+	background-color: #B488DD;
 }
 
 div#content div.infobox.infobox-summary-status-box {
