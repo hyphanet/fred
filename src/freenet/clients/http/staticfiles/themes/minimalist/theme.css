@@ -6,6 +6,9 @@
 /* Base theme */
 @import url(/static/themes/clean-dropdown/theme.css);
 
+/* Default pictures won't render nice with this theme */
+@import url(/static/picturesnullifier.css);
+
 /* *****************************************************************
  *                     minimalistic additions
  * *****************************************************************/
@@ -61,6 +64,8 @@ div#fetch-key,
 div#fetch-key div.infobox-content form div input[type=submit],
 div#statusbar,
 div#statusbar-container,
+div#topbar,
+div#navbar,
 div#content {
 	background-color: white !important;
 }
@@ -80,6 +85,9 @@ div#search-freenet,
 div#search-freenet .infobox-header,
 div#statusbar,
 div#statusbar-container,
+div#topbar,
+div#topbar h1,
+div#navbar,
 div#fetch-key {
 	margin: 0;
 }
@@ -101,18 +109,45 @@ div#search-freenet .infobox-header,
 div#fetch-key,
 div#statusbar,
 div#statusbar-container,
+div#topbar,
+div#topbar h1,
+div#navbar,
 div#freenet-version div.infobox-content form input[type=submit] {
 	padding: 0;
-}
-
-div#content {
-	border-top: 1px solid #CCF;
-	padding-top: 5px;
 }
 
 body {
 	/* Height of the status bar (+ some margin) */
 	padding-bottom: 1.5em;
+}
+
+/* *****************************************************************
+ *                           header
+ * *****************************************************************/
+
+div#topbar, div#navbar {
+	border: none;
+}
+
+div#topbar {
+	float: right;
+}
+
+div#topbar h1 {
+	font-size: 1em;
+	padding-top: 3px;
+	padding-right: 8px;
+	text-align: left;
+}
+
+div#navbar {
+	float: left;
+	padding-top: 3px;
+}
+
+div#content {
+	border-top: 1px solid #CCF;
+	padding-top: 5px;
 }
 
 /* *****************************************************************
