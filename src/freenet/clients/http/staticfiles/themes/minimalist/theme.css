@@ -238,6 +238,15 @@ div.infobox-alert div.infobox-header, div.infobox.infobox-summary-status-box.inf
 	background-color: #B488DD;
 }
 
+div.infobox-minor {
+	border-color: #50DD75;
+	background-color: #B9DDC3;
+}
+
+div.infobox-minor div.infobox-header {
+	background-color: #50DD75;
+}
+
 div#content div.infobox.infobox-summary-status-box {
 	position: absolute;
 	top: 2em;
