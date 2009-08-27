@@ -258,7 +258,7 @@ public final class PageMaker {
 				}
 			}
 
-			statusBarDiv.addChild("div", "id", "statusbar-language", L10n.getSelectedLanguage().fullName);
+			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", L10n.getSelectedLanguage().fullName);
 	
 			if(node.clientCore != null) {
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
