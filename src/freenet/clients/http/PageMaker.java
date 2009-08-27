@@ -48,8 +48,19 @@ public final class PageMaker {
 		public final String code;  // the internal name
 		public final String name;  // the name in "human form"
 		public final String description; // description
+		/**
+		 * If true, the activelinks will appear on the welcome page, whether
+		 * the user has enabled them or not.
+		 */
 		public final boolean forceActivelinks;
+		/**
+		 * If true, the "Fetch a key" infobox will appear above the bookmarks
+		 * infobox on the welcome page.
+		 */
 		public final boolean fetchKeyBoxAboveBookmarks;
+		/**
+		 * If true, a status bar is shown.
+		 */
 		public final boolean showStatusBar;
 		
 		private THEME(String code, String name, String description) {
