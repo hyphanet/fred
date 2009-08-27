@@ -29,8 +29,8 @@ public final class PageMaker {
 		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false, true),
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false, true),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false, true),
-		SKY("sky", "Sky", ""),
-		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue"),
+		SKY("sky", "Sky", "", false, false, true),
+		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue", false, false, true),
 		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true, true);
 
 		
