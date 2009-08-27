@@ -338,7 +338,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				new String[] { "link", "/link" },
 				new String[] { "<a href=\"/alerts/\">", "</a>" });
 		} else {
-			summaryContent.addChild("a", "href", "/alerts/", L10n.getString("StatusBar.alerts") + alertSummaryString.toString());
+			summaryContent.addChild("a", "href", "/alerts/", L10n.getString("StatusBar.alerts") + " " + alertSummaryString.toString());
 		}
 		summaryBox.addAttribute("id", "messages-summary-box");
 		return summaryBox;
