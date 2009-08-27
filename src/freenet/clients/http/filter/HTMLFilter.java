@@ -586,6 +586,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		 * this.unparsedAttrs = (String[]) t.unparsedAttrs.clone();
 		 * this.startSlash = t.startSlash; this.endSlash = t.endSlash; }
 		 */
+		
+		public ParsedTag(String elementName,Map<String,String> attributes){
+			this.element=elementName;
+			startSlash=false;
+			endSlash=true;
+			String[] attrs=new String[attributes.size()];
+			int pos=0;
+			for(Entry<String,String> entry:attributes.entrySet()){
+				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+			}
+			this.unparsedAttrs = attrs;
+		}
+		
 		public ParsedTag(ParsedTag t, String[] outAttrs) {
 			this.element = t.element;
 			this.unparsedAttrs = outAttrs;

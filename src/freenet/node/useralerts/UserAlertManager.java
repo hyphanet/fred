@@ -210,7 +210,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			else return -1;
 		}
 	}
-	
+
 	/**
 	 * Renders the given alert and returns the rendered HTML node.
 	 * 

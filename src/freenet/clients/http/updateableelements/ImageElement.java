@@ -1,6 +1,7 @@
 package freenet.clients.http.updateableelements;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -44,6 +45,22 @@ public class ImageElement extends BaseUpdateableElement {
 
 	private boolean					wasError		= false;
 
+	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx){
+		return createImageElement(tracker,key,maxSize,ctx,-1,-1);
+	}
+	
+	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx,int width,int height){
+		Map<String,String> attributes=new HashMap<String, String>();
+		attributes.put("src", key.toString());
+		if(width!=-1){
+			attributes.put("width", String.valueOf(width));
+		}
+		if(height!=-1){
+			attributes.put("height", String.valueOf(height));
+		}
+		return new ImageElement(tracker,key,maxSize,ctx,new ParsedTag("img", attributes));
+	}
+	
 	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg) {
 		super("span", ctx);
 		long now = System.currentTimeMillis();

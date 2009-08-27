@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.clients.http.filter.PushingTagReplacerCallback;
+import freenet.clients.http.updateableelements.AlertElement;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -251,9 +252,8 @@ public final class PageMaker {
 			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
 			if(node != null && node.clientCore != null) {
-				final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
-				if(alerts != null) {
-					statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
+				if(node.clientCore.alerts.getAlerts().length > 0) {
+					statusBarDiv.addChild(new AlertElement(true, ctx)).addAttribute("id", "statusbar-alerts");
 					statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 				}
 			}

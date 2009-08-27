@@ -84,7 +84,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 						}
 					}
 				}
-			} else if (pt.element.compareTo("body") == 0) {
+			} else if (pt.element.compareTo("body") == 0 && pt.startSlash==false) {
 				// After the <body>, we need to insert the requestId and the l10n script
 				return "<body>".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\"" + ctx.getUniqueId() + "\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>"));
 			} else if (pt.element.compareTo("head") == 0) {

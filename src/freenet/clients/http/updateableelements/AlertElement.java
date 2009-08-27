@@ -10,8 +10,15 @@ import freenet.support.HTMLNode;
 /** A pushed alerts box */
 public class AlertElement extends BaseAlertElement {
 
-	public AlertElement(ToadletContext ctx) {
+	private boolean oneLine;
+	
+	public AlertElement(ToadletContext ctx){
+		this(false,ctx);
+	}
+	
+	public AlertElement(boolean oneLine,ToadletContext ctx) {
 		super("div", ctx);
+		this.oneLine=oneLine;
 		init();
 	}
 
@@ -30,62 +37,86 @@ public class AlertElement extends BaseAlertElement {
 		UserAlert[] alerts = manager.getAlerts();
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
-			if (!alert.isValid()) continue;
+			if (!alert.isValid())
+				continue;
 			short level = alert.getPriorityClass();
-			if (level < highestLevel) highestLevel = level;
-			if (level <= UserAlert.CRITICAL_ERROR) numberOfCriticalError++;
-			else if (level <= UserAlert.ERROR) numberOfError++;
-			else if (level <= UserAlert.WARNING) numberOfWarning++;
-			else if (level <= UserAlert.MINOR) numberOfMinor++;
+			if (level < highestLevel)
+				highestLevel = level;
+			if (level <= UserAlert.CRITICAL_ERROR)
+				numberOfCriticalError++;
+			else if (level <= UserAlert.ERROR)
+				numberOfError++;
+			else if (level <= UserAlert.WARNING)
+				numberOfWarning++;
+			else if (level <= UserAlert.MINOR)
+				numberOfMinor++;
 			totalNumber++;
 		}
 
-		if (totalNumber == 0) {
-			addChild(new HTMLNode("div"));
+		if(totalNumber == 0 && oneLine)
+			return;
+
+		if (totalNumber == 0){
+			addChild(new HTMLNode("#", ""));
 			return;
 		}
-
+		
 		boolean separatorNeeded = false;
-		int messageTypes = 0;
+		String separator = oneLine?", ":" | ";
+		int messageTypes=0;
 		StringBuilder alertSummaryString = new StringBuilder(1024);
-		if (numberOfCriticalError != 0) {
+		if (numberOfCriticalError != 0 && !oneLine) {
 			alertSummaryString.append(UserAlertManager.l10n("criticalErrorCountLabel")).append(' ').append(numberOfCriticalError);
 			separatorNeeded = true;
 			messageTypes++;
 		}
-		if (numberOfError != 0) {
-			if (separatorNeeded) alertSummaryString.append(" | ");
+		if (numberOfError != 0 && !oneLine) {
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
 			alertSummaryString.append(UserAlertManager.l10n("errorCountLabel")).append(' ').append(numberOfError);
 			separatorNeeded = true;
 			messageTypes++;
 		}
 		if (numberOfWarning != 0) {
-			if (separatorNeeded) alertSummaryString.append(" | ");
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
 			alertSummaryString.append(UserAlertManager.l10n("warningCountLabel")).append(' ').append(numberOfWarning);
 			separatorNeeded = true;
 			messageTypes++;
 		}
 		if (numberOfMinor != 0) {
-			if (separatorNeeded) alertSummaryString.append(" | ");
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
 			alertSummaryString.append(UserAlertManager.l10n("minorCountLabel")).append(' ').append(numberOfMinor);
 			separatorNeeded = true;
 			messageTypes++;
 		}
-		if (messageTypes != 1) {
-			if (separatorNeeded) alertSummaryString.append(" | ");
+		if (messageTypes != 1 && !oneLine) {
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
 			alertSummaryString.append(UserAlertManager.l10n("totalLabel")).append(' ').append(totalNumber);
 		}
 		HTMLNode summaryBox = null;
 
-		if (highestLevel <= UserAlert.CRITICAL_ERROR) summaryBox = new HTMLNode("div", "class", "infobox infobox-error");
-		else if (highestLevel <= UserAlert.ERROR) summaryBox = new HTMLNode("div", "class", "infobox infobox-alert");
-		else if (highestLevel <= UserAlert.WARNING) summaryBox = new HTMLNode("div", "class", "infobox infobox-warning");
-		else if (highestLevel <= UserAlert.MINOR) summaryBox = new HTMLNode("div", "class", "infobox infobox-information");
+		String classes = oneLine?"alerts-line contains-":"infobox infobox-";
+		
+		if (highestLevel <= UserAlert.CRITICAL_ERROR && !oneLine)
+			summaryBox = new HTMLNode("div", "class", classes + "error");
+		else if (highestLevel <= UserAlert.ERROR && !oneLine)
+			summaryBox = new HTMLNode("div", "class", classes + "alert");
+		else if (highestLevel <= UserAlert.WARNING)
+			summaryBox = new HTMLNode("div", "class", classes + "warning");
+		else if (highestLevel <= UserAlert.MINOR)
+			summaryBox = new HTMLNode("div", "class", classes + "information");
 		summaryBox.addChild("div", "class", "infobox-header", UserAlertManager.l10n("alertsTitle"));
 		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
-		summaryContent.addChild("#", " ");
-		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage", new String[] { "link", "/link" }, new String[] { "<a href=\"/alerts/\">", "</a>" });
+		summaryContent.addChild("#", separator);
+		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
+				new String[] { "link", "/link" },
+				new String[] { "<a href=\"/alerts/\">", "</a>" });
+		summaryBox.addAttribute("id", "messages-summary-box");
 		addChild(summaryBox);
+
 	}
 
 }
