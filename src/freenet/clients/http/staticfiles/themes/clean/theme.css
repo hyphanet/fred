@@ -691,6 +691,8 @@ div#statusbar-container {
 	border-bottom: 1px solid #d0d0d0;
 	padding: 3px;
 	background-color: #d8d8d8;
+	border-top: 1px solid #d0d0d0;
+	border-bottom: 1px solid #d0d0d0;
 }
 
 div#statusbar {
@@ -699,11 +701,15 @@ div#statusbar {
 }
 
 div#statusbar div {
-	display: inline-block;
+	display: inline;
 }
 
 div#statusbar div.separator {
-	width: 20px;
+	display: inline-block;
+	background-color: #d0d0d0;
+	width: 1px;
+	margin-left: 9px;
+	margin-right: 9px;
 }
 
 div#statusbar div.infobox-header {

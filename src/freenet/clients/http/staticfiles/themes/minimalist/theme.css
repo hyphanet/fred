@@ -260,9 +260,11 @@ div#statusbar-container {
 	left: 0;
 	right: 0;
 	z-index: 18;
+	border: none;
 }
 
 div#statusbar {
+	border: none;
 	height: 1.5em;
 	padding-top: 0.25em;
 	border-top: 1px solid #CCF;
