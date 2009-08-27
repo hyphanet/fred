@@ -25,8 +25,7 @@ public class LogWritebackToadlet extends Toadlet {
 		super(client);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (logMINOR) {
 			Logger.minor(this, "GWT:" + req.getParam("msg"));
 		}
@@ -36,11 +35,6 @@ public class LogWritebackToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return UpdaterConstants.logWritebackPath;
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 }

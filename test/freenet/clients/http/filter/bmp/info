@@ -1,0 +1,11 @@
+	small.bmp = file of size less than 54 bytes
+	one.bmp = (0-1) start word change to AB from BM
+	two.bmp = (6-9) Invalid offset i.e. starting address
+	three.bmp = (14-17) Invalid size of bitmap info header
+	four.bmp = (18-21) Negative Image width
+	five.bmp = (26-27) Invalid no of planes
+	six.bmp= (28-29) Invalid bit depth
+	seven.bmp= (30-33) Invalid compression type
+	eight.bmp=(34-37) Invalid Image data size (i.e. not satisfying fileSize=headerSize+imagedatasize)
+	nine.bmp= (38-41, 42-45) Invalid Image resolution
+	ten.bmp= changing the bitDepth to another valid value so that the verification of file size w.r.t. image dimension and bitdepth would fail.

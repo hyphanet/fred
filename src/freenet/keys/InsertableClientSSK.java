@@ -26,7 +26,9 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.support.api.Bucket;
+import freenet.support.compress.InvalidCompressionCodecException;
 
+/** A ClientSSK that has a private key and therefore can be inserted. */
 public class InsertableClientSSK extends ClientSSK {
 
 	public final DSAPrivateKey privKey;
@@ -75,11 +77,11 @@ public class InsertableClientSSK extends ClientSSK {
 		return new InsertableClientSSK(uri.getDocName(), pkHash, pubKey, privKey, uri.getCryptoKey(), keyType);
 	}
 	
-	public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r) throws SSKEncodeException, IOException {
+	public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r, String compressordescriptor) throws SSKEncodeException, IOException, InvalidCompressionCodecException {
 		byte[] compressedData;
 		short compressionAlgo;
 		try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, SSKBlock.DATA_LENGTH, true);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, SSKBlock.DATA_LENGTH, true, compressordescriptor);
 			compressedData = comp.compressedData;
 			compressionAlgo = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e) {

@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
@@ -26,11 +28,12 @@ import freenet.support.TimeUtil;
 import freenet.support.URIPreEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.HTTPRequest;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
-
+import freenet.clients.http.annotation.AllowData;
 /**
  * ToadletContext implementation, including all the icky HTTP parsing etc.
  * An actual ToadletContext object represents a request, after we have parsed the 
@@ -39,6 +42,15 @@ import freenet.support.io.TooLongException;
  *
  */
 public class ToadletContextImpl implements ToadletContext {
+	
+	private static final Class<?> HANDLE_PARAMETERS[] = new Class[] {URI.class, HTTPRequest.class, ToadletContext.class};
+
+	/* methods listed here are *not* configurable with
+	 * AllowData annotation
+	 */
+	private static final String METHODS_MUST_HAVE_DATA = "POST";
+	private static final String METHODS_CANNOT_HAVE_DATA = "";
+	private static final String METHODS_RESTRICTED_MODE = "GET POST";
 	
 	private final MultiValueTable<String,String> headers;
 	private final OutputStream sockOutputStream;
@@ -314,33 +326,54 @@ public class ToadletContextImpl implements ToadletContext {
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
-				 * if we're handling a POST, copy the data into a bucket now,
+				 * copy the data into a bucket now,
 				 * before we go into the redirect loop
 				 */
 				
 				Bucket data;
-				
-				if(method.equals("POST")) {
-					String slen = headers.get("content-length");
-					if(slen == null) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
+
+				boolean methodIsConfigurable = true;
+
+				String slen = headers.get("content-length");
+
+				if (METHODS_MUST_HAVE_DATA.contains(method)) {
+					// <method> must have data
+					methodIsConfigurable = false;
+					if (slen == null) {
+						ctx.shouldDisconnect = true;
+						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
 						return;
 					}
+				} else if (METHODS_CANNOT_HAVE_DATA.contains(method)) {
+					// <method> can not have data
+					methodIsConfigurable = false;
+					if (slen != null) {
+						ctx.shouldDisconnect = true;
+						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
+						return;
+					}
+				}
+
+				if (slen != null) {
 					long len;
 					try {
 						len = Integer.parseInt(slen);
 						if(len < 0) throw new NumberFormatException("content-length less than 0");
 					} catch (NumberFormatException e) {
-						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("cannotParseContentLengthWithError", "error", e.toString()), true, null);
+						ctx.shouldDisconnect = true;
+						ctx.sendReplyHeaders(400, "Bad Request", null, null, -1);
 						return;
 					}
-					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) { 
-
-					data = bf.makeBucket(len);
-					BucketTools.copyFrom(data, is, len);
+					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) {
+						data = bf.makeBucket(len);
+						BucketTools.copyFrom(data, is, len);
 					} else {
 						FileUtil.skipFully(is, len);
-						ctx.sendMethodNotAllowed("POST", true);
+						if (method.equals("POST")) {
+							ctx.sendMethodNotAllowed("POST", true);
+						} else {
+							sendError(sock.getOutputStream(), 403, "Forbidden", "Content not allowed in this configuration", true, null);
+						}
 						ctx.close();
 						return;
 					}
@@ -349,58 +382,80 @@ public class ToadletContextImpl implements ToadletContext {
 					// the compiler happy
 					data = null;
 				}
-				
+
+				if (!container.enableExtendedMethodHandling()) {
+					if (!METHODS_RESTRICTED_MODE.contains(method)) {
+						sendError(sock.getOutputStream(), 403, "Forbidden", "Method not allowed in this configuration", true, null);
+						return;
+					}
+				}
+
 				// Handle it.
 				try {
-				boolean redirect = true;
-				while (redirect) {
-					// don't go around the loop unless set explicitly
-					redirect = false;
-					
-					Toadlet t;
-					try {
-						t = container.findToadlet(uri);
-					} catch (PermanentRedirectException e) {
-						Toadlet.writePermanentRedirect(ctx, "Found elsewhere", e.newuri.toASCIIString());
-						break;
-					}
-					
-					if(t == null) {
-						ctx.sendNoToadletError(ctx.shouldDisconnect);
-						break;
-					}
-					
-					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
-					try {
+					boolean redirect = true;
+					while (redirect) {
+						// don't go around the loop unless set explicitly
+						redirect = false;
 						
-						if ((t.supportedMethods()== null) || !(t.supportedMethods().contains(method))) {
-							Logger.error(t, "Method not supported: "+method+" on "+t, new Exception("error"));
+						Toadlet t;
+						try {
+							t = container.findToadlet(uri);
+						} catch (PermanentRedirectException e) {
+							Toadlet.writePermanentRedirect(ctx, "Found elsewhere", e.newuri.toASCIIString());
+							break;
 						}
-//							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
-//							ctx.close();
-						//} else 
-						if(method.equals("GET")) {
-							ctx.setActiveToadlet(t);
-							t.handleGet(uri, req, ctx);
-							ctx.close();
-						} else if(method.equals("POST")) {
-							ctx.setActiveToadlet(t);
-							t.handlePost(uri, req, ctx);
-						} else {
+					
+						if(t == null) {
+							ctx.sendNoToadletError(ctx.shouldDisconnect);
+							break;
+						}
+
+						// if the Toadlet does not support the method, we don't need to parse the data
+						// also due this pre check a 'NoSuchMethodException' should never appear
+						if (!(t.findSupportedMethods().contains(method))) {
 							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
-							ctx.close();
+							break;
 						}
-					} catch (RedirectException re) {
-						uri = re.newuri;
-						redirect = true;
-					} finally {
-						req.freeParts();
+
+						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
+						try {
+							String methodName = "handleMethod" + method;
+							try {
+								Class<? extends Toadlet> c = t.getClass();
+								Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
+								if (methodIsConfigurable) {
+									AllowData anno = m.getAnnotation(AllowData.class);
+									if (anno == null) {
+										if (data != null) {
+											sendError(sock.getOutputStream(), 400, "Bad Request", "Content not allowed", true, null);
+											ctx.close();
+											return;
+										}
+									} else if (anno.value()) {
+										if (data == null) {
+											sendError(sock.getOutputStream(), 400, "Bad Request", "Missing Content", true, null);
+											ctx.close();
+											return;
+										}
+									}
+								}
+								ctx.setActiveToadlet(t);
+								Object arglist[] = new Object[] {uri, req, ctx};
+								m.invoke(t, arglist);
+							} catch (InvocationTargetException ite) {
+								throw ite.getCause();
+							}
+						} catch (RedirectException re) {
+							uri = re.newuri;
+							redirect = true;
+						} finally {
+							req.freeParts();
+						}
 					}
-				}
-				if(ctx.shouldDisconnect) {
-					sock.close();
-					return;
-				}
+					if(ctx.shouldDisconnect) {
+						sock.close();
+						return;
+					}
 				} finally {
 					if(data != null) data.free();
 				}
@@ -481,6 +536,11 @@ public class ToadletContextImpl implements ToadletContext {
 		writeData(data, 0, data.length);
 	}
 	
+	/**
+	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket!
+	 * 
+	 * FIXME: For all references to this function, check whether they free() the Bucket.
+	 */
 	public void writeData(Bucket data) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		BucketTools.copyTo(data, sockOutputStream, Long.MAX_VALUE);

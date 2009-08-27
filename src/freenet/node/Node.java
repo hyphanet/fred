@@ -55,6 +55,7 @@ import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.ConfigToadlet;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.PageMaker;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -336,41 +337,9 @@ public class Node implements TimeSkewDetectorCallback {
 				type = storeType;
 			}
 			if(type.equals("ram")) {
-				Runnable migrate = new MigrateOldStoreData(false);
 				synchronized(this) { // Serialise this part.
-					String suffix = getStoreSuffix();
-					if (val.equals("salt-hash")) {
-						try {
-							initSaltHashFS(suffix, true, null);
-						} catch (NodeInitException e) {
-							Logger.error(this, "Unable to create new store", e);
-							System.err.println("Unable to create new store: "+e);
-							e.printStackTrace();
-							// FIXME l10n both on the NodeInitException and the wrapper message
-							throw new InvalidConfigValueException("Unable to create new store: "+e);
-						}
-					} else if (val.equals("bdb-index")) {
-						try {
-							initBDBFS(suffix);
-						} catch (NodeInitException e) {
-							Logger.error(this, "Unable to create new store", e);
-							System.err.println("Unable to create new store: "+e);
-							e.printStackTrace();
-							// FIXME l10n both on the NodeInitException and the wrapper message
-							throw new InvalidConfigValueException("Unable to create new store: "+e);
-						}
-					} else {
-						initRAMFS();
-					}
-					
-					if (storeType.equals("salt-hash")) {
-						finishInitSaltHashFS(suffix, clientCore);
-					}
-					synchronized(Node.this) {
-						storeType = val;
-					}
+					makeStore(val);
 				}
-				executor.execute(migrate, "Migrate data from previous store");
 			} else {
 				synchronized(Node.this) {
 					storeType = val;
@@ -411,7 +380,6 @@ public class Node implements TimeSkewDetectorCallback {
 				if(clientCacheAwaitingPassword)
 					type = "ram";
 			}
-				Runnable migrate = type.equals("none") ? null : new MigrateOldStoreData(true);
 				synchronized(this) { // Serialise this part.
 					String suffix = getStoreSuffix();
 					if (val.equals("salt-hash")) {
@@ -462,15 +430,10 @@ public class Node implements TimeSkewDetectorCallback {
 						initNoClientCacheFS();
 					}
 					
-					if (type.equals("salt-hash")) {
-						finishInitSaltHashFS(suffix, clientCore);
-					}
 					synchronized(Node.this) {
 						clientCacheType = val;
 					}
 				}
-				if(migrate != null)
-					executor.execute(migrate, "Migrate data from previous store");
 		}
 
 		public String[] getPossibleValues() {
@@ -532,21 +495,6 @@ public class Node implements TimeSkewDetectorCallback {
 	/** Log config handler */
 	public static LoggingConfigHandler logConfigHandler;
 	
-	/** If true, local requests and inserts aren't cached.
-	 * This opens up a glaring vulnerability; connected nodes
-	 * can then probe the store, and if the node doesn't have the
-	 * content, they know for sure that it was a local request.
-	 * HOWEVER, if we don't do this, then a non-full seized 
-	 * datastore will contain everything requested by the user...
-	 * Also, remote probing is possible by peers, although it is
-	 * more difficult, and leaves more plausible deniability,
-	 * than the first attack.
-	 * 
-	 * So it may be useful on some darknets, and is useful for 
-	 * debugging, but in general should be off on opennet and 
-	 * most darknets.
-	 */
-	public static final boolean DONT_CACHE_LOCAL_REQUESTS = false;
 	public static final int PACKETS_IN_BLOCK = 32;
 	public static final int PACKET_SIZE = 1024;
 	public static final double DECREMENT_AT_MIN_PROB = 0.25;
@@ -897,6 +845,38 @@ public class Node implements TimeSkewDetectorCallback {
 		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
 	}
 
+	public void makeStore(String val) throws InvalidConfigValueException {
+		String suffix = getStoreSuffix();
+		if (val.equals("salt-hash")) {
+			try {
+				initSaltHashFS(suffix, true, null);
+			} catch (NodeInitException e) {
+				Logger.error(this, "Unable to create new store", e);
+				System.err.println("Unable to create new store: "+e);
+				e.printStackTrace();
+				// FIXME l10n both on the NodeInitException and the wrapper message
+				throw new InvalidConfigValueException("Unable to create new store: "+e);
+			}
+		} else if (val.equals("bdb-index")) {
+			try {
+				initBDBFS(suffix);
+			} catch (NodeInitException e) {
+				Logger.error(this, "Unable to create new store", e);
+				System.err.println("Unable to create new store: "+e);
+				e.printStackTrace();
+				// FIXME l10n both on the NodeInitException and the wrapper message
+				throw new InvalidConfigValueException("Unable to create new store: "+e);
+			}
+		} else {
+			initRAMFS();
+		}
+		
+		synchronized(Node.this) {
+			storeType = val;
+		}
+	}
+
+
 	private String newName() {
 		return "Node id|"+random.nextLong();
 	}
@@ -977,7 +957,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
-		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
+		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
@@ -1012,7 +992,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// FProxy config needs to be here too
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
 		try {
-			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor);
+			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor, this);
 			fproxyConfig.finishedInitialization();
 			toadlets.start();
 		} catch (IOException e4) {
@@ -1797,7 +1777,7 @@ public class Node implements TimeSkewDetectorCallback {
 		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
-		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
+		opennetConfig.register("maxOpennetPeers", OpennetManager.MAX_PEERS_FOR_SCALING, 1, true, false, "Node.maxOpennetPeers",
 				"Node.maxOpennetPeersLong", new IntCallback() {
 					@Override
 					public Integer get() {
@@ -1813,9 +1793,9 @@ public class Node implements TimeSkewDetectorCallback {
 		, false);
 		
 		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
-		if(maxOpennetPeers > 20) {
-			Logger.error(this, "maxOpennetPeers may not be over 20");
-			maxOpennetPeers = 20;
+		if(maxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) {
+			Logger.error(this, "maxOpennetPeers may not be over "+OpennetManager.MAX_PEERS_FOR_SCALING);
+			maxOpennetPeers = OpennetManager.MAX_PEERS_FOR_SCALING;
 		}
 		
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true, securityLevels);
@@ -2231,6 +2211,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		
 		if (storeType.equals("salt-hash")) {
+			initRAMFS();
 			initSaltHashFS(suffix, false, null);
 		} else if (storeType.equals("bdb-index")) {
 			initBDBFS(suffix);
@@ -2246,10 +2227,6 @@ public class Node implements TimeSkewDetectorCallback {
 		if(notEnoughSpaceForAutoCrypt) createAutoCryptFailedUserAlert();
 		
 		netid = new NetworkIDManager(this);
-		
-		if (storeType.equals("salt-hash")) {
-			finishInitSaltHashFS(suffix, clientCore);
-		}
 		
 		// Client cache
 		
@@ -2517,8 +2494,10 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		});
-		
-		securityLevels.registerUserAlert(clientCore.alerts);
+
+		if(!PageMaker.THEME.themeFromName(this.config.get("fproxy").getString("css")).showStatusBar) {
+			securityLevels.registerUserAlert(clientCore.alerts);
+		}
 		
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
@@ -3076,7 +3055,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private String getStoreSuffix() {
 		return "-" + getDarknetPortNumber();
 	}
-
+	
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
 		((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
 		((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
@@ -3192,28 +3171,46 @@ public class Node implements TimeSkewDetectorCallback {
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
-			CHKStore chkDatastore = new CHKStore();
-			SaltedHashFreenetStore chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore, dontResizeOnStart, masterKey);
-			this.chkDatastore = chkDatastore;
-			CHKStore chkDatacache = new CHKStore();
-			SaltedHashFreenetStore chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache, dontResizeOnStart, masterKey);
-			this.chkDatacache = chkDatacache;
-			PubkeyStore pubKeyDatastore = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
-			this.pubKeyDatastore = pubKeyDatastore;
-			PubkeyStore pubKeyDatacache = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
-			this.pubKeyDatacache = pubKeyDatacache;
-			getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
-			Logger.normal(this, "Initializing SSK Datastore");
-			System.out.println("Initializing SSK Datastore");
-			SSKStore sskDatastore = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore, dontResizeOnStart, masterKey);
-			this.sskDatastore = sskDatastore;
-			SSKStore sskDatacache = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache, dontResizeOnStart, masterKey);
-			this.sskDatacache = sskDatacache;
+			final CHKStore chkDatastore = new CHKStore();
+			final SaltedHashFreenetStore chkDataFS = makeStore(bloomFilterSizeInM, "CHK", true, chkDatastore, dontResizeOnStart, masterKey);
+			final CHKStore chkDatacache = new CHKStore();
+			final SaltedHashFreenetStore chkCacheFS = makeStore(bloomFilterSizeInM, "CHK", false, chkDatacache, dontResizeOnStart, masterKey);
+			final PubkeyStore pubKeyDatastore = new PubkeyStore();
+			final SaltedHashFreenetStore pubkeyDataFS = makeStore(bloomFilterSizeInM, "PUBKEY", true, pubKeyDatastore, dontResizeOnStart, masterKey);
+			final PubkeyStore pubKeyDatacache = new PubkeyStore();
+			final SaltedHashFreenetStore pubkeyCacheFS = makeStore(bloomFilterSizeInM, "PUBKEY", false, pubKeyDatacache, dontResizeOnStart, masterKey);
+			final SSKStore sskDatastore = new SSKStore(getPubKey);
+			final SaltedHashFreenetStore sskDataFS = makeStore(bloomFilterSizeInM, "SSK", true, sskDatastore, dontResizeOnStart, masterKey);
+			final SSKStore sskDatacache = new SSKStore(getPubKey);
+			final SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache, dontResizeOnStart, masterKey);
 
+			final Runnable migrate = new MigrateOldStoreData(false);
+			
+			executor.execute(new Runnable() {
+
+				public void run() {
+					chkDataFS.start(ps);
+					chkCacheFS.start(ps);
+					pubkeyDataFS.start(ps);
+					pubkeyCacheFS.start(ps);
+					sskDataFS.start(ps);
+					sskCacheFS.start(ps);
+					
+					Node.this.chkDatastore = chkDatastore;
+					Node.this.chkDatacache = chkDatacache;
+					Node.this.pubKeyDatastore = pubKeyDatastore;
+					Node.this.pubKeyDatacache = pubKeyDatacache;
+					getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
+					Node.this.sskDatastore = sskDatastore;
+					Node.this.sskDatacache = sskDatacache;
+					
+					finishInitSaltHashFS(suffix, clientCore);
+					
+					migrate.run();
+				}
+				
+			});
+			
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
 				tryMigrate(chkDataFS, "chk", true, suffix);
@@ -3240,16 +3237,31 @@ public class Node implements TimeSkewDetectorCallback {
 			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
 			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
-			CHKStore chkClientcache = new CHKStore();
-			SaltedHashFreenetStore chkDataFS = makeClientcache(bloomFilterSizeInM, "CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
-			this.chkClientcache = chkClientcache;
-			PubkeyStore pubKeyClientcache = new PubkeyStore();
-			SaltedHashFreenetStore pubkeyDataFS = makeClientcache(bloomFilterSizeInM, "PUBKEY", true, pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
-			this.pubKeyClientcache = pubKeyClientcache;
-			getPubKey.setLocalDataStore(pubKeyClientcache);
-			SSKStore sskClientcache = new SSKStore(getPubKey);
-			SaltedHashFreenetStore sskDataFS = makeClientcache(bloomFilterSizeInM, "SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
-			this.sskClientcache = sskClientcache;
+			final CHKStore chkClientcache = new CHKStore();
+			final SaltedHashFreenetStore chkDataFS = makeClientcache(bloomFilterSizeInM, "CHK", true, chkClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final PubkeyStore pubKeyClientcache = new PubkeyStore();
+			final SaltedHashFreenetStore pubkeyDataFS = makeClientcache(bloomFilterSizeInM, "PUBKEY", true, pubKeyClientcache, dontResizeOnStart, clientCacheMasterKey);
+			final SSKStore sskClientcache = new SSKStore(getPubKey);
+			final SaltedHashFreenetStore sskDataFS = makeClientcache(bloomFilterSizeInM, "SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
+			
+			final Runnable migrate = new MigrateOldStoreData(true);
+			
+			executor.execute(new Runnable() {
+
+				public void run() {
+					chkDataFS.start(ps);
+					Node.this.chkClientcache = chkClientcache;
+					pubkeyDataFS.start(ps);
+					Node.this.pubKeyClientcache = pubKeyClientcache;
+					getPubKey.setLocalDataStore(pubKeyClientcache);
+					sskDataFS.start(ps);
+					Node.this.sskClientcache = sskClientcache;
+					
+					migrate.run();
+				}
+				
+			});
+			
 		} catch (IOException e) {
 			System.err.println("Could not open store: " + e);
 			e.printStackTrace();
@@ -3265,7 +3277,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private SaltedHashFreenetStore makeClientcache(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
-		return makeStore(bloomFilterSizeInM, type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
+		SaltedHashFreenetStore store = makeStore(bloomFilterSizeInM, type, "clientcache", maxClientCacheKeys, cb, dontResizeOnStart, clientCacheMasterKey);
+		return store;
 	}
 	
 	private SaltedHashFreenetStore makeStore(int bloomFilterSizeInM, String type, boolean isStore, StoreCallback cb, boolean dontResizeOnStart, byte[] clientCacheMasterKey) throws IOException {
@@ -3451,8 +3464,8 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
 			System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
 		}
-		Logger.normal(this, "Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		System.out.println("Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+		Logger.normal(this, "Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision());
+		System.out.println("Freenet 0.7.5 Build #"+Version.buildNumber()+" r"+Version.cvsRevision());
 		Logger.normal(this, "FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
 		System.out.println("FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
 		// Start services
@@ -3584,8 +3597,6 @@ public class Node implements TimeSkewDetectorCallback {
 			boolean is150 = javaVersion.startsWith("1.5.0_");
 			boolean is160 = javaVersion.startsWith("1.6.0_");
 			
-			boolean spuriousOOMs = false;
-			
 			if(is150 || is160) {
 				String[] split = javaVersion.split("_");
 				String secondPart = split[1];
@@ -3597,48 +3608,8 @@ public class Node implements TimeSkewDetectorCallback {
 				
 				Logger.minor(this, "JVM version: "+javaVersion+" subver: "+subver+" from "+secondPart);
 				
-				if(is150 && subver < 10)
-					spuriousOOMs = true;
-				
 				if(is150 && subver < 20 || is160 && subver < 15)
 					xmlRemoteCodeExec = true;
-			}
-			
-			if(spuriousOOMs) {
-				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6 (recommended). This version is buggy and may cause spurious OutOfMemoryErrors.");
-				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, null, UserAlert.ERROR, true, null, false, null) {
-
-					@Override
-					public HTMLNode getHTMLText() {
-						HTMLNode n = new HTMLNode("div");
-						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
-								new String[] { "link", "/link", "version" },
-								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">", 
-								"</a>", HTMLEncoder.encode(System.getProperty("java.version")) });
-						return n;
-					}
-
-					@Override
-					public String getText() {
-						return l10n("buggyJVM", "version", System.getProperty("java.version"));
-					}
-
-					@Override
-					public String getTitle() {
-						return l10n("buggyJVMTitle");
-					}
-
-					@Override
-					public void isValid(boolean validity) {
-						// Ignore
-					}
-
-					@Override
-					public String getShortText() {
-						return l10n("buggyJVMShort", "version", System.getProperty("java.version"));
-					}
-
-				});
 			}
 			
 			if(xmlRemoteCodeExec) {
@@ -3742,11 +3713,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * cannot write to the datastore.
 	 * @return A KeyBlock for the key requested or null.
 	 */
-	private KeyBlock makeRequestLocal(Key key, long uid, boolean promoteCache, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean offersOnly) {
+	private KeyBlock makeRequestLocal(Key key, long uid, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean offersOnly) {
 		KeyBlock kb = null;
 
 		if (key instanceof NodeCHK) {
-			kb = fetch((NodeCHK) key, !promoteCache, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+			kb = fetch((NodeCHK) key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 		} else if (key instanceof NodeSSK) {
 			NodeSSK sskKey = (NodeSSK) key;
 			DSAPublicKey pubKey = sskKey.getPubKey();
@@ -3763,7 +3734,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (pubKey != null) {
 				if (logMINOR)
 					Logger.minor(this, "Got pubkey: " + pubKey);
-				kb = fetch(sskKey, !promoteCache, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+				kb = fetch(sskKey, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 			} else {
 				if (logMINOR)
 					Logger.minor(this, "Not found because no pubkey: " + uid);
@@ -3797,12 +3768,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache) {
+	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean ignoreStore, boolean offersOnly, boolean canReadClientCache, boolean canWriteClientCache) {
 		boolean canWriteDatastore = canWriteDatastoreRequest(htl);
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
 		if(!ignoreStore) {
-			KeyBlock kb = makeRequestLocal(key, uid, cache, canReadClientCache, canWriteClientCache, canWriteDatastore, offersOnly);
+			KeyBlock kb = makeRequestLocal(key, uid, canReadClientCache, canWriteClientCache, canWriteDatastore, offersOnly);
 			if (kb != null)
 				return kb;
 		}
@@ -3945,11 +3916,11 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public KeyBlock fetch(Key key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+	public KeyBlock fetch(Key key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		if(key instanceof NodeSSK)
-			return fetch((NodeSSK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
+			return fetch((NodeSSK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
 		else if(key instanceof NodeCHK)
-			return fetch((NodeCHK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
+			return fetch((NodeCHK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
 		else throw new IllegalArgumentException();
 	}
 	
@@ -4284,7 +4255,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean cache, boolean canWriteClientCache) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		CHKInsertSender is = null;
@@ -4295,8 +4266,6 @@ public class Node implements TimeSkewDetectorCallback {
 			if(logMINOR) Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-		if(fromStore && !cache)
-			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
 		is.start();
 		if(logMINOR) Logger.minor(this, is.toString()+" for "+kh.toString());
@@ -4316,13 +4285,12 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, boolean cache, boolean canWriteClientCache, boolean canWriteDatastore) {
+			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
-		if(cache)
-			getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
+		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
@@ -4333,8 +4301,6 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-		if(fromStore && !cache)
-			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
 		is.start();
 		Logger.minor(this, is.toString()+" for "+kh.toString());
@@ -4663,26 +4629,26 @@ public class Node implements TimeSkewDetectorCallback {
 		return testnetEnabled;
 	}
 
-	public ClientKeyBlock fetchKey(ClientKey key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyVerifyException {
+	public ClientKeyBlock fetchKey(ClientKey key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyVerifyException {
 		if(key instanceof ClientCHK)
-			return fetch((ClientCHK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore);
+			return fetch((ClientCHK)key, canReadClientCache, canWriteClientCache, canWriteDatastore);
 		else if(key instanceof ClientSSK)
-			return fetch((ClientSSK)key, dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore);
+			return fetch((ClientSSK)key, canReadClientCache, canWriteClientCache, canWriteDatastore);
 		else
 			throw new IllegalStateException("Don't know what to do with "+key);
 	}
 
-	public ClientKeyBlock fetch(ClientSSK clientSSK, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws SSKVerifyException {
+	public ClientKeyBlock fetch(ClientSSK clientSSK, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws SSKVerifyException {
 		DSAPublicKey key = clientSSK.getPubKey();
 		if(key == null) {
 			key = getPubKey.getKey(clientSSK.pubKeyHash, canReadClientCache, false);
 		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
-		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 		if(block == null) {
 			if(logMINOR)
-				Logger.minor(this, "Could not find key for "+clientSSK+" (dontPromote="+dontPromote+")");
+				Logger.minor(this, "Could not find key for "+clientSSK);
 			return null;
 		}
 		// Move the pubkey to the top of the LRU, and fix it if it
@@ -4691,8 +4657,8 @@ public class Node implements TimeSkewDetectorCallback {
 		return ClientSSKBlock.construct(block, clientSSK);
 	}
 
-	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws CHKVerifyException {
-		CHKBlock block = fetch(clientCHK.getNodeCHK(), dontPromote, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws CHKVerifyException {
+		CHKBlock block = fetch(clientCHK.getNodeCHK(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
 		if(block == null) return null;
 		return new ClientCHKBlock(block, clientCHK);
 	}
@@ -5193,7 +5159,7 @@ public class Node implements TimeSkewDetectorCallback {
 		return opennet.crypto.portNumber;
 	}
 
-	OpennetManager getOpennet() {
+	public OpennetManager getOpennet() {
 		return opennet;
 	}
 	

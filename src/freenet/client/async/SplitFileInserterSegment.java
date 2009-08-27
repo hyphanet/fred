@@ -481,6 +481,23 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	public void tryEncode(ObjectContainer container, ClientContext context) {
+		boolean deactivateParent = false;
+		boolean deactivateParentCtx = false;
+		if(persistent) {
+			deactivateParent = !container.ext().isActive(parent);
+			deactivateParentCtx = !container.ext().isActive(parent.ctx);
+			if (deactivateParent)
+				container.activate(parent, 1);
+			if (deactivateParentCtx)
+				container.activate(parent.ctx, 1);
+		}
+		String compressorDescriptor = parent.ctx.compressorDescriptor;
+		if(persistent) {
+			if (deactivateParent)
+				container.activate(parent, 1);
+			if (deactivateParentCtx)
+				container.activate(parent.ctx, 1);
+		}
 		for(int i=0;i<dataBlocks.length;i++) {
 			if(dataURIs[i] == null && dataBlocks[i] != null) {
 				try {
@@ -489,16 +506,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						deactivate = !container.ext().isActive(dataBlocks[i]);
 						if(deactivate) container.activate(dataBlocks[i], 1);
 					}
-					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i]).getClientKey();
+					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i], compressorDescriptor).getClientKey();
 					if(deactivate) container.deactivate(dataBlocks[i], 1);
 					onEncode(i, key, container, context);
 				} catch (CHKEncodeException e) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);						
+					fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 				} catch (IOException e) {
 					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 				}
 			} else if(dataURIs[i] == null && dataBlocks[i] == null) {
-				fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);					
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);
 			}
 		}
 		if(encoded) {
@@ -510,16 +527,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							deactivate = !container.ext().isActive(checkBlocks[i]);
 							if(deactivate) container.activate(checkBlocks[i], 1);
 						}
-						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i]).getClientKey();
+						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i], compressorDescriptor).getClientKey();
 						if(deactivate) container.deactivate(checkBlocks[i], 1);
 						onEncode(i+dataBlocks.length, key, container, context);
 					} catch (CHKEncodeException e) {
-						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);						
+						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);	
 					} catch (IOException e) {
 						fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 					}
 				} else if(checkURIs[i] == null && checkBlocks[i] == null) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);					
+					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);	
 				}
 			}
 		}
@@ -1289,18 +1306,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return 0;
 	}
 
-	@Override
-	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
-		return new SendableRequestSender() {
-
-			public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
+	class MySendableRequestSender implements SendableRequestSender {
+		private final String compressorDescriptor;
+		MySendableRequestSender(String compressorDescriptor2) {
+			compressorDescriptor = compressorDescriptor2;
+		}
+		public boolean send(NodeClientCore core, RequestScheduler sched, final ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
 				try {
 					BlockItem block = (BlockItem) req.token;
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Starting request: "+SplitFileInserterSegment.this+" block number "+block.blockNum);
 					ClientCHKBlock b;
 					try {
-						b = encodeBucket(block.copyBucket);
+						b = encodeBucket(block.copyBucket, compressorDescriptor);
 					} catch (CHKEncodeException e) {
 						throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, e.toString() + ":" + e.getMessage()+" for "+block.copyBucket, e);
 					} catch (MalformedURLException e) {
@@ -1338,7 +1356,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}, "Got URI");
 						
 					}
-					core.realPut(b, req.cacheLocalRequests, req.canWriteClientCache);
+					core.realPut(b, req.canWriteClientCache);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
@@ -1352,11 +1370,34 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				return true;
 			}
 			
-		};
+		
+	}
+	
+	@Override
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		SendableRequestSender result;
+		boolean deactivateParent = false;
+		boolean deactivateParentCtx = false;
+		if(persistent) {
+			deactivateParent = !container.ext().isActive(parent);
+			deactivateParentCtx = !container.ext().isActive(parent.ctx);
+			if (deactivateParent)
+				container.activate(parent, 1);
+			if (deactivateParentCtx)
+				container.activate(parent.ctx, 1);
+		}
+		result = new MySendableRequestSender(parent.ctx.compressorDescriptor);
+		if(persistent) {
+			if (deactivateParent)
+				container.deactivate(parent, 1);
+			if (deactivateParentCtx)
+				container.deactivate(parent.ctx, 1);
+		}
+		return result;
 	}
 
-	protected ClientCHKBlock encodeBucket(Bucket copyBucket) throws CHKEncodeException, IOException {
-		return ClientCHKBlock.encode(copyBucket, false, true, (short)-1, CHKBlock.DATA_LENGTH);
+	protected ClientCHKBlock encodeBucket(Bucket copyBucket, String compressorDescriptor) throws CHKEncodeException, IOException {
+		return ClientCHKBlock.encode(copyBucket, false, true, (short)-1, CHKBlock.DATA_LENGTH, compressorDescriptor);
 	}
 
 	@Override
@@ -1473,20 +1514,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			errors.removeFrom(container);
 		}
 		container.delete(this);
-	}
-	
-	@Override
-	public boolean cacheInserts(ObjectContainer container) {
-		boolean deactivate = false;
-		if(persistent) {
-			deactivate = !container.ext().isActive(blockInsertContext);
-			if(deactivate)
-				container.activate(blockInsertContext, 1);
-		}
-		boolean retval = blockInsertContext.cacheLocalRequests;
-		if(deactivate)
-			container.deactivate(blockInsertContext, 1);
-		return retval;
 	}
 	
 	@Override

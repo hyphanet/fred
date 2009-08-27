@@ -87,7 +87,7 @@ public class SimpleSendableInsert extends SendableInsert {
 				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+this);
-					core.realPut(block, shouldCache(), req.canWriteClientCache);
+					core.realPut(block, req.canWriteClientCache);
 				} catch (LowLevelPutException e) {
 					onFailure(e, req.token, null, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
@@ -134,11 +134,6 @@ public class SimpleSendableInsert extends SendableInsert {
 		super.unregister(container, context);
 	}
 
-	public boolean shouldCache() {
-		// This is only used as-is by the random reinsert from a request code. Subclasses should override!
-		return false;
-	}
-
 	@Override
 	public synchronized long countAllKeys(ObjectContainer container, ClientContext context) {
 		if(finished) return 0;
@@ -169,11 +164,6 @@ public class SimpleSendableInsert extends SendableInsert {
 	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		// Transient-only so no makeBlocks().
 		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public boolean cacheInserts(ObjectContainer container) {
-		return scheduler.cacheInserts();
 	}
 
 	@Override

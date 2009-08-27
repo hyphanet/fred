@@ -17,6 +17,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressJob;
 import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.NativeThread;
@@ -42,6 +43,7 @@ public class InsertCompressor implements CompressJob {
 	/** BucketFactory */
 	public final BucketFactory bucketFactory;
 	public final boolean persistent;
+	public final String compressorDescriptor;
 	private transient boolean scheduled;
 	private static volatile boolean logMINOR;
 	
@@ -62,6 +64,7 @@ public class InsertCompressor implements CompressJob {
 		this.minSize = minSize2;
 		this.bucketFactory = bf;
 		this.persistent = persistent;
+		this.compressorDescriptor = inserter.ctx.compressorDescriptor;
 	}
 
 	public void init(ObjectContainer container, final ClientContext ctx) {
@@ -113,8 +116,8 @@ public class InsertCompressor implements CompressJob {
 		// Stop when run out of algorithms, or the compressed data fits in a single block.
 		try {
 			BucketChainBucketFactory bucketFactory2 = new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024);
-			
-			for(final COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
+			COMPRESSOR_TYPE[] comps = COMPRESSOR_TYPE.getCompressorsArray(compressorDescriptor);
+			for (final COMPRESSOR_TYPE comp : comps) {
 				boolean shouldFreeOnFinally = true;
 				Bucket result = null;
 				try {
@@ -226,43 +229,47 @@ public class InsertCompressor implements CompressJob {
 					
 				}, "Insert thread for "+this);
 			}
-			
-		} catch (final IOException e) {
-			if(persistent) {
-				try {
-					context.jobRunner.queue(new DBJob() {
-						
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(inserter)) {
-								if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (on failed): "+inserter+" for "+InsertCompressor.this);
-								container.delete(InsertCompressor.this);
-								return false;
-							}
-							if(container.ext().isActive(inserter))
-								Logger.error(this, "ALREADY ACTIVE in compress failure callback: "+inserter);
-							container.activate(inserter, 1);
-							container.activate(inserter.cb, 1);
-							inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, container, context);
-							container.deactivate(inserter.cb, 1);
-							container.deactivate(inserter, 1);
-							container.delete(InsertCompressor.this);
-							return true;
-						}
-						
-					}, NativeThread.NORM_PRIORITY+1, false);
-				} catch (DatabaseDisabledException e1) {
-					Logger.error(this, "Database disabled compressing data", new Exception("error"));
-					if(bestCompressedData != null && bestCompressedData != origData)
-						bestCompressedData.free();
-				}
-			} else {
-				inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, null, context);
-			}
-			
 		} catch (DatabaseDisabledException e) {
 			Logger.error(this, "Database disabled compressing data", new Exception("error"));
 			if(bestCompressedData != null && bestCompressedData != origData)
 				bestCompressedData.free();
+		} catch (InvalidCompressionCodecException e) {
+			fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), context, bestCompressedData);
+		} catch (final IOException e) {
+			fail(new InsertException(InsertException.BUCKET_ERROR, e, null), context, bestCompressedData);
+		}	
+	}
+
+	private void fail(final InsertException ie, ClientContext context, Bucket bestCompressedData) {
+		if(persistent) {
+			try {
+				context.jobRunner.queue(new DBJob() {
+					
+					public boolean run(ObjectContainer container, ClientContext context) {
+						if(!container.ext().isStored(inserter)) {
+							if(InsertCompressor.logMINOR) Logger.minor(this, "Already deleted (on failed): "+inserter+" for "+InsertCompressor.this);
+							container.delete(InsertCompressor.this);
+							return false;
+						}
+						if(container.ext().isActive(inserter))
+							Logger.error(this, "ALREADY ACTIVE in compress failure callback: "+inserter);
+						container.activate(inserter, 1);
+						container.activate(inserter.cb, 1);
+						inserter.cb.onFailure(ie, inserter, container, context);
+						container.deactivate(inserter.cb, 1);
+						container.deactivate(inserter, 1);
+						container.delete(InsertCompressor.this);
+						return true;
+					}
+					
+				}, NativeThread.NORM_PRIORITY+1, false);
+			} catch (DatabaseDisabledException e1) {
+				Logger.error(this, "Database disabled compressing data", new Exception("error"));
+				if(bestCompressedData != null && bestCompressedData != origData)
+					bestCompressedData.free();
+			}
+		} else {
+			inserter.cb.onFailure(ie, inserter, null, context);
 		}
 	}
 

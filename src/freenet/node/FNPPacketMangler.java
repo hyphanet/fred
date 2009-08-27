@@ -2688,7 +2688,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public String dismissButtonText() {
-			return null;
+			return L10n.getString("UserAlert.Hide");
 		}
 
 		public short getPriorityClass() {
@@ -2711,7 +2711,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			L10n.addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail", 
 					new String[] { "count", "link", "/link" }
-					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
+					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692\">", "</a>" });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());
@@ -2766,7 +2766,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public boolean userCanDismiss() {
-			return false;
+			return true;
 		}
 
 	};

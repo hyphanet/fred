@@ -25,9 +25,8 @@ public class SimpleHelpToadlet extends Toadlet {
 	}
 	
 	final NodeClientCore core;
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 		
 		PageNode page = ctx.getPageMaker().getPageNode("Freenet " + L10n.getString("FProxyToadlet.help"), ctx);
@@ -38,11 +37,11 @@ public class SimpleHelpToadlet extends Toadlet {
 			contentNode.addChild(new AlertElement(ctx));
 		
 		// Description infobox
-		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle"), contentNode);
+		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle"), contentNode, "freenet-description", true);
 		helpScreenContent1.addChild("#", L10n.getString("SimpleHelpToadlet.descriptionText"));
 		
 		// Definitions infobox
-		HTMLNode helpScreenContent2 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle"), contentNode);
+		HTMLNode helpScreenContent2 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle"), contentNode, "freenet-definitions", true);
 		
 		HTMLNode table = helpScreenContent2.addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
        
@@ -68,17 +67,12 @@ public class SimpleHelpToadlet extends Toadlet {
 		
 		
 		// Port forwarding, etc.	
-		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle"), contentNode);
+		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle"), contentNode, "freenet-connectivity", true);
 		helpScreenContent3.addChild("#", L10n.getString("SimpleHelpToadlet.connectivityText"));
 		
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		
-	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 	@Override

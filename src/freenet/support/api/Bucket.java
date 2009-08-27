@@ -6,7 +6,10 @@ import java.io.*;
 
 import com.db4o.ObjectContainer;
 /**
- * A bucket is any arbitrary object can temporarily store data.
+ * A bucket is any arbitrary object can temporarily store data. In other 
+ * words, it is the equivalent of a temporary file, but it could be in RAM,
+ * on disk, encrypted, part of a file on disk, composed from a chain of 
+ * other buckets etc.
  * 
  * @author oskar
  */
@@ -35,7 +38,7 @@ public interface Bucket {
     public String getName();
 
     /**
-     * Returns the amount of data currently in this bucket.
+     * Returns the amount of data currently in this bucket in bytes.
      */
     public long size();
 
@@ -62,8 +65,9 @@ public interface Bucket {
 
 	/**
 	 * Remove the bucket and everything under it from the database.
-	 * You don't need to call this if it hasn't been storeTo()'ed: buckets that use the database internally
-	 * will run a blocking job to delete internal structure in free().
+	 * You don't need to call this if it hasn't been storeTo()'ed: buckets 
+	 * that use the database internally will run a blocking job to delete 
+	 * internal structure in free().
 	 * @param container The database.
 	 */
 	public void removeFrom(ObjectContainer container);

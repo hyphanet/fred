@@ -11,6 +11,7 @@ import com.db4o.ObjectContainer;
  */
 public interface ClientGetState {
 
+	/** Schedule the request on the ClientRequestScheduler. */
 	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException;
 
 	/** Cancel the request, and call onFailure() on the callback in order to tell 
@@ -18,6 +19,7 @@ public interface ClientGetState {
 	 * it to call removeFrom() to avoid a database leak. */
 	public void cancel(ObjectContainer container, ClientContext context);
 
+	/** Get a long value which may be passed around to identify this request (e.g. by the USK fetching code). */
 	public long getToken();
 
 	/**

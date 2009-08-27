@@ -12,7 +12,10 @@ import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
 
 public class PluginRespirator {
+	/** For accessing Freenet: simple fetches and inserts, and the data you
+	 * need (FetchContext etc) to start more complex ones. */
 	private final HighLevelSimpleClient hlsc;
+	/** For accessing the node. */
 	private final Node node;
 	private final PageMaker pageMaker;
 	private final FredPlugin plugin;
@@ -35,10 +38,17 @@ public class PluginRespirator {
 		return hlsc;
 	}
 	
+	/** Get the node. Use this if you need access to low-level stuff, config
+	 * etc. */
 	public Node getNode(){
 		return node;
 	}
 
+	/** Create a GenericReadFilterCallback, which will filter URLs in 
+	 * exactly the same way as the node does when filtering a page.
+	 * @param path The base URI for the page being filtered. Not necessarily
+	 * a FreenetURI.
+	 */
 	public FilterCallback makeFilterCallback(String path) {
 		try {
 			return node.clientCore.createFilterCallback(URIPreEncoder.encodeURI(path), null);
@@ -47,12 +57,18 @@ public class PluginRespirator {
 		}
 	}
 	
+	/** Get the PageMaker. */
 	public PageMaker getPageMaker(){
 		ToadletContainer container = getToadletContainer();
 		if(container == null) return null;
 		return container.getPageMaker();
 	}
 	
+	/** Add a valid form including the form password. 
+	 * @param parentNode The parent HTMLNode.
+	 * @param target Where to post to.
+	 * @param name The id/name of the form.
+	 * @return The form's HTMLNode. */
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name) {
 		HTMLNode formNode =
 			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id", "name", "accept-charset" }, 
@@ -63,10 +79,14 @@ public class PluginRespirator {
 		return formNode;
 	}
 	
+	/** Get a PluginTalker so you can talk with other plugins. */
 	public PluginTalker getPluginTalker(FredPluginTalker fpt, String pluginname, String identifier) throws PluginNotFoundException {
 		return new PluginTalker(fpt, node, pluginname, identifier);
 	}
 
+	/** Get the ToadletContainer, which manages HTTP. You can then register
+	 * toadlets on it, which allow integrating your plugin into the main
+	 * menus, and are a more versatile interface than FredPluginHTTP. */
 	public ToadletContainer getToadletContainer() {
 		return node.clientCore.getToadletContainer();
 	}

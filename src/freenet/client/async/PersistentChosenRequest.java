@@ -39,7 +39,6 @@ public class PersistentChosenRequest {
 	/** Retry count when we selected it */
 	public transient final int retryCount;
 	public transient final boolean localRequestOnly;
-	public transient final boolean cacheLocalRequests;
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
 	public transient final ArrayList<PersistentChosenBlock> blocksNotStarted;
@@ -60,13 +59,11 @@ public class PersistentChosenRequest {
 			if(container != null)
 				container.activate(ctx, 1);
 			localRequestOnly = ctx.localRequestOnly;
-			cacheLocalRequests = ctx.cacheLocalRequests;
 			ignoreStore = ctx.ignoreStore;
 			canWriteClientCache = ctx.canWriteClientCache;
 		} else {
 			SendableInsert sg = (SendableInsert) req;
 			localRequestOnly = false;
-			cacheLocalRequests = sg.cacheInserts(container);
 			canWriteClientCache = sg.canWriteClientCache(container);
 			ignoreStore = false;
 		}

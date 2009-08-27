@@ -36,6 +36,7 @@ public class FetchResult {
 		return metadata.getMIMEType();
 	}
 
+	/** Get the client-level metadata. */
 	public ClientMetadata getMetadata() {
 		return metadata;
 	}

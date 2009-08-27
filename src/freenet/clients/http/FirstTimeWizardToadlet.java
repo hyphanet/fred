@@ -3,18 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Method;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.ConfigException;
 import freenet.config.Option;
-import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.MasterKeysFileTooBigException;
 import freenet.node.MasterKeysFileTooShortException;
@@ -68,9 +65,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	public static final String TOADLET_URL = "/wizard/";
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
@@ -380,8 +376,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		return L10n.getString("SecurityLevels."+key, pattern, value);
 	}
 
-	@Override
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
@@ -514,7 +509,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						HTMLNode contentNode = page.content;
 						
 						HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-								l10n("passwordWrongTitle"), contentNode).
+								l10n("passwordWrongTitle"), contentNode, null, true).
 								addChild("div", "class", "infobox-content");
 						
 						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, true, newThreatLevel.name(), null);
@@ -537,7 +532,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					HTMLNode contentNode = page.content;
 					
 					HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-							l10nSec("enterPasswordTitle"), contentNode).
+							l10nSec("enterPasswordTitle"), contentNode, null, true).
 							addChild("div", "class", "infobox-content");
 					
 					if(pass != null && pass.length() == 0) {
@@ -584,7 +579,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						HTMLNode contentNode = page.content;
 						
 						HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-								l10n("passwordWrongTitle"), contentNode).
+								l10n("passwordWrongTitle"), contentNode, null, true).
 								addChild("div", "class", "infobox-content");
 						
 						SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, true, false, false, newThreatLevel.name(), null);
@@ -609,7 +604,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					HTMLNode contentNode = page.content;
 					
 					HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-							l10nSec("passwordForDecryptTitle"), contentNode).
+							l10nSec("passwordForDecryptTitle"), contentNode, null, true).
 							addChild("div", "class", "infobox-content");
 					
 					if(pass != null && pass.length() == 0) {
@@ -695,7 +690,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	private void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
-		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath()).generate());
+		writeHTMLReply(ctx, 500, "OK", SecurityLevelsToadlet.sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, core.node.getMasterPasswordFile().getPath(), core.node).generate());
 	}
 
 	private void addBackToPhysicalSeclevelsLink(HTMLNode content) {
@@ -706,11 +701,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		return L10n.getString("FirstTimeWizardToadlet."+key);
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
-	
 	private void _setDatastoreSize(String selectedStoreSize) {
 		try {
 			long size = Fields.parseLong(selectedStoreSize);
@@ -831,7 +821,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	private void sendCantDeleteMasterKeysFile(ToadletContext ctx, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(ctx, core.node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel);
+		HTMLNode pageNode = SecurityLevelsToadlet.sendCantDeleteMasterKeysFileInner(ctx, core.node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel, this.core.node);
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 

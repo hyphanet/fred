@@ -53,13 +53,7 @@ public class ConnectivityToadlet extends Toadlet {
 		this.core = core;
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-
-	@Override
-	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		final int mode = ctx.getPageMaker().parseMode(request, container);
@@ -110,7 +104,7 @@ public class ConnectivityToadlet extends Toadlet {
 		
 		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
 		
-		HTMLNode summaryContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.summaryTitle"), contentNode);
+		HTMLNode summaryContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.summaryTitle"), contentNode, "connectivity-summary", true);
 		
 		HTMLNode table = summaryContent.addChild("table", "border", "0");
 		
@@ -134,7 +128,7 @@ public class ConnectivityToadlet extends Toadlet {
 		for(int i=0;i<handlers.length;i++) {
 			// Peers
 			AddressTracker tracker = handlers[i].getAddressTracker();
-			HTMLNode portsContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.byPortTitle", new String[] { "port", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }), contentNode);
+			HTMLNode portsContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.byPortTitle", new String[] { "port", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }), contentNode, "connectivity-port", false);
 			PeerAddressTrackerItem[] items = tracker.getPeerAddressTrackerItems();
 			table = portsContent.addChild("table");
 			HTMLNode row = table.addChild("tr");
@@ -168,7 +162,7 @@ public class ConnectivityToadlet extends Toadlet {
 			}
 
 			// IPs
-			portsContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.byIPTitle", new String[] { "ip", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }), contentNode);
+			portsContent = pageMaker.getInfobox("#", L10n.getString("ConnectivityToadlet.byIPTitle", new String[] { "ip", "status", "tunnelLength" }, new String[] { handlers[i].getTitle(), AddressTracker.statusString(tracker.getPortForwardStatus()), TimeUtil.formatTime(tracker.getLongestSendReceiveGap()) }), contentNode, "connectivity-ip", false);
 			InetAddressAddressTrackerItem[] ipItems = tracker.getInetAddressTrackerItems();
 			table = portsContent.addChild("table");
 			row = table.addChild("tr");

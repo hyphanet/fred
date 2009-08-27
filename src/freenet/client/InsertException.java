@@ -10,15 +10,22 @@ import freenet.l10n.L10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
+/**
+ * Thrown when a high-level insert fails. For most failures, there will not be a stack trace, or it 
+ * will be inaccurate.
+ */
 public class InsertException extends Exception {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
+	/** Failure mode, see the constants below. */
 	private final int mode;
-	/** For collection errors */
+	/** Collect errors when there are multiple failures. The error mode will be FATAL_ERRORS_IN_BLOCKS or
+	 * TOO_MANY_RETRIES_IN_BLOCKS i.e. a splitfile failed. */
 	public FailureCodeTracker errorCodes;
-	/** If a non-serious error, the URI */
+	/** If a non-serious error, the URI we expect the insert to go to if it had succeeded. */
 	public FreenetURI uri;
-	
+
+	/** Extra detail message */
 	public final String extra;
 	
 	/** Get the failure mode. */
@@ -135,6 +142,7 @@ public class InsertException extends Exception {
 	/** Invalid binary blob data supplied so cannot insert it */
 	public static final int BINARY_BLOB_FORMAT_ERROR = 12;
 	
+	/** Get the (localised) short name of this failure mode. */
 	public static String getMessage(int mode) {
 		String ret = L10n.getString("InsertException.longError."+mode);
 		if(ret == null)
@@ -142,6 +150,7 @@ public class InsertException extends Exception {
 		else return ret;
 	}
 
+	/** Get the (localised) long explanation for this failure mode. */
 	public static String getShortMessage(int mode) {
 		String ret = L10n.getString("InsertException.shortError."+mode);
 		if(ret == null)
@@ -178,6 +187,9 @@ public class InsertException extends Exception {
 		}
 	}
 
+	/**
+	 * Construct an InsertException from a bunch of error codes, typically from a splitfile insert.
+	 */
 	public static InsertException construct(FailureCodeTracker errors) {
 		if(errors == null) return null;
 		if(errors.isEmpty()) return null;
@@ -197,6 +209,10 @@ public class InsertException extends Exception {
 		return new InsertException(this);
 	}
 
+	/**
+	 * Remove the insert exception from the database.
+	 * @param container The database.
+	 */
 	public void removeFrom(ObjectContainer container) {
 		if(errorCodes != null) {
 			container.activate(errorCodes, 1);

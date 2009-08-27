@@ -101,14 +101,8 @@ public class SymlinkerToadlet extends Toadlet {
 		}
 		return retarr;
 	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
+
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();
 		String foundkey = null;

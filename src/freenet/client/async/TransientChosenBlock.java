@@ -22,8 +22,8 @@ public class TransientChosenBlock extends ChosenBlock {
 	public final RequestScheduler sched;
 
 	public TransientChosenBlock(SendableRequest req, SendableRequestItem token, Key key, ClientKey ckey, 
-			boolean localRequestOnly, boolean cacheLocalRequests, boolean ignoreStore, boolean canWriteClientCache, RequestScheduler sched) {
-		super(token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, canWriteClientCache, sched);
+			boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, RequestScheduler sched) {
+		super(token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, sched);
 		this.request = req;
 		this.sched = sched;
 	}

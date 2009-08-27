@@ -190,12 +190,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return parent.getClient();
 	}
 
-	@Override
-	public boolean dontCache(ObjectContainer container) {
-		if(persistent) container.activate(ctx, 1);
-		return !ctx.cacheLocalRequests;
-	}
-	
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -338,8 +332,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		Key newKey = key.getNodeKey().cloneKey();
 		short prio = parent.getPriorityClass();
-		boolean dontCache = !ctx.cacheLocalRequests;
-		KeyListener ret = new SingleKeyListener(newKey, this, dontCache, prio, persistent);
+		KeyListener ret = new SingleKeyListener(newKey, this, prio, persistent);
 		if(persistent) {
 			container.deactivate(key, 5);
 			container.deactivate(parent, 1);

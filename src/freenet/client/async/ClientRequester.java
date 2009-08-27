@@ -27,11 +27,19 @@ public abstract class ClientRequester {
 	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
 	
 	// FIXME move the priority classes from RequestStarter here
+	/** Priority class of the request or insert. */
 	protected short priorityClass;
+	/** Has the request or insert been cancelled? */
 	protected boolean cancelled;
+	/** The RequestClient, used to determine whether this request is 
+	 * persistent, and also we round-robin between different RequestClient's
+	 * in scheduling within a given priority class and retry count. */
 	protected final RequestClient client;
+	/** The set of queued low-level requests or inserts for this request or
+	 * insert. */
 	protected final SendableRequestSet requests;
 
+	/** What is our priority class? */
 	public short getPriorityClass() {
 		return priorityClass;
 	}
@@ -45,20 +53,38 @@ public abstract class ClientRequester {
 		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 	}
 
-	public synchronized boolean cancel() {
+	/** Cancel the request. Inner method, subclasses should actually tell 
+	 * the ClientGetState or whatever to cancel itself: this does not do 
+	 * anything apart from set a flag!
+	 * @return Whether we were already cancelled.
+	 */
+	protected synchronized boolean cancel() {
 		boolean ret = cancelled;
 		cancelled = true;
 		return ret;
 	}
-	
+
+	/** Cancel the request. Subclasses must implement to actually tell the
+	 * ClientGetState's or ClientPutState's to cancel.
+	 * @param container The database. Must be non-null if the request or 
+	 * insert is persistent, in which case we must be on the database thread.
+	 * @param context The ClientContext object including essential but 
+	 * non-persistent objects such as the schedulers.
+	 */
 	public abstract void cancel(ObjectContainer container, ClientContext context);
 
+	/** Is the request or insert cancelled? */
 	public boolean isCancelled() {
 		return cancelled;
 	}
 
+	/** Get the URI for the request or insert. For a request this is set at
+	 * creation, but for an insert, it is set when we know what the final 
+	 * URI will be. */
 	public abstract FreenetURI getURI();
 
+	/** Is the request or insert completed (succeeded, failed, or 
+	 * cancelled, which is a kind of failure)? */
 	public abstract boolean isFinished();
 	
 	private final int hashCode;
@@ -83,8 +109,17 @@ public abstract class ClientRequester {
 	protected int minSuccessBlocks;
 	/** Has totalBlocks stopped growing? */
 	protected boolean blockSetFinalized;
+	/** Has at least one block been scheduled to be sent to the network? 
+	 * Requests can be satisfied entirely from the datastore sometimes. */
 	protected boolean sentToNetwork;
 
+	/** The set of blocks has been finalised, total will not change any
+	 * more. Notify clients.
+	 * @param container The database. Must be non-null if the request or 
+	 * insert is persistent, in which case we must be on the database thread.
+	 * @param context The ClientContext object including essential but 
+	 * non-persistent objects such as the schedulers.
+	 */
 	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(blockSetFinalized) return;
@@ -97,6 +132,7 @@ public abstract class ClientRequester {
 		notifyClients(container, context);
 	}
 
+	/** Add a block to our estimate of the total. Don't notify clients. */
 	public void addBlock(ObjectContainer container) {
 		boolean wasFinalized;
 		synchronized (this) {
@@ -115,6 +151,7 @@ public abstract class ClientRequester {
 		if(persistent()) container.store(this);
 	}
 
+	/** Add several blocks to our estimate of the total. Don't notify clients. */
 	public void addBlocks(int num, ObjectContainer container) {
 		boolean wasFinalized;
 		synchronized (this) {
@@ -133,6 +170,7 @@ public abstract class ClientRequester {
 		if(persistent()) container.store(this);
 	}
 
+	/** We completed a block. Count it and notify clients unless dontNotify. */
 	public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" required="+minSuccessBlocks+" on "+this);
@@ -145,6 +183,7 @@ public abstract class ClientRequester {
 		notifyClients(container, context);
 	}
 
+	/** A block failed. Count it and notify our clients. */
 	public void failedBlock(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			failedBlocks++;
@@ -153,6 +192,7 @@ public abstract class ClientRequester {
 		notifyClients(container, context);
 	}
 
+	/** A block failed fatally. Count it and notify our clients. */
 	public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			fatallyFailedBlocks++;
@@ -161,14 +201,19 @@ public abstract class ClientRequester {
 		notifyClients(container, context);
 	}
 
+	/** Add one or more blocks to the number of requires blocks, and don't notify the clients. */
 	public synchronized void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		minSuccessBlocks += blocks;
 		if(persistent()) container.store(this);
 		if(logMINOR) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
+	/** Notify clients, usually via a SplitfileProgressEvent, of the current progress. */
 	public abstract void notifyClients(ObjectContainer container, ClientContext context);
 	
+	/** Called when we first send a request to the network. Ensures that it really is the first time and
+	 * passes on to innerToNetwork().
+	 */
 	public void toNetwork(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(sentToNetwork) return;
@@ -177,7 +222,9 @@ public abstract class ClientRequester {
 		}
 		innerToNetwork(container, context);
 	}
-	
+
+	/** Notify clients that a request has gone to the network, for the first time, i.e. we have finished
+	 * checking the datastore for at least one part of the request. */
 	protected abstract void innerToNetwork(ObjectContainer container, ClientContext context);
 
 	/** Get client context object */
@@ -185,6 +232,12 @@ public abstract class ClientRequester {
 		return client;
 	}
 
+	/** Change the priority class of the request (request includes inserts here).
+	 * @param newPriorityClass The new priority class for the request or insert.
+	 * @param ctx The ClientContext, contains essential transient objects such as the schedulers.
+	 * @param container The database. If the request is persistent, this must be non-null, and we must
+	 * be running on the database thread; you should schedule a job using the DBJobRunner.
+	 */
 	public void setPriorityClass(short newPriorityClass, ClientContext ctx, ObjectContainer container) {
 		this.priorityClass = newPriorityClass;
 		ctx.getChkFetchScheduler().reregisterAll(this, container);
@@ -194,21 +247,26 @@ public abstract class ClientRequester {
 		if(persistent()) container.store(this);
 	}
 
+	/** Is this request persistent? */
 	public boolean persistent() {
 		return client.persistent();
 	}
 
-
+	/** Remove this request from the database */
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(requests, 1);
 		requests.removeFrom(container);
 		container.delete(this);
 	}
 	
+	/** When the request is activated, so is the request client, because we have to know whether we are
+	 * persistent! */
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(client, 1);
 	}
 
+	/** Add a low-level request to the list of requests belonging to this high-level request (request here
+	 * includes inserts). */
 	public void addToRequests(SendableRequest req, ObjectContainer container) {
 		if(persistent())
 			container.activate(requests, 1);
@@ -217,6 +275,9 @@ public abstract class ClientRequester {
 			container.deactivate(requests, 1);
 	}
 
+	/** Get all known low-level requests belonging to this high-level request.
+	 * @param container The database, must be non-null if this is a persistent request or persistent insert.
+	 */
 	public SendableRequest[] getSendableRequests(ObjectContainer container) {
 		if(persistent())
 			container.activate(requests, 1);
@@ -226,6 +287,8 @@ public abstract class ClientRequester {
 		return reqs;
 	}
 
+	/** Remove a low-level request or insert from the list of known requests belonging to this 
+	 * high-level request or insert. */
 	public void removeFromRequests(SendableRequest req, ObjectContainer container, boolean dontComplain) {
 		if(persistent())
 			container.activate(requests, 1);

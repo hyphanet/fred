@@ -6,6 +6,7 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.HTMLNode;
@@ -15,22 +16,23 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 
 	private final UserAlertManager alerts;
 	private final PluginManager plugins;
+	private final Node node;
 	
-	protected ChatForumsToadlet(HighLevelSimpleClient client, UserAlertManager alerts, PluginManager plugins) {
+	protected ChatForumsToadlet(HighLevelSimpleClient client, UserAlertManager alerts, PluginManager plugins, Node node) {
 		super(client);
 		this.alerts = alerts;
 		this.plugins = plugins;
+		this.node = node;
 	}
-	
-	@Override
-    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
 		contentNode.addChild(new AlertElement(ctx));
 		
-		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode);
+		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "chat-list", true);
 		
 		contentBox.addChild("p", l10n("content1"));
 		HTMLNode ul = contentBox.addChild("ul");
@@ -53,15 +55,9 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		return "/chat/";
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-
 	public boolean isEnabled(ToadletContext ctx) {
 		return !plugins.isPluginLoaded("plugins.Freetalk.Freetalk");
 	}
-
 
 	
 }

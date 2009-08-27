@@ -43,9 +43,8 @@ public class SecurityLevelsToadlet extends Toadlet {
 		this.core = core;
 		this.node = node;
 	}
-	
-	@Override
-    public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n
 			        .getString("Toadlet.unauthorized"));
@@ -204,7 +203,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 								HTMLNode contentNode = page.content;
 								
 								content = ctx.getPageMaker().getInfobox("infobox-error", 
-										l10nSec("passwordWrongTitle"), contentNode).
+										l10nSec("passwordWrongTitle"), contentNode, "wrong-password", true).
 										addChild("div", "class", "infobox-content");
 								
 								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, false, true, newPhysicalLevel.name(), null);
@@ -267,7 +266,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 								HTMLNode contentNode = page.content;
 								
 								content = ctx.getPageMaker().getInfobox("infobox-error", 
-										l10nSec("passwordWrongTitle"), contentNode).
+										l10nSec("passwordWrongTitle"), contentNode, "wrong-password", true).
 										addChild("div", "class", "infobox-content");
 									
 								SecurityLevelsToadlet.generatePasswordFormPage(true, ctx.getContainer(), content, false, true, false, newPhysicalLevel.name(), null);
@@ -301,7 +300,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 							HTMLNode contentNode = page.content;
 							
 							content = ctx.getPageMaker().getInfobox("infobox-error", 
-									l10nSec("passwordForDecryptTitle"), contentNode).
+									l10nSec("passwordForDecryptTitle"), contentNode, "password-prompt", false).
 									addChild("div", "class", "infobox-content");
 							
 							if(password != null && password.length() == 0) {
@@ -403,17 +402,17 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 	
 	private void sendCantDeleteMasterKeysFile(ToadletContext ctx, String physicalSecurityLevel) throws ToadletContextClosedException, IOException {
-		HTMLNode pageNode = sendCantDeleteMasterKeysFileInner(ctx, node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel);
+		HTMLNode pageNode = sendCantDeleteMasterKeysFileInner(ctx, node.getMasterPasswordFile().getPath(), false, physicalSecurityLevel, this.node);
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
-	static HTMLNode sendCantDeleteMasterKeysFileInner(ToadletContext ctx, String filename, boolean forFirstTimeWizard, String physicalSecurityLevel) {
+	static HTMLNode sendCantDeleteMasterKeysFileInner(ToadletContext ctx, String filename, boolean forFirstTimeWizard, String physicalSecurityLevel, Node node) {
 		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("cantDeletePasswordFileTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-				l10nSec("cantDeletePasswordFileTitle"), contentNode).
+				l10nSec("cantDeletePasswordFileTitle"), contentNode, "password-error", true).
 				addChild("div", "class", "infobox-content");
 		
 		HTMLNode form = forFirstTimeWizard ? ctx.addFormChild(content, "/wizard/", "masterPasswordForm") :
@@ -439,7 +438,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-				l10nSec("changePasswordTitle"), contentNode).
+				l10nSec("changePasswordTitle"), contentNode, "password-change", true).
 				addChild("div", "class", "infobox-content");
 		
 		if(emptyPassword) {
@@ -472,7 +471,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-				l10nSec("setPasswordTitle"), contentNode).
+				l10nSec("setPasswordTitle"), contentNode, "password-prompt", false).
 				addChild("div", "class", "infobox-content");
 		
 		if(emptyPassword) {
@@ -490,8 +489,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		content.addChild("p").addChild("a", "href", PATH, l10nSec("backToSecurityLevels"));
 	}
 
-	@Override
-    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+    public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
@@ -637,11 +635,6 @@ public class SecurityLevelsToadlet extends Toadlet {
 		return PATH;
 	}
 
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
-
 	private static final String l10n(String string) {
 		return L10n.getString("ConfigToadlet." + string);
 	}
@@ -655,7 +648,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 	
 	void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {
-		HTMLNode page = sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, node.getMasterPasswordFile().getPath());
+		HTMLNode page = sendPasswordFileCorruptedPageInner(tooBig, ctx, forSecLevels, forFirstTimeWizard, node.getMasterPasswordFile().getPath(), node);
 		writeHTMLReply(ctx, 500, "Internal Server Error", page.generate());
 	}
 	
@@ -664,13 +657,13 @@ public class SecurityLevelsToadlet extends Toadlet {
 	 * @param forFirstTimeWizard The user has tried to set a password in the first-time wizard on the physical security levels page.
 	 * If neither of the above are set, the user is just trying to unlock an existing master keys file, which sadly has been corrupted. :(
 	 * @param ctx */
-	static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile) {
+	static HTMLNode sendPasswordFileCorruptedPageInner(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard, String masterPasswordFile, Node node) {
 		PageNode page = ctx.getPageMaker().getPageNode(l10nSec("passwordFileCorruptedTitle"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-				l10nSec("passwordFileCorruptedTitle"), contentNode).
+				l10nSec("passwordFileCorruptedTitle"), contentNode, "password-error", false).
 				addChild("div", "class", "infobox-content");
 		content.addChild("p", l10nSec("passwordFileCorrupted", "file", masterPasswordFile));
 		
@@ -694,7 +687,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", 
-				wasWrong ? l10nSec("passwordWrongTitle") : l10nSec("enterPasswordTitle"), contentNode).
+				wasWrong ? l10nSec("passwordWrongTitle") : l10nSec("enterPasswordTitle"), contentNode, "password-error", false).
 				addChild("div", "class", "infobox-content");
 		
 		generatePasswordFormPage(wasWrong, ctx.getContainer(), content, false, false, false, null, null);

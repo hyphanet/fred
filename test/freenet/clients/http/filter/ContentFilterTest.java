@@ -57,7 +57,12 @@ public class ContentFilterTest extends TestCase {
 	private static final String PREVENT_EXTERNAL_ACCESS_CSS_CASE = "<style>div { background: uRl("+BASE_URI+") }</style>";
 	private static final String PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE = "<style>div { background: \\u\\r\\l("+BASE_URI+") }</style>";
 	private static final String WHITELIST_STATIC_CONTENT = "<a href=\"/static/themes/clean/theme.css\" />";
-
+	private static final String XHTML_VOIDELEMENT="<html xmlns=\"http://www.w3.org/1999/xhtml\"><br><hr></html>";
+	private static final String XHTML_VOIDELEMENTC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><br /><hr /></html>";
+	private static final String XHTML_INCOMPLETEDOCUMENT="<html xmlns=\"http://www.w3.org/1999/xhtml\"><body> <h1> helloworld <h2> helloworld";
+	private static final String XHTML_INCOMPLETEDOCUMENTC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><body> <h1> helloworld <h2> helloworld</h2></h1></body></html>";
+	private static final String XHTML_IMPROPERNESTING="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</b></i></html>";
+	private static final String XHTML_IMPROPERNESTINGC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</i></b></html>";
 	private final BucketFactory bf = new ArrayBucketFactory();
 
 	public void testHTMLFilter() throws Exception {
@@ -92,6 +97,10 @@ public class ContentFilterTest extends TestCase {
 		assertFalse(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("http"));
 		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("CHECKED_HTTP"));
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
+		assertEquals(XHTML_VOIDELEMENTC,HTMLFilter(XHTML_VOIDELEMENT));
+		assertEquals(XHTML_INCOMPLETEDOCUMENTC,HTMLFilter(XHTML_INCOMPLETEDOCUMENT));
+		assertEquals(XHTML_IMPROPERNESTINGC,HTMLFilter(XHTML_IMPROPERNESTING));
+		
 	}
 		
 	private String HTMLFilter(String data) throws Exception {

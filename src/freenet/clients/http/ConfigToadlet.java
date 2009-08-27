@@ -112,9 +112,8 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		this.node = node;
 		this.subConfig = subConfig;
 	}
-	
-	@Override
-    public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if (!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n
 			        .getString("Toadlet.unauthorized"));
@@ -179,7 +178,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode contentNode = page.content;
 		
 		if (errbuf.length() == 0) {
-			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle"), contentNode);
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle"), contentNode, "configuration-applied", true);
 			content.addChild("#", l10n("appliedSuccess"));
 			
 			if (needRestart) {
@@ -204,14 +203,14 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				}
 			}
 		} else {
-			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle"), contentNode).
+			HTMLNode content = ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle"), contentNode, "configuration-error", true).
 				addChild("div", "class", "infobox-content");
 			content.addChild("#", l10n("appliedFailureExceptions"));
 			content.addChild("br");
 			content.addChild("#", errbuf.toString());
 		}
 		
-		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle"), contentNode);
+		HTMLNode content = ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle"), contentNode, "configuration-possibilities", false);
 		content.addChild("a", new String[]{"href", "title"}, new String[]{path(), l10n("shortTitle")}, l10n("returnToNodeConfig"));
 		content.addChild("br");
 		addHomepageLink(content);
@@ -224,8 +223,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		return L10n.getString("ConfigToadlet." + string);
 	}
 
-	@Override
-    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
@@ -317,12 +315,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
-	
-	@Override
-    public String supportedMethods() {
-		return "GET, POST";
-	}
-	
+
 	private HTMLNode addComboBox(EnumerableOptionCallback o, SubConfig sc, String name, boolean disabled) {
 		HTMLNode result;
 		if (disabled)

@@ -186,7 +186,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 				// Don't let a node force us to start a real request for a specific key.
 				// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
 				// Obviously this may have a marginal impact on load but it should only be marginal.
-				core.asyncGet(key, true, true, new SimpleRequestSenderCompletionListener() {
+				core.asyncGet(key, true, new SimpleRequestSenderCompletionListener() {
 
 					public void completed(boolean success) {
 						// Ignore

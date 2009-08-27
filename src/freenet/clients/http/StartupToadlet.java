@@ -20,14 +20,13 @@ public class StartupToadlet extends Toadlet {
 		this.staticToadlet = staticToadlet;
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		// If we don't disconnect we will have pipelining issues
 		ctx.forceDisconnect();
 
 		String path = uri.getPath();
 		if(path.startsWith(StaticToadlet.ROOT_URL) && staticToadlet != null)
-			staticToadlet.handleGet(uri, req, ctx);
+			staticToadlet.handleMethodGET(uri, req, ctx);
 		else {
 			String desc = L10n.getString("StartupToadlet.title");
 			PageNode page = ctx.getPageMaker().getPageNode(desc, false, ctx);
@@ -37,11 +36,11 @@ public class StartupToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 
 			if(!isPRNGReady) {
-				HTMLNode prngInfoboxContent = ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("StartupToadlet.entropyErrorTitle"), contentNode);
+				HTMLNode prngInfoboxContent = ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("StartupToadlet.entropyErrorTitle"), contentNode, null, true);
 				prngInfoboxContent.addChild("#", L10n.getString("StartupToadlet.entropyErrorContent"));
 			}
 
-			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode);
+			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 			infoboxContent.addChild("#", L10n.getString("StartupToadlet.isStartingUp"));
 
 			WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);
@@ -49,11 +48,6 @@ public class StartupToadlet extends Toadlet {
 			//TODO: send a Retry-After header ?
 			writeHTMLReply(ctx, 503, desc, pageNode.generate());
 		}
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 	public void setIsPRNGReady() {

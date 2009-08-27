@@ -28,8 +28,7 @@ public class PushNotificationToadlet extends Toadlet {
 		super(client);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getNextNotification(requestId);
 		if (event != null) {
@@ -47,11 +46,6 @@ public class PushNotificationToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return UpdaterConstants.notificationPath;
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 }

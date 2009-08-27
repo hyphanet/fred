@@ -36,8 +36,7 @@ public class ImageCreatorToadlet extends Toadlet {
 		super(client);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean needsGeneration = true;
 		// If the browser has requested this image, then it will send this header
 		if (ctx.getHeaders().containsKey("if-modified-since")) {
@@ -98,11 +97,6 @@ public class ImageCreatorToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return "/imagecreator/";
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 }

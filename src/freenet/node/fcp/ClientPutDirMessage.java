@@ -9,6 +9,8 @@ import freenet.keys.FreenetURI;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
+import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 /**
  * Put a directory, rather than a file.
@@ -44,6 +46,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final String defaultName;
 	final boolean earlyEncode;
 	final boolean canWriteClientCache;
+	final String compressorDescriptor;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -117,6 +120,19 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		canWriteClientCache = fs.getBoolean("WriteToClientCache", false);
 		clientToken = fs.get("ClientToken");
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
+		String codecs = fs.get("Codecs");
+		if (codecs != null) {
+			COMPRESSOR_TYPE[] ca;
+			try {
+				ca = COMPRESSOR_TYPE.getCompressorsArrayNoDefault(codecs);
+			} catch (InvalidCompressionCodecException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, e.getMessage(), identifier, global);
+			}
+			if (ca == null) 
+				codecs = null;
+		}
+		compressorDescriptor = codecs;
+
 	}
 
 	@Override
@@ -131,6 +147,8 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		sfs.putSingle("PriorityClass", Short.toString(priorityClass));
 		sfs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		sfs.putSingle("DontCompress", Boolean.toString(dontCompress));
+		if (compressorDescriptor != null)
+			sfs.putSingle("Codecs", compressorDescriptor);
 		sfs.putSingle("Global", Boolean.toString(global));
 		sfs.putSingle("DefaultName", defaultName);
 		return sfs;

@@ -20,44 +20,75 @@ public class FetchContext implements Cloneable {
 	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
 	public static final int SPLITFILE_DEFAULT_MASK = 2;
 	public static final int SET_RETURN_ARCHIVES = 4;
-	/** Low-level client to send low-level requests to. */
+	/** Maximum length of the final returned data */
 	public long maxOutputLength;
+	/** Maximum length of data fetched in order to obtain the final data - metadata, containers, etc. */
 	public long maxTempLength;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
+	/** Maximum number of containers to fetch during a request */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
-	public int maxSplitfileThreads;
+	/** Maximum number of retries (after the original attempt) for a 
+	 * splitfile block. -1 = try forever or until success or a fatal error. 
+	 * A fatal error is either an internal error (problem with the node) or
+	 * something resulting from the original data being corrupt as inserted.
+	 * So with retries = -1 we will not report Data not found, Route not
+	 * found, All data not found, etc, because these are nonfatal errors and
+	 * we will retry. Note that after every 3 attempts the request is put 
+	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is 
+	 * really not that high. */
 	public int maxSplitfileBlockRetries;
+	/** Maximum number of retries (after the original attempt) for a 
+	 * non-splitfile block. -1 = try forever or until success or a fatal 
+	 * error.. -1 = try forever or until success or a fatal error. 
+	 * A fatal error is either an internal error (problem with the node) or
+	 * something resulting from the original data being corrupt as inserted.
+	 * So with retries = -1 we will not report Data not found, Route not
+	 * found, All data not found, etc, because these are nonfatal errors and
+	 * we will retry. Note that after every 3 attempts the request is put 
+	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is 
+	 * really not that high. */
 	public int maxNonSplitfileRetries;
 	public final int maxUSKRetries;
+	/** Whether to download splitfiles */
 	public boolean allowSplitfiles;
+	/** Whether to follow simple redirects */
 	public boolean followRedirects;
+	/** If true, only read from the datastore and caches, do not send the request to the network */
 	public boolean localRequestOnly;
+	/** If true, send the request to the network without checking whether the data is in the local store */
 	public boolean ignoreStore;
+	/** Client events will be published to this, you can subscribe to them */
 	public final ClientEventProducer eventProducer;
 	public int maxMetadataSize;
+	/** Maximum number of data blocks per segment for splitfiles */
 	public int maxDataBlocksPerSegment;
+	/** Maximum number of check blocks per segment for splitfiles. */
 	public int maxCheckBlocksPerSegment;
-	public boolean cacheLocalRequests;
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public final BlockSet blocks;
+	/** If non-null, the request will be stopped if it has a MIME type that is not one of these, 
+	 * or has no MIME type. */
 	public Set allowedMIMETypes;
+	/** Do we have responsibility for removing the ClientEventProducer from the database? */
 	private final boolean hasOwnEventProducer;
+	/** Can this request write to the client-cache? We don't store all requests in the client cache,
+	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
 	public boolean canWriteClientCache;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
-			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
+			boolean dontEnterImplicitArchives, 
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests, 
+			ClientEventProducer producer, 
 			boolean ignoreTooManyPathComponents, boolean canWriteClientCache) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
@@ -67,7 +98,6 @@ public class FetchContext implements Cloneable {
 		this.maxArchiveRestarts = maxArchiveRestarts;
 		this.maxArchiveLevels = maxArchiveLevels;
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
-		this.maxSplitfileThreads = maxSplitfileThreads;
 		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
 		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
 		this.maxUSKRetries = maxUSKRetries;
@@ -77,7 +107,6 @@ public class FetchContext implements Cloneable {
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
-		this.cacheLocalRequests = cacheLocalRequests;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
 		hasOwnEventProducer = true;
@@ -103,7 +132,6 @@ public class FetchContext implements Cloneable {
 
 		this.allowedMIMETypes = ctx.allowedMIMETypes;
 		this.maxUSKRetries = ctx.maxUSKRetries;
-		this.cacheLocalRequests = ctx.cacheLocalRequests;
 		this.localRequestOnly = ctx.localRequestOnly;
 		this.maxArchiveLevels = ctx.maxArchiveLevels;
 		this.maxMetadataSize = ctx.maxMetadataSize;
@@ -118,7 +146,6 @@ public class FetchContext implements Cloneable {
 		this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 		this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 		this.maxRecursionLevel = ctx.maxRecursionLevel;
-		this.maxSplitfileThreads = ctx.maxSplitfileThreads;
 		this.returnZIPManifests = ctx.returnZIPManifests;
 		this.canWriteClientCache = ctx.canWriteClientCache;
 
@@ -128,7 +155,6 @@ public class FetchContext implements Cloneable {
 			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
 			this.dontEnterImplicitArchives = true;
-			this.maxSplitfileThreads = 0;
 			this.allowSplitfiles = false;
 			this.followRedirects = false;
 			this.maxDataBlocksPerSegment = 0;

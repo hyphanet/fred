@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+/** A KSK. We know the private key from the keyword, so this can be both 
+ * requested and inserted. */
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;

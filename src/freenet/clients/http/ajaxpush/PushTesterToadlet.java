@@ -20,8 +20,7 @@ public class PushTesterToadlet extends Toadlet {
 		super(client);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		PageNode pageNode = ctx.getPageMaker().getPageNode("Push tester", false, ctx);
 		pageNode.content.addChild(new XmlAlertElement(ctx));
 		for (int i = 0; i < 600; i++) {
@@ -33,11 +32,6 @@ public class PushTesterToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return "/pushtester/";
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 }

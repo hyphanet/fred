@@ -28,8 +28,7 @@ public class PushDataToadlet extends Toadlet {
 		super(client);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		String elementId = req.getParam("elementId");
 		elementId = elementId.replace(" ", "+");// This is needed, because BASE64 has '+', but it is a HTML escape for ' '
@@ -46,11 +45,6 @@ public class PushDataToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return UpdaterConstants.dataPath;
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 }

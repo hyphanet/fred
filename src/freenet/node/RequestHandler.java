@@ -152,7 +152,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		Message accepted = DMT.createFNPAccepted(uid);
 		source.sendAsync(accepted, null, this);
 
-		Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false, false, false);
+		Object o = node.makeRequestSender(key, htl, uid, source, false, false, false, false, false);
 		if(o instanceof KeyBlock) {
 			tag.setServedFromDatastore();
 			returnLocalData((KeyBlock) o);

@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.net.URI;
 
-import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -45,6 +45,8 @@ import freenet.support.api.HTTPRequest;
  * FIXME Investigate servlet 3.0, which support continuations.
  */
 public abstract class Toadlet {
+	
+	public static final String HANDLE_METHOD_PREFIX = "handleMethod";
 
 	public abstract String path();
 	
@@ -61,22 +63,8 @@ public abstract class Toadlet {
 	private final HighLevelSimpleClient client;
 	ToadletContainer container;
 
-	/**
-	 * Handle a GET request.
-	 * If not overridden by the client, send 'Method not supported'
-	 * @param uri The URI (relative to this client's document root) to
-	 * be fetched.
-	 * @throws IOException 
-	 * @throws ToadletContextClosedException 
-	 */
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		handleUnhandledRequest(uri, null, ctx);
-	}
-	
-	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		handleUnhandledRequest(uri, null, ctx);
-	}
-	
+	private String supportedMethodsCache;
+
 	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
 		PageNode page = toadletContext.getPageMaker().getPageNode(l10n("notSupportedTitle"), toadletContext);
 		HTMLNode pageNode = page.outer;
@@ -87,7 +75,7 @@ public abstract class Toadlet {
 		infobox.addChild("div", "class", "infobox-content", l10n("notSupportedWithClass", "class", getClass().getName()));
 
 		MultiValueTable<String, String> hdrtbl = new MultiValueTable<String, String>();
-		hdrtbl.put("Allow", this.supportedMethods());
+		hdrtbl.put("Allow", findSupportedMethods());
 
 		StringBuilder pageBuffer = new StringBuilder();
 		pageNode.generate(pageBuffer);
@@ -106,11 +94,34 @@ public abstract class Toadlet {
 	/**
 	 * Which methods are supported by this Toadlet.
 	 * Should return a string containing the methods supported, separated by commas
-	 * For example: "GET, PUT" (in which case both 'handleGet()' and 'handlePut()'
-	 * must be overridden).
-	 */					
-	abstract public String supportedMethods();
-	
+	 * For example: "GET, PUT" (in which case both 'handleMethodGET()' and 'handleMethodPUT()'
+	 * must be implemented).
+	 *
+	 * IMPORTANT: This will discover inherited methods because of getMethod()
+	 * below. If you do not want to expose a method implemented by a parent
+	 * class, then *OVERRIDE THIS METHOD*.
+	 */
+	public final String findSupportedMethods() {
+		if (supportedMethodsCache == null) {
+			Method methlist[] = this.getClass().getMethods();
+			boolean isFirst = true;
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < methlist.length;i++) {  
+				Method m = methlist[i];
+				String name = m.getName();
+				if (name.startsWith(HANDLE_METHOD_PREFIX)) {
+					if (isFirst)
+						isFirst = false;
+					else
+						sb.append(", ");
+					sb.append(name.substring(HANDLE_METHOD_PREFIX.length()));
+				}
+			}
+			supportedMethodsCache = sb.toString();
+		}
+		return supportedMethodsCache;
+	}
+
 	/**
 	 * Client calls from the above messages to run a Freenet request.
 	 * This method may block (or suspend).
@@ -130,21 +141,29 @@ public abstract class Toadlet {
 		return client.insert(insert, getCHKOnly, filenameHint);
 	}
 
-	/**
+	/*
 	 * Client calls to write a reply to the HTTP requestor.
 	 */
+	
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
 		ctx.sendReplyHeaders(code, desc, null, mimeType, length);
 		ctx.writeData(data, offset, length);
 	}
 
 	/**
-	 * Client calls to write a reply to the HTTP requestor.
+	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket! 
+	 * 
+	 * FIXME: For all references to this function, check whether they free() the Bucket.
 	 */
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, Bucket data) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, mimeType, desc, null, data);
 	}
 	
+	/**
+	 * @param data The Bucket which contains the reply data. This function does not free() the Bucket!
+	 * 
+	 * FIXME: For all references to this function, check whether they free() the Bucket.
+	 */
 	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, Bucket data) throws ToadletContextClosedException, IOException {
 		context.sendReplyHeaders(code, desc, headers, mimeType, data.size());
 		context.writeData(data);
@@ -234,7 +253,7 @@ public abstract class Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode);
+		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild(message);
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
@@ -258,7 +277,7 @@ public abstract class Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode);
+		HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
 		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("br");
 		StringWriter sw = new StringWriter();

@@ -690,4 +690,20 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return method;
 	}
 
+	public Bucket getRawData() {
+		return data;
+	}
+
+	public String getHeader(String name) {
+		return this.headers.get(name);
+	}
+
+	public int getContentLength() {
+		String slen = headers.get("content-length");
+		if (slen == null)
+			return -1;
+		// it is already parsed, so NumberFormatException can not happens here
+		return Integer.parseInt(slen);
+	}
+
 }

@@ -20,6 +20,7 @@ import freenet.keys.Key.Compressed;
 import freenet.node.Node;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
@@ -130,23 +131,26 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param dontCompress If set, don't even try to compress.
      * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
      * data is already compressed, and this is the algorithm.
+     * @param compressorDescriptor 
      * @throws CHKEncodeException
      * @throws IOException If there is an error reading from the Bucket.
+     * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength) throws CHKEncodeException, IOException {
+    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, String compressorDescriptor) throws CHKEncodeException, IOException {
         byte[] finalData = null;
         byte[] data;
         byte[] header;
         ClientCHK key;
         short compressionAlgorithm = -1;
         try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, CHKBlock.DATA_LENGTH, false, compressorDescriptor);
 			finalData = comp.compressedData;
 			compressionAlgorithm = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e2) {
 			throw new CHKEncodeException(e2.getMessage(), e2);
+		} catch (InvalidCompressionCodecException e2) {
+			throw new CHKEncodeException(e2.getMessage(), e2);
 		}
-        
         // Now do the actual encode
         
         MessageDigest md256 = SHA256.getMessageDigest();
@@ -216,10 +220,12 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @param dontCompress If set, don't even try to compress.
      * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
      * data is already compressed, and this is the algorithm.
+     * @param compressorDescriptor 
+     * @throws InvalidCompressionCodecException 
      */
-    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength) throws CHKEncodeException {
+    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength, String compressorDescriptor) throws CHKEncodeException, InvalidCompressionCodecException {
     	try {
-			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength);
+			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength, compressorDescriptor);
 		} catch (IOException e) {
 			// Can't happen
 			throw new Error(e);

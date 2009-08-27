@@ -381,19 +381,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// So a SingleKeyListener isn't created.
 			finished = true;
 		}
-		if(metaSnoop != null) {
-			if(persistent)
-				container.activate(metaSnoop, 1);
-			if(metaSnoop.snoopMetadata(metadata, container, context)) {
-				cancel(container, context);
+		while(true) {
+			if(metaSnoop != null) {
+				if(persistent)
+					container.activate(metaSnoop, 1);
+				if(metaSnoop.snoopMetadata(metadata, container, context)) {
+					cancel(container, context);
+					if(persistent)
+						container.deactivate(metaSnoop, 1);
+					return;
+				}
 				if(persistent)
 					container.deactivate(metaSnoop, 1);
-				return;
 			}
-			if(persistent)
-				container.deactivate(metaSnoop, 1);
-		}
-		while(true) {
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;

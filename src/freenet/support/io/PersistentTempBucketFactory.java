@@ -25,34 +25,43 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
 /**
- * Handles persistent temp files. These are used for e.g. persistent downloads.
- * Fed a directory on startup.
- * Finds all files in the directory.
- * Keeps a list.
- * On startup, clients are expected to claim a temp bucket.
- * Once startup is completed, any unclaimed temp buckets which match the 
- * temporary file pattern will be deleted.
+ * Handles persistent temp files. These are used for e.g. persistent downloads. Anything of exactly 32KB
+ * length will be stored in the blob file, otherwise these are simply temporary files in the directory 
+ * specified for the PersistentFileTracker (which supports changing the directory, i.e. moving the files).
+ * These temporary files are encrypted using an ephemeral key (unless the node is configured not to encrypt
+ * temporary files as happens with physical security level LOW). Note that the files are only deleted *after*
+ * the transaction containing their deletion reaches disk - so we should not leak temporary files, or 
+ * forget that we deleted a bucket and try to reuse it, if there is an unclean shutdown.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS/
 public class PersistentTempBucketFactory implements BucketFactory, PersistentFileTracker {
 
-	/** Original contents of directory */
+	/** Original contents of directory. This used to be used to delete any files that we can't account for.
+	 * However at the moment we do not support garbage collection for non-blob persistent temp files. 
+	 * When we implement it it will probably not use this structure... FIXME! */
 	private HashSet<File> originalFiles;
 	
-	/** Filename generator */
+	/** Filename generator. Tracks the directory and the prefix for temp files, can move them if these 
+	 * change, generates filenames. */
 	public final FilenameGenerator fg;
 	
-	/** Random number generator */
+	/** Cryptographically strong random number generator */
 	private transient RandomSource strongPRNG;
+	/** Weak but fast random number generator. */
 	private transient Random weakPRNG;
 	
-	/** Buckets to free */
+	/** Buckets to free. When buckets are freed, we write them to this list, and delete the files *after*
+	 * the transaction recording the buckets being deleted hits the disk. */
 	private final ArrayList<DelayedFreeBucket> bucketsToFree;
 	
+	/** The node database handle. Used to find everything for a specific node in the database. */
 	private final long nodeDBHandle;
-	
+
+	/** Should we encrypt temporary files? */
 	private volatile boolean encrypt;
-	
+
+	/** Any temporary file of exactly 32KB - and there are a lot of such temporary files! - will be allocated
+	 * out of a single large blob file, whose contents are tracked in the database. */
 	private final PersistentBlobTempBucketFactory blobFactory;
 	
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
@@ -60,6 +69,17 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/** Don't store the bucketsToFree unless it's been modified since we last stored it. */
 	private transient boolean modifiedBucketsToFree;
 
+	/**
+	 * Create a temporary bucket factory.
+	 * @param dir Where to put it.
+	 * @param prefix Prefix for temporary file names.
+	 * @param strongPRNG Cryptographically strong random number generator, for making keys etc.
+	 * @param weakPRNG Weak but fast random number generator.
+	 * @param encrypt Whether to encrypt temporary files.
+	 * @param nodeDBHandle The node database handle, used to find big objects in the database (such as the
+	 * one and only PersistentTempBucketFactory).
+	 * @throws IOException If we are unable to read the directory, etc.
+	 */
 	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt, long nodeDBHandle) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		blobFactory = new PersistentBlobTempBucketFactory(BLOB_SIZE, nodeDBHandle, new File(dir, "persistent-blob.tmp"));
@@ -98,12 +118,15 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		bucketsToFree = new ArrayList<DelayedFreeBucket>();
 	}
 	
+	/** Re-initialise the bucket factory after restarting and pulling it from the database */
 	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
 		fg.init(dir, prefix, weakPRNG);
 	}
 	
+	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
+	 * currently used. @see #completedInit() */
 	public void register(File file) {
 		synchronized(this) {
 			if(originalFiles == null)
@@ -133,6 +156,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		originalFiles = null;
 	}
 
+	/** Create a persistent temporary bucket. Use a blob if it is exactly 32KB, otherwise use a temporary
+	 * file. Encrypted if appropriate. Wrapped in a DelayedFreeBucket so that they will not be deleted until
+	 * after the transaction deleting them in the database commits. */
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket rawBucket = null;
 		boolean mustWrap = true;
@@ -164,6 +190,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
+	/** Get and clear the list of buckets to free after the transaction commits. */
 	private DelayedFreeBucket[] grabBucketsToFree() {
 		synchronized(this) {
 			if(bucketsToFree.isEmpty()) return null;
@@ -174,26 +201,50 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 	
+	/** Get the directory we are creating temporary files in */
 	public File getDir() {
 		return fg.getDir();
 	}
 
+	/** Get the FilenameGenerator */
 	public FilenameGenerator getGenerator() {
 		return fg;
 	}
 
+	/** Is the file potentially one of ours? That is, is it in the right directory and does it have the
+	 * right prefix? */
 	public boolean matches(File file) {
 		return fg.matches(file);
 	}
 
+	/** Get the filename ID from the filename for a file that matches() */
 	public long getID(File file) {
 		return fg.getID(file);
 	}
 	
+	/** Are we encrypting temporary files? */
 	public boolean isEncrypting() {
 		return encrypt;
 	}
 
+	/** Load the persistent temporary bucket factory from the database, or create a new one if there is none
+	 * in the database. Automatically migrate files if the dir or prefix change.
+	 * @param dir The directory to put temporary files in.
+	 * @param prefix The prefix for temporary files.
+	 * @param random Strong random number generator.
+	 * @param fastWeakRandom Weak PRNG.
+	 * @param container The database. Must not be null, we must be running on the database thread and/or be
+	 * initialising the node.
+	 * @param nodeDBHandle The node database handle. Used to identify the specific PersistentTempBucketFactory
+	 * for the current node. Hence it is possible to have multiple nodes share the same database, at least in theory.
+	 * @param encrypt Whether to encrypt temporary buckets created. Note that if this is changed we do *not*
+	 * decrypt/encrypt old buckets.
+	 * @param jobRunner The DBJobRunner on which to schedule database jobs when needed.
+	 * @param ticker The Ticker to run non-database jobs on.
+	 * @return A persistent temporary bucket factory.
+	 * @throws IOException If we cannot access the proposed directory, or some other I/O error prevents us
+	 * using it.
+	 */
 	@SuppressWarnings("serial")
 	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt, DBJobRunner jobRunner, Ticker ticker) throws IOException {
 		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
@@ -218,10 +269,19 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
+	/**
+	 * Set whether to encrypt new persistent temp buckets. Note that we do not encrypt/decrypt old ones when
+	 * this changes.
+	 */
 	public void setEncryption(boolean encrypt) {
 		this.encrypt = encrypt;
 	}
 
+	/**
+	 * Call this just before committing a transaction. Ensures that the list of buckets to free has been
+	 * stored if necessary.
+	 * @param db The database.
+	 */
 	public void preCommit(ObjectContainer db) {
 		synchronized(this) {
 			if(!modifiedBucketsToFree) return;
@@ -234,6 +294,11 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 	
+	/**
+	 * Call this just after committing a transaction. Deletes buckets pending deletion, and if there are lots
+	 * of them, commits the transaction again.
+	 * @param db The database.
+	 */
 	public void postCommit(ObjectContainer db) {
 		blobFactory.postCommit();
 		DelayedFreeBucket[] toFree = grabBucketsToFree();
@@ -257,10 +322,17 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
+	/**
+	 * Add a callback job to be called when we are low on space in the blob temp bucket factory.
+	 * For example a defragger, but there are other possibilities. 
+	 */
 	public void addBlobFreeCallback(DBJob job) {
 		blobFactory.addBlobFreeCallback(job);
 	}
 
+	/**
+	 * Remove a blob temp bucket factory callback job.
+	 */
 	public void removeBlobFreeCallback(DBJob job) {
 		blobFactory.removeBlobFreeCallback(job);
 	}

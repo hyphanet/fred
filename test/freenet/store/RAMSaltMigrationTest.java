@@ -21,6 +21,7 @@ import freenet.support.PooledExecutor;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.TrivialTicker;
 import freenet.support.api.Bucket;
+import freenet.support.compress.Compressor;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
@@ -83,6 +84,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		CHKStore newStore = new CHKStore();
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, new SemiOrderedShutdownHook(), true, true, ticker, null);
+		saltStore.start(null);
 		
 		ramStore.migrateTo(newStore, false);
 		
@@ -112,6 +114,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		CHKStore newStore = new CHKStore();
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, new SemiOrderedShutdownHook(), true, true, ticker, storeKey);
+		saltStore.start(null);
 		
 		ramStore.migrateTo(newStore, false);
 		
@@ -131,7 +134,7 @@ public class RAMSaltMigrationTest extends TestCase {
 	private ClientCHKBlock encodeBlock(String test) throws CHKEncodeException, IOException {
 		byte[] data = test.getBytes("UTF-8");
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(data);
-		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size());
+		return ClientCHKBlock.encode(bucket, false, false, (short)-1, bucket.size(), Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
 
 

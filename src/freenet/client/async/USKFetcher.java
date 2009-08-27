@@ -760,11 +760,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			boolean done = false;
 
 			@Override
-			public boolean dontCache(ObjectContainer container) {
-				return false;
-			}
-
-			@Override
 			public FetchContext getContext() {
 				return ctx;
 			}
@@ -936,10 +931,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		for(ClientSSK ssk : keysWatching)
 			if(ssk.getNodeKey().equals(key)) return progressPollPriority;
 		return -1;
-	}
-
-	public boolean dontCache() {
-		return !ctx.cacheLocalRequests;
 	}
 
 	public HasKeyListener getHasKeyListener() {

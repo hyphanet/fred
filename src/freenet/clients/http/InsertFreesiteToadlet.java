@@ -19,16 +19,15 @@ public class InsertFreesiteToadlet extends Toadlet {
 		super(client);
 		this.alerts = alerts;
 	}
-	
-	@Override
-    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("title"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
 		contentNode.addChild(new AlertElement(ctx));
 		
-		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode);
+		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "freesite-insert", true);
 		
 		contentBox.addChild("p", l10n("content1"));
 		L10n.addL10nSubstitution(contentBox.addChild("p"), "InsertFreesiteToadlet.content2", new String[] { "jsite-http", "jsite-freenet", "jsite-freenet-version", "jsite-info", "/link"},
@@ -57,10 +56,4 @@ public class InsertFreesiteToadlet extends Toadlet {
 	public String path() {
 		return "/insertsite/";
 	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-
 }

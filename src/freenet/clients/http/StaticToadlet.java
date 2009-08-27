@@ -25,8 +25,7 @@ public class StaticToadlet extends Toadlet {
 	public static final String ROOT_URL = "/static/";
 	public static final String ROOT_PATH = "staticfiles/";
 	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String path = uri.getPath();
 		
 		if (!path.startsWith(ROOT_URL)) {
@@ -90,11 +89,6 @@ public class StaticToadlet extends Toadlet {
 	
 	private String l10n(String key) {
 		return L10n.getString("StaticToadlet."+key);
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 	@Override

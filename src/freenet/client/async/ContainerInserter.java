@@ -25,12 +25,14 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
+import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
 /**
+ * Insert a bunch of files as single Archive with .metadata
  * pack the container/archive, then hand it off to SimpleFileInserter
  *
  * TODO persistence
@@ -76,9 +78,11 @@ public class ContainerInserter implements ClientPutState {
 	private final boolean dontCompress;
 
 	/**
+	 * Insert a bunch of files as single Archive with .metadata
+	 * 
 	 * @param metadata2 
 	 * @param archiveType2 
-	 * @param targetURI2 
+	 * @param targetURI2 The caller need to clone it for persistance
 	 * @param token2 
 	 * @param getCHKOnly2 
 	 * @param earlyEncode2 
@@ -138,6 +142,7 @@ public class ContainerInserter implements ClientPutState {
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		// TODO
+		new Exception("ContainerInserter.removeFrom: TODO").printStackTrace();
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
@@ -193,14 +198,12 @@ public class ContainerInserter implements ClientPutState {
 	}
 
 	private void makeMetadata(ClientContext context, ObjectContainer container) {
-		
+
 		Bucket bucket = null;
 		int x = 0;
-		
-		HashMap<String,Object> manifest = new HashMap<String,Object>();
-		makeManifest(origMetadata, manifest, "/");
-		Metadata md = Metadata.mkRedirectionManifestWithMetadata(manifest);
-		
+
+		Metadata md = makeManifest(origMetadata, "/");
+
 		while(true) {
 			try {
 				bucket = context.tempBucketFactory.makeBucket(-1);
@@ -264,13 +267,13 @@ public class ContainerInserter implements ClientPutState {
 		return hashCode;
 	}
 	
-	public boolean objectCanUpdate(@SuppressWarnings("unused") ObjectContainer container) {
+	public boolean objectCanUpdate(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "objectCanUpdate() on "+this, new Exception("debug"));
 		return true;
 	}
 	
-	public boolean objectCanNew(@SuppressWarnings("unused") ObjectContainer container) {
+	public boolean objectCanNew(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "objectCanNew() on "+this, new Exception("debug"));
 		return true;
@@ -334,7 +337,8 @@ public class ContainerInserter implements ClientPutState {
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
 
-	private void makeManifest(HashMap<String, Object> manifestElements, HashMap<String,Object> manifest, String archivePrefix) {
+	private Metadata makeManifest(HashMap<String, Object> manifestElements, String archivePrefix) {
+		SimpleManifestComposer smc = new Metadata.SimpleManifestComposer();
 		for (Map.Entry<String, Object> me : manifestElements.entrySet()) {
 			String name = me.getKey();
 			Object o = me.getValue();
@@ -343,14 +347,13 @@ public class ContainerInserter implements ClientPutState {
 				HashMap<String,Object> hm = (HashMap<String, Object>) o;
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				//System.out.println("Decompose: "+name+" (SubDir)");
-				manifest.put(name, subMap);
-				makeManifest(hm, subMap, archivePrefix+name+ '/');
+				smc.addItem(name, makeManifest(hm, archivePrefix+name+ '/'));
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+hm.size());
 			} else if (o instanceof Metadata) {
-				//already Metadata, take as is
+				//already Metadata, take it as is
 				//System.out.println("Decompose: "+name+" (Metadata)");
-				manifest.put(name, o);
+				smc.addItem(name, (Metadata)o);
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -368,8 +371,9 @@ public class ContainerInserter implements ClientPutState {
 					containerItems.add(new ContainerElement(element.data, archivePrefix+name));
 					m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, archivePrefix+element.fullName, cm);
 				}
-				manifest.put(name, m);
+				smc.addItem(name, m);
 			}
 		}
+		return smc.getMetadata();
 	}
 }

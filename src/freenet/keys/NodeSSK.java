@@ -231,7 +231,7 @@ public class NodeSSK extends Key {
 		return makeRoutingKey(pubKeyHash, encryptedHashedDocname);
 	}
 
-	public int compareTo(Object arg0) {
+	public int compareTo(Key arg0) {
 		if(arg0 instanceof NodeCHK) return -1;
 		NodeSSK key = (NodeSSK) arg0;
 		int result = Fields.compareBytes(encryptedHashedDocname, key.encryptedHashedDocname);

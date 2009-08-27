@@ -25,7 +25,6 @@ import freenet.support.io.FileUtil;
 
 public class BootstrapPushPullTest {
 
-	public static int TARGET_PEERS = 10;
 	public static int TEST_SIZE = 1024*1024;
 	
 	public static int EXIT_NO_SEEDNODES = 257;
@@ -67,7 +66,7 @@ public class BootstrapPushPullTest {
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging
     	// Start it
         node.start(true);
-		if (!TestUtil.waitForNodes(node, TARGET_PEERS)) {
+		if (!TestUtil.waitForNodes(node)) {
 			node.park();
 			System.exit(EXIT_FAILED_TARGET);
 		}
@@ -108,7 +107,7 @@ public class BootstrapPushPullTest {
         executor = new PooledExecutor();
         secondNode = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
-		if (!TestUtil.waitForNodes(secondNode, TARGET_PEERS)) {
+		if (!TestUtil.waitForNodes(secondNode)) {
 			secondNode.park();
 			System.exit(EXIT_FAILED_TARGET);
 		}

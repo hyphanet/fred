@@ -34,7 +34,6 @@ import freenet.support.io.LineReadingInputStream;
  */
 public class BootstrapPullTest {
 
-	public static int TARGET_PEERS = 10;
 	public static int TEST_SIZE = 1024*1024;
 	
 	public static int EXIT_NO_SEEDNODES = 257;
@@ -103,7 +102,7 @@ public class BootstrapPullTest {
         secondNode = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
 
-		if (!TestUtil.waitForNodes(secondNode, TARGET_PEERS)) {
+		if (!TestUtil.waitForNodes(secondNode)) {
 			secondNode.park();
 			System.exit(EXIT_FAILED_TARGET);
 		}

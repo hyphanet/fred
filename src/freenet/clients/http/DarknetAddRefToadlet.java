@@ -24,9 +24,8 @@ public class DarknetAddRefToadlet extends Toadlet {
 		this.node = n;
 		this.core = core;
 	}
-	
-	@Override
-	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+
+	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
@@ -60,7 +59,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		
 		contentNode.addChild(new AlertElement(ctx));
 		
-		HTMLNode boxContent = pageMaker.getInfobox("infobox-information", l10n("explainBoxTitle"), contentNode);
+		HTMLNode boxContent = pageMaker.getInfobox("infobox-information", l10n("explainBoxTitle"), contentNode, "darknet-explanations", true);
 		boxContent.addChild("p", l10n("explainBox1"));
 		boxContent.addChild("p", l10n("explainBox2"));
 		
@@ -80,15 +79,8 @@ public class DarknetAddRefToadlet extends Toadlet {
 	}
 	
 
-
 	@Override
 	public String path() {
 		return "/addfriend/";
 	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
-	}
-
 }

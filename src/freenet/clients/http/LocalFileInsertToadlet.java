@@ -42,8 +42,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 	 * @see freenet.clients.http.Toadlet#handleGet(java.net.URI,
 	 *      freenet.clients.http.ToadletContext)
 	 */
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
 		FreenetURI furi = null;
 		String key = request.getParam("key");
 		if(key != null) {
@@ -75,7 +74,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 		if(!core.allowUploadFrom(thisPath)) {
 			PageNode page = pageMaker.getPageNode(l10n("listingTitle", "path", thisPath.getAbsolutePath()), toadletContext);
-			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content).
+			pageMaker.getInfobox("infobox-error",  "Forbidden", page.content, "access-denied", true).
 				addChild("#", l10n("dirAccessDenied"));
 
 			thisPath = currentPath;
@@ -208,14 +207,6 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 	private String l10n(String msg) {
 		return L10n.getString("LocalFileInsertToadlet."+msg);
-	}
-
-	/**
-	 * @see freenet.clients.http.Toadlet#supportedMethods()
-	 */
-	@Override
-	public String supportedMethods() {
-		return "GET,POST";
 	}
 
 	@Override

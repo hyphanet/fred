@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import freenet.node.SecurityLevels;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -10,7 +11,9 @@ import java.util.Map;
 
 import freenet.clients.http.filter.PushingTagReplacerCallback;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -28,7 +31,9 @@ public final class PageMaker {
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),
-                MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
+		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue"),
+		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true, true);
+
 		
 		public static final String[] possibleValues = {
 			BOXED.code,
@@ -37,17 +42,28 @@ public final class PageMaker {
 			CLEAN_STATIC.code,
 			GRAYANDBLUE.code,
 			SKY.code,
-                        MINIMALBLUE.code
+			MINIMALBLUE.code,
+			MINIMALISTIC.code
 		};
 		
 		public final String code;  // the internal name
 		public final String name;  // the name in "human form"
 		public final String description; // description
+		public final boolean forceActivelinks;
+		public final boolean fetchKeyBoxAboveBookmarks;
+		public final boolean showStatusBar;
 		
 		private THEME(String code, String name, String description) {
+			this(code, name, description, false, false, false);
+		}
+
+		private THEME(String code, String name, String description, boolean forceActivelinks, boolean fetchKeyBoxAboveBookmarks, boolean showStatusBar) {
 			this.code = code;
 			this.name = name;
 			this.description = description;
+			this.forceActivelinks = forceActivelinks;
+			this.fetchKeyBoxAboveBookmarks = fetchKeyBoxAboveBookmarks;
+			this.showStatusBar = showStatusBar;
 		}
 
 		public static THEME themeFromName(String cssName) {
@@ -70,6 +86,7 @@ public final class PageMaker {
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
 	private File override;
+	private final Node node;
 	
 	private List<SubMenu> menuList = new ArrayList<SubMenu>();
 	private Map<String, SubMenu> subMenus = new HashMap<String, SubMenu>();
@@ -125,8 +142,9 @@ public final class PageMaker {
 		}
 	}
 	
-	protected PageMaker(THEME t) {
+	protected PageMaker(THEME t, Node n) {
 		setTheme(t);
+		this.node = n;
 	}
 	
 	void setOverride(File f) {
@@ -228,6 +246,67 @@ public final class PageMaker {
 		
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
+
+		if (this.getTheme().showStatusBar) {
+			final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
+
+			if(node != null && node.clientCore != null) {
+				final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
+				if(alerts != null) {
+					statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
+					statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				}
+			}
+
+			statusBarDiv.addChild("div", "id", "statusbar-language", L10n.getSelectedLanguage().fullName);
+	
+			if(node.clientCore != null) {
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
+				if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
+					switchMode.addAttribute("class", "simple");
+					switchMode.addChild("a", "href", "?mode=1", L10n.getString("StatusBar.switchToSimpleMode"));
+				} else {
+					switchMode.addAttribute("class", "advanced");
+					switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
+				}
+			}
+			
+			if(node != null && node.clientCore != null) {
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+				final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", L10n.getString("SecurityLevels.statusBarPrefix"));
+
+				final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()));
+				network.addAttribute("title", L10n.getString("SecurityLevels.networkThreatLevelShort"));
+				network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
+
+				final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()));
+				friends.addAttribute("title", L10n.getString("SecurityLevels.friendsThreatLevelShort"));
+				friends.addAttribute("class", node.securityLevels.getFriendsThreatLevel().toString().toLowerCase());
+
+				final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
+				physical.addAttribute("title", L10n.getString("SecurityLevels.physicalThreatLevelShort"));
+				physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
+
+				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+
+				final int connectedPeers = node.peers.countConnectedPeers();
+				final HTMLNode peers = statusBarDiv.addChild("div", "id", "statusbar-peers", connectedPeers + " Peers");
+
+				if(connectedPeers == 0) {
+					peers.addAttribute("class", "no-peers");
+				} else if(connectedPeers < 4) {
+					peers.addAttribute("class", "very-few-peers");
+				} else if(connectedPeers < 7) {
+					peers.addAttribute("class", "few-peers");
+				} else if(connectedPeers < 10) {
+					peers.addAttribute("class", "avg-peers");
+				} else {
+					peers.addAttribute("class", "lots-of-peers");
+				}
+			}
+		}
+
 		topBarDiv.addChild("h1", title);
 		if (renderNavigationLinks) {
 			SubMenu selected = null;
@@ -324,33 +403,54 @@ public final class PageMaker {
 		return new PageNode(pageNode, headNode, contentDiv);
 	}
 
-	public InfoboxNode getInfobox(String header) {
-		if (header == null) throw new NullPointerException();
-		return getInfobox(new HTMLNode("#", header));
+	public THEME getTheme() {
+		return this.theme;
 	}
-	
+
+	public InfoboxNode getInfobox(String header) {
+		return getInfobox(header, null, false);
+	}
+
 	public InfoboxNode getInfobox(HTMLNode header) {
-		if (header == null) throw new NullPointerException();
-		return getInfobox(null, header);
+		return getInfobox(header, null, false);
 	}
 
 	public InfoboxNode getInfobox(String category, String header) {
+		return getInfobox(category, header, null, false);
+	}
+
+	public HTMLNode getInfobox(String category, String header, HTMLNode parent) {
+		return getInfobox(category, header, parent, null, false);
+	}
+
+	public InfoboxNode getInfobox(String category, HTMLNode header) {
+		return getInfobox(category, header, null, false);
+	}
+
+	public InfoboxNode getInfobox(String header, String title, boolean isUnique) {
 		if (header == null) throw new NullPointerException();
-		return getInfobox(category, new HTMLNode("#", header));
+		return getInfobox(new HTMLNode("#", header), title, isUnique);
+	}
+	
+	public InfoboxNode getInfobox(HTMLNode header, String title, boolean isUnique) {
+		if (header == null) throw new NullPointerException();
+		return getInfobox(null, header, title, isUnique);
+	}
+
+	public InfoboxNode getInfobox(String category, String header, String title, boolean isUnique) {
+		if (header == null) throw new NullPointerException();
+		return getInfobox(category, new HTMLNode("#", header), title, isUnique);
 	}
 
 	/** Create an infobox, attach it to the given parent, and return the content node. */
-	public HTMLNode getInfobox(String category, String header, HTMLNode parent) {
-		InfoboxNode node = getInfobox(category, header);
+	public HTMLNode getInfobox(String category, String header, HTMLNode parent, String title, boolean isUnique) {
+		InfoboxNode node = getInfobox(category, header, title, isUnique);
 		parent.addChild(node.outer);
 		return node.content;
 	}
 
 	/**
-	 * Returns an infobox with the given style and header. If you retrieve an
-	 * infobox from this method, be sure to retrieve the matching content node
-	 * with {@link #getContentNode(HTMLNode)} otherwise your layout will be
-	 * destroyed (and you will get memory leaks).
+	 * Returns an infobox with the given style and header.
 	 * 
 	 * @param category
 	 *            The CSS styles, separated by a space (' ')
@@ -358,9 +458,25 @@ public final class PageMaker {
 	 *            The header HTML node
 	 * @return The infobox
 	 */
-	public InfoboxNode getInfobox(String category, HTMLNode header) {
+	public InfoboxNode getInfobox(String category, HTMLNode header, String title, boolean isUnique) {
 		if (header == null) throw new NullPointerException();
-		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (' ' + category)));
+
+		StringBuffer classes = new StringBuffer("infobox");
+		if(category != null) {
+			classes.append(" ");
+			classes.append(category);
+		}
+		if(title != null && !isUnique) {
+			classes.append(" ");
+			classes.append(title);
+		}
+
+		HTMLNode infobox = new HTMLNode("div", "class", classes.toString());
+
+		if(title != null && isUnique) {
+			infobox.addAttribute("id", title);
+		}
+
 		infobox.addChild("div", "class", "infobox-header").addChild(header);
 		return new InfoboxNode(infobox, infobox.addChild("div", "class", "infobox-content"));
 	}
@@ -398,6 +514,11 @@ public final class PageMaker {
 	}
 	
 	protected int drawModeSelectionArray(NodeClientCore core, ToadletContainer container, HTMLNode contentNode, int mode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
+		if(this.getTheme().showStatusBar) {
+			// We use the status bar, no need to show this.
+			return mode;
+		}
+
 		// FIXME style this properly?
 		HTMLNode table = contentNode.addChild("table", "border", "1");
 		HTMLNode row = table.addChild("tr");

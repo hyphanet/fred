@@ -7,6 +7,9 @@ import com.db4o.ObjectContainer;
 
 /**
  * Stores the metadata that the client might actually be interested in.
+ * Currently this is just the MIME type, but in future it might be more than
+ * that. Size is not stored here, but maybe things like dublin core or 
+ * whatever.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class ClientMetadata implements Cloneable {
@@ -39,6 +42,7 @@ public class ClientMetadata implements Cloneable {
 			mimeType = clientMetadata.mimeType;
 	}
 
+	/** Is there no MIME type? */
 	public boolean isTrivial() {
 		return ((mimeType == null) || mimeType.equals(""));
 	}
@@ -57,10 +61,13 @@ public class ClientMetadata implements Cloneable {
 		return getMIMEType();
 	}
 
+	/** Clear the MIME type. */
 	public void clear() {
 		mimeType = null;
 	}
 
+	/** Return the MIME type minus any type parameters (e.g. charset, see 
+	 * the RFCs defining the MIME type for details). */
 	public String getMIMETypeNoParams() {
 		String s = mimeType;
 		if(s == null) return null;

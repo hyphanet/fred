@@ -719,7 +719,7 @@ public class Metadata implements Cloneable {
 	 * The default document is the one which has an empty name.
 	 * @throws MetadataParseException 
 	 */
-	public Metadata getDefaultDocument() throws MetadataParseException {
+	public Metadata getDefaultDocument() {
 		return getDocument("");
 	}
 	

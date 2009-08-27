@@ -25,6 +25,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.math.RunningAverage;
@@ -131,9 +132,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 	insertKey = InsertableClientSSK.create(testKey);
                 	fetchKey = ClientKSK.create(testKey);
                 	
-                	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random);
+                	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
                 } else {
-                	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length);
+                	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
                 	insertKey = fetchKey = block.getClientKey();
                 	testKey = insertKey.getURI();
                 }
@@ -148,7 +149,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
 					insertAttempts++;
-					randomNode.clientCore.realPut(block, true, false);
+					randomNode.clientCore.realPut(block, false);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {
@@ -162,7 +163,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = fetchNode.clientCore.realGetKey(fetchKey, false, true, false, false);
+                block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false);
                 if(block == null) {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);

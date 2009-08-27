@@ -26,6 +26,7 @@ import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.Ticker;
 import freenet.node.SecurityLevelListener;
@@ -88,6 +89,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean enablePersistentConnections;
 	private boolean enableInlinePrefetch;
 	private boolean enableActivelinks;
+	private boolean enableExtendedMethodHandling;
 	
 	// Something does not really belongs to here
 	volatile static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
@@ -329,9 +331,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor) throws IOException, InvalidConfigValueException {
+	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor, Node node) throws IOException, InvalidConfigValueException {
 
 		this.executor = executor;
+		this.core = node.clientCore;
 		
 		int configItemOrder = 0;
 		
@@ -352,6 +355,19 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSOverrideCallback());
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
+		fproxyConfig.register("enableExtendedMethodHandling", false, configItemOrder++, true, false, "SimpleToadletServer.enableExtendedMethodHandling", "SimpleToadletServer.enableExtendedMethodHandlingLong",
+				new BooleanCallback() {
+					@Override
+					public Boolean get() {
+						return enableExtendedMethodHandling;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(get().equals(val)) return;
+						enableExtendedMethodHandling = val;
+					}
+		});
 		fproxyConfig.register("javascriptEnabled", true, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("hasCompletedWizard", false, configItemOrder++, true, false, "SimpleToadletServer.hasCompletedWizard", "SimpleToadletServer.hasCompletedWizardLong",
@@ -384,7 +400,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyHasCompletedWizard = fproxyConfig.getBoolean("hasCompletedWizard");
 		fProxyJavascriptEnabled = fproxyConfig.getBoolean("javascriptEnabled");
 		disableProgressPage = fproxyConfig.getBoolean("disableProgressPage");
-		
+		enableExtendedMethodHandling = fproxyConfig.getBoolean("enableExtendedMethodHandling");
+
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
 				@Override
@@ -537,7 +554,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		cssTheme = THEME.themeFromName(cssName);
-		pageMaker = new PageMaker(cssTheme);
+		pageMaker = new PageMaker(cssTheme, node);
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));
@@ -835,6 +852,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public boolean enableInlinePrefetch() {
 		return enableInlinePrefetch;
+	}
+
+	public boolean enableExtendedMethodHandling() {
+		return enableExtendedMethodHandling;
 	}
 
 	public synchronized boolean allowPosts() {

@@ -130,7 +130,7 @@ public class NodeCHK extends Key {
 		return out;
 	}
 
-	public int compareTo(Object arg0) {
+	public int compareTo(Key arg0) {
 		if(arg0 instanceof NodeSSK) return 1;
 		NodeCHK key = (NodeCHK) arg0;
 		return Fields.compareBytes(routingKey, key.routingKey);

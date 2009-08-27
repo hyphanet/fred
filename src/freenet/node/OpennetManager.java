@@ -95,13 +95,19 @@ public class OpennetManager {
 	public static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
 	
 	/** Enable scaling of peers with bandwidth? */
-	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = false;
-	/** Target bandwidth usage - above this, we use MAX_PEERS_FOR_SCALING */
-	public static final int TARGET_BANDWIDTH_USAGE = 20*1024; // 20 peers at 20K/sec.
+	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
+	/** Constant for scaling peers: we multiply bandwidth in kB/sec by this
+	 * and then take the square root. 12 gives 11 at 10K, 15 at 20K, 19 at 
+	 * 30K, 26 at 60K, 34 at 100K, 40 at 140K. */
+	public static final double SCALING_CONSTANT = 12.0;
 	/** Minimum number of peers */
 	public static final int MIN_PEERS_FOR_SCALING = 10;
-	/** Maximum number of peers */
-	public static final int MAX_PEERS_FOR_SCALING = 20;
+	/** Maximum number of peers. Should be 40, cut to 35 for now to avoid
+	 * disconnects while updating from old build that had PANIC_MAX_PEERS
+	 * equal to 40. */
+	public static final int MAX_PEERS_FOR_SCALING = 35;
+	/** Maximum number of peers for purposes of FOAF attack/sanity check */
+	public static final int PANIC_MAX_PEERS = 50;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = 31 * 24 * 60 * 60 * 1000;
 	
@@ -553,18 +559,20 @@ public class OpennetManager {
 		oldPeers.remove(source);
 	}
 
-	protected int getNumberOfConnectedPeersToAim() {
+	public int getNumberOfConnectedPeersToAimIncludingDarknet() {
 		int max = node.getMaxOpennetPeers();
 		if(ENABLE_PEERS_PER_KB_OUTPUT) {
 			int obwLimit = node.getOutputBandwidthLimit();
-			if(obwLimit >= TARGET_BANDWIDTH_USAGE) {
-				max = Math.min(max, MAX_PEERS_FOR_SCALING);
-			} else {
-				int limit = Math.min(max, obwLimit * MAX_PEERS_FOR_SCALING / TARGET_BANDWIDTH_USAGE);
-				if(limit < MIN_PEERS_FOR_SCALING) limit = MIN_PEERS_FOR_SCALING;
-				max = Math.min(max, limit);
-			}
+			int targetPeers = (int)Math.round(Math.min(MAX_PEERS_FOR_SCALING, Math.sqrt(obwLimit * SCALING_CONSTANT / 1000.0)));
+			if(targetPeers < MIN_PEERS_FOR_SCALING)
+				targetPeers = MIN_PEERS_FOR_SCALING;
+			if(max > targetPeers) max = targetPeers; // Allow user to reduce it.
 		}
+		return max;
+	}
+	
+	public int getNumberOfConnectedPeersToAim() {
+		int max = getNumberOfConnectedPeersToAimIncludingDarknet();
 		return max - node.peers.countConnectedDarknetPeers();
 	}
 
@@ -796,5 +804,9 @@ public class OpennetManager {
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
 	public int getNetworkSizeEstimate(long timestamp) {
 		return knownIds.countValuesAfter(timestamp);
+	}
+
+	public int getAnnouncementThreshold() {
+		return announcer.getAnnouncementThreshold();
 	}
 }

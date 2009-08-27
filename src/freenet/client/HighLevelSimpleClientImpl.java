@@ -30,6 +30,7 @@ import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NullBucket;
 import freenet.support.io.NullPersistentFileTracker;
@@ -48,14 +49,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
-	/** See comments in Node */
-	private final boolean cacheLocalRequests;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final int MAX_ARCHIVE_LEVELS = 4;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
-	/** Number of threads used by a splitfile fetch */
-	static final int SPLITFILE_THREADS = 20;
 	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
 	// for interactive requests mostly.
 	/** Number of retries allowed per block in a splitfile. */
@@ -75,7 +72,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final boolean CAN_WRITE_CLIENT_CACHE = true;
 	/** By default, don't write local inserts to the client cache. */
 	static final boolean CAN_WRITE_CLIENT_CACHE_INSERTS = false;
-	static final int SPLITFILE_INSERT_THREADS = 20;
 	/** Number of retries on inserts */
 	static final int INSERT_RETRIES = 10;
 	/** Number of RNFs on insert that make a success, or -1 on large networks */
@@ -87,7 +83,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	
 	
-	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
@@ -98,7 +94,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
-		this.cacheLocalRequests = cacheLocalRequests;
 		this.persistentBucketFactory = node.persistentTempBucketFactory;
 	}
 	
@@ -181,7 +176,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
 		return insert(insert, getCHKOnly, filenameHint, isMetadata, ctx, (ClientPutCallback) cb);
 	}
-	
+
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata,
 				ctx, priorityClass,
@@ -237,7 +232,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public FetchContext getFetchContext() {
 		return getFetchContext(-1);
 	}
-	
+
 	public FetchContext getFetchContext(long overrideMaxSize) {
 		long maxLength = curMaxLength;
 		long maxTempLength = curMaxTempLength;
@@ -248,19 +243,19 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return 			
 			new FetchContext(maxLength, maxTempLength, curMaxMetadataLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES, 
-				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
+				SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, eventProducer, 
-				cacheLocalRequests, false, CAN_WRITE_CLIENT_CACHE);
+				false, CAN_WRITE_CLIENT_CACHE);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
 		return new InsertContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
 				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
-				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				eventProducer, cacheLocalRequests, CAN_WRITE_CLIENT_CACHE_INSERTS);
+				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
+				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

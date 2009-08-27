@@ -91,6 +91,14 @@ public class FreenetURI implements Cloneable {
 	}
 
 	private final String keyType,  docName;
+	/** The meta-strings, in the order they are given. Typically we will 
+	 * construct the base key from the key type, routing key, extra, and
+	 * document name (SSK@blah,blah,blah/filename, CHK@blah,blah,blah,
+	 * KSK@filename or USK@blah,blah,blah/filename/20), fetch it, discover
+	 * that it is a manifest, and look up the first meta-string. If this is
+	 * the final data, we use that (and complain if there are meta-strings
+	 * left), else we look up the next meta-string in the manifest, and so
+	 * on. This is executed by SingleFileFetcher. */
 	private final String[] metaStr;
 	/* for SSKs, routingKey is actually the pkHash. the actual routing key is
 	 * calculated in NodeSSK and is a function of pkHash and the docName
@@ -161,6 +169,12 @@ public class FreenetURI implements Cloneable {
 		}
 	}
 
+	/** Is the keypair (the routing key and crypto key) the same as the 
+	 * given key?
+	 * @return False if there is no routing key or no crypto key (CHKs, 
+	 * SSKs, USKs have them, KSKs don't), or if the keys don't have the 
+	 * same crypto key and routing key.
+	 */
 	public boolean equalsKeypair(FreenetURI u2) {
 		if((routingKey != null) && (cryptoKey != null))
 			return Arrays.equals(routingKey, u2.routingKey) && Arrays.equals(cryptoKey, u2.cryptoKey);
@@ -266,6 +280,11 @@ public class FreenetURI implements Cloneable {
 	// Strip http:// and freenet: prefix
 	protected final static Pattern URI_PREFIX = Pattern.compile("^(http://[^/]+/+)?(freenet:)?");
 
+	/**
+	 * Create a FreenetURI from its string form. May or may not have a 
+	 * freenet: prefix.
+	 * @throws MalformedURLException If the string could not be parsed.
+	 */
 	public FreenetURI(String URI) throws MalformedURLException {
 //		this.uniqueHashCode = super.hashCode();
 		if(URI == null)
@@ -413,6 +432,7 @@ public class FreenetURI implements Cloneable {
 		if (logDEBUG) Logger.minor(this, "Created from components (USK): "+toString(), new Exception("debug"));
 	}
 
+	/** Dump the individual components of the key to System.out. */
 	public void decompose() {
 		String r = routingKey == null ? "none" : HexUtil.bytesToHex(routingKey);
 		String k = cryptoKey == null ? "none" : HexUtil.bytesToHex(cryptoKey);
@@ -441,34 +461,89 @@ public class FreenetURI implements Cloneable {
 		return getDocName();
 	}
 
+	/** Get the document name. For a KSK this is everything from the @ to
+	 * the first slash or the end of the key. For an SSK this is everything
+	 * from the slash to the next slash or the end of the key. CHKs don't
+	 * have a doc name, they only have meta strings. */
 	public String getDocName() {
 		return docName;
 	}
 
+	/** Get the first meta-string. This is just after the main part of the 
+	 * key and the doc name. Meta-strings are directory (manifest) lookups 
+	 * delimited by /'es after the main key and the doc name if any.
+	 */
 	public String getMetaString() {
 		return ((metaStr == null) || (metaStr.length == 0)) ? null : metaStr[0];
 	}
 
+	/** Get the last meta string. Meta-strings are directory (manifest) 
+	 * lookups after the main key and the doc name if any. So the last meta
+	 * string, if there is one, is from the last / to the end of the uri 
+	 * i.e. usually the filename. */
 	public String lastMetaString() {
 		return ((metaStr == null) || (metaStr.length == 0)) ? null : metaStr[metaStr.length - 1];
 	}
 
+	/** Get all the meta strings. Meta strings are directory (manifest) 
+	 * lookups after the main key and the doc name if any. Examples:
+	 * 
+	 * CHK@blah,blah,blah/filename
+	 * 
+	 * This has a routing key, a crypto key, extra bytes, no document name,
+	 * and one meta string "filename"
+	 * 
+	 * SSK@blah,blah,blah/docname/dir/subdir/filename
+	 * 
+	 * This has a routing key, a crypto key, extra bytes, a document name,
+	 * and three meta strings "dir", "subdir" and "filename". The SSK 
+	 * including the docname is turned into a low level Freenet key, which
+	 * we fetch. This will produce a metadata document containing a 
+	 * manifest, within which we look up "dir". This either gives us 
+	 * another metadata document directly, or a redirect if the dir is 
+	 * inserted separately. And so on. If it's a container, the files will
+	 * be stored, with the metadata, in the container (tar.bz2 or 
+	 * whatever); the metadata fetched by SSK@blah,blah,blah/docname will
+	 * say that there is a container and explain how to fetch it.
+	 * 
+	 * KSK@gpl.txt
+	 * 
+	 * This has no routing key, no crypto key, and no meta strings (but 
+	 * KSKs *can* have meta strings), but it has a document name.
+	 */
 	public String[] getAllMetaStrings() {
 		return metaStr;
 	}
 
+	/** Are there any meta-strings? */
 	public boolean hasMetaStrings() {
 		return !(metaStr == null || metaStr.length == 0);
 	}
-
+	
+	/** Get the routing key. This is the first part of the key after the @ 
+	 * for CHKs, SSKs and USKs. For purposes of FreenetURI, KSKs do not
+	 * have a routing key. For CHKs, this is ultimately derived from the
+	 * hash of the encrypted data; for SSKs it is the hash of the public 
+	 * key.
+	 */
 	public byte[] getRoutingKey() {
 		return routingKey;
 	}
 
+	/** Get the crypto key. This is the second part of the key after the @ 
+	 * for CHKs, SSKs and USKs. For purposes of FreenetURI, KSKs do not
+	 * have a crypto key. For CHKs, this is derived from the hash of the
+	 * *original* plaintext data; for SSKs it is a separate key for 
+	 * decryption. The crypto key is kept on the requesting node and is not
+	 * sent over the network - but of course many freesites and other 
+	 * documents on the network include URIs which do include crypto keys.
+	 */
 	public byte[] getCryptoKey() {
 		return cryptoKey;
 	}
 
+	/** Get the key type. CHK, SSK, KSK or USK. Upper case, we normally
+	 * use the constants. */
 	public String getKeyType() {
 		return keyType;
 	}
@@ -488,6 +563,11 @@ public class FreenetURI implements Cloneable {
 		return setMetaString(newMetaStr);
 	}
 
+	/** Create a new URI with the last few meta-strings dropped.
+	 * @param i The number of meta-strings to drop.
+	 * @return A new FreenetURI with the specified number of meta-strings
+	 * removed from the end.
+	 */
 	public FreenetURI dropLastMetaStrings(int i) {
 		String[] newMetaStr = null;
 		if((metaStr != null) && (metaStr.length > 1)) {
@@ -500,7 +580,8 @@ public class FreenetURI implements Cloneable {
 	}
 
 	/**
-	 * Returns a copy of this URI with the given string added as a new meta string.
+	 * Returns a copy of this URI with the given string appended as a 
+	 * meta-string.
 	 */
 	public FreenetURI pushMetaString(String name) {
 		String[] newMetaStr;
@@ -517,7 +598,7 @@ public class FreenetURI implements Cloneable {
 	}
 
 	/**
-	 * Returns a copy of this URI with the those meta strings appended.
+	 * Returns a copy of this URI with these meta strings appended.
 	 */
 	public FreenetURI addMetaStrings(String[] strs) {
 		if(strs == null)
@@ -537,6 +618,9 @@ public class FreenetURI implements Cloneable {
 		}
 	}
 
+	/**
+	 * Returns a copy of this URI with these meta strings appended.
+	 */
 	public FreenetURI addMetaStrings(List<String> metaStrings) {
 		return addMetaStrings(metaStrings.toArray(new String[metaStrings.size()]));
 	}
@@ -556,6 +640,7 @@ public class FreenetURI implements Cloneable {
 
 	}
 
+	/** Returns a copy of this URI with new meta-strings. */
 	public FreenetURI setMetaString(String[] newMetaStr) {
 		return new FreenetURI(
 			keyType,
@@ -569,6 +654,7 @@ public class FreenetURI implements Cloneable {
 
 	protected String toStringCache;
 
+	/** toString() is equivalent to toString(false, false) but is cached. */
 	@Override
 	public String toString() {
 		if (toStringCache == null)
@@ -584,10 +670,21 @@ public class FreenetURI implements Cloneable {
         return toASCIIString();
     }
 
+	/**
+	 * Get the FreenetURI as a pure ASCII string, any non-english 
+	 * characters as well as any dangerous characters are encoded.
+	 * @return
+	 */
 	public String toASCIIString() {
 		return toString(true, true);
 	}
 
+	/**
+	 * Get the FreenetURI as a string.
+	 * @param prefix Whether to include the freenet: prefix.
+	 * @param pureAscii If true, encode any non-english characters. If 
+	 * false, only encode dangerous characters (slashes e.g.).
+	 */
 	public String toString(boolean prefix, boolean pureAscii) {
 		if(keyType == null) {
 			// Not activated or something...
@@ -652,14 +749,20 @@ public class FreenetURI implements Cloneable {
 		return b.toString();
 	}
 
+	/** Run this class to decompose the argument. */
 	public static void main(String[] args) throws Exception {
 		(new FreenetURI(args[0])).decompose();
 	}
 
+	/** Get the extra bytes. SSKs and CHKs have extra bytes, these come 
+	 * after the second comma, and specify encryption and hashing 
+	 * algorithms etc.
+	 */
 	public byte[] getExtra() {
 		return extra;
 	}
 
+	/** Get the meta strings as an ArrayList. */
 	public ArrayList<String> listMetaStrings() {
 		if(metaStr != null) {
 			ArrayList<String> l = new ArrayList<String>(metaStr.length);
@@ -673,6 +776,7 @@ public class FreenetURI implements Cloneable {
 	static final byte KSK = 3;
 	static final byte USK = 4;
 
+	/** Read the binary form of a key, preceded by a short for its length. */
 	public static FreenetURI readFullBinaryKeyWithLength(DataInputStream dis) throws IOException {
 		int len = dis.readShort();
 		byte[] buf = new byte[len];
@@ -681,12 +785,17 @@ public class FreenetURI implements Cloneable {
 		return fromFullBinaryKey(buf);
 	}
 
+	/** Create a FreenetURI from the binary form of the key. */
 	public static FreenetURI fromFullBinaryKey(byte[] buf) throws IOException {
 		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 		DataInputStream dis = new DataInputStream(bais);
 		return readFullBinaryKey(dis);
 	}
 
+	/** Create a FreenetURI from the binary form of the key, read from a 
+	 * stream, with no length.
+	 * @throws MalformedURLException If there was a format error in the data.
+	 * @throws IOException If a read error occurred */
 	public static FreenetURI readFullBinaryKey(DataInputStream dis) throws IOException {
 		byte type = dis.readByte();
 		String keyType;
@@ -794,6 +903,9 @@ public class FreenetURI implements Cloneable {
 			throw new IllegalArgumentException("Not a USK requesting suggested edition");
 	}
 
+	/** Generate a suggested filename for the URI. This may be constructed
+	 * from more than one part of the URI e.g. SSK@blah,blah,blah/sitename/ 
+	 * might return sitename. */
 	public String getPreferredFilename() {
 		if (logMINOR)
 			Logger.minor(this, "Getting preferred filename for " + this);
@@ -838,6 +950,8 @@ public class FreenetURI implements Cloneable {
 		return out.toString();
 	}
 
+	/** Returns a <b>new</b> FreenetURI with a new suggested edition number.
+	 * Note that the suggested edition number is only valid for USKs. */
 	public FreenetURI setSuggestedEdition(long newEdition) {
 		return new FreenetURI(
 			keyType,
@@ -849,6 +963,9 @@ public class FreenetURI implements Cloneable {
 			newEdition);
 	}
 
+	/** Returns a <b>new</b> FreenetURI with a new key type. Usually this 
+	 * will be invalid!
+	 */
 	public FreenetURI setKeyType(String newKeyType) {
 		return new FreenetURI(
 			newKeyType,
@@ -860,6 +977,8 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
+	/** Returns a <b>new</b> FreenetURI with a new routing key. KSKs do not
+	 * have a routing key. */
 	public FreenetURI setRoutingKey(byte[] newRoutingKey) {
 		return new FreenetURI(
 			keyType,
@@ -871,29 +990,40 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
+	/** Throw an InsertException if we have any meta-strings. They are not
+	 * valid for inserts, you must insert a directory to create a directory
+	 * structure. */
 	public void checkInsertURI() throws InsertException {
 		if(metaStr != null && metaStr.length > 0)
 			throw new InsertException(InsertException.META_STRINGS_NOT_SUPPORTED, this);
 	}
 
+	/** Throw an InsertException if the argument has any meta-strings. They 
+	 * are not valid for inserts, you must insert a directory to create a 
+	 * directory structure. */
 	public static void checkInsertURI(FreenetURI uri) throws InsertException {
 		uri.checkInsertURI();
 	}
 
+	/** Convert to a relative URI in the form of a URI (/KSK@gpl.txt etc). */
 	public URI toRelativeURI() throws URISyntaxException {
 		// Single-argument constructor used because it preserves encoded /'es in path.
 		// Hence we can have slashes, question marks etc in the path, but they are encoded.
 		return new URI('/' + toString(false, false));
 	}
 
+	/** Convert to a relative URI in the form of a URI, with the base path
+	 * not necessarily /. */
 	public URI toURI(String basePath) throws URISyntaxException {
 		return new URI(basePath + toString(false, false));
 	}
 
+	/** Is this key an SSK? */
 	public boolean isSSK() {
 		return "SSK".equals(keyType);
 	}
 
+	/** Remove from the database. */
 	public void removeFrom(ObjectContainer container) {
 		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
 		container.delete(this);
@@ -918,23 +1048,29 @@ public class FreenetURI implements Cloneable {
 		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Deleting URI", new Exception("debug"));
 	}
 
+	/** Is this key a USK? */
 	public boolean isUSK() {
 		return "USK".equals(keyType);
 	}
 
+	/** Is this key a CHK? */
 	public boolean isCHK() {
 		return "CHK".equals(keyType);
 	}
 
+	/** Convert a USK into an SSK by appending "-" and the suggested edition
+	 * to the document name and changing the key type. */
 	public FreenetURI sskForUSK() {
 		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
 		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
 	}
 
+	/** Could this SSK be the result of sskForUSK()? */
 	public boolean isSSKForUSK() {
 		return keyType.equalsIgnoreCase("SSK") && docName.matches(".*\\-[0-9]+");
 	}
 
+	/** Convert an SSK into a USK, if possible. */
 	public FreenetURI uskForSSK() {
 		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
 		if (!docName.matches(".*\\-[0-9]+"))
@@ -947,6 +1083,10 @@ public class FreenetURI implements Cloneable {
 		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
 	}
 
+	/**
+	 * Get the edition number, if the key is a USK or a USK converted to an
+	 * SSK.
+	 */
 	public long getEdition() {
 		if(keyType.equalsIgnoreCase("USK"))
 			return suggestedEdition;

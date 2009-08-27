@@ -279,7 +279,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			}
 		}
 		try {
-			getter.cancel();
+			getter.cancel(null, tracker.context);
 		} catch (Throwable t) {
 			// Ensure we get to the next bit
 			Logger.error(this, "Failed to cancel: "+t, t);

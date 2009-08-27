@@ -1,30 +1,28 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
 import java.util.HashMap;
-import java.util.Iterator;
-
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 /**
- * plain/dumb manifest putter: every file item is a redirect (no containers at all)
+ * <P>plain/dumb manifest putter: every file item is a redirect (no containers at all)
+ * 
+ * <P>default doc:<BR>
+ * defaultName is just the name, without any '/'!<BR>
+ * each item &lt;defaultName&gt; is the default doc in the corresponding dir.
  */
 
 public class PlainManifestPutter extends BaseManifestPutter {
-	
+
 	private static volatile boolean logDEBUG;
-	
+
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
-			@Override
-			public void shouldUpdate() {
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-			}
-		});
+		Logger.registerClass(PlainManifestPutter.class);
 	}
 
 	public PlainManifestPutter(ClientPutCallback clientCallback, HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName, InsertContext ctx, boolean getCHKOnly,
@@ -33,24 +31,25 @@ public class PlainManifestPutter extends BaseManifestPutter {
 	}
 
 	@Override
-	protected void makePutHandlers(HashMap<String,Object> manifestElements, HashMap<String, Object> putHandlersByName) {
-		makePutHandlers(manifestElements, putHandlersByName, "/");
+	protected void makePutHandlers(HashMap<String,Object> manifestElements, String defaultName) {
+		if(logDEBUG) Logger.debug(this, "Root map : "+manifestElements.size()+" elements");
+		makePutHandlers(getRootBuilder(), manifestElements, defaultName);
 	}
-		
-	private void makePutHandlers(HashMap<String,Object> manifestElements, HashMap<String,Object> putHandlersByName, String prefix) {
-		Iterator<String> it = manifestElements.keySet().iterator();
-		while(it.hasNext()) {
-			String name = it.next();
+	
+	@SuppressWarnings("unchecked")
+	private void makePutHandlers(FreeFormBuilder builder, HashMap<String, Object> manifestElements, Object defaultName) {
+		for(String name: manifestElements.keySet()) {
 			Object o = manifestElements.get(name);
 			if(o instanceof HashMap) {
-				HashMap<String,Object> subMap = new HashMap<String,Object>();
-				putHandlersByName.put(name, subMap);
-				makePutHandlers((HashMap<String,Object>)o, subMap, prefix+name+ '/');
-				if(logDEBUG)
-					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
+				HashMap<String,Object> subMap = (HashMap<String,Object>)o;
+				builder.pushCurrentDir();
+				builder.makeSubDirCD(name);
+				makePutHandlers(builder, subMap, defaultName);
+				builder.popCurrentDir();
+				if(logDEBUG) Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements");
 			} else {
 				ManifestElement element = (ManifestElement) o;
-				addRedirect(name, element, putHandlersByName);
+				builder.addElement(name, element, name.equals(defaultName));
 			}
 		}
 	}

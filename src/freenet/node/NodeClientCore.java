@@ -15,6 +15,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
+import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
@@ -76,6 +77,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.compress.Compressor;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
@@ -97,7 +99,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		});
 	}
-	
+
+	public final PersistentStatsPutter bandwidthStatsPutter;
 	public final USKManager uskManager;
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -221,7 +224,22 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			String msg = "Could not find or create temporary directory (filename generator)";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
-		
+
+		this.bandwidthStatsPutter = new PersistentStatsPutter(this.node);
+		if (container != null) {
+			bandwidthStatsPutter.restorePreviousData(container);
+			this.getTicker().queueTimedJob(new Runnable() {
+				public void run() {
+					try {
+						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+						getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
+					} catch (DatabaseDisabledException e) {
+						// Should be safe to ignore.
+					}
+				}
+			}, PersistentStatsPutter.OFFSET);
+		}
+
 		uskManager = new USKManager(this);
 
 		// Persistent temp files
@@ -313,8 +331,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
-						0, 2, 1, 0, 0, new SimpleEventProducer(),
-						!Node.DONT_CACHE_LOCAL_REQUESTS, false), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						0, 2, 0, 0, new SimpleEventProducer(),
+						false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor);
 		compressor.setClientContext(clientContext);
@@ -474,7 +492,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
-		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), l10n("startingUpShort"), UserAlert.MINOR));
+		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), l10n("startingUpShort"), UserAlert.ERROR));
 		this.alerts.register(new SimpleUserAlert(true, L10n.getString("QueueToadlet.persistenceBrokenTitle"),
 				L10n.getString("QueueToadlet.persistenceBroken",
 						new String[]{ "TEMPDIR", "DBFILE" },
@@ -655,6 +673,19 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return false;
 			}
 		}
+
+		bandwidthStatsPutter.restorePreviousData(container);
+		this.getTicker().queueTimedJob(new Runnable() {
+			public void run() {
+				try {
+					queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+					getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
+				} catch (DatabaseDisabledException e) {
+					// Should be safe to ignore.
+				}
+			}
+		}, PersistentStatsPutter.OFFSET);
+
 		// CONCURRENCY: We need everything to have hit its various memory locations.
 		// How to ensure this?
 		// FIXME This is a hack!!
@@ -738,6 +769,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		} catch (DatabaseDisabledException e) {
 			// Safe to ignore
 		}
+
 		persister.start();
 		
 		storeChecker.start(node.executor, "Datastore checker");
@@ -770,7 +802,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				return NativeThread.LOW_PRIORITY;
 			}
 		}, "Startup completion thread");
-		
+
 		if(!killedDatabase)
 			clientDatabaseExecutor.start(node.executor, "Client database access thread");
 	}
@@ -812,7 +844,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		public void completed(boolean success);
 	}
 
-	public void asyncGet(Key key, boolean cache, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache) {
+	public void asyncGet(Key key, boolean offersOnly, final SimpleRequestSenderCompletionListener listener, boolean canReadClientCache, boolean canWriteClientCache) {
 		final long uid = random.nextLong();
 		final boolean isSSK = key instanceof NodeSSK;
 		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET);
@@ -828,7 +860,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			htl = node.failureTable.minOfferedHTL(key, htl);
 			if(logMINOR) Logger.minor(this, "Using old HTL for GetOfferedKey: "+htl);
 		}
-		asyncGet(key, isSSK, cache, offersOnly, uid, new RequestSender.Listener() {
+		asyncGet(key, isSSK, offersOnly, uid, new RequestSender.Listener() {
 
 			public void onCHKTransferBegins() {
 				// Ignore
@@ -858,9 +890,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean isSSK, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl) {
+	void asyncGet(Key key, boolean isSSK, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag, boolean canReadClientCache, boolean canWriteClientCache, short htl) {
 		try {
-			Object o = node.makeRequestSender(key, htl, uid, null, false, cache, false, offersOnly, canReadClientCache, canWriteClientCache);
+			Object o = node.makeRequestSender(key, htl, uid, null, false, false, offersOnly, canReadClientCache, canWriteClientCache);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
 				node.unlockUID(uid, isSSK, false, true, false, true, tag);
@@ -883,11 +915,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
+	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
 		if(key instanceof ClientCHK)
-			return realGetCHK((ClientCHK) key, localOnly, cache, ignoreStore, canWriteClientCache);
+			return realGetCHK((ClientCHK) key, localOnly, ignoreStore, canWriteClientCache);
 		else if(key instanceof ClientSSK)
-			return realGetSSK((ClientSSK) key, localOnly, cache, ignoreStore, canWriteClientCache);
+			return realGetSSK((ClientSSK) key, localOnly, ignoreStore, canWriteClientCache);
 		else
 			throw new IllegalArgumentException("Not a CHK or SSK: " + key);
 	}
@@ -903,7 +935,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * @return The fetched block.
 	 * @throws LowLevelGetException
 	 */
-	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
+	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
 		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL);
@@ -912,7 +944,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof CHKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1024,7 +1056,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
+	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean ignoreStore, boolean canWriteClientCache) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
 		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL);
@@ -1033,7 +1065,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-			Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof SSKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1144,16 +1176,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	 * @param canWriteClientCache
 	 * @throws LowLevelPutException
 	 */
-	public void realPut(KeyBlock block, boolean cache, boolean canWriteClientCache) throws LowLevelPutException {
+	public void realPut(KeyBlock block, boolean canWriteClientCache) throws LowLevelPutException {
 		if(block instanceof CHKBlock)
-			realPutCHK((CHKBlock) block, cache, canWriteClientCache);
+			realPutCHK((CHKBlock) block, canWriteClientCache);
 		else if(block instanceof SSKBlock)
-			realPutSSK((SSKBlock) block, cache, canWriteClientCache);
+			realPutSSK((SSKBlock) block, canWriteClientCache);
 		else
 			throw new IllegalArgumentException("Unknown put type " + block.getClass());
 	}
 
-	public void realPutCHK(CHKBlock block, boolean cache, boolean canWriteClientCache) throws LowLevelPutException {
+	public void realPutCHK(CHKBlock block, boolean canWriteClientCache) throws LowLevelPutException {
 		byte[] data = block.getData();
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
@@ -1166,10 +1198,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 		try {
 			long startTime = System.currentTimeMillis();
-			if(cache)
-				node.store(block, canWriteClientCache, false, false);
+			node.store(block, canWriteClientCache, false, false);
 			is = node.makeInsertSender(block.getKey(),
-				node.maxHTL(), uid, null, headers, prb, false, cache, canWriteClientCache);
+				node.maxHTL(), uid, null, headers, prb, false, canWriteClientCache);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {
@@ -1270,7 +1301,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 	}
 
-	public void realPutSSK(SSKBlock block, boolean cache, boolean canWriteClientCache) throws LowLevelPutException {
+	public void realPutSSK(SSKBlock block, boolean canWriteClientCache) throws LowLevelPutException {
 		SSKInsertSender is;
 		long uid = random.nextLong();
 		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL);
@@ -1285,7 +1316,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			if(altBlock != null && !altBlock.equals(block))
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			is = node.makeInsertSender(block,
-				node.maxHTL(), uid, null, false, cache, canWriteClientCache, false);
+				node.maxHTL(), uid, null, false, canWriteClientCache, false);
 			boolean hasReceivedRejectedOverload = false;
 			// Wait for status
 			while(true) {
@@ -1358,12 +1389,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			} else
-				if(cache)
-					try {
-						node.storeInsert(block, false, canWriteClientCache, false);
-					} catch(KeyCollisionException e) {
-						throw new LowLevelPutException(LowLevelPutException.COLLISION);
-					}
+				try {
+					node.storeInsert(block, false, canWriteClientCache, false);
+				} catch(KeyCollisionException e) {
+					throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				}
 
 
 			if(status == SSKInsertSender.SUCCESS) {
@@ -1405,13 +1435,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents);
+		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, prioClass, forceDontIgnoreTooManyPathComponents);
 	}
 	
-	public boolean cacheInserts() {
-		return !Node.DONT_CACHE_LOCAL_REQUESTS;
-	}
-
 	public FCPServer getFCPServer() {
 		return fcpServer;
 	}

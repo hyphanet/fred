@@ -26,8 +26,7 @@ public class PushFailoverToadlet extends Toadlet {
 		super(client);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		String originalRequestId = req.getParam("originalRequestId");
 		boolean result = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.failover(originalRequestId, requestId);
@@ -40,11 +39,6 @@ public class PushFailoverToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return UpdaterConstants.failoverPath;
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 }

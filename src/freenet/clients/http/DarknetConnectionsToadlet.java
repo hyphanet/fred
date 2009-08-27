@@ -24,11 +24,6 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	DarknetConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(n, core, client);
 	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET, POST";
-	}
 
 	private static String l10n(String string) {
 		return L10n.getString("DarknetConnectionsToadlet."+string);
@@ -336,7 +331,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 						PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
 						HTMLNode pageNode = page.outer;
 						HTMLNode contentNode = page.content;
-						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode); 
+						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode, "darknet-remove-node", true);
 						content.addChild("p").addChild("#",
 								L10n.getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
 						HTMLNode removeForm = ctx.addFormChild(content, "/friends/", "removeConfirmForm");
@@ -379,7 +374,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			redirectHere(ctx);
 			return;
 		} else {
-			this.handleGet(uri, new HTTPRequestImpl(uri, "GET"), ctx);
+			this.handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 		}
 	}
 
@@ -402,6 +397,16 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	public String path() {
 		return "/friends/";
+	}
+
+	@Override
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		super.handleMethodGET(uri, request, ctx);
+	}
+
+	@Override
+	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		super.handleMethodPOST(uri, request, ctx);
 	}
 
 }

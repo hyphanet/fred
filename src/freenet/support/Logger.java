@@ -219,6 +219,7 @@ public abstract class Logger {
 	 */
 	static Logger logger = new VoidLogger();
 
+	/** Log to standard output. */
 	public synchronized static FileLoggerHook setupStdoutLogging(int level, String detail) throws InvalidThresholdException {
 		setupChain();
 		logger.setThreshold(level);
@@ -232,10 +233,13 @@ public abstract class Logger {
 		return fh;
 	}
 
+	/** Create a LoggerHookChain and set the global logger to be it. */
 	public synchronized static void setupChain() {
 		logger = new LoggerHookChain();
 	}
 
+	// These methods log messages at various priorities using the global logger.
+	
 	public synchronized static void debug(Class<?> c, String s) {
 		logger.log(c, s, DEBUG);
 	}
@@ -358,16 +362,24 @@ public abstract class Logger {
 	public abstract void log(Class<?> c, String message, Throwable e,
 			int priority);
 
+	/** Should this specific Logger object log a message concerning the 
+	 * given class with the given priority. */
 	public abstract boolean instanceShouldLog(int priority, Class<?> c);
 
+	/** Would a message concerning an object of the given class be logged
+	 * at the given priority by the global logger? */
 	public static boolean shouldLog(int priority, Class<?> c) {
 		return logger.instanceShouldLog(priority, c);
 	}
 
+	/** Would a message concerning the given object be logged
+	 * at the given priority by the global logger? */
 	public static boolean shouldLog(int priority, Object o) {
 		return shouldLog(priority, o.getClass());
 	}
 
+	/** Should this specific Logger object log a message concerning the 
+	 * given object with the given priority. */
 	public abstract boolean instanceShouldLog(int prio, Object o);
 
 	/**
@@ -392,15 +404,24 @@ public abstract class Logger {
 	 */
 	public abstract int getThreshold();
 
+	/** Set the detailed list of thresholds. This allows to specify that
+	 * we are interested in debug level logging for one class but are only
+	 * interested in errors for another, which can be very useful for 
+	 * debugging. Format is classname:threshold,classname:threshold...
+	 */
 	public abstract void setDetailedThresholds(String details) throws InvalidThresholdException;
 
 	/**
-	 * Register a LogThresholdCallback; this callback will be called after registration
+	 * Register a LogThresholdCallback; this callback will be called after registration,
+	 * and whether the overall threshold or the detailed thresholds change in a way that
+	 * would affect whether messages for the class registering will be logged.
 	 */
 	public static void registerLogThresholdCallback(LogThresholdCallback ltc) {
 		logger.instanceRegisterLogThresholdCallback(ltc);
 	}
 
+	/** Register a log threshold callback with this specific logger, not with
+	 * the global logger. */
 	public abstract void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc);
 
 	/**
@@ -410,8 +431,12 @@ public abstract class Logger {
 		logger.instanceUnregisterLogThresholdCallback(ltc);
 	}
 	
+	/** Unregister a log threshold callback with this specific logger. */
 	public abstract void instanceUnregisterLogThresholdCallback(LogThresholdCallback ltc);
 	
+	/** Register a class so that its logMINOR and logDEBUG fields (the 
+	 * latter is optional) are automatically updated whenever they should be
+	 * i.e. whenever shouldLog(classname, MINOR) or ,DEBUG would change. */
 	public static void registerClass(final Class<?> clazz) {
 		LogThresholdCallback ltc = new LogThresholdCallback() {
 			WeakReference<Class<?>> ref = new WeakReference<Class<?>> (clazz);
@@ -469,20 +494,27 @@ public abstract class Logger {
 		System.exit(retcode);
 	}
 
+	/** Add a logger hook to the global logger hook chain. Messages which
+	 * are not filtered out by the global logger hook chain's thresholds
+	 * will be passed to this logger. */
 	public synchronized static void globalAddHook(LoggerHook logger2) {
 		if(logger instanceof VoidLogger)
 			setupChain();
 		((LoggerHookChain)logger).addHook(logger2);
 	}
 
+	/** Set the global threshold. The global logger will ignore messages 
+	 * less significant than the given threshold. */
 	public synchronized static void globalSetThreshold(int i) {
 		logger.setThreshold(i);
 	}
 
+	/** What is the current global logging threshold? */
 	public synchronized static int globalGetThreshold() {
 		return logger.getThreshold();
 	}
 
+	/** Remove a logger hook from the global logger hook chain. */
 	public synchronized static void globalRemoveHook(FileLoggerHook hook) {
 		if(logger instanceof LoggerHookChain)
 			((LoggerHookChain)logger).removeHook(hook);
@@ -490,6 +522,9 @@ public abstract class Logger {
 			System.err.println("Cannot remove hook: "+hook+" global logger is "+logger);
 	}
 
+	/** If no logger hooks are registered, destroy the global logger hook
+	 * chain by replacing it with a VoidLogger, which simply ignores 
+	 * everything logged. */
 	public synchronized static void destroyChainIfEmpty() {
 		if(logger instanceof VoidLogger) return;
 		if((logger instanceof LoggerHookChain) && (((LoggerHookChain)logger).getHooks().length == 0)) {
@@ -497,11 +532,20 @@ public abstract class Logger {
 		}
 	}
 
+	/** Get the global logger hook chain, creating it if necessary. */
 	public synchronized static LoggerHookChain getChain() {
 		if(logger instanceof LoggerHookChain)
 			return (LoggerHookChain) logger;
 		else {
+			Logger oldLogger = logger;
+			if(!(oldLogger instanceof VoidLogger)) {
+				if(!(oldLogger instanceof LoggerHook))
+					throw new IllegalStateException("The old logger is not a VoidLogger and is not a LoggerHook either!");
+			}
 			setupChain();
+			if(!(oldLogger instanceof VoidLogger)) {
+				((LoggerHookChain)logger).addHook((LoggerHook)oldLogger);
+			}
 			return (LoggerHookChain) logger;
 		}
 	}

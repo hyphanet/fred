@@ -147,8 +147,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 
 	@Override
 	public short getPriorityClass() {
-		if(updater.inFinalCheck())
-			return UserAlert.WARNING;
+		if(updater.inFinalCheck() || updater.canUpdateNow())
+			return UserAlert.ERROR;
 		else
 			return UserAlert.MINOR;
 	}

@@ -27,6 +27,8 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.compress.InvalidCompressionCodecException;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.FileUtil;
 
 /**
@@ -56,7 +58,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
     static final int DARKNET_PORT_BASE = 5008;
     static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
-    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, UnsupportedEncodingException, CHKVerifyException, CHKDecodeException {
+    public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, UnsupportedEncodingException, CHKVerifyException, CHKDecodeException, InvalidCompressionCodecException {
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
         if(!FileUtil.removeAll(wd)) {
@@ -117,7 +119,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             String dataString = baseString + i;
             byte[] data = dataString.getBytes("UTF-8");
             ClientCHKBlock block;
-            block = ClientCHKBlock.encode(data, false, false, (short)-1, 0);
+            block = ClientCHKBlock.encode(data, false, false, (short)-1, 0, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
             ClientCHK chk = (ClientCHK) block.getClientKey();
             byte[] encData = block.getData();
             byte[] encHeaders = block.getHeaders();
@@ -128,7 +130,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
-				randomNode.clientCore.realPut(block, true, false);
+				randomNode.clientCore.realPut(block, false);
 				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
 			} catch (freenet.node.LowLevelPutException putEx) {

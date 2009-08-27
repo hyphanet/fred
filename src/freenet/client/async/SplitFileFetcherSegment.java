@@ -39,6 +39,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.api.Bucket;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 
 /**
@@ -773,8 +774,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientGetter getter = (ClientGetter) (parent);
 			if(getter.collectingBinaryBlob()) {
 				try {
+					// Note: dontCompress is true. if false we need to know the codec it was compresssed to get a proper blob
 					ClientCHKBlock block =
-						ClientCHKBlock.encode(data, false, true, (short)-1, data.size());
+						ClientCHKBlock.encode(data, false, true, (short)-1, data.size(), COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
 					getter.addKeyToBinaryBlob(block, container, context);
 				} catch (CHKEncodeException e) {
 					Logger.error(this, "Failed to encode (collecting binary blob) "+(check?"check":"data")+" block "+i+": "+e, e);
@@ -1430,10 +1432,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.deactivate(checkBuckets[blockNo], 1);
 			return retval;
 		}
-	}
-
-	public boolean dontCache(ObjectContainer container) {
-		return !blockFetchContext.cacheLocalRequests;
 	}
 
 	public short getPriorityClass(ObjectContainer container) {

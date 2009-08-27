@@ -1175,10 +1175,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		starter.wakeUp();
 	}
 
-	public boolean cacheInserts() {
-		return this.node.clientCore.cacheInserts();
-	}
-
 	public byte[] saltKey(boolean persistent, Key key) {
 		return persistent ? schedCore.saltKey(key) : schedTransient.saltKey(key);
 	}

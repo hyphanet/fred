@@ -26,8 +26,7 @@ public class PushKeepaliveToadlet extends Toadlet {
 		super(client);
 	}
 
-	@Override
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		if (logMINOR) {
 			Logger.minor(this, "Got keepalive:" + requestId);
@@ -43,11 +42,6 @@ public class PushKeepaliveToadlet extends Toadlet {
 	@Override
 	public String path() {
 		return UpdaterConstants.keepalivePath;
-	}
-
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 }

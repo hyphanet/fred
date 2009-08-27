@@ -178,8 +178,7 @@ public class BrowserTestToadlet extends Toadlet {
 		"TTfltFP4CgA1VFFFraqAAAIANUIAYJzwRFRHhRVWT2eltVZbb8U1V1135bVX" +
 		"X38FNlhhhyW2WGOPRTZZZbEMCAA7====";
 	
-	@Override
-	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		// Yes, we need that in order to test the browser (number of connections per server)
 		if (request.isParameterSet("wontload")) return;
 		else if (request.isParameterSet("mimeTest")){
@@ -195,30 +194,25 @@ public class BrowserTestToadlet extends Toadlet {
 			contentNode.addChild(new AlertElement(ctx));
 		
 		// #### Test MIME inline
-		ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline", contentNode).
+		ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline", contentNode, "mime-inline-test", true).
 			//addChild("img", new String[]{"src", "alt"}, new String[]{"data:image/gif;base64,"+imgWarningMime, "Your browser is probably safe."});
 			addChild("img", new String[]{"src", "alt"}, new String[]{"?mimeTest", "Your browser is probably safe."});
 		
 		// #### Test whether we can have more than 10 simultaneous connections to fproxy
 		
-		HTMLNode maxConnectionsPerServerContent = ctx.getPageMaker().getInfobox("infobox-warning", "Number of connections", contentNode);
+		HTMLNode maxConnectionsPerServerContent = ctx.getPageMaker().getInfobox("infobox-warning", "Number of connections", contentNode, "browser-connections", true);
 		maxConnectionsPerServerContent.addChild("#", "If you do not see a green picture below, your browser is probably missconfigured! Ensure it allows more than 10 connections per server.");
 		for(int i = 0; i < 10 ; i++)
 			maxConnectionsPerServerContent.addChild("img", "src", ".?wontload");
 		maxConnectionsPerServerContent.addChild("img", new String[]{"src", "alt"}, new String[]{"/static/themes/clean/success.gif", "fail!"});
 
 		// #### Test whether JS is available. : should do the test with pictures instead!
-		HTMLNode jsTestContent= ctx.getPageMaker().getInfobox("infobox-warning", "Javascript", contentNode);
+		HTMLNode jsTestContent= ctx.getPageMaker().getInfobox("infobox-warning", "Javascript", contentNode, "javascript-test", true);
 		HTMLNode jsTest = jsTestContent.addChild("div");
 		jsTest.addChild("img", new String[]{"id", "src", "alt"}, new String[]{"JSTEST", "/static/themes/clean/success.gif", "fail!"});
 		jsTest.addChild("script", "type", "text/javascript").addChild("%", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.gif';");
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-	}
-	
-	@Override
-	public String supportedMethods() {
-		return "GET";
 	}
 
 	@Override
