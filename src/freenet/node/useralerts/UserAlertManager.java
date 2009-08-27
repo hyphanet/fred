@@ -216,8 +216,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	/**
-<<<<<<< HEAD:src/freenet/node/useralerts/UserAlertManager.java
-=======
 	 * Write the alerts as HTML.
 	 */
 	public HTMLNode createAlerts(boolean onlyShowErrors) {
@@ -294,7 +292,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 	
 	/**
->>>>>>> master:src/freenet/node/useralerts/UserAlertManager.java
 	 * Renders the given alert and returns the rendered HTML node.
 	 * 
 	 * @param userAlert
