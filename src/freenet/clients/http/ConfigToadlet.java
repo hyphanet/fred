@@ -272,7 +272,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					String configName = o[j].getName();
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
-					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
+					configItemNode.addChild("a", new String[]{"name", "id"}, new String[]{configName, configName}).addChild("span", new String[]{ "class", "title", "style" },
 							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+subConfig.getPrefix() + '.' + o[j].getName() + ']' : ""),
 							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");

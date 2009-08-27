@@ -1,0 +1,13 @@
+#topbar,
+div.infobox-warning div.infobox-header,
+div.infobox-information div.infobox-header,
+div.infobox-alert div.infobox-header,
+div.infobox-error div.infobox-header,
+div.infobox-query div.infobox-header,
+div.infobox-success div.infobox-header,
+li.alert-summary-text-error,
+li.alert-summary-text-alert,
+li.alert-summary-text-warning,
+li.alert-summary-text-minor {
+	background-image: none !important;
+}

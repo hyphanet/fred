@@ -24,11 +24,11 @@ import freenet.support.io.FileUtil;
 public final class PageMaker {
 	
 	public enum THEME {
-		BOXED("boxed", "Boxed", ""),
-		CLEAN("clean", "Clean", "Mr. Proper"),
-		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu."),
-		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu."),
-		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
+		BOXED("boxed", "Boxed", "", false, false, true),
+		CLEAN("clean", "Clean", "Mr. Proper", false, false, true),
+		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false, true),
+		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false, true),
+		GRAYANDBLUE("grayandblue", "Gray And Blue", "", false, false, true),
 		SKY("sky", "Sky", ""),
 		MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue"),
 		MINIMALISTIC("minimalist", "Minimalistic", "A very minimalistic theme based on Google's designs", true, true, true);
@@ -48,8 +48,19 @@ public final class PageMaker {
 		public final String code;  // the internal name
 		public final String name;  // the name in "human form"
 		public final String description; // description
+		/**
+		 * If true, the activelinks will appear on the welcome page, whether
+		 * the user has enabled them or not.
+		 */
 		public final boolean forceActivelinks;
+		/**
+		 * If true, the "Fetch a key" infobox will appear above the bookmarks
+		 * infobox on the welcome page.
+		 */
 		public final boolean fetchKeyBoxAboveBookmarks;
+		/**
+		 * If true, a status bar is shown.
+		 */
 		public final boolean showStatusBar;
 		
 		private THEME(String code, String name, String description) {
@@ -247,7 +258,7 @@ public final class PageMaker {
 				}
 			}
 
-			statusBarDiv.addChild("div", "id", "statusbar-language", L10n.getSelectedLanguage().fullName);
+			statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", L10n.getSelectedLanguage().fullName);
 	
 			if(node.clientCore != null) {
 				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
