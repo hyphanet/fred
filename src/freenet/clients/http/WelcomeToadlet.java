@@ -19,6 +19,7 @@ import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.GenericReadFilterCallback;
+import freenet.clients.http.updateableelements.ImageElement;
 import freenet.clients.http.updateableelements.ShortAlertElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
@@ -41,12 +42,14 @@ public class WelcomeToadlet extends Toadlet {
     final NodeClientCore core;
     final Node node;
     final BookmarkManager bookmarkManager;
+    final FProxyFetchTracker tracker;
 
-    WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node, BookmarkManager bookmarks) {
+    WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node, BookmarkManager bookmarks, FProxyFetchTracker fetchTracker) {
         super(client);
         this.node = node;
         this.core = core;
         this.bookmarkManager = bookmarks;
+        this.tracker = fetchTracker;
     }
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -70,10 +73,11 @@ public class WelcomeToadlet extends Toadlet {
                 HTMLNode row = table.addChild("tr");
                 HTMLNode cell = row.addChild("td", "style", "border: none");
                 if (item.hasAnActivelink() && !noActiveLinks) {
-                    String initialKey = item.getKey();
-                    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
-                    cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
-                            new String[]{ key, "36", "108", "activelink", item.getDescription()});
+//                    String initialKey = item.getKey();
+//                    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
+                    cell.addChild("a", "href", '/' + item.getKey()).addChild(ImageElement.createImageElement(tracker, item.getURI().addMetaStrings(new String[]  { "activelink.png" }), FProxyToadlet.MAX_LENGTH, ctx, 95, 32, item.getDescription()));
+//                    cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
+//                            new String[]{ key, "36", "108", "activelink", item.getDescription()});
                 } else {
                     cell.addChild("#", " ");
                 }

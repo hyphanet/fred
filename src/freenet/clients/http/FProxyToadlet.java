@@ -92,7 +92,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 	
-	public FProxyToadlet(final HighLevelSimpleClient client, NodeClientCore core) {
+	public FProxyToadlet(final HighLevelSimpleClient client, NodeClientCore core, FProxyFetchTracker tracker) {
 		super(client);
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
@@ -115,7 +115,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				
 			};
-		fetchTracker = new FProxyFetchTracker(context, getClientImpl().getFetchContext(), this);
+		fetchTracker = tracker;
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -986,7 +986,21 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		random = new byte[32];
 		core.random.nextBytes(random);
-		FProxyToadlet fproxy = new FProxyToadlet(client, core);
+		
+		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(), new RequestClient() {
+
+			public boolean persistent() {
+				return false;
+			}
+
+			public void removeFrom(ObjectContainer container) {
+				// Do nothing.
+			}
+			
+		});
+
+		
+		FProxyToadlet fproxy = new FProxyToadlet(client, core, fetchTracker);
 		core.setFProxy(fproxy);
 		
 		server.registerMenu("/", "FProxyToadlet.categoryBrowsing", "FProxyToadlet.categoryTitleBrowsing", null);
@@ -1030,7 +1044,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true, "ConfigToadlet."+prefix, "ConfigToadlet.title."+prefix, true, configtoadlet);
 		}
 		
-		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
+		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks, fetchTracker);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
 		
 		
