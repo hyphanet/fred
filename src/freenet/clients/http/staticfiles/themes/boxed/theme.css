@@ -1,6 +1,9 @@
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
 
+/* Status bar style & colors */
+@import url(/static/statusbar.css);
+
 /* boxed overall settings */ 
 
 body {
@@ -445,4 +448,42 @@ td.n2ntm-send-queued {
 
 td.n2ntm-send-failed {
 	background-color: #ffb7b7;
+}
+
+/* statusbar */
+
+div#statusbar-container {
+	margin-top: 5px;
+	margin-bottom: 5px;
+	background-color: #ddd;
+	padding: 5px;
+	font-size: 1.2em;
+	border: 1px solid black;
+}
+
+div#statusbar {
+	text-align: center;
+}
+
+div#statusbar div {
+	display: inline;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
+}
+
+div#statusbar div.infobox-content {
+	border: none;
+	background-color: #ddd;
+	padding: 0;
+	margin: 0;
+}
+
+div#statusbar div.separator {
+	display: inline-block;
+	background-color: black;
+	width: 1px;
+	margin-left: 9px;
+	margin-right: 9px;
 }

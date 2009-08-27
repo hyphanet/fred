@@ -24,7 +24,7 @@ import freenet.support.io.FileUtil;
 public final class PageMaker {
 	
 	public enum THEME {
-		BOXED("boxed", "Boxed", ""),
+		BOXED("boxed", "Boxed", "", false, false, true),
 		CLEAN("clean", "Clean", "Mr. Proper", false, false, true),
 		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false, true),
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu.", false, false, true),
