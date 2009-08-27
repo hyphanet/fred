@@ -147,7 +147,7 @@ public class FreenetURI implements Cloneable {
 					return false;
 			if((docName == null) ^ (f.docName == null))
 				return false;
-			if((metaStr == null) ^ (f.metaStr == null))
+			if((metaStr == null || metaStr.length == 0) ^ (f.metaStr == null || f.metaStr.length == 0))
 				return false;
 			if((routingKey == null) ^ (f.routingKey == null))
 				return false;
@@ -446,15 +446,9 @@ public class FreenetURI implements Cloneable {
 			"Doc name   : " + (docName == null ? "none" : docName));
 		System.out.print("Meta strings: ");
 		if(metaStr == null)
-			System.err.println("none");
+			System.out.println("none");
 		else
-			for(int i = 0; i < metaStr.length; i++) {
-				System.err.print(metaStr[i]);
-				if(i == metaStr.length - 1)
-					System.err.println();
-				else
-					System.err.print(", ");
-			}
+			System.out.println(Arrays.asList(metaStr).toString());
 	}
 
 	public String getGuessableKey() {
