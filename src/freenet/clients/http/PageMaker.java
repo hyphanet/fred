@@ -26,7 +26,7 @@ public final class PageMaker {
 	public enum THEME {
 		BOXED("boxed", "Boxed", ""),
 		CLEAN("clean", "Clean", "Mr. Proper"),
-		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu."),
+		CLEAN_DROPDOWN("clean-dropdown", "Clean (Dropdown menu)", "Clean theme with a dropdown menu.", false, false, true),
 		CLEAN_STATIC("clean-static", "Clean (Static menu)", "Clean theme with a static menu."),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
 		SKY("sky", "Sky", ""),

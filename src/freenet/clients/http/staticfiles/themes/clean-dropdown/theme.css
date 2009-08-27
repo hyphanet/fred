@@ -661,4 +661,103 @@ td.n2ntm-send-failed {
 	background-color: #f0fef0;
 }
 
+/* status bar */
 
+div#navbar {
+	clear: both;
+}
+
+div#statusbar-container {
+	background-color: #d8d8d8;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	border: 1px solid #d0d0d0;
+	border-left: none;
+	border-right: none;
+	text-align: center;
+}
+
+div#statusbar {
+	width: auto;
+	margin: auto;
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+div#statusbar div {
+	display: inline-block;
+}
+
+div#statusbar div.separator {
+	width: 20px;
+}
+
+div#statusbar div#statusbar-alerts div.infobox-header,
+div.infobox.infobox-summary-status-box {
+	display: none;
+}
+
+div.infobox.infobox-summary-status-box.infobox-alert,
+div.infobox.infobox-summary-status-box.infobox-error {
+	display: block;
+}
+
+/* status bar style & colors */
+
+div#statusbar div#statusbar-peers {
+	font-weight: bold;
+}
+
+div#statusbar div#statusbar-peers.no-peers {
+	color: #700;
+}
+
+div#statusbar div#statusbar-peers.very-few-peers {
+	color: #700;
+}
+
+div#statusbar div#statusbar-peers.few-peers {
+	color: #FA0;
+}
+
+div#statusbar div#statusbar-peers.avg-peers {
+	color: #FA0;
+}
+
+div#statusbar div#statusbar-peers.lots-of-peers {
+	color: green;
+}
+
+div#statusbar div#statusbar-seclevels a {
+	text-decoration: none;
+	padding-left: 5px;
+}
+
+div#statusbar div#statusbar-seclevels a.low {
+	color: #700;
+}
+
+div#statusbar div#statusbar-seclevels a.normal {
+	color: #b66700;
+}
+
+div#statusbar div#statusbar-seclevels a.high {
+	color: green;
+}
+
+div#statusbar div#statusbar-seclevels a.maximum {
+	color: #d9bd00;
+}
+
+div#statusbar div#statusbar-alerts.contains-error, div#statusbar div#statusbar-alerts.contains-error a {
+	background-color: #ff7f7f;
+}
+
+div#statusbar div#statusbar-alerts.contains-warning, div#statusbar div#statusbar-alerts.contains-warning a,
+div#statusbar div#statusbar-alerts.contains-alert, div#statusbar div#statusbar-alerts.contains-alert a{
+	background-color: yellow;
+}
+
+div#statusbar div#statusbar-alerts.contains-information, div#statusbar div#statusbar-alerts.contains-information a {
+	color: blue;
+}
