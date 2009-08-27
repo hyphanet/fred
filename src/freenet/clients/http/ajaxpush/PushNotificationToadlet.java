@@ -28,7 +28,7 @@ public class PushNotificationToadlet extends Toadlet {
 		super(client);
 	}
 
-	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		PushDataManager.UpdateEvent event = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.getNextNotification(requestId);
 		if (event != null) {

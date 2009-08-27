@@ -27,7 +27,7 @@ public class DismissAlertToadlet extends Toadlet {
 		super(client);
 	}
 
-	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		// The anchor is used to identify the alert
 		String anchor = HTMLDecoder.decode(req.getParam("anchor"));
 		if (logMINOR) {

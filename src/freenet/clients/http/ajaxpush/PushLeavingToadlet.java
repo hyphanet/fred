@@ -29,7 +29,7 @@ public class PushLeavingToadlet extends Toadlet {
 		super(client);
 	}
 
-	public void handleMethodGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String requestId = req.getParam("requestId");
 		boolean deleted = ((SimpleToadletServer) ctx.getContainer()).pushDataManager.leaving(requestId);
 		if (logMINOR) {
