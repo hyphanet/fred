@@ -349,14 +349,22 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		if (numberOfWarning != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(separator);
-			alertSummaryString.append(l10n("warningCountLabel")).append(' ').append(numberOfWarning);
+			if(oneLine) {
+				alertSummaryString.append(numberOfWarning).append(' ').append(l10n("warningCountLabel").replace(":", ""));
+			} else {
+				alertSummaryString.append(l10n("warningCountLabel")).append(' ').append(numberOfWarning);
+			}
 			separatorNeeded = true;
 			messageTypes++;
 		}
 		if (numberOfMinor != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(separator);
-			alertSummaryString.append(l10n("minorCountLabel")).append(' ').append(numberOfMinor);
+			if(oneLine) {
+				alertSummaryString.append(numberOfMinor).append(' ').append(l10n("minorCountLabel").replace(":", ""));
+			} else {
+				alertSummaryString.append(l10n("minorCountLabel")).append(' ').append(numberOfMinor);
+			}
 			separatorNeeded = true;
 			messageTypes++;
 		}
@@ -378,11 +386,15 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		else if (highestLevel <= UserAlert.MINOR)
 			summaryBox = new HTMLNode("div", "class", classes + "information");
 		summaryBox.addChild("div", "class", "infobox-header", l10n("alertsTitle"));
-		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
-		summaryContent.addChild("#", separator);
-		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
+		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content");
+		if(!oneLine) {
+			summaryContent.addChild("#", alertSummaryString.toString() + separator);
+			L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
 				new String[] { "link", "/link" },
 				new String[] { "<a href=\"/alerts/\">", "</a>" });
+		} else {
+			summaryContent.addChild("a", "href", "/alerts/", L10n.getString("StatusBar.alerts") + alertSummaryString.toString());
+		}
 		summaryBox.addAttribute("id", "messages-summary-box");
 		return summaryBox;
 	}
