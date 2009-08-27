@@ -267,7 +267,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			totalNumber++;
 		}
 
-		if(totalNumber == 0 && oneLine)
+		if(numberOfMinor == 0 && numberOfWarning == 0 && oneLine)
 			return null;
 
 		if (totalNumber == 0)
