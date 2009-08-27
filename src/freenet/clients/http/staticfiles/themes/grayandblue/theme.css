@@ -1,5 +1,10 @@
+/* grayandblue */
+
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
+
+/* Status bar style & colors */
+@import url(/static/statusbar.css);
 
 /* [edward@rnahost.com] */
 
@@ -224,6 +229,7 @@ li.alert-summary-text-minor {
 	padding: 0;
 	position: absolute;
 	left: 177px;
+	right: 5px;
 }
 
 a, a:link {
@@ -537,4 +543,28 @@ td.n2ntm-send-queued {
 
 td.n2ntm-send-failed {
 	background-color: #ffb7b7;
+}
+
+div#statusbar-container {
+	text-align: center;
+	border: 1px dotted #676767;
+	background-color: #eee;
+	margin: 10px;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
+}
+
+div#statusbar div {
+	display: inline;
+}
+
+div#statusbar div.separator {
+	display: inline-block;
+	background: none;
+	border-left: 1px dotted #676767;
+	width: 1px;
+	margin-left: 10px;
+	margin-right: 8px;
 }
