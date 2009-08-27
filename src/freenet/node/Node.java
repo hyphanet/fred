@@ -1217,7 +1217,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		defragDatabaseOnStartup = nodeConfig.getBoolean("defragDatabaseOnStartup");
 		
-		nodeConfig.register("defragOnce", true, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
+		nodeConfig.register("defragOnce", false, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
