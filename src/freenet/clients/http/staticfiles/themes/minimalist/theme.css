@@ -127,10 +127,12 @@ body {
 
 div#topbar, div#navbar {
 	border: none;
+	padding-bottom: 2px;
 }
 
 div#topbar {
 	float: right;
+	min-height: 0;
 }
 
 div#topbar h1 {
@@ -145,9 +147,49 @@ div#navbar {
 	padding-top: 3px;
 }
 
+div#navbar ul li {
+	margin-left: 2px;
+	margin-right: 3px;
+}
+
+div#navbar ul li ul {
+	background-color: white;
+	border: 1px solid blue;
+}
+
+div#navbar ul li a, div#navbar ul li a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li.submenuitem-selected a {
+	color: blue;
+	background-color: white;
+}
+
+div#navbar ul#navlist li#navlist-selected a {
+	color: black;
+	font-weight: bold;
+	background-color: white;
+	text-decoration: none;
+}
+
+div#navbar ul#navlist li ul li a:hover, div#navbar ul#navlist li#navlist-selected ul.subnavlist-selected li a:hover {
+	color: white;
+	background-color: blue;
+}
+
+div#navbar ul#navlist li ul li a, div#navbar ul#navlist li#navlist-selected ul li a {
+	color: blue;
+	font-weight: normal;
+	background-color: white;
+}
+
+div#navbar ul#navlist li#navlist-selected ul li.submenuitem-selected a {
+	color: black;
+	background-color: white;
+	font-weight: bold;
+}
+
 div#content {
 	border-top: 1px solid #CCF;
 	padding-top: 5px;
+	clear: both;
 }
 
 /* *****************************************************************
