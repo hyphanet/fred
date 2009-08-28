@@ -13,7 +13,7 @@ import java.util.Properties;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 
 /**
  * Handles the wrapper.conf, essentially.
@@ -94,15 +94,15 @@ class UpdateDeployContext {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("UpdateDeployContext."+key);
+		return NodeL10n.getBase().getString("UpdateDeployContext."+key);
 	}
 
 	public static String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("UpdateDeployContext."+key, patterns, values);
+		return NodeL10n.getBase().getString("UpdateDeployContext."+key, patterns, values);
 	}
 
 	public static String l10n(String key, String pattern, String value) {
-		return L10n.getString("UpdateDeployContext."+key, pattern, value);
+		return NodeL10n.getBase().getString("UpdateDeployContext."+key, pattern, value);
 	}
 
 	File getMainJar() {

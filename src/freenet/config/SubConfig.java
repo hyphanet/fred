@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -250,10 +250,10 @@ public class SubConfig implements Comparable<SubConfig> {
 					fs.put(key, o.isForcedWrite());
 					break;
 				case SHORT_DESCRIPTION:
-					fs.putSingle(key, L10n.getString(o.getShortDesc()));
+					fs.putSingle(key, NodeL10n.getBase().getString(o.getShortDesc()));
 					break;
 				case LONG_DESCRIPTION:
-					fs.putSingle(key, L10n.getString(o.getLongDesc()));
+					fs.putSingle(key, NodeL10n.getBase().getString(o.getLongDesc()));
 					break;
 				case DATA_TYPE:
 					fs.putSingle(key, o.getDataTypeStr());

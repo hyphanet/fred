@@ -37,7 +37,7 @@ import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -495,11 +495,11 @@ public class FCPServer implements Runnable {
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("FcpServer."+key);
+		return NodeL10n.getBase().getString("FcpServer."+key);
 	}
 	
 	private static String l10n(String key, String pattern, String value) {
-		return L10n.getString("FcpServer."+key, pattern, value);
+		return NodeL10n.getBase().getString("FcpServer."+key, pattern, value);
 	}
 
 	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {

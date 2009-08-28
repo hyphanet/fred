@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.node.fcp.FCPConnectionHandler;
 import freenet.support.Base64;
@@ -332,18 +332,18 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content");
 		if(!oneLine) {
 			summaryContent.addChild("#", alertSummaryString.toString() + separator);
-			L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
+			NodeL10n.getBase().addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
 				new String[] { "link", "/link" },
 				new String[] { "<a href=\"/alerts/\">", "</a>" });
 		} else {
-			summaryContent.addChild("a", "href", "/alerts/", L10n.getString("StatusBar.alerts") + " " + alertSummaryString.toString());
+			summaryContent.addChild("a", "href", "/alerts/", NodeL10n.getBase().getString("StatusBar.alerts") + " " + alertSummaryString.toString());
 		}
 		summaryBox.addAttribute("id", "messages-summary-box");
 		return summaryBox;
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("UserAlertManager."+key);
+		return NodeL10n.getBase().getString("UserAlertManager."+key);
 	}
 
 	public void dumpEvents(HashSet<String> toDump) {

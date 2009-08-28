@@ -3,7 +3,7 @@ package freenet.pluginmanager;
 import java.util.Date;
 import java.util.HashSet;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
@@ -82,7 +82,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		if (isVersionedPlugin) {
 			return ((FredPluginVersioned)plug).getVersion();
 		} else {
-			return L10n.getString("PproxyToadlet.noVersion");
+			return NodeL10n.getBase().getString("PproxyToadlet.noVersion");
 		}
 	}
 	

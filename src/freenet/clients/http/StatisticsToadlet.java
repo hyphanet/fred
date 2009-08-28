@@ -13,7 +13,7 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Location;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -102,7 +102,7 @@ public class StatisticsToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 		final SubConfig nodeConfig = node.config.get("node");
@@ -179,7 +179,7 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode logsList = statGatheringContent.addChild("ul");
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))
 			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_blank"}, l10n("getLogs"));
-		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", L10n.getString("TranslationToadlet.downloadTranslationsFile"));
+		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", NodeL10n.getBase().getString("TranslationToadlet.downloadTranslationsFile"));
 		
 		if(mode >= PageMaker.MODE_ADVANCED) {
 			// store size box
@@ -362,14 +362,14 @@ public class StatisticsToadlet extends Toadlet {
 		versionInfobox.addChild("div", "class", "infobox-header", l10n("versionTitle"));
 		HTMLNode versionInfoboxContent = versionInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode versionInfoboxList = versionInfoboxContent.addChild("ul");
-		versionInfoboxList.addChild("li", L10n.getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
+		versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.version", new String[] { "fullVersion", "build", "rev" },
 				new String[] { Version.publicVersion(), Integer.toString(Version.buildNumber()), Version.cvsRevision() }));
 		if(NodeStarter.extBuildNumber < NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER)
-			versionInfoboxList.addChild("li", L10n.getString("WelcomeToadlet.extVersionWithRecommended", 
+			versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersionWithRecommended", 
 					new String[] { "build", "recbuild", "rev" }, 
 					new String[] { Integer.toString(NodeStarter.extBuildNumber), Integer.toString(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER), NodeStarter.extRevisionNumber }));
 		else
-			versionInfoboxList.addChild("li", L10n.getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
+			versionInfoboxList.addChild("li", NodeL10n.getBase().getString("WelcomeToadlet.extVersion", new String[] { "build", "rev" },
 					new String[] { Integer.toString(NodeStarter.extBuildNumber), NodeStarter.extRevisionNumber }));
 		
 	}
@@ -807,19 +807,19 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("StatisticsToadlet."+key);
+		return NodeL10n.getBase().getString("StatisticsToadlet."+key);
 	}
 	
 	private static String l10nDark(String key) {
-		return L10n.getString("DarknetConnectionsToadlet."+key);
+		return NodeL10n.getBase().getString("DarknetConnectionsToadlet."+key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return L10n.getString("StatisticsToadlet."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("StatisticsToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 	
 	private static String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("StatisticsToadlet."+key, patterns, values);
+		return NodeL10n.getBase().getString("StatisticsToadlet."+key, patterns, values);
 	}
 	
 	private void drawActivityBox(HTMLNode activityInfobox, boolean advancedModeEnabled) {
@@ -952,21 +952,21 @@ public class StatisticsToadlet extends Toadlet {
 		} else {
 			HTMLNode activityList = activityInfoboxContent.addChild("ul");
 			if (numInserts > 0 || numCHKInserts > 0 || numSSKInserts > 0) {
-				activityList.addChild("li", L10n.getString("StatisticsToadlet.activityInserts", 
+				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.activityInserts", 
 						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers", "local" } , 
 						new String[] { Integer.toString(numInserts), Integer.toString(numCHKInserts), Integer.toString(numSSKInserts), Integer.toString(numLocalCHKInserts + numLocalSSKInserts)}));
 			}
 			if (numRequests > 0 || numCHKRequests > 0 || numSSKRequests > 0) {
-				activityList.addChild("li", L10n.getString("StatisticsToadlet.activityRequests", 
+				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.activityRequests", 
 						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers", "local" } , 
 						new String[] { Integer.toString(numRequests), Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests + numLocalSSKRequests)}));
 			}
 			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0 || numIncomingTurtles > 0) {
-				activityList.addChild("li", L10n.getString("StatisticsToadlet.transferringRequests", 
+				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.transferringRequests", 
 						new String[] { "senders", "receivers", "turtles" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers), Integer.toString(numIncomingTurtles)}));
 			}
 			if (numCHKOfferReplys > 0 || numSSKOfferReplys > 0) {
-				activityList.addChild("li", L10n.getString("StatisticsToadlet.offerReplys", 
+				activityList.addChild("li", NodeL10n.getBase().getString("StatisticsToadlet.offerReplys", 
 						new String[] { "chk", "ssk" }, new String[] { Integer.toString(numCHKOfferReplys), Integer.toString(numSSKOfferReplys) }));
 			}
 			return activityList;

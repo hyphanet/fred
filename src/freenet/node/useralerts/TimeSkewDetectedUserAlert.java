@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
 /**
@@ -20,7 +20,7 @@ public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
 	 * 
 	 */
 	public TimeSkewDetectedUserAlert() {
-		super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, false, L10n.getString("UserAlert.hide"), false, null);
+		super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, false, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
 	}
 	
 	@Override
@@ -29,7 +29,7 @@ public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
 	}
 	
 	private String l10n(String key) {
-		return L10n.getString("TimeSkewDetectedUserAlert."+key);
+		return NodeL10n.getBase().getString("TimeSkewDetectedUserAlert."+key);
 	}
 
 	@Override

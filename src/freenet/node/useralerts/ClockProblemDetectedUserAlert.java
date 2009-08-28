@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
 /**
@@ -28,7 +28,7 @@ public class ClockProblemDetectedUserAlert extends AbstractUserAlert {
 	}
 	
 	private String l10n(String key) {
-		return L10n.getString("ClockProblemDetectedUserAlert."+key);
+		return NodeL10n.getBase().getString("ClockProblemDetectedUserAlert."+key);
 	}
 
 	@Override

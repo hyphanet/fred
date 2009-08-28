@@ -2,7 +2,7 @@ package freenet.config;
 
 import java.util.Arrays;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
@@ -41,7 +41,7 @@ public class StringArrOption extends Option<String[]> {
 	}
 	
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("StringArrOption."+key, pattern, value);
+		return NodeL10n.getBase().getString("StringArrOption."+key, pattern, value);
 	}
 
 	@Override

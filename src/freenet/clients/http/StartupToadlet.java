@@ -1,6 +1,6 @@
 package freenet.clients.http;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import java.io.IOException;
 import java.net.URI;
 
@@ -28,7 +28,7 @@ public class StartupToadlet extends Toadlet {
 		if(path.startsWith(StaticToadlet.ROOT_URL) && staticToadlet != null)
 			staticToadlet.handleMethodGET(uri, req, ctx);
 		else {
-			String desc = L10n.getString("StartupToadlet.title");
+			String desc = NodeL10n.getBase().getString("StartupToadlet.title");
 			PageNode page = ctx.getPageMaker().getPageNode(desc, false, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode headNode = page.headNode;
@@ -36,12 +36,12 @@ public class StartupToadlet extends Toadlet {
 			HTMLNode contentNode = page.content;
 
 			if(!isPRNGReady) {
-				HTMLNode prngInfoboxContent = ctx.getPageMaker().getInfobox("infobox-error", L10n.getString("StartupToadlet.entropyErrorTitle"), contentNode, null, true);
-				prngInfoboxContent.addChild("#", L10n.getString("StartupToadlet.entropyErrorContent"));
+				HTMLNode prngInfoboxContent = ctx.getPageMaker().getInfobox("infobox-error", NodeL10n.getBase().getString("StartupToadlet.entropyErrorTitle"), contentNode, null, true);
+				prngInfoboxContent.addChild("#", NodeL10n.getBase().getString("StartupToadlet.entropyErrorContent"));
 			}
 
 			HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("infobox-error", desc, contentNode, null, true);
-			infoboxContent.addChild("#", L10n.getString("StartupToadlet.isStartingUp"));
+			infoboxContent.addChild("#", NodeL10n.getBase().getString("StartupToadlet.isStartingUp"));
 
 			WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);
 

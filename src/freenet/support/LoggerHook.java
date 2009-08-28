@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 
 public abstract class LoggerHook extends Logger {
 
@@ -186,7 +186,7 @@ public abstract class LoggerHook extends Logger {
 		else if (s.equalsIgnoreCase("debug"))
 			return Logger.DEBUG;
 		else
-			throw new InvalidThresholdException(L10n.getString("LoggerHook.unrecognisedPriority", "name", s));
+			throw new InvalidThresholdException(NodeL10n.getBase().getString("LoggerHook.unrecognisedPriority", "name", s));
 		// return Logger.NORMAL;
 	}
 

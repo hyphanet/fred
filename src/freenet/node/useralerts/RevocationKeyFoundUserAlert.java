@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
 public class RevocationKeyFoundUserAlert extends AbstractUserAlert {
@@ -18,16 +18,16 @@ public class RevocationKeyFoundUserAlert extends AbstractUserAlert {
 	
 	private static String getText(boolean disabledNotBlown, String msg) {
 		if(disabledNotBlown)
-			return L10n.getString("RevocationKeyFoundUserAlert.textDisabled", "message", msg);
+			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.textDisabled", "message", msg);
 		else
-			return L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg);
+			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.text", "message", msg);
 	}
 
 	private static String getTitle(boolean disabledNotBlown) {
 		if(disabledNotBlown)
-			return L10n.getString("RevocationKeyFoundUserAlert.titleDisabled");
+			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.titleDisabled");
 		else
-			return L10n.getString("RevocationKeyFoundUserAlert.title");
+			return NodeL10n.getBase().getString("RevocationKeyFoundUserAlert.title");
 	}
 
 	@Override

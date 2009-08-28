@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
@@ -217,7 +217,7 @@ public final class PageMaker {
 	public PageNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
-		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage().isoCode);
+		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", NodeL10n.getBase().getSelectedLanguage().isoCode);
 		HTMLNode headNode = htmlNode.addChild("head");
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
 		headNode.addChild("title", title + " - Freenet");
@@ -252,34 +252,34 @@ public final class PageMaker {
 			}
 		}
 
-		statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", L10n.getSelectedLanguage().fullName);
+		statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
 		if (node.clientCore != null) {
 			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 			final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
 			if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
 				switchMode.addAttribute("class", "simple");
-				switchMode.addChild("a", "href", "?mode=1", L10n.getString("StatusBar.switchToSimpleMode"));
+				switchMode.addChild("a", "href", "?mode=1", NodeL10n.getBase().getString("StatusBar.switchToSimpleMode"));
 			} else {
 				switchMode.addAttribute("class", "advanced");
-				switchMode.addChild("a", "href", "?mode=2", L10n.getString("StatusBar.switchToAdvancedMode"));
+				switchMode.addChild("a", "href", "?mode=2", NodeL10n.getBase().getString("StatusBar.switchToAdvancedMode"));
 			}
 		}
 
 		if (node != null && node.clientCore != null) {
 			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-			final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", L10n.getString("SecurityLevels.statusBarPrefix"));
+			final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
 
 			final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()));
-			network.addAttribute("title", L10n.getString("SecurityLevels.networkThreatLevelShort"));
+			network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
 			network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
 
 			final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()));
-			friends.addAttribute("title", L10n.getString("SecurityLevels.friendsThreatLevelShort"));
+			friends.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.friendsThreatLevelShort"));
 			friends.addAttribute("class", node.securityLevels.getFriendsThreatLevel().toString().toLowerCase());
 
 			final HTMLNode physical = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getPhysicalThreatLevel()));
-			physical.addAttribute("title", L10n.getString("SecurityLevels.physicalThreatLevelShort"));
+			physical.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevelShort"));
 			physical.addAttribute("class", node.securityLevels.getPhysicalThreatLevel().toString().toLowerCase());
 
 			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
@@ -326,8 +326,8 @@ public final class PageMaker {
 						if(navigationTitle != null) navigationTitle = menu.plugin.getString(navigationTitle);
 						if(navigationLink != null) navigationLink = menu.plugin.getString(navigationLink);
 					} else {
-						if(navigationTitle != null) navigationTitle = L10n.getString(navigationTitle);
-						if(navigationLink != null) navigationLink = L10n.getString(navigationLink);
+						if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
+						if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
 					}
 					if(navigationTitle != null)
 						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
@@ -347,8 +347,8 @@ public final class PageMaker {
 					String menuItemTitle = menu.defaultNavigationLinkTitle;
 					String text = menu.navigationLinkText;
 					if(menu.plugin == null) {
-						menuItemTitle = L10n.getString(menuItemTitle);
-						text = L10n.getString(text);
+						menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
+						text = NodeL10n.getBase().getString(text);
 					} else {
 						menuItemTitle = menu.plugin.getString(menuItemTitle);
 						text = menu.plugin.getString(text);
@@ -380,8 +380,8 @@ public final class PageMaker {
 						if(navigationTitle != null) navigationTitle = selected.plugin.getString(navigationTitle);
 						if(navigationLink != null) navigationLink = selected.plugin.getString(navigationLink);
 					} else {
-						if(navigationTitle != null) navigationTitle = L10n.getString(navigationTitle);
-						if(navigationLink != null) navigationLink = L10n.getString(navigationLink);
+						if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
+						if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
 					}
 					if(navigationTitle != null)
 						sublistItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
@@ -502,6 +502,6 @@ public final class PageMaker {
 	}
 	
 	private static final String l10n(String string) {
-		return L10n.getString("PageMaker." + string);
+		return NodeL10n.getBase().getString("PageMaker." + string);
 	}
 }

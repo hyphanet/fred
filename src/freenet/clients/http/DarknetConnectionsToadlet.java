@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.DarknetPeerNodeStatus;
 import freenet.node.Node;
@@ -26,7 +26,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	}
 
 	private static String l10n(String string) {
-		return L10n.getString("DarknetConnectionsToadlet."+string);
+		return NodeL10n.getBase().getString("DarknetConnectionsToadlet."+string);
 	}
 	
 	protected class DarknetComparator extends ComparatorByStatus {
@@ -97,7 +97,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	@Override
 	protected String getPageTitle(String titleCountString, String myName) {
-		return L10n.getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
+		return NodeL10n.getBase().getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
 	}
 	
 	@Override
@@ -333,10 +333,10 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 						HTMLNode contentNode = page.content;
 						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode, "darknet-remove-node", true);
 						content.addChild("p").addChild("#",
-								L10n.getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
+								NodeL10n.getBase().getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
 						HTMLNode removeForm = ctx.addFormChild(content, "/friends/", "removeConfirmForm");
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", l10n("remove") });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", l10n("forceRemove") });
 

@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.UserAlertManager;
@@ -32,7 +32,7 @@ public class UserAlertsToadlet extends Toadlet {
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -62,7 +62,7 @@ public class UserAlertsToadlet extends Toadlet {
 
 
 	protected String l10n(String name, String pattern, String value) {
-		return L10n.getString("UserAlertsToadlet."+name, pattern, value);
+		return NodeL10n.getBase().getString("UserAlertsToadlet."+name, pattern, value);
 	}
 
 	@Override

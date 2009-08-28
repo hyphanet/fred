@@ -3,14 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
 public class BuildOldAgeUserAlert extends AbstractUserAlert {
 	public int lastGoodVersion = 0;
 	
 	public BuildOldAgeUserAlert() {
-		super(false, null, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), false, null);
+		super(false, null, null, null, null, UserAlert.ERROR, true, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
 	}
 	
 	@Override
@@ -19,11 +19,11 @@ public class BuildOldAgeUserAlert extends AbstractUserAlert {
 	}
 	
 	private String l10n(String key) {
-		return L10n.getString("BuildOldAgeUserAlert."+key);
+		return NodeL10n.getBase().getString("BuildOldAgeUserAlert."+key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("BuildOldAgeUserAlert."+key, pattern, value);
+		return NodeL10n.getBase().getString("BuildOldAgeUserAlert."+key, pattern, value);
 	}
 
 	@Override

@@ -9,7 +9,7 @@ import java.net.URI;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -35,7 +35,7 @@ public class N2NTMToadlet extends Toadlet {
 			RedirectException {
 
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n
+			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase()
 					.getString("Toadlet.unauthorized"));
 			return;
 		}
@@ -86,12 +86,12 @@ public class N2NTMToadlet extends Toadlet {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("N2NTMToadlet." + key, new String[] { pattern },
+		return NodeL10n.getBase().getString("N2NTMToadlet." + key, new String[] { pattern },
 				new String[] { value });
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("N2NTMToadlet." + key);
+		return NodeL10n.getBase().getString("N2NTMToadlet." + key);
 	}
 
 	private static HTMLNode createPeerInfobox(String infoboxType,
@@ -122,7 +122,7 @@ public class N2NTMToadlet extends Toadlet {
 		}
 
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, "Unauthorized", L10n
+			super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase()
 					.getString("Toadlet.unauthorized"));
 			return;
 		}

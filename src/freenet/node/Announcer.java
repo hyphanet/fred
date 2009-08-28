@@ -18,7 +18,7 @@ import java.util.Vector;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserEvent;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -557,7 +557,7 @@ public class Announcer {
 		}
 
 		public String dismissButtonText() {
-			return L10n.getString("UserAlert.hide");
+			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
 		public HTMLNode getHTMLText() {
@@ -674,14 +674,14 @@ public class Announcer {
 	}
 	
 	private String l10n(String key) {
-		return L10n.getString("Announcer."+key);
+		return NodeL10n.getBase().getString("Announcer."+key);
 	}
 
 	protected String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("Announcer."+key, patterns, values);
+		return NodeL10n.getBase().getString("Announcer."+key, patterns, values);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("Announcer."+key, pattern, value);
+		return NodeL10n.getBase().getString("Announcer."+key, pattern, value);
 	}
 }

@@ -12,7 +12,7 @@ import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.URLEncoder;
@@ -201,11 +201,11 @@ public class LocalFileInsertToadlet extends Toadlet {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("LocalFileInsertToadlet."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("LocalFileInsertToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	private String l10n(String msg) {
-		return L10n.getString("LocalFileInsertToadlet."+msg);
+		return NodeL10n.getBase().getString("LocalFileInsertToadlet."+msg);
 	}
 
 	@Override

@@ -3,7 +3,7 @@ package freenet.node.useralerts;
 import java.lang.ref.WeakReference;
 
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.node.fcp.FCPMessage;
@@ -77,11 +77,11 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("DownloadFeedUserAlert." + key);
+		return NodeL10n.getBase().getString("DownloadFeedUserAlert." + key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("DownloadFeedUserAlert." + key, pattern, value);
+		return NodeL10n.getBase().getString("DownloadFeedUserAlert." + key, pattern, value);
 	}
 
 	@Override

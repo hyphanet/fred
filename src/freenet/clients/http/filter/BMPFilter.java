@@ -11,7 +11,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -181,7 +181,7 @@ public class BMPFilter implements ContentDataFilter {
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("BMPFilter."+key);
+		return NodeL10n.getBase().getString("BMPFilter."+key);
 	}
 
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {

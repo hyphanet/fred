@@ -40,7 +40,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
@@ -2688,7 +2688,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public String dismissButtonText() {
-			return L10n.getString("UserAlert.Hide");
+			return NodeL10n.getBase().getString("UserAlert.Hide");
 		}
 
 		public short getPriorityClass() {
@@ -2709,7 +2709,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			synchronized(peersWithProblems) {
 				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
 			}
-			L10n.addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail", 
+			NodeL10n.getBase().addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail",
 					new String[] { "count", "link", "/link" }
 					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/view.php?id=2692\">", "</a>" });
 			HTMLNode list = div.addChild("ul");
@@ -2841,11 +2841,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	protected String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("FNPPacketMangler."+key, patterns, values);
+		return NodeL10n.getBase().getString("FNPPacketMangler."+key, patterns, values);
 	}
 
 	protected String l10n(String key, String pattern, String value) {
-		return L10n.getString("FNPPacketMangler."+key, pattern, value);
+		return NodeL10n.getBase().getString("FNPPacketMangler."+key, pattern, value);
 	}
 
 	/* (non-Javadoc)

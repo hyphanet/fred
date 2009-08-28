@@ -16,7 +16,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -84,11 +84,11 @@ public abstract class Toadlet {
 	}
 	
 	private static String l10n(String key, String pattern, String value) {
-		return L10n.getString("Toadlet."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("Toadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("Toadlet."+key);
+		return NodeL10n.getBase().getString("Toadlet."+key);
 	}
 
 	/**
@@ -296,8 +296,8 @@ public abstract class Toadlet {
 
 	protected void writeInternalError(Throwable t, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		Logger.error(this, "Caught "+t, t);
-		String msg = "<html><head><title>"+L10n.getString("Toadlet.internalErrorTitle")+
-				"</title></head><body><h1>"+L10n.getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
+		String msg = "<html><head><title>"+NodeL10n.getBase().getString("Toadlet.internalErrorTitle")+
+				"</title></head><body><h1>"+NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
 		StringWriter sw = new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		t.printStackTrace(pw);

@@ -10,7 +10,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -52,7 +52,7 @@ public class GIFFilter implements ContentDataFilter {
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("GIFFilter."+key);
+		return NodeL10n.getBase().getString("GIFFilter."+key);
 	}
 
 	private void throwHeaderError(String shortReason, String reason) throws DataFilterException {

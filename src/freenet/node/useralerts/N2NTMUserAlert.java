@@ -7,7 +7,7 @@ import java.lang.ref.WeakReference;
 import java.text.DateFormat;
 import java.util.Date;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.node.fcp.FCPMessage;
@@ -92,15 +92,15 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("N2NTMUserAlert." + key);
+		return NodeL10n.getBase().getString("N2NTMUserAlert." + key);
 	}
 
 	private String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("N2NTMUserAlert." + key, patterns, values);
+		return NodeL10n.getBase().getString("N2NTMUserAlert." + key, patterns, values);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("N2NTMUserAlert." + key, pattern, value);
+		return NodeL10n.getBase().getString("N2NTMUserAlert." + key, pattern, value);
 	}
 
 	@Override

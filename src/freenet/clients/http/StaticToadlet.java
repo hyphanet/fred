@@ -9,7 +9,7 @@ import java.net.URL;
 import java.util.Date;
 
 import freenet.client.DefaultMIMETypes;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 
@@ -88,7 +88,7 @@ public class StaticToadlet extends Toadlet {
 	}
 	
 	private String l10n(String key) {
-		return L10n.getString("StaticToadlet."+key);
+		return NodeL10n.getBase().getString("StaticToadlet."+key);
 	}
 
 	@Override

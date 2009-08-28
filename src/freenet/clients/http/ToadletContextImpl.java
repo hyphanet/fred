@@ -18,7 +18,7 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -90,11 +90,11 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	private static String l10n(String key) {
-		return L10n.getString("ToadletContextImpl."+key);
+		return NodeL10n.getBase().getString("ToadletContextImpl."+key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return L10n.getString("ToadletContextImpl."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("ToadletContextImpl."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	/**

@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Hashtable;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -101,7 +101,7 @@ public class ContentFilter {
 	}
 	
 	private static String l10n(String key) {
-		return L10n.getString("ContentFilter."+key);
+		return NodeL10n.getBase().getString("ContentFilter."+key);
 	}
 
 	public static void register(MIMEType mimeType) {
