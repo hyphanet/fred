@@ -10,6 +10,7 @@ import freenet.l10n.BaseL10n.LANGUAGE;
  * PageMaker.addNavigationLink(..) 
  * 
  * @author saces
+ * @deprecated Use FredPluginBaseL10n instead.
  */
 public interface FredPluginL10n {
 

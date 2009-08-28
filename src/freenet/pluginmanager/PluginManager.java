@@ -1196,6 +1196,16 @@ public class PluginManager {
 								Logger.error(this, "Cought Trowable in Callback", t);
 							}
 						}}, "Callback");
+				} else if(pi.isBaseL10nPlugin()) {
+					final FredPluginBaseL10n plug = (FredPluginBaseL10n)(pi.plug);
+					executor.execute(new Runnable() {
+						public void run() {
+							try {
+								plug.setLanguage(lang);
+							} catch (Throwable t) {
+								Logger.error(this, "Cought Trowable in Callback", t);
+							}
+						}}, "Callback");
 				}
 			}
 		}

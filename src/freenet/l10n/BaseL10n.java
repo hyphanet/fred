@@ -139,16 +139,16 @@ public class BaseL10n {
 	 * Get the full base name of the L10n file used by the current language.
 	 * @return String
 	 */
-	public String getL10nFileName() {
-		return this.l10nFilesBasePath + this.l10nFilesMask.replace("${lang}", this.lang.shortCode);
+	public String getL10nFileName(LANGUAGE lang) {
+		return this.l10nFilesBasePath + this.l10nFilesMask.replace("${lang}", lang.shortCode);
 	}
 
 	/**
 	 * Get the full base name of the L10n override file used by the current language.
 	 * @return String
 	 */
-	public String getL10nOverrideFileName() {
-		return this.l10nFilesBasePath + this.l10nOverrideFilesMask.replace("${lang}", this.lang.shortCode);
+	public String getL10nOverrideFileName(LANGUAGE lang) {
+		return this.l10nFilesBasePath + this.l10nOverrideFilesMask.replace("${lang}", lang.shortCode);
 	}
 
 	/**
@@ -166,7 +166,7 @@ public class BaseL10n {
 		Logger.normal(this.getClass(), "Changing the current language to : " + this.lang);
 
 		try {
-			final File tmpFile = new File(this.getL10nOverrideFileName());
+			final File tmpFile = new File(this.getL10nOverrideFileName(this.lang));
 			if (tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
 				Logger.normal(this, "Override file detected : let's try to load it");
 				this.translationOverride = SimpleFieldSet.readFrom(tmpFile, false, false);
@@ -204,12 +204,14 @@ public class BaseL10n {
 
 		try {
 			// Returns null on lookup failures:
-			in = this.cl.getResourceAsStream(this.getL10nFileName());
+			in = this.cl.getResourceAsStream(this.getL10nFileName(lang));
 			if (in != null) {
 				result = SimpleFieldSet.readFrom(in, false, false);
+			} else {
+				Logger.error(this.getClass(), "Could not get resource : " + this.getL10nFileName(lang));
 			}
 		} catch (Exception e) {
-			Logger.error(this.getClass(), "Error while loading the l10n file from " + this.getL10nFileName() + " :" + e.getMessage(), e);
+			Logger.error(this.getClass(), "Error while loading the l10n file from " + this.getL10nFileName(lang) + " :" + e.getMessage(), e);
 			result = null;
 		} finally {
 			Closer.close(in);
@@ -272,7 +274,7 @@ public class BaseL10n {
 	 */
 	private void saveTranslationFile() {
 		FileOutputStream fos = null;
-		File finalFile = new File(this.getL10nOverrideFileName());
+		File finalFile = new File(this.getL10nOverrideFileName(this.lang));
 
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup

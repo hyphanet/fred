@@ -26,7 +26,11 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isVersionedPlugin;
 	private final boolean isLongVersionedPlugin;
 	private final boolean isThemedPlugin;
+	/**
+	 * @deprecated
+	 */
 	private final boolean isL10nPlugin;
+	private final boolean isBaseL10nPlugin;
 	private final boolean isUpdatedablePlugin;
 	private final String filename;
 	private HashSet<String> toadletLinks = new HashSet<String>();
@@ -51,6 +55,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		isLongVersionedPlugin = (plug instanceof FredPluginRealVersioned);
 		isThemedPlugin = (plug instanceof FredPluginThemed);
 		isL10nPlugin = (plug instanceof FredPluginL10n);
+		isBaseL10nPlugin = (plug instanceof FredPluginBaseL10n);
 		isUpdatedablePlugin = (plug instanceof FredPluginUoF);
 	}
 
@@ -199,9 +204,16 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	public boolean isThemedPlugin() {
 		return isThemedPlugin;
 	}
-	
+
+	/**
+	 * @deprecated
+	 */
 	public boolean isL10nPlugin() {
 		return isL10nPlugin;
+	}
+
+	public boolean isBaseL10nPlugin() {
+		return isBaseL10nPlugin;
 	}
 	
 	public boolean isUpdatedablePlugin() {
