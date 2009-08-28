@@ -21,6 +21,13 @@ public class NodeL10n {
 	private static BaseL10n b;
 
 	/**
+	 * Initialize the Node localization with the node's default language.
+	 */
+	public NodeL10n() {
+		this(LANGUAGE.getDefault());
+	}
+
+	/**
 	 * Initialize the Node localization. You must also call that constructor
 	 * if you want to change the language.
 	 * @param lang Language to use.
