@@ -527,7 +527,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
 					try {
-						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true, true, false);
+						ClientSSKBlock collided = (ClientSSKBlock) core.node.fetch((ClientSSK)key, true, true, req.canWriteClientCache);
 						byte[] data = collided.memoryDecode(true);
 						byte[] inserting = BucketTools.toByteArray(block.copyBucket);
 						if(collided.isMetadata() == block.isMetadata && collided.getCompressionCodec() == block.compressionCodec && Arrays.equals(data, inserting)) {
