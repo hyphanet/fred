@@ -158,6 +158,7 @@ public class MessageManager {
 			hpanel.getElement().getStyle().setProperty("width", "100%");
 			hpanel.getElement().getStyle().setProperty("height", "100%");
 			hpanel.getElement().getStyle().setProperty("display", "block");
+			hpanel.getElement().getStyle().setPropertyPx("padding", 3);
 
 			// The short description label
 			Label msgLabel = new Label(m.getMsg());
