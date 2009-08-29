@@ -452,7 +452,7 @@ public class Node implements TimeSkewDetectorCallback {
 		public void set(String val) throws InvalidConfigValueException {
 			if(val == null || get().equalsIgnoreCase(val)) return;
 			try {
-				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(val));
+				NodeL10n.getBase().setLanguage(BaseL10n.LANGUAGE.mapToLanguage(val));
 			} catch (MissingResourceException e) {
 				throw new InvalidConfigValueException(e.getLocalizedMessage());
 			}

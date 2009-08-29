@@ -38,7 +38,6 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;

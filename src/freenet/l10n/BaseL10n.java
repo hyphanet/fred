@@ -148,7 +148,7 @@ public class BaseL10n {
 	 * @return String
 	 */
 	public String getL10nOverrideFileName(LANGUAGE lang) {
-		return this.l10nFilesBasePath + this.l10nOverrideFilesMask.replace("${lang}", lang.shortCode);
+		return this.l10nOverrideFilesMask.replace("${lang}", lang.shortCode);
 	}
 
 	/**
@@ -218,6 +218,15 @@ public class BaseL10n {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Load the fallback translation. Synchronized.
+	 */
+	private synchronized void loadFallback() {
+		if (this.fallbackTranslation == null) {
+			this.fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
+		}
 	}
 
 	/**
@@ -315,9 +324,7 @@ public class BaseL10n {
 	 * @return SimpleFieldSet
 	 */
 	public SimpleFieldSet getDefaultLanguageTranslation() {
-		if (this.fallbackTranslation == null) {
-			this.fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
-		}
+		this.loadFallback();
 
 		return new SimpleFieldSet(this.fallbackTranslation);
 
@@ -384,10 +391,7 @@ public class BaseL10n {
 	 */
 	public String getDefaultString(String key) {
 		String result = null;
-		// We instanciate it only if necessary
-		if (this.fallbackTranslation == null) {
-			this.fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
-		}
+		this.loadFallback();
 
 		result = this.fallbackTranslation.get(key);
 

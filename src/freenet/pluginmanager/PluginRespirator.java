@@ -1,6 +1,3 @@
-/* This code is part of Freenet. It is distributed under the GNU General
- * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
 import com.db4o.ObjectContainer;
@@ -110,10 +107,10 @@ public class PluginRespirator {
 	 * @return PluginStore
 	 * @throws DatabaseDisabledException
 	 */
-	public PluginStore getStore(String storeIdentifier) throws DatabaseDisabledException {
+	public PluginStore getStore() throws DatabaseDisabledException {
 		final PluginStoreContainer example = new PluginStoreContainer();
 		example.nodeDBHandle = this.node.nodeDBHandle;
-		example.storeIdentifier = storeIdentifier;
+		example.storeIdentifier = this.plugin.getClass().getCanonicalName();
 		example.pluginStore = null;
 
 		this.node.clientCore.runBlocking(new DBJob() {
@@ -139,21 +136,28 @@ public class PluginRespirator {
 	 * @param storeIdentifier Some string to identify the store, basically the plugin's name.
 	 * @throws DatabaseDisabledException
 	 */
-	public void putStore(final PluginStore store, final String storeIdentifier) throws DatabaseDisabledException {
+	public void putStore(final PluginStore store) throws DatabaseDisabledException {
 		final PluginStoreContainer storeC = new PluginStoreContainer();
 		storeC.nodeDBHandle = this.node.nodeDBHandle;
-		storeC.pluginStore = store;
-		storeC.storeIdentifier = storeIdentifier;
+		storeC.pluginStore = null;
+		storeC.storeIdentifier = this.plugin.getClass().getCanonicalName();
 
 		this.node.clientCore.queue(new DBJob() {
 
 			public boolean run(ObjectContainer container, ClientContext context) {
-				// Setting cascadeOnDelete(true) will make the calls to store() delete
+				// cascadeOnDelete(true) will make the calls to store() delete
 				// any precedent stored instance of PluginStore.
-				container.ext().configure().objectClass(storeC.pluginStore.getClass()).cascadeOnDelete(true);
 
-				// Check all subStores for changes, not only the top-level store.
-				container.ext().store(storeC, Integer.MAX_VALUE);
+				if(container.queryByExample(storeC).size() == 0) {
+					// Let's store the whole container.
+					storeC.pluginStore = store;
+					container.ext().store(storeC, Integer.MAX_VALUE);
+				} else {
+					// Only update the PluginStore.
+					// Check all subStores for changes, not only the top-level store.
+					storeC.pluginStore = store;
+					container.ext().store(storeC.pluginStore, Integer.MAX_VALUE);
+				}
 				container.commit();
 				return false;
 			}
