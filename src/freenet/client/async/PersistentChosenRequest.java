@@ -61,12 +61,12 @@ public class PersistentChosenRequest {
 			localRequestOnly = ctx.localRequestOnly;
 			ignoreStore = ctx.ignoreStore;
 			canWriteClientCache = ctx.canWriteClientCache;
-		} else {
+		} else if(req instanceof SendableInsert) {
 			SendableInsert sg = (SendableInsert) req;
 			localRequestOnly = false;
 			canWriteClientCache = sg.canWriteClientCache(container);
 			ignoreStore = false;
-		}
+		} else throw new IllegalStateException("Creating a PersistentChosenRequest for "+req);
 		blocksNotStarted = new ArrayList<PersistentChosenBlock>();
 		blocksStarted = new ArrayList<PersistentChosenBlock>();
 		blocksFinished = new ArrayList<PersistentChosenBlock>();
