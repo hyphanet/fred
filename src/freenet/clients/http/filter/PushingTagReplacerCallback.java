@@ -89,7 +89,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 				return "<body>".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\"" + ctx.getUniqueId() + "\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>"));
 			} else if (pt.element.compareTo("head") == 0) {
 				// After the <head>, we need to add GWT support
-				return "<head><script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script><noscript><style> .jsonly {display:none;}</style></noscript><link href=\"/static/reset.css\" rel=\"stylesheet\" type=\"text/css\" >";
+				return "<head><script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script><noscript><style> .jsonly {display:none;}</style></noscript><link href=\"/static/reset.css\" rel=\"stylesheet\" type=\"text/css\" />";
 			}
 		}
 		return null;

@@ -156,6 +156,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
+				//Horrible hack needed for GWT as it relies on document.write() which is not supported in xhtml
+				if(mimeType.compareTo("application/xhtml+xml")==0){
+					mimeType="text/html";
+				}
 				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null,new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx));
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
