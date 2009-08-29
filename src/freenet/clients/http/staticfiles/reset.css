@@ -2,15 +2,15 @@
 /* v1.0 | 20080212 */
 /* Modified by sashee to meet the needs of Freenet*/
 
-#messagesPanel html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, font, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td {
+#messagesPanel html,#messagesPanel body,#messagesPanel div,#messagesPanel span,#messagesPanel applet,#messagesPanel object,#messagesPanel iframe,
+#messagesPanel h1, #messagesPanel h2,#messagesPanel h3,#messagesPanel h4,#messagesPanel h5,#messagesPanel h6,#messagesPanel p,#messagesPanel blockquote,#messagesPanel pre,
+#messagesPanel a,#messagesPanel abbr,#messagesPanel acronym,#messagesPanel address,#messagesPanel big,#messagesPanel cite,#messagesPanel code,
+#messagesPanel del,#messagesPanel dfn,#messagesPanel em,#messagesPanel font,#messagesPanel img,#messagesPanel ins,#messagesPanel kbd,#messagesPanel q,#messagesPanel s,#messagesPanel samp,
+#messagesPanel small, #messagesPanel strike,#messagesPanel strong,#messagesPanel sub,#messagesPanel sup,#messagesPanel tt,#messagesPanel var,
+#messagesPanel b,#messagesPanel u,#messagesPanel i,#messagesPanel center,
+#messagesPanel dl,#messagesPanel dt,#messagesPanel dd,#messagesPanel ol,#messagesPanel ul,#messagesPanel li,
+#messagesPanel fieldset,#messagesPanel form,#messagesPanel label,#messagesPanel legend,
+#messagesPanel table,#messagesPanel caption,#messagesPanel tbody,#messagesPanel tfoot,#messagesPanel thead,#messagesPanel tr,#messagesPanel th,#messagesPanel td {
 	margin: 0;
 	padding: 0;
 	border: 0;
@@ -22,14 +22,14 @@ table, caption, tbody, tfoot, thead, tr, th, td {
 #messagesPanel body {
 	line-height: 1;
 }
-#messagesPanel ol, ul {
+#messagesPanel ol,#messagesPanel ul {
 	list-style: none;
 }
-#messagesPanel blockquote, q {
+#messagesPanel blockquote,#messagesPanel q {
 	quotes: none;
 }
-#messagesPanel blockquote:before, blockquote:after,
-q:before, q:after {
+#messagesPanel blockquote:before,#messagesPanel blockquote:after,
+#messagesPanel q:before,#messagesPanel q:after {
 	content: '';
 	content: none;
 }
