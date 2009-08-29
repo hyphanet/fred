@@ -1,8 +1,16 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import freenet.client.async.ClientContext;
+import freenet.client.async.DatabaseDisabledException;
 import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.DBJob;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.filter.FilterCallback;
@@ -10,6 +18,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
+import freenet.support.io.NativeThread;
 
 public class PluginRespirator {
 	/** For accessing Freenet: simple fetches and inserts, and the data you
@@ -20,6 +29,8 @@ public class PluginRespirator {
 	private final PageMaker pageMaker;
 	private final FredPlugin plugin;
 	private final PluginManager pluginManager;
+
+	private PluginStore store;
 	
 	public PluginRespirator(Node node, PluginManager pm, FredPlugin plug) {
 		this.node = node;
@@ -91,4 +102,61 @@ public class PluginRespirator {
 		return node.clientCore.getToadletContainer();
 	}
 
+	/**
+	 * Get a PluginStore that can be used by the plugin to put data in a database.
+	 * The database used is the node's database, so all the encrypt/decrypt part
+	 * is already automatically handled according to the physical security level.
+	 * @param storeIdentifier PluginStore identifier, Plugin's name or some other identifier.
+	 * @return PluginStore
+	 * @throws DatabaseDisabledException
+	 */
+	public PluginStore getStore(String storeIdentifier) throws DatabaseDisabledException {
+		final PluginStoreContainer example = new PluginStoreContainer();
+		example.nodeDBHandle = this.node.nodeDBHandle;
+		example.storeIdentifier = storeIdentifier;
+		example.pluginStore = null;
+
+		this.node.clientCore.runBlocking(new DBJob() {
+
+			public boolean run(ObjectContainer container, ClientContext context) {
+				ObjectSet<PluginStoreContainer> stores = container.queryByExample(example);
+				if(stores.size() == 0) store = new PluginStore();
+				else {
+					store = stores.get(0).pluginStore;
+					container.activate(store, Integer.MAX_VALUE);
+				}
+				return false;
+			}
+		}, NativeThread.HIGH_PRIORITY);
+
+		return this.store;
+	}
+
+	/**
+	 * This should be called by the plugin to store its PluginStore in the node's
+	 * database.
+	 * @param store Store to put.
+	 * @param storeIdentifier Some string to identify the store, basically the plugin's name.
+	 * @throws DatabaseDisabledException
+	 */
+	public void putStore(final PluginStore store, final String storeIdentifier) throws DatabaseDisabledException {
+		final PluginStoreContainer storeC = new PluginStoreContainer();
+		storeC.nodeDBHandle = this.node.nodeDBHandle;
+		storeC.pluginStore = store;
+		storeC.storeIdentifier = storeIdentifier;
+
+		this.node.clientCore.queue(new DBJob() {
+
+			public boolean run(ObjectContainer container, ClientContext context) {
+				// Setting cascadeOnDelete(true) will make the calls to store() delete
+				// any precedent stored instance of PluginStore.
+				container.ext().configure().objectClass(storeC.pluginStore.getClass()).cascadeOnDelete(true);
+
+				// Check all subStores for changes, not only the top-level store.
+				container.ext().store(storeC, Integer.MAX_VALUE);
+				container.commit();
+				return false;
+			}
+		}, NativeThread.NORM_PRIORITY, false);
+	}
 }
