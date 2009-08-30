@@ -26,9 +26,6 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	private final boolean isVersionedPlugin;
 	private final boolean isLongVersionedPlugin;
 	private final boolean isThemedPlugin;
-	/**
-	 * @deprecated
-	 */
 	private final boolean isL10nPlugin;
 	private final boolean isBaseL10nPlugin;
 	private final boolean isUpdatedablePlugin;
@@ -205,9 +202,6 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		return isThemedPlugin;
 	}
 
-	/**
-	 * @deprecated
-	 */
 	public boolean isL10nPlugin() {
 		return isL10nPlugin;
 	}
