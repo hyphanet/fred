@@ -254,7 +254,7 @@ public final class PageMaker {
 
 		statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 
-		if (node.clientCore != null) {
+		if (node.clientCore != null && ctx != null) {
 			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 			final HTMLNode switchMode = statusBarDiv.addChild("div", "id", "statusbar-switchmode");
 			if (ctx.activeToadlet().container.isAdvancedModeEnabled()) {
