@@ -735,7 +735,7 @@ public class PluginManager {
 		addOfficialPlugin("TestGallery", false);
 		addOfficialPlugin("ThawIndexBrowser", false, 2, true);
 		addOfficialPlugin("UPnP", true, 10003, false);
-		addOfficialPlugin("XMLLibrarian", false, 22, true);
+		addOfficialPlugin("XMLLibrarian", false, 25, true);
 		addOfficialPlugin("XMLSpider", false, 39, true);
 		addOfficialPlugin("Freereader", false, 2, true);
 	}
