@@ -6,7 +6,7 @@
 package freenet.clients.http.filter;
 import java.io.*;
 import java.util.*;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 /* This class tokenizes a CSS2 Reader stream, writes it out to the output Writer, and filters any URLs found */
 // WARNING: this is not as thorough as the HTML parser - new versions of the standard could lead to anonymity risks. See comments in SaferFilter.java
 // FIXME: Rewrite this as a proper whitelist filter. It's about half way there, it
@@ -973,7 +973,7 @@ class CSSTokenizerFilter {
 	}
 	
 	static String l10n(String key) {
-		return L10n.getString("CSSTokenizerFilter."+key);
+		return NodeL10n.getBase().getString("CSSTokenizerFilter."+key);
 	}
 	
 	static class DecodedStringThingy {

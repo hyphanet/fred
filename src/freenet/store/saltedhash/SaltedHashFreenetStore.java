@@ -35,7 +35,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.SSKBlock;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.FastRunnable;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.Ticker;
@@ -1496,7 +1496,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		public String dismissButtonText() {
-			return L10n.getString("UserAlert.hide");
+			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
 		public HTMLNode getHTMLText() {
@@ -1509,12 +1509,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		public String getShortText() {
 			if (cleaner.isResizing)
-				return L10n.getString("SaltedHashFreenetStore.shortResizeProgress", //
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortResizeProgress", //
 				        new String[] { "name", "processed", "total" },// 
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
-				return L10n.getString("SaltedHashFreenetStore.shortRebuildProgress", //
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress", //
 				        new String[] { "name", "processed", "total" },// 
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
@@ -1522,19 +1522,19 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		public String getText() {
 			if (cleaner.isResizing)
-				return L10n.getString("SaltedHashFreenetStore.longResizeProgress", //
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longResizeProgress", //
 				        new String[] { "name", "processed", "total" },// 
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
-				return L10n.getString("SaltedHashFreenetStore.longRebuildProgress", //
+				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress", //
 				        new String[] { "name", "processed", "total" },// 
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 		}
 
 		public String getTitle() {
-			return L10n.getString("SaltedHashFreenetStore.cleanerAlertTitle", //
+			return NodeL10n.getBase().getString("SaltedHashFreenetStore.cleanerAlertTitle", //
 			        new String[] { "name" }, //
 			        new String[] { name });
 		}

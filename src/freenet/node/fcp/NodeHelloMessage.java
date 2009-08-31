@@ -5,7 +5,7 @@ package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
@@ -46,7 +46,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
 		sfs.putSingle("CompressionCodecs", Compressor.COMPRESSOR_TYPE.getHelloCompressorDescriptor());
 		sfs.putSingle("ConnectionIdentifier", id);
-		sfs.putSingle("NodeLanguage", L10n.getSelectedLanguage().toString());
+		sfs.putSingle("NodeLanguage", NodeL10n.getBase().getSelectedLanguage().toString());
 		return sfs;
 	}
 

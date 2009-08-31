@@ -16,7 +16,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -617,11 +617,11 @@ public class NodeUpdateManager {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("NodeUpdateManager."+key);
+		return NodeL10n.getBase().getString("NodeUpdateManager."+key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("NodeUpdateManager."+key, pattern, value);
+		return NodeL10n.getBase().getString("NodeUpdateManager."+key, pattern, value);
 	}
 
 	/**

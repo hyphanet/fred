@@ -96,12 +96,12 @@ public abstract class FCPMessage {
 			return new RemovePlugin(fs);
 		if(name.equals(ShutdownMessage.NAME))
 			return new ShutdownMessage();
-		if(name.equals(SubscribeFeedsMessage.NAME))
-			return new SubscribeFeedsMessage(fs);
+		if(name.equals(WatchFeedsMessage.NAME))
+			return new WatchFeedsMessage(fs);
 		if(name.equals(SubscribeUSKMessage.NAME))
 			return new SubscribeUSKMessage(fs);
-		if(name.equals(UnsubscribeFeedMessages.NAME))
-			return new UnsubscribeFeedMessages(fs);
+		if(name.equals(WatchFeedsMessage.NAME))
+			return new WatchFeedsMessage(fs);
 		if(name.equals(UnsubscribeUSKMessage.NAME))
 			return new UnsubscribeUSKMessage(fs);
 		if(name.equals(TestDDARequestMessage.NAME))

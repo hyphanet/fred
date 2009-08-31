@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeStats;
 import freenet.support.HTMLNode;
 
@@ -52,7 +52,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
 	public PeerManagerUserAlert(NodeStats n) {
-		super(false, null, null, null, null, (short) 0, true, L10n.getString("UserAlert.hide"), false, null);
+		super(false, null, null, null, null, (short) 0, true, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
 		this.n = n;
 	}
 	
@@ -93,15 +93,15 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 	
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("PeerManagerUserAlert."+key, pattern, value);
+		return NodeL10n.getBase().getString("PeerManagerUserAlert."+key, pattern, value);
 	}
 
 	private String l10n(String key, String[] pattern, String[] value) {
-		return L10n.getString("PeerManagerUserAlert."+key, pattern, value);
+		return NodeL10n.getBase().getString("PeerManagerUserAlert."+key, pattern, value);
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("PeerManagerUserAlert."+key);
+		return NodeL10n.getBase().getString("PeerManagerUserAlert."+key);
 	}
 
 	@Override
@@ -201,7 +201,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		} else if (clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("clockProblem", "count", Integer.toString(clockProblem)));
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
-			L10n.addL10nSubstitution(alertNode, "PeerManagerUserAlert.tooManyNeverConnectedWithLink",
+			NodeL10n.getBase().addL10nSubstitution(alertNode, "PeerManagerUserAlert.tooManyNeverConnectedWithLink",
 					new String[] { "link", "/link", "count" },
 					new String[] { "<a href=\"/friends/myref.fref\">", "</a>", Integer.toString(neverConn) });
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {

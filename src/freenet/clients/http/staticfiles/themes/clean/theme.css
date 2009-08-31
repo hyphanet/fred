@@ -1,5 +1,10 @@
+/* clean */
+
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
+
+/* Status bar style & colors */
+@import url(/static/statusbar.css);
 
 /* clean overall settings */
 
@@ -86,6 +91,7 @@ div#navbar {
 	padding: 0;
 	margin-left: 0;
 	padding-bottom: 5px;
+	margin-top: 0;
 }
 
 div#navbar a {
@@ -123,11 +129,6 @@ div#selected-subnavbar {
 }
 
 div#navbar ul li ul.subnavlist {
-	/* ***************************************
-	   You can comment this if you want all the
-	   submenus to be shown by default (not only
-	   when the mouse is on it).
-	   *************************************** */
 	display: none;
 }
 
@@ -680,4 +681,37 @@ td.n2ntm-send-failed {
 	background-color: #f0fef0;
 }
 
+/* statusbar */
 
+div#statusbar-container {
+	margin-left: 0;
+	margin-right: 0;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	border-bottom: 1px solid #d0d0d0;
+	padding: 3px;
+	background-color: #d8d8d8;
+	border-top: 1px solid #d0d0d0;
+	border-bottom: 1px solid #d0d0d0;
+}
+
+div#statusbar {
+	margin: auto;
+	text-align: center;
+}
+
+div#statusbar div {
+	display: inline;
+}
+
+div#statusbar div.separator {
+	display: inline-block;
+	background-color: #d0d0d0;
+	width: 1px;
+	margin-left: 9px;
+	margin-right: 9px;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
+}

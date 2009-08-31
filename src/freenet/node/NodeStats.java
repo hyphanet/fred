@@ -10,7 +10,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -421,7 +421,7 @@ public class NodeStats implements Persistable {
 	}
 	
 	protected String l10n(String key) {
-		return L10n.getString("NodeStats."+key);
+		return NodeL10n.getBase().getString("NodeStats."+key);
 	}
 
 	public void start() throws NodeInitException {

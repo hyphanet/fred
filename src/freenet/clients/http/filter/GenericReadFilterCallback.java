@@ -14,7 +14,7 @@ import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
 import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
@@ -215,11 +215,11 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return L10n.getString("GenericReadFilterCallback."+key, pattern, value);
+		return NodeL10n.getBase().getString("GenericReadFilterCallback."+key, pattern, value);
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("GenericReadFilterCallback."+key);
+		return NodeL10n.getBase().getString("GenericReadFilterCallback."+key);
 	}
 
 	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u, boolean noRelative) {

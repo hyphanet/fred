@@ -30,7 +30,8 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -947,7 +948,7 @@ public class DarknetPeerNode extends PeerNode {
 			UserAlert alert = new AbstractUserAlert() {
 				@Override
 				public String dismissButtonText() {
-					return L10n.getString("UserAlert.hide");
+					return NodeL10n.getBase().getString("UserAlert.hide");
 				}
 				@Override
 				public HTMLNode getHTMLText() {
@@ -1040,7 +1041,7 @@ public class DarknetPeerNode extends PeerNode {
 			UserAlert alert = new AbstractUserAlert() {
 				@Override
 				public String dismissButtonText() {
-					return L10n.getString("UserAlert.hide");
+					return NodeL10n.getBase().getString("UserAlert.hide");
 				}
 				@Override
 				public HTMLNode getHTMLText() {
@@ -1201,13 +1202,13 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		private String l10n(String key) {
-			return L10n.getString("FileOffer."+key);
+			return NodeL10n.getBase().getString("FileOffer."+key);
 		}
 		private String l10n(String key, String pattern, String value) {
-			return L10n.getString("FileOffer."+key, pattern, value);
+			return NodeL10n.getBase().getString("FileOffer."+key, pattern, value);
 		}
 		private String l10n(String key, String[] pattern, String[] value) {
-			return L10n.getString("FileOffer."+key, pattern, value);
+			return NodeL10n.getBase().getString("FileOffer."+key, pattern, value);
 		}
 
 		private String describeFileText(String header) {

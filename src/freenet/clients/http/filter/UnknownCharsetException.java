@@ -2,7 +2,7 @@ package freenet.clients.http.filter;
 
 import java.io.UnsupportedEncodingException;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
 public class UnknownCharsetException extends DataFilterException {
@@ -26,12 +26,12 @@ public class UnknownCharsetException extends DataFilterException {
 
 	private static String l10nDF(String key) {
 		// All the strings here are generic
-		return L10n.getString("ContentDataFilter."+key);
+		return NodeL10n.getBase().getString("ContentDataFilter."+key);
 	}
 
 	private static String l10nDF(String key, String pattern, String value) {
 		// All the strings here are generic
-		return L10n.getString("ContentDataFilter."+key, pattern, value);
+		return NodeL10n.getBase().getString("ContentDataFilter."+key, pattern, value);
 	}
 
 }

@@ -1,8 +1,13 @@
 package freenet.pluginmanager;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import freenet.client.async.ClientContext;
+import freenet.client.async.DatabaseDisabledException;
 import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.DBJob;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.filter.FilterCallback;
@@ -10,6 +15,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLNode;
 import freenet.support.URIPreEncoder;
+import freenet.support.io.NativeThread;
 
 public class PluginRespirator {
 	/** For accessing Freenet: simple fetches and inserts, and the data you
@@ -17,20 +23,16 @@ public class PluginRespirator {
 	private final HighLevelSimpleClient hlsc;
 	/** For accessing the node. */
 	private final Node node;
-	private final PageMaker pageMaker;
 	private final FredPlugin plugin;
 	private final PluginManager pluginManager;
+
+	private PluginStore store;
 	
 	public PluginRespirator(Node node, PluginManager pm, FredPlugin plug) {
 		this.node = node;
 		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 		this.plugin = plug;
 		this.pluginManager = pm;
-//		if (plugin instanceof FredPluginL10n)
-//			pageMaker = new PageMaker((FredPluginL10n)plugin, pluginManager.getFProxyTheme());
-//		else
-//			pageMaker = new PageMaker(null, pluginManager.getFProxyTheme());
-		pageMaker = null; // FIXME!
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {
@@ -91,4 +93,68 @@ public class PluginRespirator {
 		return node.clientCore.getToadletContainer();
 	}
 
+	/**
+	 * Get a PluginStore that can be used by the plugin to put data in a database.
+	 * The database used is the node's database, so all the encrypt/decrypt part
+	 * is already automatically handled according to the physical security level.
+	 * @param storeIdentifier PluginStore identifier, Plugin's name or some other identifier.
+	 * @return PluginStore
+	 * @throws DatabaseDisabledException
+	 */
+	public PluginStore getStore() throws DatabaseDisabledException {
+		final PluginStoreContainer example = new PluginStoreContainer();
+		example.nodeDBHandle = this.node.nodeDBHandle;
+		example.storeIdentifier = this.plugin.getClass().getCanonicalName();
+		example.pluginStore = null;
+
+		this.node.clientCore.runBlocking(new DBJob() {
+
+			public boolean run(ObjectContainer container, ClientContext context) {
+				ObjectSet<PluginStoreContainer> stores = container.queryByExample(example);
+				if(stores.size() == 0) store = new PluginStore();
+				else {
+					store = stores.get(0).pluginStore;
+					container.activate(store, Integer.MAX_VALUE);
+				}
+				return false;
+			}
+		}, NativeThread.HIGH_PRIORITY);
+
+		return this.store;
+	}
+
+	/**
+	 * This should be called by the plugin to store its PluginStore in the node's
+	 * database.
+	 * @param store Store to put.
+	 * @param storeIdentifier Some string to identify the store, basically the plugin's name.
+	 * @throws DatabaseDisabledException
+	 */
+	public void putStore(final PluginStore store) throws DatabaseDisabledException {
+		final PluginStoreContainer storeC = new PluginStoreContainer();
+		storeC.nodeDBHandle = this.node.nodeDBHandle;
+		storeC.pluginStore = null;
+		storeC.storeIdentifier = this.plugin.getClass().getCanonicalName();
+
+		this.node.clientCore.queue(new DBJob() {
+
+			public boolean run(ObjectContainer container, ClientContext context) {
+				// cascadeOnDelete(true) will make the calls to store() delete
+				// any precedent stored instance of PluginStore.
+
+				if(container.queryByExample(storeC).size() == 0) {
+					// Let's store the whole container.
+					storeC.pluginStore = store;
+					container.ext().store(storeC, Integer.MAX_VALUE);
+				} else {
+					// Only update the PluginStore.
+					// Check all subStores for changes, not only the top-level store.
+					storeC.pluginStore = store;
+					container.ext().store(storeC.pluginStore, Integer.MAX_VALUE);
+				}
+				container.commit();
+				return false;
+			}
+		}, NativeThread.NORM_PRIORITY, false);
+	}
 }

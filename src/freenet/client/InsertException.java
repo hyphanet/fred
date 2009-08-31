@@ -6,7 +6,7 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
@@ -144,7 +144,7 @@ public class InsertException extends Exception {
 	
 	/** Get the (localised) short name of this failure mode. */
 	public static String getMessage(int mode) {
-		String ret = L10n.getString("InsertException.longError."+mode);
+		String ret = NodeL10n.getBase().getString("InsertException.longError."+mode);
 		if(ret == null)
 			return "Unknown error "+mode;
 		else return ret;
@@ -152,7 +152,7 @@ public class InsertException extends Exception {
 
 	/** Get the (localised) long explanation for this failure mode. */
 	public static String getShortMessage(int mode) {
-		String ret = L10n.getString("InsertException.shortError."+mode);
+		String ret = NodeL10n.getBase().getString("InsertException.shortError."+mode);
 		if(ret == null)
 			return "Unknown error "+mode;
 		else return ret;

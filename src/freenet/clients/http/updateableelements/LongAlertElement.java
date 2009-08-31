@@ -8,8 +8,11 @@ import freenet.support.HTMLNode;
 
 /** A pushed alert box, provides detailed information */
 public class LongAlertElement extends BaseAlertElement {
-	public LongAlertElement(ToadletContext ctx) {
+	
+	private boolean showOnlyErrors;
+	public LongAlertElement(ToadletContext ctx,boolean showOnlyErrors) {
 		super("div", ctx);
+		this.showOnlyErrors=showOnlyErrors;
 		init();
 	}
 
@@ -24,7 +27,10 @@ public class LongAlertElement extends BaseAlertElement {
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
-			if (!alert.isValid()) continue;
+			if(showOnlyErrors && alert.getPriorityClass() > alert.ERROR)
+				continue;
+			if (!alert.isValid())
+				continue;
 			totalNumber++;
 			alertsNode.addChild("a", "name", alert.anchor());
 			alertsNode.addChild(manager.renderAlert(alert));

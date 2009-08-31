@@ -6,6 +6,14 @@ package freenet.support;
 import java.util.HashMap;
 
 /**
+ * Encodes any character mentioned with a substitute in the HTML spec. This
+ * includes nulls, <>, quotes, but not control characters. It should be 
+ * safe to put the output of this function into a web page; if it is not 
+ * then we have big problems. Because we encode quotes it should also be 
+ * safe to include it inside attributes. I am not certain where the list in
+ * HTMLEntities came from, but the list of potentially markup-significant
+ * characters in [X]HTML is *really* small.
+ * 
  * Originally from com.websiteasp.ox pasckage.
  * 
  * @author avian (Yves Lempereur)

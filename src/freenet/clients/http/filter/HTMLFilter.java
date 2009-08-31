@@ -28,6 +28,9 @@ import java.util.Map.Entry;
 import java.util.Stack;
 
 import freenet.l10n.L10n;
+import java.io.FileReader;
+import java.io.FileWriter;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -2255,11 +2258,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("HTMLFilter."+key);
+		return NodeL10n.getBase().getString("HTMLFilter."+key);
 	}
 
 	private static String l10n(String key, String pattern, String value) {
-		return L10n.getString("HTMLFilter."+key, pattern, value);
+		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 	
 

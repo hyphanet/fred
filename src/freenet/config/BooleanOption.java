@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.api.BooleanCallback;
 
 public class BooleanOption extends Option<Boolean> {
@@ -21,7 +21,7 @@ public class BooleanOption extends Option<Boolean> {
 		} else if(val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) {
 			return false;
 		} else
-			throw new OptionFormatException(L10n.getString("BooleanOption.parseError", "val", val));
+			throw new OptionFormatException(NodeL10n.getBase().getString("BooleanOption.parseError", "val", val));
 	}
 
 	@Override

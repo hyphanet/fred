@@ -54,13 +54,14 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.pluginmanager.PluginStore;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
@@ -238,6 +239,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 				}
 			}, PersistentStatsPutter.OFFSET);
+
+			container.ext().configure().objectClass(PluginStore.class).cascadeOnDelete(true);
 		}
 
 		uskManager = new USKManager(this);
@@ -493,11 +496,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
 		this.alerts.register(startingUpAlert = new SimpleUserAlert(true, l10n("startingUpTitle"), l10n("startingUp"), l10n("startingUpShort"), UserAlert.ERROR));
-		this.alerts.register(new SimpleUserAlert(true, L10n.getString("QueueToadlet.persistenceBrokenTitle"),
-				L10n.getString("QueueToadlet.persistenceBroken",
+		this.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("QueueToadlet.persistenceBrokenTitle"),
+				NodeL10n.getBase().getString("QueueToadlet.persistenceBroken",
 						new String[]{ "TEMPDIR", "DBFILE" },
 						new String[]{ FileUtil.getCanonicalFile(getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(node.getNodeDir())+File.separator+"node.db4o" }
-				), L10n.getString("QueueToadlet.persistenceBrokenShortAlert"), UserAlert.CRITICAL_ERROR)
+				), NodeL10n.getBase().getString("QueueToadlet.persistenceBrokenShortAlert"), UserAlert.CRITICAL_ERROR)
 				{
 			public boolean isValid() {
 				synchronized(NodeClientCore.this) {
@@ -686,6 +689,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			}
 		}, PersistentStatsPutter.OFFSET);
 
+		container.ext().configure().objectClass(PluginStore.class).cascadeOnDelete(true);
+
 		// CONCURRENCY: We need everything to have hit its various memory locations.
 		// How to ensure this?
 		// FIXME This is a hack!!
@@ -710,7 +715,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("NodeClientCore." + key);
+		return NodeL10n.getBase().getString("NodeClientCore." + key);
 	}
 
 	protected synchronized void setDownloadAllowedDirs(String[] val) {

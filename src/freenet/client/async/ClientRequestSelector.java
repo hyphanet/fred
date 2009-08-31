@@ -207,7 +207,7 @@ class ClientRequestSelector implements KeysFetchingLocally {
 		}
 		int choosenPriorityClass = removeFirstAccordingToPriorities(fuzz, random, schedCore, schedTransient, transientOnly, maxPrio, container);
 		if(choosenPriorityClass == -1) {
-			if(!tryOfferedKeys) {
+			if((!notTransient) && !tryOfferedKeys) {
 				if(offeredKeys != null && offeredKeys.hasValidKeys(this, null, context))
 					return offeredKeys;
 			}

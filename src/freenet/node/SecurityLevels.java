@@ -10,7 +10,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
@@ -292,7 +292,7 @@ public class SecurityLevels {
 				parent.addChild("p", l10n("noFriendsWarning"));
 				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 					HTMLNode p = parent.addChild("p");
-					L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+					NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("noFriendsCheckbox"));
 				return parent;
@@ -300,7 +300,7 @@ public class SecurityLevels {
 				parent.addChild("p", l10n("noConnectedFriendsWarning", "added", Integer.toString(node.peers.getDarknetPeers().length)));
 				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 					HTMLNode p = parent.addChild("p");
-					L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+					NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("noConnectedFriendsCheckbox"));
 				return parent;
@@ -308,7 +308,7 @@ public class SecurityLevels {
 				parent.addChild("p", l10n("fewConnectedFriendsWarning", new String[] { "connected", "added" }, new String[] { Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.getDarknetPeers().length)}));
 				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 					HTMLNode p = parent.addChild("p");
-					L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+					NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("fewConnectedFriendsCheckbox"));
 				return parent;
@@ -320,9 +320,9 @@ public class SecurityLevels {
 		} // Don't warn on switching to NORMAL.
 		if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 			HTMLNode p = parent.addChild("p");
-			L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			p.addChild("#", " ");
-			L10n.addL10nSubstitution(p, "SecurityLevels.maxSecurityYouNeedFriends", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(p, "SecurityLevels.maxSecurityYouNeedFriends", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("maximumNetworkThreatLevelCheckbox"));
 			return parent;
 		}
@@ -342,15 +342,15 @@ public class SecurityLevels {
 	}
 
 	private String l10n(String string) {
-		return L10n.getString("SecurityLevels."+string);
+		return NodeL10n.getBase().getString("SecurityLevels."+string);
 	}
 
 	private String l10n(String string, String pattern, String value) {
-		return L10n.getString("SecurityLevels."+string, pattern, value);
+		return NodeL10n.getBase().getString("SecurityLevels."+string, pattern, value);
 	}
 
 	private String l10n(String string, String[] patterns, String[] values) {
-		return L10n.getString("SecurityLevels."+string, patterns, values);
+		return NodeL10n.getBase().getString("SecurityLevels."+string, patterns, values);
 	}
 
 	public void setThreatLevel(NETWORK_THREAT_LEVEL newThreatLevel) {
@@ -388,90 +388,14 @@ public class SecurityLevels {
 	}
 
 	public static String localisedName(NETWORK_THREAT_LEVEL newThreatLevel) {
-		return L10n.getString("SecurityLevels.networkThreatLevel.name."+newThreatLevel.name());
+		return NodeL10n.getBase().getString("SecurityLevels.networkThreatLevel.name."+newThreatLevel.name());
 	}
 	
 	public static String localisedName(FRIENDS_THREAT_LEVEL newFriendsLevel) {
-		return L10n.getString("SecurityLevels.friendsThreatLevel.name."+newFriendsLevel.name());
+		return NodeL10n.getBase().getString("SecurityLevels.friendsThreatLevel.name."+newFriendsLevel.name());
 	}
 	
 	public static String localisedName(PHYSICAL_THREAT_LEVEL newPhysicalLevel) {
-		return L10n.getString("SecurityLevels.physicalThreatLevel.name."+newPhysicalLevel.name());
+		return NodeL10n.getBase().getString("SecurityLevels.physicalThreatLevel.name."+newPhysicalLevel.name());
 	}
-
-	public void registerUserAlert(UserAlertManager alerts) {
-		alerts.register(new AbstractUserAlert() {
-
-			public String anchor() {
-				return "seclevels";
-			}
-
-			public String dismissButtonText() {
-				return L10n.getString("UserAlert.hide");
-			}
-
-			public HTMLNode getHTMLText() {
-				HTMLNode div = new HTMLNode("div");
-				HTMLNode ul = div.addChild("ul");
-				ul.addChild("li", l10n("userAlertNetworkThreatLevel", "level", localisedName(networkThreatLevel)));
-				ul.addChild("li", l10n("userAlertFriendsThreatLevel", "level", localisedName(friendsThreatLevel)));
-				ul.addChild("li", l10n("userAlertPhysicalThreatLevel", "level", localisedName(physicalThreatLevel)));
-				div.addChild("br");
-				L10n.addL10nSubstitution(div, "SecurityLevels.userAlertExtro",
-						new String[] { "link", "/link" },
-						new String[] { "<a href=\"/seclevels/\">", "</a>" });
-				return div;
-			}
-
-			public short getPriorityClass() {
-				return UserAlert.WARNING;
-			}
-
-			public String getShortText() {
-				return l10n("userAlertShortText", new String[] { "network", "friends", "physical" },
-						new String[] {
-							localisedName(networkThreatLevel),
-							localisedName(friendsThreatLevel),
-							localisedName(physicalThreatLevel)} );
-			}
-
-			public String getText() {
-				return getHTMLText().getContent();
-			}
-
-			public String getTitle() {
-				return l10n("title");
-			}
-
-			public Object getUserIdentifier() {
-				return null;
-			}
-
-			public boolean isEventNotification() {
-				return false;
-			}
-
-			public boolean isValid() {
-				return true;
-			}
-
-			public void isValid(boolean validity) {
-				// Ignore
-			}
-
-			public void onDismiss() {
-				// Ignore
-			}
-
-			public boolean shouldUnregisterOnDismiss() {
-				return true;
-			}
-
-			public boolean userCanDismiss() {
-				return true;
-			}
-			
-		});
-	}
-
 }

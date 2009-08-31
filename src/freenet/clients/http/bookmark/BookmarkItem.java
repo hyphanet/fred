@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -83,7 +83,7 @@ public class BookmarkItem extends Bookmark {
         @Override
 		public HTMLNode getHTMLText() {
             HTMLNode n = new HTMLNode("div");
-            L10n.addL10nSubstitution(n, "BookmarkItem.bookmarkUpdatedWithLink", new String[]{"link", "/link", "name", "edition"},
+            NodeL10n.getBase().addL10nSubstitution(n, "BookmarkItem.bookmarkUpdatedWithLink", new String[]{"link", "/link", "name", "edition"},
                     new String[]{"<a href=\"/" + key.toString() + "\">", "</a>", HTMLEncoder.encode(name), Long.toString(key.getSuggestedEdition())});
             return n;
         }
@@ -130,15 +130,15 @@ public class BookmarkItem extends Bookmark {
     }
 
     private String l10n(String key) {
-        return L10n.getString("BookmarkItem." + key);
+        return NodeL10n.getBase().getString("BookmarkItem." + key);
     }
 
     private String l10n(String key, String pattern, String value) {
-        return L10n.getString("BookmarkItem." + key, new String[]{pattern}, new String[]{value});
+        return NodeL10n.getBase().getString("BookmarkItem." + key, new String[]{pattern}, new String[]{value});
     }
 
     private String l10n(String key, String[] patterns, String[] values) {
-        return L10n.getString("BookmarkItem." + key, patterns, values);
+        return NodeL10n.getBase().getString("BookmarkItem." + key, patterns, values);
     }
 
     private synchronized void enableBookmark() {

@@ -6,6 +6,7 @@ package freenet.clients.http.filter;
 import java.net.URI;
 
 import junit.framework.TestCase;
+import freenet.l10n.NodeL10n;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -66,6 +67,8 @@ public class ContentFilterTest extends TestCase {
 	private final BucketFactory bf = new ArrayBucketFactory();
 
 	public void testHTMLFilter() throws Exception {
+		new NodeL10n();
+
 		// General sanity checks
 		// is "relativization" working?
 		assertEquals(INTERNAL_RELATIVE_LINK, HTMLFilter(INTERNAL_RELATIVE_LINK));

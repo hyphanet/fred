@@ -14,7 +14,7 @@ import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.InvalidAddressOverrideUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -313,11 +313,11 @@ public class NodeIPDetector {
 	}
 	
 	private String l10n(String key) {
-		return L10n.getString("NodeIPDetector."+key);
+		return NodeL10n.getBase().getString("NodeIPDetector."+key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("NodeIPDetector."+key, pattern, value);
+		return NodeL10n.getBase().getString("NodeIPDetector."+key, pattern, value);
 	}
 
 	FreenetInetAddress[] getPrimaryIPAddress(boolean dumpLocal) {

@@ -81,7 +81,7 @@ public interface UserAlert {
 	 * @param The identifier of the subscription
 	 * @return A FCPMessage that is sent subscribing FCPClients
 	 */
-	public FCPMessage getFCPMessage(String identifier);
+	public FCPMessage getFCPMessage();
 	
 	/**
 	 * @return The Unix timestamp of when the alert was last updated

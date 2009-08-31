@@ -10,10 +10,10 @@ public class ReceivedTextFeedMessage extends ReceivedN2NFeedMessage {
 	public static final String NAME = "ReceivedTextFeed";
 	private final String messageText;
 
-	public ReceivedTextFeedMessage(String identifier, String header, String shortText, String text,
+	public ReceivedTextFeedMessage(String header, String shortText, String text,
 			String sourceNodeName, long composed, long sent, long received,
 			String messageText) {
-		super(identifier, header, shortText, text, sourceNodeName, composed, sent, received);
+		super(header, shortText, text, sourceNodeName, composed, sent, received);
 		this.messageText = messageText;
 	}
 

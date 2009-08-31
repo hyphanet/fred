@@ -5,7 +5,7 @@ import java.net.URI;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.OpennetPeerNodeStatus;
@@ -59,7 +59,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 
 	@Override
 	protected String getPageTitle(String titleCountString, String myName) {
-		return L10n.getString("OpennetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
+		return NodeL10n.getBase().getString("OpennetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
 	}
 
 	@Override
@@ -81,7 +81,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 
 	@Override
 	protected String getPeerListTitle() {
-		return L10n.getString("OpennetConnectionsToadlet.peersListTitle");
+		return NodeL10n.getBase().getString("OpennetConnectionsToadlet.peersListTitle");
 	}
 
 	@Override

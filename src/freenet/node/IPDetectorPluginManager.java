@@ -11,7 +11,7 @@ import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.ProxyUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -49,7 +49,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		public String dismissButtonText() {
-			return L10n.getString("UserAlert.hide");
+			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
 		public HTMLNode getHTMLText() {
@@ -61,11 +61,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
-				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort"+keySuffix, 
+				NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort"+keySuffix, 
 						new String[] { "port", "link", "/link" }, 
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "<a href=\""+url+"\">", "</a>" });
 			} else if(portsNotForwarded.length == 2) {
-				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts"+keySuffix, 
+				NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts"+keySuffix, 
 						new String[] { "port1", "port2", "link", "/link" }, 
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "<a href=\""+url+"\">", "</a>" });
 			} else {
@@ -182,7 +182,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		private int[] portsNotForwarded;
 		
 		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
-			super(false, title, text, title, null, code, true, L10n.getString("UserAlert.hide"), false, null);
+			super(false, title, text, title, null, code, true, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
 			this.suggestPortForward = suggestPortForward;
 			portsNotForwarded = new int[] { };
 		}
@@ -193,10 +193,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			div.addChild("#", super.getText());
 			if(suggestPortForward) {
 				if(portsNotForwarded.length == 1) {
-					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
+					NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
 							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(portsNotForwarded[0]) });
 				} else {
-					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardTwoPortsWithLink", new String[] { "link", "/link", "port1", "port2" },
+					NodeL10n.getBase().addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardTwoPortsWithLink", new String[] { "link", "/link", "port1", "port2" },
 							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) });
 				}
 			}
@@ -301,15 +301,15 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("IPDetectorPluginManager."+key);
+		return NodeL10n.getBase().getString("IPDetectorPluginManager."+key);
 	}
 
 	public String l10n(String key, String pattern, String value) {
-		return L10n.getString("IPDetectorPluginManager."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("IPDetectorPluginManager."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	public String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("IPDetectorPluginManager."+key, patterns, values);
+		return NodeL10n.getBase().getString("IPDetectorPluginManager."+key, patterns, values);
 	}
 
 	/** Start the detector plugin manager. This includes running the plugin, if there

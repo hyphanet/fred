@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.zip.CRC32;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -296,7 +296,7 @@ public class PNGFilter implements ContentDataFilter {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("PNGFilter." + key);
+		return NodeL10n.getBase().getString("PNGFilter." + key);
 	}
 
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,

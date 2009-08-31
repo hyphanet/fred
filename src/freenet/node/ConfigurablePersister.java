@@ -5,7 +5,7 @@ import java.io.IOException;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.api.StringCallback;
 
 public class ConfigurablePersister extends Persister {
@@ -74,7 +74,7 @@ public class ConfigurablePersister extends Persister {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("ConfigurablePersister."+key);
+		return NodeL10n.getBase().getString("ConfigurablePersister."+key);
 	}
 
 }

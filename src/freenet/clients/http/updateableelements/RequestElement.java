@@ -10,6 +10,7 @@ import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
@@ -178,34 +179,33 @@ public class RequestElement extends BaseUpdateableElement {
 		if (filename != null) {
 			filenameCell.addChild("span", "class", "filename_is", filename.toString());
 		} else {
-			filenameCell.addChild("span", "class", "filename_none", L10n.getString("QueueToadlet.none"));
+			filenameCell.addChild("span", "class", "filename_none", NodeL10n.getBase().getString("QueueToadlet.none"));
 		}
 		return filenameCell;
 	}
 
 	private HTMLNode createPriorityCell(String identifier, short priorityClass, ToadletContext ctx, String[] priorityClasses, boolean advancedModeEnabled) {
-
 		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
 		HTMLNode priorityForm = ctx.addFormChild(priorityCell, path, "queueChangePriorityCell-" + identifier.hashCode());
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
-			if (p <= RequestStarter.INTERACTIVE_PRIORITY_CLASS && !advancedModeEnabled) continue;
+			if(p <= RequestStarter.INTERACTIVE_PRIORITY_CLASS && !advancedModeEnabled) continue;
 			if (p == priorityClass) {
 				prioritySelect.addChild("option", new String[] { "value", "selected" }, new String[] { String.valueOf(p), "selected" }, priorityClasses[p]);
 			} else {
 				prioritySelect.addChild("option", "value", String.valueOf(p), priorityClasses[p]);
 			}
 		}
-		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change_priority", L10n.getString("QueueToadlet.change") });
+		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change_priority", NodeL10n.getBase().getString("QueueToadlet.change") });
 		return priorityCell;
 	}
 
 	private HTMLNode createRecommendCell(FreenetURI URI, ToadletContext ctx) {
 		HTMLNode recommendNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode shareForm = ctx.addFormChild(recommendNode, "/downloads/", "recommendForm");
-		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "URI", URI.toString() });
-		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", L10n.getString("QueueToadlet.recommendToFriends") });
+		HTMLNode shareForm = ctx.addFormChild(recommendNode, path, "recommendForm");
+		shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
+		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends") });
 
 		return recommendNode;
 	}
@@ -215,7 +215,7 @@ public class RequestElement extends BaseUpdateableElement {
 		HTMLNode deleteForm = ctx.addFormChild(deleteNode, path, "queueDeleteForm-" + identifier.hashCode());
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		if((clientRequest instanceof ClientGet) && !((ClientGet)clientRequest).isToDisk()) {
-			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", L10n.getString("QueueToadlet.deleteFileFromTemp") });
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "delete_request", NodeL10n.getBase().getString("QueueToadlet.deleteFileFromTemp") });
 			FreenetURI uri = ((ClientGet)clientRequest).getURI(container);
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", uri.toString(false, false) });
 			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "size", SizeUtil.formatSize(((ClientGet)clientRequest).getDataSize(container)) });
@@ -223,13 +223,13 @@ public class RequestElement extends BaseUpdateableElement {
 			if(((ClientGet)clientRequest).isTotalFinalized(container))
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "finalized", "true" });
 		} else
-			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", L10n.getString("QueueToadlet.remove") });
+			deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", NodeL10n.getBase().getString("QueueToadlet.remove") });
 		
 		// If it's failed, offer to restart it
 		
 		if(clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
 			HTMLNode retryForm = ctx.addFormChild(deleteNode, path, "queueRestartForm-" + identifier.hashCode());
-			String restartName = L10n.getString(clientRequest instanceof ClientGet && ((ClientGet)clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
+			String restartName = NodeL10n.getBase().getString(clientRequest instanceof ClientGet && ((ClientGet)clientRequest).hasPermRedirect() ? "QueueToadlet.follow" : "QueueToadlet.restart");
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", restartName });
 		}
@@ -245,16 +245,17 @@ public class RequestElement extends BaseUpdateableElement {
 			identifierCell.addChild("span", "class", "identifier_without_uri", identifier);
 		}
 		return identifierCell;
+
 	}
 
 	private HTMLNode createPersistenceCell(boolean persistent, boolean persistentForever) {
 		HTMLNode persistenceCell = new HTMLNode("td", "class", "request-persistence");
 		if (persistentForever) {
-			persistenceCell.addChild("span", "class", "persistence_forever", L10n.getString("QueueToadlet.persistenceForever"));
+			persistenceCell.addChild("span", "class", "persistence_forever", NodeL10n.getBase().getString("QueueToadlet.persistenceForever"));
 		} else if (persistent) {
-			persistenceCell.addChild("span", "class", "persistence_reboot", L10n.getString("QueueToadlet.persistenceReboot"));
+			persistenceCell.addChild("span", "class", "persistence_reboot", NodeL10n.getBase().getString("QueueToadlet.persistenceReboot"));
 		} else {
-			persistenceCell.addChild("span", "class", "persistence_none", L10n.getString("QueueToadlet.persistenceNone"));
+			persistenceCell.addChild("span", "class", "persistence_none", NodeL10n.getBase().getString("QueueToadlet.persistenceNone"));
 		}
 		return persistenceCell;
 	}
@@ -262,8 +263,10 @@ public class RequestElement extends BaseUpdateableElement {
 	private HTMLNode createDownloadCell(ClientGet p, ObjectContainer container) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
 		FreenetURI uri = p.getURI(container);
-		if (uri == null) Logger.error(this, "NO URI FOR " + p, new Exception("error"));
-		else downloadCell.addChild("a", "href", uri.toString(), L10n.getString("QueueToadlet.download"));
+		if(uri == null)
+			Logger.error(this, "NO URI FOR "+p, new Exception("error"));
+		else
+			downloadCell.addChild("a", "href", uri.toString(), NodeL10n.getBase().getString("QueueToadlet.download"));
 		return downloadCell;
 	}
 
@@ -272,7 +275,7 @@ public class RequestElement extends BaseUpdateableElement {
 		if (type != null) {
 			typeCell.addChild("span", "class", "mimetype_is", type);
 		} else {
-			typeCell.addChild("span", "class", "mimetype_unknown", L10n.getString("QueueToadlet.unknown"));
+			typeCell.addChild("span", "class", "mimetype_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 		}
 		return typeCell;
 	}
@@ -282,7 +285,7 @@ public class RequestElement extends BaseUpdateableElement {
 		if (dataSize > 0 && (confirmed || advancedModeEnabled)) {
 			sizeCell.addChild("span", "class", "filesize_is", (confirmed ? "" : ">= ") + SizeUtil.formatSize(dataSize) + (confirmed ? "" : " ??"));
 		} else {
-			sizeCell.addChild("span", "class", "filesize_unknown", L10n.getString("QueueToadlet.unknown"));
+			sizeCell.addChild("span", "class", "filesize_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 		}
 		return sizeCell;
 	}
@@ -292,7 +295,7 @@ public class RequestElement extends BaseUpdateableElement {
 		if (uri != null) {
 			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString() + (addSlash ? "/" : ""), uri.toShortString() + (addSlash ? "/" : ""));
 		} else {
-			keyCell.addChild("span", "class", "key_unknown", L10n.getString("QueueToadlet.unknown"));
+			keyCell.addChild("span", "class", "key_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 		}
 		return keyCell;
 	}
@@ -310,52 +313,51 @@ public class RequestElement extends BaseUpdateableElement {
 	private HTMLNode createProgressCell(boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
 		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
 		if (!started) {
-			progressCell.addChild("#", L10n.getString("QueueToadlet.starting"));
+			progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.starting"));
 			return progressCell;
 		}
 		boolean advancedMode = advancedModeEnabled;
-		if (compressing == COMPRESS_STATE.WAITING && advancedMode) {
-			progressCell.addChild("#", L10n.getString("QueueToadlet.awaitingCompression"));
+		if(compressing == COMPRESS_STATE.WAITING && advancedMode) {
+			progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.awaitingCompression"));
 			return progressCell;
 		}
-		if (compressing != COMPRESS_STATE.WORKING) {
-			progressCell.addChild("#", L10n.getString("QueueToadlet.compressing"));
+		if(compressing != COMPRESS_STATE.WORKING) {
+			progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.compressing"));
 			return progressCell;
 		}
-
-		// double frac = p.getSuccessFraction();
+		
+		//double frac = p.getSuccessFraction();
 		if (!advancedMode || total < min /* FIXME why? */) {
 			total = min;
 		}
-
+		
 		if ((fetched < 0) || (total <= 0)) {
-			progressCell.addChild("span", "class", "progress_fraction_unknown", L10n.getString("QueueToadlet.unknown"));
+			progressCell.addChild("span", "class", "progress_fraction_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 		} else {
 			int fetchedPercent = (int) (fetched / (double) total * 100);
 			int failedPercent = (int) (failed / (double) total * 100);
 			int fatallyFailedPercent = (int) (fatallyFailed / (double) total * 100);
 			int minPercent = (int) (min / (double) total * 100);
+			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
+			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
+
+			if (failed > 0)
+				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
+			if (fatallyFailed > 0)
+				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
+			if ((fetched + failed + fatallyFailed) < min)
+				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-min", "width: " + (minPercent - fetchedPercent) + "%;" });
+			
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
-			String fetchedPercentString=nf.format(Math.min((int) ((fetched / (double) min) * 1000) / 10.0,100));
-			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
-			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercentString + "%;" });
-
-			//if (failed > 0) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
-			//if (fatallyFailed > 0) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
-			//if ((fetched + failed + fatallyFailed) < min) progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-min",
-			//		"width: " + (minPercent - fetchedPercent) + "%;" });
-
-
-			String prefix = '(' + Integer.toString(fetched) + "/ " + Integer.toString(min) + "): ";
+			String prefix = '('+Integer.toString(fetched) + "/ " + Integer.toString(min)+"): ";
 			if (finalized) {
-				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized",
-						prefix + L10n.getString("QueueToadlet.progressbarAccurate") },  fetchedPercentString + '%');
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + NodeL10n.getBase().getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0) + '%');
 			} else {
-				String text = fetchedPercentString + '%';
-				if (!finalized) text = "" + fetched + " (" + text + "??)";
-				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized",
-						prefix + L10n.getString(upload ? "QueueToadlet.uploadProgressbarNotAccurate" : "QueueToadlet.progressbarNotAccurate") }, text);
+				String text = nf.format((int) ((fetched / (double) min) * 1000) / 10.0)+ '%';
+				if(!finalized)
+					text = "" + fetched + " ("+text+"??)";
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + NodeL10n.getBase().getString(upload ? "QueueToadlet.uploadProgressbarNotAccurate" : "QueueToadlet.progressbarNotAccurate") }, text);
 			}
 		}
 		return progressCell;

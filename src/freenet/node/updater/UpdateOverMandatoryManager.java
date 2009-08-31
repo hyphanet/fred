@@ -42,7 +42,7 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
@@ -630,11 +630,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 
 		private String l10n(String key) {
-			return L10n.getString("PeersSayKeyBlownAlert." + key);
+			return NodeL10n.getBase().getString("PeersSayKeyBlownAlert." + key);
 		}
 
 		private String l10n(String key, String pattern, String value) {
-			return L10n.getString("PeersSayKeyBlownAlert." + key, pattern, value);
+			return NodeL10n.getBase().getString("PeersSayKeyBlownAlert." + key, pattern, value);
 		}
 
 		@Override

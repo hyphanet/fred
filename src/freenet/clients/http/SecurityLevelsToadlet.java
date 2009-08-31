@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileTooBigException;
 import freenet.node.MasterKeysFileTooShortException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -46,7 +47,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase()
 			        .getString("Toadlet.unauthorized"));
 			return;
 		}
@@ -77,7 +78,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
 						if(warning != null) {
 							if(pageNode == null) {
-								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+								PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 								pageNode = page.outer;
 								content = page.content;
 								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
@@ -115,7 +116,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newFriendsLevel, confirm);
 						if(warning != null) {
 							if(pageNode == null) {
-								PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+								PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 								pageNode = page.outer;
 								content = page.content;
 								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
@@ -492,11 +493,11 @@ public class SecurityLevelsToadlet extends Toadlet {
     public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 		
-		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("SecurityLevelsToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("SecurityLevelsToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -530,9 +531,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 			}
 			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
 			input.addChild("#", ": ");
-			L10n.addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			HTMLNode inner = input.addChild("p").addChild("i");
-			L10n.addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 		}
 		
 		// Friends security level
@@ -553,9 +554,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 			}
 			input.addChild("b", l10nSec("friendsThreatLevel.name."+level));
 			input.addChild("#", ": ");
-			L10n.addL10nSubstitution(input, "SecurityLevels.friendsThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.friendsThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			HTMLNode inner = input.addChild("p").addChild("i");
-			L10n.addL10nSubstitution(inner, "SecurityLevels.friendsThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.friendsThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 		}
 		
 		// Physical security level
@@ -576,9 +577,9 @@ public class SecurityLevelsToadlet extends Toadlet {
 			}
 			input.addChild("b", l10nSec("physicalThreatLevel.name."+level));
 			input.addChild("#", ": ");
-			L10n.addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			HTMLNode inner = input.addChild("p").addChild("i");
-			L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			if(level != PHYSICAL_THREAT_LEVEL.LOW && physicalLevel == PHYSICAL_THREAT_LEVEL.LOW && node.hasDatabase() && !node.isDatabaseEncrypted()) {
 				if(node.autoChangeDatabaseEncryption())
 					inner.addChild("b", " "+l10nSec("warningWillEncrypt"));
@@ -636,15 +637,15 @@ public class SecurityLevelsToadlet extends Toadlet {
 	}
 
 	private static final String l10n(String string) {
-		return L10n.getString("ConfigToadlet." + string);
+		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 
 	private static String l10nSec(String key) {
-		return L10n.getString("SecurityLevels."+key);
+		return NodeL10n.getBase().getString("SecurityLevels."+key);
 	}
 	
 	private static String l10nSec(String key, String pattern, String value) {
-		return L10n.getString("SecurityLevels."+key, pattern, value);
+		return NodeL10n.getBase().getString("SecurityLevels."+key, pattern, value);
 	}
 	
 	void sendPasswordFileCorruptedPage(boolean tooBig, ToadletContext ctx, boolean forSecLevels, boolean forFirstTimeWizard) throws ToadletContextClosedException, IOException {

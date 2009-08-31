@@ -1,6 +1,6 @@
 package freenet.config;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.Fields;
 import freenet.support.api.ShortCallback;
 
@@ -16,7 +16,7 @@ public class ShortOption extends Option<Short> {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("ShortOption."+key, pattern, value);
+		return NodeL10n.getBase().getString("ShortOption."+key, pattern, value);
 	}
 	
 	@Override

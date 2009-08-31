@@ -20,7 +20,7 @@ import freenet.client.async.USKCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -133,7 +133,7 @@ public class BookmarkManager implements RequestClient {
 	}
 
 	public String l10n(String key) {
-		return L10n.getString("BookmarkManager." + key);
+		return NodeL10n.getBase().getString("BookmarkManager." + key);
 	}
 
 	public String parentPath(String path) {

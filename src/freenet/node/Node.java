@@ -94,7 +94,8 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.l10n.L10n;
+import freenet.l10n.BaseL10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
@@ -444,22 +445,22 @@ public class Node implements TimeSkewDetectorCallback {
 	private static class L10nCallback extends StringCallback implements EnumerableOptionCallback {
 		@Override
 		public String get() {
-			return L10n.getSelectedLanguage().fullName;
+			return NodeL10n.getBase().getSelectedLanguage().fullName;
 		}
 		
 		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if(val == null || get().equalsIgnoreCase(val)) return;
 			try {
-				L10n.setLanguage(val);
+				NodeL10n.getBase().setLanguage(BaseL10n.LANGUAGE.mapToLanguage(val));
 			} catch (MissingResourceException e) {
 				throw new InvalidConfigValueException(e.getLocalizedMessage());
 			}
-			PluginManager.setLanguage(L10n.getSelectedLanguage());
+			PluginManager.setLanguage(NodeL10n.getBase().getSelectedLanguage());
 		}
 		
 		public String[] getPossibleValues() {
-			return L10n.LANGUAGE.valuesWithFullNames();
+			return BaseL10n.LANGUAGE.valuesWithFullNames();
 		}
 	}
 	
@@ -980,12 +981,12 @@ public class Node implements TimeSkewDetectorCallback {
 				new L10nCallback());
 		
 		try {
-			L10n.setLanguage(nodeConfig.getString("l10n"));
+			new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getString("l10n")));
 		} catch (MissingResourceException e) {
 			try {
-				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
+				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(nodeConfig.getOption("l10n").getDefault()));
 			} catch (MissingResourceException e1) {
-				L10n.setLanguage(L10n.LANGUAGE.getDefault().shortCode);
+				new NodeL10n(BaseL10n.LANGUAGE.mapToLanguage(BaseL10n.LANGUAGE.getDefault().shortCode));
 			}
 		}
 		
@@ -1217,7 +1218,7 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		defragDatabaseOnStartup = nodeConfig.getBoolean("defragDatabaseOnStartup");
 		
-		nodeConfig.register("defragOnce", true, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
+		nodeConfig.register("defragOnce", false, sortOrder++, false, true, "Node.defragOnce", "Node.defragOnceLong", new BooleanCallback() {
 
 			@Override
 			public Boolean get() {
@@ -2152,8 +2153,8 @@ public class Node implements TimeSkewDetectorCallback {
 						} catch (IOException e) {
 							masterKeysFile.delete();
 							Logger.error(this, "Unable to securely delete "+masterKeysFile);
-							System.err.println(L10n.getString("SecurityLevels.cantDeletePasswordFile", "filename", masterKeysFile.getAbsolutePath()));
-							clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("SecurityLevels.cantDeletePasswordFileTitle"), L10n.getString("SecurityLevels.cantDeletePasswordFile"), L10n.getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
+							System.err.println(NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile", "filename", masterKeysFile.getAbsolutePath()));
+							clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFile"), NodeL10n.getBase().getString("SecurityLevels.cantDeletePasswordFileTitle"), UserAlert.CRITICAL_ERROR));
 						}
 					}
 				}
@@ -2494,10 +2495,6 @@ public class Node implements TimeSkewDetectorCallback {
 			}
 
 		});
-
-		if(!PageMaker.THEME.themeFromName(this.config.get("fproxy").getString("css")).showStatusBar) {
-			securityLevels.registerUserAlert(clientCore.alerts);
-		}
 		
 		nodeConfig.finishedInitialization();
 		if(shouldWriteConfig)
@@ -2958,8 +2955,8 @@ public class Node implements TimeSkewDetectorCallback {
 			return creationTime;
 		}
 
-		public FCPMessage getFCPMessage(String identifier) {
-			return new ReceivedStatusFeedMessage(identifier, getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
+		public FCPMessage getFCPMessage() {
+			return new ReceivedStatusFeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 		}
 
 		public HTMLNode getHTMLText() {
@@ -2973,15 +2970,15 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		public String getShortText() {
-			return L10n.getString("SecurityLevels.enterPassword");
+			return NodeL10n.getBase().getString("SecurityLevels.enterPassword");
 		}
 
 		public String getText() {
-			return L10n.getString("SecurityLevels.enterPassword");
+			return NodeL10n.getBase().getString("SecurityLevels.enterPassword");
 		}
 
 		public String getTitle() {
-			return L10n.getString("SecurityLevels.enterPassword");
+			return NodeL10n.getBase().getString("SecurityLevels.enterPassword");
 		}
 
 		public Object getUserIdentifier() {
@@ -3065,14 +3062,14 @@ public class Node implements TimeSkewDetectorCallback {
 		((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
 
 		if (isBDBStoreExist(suffix)) {
-			clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("Node.storeSaltHashMigratedShort"),
-			        L10n.getString("Node.storeSaltHashMigratedShort"), L10n
+			clientCore.alerts.register(new SimpleUserAlert(true, NodeL10n.getBase().getString("Node.storeSaltHashMigratedShort"),
+			        NodeL10n.getBase().getString("Node.storeSaltHashMigratedShort"), NodeL10n.getBase()
 			                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
 				
 				@Override
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
-					div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
+					div.addChild("#", NodeL10n.getBase().getString("Node.storeSaltHashMigrated"));
 					HTMLNode ul = div.addChild("ul");
 
 					for (String type : new String[] { "chk", "pubkey", "ssk" })
@@ -3093,7 +3090,7 @@ public class Node implements TimeSkewDetectorCallback {
 				@Override
 				public String getText() {						
 					StringBuilder sb = new StringBuilder();
-					sb.append(L10n.getString("Node.storeSaltHashMigrated") + " \n");
+					sb.append(NodeL10n.getBase().getString("Node.storeSaltHashMigrated") + " \n");
 					
 					for (String type : new String[] { "chk", "pubkey", "ssk" })
 						for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
@@ -3654,15 +3651,15 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("Node."+key);
+		return NodeL10n.getBase().getString("Node."+key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("Node."+key, pattern, value);
+		return NodeL10n.getBase().getString("Node."+key, pattern, value);
 	}
 
 	private String l10n(String key, String[] pattern, String[] value) {
-		return L10n.getString("Node."+key, pattern, value);
+		return NodeL10n.getBase().getString("Node."+key, pattern, value);
 	}
 
 	/**

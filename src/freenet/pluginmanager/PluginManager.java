@@ -35,8 +35,8 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
-import freenet.l10n.L10n.LANGUAGE;
+import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -130,7 +130,7 @@ public class PluginManager {
 //				installDir = val;
 //				//if(storeDir.equals(new File(val))) return;
 //				// FIXME
-//				//throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
+//				//throw new InvalidConfigValueException(NodeL10n.getBase().getString("PluginManager.cannotSetOnceLoaded"));
 //			}
 //		});
 //		installDir = pmconfig.getString("installdir");
@@ -148,7 +148,7 @@ public class PluginManager {
 				public void set(String[] val) throws InvalidConfigValueException {
 					//if(storeDir.equals(new File(val))) return;
 					// FIXME
-					throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
+					throw new InvalidConfigValueException(NodeL10n.getBase().getString("PluginManager.cannotSetOnceLoaded"));
 				}
 
 			@Override
@@ -427,11 +427,11 @@ public class PluginManager {
 	 * @return The translation
 	 */
 	private String l10n(String key) {
-		return L10n.getString("PluginManager." + key);
+		return NodeL10n.getBase().getString("PluginManager." + key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("PluginManager." + key, pattern, value);
+		return NodeL10n.getBase().getString("PluginManager." + key, pattern, value);
 	}
 
 	/**
@@ -447,7 +447,7 @@ public class PluginManager {
 	 * @return The translation
 	 */
 	private String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("PluginManager." + key, patterns, values);
+		return NodeL10n.getBase().getString("PluginManager." + key, patterns, values);
 	}
 
 	private void registerToadlet(FredPlugin pl) {
@@ -737,6 +737,7 @@ public class PluginManager {
 		addOfficialPlugin("UPnP", true, 10003, false);
 		addOfficialPlugin("XMLLibrarian", false, 22, true);
 		addOfficialPlugin("XMLSpider", false, 39, true);
+		addOfficialPlugin("Freereader", false, 2, true);
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML) {
@@ -1187,6 +1188,16 @@ public class PluginManager {
 			for(PluginInfoWrapper pi: pluginWrappers) {
 				if(pi.isL10nPlugin()) {
 					final FredPluginL10n plug = (FredPluginL10n)(pi.plug);
+					executor.execute(new Runnable() {
+						public void run() {
+							try {
+								plug.setLanguage(lang);
+							} catch (Throwable t) {
+								Logger.error(this, "Cought Trowable in Callback", t);
+							}
+						}}, "Callback");
+				} else if(pi.isBaseL10nPlugin()) {
+					final FredPluginBaseL10n plug = (FredPluginBaseL10n)(pi.plug);
 					executor.execute(new Runnable() {
 						public void run() {
 							try {

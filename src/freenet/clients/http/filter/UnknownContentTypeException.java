@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
@@ -42,11 +42,11 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("UnknownContentTypeException."+key);
+		return NodeL10n.getBase().getString("UnknownContentTypeException."+key);
 	}
 	
 	private static String l10n(String key, String pattern, String value) {
-		return L10n.getString("UnknownContentTypeException."+key, pattern, value);
+		return NodeL10n.getBase().getString("UnknownContentTypeException."+key, pattern, value);
 	}
 	
 }

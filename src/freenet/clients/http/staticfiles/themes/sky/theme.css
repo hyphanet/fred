@@ -1,5 +1,10 @@
+/* sky */
+
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
+
+/* Status bar style & colors */
+@import url(/static/statusbar.css);
 
 /* sky overall settings */
 
@@ -677,4 +682,40 @@ td.n2ntm-send-queued {
 
 td.n2ntm-send-failed {
 	background-color: #ffb7b7;
+}
+
+/* statusbar */
+
+div#statusbar-container {
+	background-color: #eaf2ff;
+	font-size: 1.2em;
+	padding-bottom: 0;
+	border-top: 1px solid #d0d0f0;
+	background-color: #eaf2ff;
+}
+
+div#statusbar {
+	text-align: center;
+}
+
+div#statusbar div {
+	display: inline;
+}
+
+div#statusbar div.infobox-header {
+	display: none;
+}
+
+div#statusbar div.infobox-content {
+	border: none;
+	padding: 0;
+	margin: 0;
+}
+
+div#statusbar div.separator {
+	display: inline-block;
+	background-color: #d0d0f0;
+	width: 1px;
+	margin-left: 9px;
+	margin-right: 9px;
 }

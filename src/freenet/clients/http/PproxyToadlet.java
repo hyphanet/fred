@@ -10,6 +10,7 @@ import java.util.Set;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.useralerts.UserAlert;
@@ -183,7 +184,7 @@ public class PproxyToadlet extends Toadlet {
 				tempNode = unloadForm.addChild("p");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("unload") });
 				tempNode.addChild("#", " ");
-				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
+				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
@@ -201,7 +202,7 @@ public class PproxyToadlet extends Toadlet {
 				tempNode = reloadForm.addChild("p");
 				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", l10n("reload") });
 				tempNode.addChild("#", " ");
-				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel") });
+				tempNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
@@ -212,7 +213,7 @@ public class PproxyToadlet extends Toadlet {
 
 				if (fn == null) {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
-							L10n.getString("PluginToadlet.pluginNotFoundReload"));
+							NodeL10n.getBase().getString("PluginToadlet.pluginNotFoundReload"));
 				} else {
 					pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
 					if (purge) {
@@ -258,11 +259,11 @@ public class PproxyToadlet extends Toadlet {
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("PproxyToadlet."+key, new String[] { pattern }, new String[] { value });
+		return NodeL10n.getBase().getString("PproxyToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("PproxyToadlet."+key);
+		return NodeL10n.getBase().getString("PproxyToadlet."+key);
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx)
@@ -282,7 +283,7 @@ public class PproxyToadlet extends Toadlet {
 		try {
 			if (path.equals("")) {
 				if (!ctx.isAllowedFullAccess()) {
-					super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
+					super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
 					return;
 				}
 
@@ -404,7 +405,7 @@ public class PproxyToadlet extends Toadlet {
 
 	private void showPluginList(ToadletContext ctx, PluginManager pm, HTMLNode contentNode) throws ToadletContextClosedException, IOException {
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		infobox.addChild("div", "class", "infobox-header", L10n.getString("PluginToadlet.pluginListTitle"));
+		infobox.addChild("div", "class", "infobox-header", NodeL10n.getBase().getString("PluginToadlet.pluginListTitle"));
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 		if (pm.getPlugins().isEmpty()) {
 			infoboxContent.addChild("div", l10n("noPlugins"));
@@ -439,7 +440,7 @@ public class PproxyToadlet extends Toadlet {
 					if (pi.isPproxyPlugin()) {
 						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_blank" });
 						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("PluginToadlet.visit") });
+						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", NodeL10n.getBase().getString("PluginToadlet.visit") });
 					}
 					HTMLNode unloadForm = ctx.addFormChild(pluginRow.addChild("td"), ".", "unloadPluginForm");
 					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });

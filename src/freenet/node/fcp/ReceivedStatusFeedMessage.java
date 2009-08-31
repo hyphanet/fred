@@ -7,9 +7,9 @@ public class ReceivedStatusFeedMessage extends ReceivedFeedMessage {
 	private final short priorityClass;
 	private final long timeCreated;
 
-	public ReceivedStatusFeedMessage(String identifier, String header, String shortText, String text,
+	public ReceivedStatusFeedMessage(String header, String shortText, String text,
 			short priorityClass, long creationTime) {
-		super(identifier, header, shortText, text);
+		super(header, shortText, text);
 		this.priorityClass = priorityClass;
 		this.timeCreated = creationTime;
 	}

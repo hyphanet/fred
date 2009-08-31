@@ -3,7 +3,7 @@ package freenet.node.useralerts;
 import java.lang.ref.WeakReference;
 
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.node.fcp.ReceivedBookmarkFeed;
@@ -88,11 +88,11 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("BookmarkFeedUserAlert." + key);
+		return NodeL10n.getBase().getString("BookmarkFeedUserAlert." + key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("BookmarkFeedUserAlert." + key, pattern, value);
+		return NodeL10n.getBase().getString("BookmarkFeedUserAlert." + key, pattern, value);
 	}
 
 	@Override
@@ -103,8 +103,8 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public ReceivedBookmarkFeed getFCPMessage(String identifier) {
-		return new ReceivedBookmarkFeed(identifier, getTitle(), getShortText(), getText(), sourceNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
+	public ReceivedBookmarkFeed getFCPMessage() {
+		return new ReceivedBookmarkFeed(getTitle(), getShortText(), getText(), sourceNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
 	}
 
 	@Override

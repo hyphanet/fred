@@ -15,10 +15,10 @@ public class ReceivedBookmarkFeed extends ReceivedN2NFeedMessage {
 	private final String description;
 	private final boolean hasAnActivelink;
 
-	public ReceivedBookmarkFeed(String identifier, String header, String shortText, String text,
+	public ReceivedBookmarkFeed(String header, String shortText, String text,
 			String sourceNodeName, long composed, long sent, long received,
 			String name, FreenetURI URI, String description, boolean hasAnActivelink) {
-		super(identifier, header, shortText, text, sourceNodeName, composed, sent, received);
+		super(header, shortText, text, sourceNodeName, composed, sent, received);
 		this.name = name;
 		this.URI = URI;
 		this.description = description;

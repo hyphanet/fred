@@ -15,7 +15,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -360,7 +360,7 @@ public class JPEGFilter implements ContentDataFilter {
 	}
 
 	private static String l10n(String key) {
-		return L10n.getString("JPEGFilter."+key);
+		return NodeL10n.getBase().getString("JPEGFilter."+key);
 	}
 
 	private void writeNullTerminatedString(ByteArrayOutputStream baos, String type) throws IOException {

@@ -7,6 +7,7 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
@@ -27,7 +28,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 
 	public void handleMethodGET(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -75,7 +76,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 	}
 	
 	private static String l10n(String string) {
-		return L10n.getString("DarknetAddRefToadlet."+string);
+		return NodeL10n.getBase().getString("DarknetAddRefToadlet."+string);
 	}
 	
 

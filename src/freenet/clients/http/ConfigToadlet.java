@@ -17,7 +17,7 @@ import freenet.config.NodeNeedRestartException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.config.WrapperConfig;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileTooBigException;
 import freenet.node.MasterKeysFileTooShortException;
 import freenet.node.MasterKeysWrongPasswordException;
@@ -115,7 +115,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if (!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase()
 			        .getString("Toadlet.unauthorized"));
 			return;
 		}
@@ -220,25 +220,23 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 	}
 	
 	private static final String l10n(String string) {
-		return L10n.getString("ConfigToadlet." + string);
+		return NodeL10n.getBase().getString("ConfigToadlet." + string);
 	}
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
+			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
 		
 		final int mode = ctx.getPageMaker().parseMode(req, container);
 		
-		PageNode page = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
 		contentNode.addChild(new AlertElement(ctx));
-		
-		ctx.getPageMaker().drawModeSelectionArray(core, container, contentNode, mode);
 		
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", l10n("title"));
@@ -255,10 +253,10 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 				// FIXME how to get the real default???
 				String defaultValue = "128";
 				item.addChild("span", new String[]{ "class", "title", "style" },
-						new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
-						"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
+						new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
+						"cursor: help;" }).addChild(NodeL10n.getBase().getHTMLNode("WrapperConfig."+configName+".short"));
 				item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
-				item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
+				item.addChild("span", "class", "configlongdesc").addChild(NodeL10n.getBase().getHTMLNode("WrapperConfig."+configName+".long"));
 			}
 		}
 		
@@ -273,9 +271,9 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 					String configName = o[j].getName();
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
-					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+subConfig.getPrefix() + '.' + o[j].getName() + ']' : ""),
-							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
+					configItemNode.addChild("a", new String[]{"name", "id"}, new String[]{configName, configName}).addChild("span", new String[]{ "class", "title", "style" },
+							new String[]{ "configshortdesc", NodeL10n.getBase().getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+subConfig.getPrefix() + '.' + o[j].getName() + ']' : ""),
+							"cursor: help;" }).addChild(NodeL10n.getBase().getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, subConfig.getPrefix() + configName + "has returned null from config!);");
@@ -300,7 +298,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 						        new String[] { "text", "config", o[j].getShortDesc(),
 						                subConfig.getPrefix() + '.' + configName, o[j].getValueString() });
 
-					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc()));
+					configItemNode.addChild("span", "class", "configlongdesc").addChild(NodeL10n.getBase().getHTMLNode(o[j].getLongDesc()));
 				}
 			}
 			

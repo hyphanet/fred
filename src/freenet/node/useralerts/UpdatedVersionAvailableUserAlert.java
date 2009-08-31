@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
 import freenet.support.HTMLNode;
@@ -13,7 +13,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	private final NodeUpdateManager updater;
 
 	public UpdatedVersionAvailableUserAlert(NodeUpdateManager updater){
-		super(false, null, null, null, null, (short) 0, false, L10n.getString("UserAlert.hide"), false, null);
+		super(false, null, null, null, null, (short) 0, false, NodeL10n.getBase().getString("UserAlert.hide"), false, null);
 		this.updater = updater;
 	}
 	
@@ -23,15 +23,15 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	}
 
 	private String l10n(String key) {
-		return L10n.getString("UpdatedVersionAvailableUserAlert."+key);
+		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert."+key);
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("UpdatedVersionAvailableUserAlert."+key, pattern, value);
+		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert."+key, pattern, value);
 	}
 
 	private String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("UpdatedVersionAvailableUserAlert."+key, patterns, values);
+		return NodeL10n.getBase().getString("UpdatedVersionAvailableUserAlert."+key, patterns, values);
 	}
 
 	@Override

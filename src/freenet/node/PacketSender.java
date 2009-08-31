@@ -10,7 +10,7 @@ import java.util.TreeMap;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -422,7 +422,7 @@ public class PacketSender implements Runnable, Ticker {
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
 			}
-			L10n.addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail", 
+			NodeL10n.getBase().addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail", 
 					new String[] { "count", "link", "/link" }
 					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
 			HTMLNode list = div.addChild("ul");
@@ -493,11 +493,11 @@ public class PacketSender implements Runnable, Ticker {
 	}
 
 	protected String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("PacketSender."+key, patterns, values);
+		return NodeL10n.getBase().getString("PacketSender."+key, patterns, values);
 	}
 
 	protected String l10n(String key, String pattern, String value) {
-		return L10n.getString("PacketSender."+key, pattern, value);
+		return NodeL10n.getBase().getString("PacketSender."+key, pattern, value);
 	}
 
 	public void queueTimedJob(Runnable job, long offset) {

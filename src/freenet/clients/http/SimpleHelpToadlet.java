@@ -11,7 +11,7 @@ import freenet.clients.http.updateableelements.AlertElement;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 
 /**
  * Simple Help Toadlet.  Provides an offline means of looking up some basic info, howtos, and FAQ
@@ -29,7 +29,7 @@ public class SimpleHelpToadlet extends Toadlet {
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
 		
-		PageNode page = ctx.getPageMaker().getPageNode("Freenet " + L10n.getString("FProxyToadlet.help"), ctx);
+		PageNode page = ctx.getPageMaker().getPageNode("Freenet " + NodeL10n.getBase().getString("FProxyToadlet.help"), ctx);
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
@@ -37,11 +37,11 @@ public class SimpleHelpToadlet extends Toadlet {
 			contentNode.addChild(new AlertElement(ctx));
 		
 		// Description infobox
-		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle"), contentNode, "freenet-description", true);
-		helpScreenContent1.addChild("#", L10n.getString("SimpleHelpToadlet.descriptionText"));
+		HTMLNode helpScreenContent1 = ctx.getPageMaker().getInfobox("infobox-content", NodeL10n.getBase().getString("SimpleHelpToadlet.descriptionTitle"), contentNode, "freenet-description", true);
+		helpScreenContent1.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.descriptionText"));
 		
 		// Definitions infobox
-		HTMLNode helpScreenContent2 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle"), contentNode, "freenet-definitions", true);
+		HTMLNode helpScreenContent2 = ctx.getPageMaker().getInfobox("infobox-content", NodeL10n.getBase().getString("SimpleHelpToadlet.definitionsTitle"), contentNode, "freenet-definitions", true);
 		
 		HTMLNode table = helpScreenContent2.addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
        
@@ -53,22 +53,22 @@ public class SimpleHelpToadlet extends Toadlet {
                 // cell = row.addChild("td", "style", "border: none");
                 // cell.addChild("a", new String[]{"href", "title"}, new String[]{ ctx.fixLink('/' + item.getKey()), item.getDescription()}, item.getName());
      
-		row.addChild("#", L10n.getString("SimpleHelpToadlet.CHK"));
+		row.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.CHK"));
 		row.addChild("br");
-		row.addChild("#", L10n.getString("SimpleHelpToadlet.SSK"));
+		row.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.SSK"));
 		row.addChild("br");
-		row.addChild("#", L10n.getString("SimpleHelpToadlet.USK"));
+		row.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.USK"));
 		
-		// helpScreenContent2.addchild("#", L10n.getString("SimpleHelpToadlet.CHK"));
+		// helpScreenContent2.addchild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.CHK"));
 		// helpScreenContent2.addchild("br");
-		// helpScreenContent2.addchild("#", L10n.getString("SimpleHelpToadlet.SSK"));
+		// helpScreenContent2.addchild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.SSK"));
 		// helpScreenContent2.addchild("br");
-		// helpScreenContent2.addchild("#", L10n.getString("SimpleHelpToadlet.USK"));
+		// helpScreenContent2.addchild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.USK"));
 		
 		
 		// Port forwarding, etc.	
-		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle"), contentNode, "freenet-connectivity", true);
-		helpScreenContent3.addChild("#", L10n.getString("SimpleHelpToadlet.connectivityText"));
+		HTMLNode helpScreenContent3 = ctx.getPageMaker().getInfobox("infobox-content", NodeL10n.getBase().getString("SimpleHelpToadlet.connectivityTitle"), contentNode, "freenet-connectivity", true);
+		helpScreenContent3.addChild("#", NodeL10n.getBase().getString("SimpleHelpToadlet.connectivityText"));
 		
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());

@@ -21,7 +21,7 @@ import java.util.TimeZone;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
-import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -224,7 +224,7 @@ public class TestnetHandler implements Runnable {
 		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if(node.testnetEnabled == val) return;
-			throw new InvalidConfigValueException(L10n.getString("TestnetHandler.cannotEnableDisableOnTheFly"));
+			throw new InvalidConfigValueException(NodeL10n.getBase().getString("TestnetHandler.cannotEnableDisableOnTheFly"));
 		}
 
 		@Override
