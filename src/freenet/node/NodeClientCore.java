@@ -61,7 +61,6 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.pluginmanager.PluginStore;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
@@ -239,8 +238,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 				}
 			}, PersistentStatsPutter.OFFSET);
-
-			container.ext().configure().objectClass(PluginStore.class).cascadeOnDelete(true);
 		}
 
 		uskManager = new USKManager(this);
@@ -688,8 +685,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 			}
 		}, PersistentStatsPutter.OFFSET);
-
-		container.ext().configure().objectClass(PluginStore.class).cascadeOnDelete(true);
 
 		// CONCURRENCY: We need everything to have hit its various memory locations.
 		// How to ensure this?

@@ -114,6 +114,7 @@ import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
+import freenet.pluginmanager.PluginStore;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.CHKStore;
 import freenet.store.FreenetStore;
@@ -2604,6 +2605,7 @@ public class Node implements TimeSkewDetectorCallback {
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("factory").indexed(true);
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("isFree").indexed(true);
 		dbConfig.objectClass(freenet.client.FetchException.class).cascadeOnDelete(true);
+		dbConfig.objectClass(PluginStore.class).cascadeOnDelete(true);
 		/*
 		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
 		 * internally through the TMap translator.
