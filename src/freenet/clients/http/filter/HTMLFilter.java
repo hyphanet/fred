@@ -506,7 +506,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(pc.noOutput) return; // sanitize has done all the work we are interested in
 			if (t != null) {
 				//If the tag needs replacement, then replace it
-				String newContent=t.startSlash?null:pc.cb.processTag(t);
+				String newContent=pc.cb.processTag(t);
 				if(newContent!=null){
 					w.write(newContent);
 					if(t.endSlash==false){

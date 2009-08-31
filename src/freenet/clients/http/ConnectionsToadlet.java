@@ -422,7 +422,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					 if(peerForm != null) {
 					 drawPeerActionSelectBox(peerForm, mode >= PageMaker.MODE_ADVANCED);
 					 }
-					 }						
+					}						
 				
 			}
 
