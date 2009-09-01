@@ -3186,7 +3186,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 			final Runnable migrate = new MigrateOldStoreData(false);
 			
-			executor.execute(new Runnable() {
+			this.getTicker().queueTimedJob(new Runnable() {
 
 				public void run() {
 					chkDataFS.start(ps);
@@ -3209,7 +3209,7 @@ public class Node implements TimeSkewDetectorCallback {
 					migrate.run();
 				}
 				
-			});
+			}, 0); // Use Ticker to guarantee that this runs *after* constructors have completed.
 			
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
