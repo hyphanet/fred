@@ -733,6 +733,7 @@ public class PluginManager {
 	static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
 
 	static {
+		try {
 		addOfficialPlugin("Echo", false);
 		addOfficialPlugin("Freemail", false, 12, true);
 		addOfficialPlugin("HelloWorld", false);
@@ -744,9 +745,12 @@ public class PluginManager {
 		addOfficialPlugin("TestGallery", false);
 		addOfficialPlugin("ThawIndexBrowser", false, 2, true);
 		addOfficialPlugin("UPnP", true, 10003, false);
-		addOfficialPlugin("XMLLibrarian", false, 25, true);
+		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
 		addOfficialPlugin("XMLSpider", false, 39, true);
 		addOfficialPlugin("Freereader", false, 2, true);
+		} catch (MalformedURLException e) {
+			throw new Error("Malformed hardcoded URL: "+e, e);
+		}
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML) {
