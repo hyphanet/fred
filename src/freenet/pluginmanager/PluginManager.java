@@ -712,12 +712,15 @@ public class PluginManager {
 		final long minimumVersion;
 		/** Does it use XML? If so, if the JVM is vulnerable, then don't load it */
 		final boolean usesXML;
+		/** FreenetURI to get the latest version from */
+		final FreenetURI uri;
 
-		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML) {
+		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
 			this.name = name;
 			this.essential = essential;
 			this.minimumVersion = minVer;
 			this.usesXML = usesXML;
+			this.uri = uri;
 		}
 	}
 
@@ -741,11 +744,19 @@ public class PluginManager {
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, null));
+	}
+	
+	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, null));
+	}
+	
+	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri));
 	}
 
 	/**
