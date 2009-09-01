@@ -11,6 +11,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
@@ -470,12 +471,18 @@ public class PproxyToadlet extends Toadlet {
 		
 		p.addChild("#", " " + l10n("pluginSourceChoice"));
 		
-		addOfficialForm.addChild("input", new String[] { "type", "name", "value", "checked" },
-				new String[] { "radio", "pluginSource", "freenet", "true" });
+		boolean isLowSecLevel = node.securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW;
+		
+		HTMLNode input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
+				new String[] { "radio", "pluginSource", "freenet" });
+		if(!isLowSecLevel)
+			input.addAttribute("checked", "true");
 		addOfficialForm.addChild("#", l10n("pluginSourceFreenet"));
 		addOfficialForm.addChild("br");
-		addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
+		input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "radio", "pluginSource", "https" });
+		if(isLowSecLevel)
+			input.addAttribute("checked", "true");
 		addOfficialForm.addChild("#", l10n("pluginSourceHTTPS"));
 		if(node.getOpennet() == null)
 			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarningDarknet"));
