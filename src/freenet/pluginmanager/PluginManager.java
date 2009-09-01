@@ -83,6 +83,8 @@ public class PluginManager {
 	private THEME fproxyTheme;
 
 	private final SerialExecutor executor;
+	
+	private boolean alwaysLoadOfficialPluginsFromCentralServer = false;
 
 	public PluginManager(Node node) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -234,8 +236,10 @@ public class PluginManager {
 	}
 	
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
-		
-		return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
+		if(alwaysLoadOfficialPluginsFromCentralServer || desc.uri == null)
+			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
+		else
+			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client), pluginname, store);
 	}
 
 	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
