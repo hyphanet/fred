@@ -893,7 +893,7 @@ public class PluginManager {
 		addOfficialPlugin("MDNSDiscovery", false, 2, false);
 		addOfficialPlugin("SNMP", false);
 		addOfficialPlugin("TestGallery", false);
-		addOfficialPlugin("ThawIndexBrowser", false, 3, true, new FreenetURI("CHK@Hrtddz74pQ0luFD77ji~h8Btx35~4-VjqTilDKsbeM0,lciym79NHSPoZ8QZNHUeUaYG7x5Ug2Byw0lfNFHb-Jk,AAIC--8/ThawIndexBrowser.jar"));
+		addOfficialPlugin("ThawIndexBrowser", false, 3, true, new FreenetURI("CHK@aPJ4SXq8bcDwDI4IeZcMtEk6YrYjo5KbQfDPgHbvWFw,svusKGEL8yWfAmxA0ueXvBUny0mlSReZbvpDIA7UIXk,AAIC--8/ThawIndexBrowser.jar"));
 		addOfficialPlugin("UPnP", true, 10003, false);
 		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
 		addOfficialPlugin("XMLSpider", false, 39, true);
