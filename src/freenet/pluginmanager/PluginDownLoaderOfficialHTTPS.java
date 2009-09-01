@@ -21,7 +21,7 @@ import java.util.Iterator;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
+public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	
 	private static final String certurl = "freenet/clients/http/staticfiles/startssl.pem";
 	private static final String certfile = "startssl.pem";

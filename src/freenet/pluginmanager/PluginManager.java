@@ -235,7 +235,7 @@ public class PluginManager {
 	
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
 		
-		return realStartPlugin(new PluginDownLoaderOfficial(), pluginname, store);
+		return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
 	}
 
 	public PluginInfoWrapper startPluginFile(final String filename, boolean store) {
@@ -278,7 +278,7 @@ public class PluginManager {
 				pluginsFailedLoad.add(filename);
 			}
 			core.alerts.register(new PluginLoadFailedUserAlert(filename,
-					pdl instanceof PluginDownLoaderOfficial, e));
+					pdl instanceof PluginDownLoaderOfficialHTTPS, e));
 		} catch (UnsupportedClassVersionError e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e,
 					e);
@@ -289,7 +289,7 @@ public class PluginManager {
 			synchronized (pluginWrappers) {
 				pluginsFailedLoad.add(filename);
 			}
-			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, l10n("pluginReqNewerJVMTitle", "name", filename)));
+			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS, l10n("pluginReqNewerJVMTitle", "name", filename)));
 		} catch (Throwable e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 			System.err.println("Could not load plugin " + filename + " : " + e);
@@ -299,7 +299,7 @@ public class PluginManager {
 			synchronized (pluginWrappers) {
 				pluginsFailedLoad.add(filename);
 			}
-			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficial, e));
+			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS, e));
 		} finally {
 			synchronized (startingPlugins) {
 				startingPlugins.remove(pluginProgress);
@@ -961,7 +961,7 @@ public class PluginManager {
 					((FredPluginWithClassLoader)object).setClassLoader(jarClassLoader);
 				}
 
-				if(pdl instanceof PluginDownLoaderOfficial) {
+				if(pdl instanceof PluginDownLoaderOfficialHTTPS) {
 					System.err.println("Loading official plugin "+name);
 					// Check the version after loading it!
 					// Building it into the manifest would be better, in that it would
