@@ -33,6 +33,7 @@ import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
@@ -42,7 +43,9 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.node.SecurityLevelListener;
 import freenet.node.Ticker;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.fcp.ClientPut;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -51,6 +54,7 @@ import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.SerialExecutor;
+import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
@@ -88,6 +92,7 @@ public class PluginManager {
 	private final SerialExecutor executor;
 	
 	private boolean alwaysLoadOfficialPluginsFromCentralServer = false;
+	private boolean fallbackFromFreenetLoadToCentralServer = false;
 
 	public PluginManager(Node node) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -163,7 +168,59 @@ public class PluginManager {
 			});
 
 		toStart = pmconfig.getStringArr("loadplugin");
+		
+		pmconfig.register("alwaysLoadPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromHTTPS", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
 
+			@Override
+			public Boolean get() {
+				return alwaysLoadOfficialPluginsFromCentralServer;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				alwaysLoadOfficialPluginsFromCentralServer = val;
+			}
+			
+		});
+		
+		pmconfig.register("fallbackFromFreenetLoadToCentralServer", false, 0, false, false, "PluginManager.fallbackFromFreenetLoadToCentralServer", "PluginManager.fallbackFromFreenetLoadToCentralServerLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return fallbackFromFreenetLoadToCentralServer;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				fallbackFromFreenetLoadToCentralServer = val;
+			}
+			
+		});
+		
+		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
+		fallbackFromFreenetLoadToCentralServer = pmconfig.getBoolean("fallbackFromFreenetLoadToCentralServer");
+
+		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == oldLevel) return;
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+					alwaysLoadOfficialPluginsFromCentralServer = true;
+				else if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
+					alwaysLoadOfficialPluginsFromCentralServer = false;
+				
+				boolean newIsNormal = 
+					newLevel == NETWORK_THREAT_LEVEL.LOW || newLevel == NETWORK_THREAT_LEVEL.NORMAL;
+				boolean oldIsNormal = 
+					oldLevel == NETWORK_THREAT_LEVEL.LOW || oldLevel == NETWORK_THREAT_LEVEL.NORMAL;
+				if(newIsNormal && !oldIsNormal)
+					fallbackFromFreenetLoadToCentralServer = true;
+				else if(oldIsNormal && !newIsNormal)
+					fallbackFromFreenetLoadToCentralServer = false;
+			}
+			
+		});
+		
 		pmconfig.finishedInitialization();
 
 		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
