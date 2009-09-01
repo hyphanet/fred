@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,11 +15,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.async.ClientContext;
+import freenet.client.events.ClientEvent;
+import freenet.client.events.ClientEventListener;
+import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -121,6 +128,17 @@ public class LongTermPushPullTest {
 				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
 				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()) + "-" + i);
 				System.out.println("PUSHING " + uri);
+				client.addEventHook(new ClientEventListener() {
+
+					public void onRemoveEventProducer(ObjectContainer container) {
+						// Ignore
+					}
+
+					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
+						System.out.println(ce.getDescription());
+					}
+					
+				});
 
 				try {
 					InsertBlock block = new InsertBlock(data, new ClientMetadata(), uri);
