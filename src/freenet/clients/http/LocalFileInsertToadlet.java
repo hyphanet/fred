@@ -12,6 +12,7 @@ import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
+import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
@@ -102,7 +103,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())
-				contentNode.addChild(new AlertElement(toadletContext));
+				contentNode.addChild(new LongAlertElement(toadletContext,true));
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));
@@ -185,7 +186,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())
-				contentNode.addChild(new AlertElement(toadletContext));
+				contentNode.addChild(new LongAlertElement(toadletContext,true));
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));

@@ -15,6 +15,7 @@ import java.util.Random;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.clients.http.updateableelements.BaseUpdateableElement;
+import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.config.SubConfig;
 import freenet.l10n.NodeL10n;
@@ -144,7 +145,7 @@ public class StatisticsToadlet extends Toadlet {
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(new AlertElement(ctx));
+			contentNode.addChild(new LongAlertElement(ctx,true));
 
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();

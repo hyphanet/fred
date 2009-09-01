@@ -22,6 +22,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.complexhtmlnodes.SecondCounterNode;
 import freenet.clients.http.updateableelements.AlertElement;
 import freenet.clients.http.updateableelements.BaseUpdateableElement;
+import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.clients.http.updateableelements.UpdaterConstants;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
@@ -220,7 +221,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(new AlertElement(ctx));
+			contentNode.addChild(new LongAlertElement(ctx,true));
 
 		if(peerNodeStatuses.length>0){
 

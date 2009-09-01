@@ -20,6 +20,7 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.updateableelements.AlertElement;
+import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.io.AddressTracker;
 import freenet.io.AddressTrackerItem;
 import freenet.io.InetAddressAddressTrackerItem;
@@ -63,7 +64,7 @@ public class ConnectivityToadlet extends Toadlet {
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(new AlertElement(ctx));
+			contentNode.addChild(new LongAlertElement(ctx,true));
 
 		// our ports
 		HTMLNode portInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
