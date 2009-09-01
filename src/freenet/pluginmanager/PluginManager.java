@@ -70,7 +70,7 @@ public class PluginManager {
 	/* All currently starting plugins. */
 	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
 	private final Vector<PluginInfoWrapper> pluginWrappers;
-	private final HashSet<String> pluginsFailedLoad;
+	private final HashMap<String, PluginLoadFailedUserAlert> pluginsFailedLoad;
 	final Node node;
 	private final NodeClientCore core;
 	SubConfig pmconfig;
@@ -93,7 +93,7 @@ public class PluginManager {
 
 		toadletList = new HashMap<String, FredPlugin>();
 		pluginWrappers = new Vector<PluginInfoWrapper>();
-		pluginsFailedLoad = new HashSet<String>();
+		pluginsFailedLoad = new HashMap<String, PluginLoadFailedUserAlert>();
 		this.node = node;
 		this.core = node.clientCore;
 
@@ -188,7 +188,7 @@ public class PluginManager {
 			for(PluginInfoWrapper pi : pluginWrappers) {
 				v.add(pi.getFilename());
 			}
-			for(String s : pluginsFailedLoad) {
+			for(String s : pluginsFailedLoad.keySet()) {
 				v.add(s);
 			}
 		}
@@ -281,11 +281,15 @@ public class PluginManager {
 		} catch (PluginNotFoundException e) {
 			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
 			String message = e.getMessage();
+			PluginLoadFailedUserAlert newAlert = 
+				new PluginLoadFailedUserAlert(filename,
+						pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, e);
+			PluginLoadFailedUserAlert oldAlert = null;
 			synchronized (pluginWrappers) {
-				pluginsFailedLoad.add(filename);
+				oldAlert = pluginsFailedLoad.put(filename, newAlert);
 			}
-			core.alerts.register(new PluginLoadFailedUserAlert(filename,
-					pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, e));
+			core.alerts.register(newAlert);
+			core.alerts.unregister(oldAlert);
 		} catch (UnsupportedClassVersionError e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e,
 					e);
@@ -293,20 +297,28 @@ public class PluginManager {
 			e.printStackTrace();
 			System.err.println("Plugin " + filename + " appears to require a later JVM");
 			Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
+			PluginLoadFailedUserAlert newAlert =
+				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, l10n("pluginReqNewerJVMTitle", "name", filename));
+			PluginLoadFailedUserAlert oldAlert = null;
 			synchronized (pluginWrappers) {
-				pluginsFailedLoad.add(filename);
+				oldAlert = pluginsFailedLoad.put(filename, newAlert);
 			}
-			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, l10n("pluginReqNewerJVMTitle", "name", filename)));
+			core.alerts.register(newAlert);
+			core.alerts.unregister(oldAlert);
 		} catch (Throwable e) {
 			Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 			System.err.println("Could not load plugin " + filename + " : " + e);
 			e.printStackTrace();
 			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
 			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
+			PluginLoadFailedUserAlert newAlert =
+				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, e);
+			PluginLoadFailedUserAlert oldAlert = null;
 			synchronized (pluginWrappers) {
-				pluginsFailedLoad.add(filename);
+				oldAlert = pluginsFailedLoad.put(filename, newAlert);
 			}
-			core.alerts.register(new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, e));
+			core.alerts.register(newAlert);
+			core.alerts.unregister(oldAlert);
 		} finally {
 			synchronized (startingPlugins) {
 				startingPlugins.remove(pluginProgress);
@@ -412,7 +424,7 @@ public class PluginManager {
 		public boolean isValid() {
 			boolean success;
 			synchronized(pluginWrappers) {
-				success = pluginsFailedLoad.contains(filename);
+				success = pluginsFailedLoad.containsKey(filename);
 			}
 			if(!success) {
 				core.alerts.unregister(this);

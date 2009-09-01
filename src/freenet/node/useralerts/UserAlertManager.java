@@ -85,6 +85,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	public void unregister(UserAlert alert) {
+		if(alert == null) return;
 		if(alert instanceof UserEvent)
 			unregister(((UserEvent)alert).getEventType());
 		synchronized (alerts) {
