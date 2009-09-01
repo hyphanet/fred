@@ -1264,12 +1264,16 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 
 	private HTMLNode createProgressCell(boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
+		boolean advancedMode = core.isAdvancedModeEnabled();
+		return createProgressCell(advancedMode, started, compressing, fetched, failed, fatallyFailed, min, total, finalized, upload);
+	}
+	
+	public static HTMLNode createProgressCell(boolean advancedMode, boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
 		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
 		if (!started) {
 			progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.starting"));
 			return progressCell;
 		}
-		boolean advancedMode = core.isAdvancedModeEnabled();
 		if(compressing == COMPRESS_STATE.WAITING && advancedMode) {
 			progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.awaitingCompression"));
 			return progressCell;
@@ -1315,7 +1319,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		return progressCell;
 	}
-
+	
 	private HTMLNode createNumberCell(int numberOfFiles) {
 		HTMLNode numberCell = new HTMLNode("td", "class", "request-files");
 		numberCell.addChild("span", "class", "number_of_files", String.valueOf(numberOfFiles));

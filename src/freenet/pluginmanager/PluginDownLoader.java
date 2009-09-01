@@ -6,6 +6,8 @@ package freenet.pluginmanager;
 import java.io.IOException;
 import java.io.InputStream;
 
+import freenet.pluginmanager.PluginManager.PluginProgress;
+
 /**
  * load a plugin from wherever 
  * @author saces
@@ -24,7 +26,7 @@ public abstract class PluginDownLoader<T> {
 		return _source;
 	}
 	
-	abstract InputStream getInputStream() throws IOException, PluginNotFoundException;
+	abstract InputStream getInputStream(PluginProgress progress) throws IOException, PluginNotFoundException;
 	
 	abstract T checkSource(String source) throws PluginNotFoundException;
 	

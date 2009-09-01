@@ -7,17 +7,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientContext;
+import freenet.client.events.ClientEvent;
+import freenet.client.events.ClientEventListener;
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.Logger;
 
 public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	final HighLevelSimpleClient hlsc;
 
 	PluginDownLoaderFreenet(HighLevelSimpleClient hlsc) {
-		this.hlsc = hlsc;
+		this.hlsc = hlsc.clone();
 	}
 
 	@Override
@@ -31,10 +38,27 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	}
 
 	@Override
-	InputStream getInputStream() throws IOException, PluginNotFoundException {
+	InputStream getInputStream(final PluginProgress progress) throws IOException, PluginNotFoundException {
 		FreenetURI uri = getSource();
 		while (true) {
 			try {
+				progress.setDownloading();
+				hlsc.addEventHook(new ClientEventListener() {
+
+					public void onRemoveEventProducer(ObjectContainer container) {
+						// Ignore
+					}
+
+					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
+						if(ce instanceof SplitfileProgressEvent) {
+							SplitfileProgressEvent split = (SplitfileProgressEvent) ce;
+							if(split.finalizedTotal) {
+								progress.setDownloadProgress(split.minSuccessfulBlocks, split.succeedBlocks, split.totalBlocks, split.failedBlocks, split.fatallyFailedBlocks, split.finalizedTotal);
+							}
+						}
+					}
+					
+				});
 				FetchResult fres = hlsc.fetch(uri);
 				return fres.asBucket().getInputStream();
 			} catch (FetchException e) {

@@ -399,7 +399,7 @@ public class PproxyToadlet extends Toadlet {
 				PluginProgress pluginProgress = startingPluginsIterator.next();
 				HTMLNode startingPluginsRow = startingPluginsTable.addChild("tr");
 				startingPluginsRow.addChild("td", pluginProgress.getName());
-				startingPluginsRow.addChild("td", l10n("startingPluginStatus." + pluginProgress.getProgress().toString()));
+				startingPluginsRow.addChild(pluginProgress.toLocalisedHTML());
 				startingPluginsRow.addChild("td", "aligh", "right", TimeUtil.formatTime(pluginProgress.getTime()));
 			}
 		}

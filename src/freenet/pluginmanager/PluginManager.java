@@ -29,6 +29,7 @@ import java.util.zip.ZipException;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -36,11 +37,13 @@ import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n.LANGUAGE;
+import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.Ticker;
+import freenet.node.fcp.ClientPut;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -268,10 +271,10 @@ public class PluginManager {
 		FredPlugin plug;
 		PluginInfoWrapper pi = null;
 		try {
-			plug = loadPlugin(pdl, filename);
+			plug = loadPlugin(pdl, filename, pluginProgress);
 			if (plug == null)
 				return null; // Already loaded
-			pluginProgress.setProgress(PluginProgress.STARTING);
+			pluginProgress.setProgress(PluginProgress.PROGRESS_STATE.STARTING);
 			pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
 			synchronized (pluginWrappers) {
 				pluginWrappers.add(pi);
@@ -775,7 +778,7 @@ public class PluginManager {
 		addOfficialPlugin("HelloWorld", false);
 		addOfficialPlugin("HelloFCP", false);
 		addOfficialPlugin("JSTUN", true, 2, false);
-		addOfficialPlugin("KeyExplorer", false, 4010, false/* bogus url for testing: , new FreenetURI("CHK@abcdefghijlkkkammammamamamamamamamamBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar")*/);
+		addOfficialPlugin("KeyExplorer", false, 4010, false);
 		addOfficialPlugin("MDNSDiscovery", false, 2, false);
 		addOfficialPlugin("SNMP", false);
 		addOfficialPlugin("TestGallery", false);
@@ -849,7 +852,7 @@ public class PluginManager {
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
 	 */
-	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name) throws PluginNotFoundException {
+	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name, PluginProgress progress) throws PluginNotFoundException {
 
 		pdl.setSource(name);
 		
@@ -886,7 +889,7 @@ public class PluginManager {
 
 
 						pluginOutputStream = new FileOutputStream(tempPluginFile);
-						pluginInputStream = pdl.getInputStream();
+						pluginInputStream = pdl.getInputStream(progress);
 						byte[] buffer = new byte[1024];
 						int read;
 						while((read = pluginInputStream.read(buffer)) != -1) {
@@ -1128,22 +1131,26 @@ public class PluginManager {
 	 */
 	public static class PluginProgress {
 
-		/** State for downloading. */
-		public static final PluginProgress DOWNLOADING = new PluginProgress();
-		/** State for starting. */
-		public static final PluginProgress STARTING = new PluginProgress();
+		enum PROGRESS_STATE {
+			DOWNLOADING,
+			STARTING
+		}
+		
 		/** The starting time. */
 		private long startingTime = System.currentTimeMillis();
 		/** The current state. */
-		private PluginProgress pluginProgress;
+		private PROGRESS_STATE pluginProgress;
 		/** The name by which the plugin is loaded. */
 		private String name;
-
-		/**
-		 * Private constructor for state constants.
-		 */
-		private PluginProgress() {
-		}
+		/** Total. Might be bytes, might be blocks. */
+		private int total;
+		/** Minimum for success */
+		private int minSuccessful;
+		/** Current value. Same units as total. */
+		private int current;
+		private boolean finalisedTotal;
+		private int failed;
+		private int fatallyFailed;
 
 		/**
 		 * Creates a new progress tracker for a plugin that is loaded by the
@@ -1154,7 +1161,7 @@ public class PluginManager {
 		 */
 		PluginProgress(String name) {
 			this.name = name;
-			pluginProgress = DOWNLOADING;
+			pluginProgress = PROGRESS_STATE.DOWNLOADING;
 		}
 
 		/**
@@ -1182,7 +1189,7 @@ public class PluginManager {
 		 *
 		 * @return The current state of the plugin
 		 */
-		public PluginProgress getProgress() {
+		public PROGRESS_STATE getProgress() {
 			return pluginProgress;
 		}
 
@@ -1192,8 +1199,8 @@ public class PluginManager {
 		 * @param pluginProgress
 		 *            The current state
 		 */
-		void setProgress(PluginProgress pluginProgress) {
-			this.pluginProgress = pluginProgress;
+		void setProgress(PROGRESS_STATE state) {
+			this.pluginProgress = state;
 		}
 
 		/**
@@ -1206,11 +1213,43 @@ public class PluginManager {
 		 */
 		@Override
 		public String toString() {
-			if(this == DOWNLOADING)
-				return "downloading";
-			else if(this == STARTING)
-				return "starting";
 			return "PluginProgress[name=" + name + ",startingTime=" + startingTime + ",progress=" + pluginProgress + "]";
+		}
+
+		public String toLocalisedString() {
+			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0)
+				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading") + " : "+((current*100.0) / total)+"%";
+			else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
+				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading");
+			else if(pluginProgress == PROGRESS_STATE.STARTING)
+				return NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.starting");
+			else
+				return toString();
+		}
+		
+		public HTMLNode toLocalisedHTML() {
+			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0) {
+				return QueueToadlet.createProgressCell(false, true, ClientPut.COMPRESS_STATE.WORKING, current, failed, fatallyFailed, minSuccessful, total, finalisedTotal, false);
+			} else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
+				return new HTMLNode("td", NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading"));
+			else if(pluginProgress == PROGRESS_STATE.STARTING)
+				return new HTMLNode("td", NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.starting"));
+			else
+				return new HTMLNode("td", toString());
+		}
+		
+		public void setDownloadProgress(int minSuccess, int current, int total, int failed, int fatallyFailed, boolean finalised) {
+			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			this.total = total;
+			this.current = current;
+			this.minSuccessful = minSuccess;
+			this.failed = failed;
+			this.fatallyFailed = fatallyFailed;
+			this.finalisedTotal = finalised;
+		}
+		
+		public void setDownloading() {
+			this.pluginProgress = PROGRESS_STATE.DOWNLOADING;
 		}
 	}
 

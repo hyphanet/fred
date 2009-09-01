@@ -142,5 +142,7 @@ public interface HighLevelSimpleClient {
 	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null. 
 	 */
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio);
+
+	public HighLevelSimpleClient clone();
 	
 }

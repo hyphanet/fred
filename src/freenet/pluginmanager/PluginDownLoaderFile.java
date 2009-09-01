@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import freenet.pluginmanager.PluginManager.PluginProgress;
+
 public class PluginDownLoaderFile extends PluginDownLoader<File> {
 
 	@Override
@@ -16,7 +18,7 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 	}
 
 	@Override
-	InputStream getInputStream() throws IOException {
+	InputStream getInputStream(PluginProgress progress) throws IOException {
 		return new FileInputStream(getSource());
 	}
 
