@@ -39,8 +39,9 @@ public class PersistentStatsPutter implements DBJob {
 		BandwidthStatsContainer storedBSC = null;
 
 		ObjectSet<BandwidthStatsContainer> BSCresult = container.query(BandwidthStatsContainer.class);
-		storedBSC = BSCresult.get(0);
-		if(storedBSC == null) {
+		if(BSCresult.size() > 0) {
+			storedBSC = BSCresult.get(0);
+		} else {
 			storedBSC = new BandwidthStatsContainer();
 		}
 
@@ -48,8 +49,9 @@ public class PersistentStatsPutter implements DBJob {
 
 		UptimeContainer storedUC = null;
 		ObjectSet<UptimeContainer> UptimeResult = container.query(UptimeContainer.class);
-		storedUC = UptimeResult.get(0);
-		if(storedUC == null) {
+		if(UptimeResult.size() > 0) {
+			storedUC = UptimeResult.get(0);
+		} else {
 			storedUC = new UptimeContainer();
 		}
 
