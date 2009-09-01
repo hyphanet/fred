@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,23 +14,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
-import freenet.client.async.ClientContext;
-import freenet.client.events.ClientEvent;
-import freenet.client.events.ClientEventListener;
-import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
-import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -41,20 +33,10 @@ import freenet.support.io.FileUtil;
 /**
  * Push / Pull test over long period of time
  * 
- * <p>
- * This class push a series of keys in the format of
- * <code>KSK@&lt;unique identifier&gt;-DATE-n</code>. It will then try to pull them after (2^n - 1)
- * days.
- * <p>
- * The result is recorded as a CSV file in the format of:
- * 
- * <pre>
- * 	DATE, VERSION, SEED-TIME-1, PUSH-TIME-#0, ... , PUSH-TIME-#N, SEED-TIME-2, PULL-TIME-#0, ... , PULL-TIME-#N
- * </pre>
- * 
- * @author sdiz
+ * Unlike LongTermPushPullTest, this only inserts one key per day. That key
+ * is then re-pulled at increasing intervals.
  */
-public class LongTermPushPullTest {
+public class LongTermPushRepullTest {
 	private static final int TEST_SIZE = 64 * 1024;
 
 	private static final int EXIT_NO_SEEDNODES = 257;
@@ -122,39 +104,27 @@ public class LongTermPushPullTest {
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
 
-			// PUSH N+1 BLOCKS
-			for (int i = 0; i <= MAX_N; i++) {
-				Bucket data = randomData(node);
-				HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
-				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()) + "-" + i);
-				System.out.println("PUSHING " + uri);
-				client.addEventHook(new ClientEventListener() {
-
-					public void onRemoveEventProducer(ObjectContainer container) {
-						// Ignore
-					}
-
-					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
-						System.out.println(ce.getDescription());
-					}
-					
-				});
-
-				try {
-					InsertBlock block = new InsertBlock(data, new ClientMetadata(), uri);
-					t1 = System.currentTimeMillis();
-					client.insert(block, false, null);
-					t2 = System.currentTimeMillis();
-
-					System.out.println("PUSH-TIME-" + i + ":" + (t2 - t1));
-					csvLine.add(String.valueOf(t2 - t1));
-				} catch (InsertException e) {
-					e.printStackTrace();
-					csvLine.add("N/A");
-				}
-
-				data.free();
+			// Push one block only.
+			
+			Bucket data = randomData(node);
+			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
+			FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()));
+			System.out.println("PUSHING " + uri);
+			
+			try {
+				InsertBlock block = new InsertBlock(data, new ClientMetadata(), uri);
+				t1 = System.currentTimeMillis();
+				client.insert(block, false, null);
+				t2 = System.currentTimeMillis();
+				
+				System.out.println("PUSH-TIME-" + ":" + (t2 - t1));
+				csvLine.add(String.valueOf(t2 - t1));
+			} catch (InsertException e) {
+				e.printStackTrace();
+				csvLine.add("N/A");
 			}
+
+			data.free();
 
 			node.park();
 
@@ -180,11 +150,11 @@ public class LongTermPushPullTest {
 
 			// PULL N+1 BLOCKS
 			for (int i = 0; i <= MAX_N; i++) {
-				HighLevelSimpleClient client = node2.clientCore.makeClient((short) 0);
+				client = node2.clientCore.makeClient((short) 0);
 				Calendar targetDate = (Calendar) today.clone();
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 
-				FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(targetDate.getTime()) + "-" + i);
+				uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(targetDate.getTime()));
 				System.out.println("PULLING " + uri);
 
 				try {

@@ -207,8 +207,9 @@ public class PluginManager {
 	// try to guess around...
 	public PluginInfoWrapper startPluginAuto(final String pluginname, boolean store) {
 
-		if(isOfficialPlugin(pluginname)) {
-			return startPluginOfficial(pluginname, store);
+		OfficialPluginDescription desc;
+		if((desc = isOfficialPlugin(pluginname)) != null) {
+			return startPluginOfficial(pluginname, store, desc);
 		}
 
 		try {
@@ -229,6 +230,11 @@ public class PluginManager {
 	}
 
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store) {
+		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname));
+	}
+	
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
+		
 		return realStartPlugin(new PluginDownLoaderOfficial(), pluginname, store);
 	}
 
@@ -700,24 +706,27 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime);
 	}
 
-	private static class OfficialPluginDescription {
+	public static class OfficialPluginDescription {
 		/** The name of the plugin */
-		final String name;
+		public final String name;
 		/** If true, we will download it, blocking, over HTTP, during startup (unless
 		 * explicitly forbidden to use HTTP). If not, we will download it on a
 		 * separate thread after startup. Both are assuming we don't have it in a file. */
-		final boolean essential;
+		public final boolean essential;
 		/** Minimum getRealVersion(). If the plugin is older than this, we will fail
 		 * the load. */
-		final long minimumVersion;
+		public final long minimumVersion;
 		/** Does it use XML? If so, if the JVM is vulnerable, then don't load it */
-		final boolean usesXML;
+		public final boolean usesXML;
+		/** FreenetURI to get the latest version from */
+		public final FreenetURI uri;
 
-		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML) {
+		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
 			this.name = name;
 			this.essential = essential;
 			this.minimumVersion = minVer;
 			this.usesXML = usesXML;
+			this.uri = uri;
 		}
 	}
 
@@ -735,17 +744,25 @@ public class PluginManager {
 		addOfficialPlugin("TestGallery", false);
 		addOfficialPlugin("ThawIndexBrowser", false, 2, true);
 		addOfficialPlugin("UPnP", true, 10003, false);
-		addOfficialPlugin("XMLLibrarian", false, 22, true);
+		addOfficialPlugin("XMLLibrarian", false, 25, true);
 		addOfficialPlugin("XMLSpider", false, 39, true);
 		addOfficialPlugin("Freereader", false, 2, true);
 	}
 
 	static void addOfficialPlugin(String name, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML));
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, null));
+	}
+	
+	static void addOfficialPlugin(String name, boolean usesXML, FreenetURI uri) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, false, -1, usesXML, uri));
 	}
 
 	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML) {
-		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML));
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, null));
+	}
+	
+	static void addOfficialPlugin(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
+		officialPlugins.put(name, new OfficialPluginDescription(name, essential, minVer, usesXML, uri));
 	}
 
 	/**
@@ -755,21 +772,21 @@ public class PluginManager {
 	 *
 	 * @return A list of all available plugin names
 	 */
-	public List<String> findAvailablePlugins() {
-		List<String> availablePlugins = new ArrayList<String>();
-		availablePlugins.addAll(officialPlugins.keySet());
+	public List<OfficialPluginDescription> findAvailablePlugins() {
+		List<OfficialPluginDescription> availablePlugins = new ArrayList<OfficialPluginDescription>();
+		availablePlugins.addAll(officialPlugins.values());
 		return availablePlugins;
 	}
 
-	public boolean isOfficialPlugin(String name) {
+	public OfficialPluginDescription isOfficialPlugin(String name) {
 		if((name == null) || (name.trim().length() == 0))
-			return false;
-		List<String> availablePlugins = findAvailablePlugins();
-		for(String n : availablePlugins) {
-			if(n.equals(name))
-				return true;
+			return null;
+		List<OfficialPluginDescription> availablePlugins = findAvailablePlugins();
+		for(OfficialPluginDescription desc : availablePlugins) {
+			if(desc.name.equals(name))
+				return desc;
 		}
-		return false;
+		return null;
 	}
 
 	/** Separate lock for plugin loading. Don't use (this) as we also use that for
