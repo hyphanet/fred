@@ -6,9 +6,9 @@ package freenet.support.api;
 public interface HTTPUploadedFile {
 
 	/**
-	 * Returns the content type of the file.
+	 * Returns the MIME type of the file.
 	 * 
-	 * @return The content type of the file
+	 * @return The MIME type of the file
 	 */
 	public String getContentType();
 
