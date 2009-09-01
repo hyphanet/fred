@@ -1342,4 +1342,8 @@ public class PluginManager {
 	public THEME getFProxyTheme() {
 		return fproxyTheme;
 	}
+
+	public boolean loadOfficialPluginsFromWeb() {
+		return alwaysLoadOfficialPluginsFromCentralServer;
+	}
 }

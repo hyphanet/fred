@@ -333,7 +333,7 @@ public class PproxyToadlet extends Toadlet {
 
 				showStartingPlugins(pm, contentNode);
 				showPluginList(ctx, pm, contentNode);
-				showOfficialPluginLoader(ctx, contentNode, availablePlugins);
+				showOfficialPluginLoader(ctx, contentNode, availablePlugins, pm);
 				showUnofficialPluginLoader(ctx, contentNode);
 				showFreenetPluginLoader(ctx, contentNode);
 
@@ -456,7 +456,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 	
-	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<OfficialPluginDescription> availablePlugins) {
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<OfficialPluginDescription> availablePlugins, PluginManager pm) {
 		/* box for "official" plugins. */
 		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
@@ -471,7 +471,7 @@ public class PproxyToadlet extends Toadlet {
 		
 		p.addChild("#", " " + l10n("pluginSourceChoice"));
 		
-		boolean isLowSecLevel = node.securityLevels.getNetworkThreatLevel() == NETWORK_THREAT_LEVEL.LOW;
+		boolean isLowSecLevel = pm.loadOfficialPluginsFromWeb();
 		
 		HTMLNode input = addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
 				new String[] { "radio", "pluginSource", "freenet" });
