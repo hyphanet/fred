@@ -229,7 +229,12 @@ public class PluginManager {
 		return startPluginURL(pluginname, store);
 	}
 
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store) {
+		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname));
+	}
+	
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
+		
 		return realStartPlugin(new PluginDownLoaderOfficial(), pluginname, store);
 	}
 
@@ -701,20 +706,20 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime);
 	}
 
-	private static class OfficialPluginDescription {
+	public static class OfficialPluginDescription {
 		/** The name of the plugin */
-		final String name;
+		public final String name;
 		/** If true, we will download it, blocking, over HTTP, during startup (unless
 		 * explicitly forbidden to use HTTP). If not, we will download it on a
 		 * separate thread after startup. Both are assuming we don't have it in a file. */
-		final boolean essential;
+		public final boolean essential;
 		/** Minimum getRealVersion(). If the plugin is older than this, we will fail
 		 * the load. */
-		final long minimumVersion;
+		public final long minimumVersion;
 		/** Does it use XML? If so, if the JVM is vulnerable, then don't load it */
-		final boolean usesXML;
+		public final boolean usesXML;
 		/** FreenetURI to get the latest version from */
-		final FreenetURI uri;
+		public final FreenetURI uri;
 
 		OfficialPluginDescription(String name, boolean essential, long minVer, boolean usesXML, FreenetURI uri) {
 			this.name = name;

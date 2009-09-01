@@ -73,7 +73,7 @@ public class LoadPlugin extends FCPMessage {
 			public void run() {
 				String type = null;
 				if (urlType == null) {
-					if (node.pluginManager.isOfficialPlugin(pluginURL)) {
+					if (node.pluginManager.isOfficialPlugin(pluginURL) != null) {
 						type = TYPENAME_OFFICIAL;
 					} else if (new File(pluginURL).exists()) {
 						type = TYPENAME_FILE;

@@ -19,6 +19,7 @@ import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
 import freenet.pluginmanager.RedirectPluginHTTPException;
+import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -306,7 +307,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 				
 				/* find which plugins have already been loaded. */
-				List<String> availablePlugins = pm.findAvailablePlugins();
+				List<OfficialPluginDescription> availablePlugins = pm.findAvailablePlugins();
 				Iterator<PluginInfoWrapper> loadedPlugins = pm.getPlugins().iterator();
 				while (loadedPlugins.hasNext()) {
 					PluginInfoWrapper pluginInfoWrapper = loadedPlugins.next();
@@ -451,7 +452,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 	
-	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<String> availablePlugins) {
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<OfficialPluginDescription> availablePlugins) {
 		/* box for "official" plugins. */
 		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
@@ -462,9 +463,9 @@ public class PproxyToadlet extends Toadlet {
 		addOfficialForm.addChild("p").addChild("b").addChild("font", new String[] { "color" }, new String[] { "red" }, l10n("loadOfficialPluginWarning"));
 		addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 		HTMLNode selectNode = addOfficialForm.addChild("select", "name", "plugin-name");
-		Iterator<String> availablePluginIterator = availablePlugins.iterator();
+		Iterator<OfficialPluginDescription> availablePluginIterator = availablePlugins.iterator();
 		while (availablePluginIterator.hasNext()) {
-			String pluginName = availablePluginIterator.next();
+			String pluginName = availablePluginIterator.next().name;
 			selectNode.addChild("option", "value", pluginName, pluginName);
 		}
 		addOfficialForm.addChild("#", " ");
