@@ -3209,7 +3209,7 @@ public class Node implements TimeSkewDetectorCallback {
 					migrate.run();
 				}
 				
-			}, 0); // Use Ticker to guarantee that this runs *after* constructors have completed.
+			}, 0, "Start store", true, false); // Use Ticker to guarantee that this runs *after* constructors have completed.
 			
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
