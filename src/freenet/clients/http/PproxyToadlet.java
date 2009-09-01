@@ -298,14 +298,6 @@ public class PproxyToadlet extends Toadlet {
 
 				contentNode.addChild(core.alerts.createSummary());
 
-				UserAlert[] userAlerts = core.alerts.getAlerts();
-				for (int index = 0, count = userAlerts.length; index < count; index++) {
-					UserAlert userAlert = userAlerts[index];
-					if (userAlert.isValid() && (userAlert.getUserIdentifier() == PluginManager.class)) {
-						contentNode.addChild(core.alerts.renderAlert(userAlert));
-					}
-				}
-				
 				/* find which plugins have already been loaded. */
 				List<OfficialPluginDescription> availablePlugins = pm.findAvailablePlugins();
 				Iterator<PluginInfoWrapper> loadedPlugins = pm.getPlugins().iterator();
