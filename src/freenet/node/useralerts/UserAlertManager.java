@@ -5,6 +5,7 @@ package freenet.node.useralerts;
 
 import java.text.Format;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import freenet.support.Logger;
  * Collection of UserAlert's.
  */
 public class UserAlertManager implements Comparator<UserAlert> {
+	// No point keeping them sorted as some alerts can change priority.
 	private final Set<UserAlert> alerts;
 	private final NodeClientCore core;
 	private final Set<FCPConnectionHandler> subscribers;
@@ -34,7 +36,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
-		alerts = new TreeSet<UserAlert>(this);
+		alerts = new HashSet<UserAlert>();
 		subscribers = new CopyOnWriteArraySet<FCPConnectionHandler>();
 		events = new HashMap<UserEvent.Type, UserEvent>();
 		unregisteredEventTypes = new HashSet<UserEvent.Type>();
@@ -138,6 +140,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		synchronized (alerts) {
 			a = alerts.toArray(new UserAlert[alerts.size()]);
 		}
+		Arrays.sort(a, this);
 		return a;
 	}
 
