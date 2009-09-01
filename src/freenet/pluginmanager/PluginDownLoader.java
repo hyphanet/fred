@@ -35,6 +35,9 @@ public abstract class PluginDownLoader<T> {
 	abstract String getSHA1sum() throws PluginNotFoundException;
 	
 	abstract String getSHA256sum() throws PluginNotFoundException;
+
+	/** Cancel the load if possible */
+	abstract void tryCancel();
 	
 
 }

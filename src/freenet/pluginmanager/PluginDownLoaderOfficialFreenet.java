@@ -2,12 +2,13 @@ package freenet.pluginmanager;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
+import freenet.node.Node;
 import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 
 public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 
-	public PluginDownLoaderOfficialFreenet(HighLevelSimpleClient client) {
-		super(client);
+	public PluginDownLoaderOfficialFreenet(HighLevelSimpleClient client, Node node, boolean desperate) {
+		super(client, node, desperate);
 	}
 
 	@Override

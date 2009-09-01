@@ -102,5 +102,10 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 		while (redir);
 		return in;
 	}
+
+	@Override
+	void tryCancel() {
+		// Do nothing, not supported.
+	}
 }
 

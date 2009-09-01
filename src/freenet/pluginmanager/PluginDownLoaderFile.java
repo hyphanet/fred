@@ -40,4 +40,9 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 		return null;
 	}
 
+	@Override
+	void tryCancel() {
+		// Definitely not supported.
+	}
+
 }

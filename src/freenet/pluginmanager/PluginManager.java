@@ -15,6 +15,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,8 @@ public class PluginManager {
 	private final SerialExecutor executor;
 	
 	private boolean alwaysLoadOfficialPluginsFromCentralServer = false;
+	
+	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 
 	public PluginManager(Node node) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -110,7 +113,7 @@ public class PluginManager {
 		if(logDEBUG)
 			Logger.debug(this, "Initialize Plugin Manager config");
 
-		client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
+		client = core.makeClient(PRIO, true);
 
 		// callback executor
 		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);
@@ -276,7 +279,7 @@ public class PluginManager {
 			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
 		} else {
 			System.out.println("Loading plugin "+pluginname+" over Freenet...");
-			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client), pluginname, store);
+			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store);
 		}
 	}
 
@@ -289,13 +292,13 @@ public class PluginManager {
 	}
 
 	public PluginInfoWrapper startPluginFreenet(final String filename, boolean store) {
-		return realStartPlugin(new PluginDownLoaderFreenet(client), filename, store);
+		return realStartPlugin(new PluginDownLoaderFreenet(client, node, false), filename, store);
 	}
 
 	private PluginInfoWrapper realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store) {
 		if(filename.trim().length() == 0)
 			return null;
-		final PluginProgress pluginProgress = new PluginProgress(filename);
+		final PluginProgress pluginProgress = new PluginProgress(filename, pdl);
 		synchronized(startingPlugins) {
 			startingPlugins.add(pluginProgress);
 		}
@@ -316,9 +319,41 @@ public class PluginManager {
 		} catch (PluginNotFoundException e) {
 			Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
 			String message = e.getMessage();
+			boolean stillTrying = false;
+			if(pdl instanceof PluginDownLoaderOfficialFreenet) {
+				PluginDownLoaderOfficialFreenet downloader = (PluginDownLoaderOfficialFreenet) pdl;
+				if(!(downloader.fatalFailure() || downloader.desperate || twoCopiesInStartingPlugins(filename))) {
+					// Retry forever...
+					final PluginDownLoaderOfficialFreenet retry = 
+						new PluginDownLoaderOfficialFreenet(client, node, true);
+					stillTrying = true;
+					node.getTicker().queueTimedJob(new Runnable() {
+
+						public void run() {
+							realStartPlugin(retry, filename, store);
+						}
+						
+					}, 0);
+				}
+			} else if(pdl instanceof PluginDownLoaderFreenet) {
+				PluginDownLoaderFreenet downloader = (PluginDownLoaderFreenet) pdl;
+				if(!(downloader.fatalFailure() || downloader.desperate || twoCopiesInStartingPlugins(filename))) {
+					// Retry forever...
+					final PluginDownLoaderFreenet retry = 
+						new PluginDownLoaderFreenet(client, node, true);
+					stillTrying = true;
+					node.getTicker().queueTimedJob(new Runnable() {
+
+						public void run() {
+							realStartPlugin(retry, filename, store);
+						}
+						
+					}, 0);
+				}
+			}
 			PluginLoadFailedUserAlert newAlert = 
 				new PluginLoadFailedUserAlert(filename,
-						pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, e);
+						pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, stillTrying, e);
 			PluginLoadFailedUserAlert oldAlert = null;
 			synchronized (pluginWrappers) {
 				oldAlert = pluginsFailedLoad.put(filename, newAlert);
@@ -333,7 +368,7 @@ public class PluginManager {
 			System.err.println("Plugin " + filename + " appears to require a later JVM");
 			Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, l10n("pluginReqNewerJVMTitle", "name", filename));
+				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, false, l10n("pluginReqNewerJVMTitle", "name", filename));
 			PluginLoadFailedUserAlert oldAlert = null;
 			synchronized (pluginWrappers) {
 				oldAlert = pluginsFailedLoad.put(filename, newAlert);
@@ -347,7 +382,7 @@ public class PluginManager {
 			System.err.println("Plugin "+filename+" is broken, but we want to retry after next startup");
 			Logger.error(this, "Plugin "+filename+" is broken, but we want to retry after next startup");
 			PluginLoadFailedUserAlert newAlert =
-				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, e);
+				new PluginLoadFailedUserAlert(filename, pdl instanceof PluginDownLoaderOfficialHTTPS || pdl instanceof PluginDownLoaderOfficialFreenet, pdl instanceof PluginDownLoaderOfficialFreenet, false, e);
 			PluginLoadFailedUserAlert oldAlert = null;
 			synchronized (pluginWrappers) {
 				oldAlert = pluginsFailedLoad.put(filename, newAlert);
@@ -367,23 +402,37 @@ public class PluginManager {
 		return pi;
 	}
 
+	private synchronized boolean twoCopiesInStartingPlugins(String filename) {
+		int count = 0;
+		for(PluginProgress progress : startingPlugins) {
+			if(filename.equals(progress.name)) {
+				count++;
+				if(count == 2) return true;
+			}
+		}
+		return false;
+	}
+
 	class PluginLoadFailedUserAlert extends AbstractUserAlert {
 
 		final String filename;
 		final String message;
 		final boolean official;
 		final boolean officialFromFreenet;
+		final boolean stillTryingOverFreenet;
 
-		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, String message) {
+		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, boolean stillTryingOverFreenet, String message) {
 			this.filename = filename;
 			this.official = official;
 			this.message = message;
 			this.officialFromFreenet = officialFromFreenet;
+			this.stillTryingOverFreenet = stillTryingOverFreenet;
 		}
 
-		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, Throwable e) {
+		public PluginLoadFailedUserAlert(String filename, boolean official, boolean officialFromFreenet, boolean stillTryingOverFreenet, Throwable e) {
 			this.filename = filename;
 			this.official = official;
+			this.stillTryingOverFreenet = stillTryingOverFreenet;
 			String msg = e.getMessage();
 			if(msg == null) msg = e.toString();
 			this.message = msg;
@@ -398,6 +447,13 @@ public class PluginManager {
 			synchronized(pluginWrappers) {
 				pluginsFailedLoad.remove(filename);
 			}
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					cancelRunningLoads(filename);
+				}
+				
+			});
 		}
 
 		public String anchor() {
@@ -408,6 +464,9 @@ public class PluginManager {
 			HTMLNode div = new HTMLNode("div");
 			HTMLNode p = div.addChild("p");
 			p.addChild("#", l10n("pluginLoadingFailedWithMessage", new String[] { "name", "message" }, new String[] { filename, message }));
+			if(stillTryingOverFreenet) {
+				div.addChild("p", l10n("pluginLoadingFailedStillTryingOverFreenet"));
+			}
 
 			if(official) {
 				p = div.addChild("p");
@@ -422,11 +481,13 @@ public class PluginManager {
 				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "https" });
 				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgain") });
 
-				reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "freenet" });
-				reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgainFreenet") });
+				if(!stillTryingOverFreenet) {
+					reloadForm = div.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "plugin-name", filename });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginSource", "freenet" });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("officialPluginLoadFailedTryAgainFreenet") });
+				}
 			}
 
 			return div;
@@ -493,6 +554,24 @@ public class PluginManager {
 			node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
 		if(pi.isBandwidthIndicator())
 			node.ipDetector.registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
+	}
+
+	public void cancelRunningLoads(String filename) {
+		Logger.normal(this, "Cancelling loads for plugin "+filename);
+		ArrayList<PluginProgress> matches = null;
+		synchronized(this) {
+			for(Iterator<PluginProgress> i = startingPlugins.iterator();i.hasNext();) {
+				PluginProgress progress = i.next();
+				if(!filename.equals(progress.name)) continue;
+				if(matches == null) matches = new ArrayList<PluginProgress>();
+				matches.add(progress);
+				i.remove();
+			}
+		}
+		if(matches == null) return;
+		for(PluginProgress progress : matches) {
+			progress.kill();
+		}
 	}
 
 	/**
@@ -814,7 +893,7 @@ public class PluginManager {
 		addOfficialPlugin("MDNSDiscovery", false, 2, false);
 		addOfficialPlugin("SNMP", false);
 		addOfficialPlugin("TestGallery", false);
-		addOfficialPlugin("ThawIndexBrowser", false, 2, true);
+		addOfficialPlugin("ThawIndexBrowser", false, 2, true, new FreenetURI("CHK@Hrtddz74pQ0luFD77ji~h8Btx35~4-VjqTilDKsbeM0,lciym79NHSPoZ8QZNHUeUaYG7x5Ug2Byw0lfNFHb-Jk,AAIC--8/ThawIndexBrowser.jar"));
 		addOfficialPlugin("UPnP", true, 10003, false);
 		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
 		addOfficialPlugin("XMLSpider", false, 39, true);
@@ -971,6 +1050,8 @@ public class PluginManager {
 						throw e;
 				}
 		}
+		
+		cancelRunningLoads(name);
 
 		boolean remoteCodeExecVuln = node.xmlRemoteCodeExecVuln();
 		// we do quite a lot inside the lock, use a dedicated one
@@ -1183,6 +1264,7 @@ public class PluginManager {
 		private boolean finalisedTotal;
 		private int failed;
 		private int fatallyFailed;
+		private final PluginDownLoader<?> loader;
 
 		/**
 		 * Creates a new progress tracker for a plugin that is loaded by the
@@ -1190,10 +1272,16 @@ public class PluginManager {
 		 *
 		 * @param name
 		 *            The name by which the plugin is loaded
+		 * @param pdl 
 		 */
-		PluginProgress(String name) {
+		PluginProgress(String name, PluginDownLoader<?> pdl) {
 			this.name = name;
 			pluginProgress = PROGRESS_STATE.DOWNLOADING;
+			loader = pdl;
+		}
+
+		public void kill() {
+			loader.tryCancel();
 		}
 
 		/**
