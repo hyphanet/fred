@@ -40,7 +40,7 @@ public class PproxyToadlet extends Toadlet {
 		this.core = core;
 	}
 
-	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx)
+	public void handleMethodPOST(URI uri, final HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException {
 
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
@@ -65,7 +65,7 @@ public class PproxyToadlet extends Toadlet {
 
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Pproxy received POST on "+path);
 
-		PluginManager pm = node.pluginManager;
+		final PluginManager pm = node.pluginManager;
 
 		if(path.length()>0)
 		{
@@ -116,9 +116,15 @@ public class PproxyToadlet extends Toadlet {
 			PageMaker pageMaker = ctx.getPageMaker();
 			
 			if (request.isPartSet("submit-official")) {
-				String pluginName = null;
-				pluginName = request.getPartAsString("plugin-name", 40);
-				pm.startPluginOfficial(pluginName, true, "https".equals(request.getPartAsString("pluginSource", 10)));
+				final String pluginName = request.getPartAsString("plugin-name", 40);
+				node.executor.execute(new Runnable() {
+
+					public void run() {
+						pm.startPluginOfficial(pluginName, true, "https".equals(request.getPartAsString("pluginSource", 10)));
+					}
+					
+				});
+				
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
@@ -208,7 +214,7 @@ public class PproxyToadlet extends Toadlet {
 			}else if (request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				boolean purge = request.isPartSet("purge");
 				String pluginThreadName = request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
-				String fn = getPluginSpecification(pm, pluginThreadName);
+				final String fn = getPluginSpecification(pm, pluginThreadName);
 
 				if (fn == null) {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
@@ -218,8 +224,14 @@ public class PproxyToadlet extends Toadlet {
 					if (purge) {
 						pm.removeCachedCopy(fn);
 					}
-					// FIXME
-					pm.startPluginAuto(fn, true);
+					node.executor.execute(new Runnable() {
+
+						public void run() {
+							// FIXME
+							pm.startPluginAuto(fn, true);
+						}
+						
+					});
 
 					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);

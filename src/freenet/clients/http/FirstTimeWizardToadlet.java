@@ -673,7 +673,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if(enableUPnP)
 					// We can probably get connected without it, so don't force HTTPS.
 					// We'd have to ask the user anyway...
-					core.node.pluginManager.startPluginOfficial("UPnP", true, false);
+					core.node.executor.execute(new Runnable() {
+
+						public void run() {
+							core.node.pluginManager.startPluginOfficial("UPnP", true, false);
+						}
+						
+					});
+					
 				else
 					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
 			}
