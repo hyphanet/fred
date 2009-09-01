@@ -3056,6 +3056,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	private void finishInitSaltHashFS(final String suffix, NodeClientCore clientCore) {
+		if(clientCore.alerts == null) throw new NullPointerException();
 		((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
 		((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
 		((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
