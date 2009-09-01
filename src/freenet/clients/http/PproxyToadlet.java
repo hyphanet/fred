@@ -118,7 +118,7 @@ public class PproxyToadlet extends Toadlet {
 			if (request.isPartSet("submit-official")) {
 				String pluginName = null;
 				pluginName = request.getPartAsString("plugin-name", 40);
-				pm.startPluginOfficial(pluginName, true);
+				pm.startPluginOfficial(pluginName, true, "https".equals(request.getPartAsString("pluginSource", 10)));
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
@@ -458,11 +458,32 @@ public class PproxyToadlet extends Toadlet {
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
 		HTMLNode addOfficialPluginContent = addOfficialPluginBox.addChild("div", "class", "infobox-content");
 		HTMLNode addOfficialForm = toadletContext.addFormChild(addOfficialPluginContent, ".", "addOfficialPluginForm");
-		addOfficialForm.addChild("div", l10n("loadOfficialPluginText"));
-		// FIXME CSS-ize this
-		addOfficialForm.addChild("p").addChild("b").addChild("font", new String[] { "color" }, new String[] { "red" }, l10n("loadOfficialPluginWarning"));
-		addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
-		HTMLNode selectNode = addOfficialForm.addChild("select", "name", "plugin-name");
+		
+		HTMLNode p = addOfficialForm.addChild("p");
+		
+		p.addChild("#", l10n("loadOfficialPluginText"));
+		
+		// Over Freenet or over HTTP??
+		
+		p.addChild("#", " " + l10n("pluginSourceChoice"));
+		
+		addOfficialForm.addChild("input", new String[] { "type", "name", "value", "checked" },
+				new String[] { "radio", "pluginSource", "freenet", "true" });
+		addOfficialForm.addChild("#", l10n("pluginSourceFreenet"));
+		addOfficialForm.addChild("br");
+		addOfficialForm.addChild("input", new String[] { "type", "name", "value" },
+				new String[] { "radio", "pluginSource", "https" });
+		addOfficialForm.addChild("#", l10n("pluginSourceHTTPS"));
+		if(node.getOpennet() == null)
+			addOfficialForm.addChild("b").addChild("font", "color", "red", l10n("pluginSourceHTTPSWarningDarknet"));
+		else
+			// FIXME CSS-ize this
+			addOfficialForm.addChild("b", l10n("pluginSourceHTTPSWarning"));
+		
+		p = addOfficialForm.addChild("p");
+		
+		p.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
+		HTMLNode selectNode = p.addChild("select", "name", "plugin-name");
 		Iterator<OfficialPluginDescription> availablePluginIterator = availablePlugins.iterator();
 		while (availablePluginIterator.hasNext()) {
 			String pluginName = availablePluginIterator.next().name;
