@@ -119,7 +119,7 @@ public class PproxyToadlet extends Toadlet {
 				node.executor.execute(new Runnable() {
 
 					public void run() {
-						pm.startPluginOfficial(pluginName, true, "https".equals(request.getPartAsString("pluginSource", 10)));
+						pm.startPluginOfficial(pluginName, true, true, "https".equals(request.getPartAsString("pluginSource", 10)));
 					}
 					
 				});

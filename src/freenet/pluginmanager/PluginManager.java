@@ -92,7 +92,6 @@ public class PluginManager {
 	private final SerialExecutor executor;
 	
 	private boolean alwaysLoadOfficialPluginsFromCentralServer = false;
-	private boolean fallbackFromFreenetLoadToCentralServer = false;
 
 	public PluginManager(Node node) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -183,22 +182,7 @@ public class PluginManager {
 			
 		});
 		
-		pmconfig.register("fallbackFromFreenetLoadToCentralServer", false, 0, false, false, "PluginManager.fallbackFromFreenetLoadToCentralServer", "PluginManager.fallbackFromFreenetLoadToCentralServerLong", new BooleanCallback() {
-
-			@Override
-			public Boolean get() {
-				return fallbackFromFreenetLoadToCentralServer;
-			}
-
-			@Override
-			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				fallbackFromFreenetLoadToCentralServer = val;
-			}
-			
-		});
-		
 		alwaysLoadOfficialPluginsFromCentralServer = pmconfig.getBoolean("alwaysLoadOfficialPluginsFromCentralServer");
-		fallbackFromFreenetLoadToCentralServer = pmconfig.getBoolean("fallbackFromFreenetLoadToCentralServer");
 
 		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
@@ -208,15 +192,6 @@ public class PluginManager {
 					alwaysLoadOfficialPluginsFromCentralServer = true;
 				else if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
 					alwaysLoadOfficialPluginsFromCentralServer = false;
-				
-				boolean newIsNormal = 
-					newLevel == NETWORK_THREAT_LEVEL.LOW || newLevel == NETWORK_THREAT_LEVEL.NORMAL;
-				boolean oldIsNormal = 
-					oldLevel == NETWORK_THREAT_LEVEL.LOW || oldLevel == NETWORK_THREAT_LEVEL.NORMAL;
-				if(newIsNormal && !oldIsNormal)
-					fallbackFromFreenetLoadToCentralServer = true;
-				else if(oldIsNormal && !newIsNormal)
-					fallbackFromFreenetLoadToCentralServer = false;
 			}
 			
 		});
@@ -271,7 +246,7 @@ public class PluginManager {
 
 		OfficialPluginDescription desc;
 		if((desc = isOfficialPlugin(pluginname)) != null) {
-			return startPluginOfficial(pluginname, store, desc, false);
+			return startPluginOfficial(pluginname, store, desc, false, false);
 		}
 
 		try {
@@ -291,12 +266,12 @@ public class PluginManager {
 		return startPluginURL(pluginname, store);
 	}
 
-	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, boolean forceHTTPS) {
-		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname), forceHTTPS);
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, boolean force, boolean forceHTTPS) {
+		return startPluginOfficial(pluginname, store, officialPlugins.get(pluginname), force, forceHTTPS);
 	}
 	
-	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean forceHTTPS) {
-		if(alwaysLoadOfficialPluginsFromCentralServer || desc.uri == null || forceHTTPS) {
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
+		if((alwaysLoadOfficialPluginsFromCentralServer && !force) || desc.uri == null || force && forceHTTPS) {
 			System.out.println("Loading plugin "+pluginname+" over HTTPS...");
 			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
 		} else {

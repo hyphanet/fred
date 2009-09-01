@@ -102,7 +102,7 @@ public class LoadPlugin extends FCPMessage {
 				}
 				PluginInfoWrapper pi;
 				if (TYPENAME_OFFICIAL.equals(type)) {
-					pi = node.pluginManager.startPluginOfficial(pluginURL, store, false);
+					pi = node.pluginManager.startPluginOfficial(pluginURL, store, false, false);
 				} else if (TYPENAME_FILE.equals(type)) {
 					pi = node.pluginManager.startPluginFile(pluginURL, store);
 				} else if (TYPENAME_FREENET.equals(type)) {
