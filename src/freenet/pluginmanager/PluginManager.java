@@ -207,8 +207,9 @@ public class PluginManager {
 	// try to guess around...
 	public PluginInfoWrapper startPluginAuto(final String pluginname, boolean store) {
 
-		if(isOfficialPlugin(pluginname)) {
-			return startPluginOfficial(pluginname, store);
+		OfficialPluginDescription desc;
+		if((desc = isOfficialPlugin(pluginname)) != null) {
+			return startPluginOfficial(pluginname, store, desc);
 		}
 
 		try {
@@ -228,7 +229,7 @@ public class PluginManager {
 		return startPluginURL(pluginname, store);
 	}
 
-	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store) {
+	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc) {
 		return realStartPlugin(new PluginDownLoaderOfficial(), pluginname, store);
 	}
 
@@ -766,21 +767,21 @@ public class PluginManager {
 	 *
 	 * @return A list of all available plugin names
 	 */
-	public List<String> findAvailablePlugins() {
-		List<String> availablePlugins = new ArrayList<String>();
-		availablePlugins.addAll(officialPlugins.keySet());
+	public List<OfficialPluginDescription> findAvailablePlugins() {
+		List<OfficialPluginDescription> availablePlugins = new ArrayList<OfficialPluginDescription>();
+		availablePlugins.addAll(officialPlugins.values());
 		return availablePlugins;
 	}
 
-	public boolean isOfficialPlugin(String name) {
+	public OfficialPluginDescription isOfficialPlugin(String name) {
 		if((name == null) || (name.trim().length() == 0))
-			return false;
-		List<String> availablePlugins = findAvailablePlugins();
-		for(String n : availablePlugins) {
-			if(n.equals(name))
-				return true;
+			return null;
+		List<OfficialPluginDescription> availablePlugins = findAvailablePlugins();
+		for(OfficialPluginDescription desc : availablePlugins) {
+			if(desc.name.equals(name))
+				return desc;
 		}
-		return false;
+		return null;
 	}
 
 	/** Separate lock for plugin loading. Don't use (this) as we also use that for
