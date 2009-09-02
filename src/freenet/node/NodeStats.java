@@ -420,9 +420,9 @@ public class NodeStats implements Persistable {
 		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
 		
 		remoteCHKRequestsByHTL = new long[node.maxHTL()+1];
-		remoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];;
-		remoteSSKRequestsByHTL = new long[node.maxHTL()+1];;
-		remoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];;
+		remoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];
+		remoteSSKRequestsByHTL = new long[node.maxHTL()+1];
+		remoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];
 		remoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
 		remoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
 	}
