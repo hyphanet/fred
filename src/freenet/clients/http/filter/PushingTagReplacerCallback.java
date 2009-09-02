@@ -57,7 +57,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 	public String processTag(ParsedTag pt, URIProcessor uriProcessor) {
 		// If javascript is disabled, then it won't need pushing
 		if (ctx.getContainer().isFProxyJavascriptEnabled()) {
-			if (pt.element.compareTo("img") == 0) {
+			if (pt.element.toLowerCase().compareTo("img") == 0) {
 				// Img's needs to be replaced with pushed ImageElement's
 				for (int i = 0; i < pt.unparsedAttrs.length; i++) {
 					String attr = pt.unparsedAttrs[i];
@@ -84,10 +84,10 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 						}
 					}
 				}
-			} else if (pt.element.compareTo("body") == 0 && pt.startSlash==true) {
+			} else if (pt.element.toLowerCase().compareTo("body") == 0 && pt.startSlash==true) {
 				// After the <body>, we need to insert the requestId and the l10n script
 				return "".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\"" + ctx.getUniqueId() + "\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>")).concat("</body>");
-			} else if (pt.element.compareTo("head") == 0) {
+			} else if (pt.element.toLowerCase().compareTo("head") == 0) {
 				// After the <head>, we need to add GWT support
 				return "<head><script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script><noscript><style> .jsonly {display:none;}</style></noscript><link href=\"/static/reset.css\" rel=\"stylesheet\" type=\"text/css\" />";
 			}
