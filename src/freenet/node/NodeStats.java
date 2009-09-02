@@ -418,6 +418,12 @@ public class NodeStats implements Persistable {
 		this.avgCacheSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSuccessLocation"));
 		this.avgStoreSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSuccessLocation"));
 		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
+		
+		remoteCHKRequestsByHTL = new long[node.maxHTL()+1];
+		remoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];;
+		remoteSSKRequestsByHTL = new long[node.maxHTL()+1];;
+		remoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];;
+
 	}
 	
 	protected String l10n(String key) {
@@ -2032,5 +2038,43 @@ public class NodeStats implements Persistable {
 	
 	synchronized void turtleFailed() {
 		turtleTransfersCompleted++;
+	}
+	
+	private long[] remoteCHKRequestsByHTL;
+	private long[] remoteCHKRequestsSuccessByHTL;
+	private long[] remoteSSKRequestsByHTL;
+	private long[] remoteSSKRequestsSuccessByHTL;
+	
+	void remoteRequest(boolean ssk, boolean success, short htl) {
+		if(htl > node.maxHTL()) htl = node.maxHTL();
+		synchronized(this) {
+			if(ssk)
+				remoteSSKRequestsByHTL[htl]++;
+			else
+				remoteCHKRequestsByHTL[htl]++;
+			if(success) {
+				if(ssk)
+					remoteSSKRequestsSuccessByHTL[htl]++;
+				else
+					remoteCHKRequestsSuccessByHTL[htl]++;
+			}
+		}
+	}
+	
+	public void fillRemoteRequestHTLsBox(HTMLNode html) {
+		HTMLNode table = html.addChild("table");
+		HTMLNode row = table.addChild("tr");
+		row.addChild("th", "HTL");
+		row.addChild("th", "CHKs");
+		row.addChild("th", "SSKs");
+		row = table.addChild("tr");
+		synchronized(this) {
+			for(int htl = remoteCHKRequestsByHTL.length-1;htl>=0;htl--) {
+				row = table.addChild("tr");
+				row.addChild("td", Integer.toString(htl));
+				row.addChild("td", fix3p3pct.format(remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl]) + "&nbsp;("+remoteCHKRequestsByHTL[htl]+")");
+				row.addChild("td", fix3p3pct.format(remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl]) + "&nbsp;("+remoteSSKRequestsByHTL[htl]+")");
+			}
+		}
 	}
 }
