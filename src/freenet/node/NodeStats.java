@@ -2087,8 +2087,8 @@ public class NodeStats implements Persistable {
 				if (remoteSSKRequestsByHTL[htl] > 0) SSKRate = remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl];
 				double CHKLocalRate = 0;
 				double SSKLocalRate = 0;
-				if (remoteCHKRequestsSuccessByHTL[htl] > 0) CHKLocalRate = remoteCHKRequestsLocalSuccessByHTL[htl] / remoteCHKRequestsSuccessByHTL[htl];
-				if (remoteSSKRequestsSuccessByHTL[htl] > 0) SSKLocalRate = remoteSSKRequestsLocalSuccessByHTL[htl] / remoteSSKRequestsSuccessByHTL[htl];
+				if (remoteCHKRequestsSuccessByHTL[htl] > 0) CHKLocalRate = remoteCHKRequestsLocalSuccessByHTL[htl]*1.0 / remoteCHKRequestsSuccessByHTL[htl];
+				if (remoteSSKRequestsSuccessByHTL[htl] > 0) SSKLocalRate = remoteSSKRequestsLocalSuccessByHTL[htl]*1.0 / remoteSSKRequestsSuccessByHTL[htl];
 				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsByHTL[htl]+","+fix3p3pct.format(CHKLocalRate)+")");
 				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsByHTL[htl]+","+fix3p3pct.format(SSKLocalRate)+")");
 			}
