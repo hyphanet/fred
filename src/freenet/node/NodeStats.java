@@ -2042,10 +2042,12 @@ public class NodeStats implements Persistable {
 	
 	private long[] remoteCHKRequestsByHTL;
 	private long[] remoteCHKRequestsSuccessByHTL;
+	private long[] remoteCHKRequestsLocalSuccessByHTL;
 	private long[] remoteSSKRequestsByHTL;
 	private long[] remoteSSKRequestsSuccessByHTL;
+	private long[] remoteSSKRequestsLocalSuccessByHTL;
 	
-	void remoteRequest(boolean ssk, boolean success, short htl) {
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl) {
 		if(htl > node.maxHTL()) htl = node.maxHTL();
 		synchronized(this) {
 			if(ssk)
@@ -2053,10 +2055,15 @@ public class NodeStats implements Persistable {
 			else
 				remoteCHKRequestsByHTL[htl]++;
 			if(success) {
-				if(ssk)
+				if(ssk) {
 					remoteSSKRequestsSuccessByHTL[htl]++;
-				else
+					if(local)
+						remoteSSKRequestsLocalSuccessByHTL[htl]++;
+				} else {
 					remoteCHKRequestsSuccessByHTL[htl]++;
+					if(local)
+						remoteCHKRequestsLocalSuccessByHTL[htl]++;
+				}
 			}
 		}
 	}
@@ -2072,8 +2079,8 @@ public class NodeStats implements Persistable {
 			for(int htl = remoteCHKRequestsByHTL.length-1;htl>=0;htl--) {
 				row = table.addChild("tr");
 				row.addChild("td", Integer.toString(htl));
-				row.addChild("td", fix3p3pct.format(remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl]) + "\u00a0("+remoteCHKRequestsByHTL[htl]+")");
-				row.addChild("td", fix3p3pct.format(remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl]) + "\u00a0("+remoteSSKRequestsByHTL[htl]+")");
+				row.addChild("td", fix3p3pct.format(remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl]) + "\u00a0("+remoteCHKRequestsByHTL[htl]+","+"("+fix3p3pct.format(remoteCHKRequestsLocalSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl])+")");
+				row.addChild("td", fix3p3pct.format(remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl]) + "\u00a0("+remoteSSKRequestsByHTL[htl]+","+"("+fix3p3pct.format(remoteSSKRequestsLocalSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl])+")");
 			}
 		}
 	}
