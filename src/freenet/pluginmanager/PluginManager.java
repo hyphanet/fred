@@ -886,7 +886,7 @@ public class PluginManager {
 		addOfficialPlugin("Echo", false);
 		addOfficialPlugin("Freemail", false, 12, true, new FreenetURI("CHK@OwIWNuh0FvE4SO4HYV9TQ1GtwOrfuZZoJv4-WXp4X2Q,0jcAIHtFJOin6vke-KxUhps5jTxYeu1XvmuCZKxlQY4,AAIC--8/Freemail.jar"));
 		addOfficialPlugin("HelloWorld", false);
-		addOfficialPlugin("HelloFCP", false);
+		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"));
 		addOfficialPlugin("JSTUN", true, 2, false);
 		addOfficialPlugin("KeyExplorer", false, 4010, false);
 		addOfficialPlugin("MDNSDiscovery", false, 2, false);
