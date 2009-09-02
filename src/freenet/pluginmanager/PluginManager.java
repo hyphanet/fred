@@ -1161,11 +1161,14 @@ public class PluginManager {
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
 						}
+						pluginFile.delete();
 						throw new PluginTooOldException("plugin too old: need at least version "+minVer, downloaded);
 					}
 
-					if(desc.usesXML && remoteCodeExecVuln)
+					if(desc.usesXML && remoteCodeExecVuln) {
+						pluginFile.delete();
 						throw new PluginNotFoundException("plugin cannot be loaded because your JVM is dangerously old; plugin uses XML and your JVM has remote code execution vulnerabilities in its XML parser");
+					}
 
 				}
 
