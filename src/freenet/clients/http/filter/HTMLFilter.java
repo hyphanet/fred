@@ -132,6 +132,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		final boolean noOutput;
 		boolean isXHTML=false;
 		Stack<String> openElements;
+		
+		/** If <head> is found, then it is true. It is needed that if <title> or <meta> is found outside <head> or if a <body> is found first, then insert a <head> too*/
+		boolean wasHeadElementFound=false;
 	
 		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean noOutput) {
 			this.r = r;
@@ -505,6 +508,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			t = t.sanitize(pc);
 			if(pc.noOutput) return; // sanitize has done all the work we are interested in
 			if (t != null) {
+				
+				//We need to make sure that <head> is present in the document. If it is not, then GWT javascript won't get loaded.
+				//To achieve this, we keep track whether we processed the <head>
+				if(t.element.compareTo("head")==0){
+					pc.wasHeadElementFound=true;
+				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
+				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.wasHeadElementFound==false){
+					pc.openElements.push("head");
+					pc.wasHeadElementFound=true;
+					w.write(pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>())));
+				//If we found a <body> and haven't closed <head> already, then we do
+				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
+					w.write("</head>");
+					pc.openElements.pop();
+				//If we found a <body> and no <head> before it, then we insert it 
+				}else if(t.element.compareTo("body")==0 && pc.wasHeadElementFound==false){
+					pc.wasHeadElementFound=true;
+					w.write(pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()))+"</head>");
+				}
+				
 				//If the tag needs replacement, then replace it
 				String newContent=pc.cb.processTag(t);
 				if(newContent!=null){
