@@ -2075,12 +2075,21 @@ public class NodeStats implements Persistable {
 		row.addChild("th", "CHKs");
 		row.addChild("th", "SSKs");
 		row = table.addChild("tr");
+		char nbsp = (char)160;
 		synchronized(this) {
 			for(int htl = remoteCHKRequestsByHTL.length-1;htl>=0;htl--) {
 				row = table.addChild("tr");
 				row.addChild("td", Integer.toString(htl));
-				row.addChild("td", fix3p3pct.format(remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl]) + "\u00a0("+remoteCHKRequestsByHTL[htl]+","+"("+fix3p3pct.format(remoteCHKRequestsLocalSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl])+")");
-				row.addChild("td", fix3p3pct.format(remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl]) + "\u00a0("+remoteSSKRequestsByHTL[htl]+","+"("+fix3p3pct.format(remoteSSKRequestsLocalSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl])+")");
+				double CHKRate = 0.;
+				double SSKRate = 0.;
+				if (remoteCHKRequestsByHTL[htl] > 0) CHKRate = remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl];
+				if (remoteSSKRequestsByHTL[htl] > 0) SSKRate = remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl];
+				double CHKLocalRate = 0;
+				double SSKLocalRate = 0;
+				if (remoteCHKRequestsSuccessByHTL[htl] > 0) CHKLocalRate = remoteCHKRequestsLocalSuccessByHTL[htl] / remoteCHKRequestsSuccessByHTL[htl];
+				if (remoteSSKRequestsSuccessByHTL[htl] > 0) SSKLocalRate = remoteSSKRequestsLocalSuccessByHTL[htl] / remoteSSKRequestsSuccessByHTL[htl];
+				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsByHTL[htl]+","+fix3p3pct.format(CHKLocalRate)+")");
+				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsByHTL[htl]+","+fix3p3pct.format(SSKLocalRate)+")");
 			}
 		}
 	}
