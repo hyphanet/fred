@@ -275,10 +275,8 @@ public class PluginManager {
 	
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
 		if((alwaysLoadOfficialPluginsFromCentralServer && !force) || desc.uri == null || force && forceHTTPS) {
-			System.out.println("Loading plugin "+pluginname+" over HTTPS...");
 			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
 		} else {
-			System.out.println("Loading plugin "+pluginname+" over Freenet...");
 			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store);
 		}
 	}
