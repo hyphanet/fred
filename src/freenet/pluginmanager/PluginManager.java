@@ -884,7 +884,7 @@ public class PluginManager {
 	static {
 		try {
 		addOfficialPlugin("Echo", false);
-		addOfficialPlugin("Freemail", false, 12, true);
+		addOfficialPlugin("Freemail", false, 12, true, new FreenetURI("CHK@OwIWNuh0FvE4SO4HYV9TQ1GtwOrfuZZoJv4-WXp4X2Q,0jcAIHtFJOin6vke-KxUhps5jTxYeu1XvmuCZKxlQY4,AAIC--8/Freemail.jar"));
 		addOfficialPlugin("HelloWorld", false);
 		addOfficialPlugin("HelloFCP", false);
 		addOfficialPlugin("JSTUN", true, 2, false);
@@ -896,7 +896,7 @@ public class PluginManager {
 		addOfficialPlugin("UPnP", true, 10003, false);
 		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
 		addOfficialPlugin("XMLSpider", false, 39, true);
-		addOfficialPlugin("Freereader", false, 2, true);
+		addOfficialPlugin("Freereader", false, 2, true, new FreenetURI("CHK@ijfUy3ptA-UTk~vBpnxl92AVgLtH34FD46CJXNeJk5Q,p8ZtjT0Fg0YmA2LDt3kyxIagCQ6-KtsfwDyAVoOhQKE,AAIC--8/Freereader.jar"));
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
