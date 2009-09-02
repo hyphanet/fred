@@ -450,7 +450,7 @@ public class PluginManager {
 			node.executor.execute(new Runnable() {
 
 				public void run() {
-					cancelRunningLoads(filename);
+					cancelRunningLoads(filename, null);
 				}
 				
 			});
@@ -556,12 +556,13 @@ public class PluginManager {
 			node.ipDetector.registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
 	}
 
-	public void cancelRunningLoads(String filename) {
+	public void cancelRunningLoads(String filename, PluginProgress exceptFor) {
 		Logger.normal(this, "Cancelling loads for plugin "+filename);
 		ArrayList<PluginProgress> matches = null;
 		synchronized(this) {
 			for(Iterator<PluginProgress> i = startingPlugins.iterator();i.hasNext();) {
 				PluginProgress progress = i.next();
+				if(progress == exceptFor) continue;
 				if(!filename.equals(progress.name)) continue;
 				if(matches == null) matches = new ArrayList<PluginProgress>();
 				matches.add(progress);
@@ -1052,7 +1053,7 @@ public class PluginManager {
 						throw e;
 				}
 		
-		cancelRunningLoads(name);
+		cancelRunningLoads(name, progress);
 
 		boolean remoteCodeExecVuln = node.xmlRemoteCodeExecVuln();
 		// we do quite a lot inside the lock, use a dedicated one
