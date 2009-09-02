@@ -2085,12 +2085,9 @@ public class NodeStats implements Persistable {
 				double SSKRate = 0.;
 				if (remoteCHKRequestsByHTL[htl] > 0) CHKRate = remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl];
 				if (remoteSSKRequestsByHTL[htl] > 0) SSKRate = remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl];
-				double CHKLocalRate = 0;
-				double SSKLocalRate = 0;
-				if (remoteCHKRequestsSuccessByHTL[htl] > 0) CHKLocalRate = remoteCHKRequestsLocalSuccessByHTL[htl]*1.0 / remoteCHKRequestsSuccessByHTL[htl];
-				if (remoteSSKRequestsSuccessByHTL[htl] > 0) SSKLocalRate = remoteSSKRequestsLocalSuccessByHTL[htl]*1.0 / remoteSSKRequestsSuccessByHTL[htl];
-				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsByHTL[htl]+","+fix3p3pct.format(CHKLocalRate)+")");
-				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsByHTL[htl]+","+fix3p3pct.format(SSKLocalRate)+")");
+				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsLocalSuccessByHTL[htl] + "," + (remoteCHKRequestsSuccessByHTL[htl] - remoteCHKRequestsLocalSuccessByHTL[htl]) + "," + remoteCHKRequestsByHTL[htl] + ")");
+				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsLocalSuccessByHTL[htl] + "," + (remoteSSKRequestsSuccessByHTL[htl] - remoteSSKRequestsLocalSuccessByHTL[htl]) + "," + remoteSSKRequestsByHTL[htl] + ")");
+
 			}
 		}
 	}
