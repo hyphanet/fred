@@ -1120,7 +1120,8 @@ public class PluginManager {
 					((FredPluginWithClassLoader)object).setClassLoader(jarClassLoader);
 				}
 
-				if(pdl instanceof PluginDownLoaderOfficialHTTPS) {
+				if(pdl instanceof PluginDownLoaderOfficialHTTPS ||
+						pdl instanceof PluginDownLoaderOfficialFreenet) {
 					System.err.println("Loading official plugin "+name);
 					// Check the version after loading it!
 					// Building it into the manifest would be better, in that it would
