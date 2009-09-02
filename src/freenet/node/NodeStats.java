@@ -2073,8 +2073,12 @@ public class NodeStats implements Persistable {
 			for(int htl = remoteCHKRequestsByHTL.length-1;htl>=0;htl--) {
 				row = table.addChild("tr");
 				row.addChild("td", Integer.toString(htl));
-				row.addChild("td", fix3p3pct.format(remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl]) + nbsp + "("+remoteCHKRequestsByHTL[htl]+")");
-				row.addChild("td", fix3p3pct.format(remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl]) + nbsp + "("+remoteSSKRequestsByHTL[htl]+")");
+				double CHKRate = 0.;
+				double SSKRate = 0.;
+				if (remoteCHKRequestsByHTL[htl] > 0) CHKRate = remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl];
+				if (remoteSSKRequestsByHTL[htl] > 0) SSKRate = remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl];
+				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsByHTL[htl]+")");
+				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsByHTL[htl]+")");
 			}
 		}
 	}
