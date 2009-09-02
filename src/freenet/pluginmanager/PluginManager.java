@@ -982,6 +982,7 @@ public class PluginManager {
 			pluginFile.delete();
 		}
 
+		boolean downloaded = false;
 		/* check if file needs to be downloaded. */
 		if(logMINOR)
 			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists()+" downloader "+pdl+" name "+name);
@@ -989,6 +990,7 @@ public class PluginManager {
 		for(int i = 0; i < RETRIES; i++) {
 			if(!pluginFile.exists() || pluginFile.length() == 0)
 				try {
+					downloaded = true;
 					System.err.println("Downloading plugin "+name);
 					WrapperManager.signalStarting(5*60*1000);
 					File tempPluginFile = null;
@@ -1159,7 +1161,7 @@ public class PluginManager {
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
 						}
-						throw new PluginNotFoundException("plugin too old: need at least version "+minVer);
+						throw new PluginTooOldException("plugin too old: need at least version "+minVer, downloaded);
 					}
 
 					if(desc.usesXML && remoteCodeExecVuln)
