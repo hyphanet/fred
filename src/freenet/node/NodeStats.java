@@ -423,7 +423,8 @@ public class NodeStats implements Persistable {
 		remoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];;
 		remoteSSKRequestsByHTL = new long[node.maxHTL()+1];;
 		remoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];;
-
+		remoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
+		remoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
 	}
 	
 	protected String l10n(String key) {
