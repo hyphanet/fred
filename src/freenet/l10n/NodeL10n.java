@@ -44,6 +44,9 @@ public class NodeL10n {
 	 * @see BaseL10n
 	 */
 	public static BaseL10n getBase() {
+		if(b==null){
+			new NodeL10n();
+		}
 		return b;
 	}
 }

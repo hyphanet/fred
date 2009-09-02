@@ -517,7 +517,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.wasHeadElementFound==false){
 					pc.openElements.push("head");
 					pc.wasHeadElementFound=true;
-					w.write(pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>())));
+					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
+					if(headContent!=null){
+						w.write(headContent);
+					}
 				//If we found a <body> and haven't closed <head> already, then we do
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
 					w.write("</head>");
@@ -525,7 +528,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				//If we found a <body> and no <head> before it, then we insert it 
 				}else if(t.element.compareTo("body")==0 && pc.wasHeadElementFound==false){
 					pc.wasHeadElementFound=true;
-					w.write(pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()))+"</head>");
+					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
+					if(headContent!=null){
+						w.write(headContent+"</head>");
+					}
 				}
 				
 				//If the tag needs replacement, then replace it
