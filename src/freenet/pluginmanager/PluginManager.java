@@ -982,6 +982,7 @@ public class PluginManager {
 			pluginFile.delete();
 		}
 
+		boolean downloaded = false;
 		/* check if file needs to be downloaded. */
 		if(logMINOR)
 			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists()+" downloader "+pdl+" name "+name);
@@ -989,6 +990,7 @@ public class PluginManager {
 		for(int i = 0; i < RETRIES; i++) {
 			if(!pluginFile.exists() || pluginFile.length() == 0)
 				try {
+					downloaded = true;
 					System.err.println("Downloading plugin "+name);
 					WrapperManager.signalStarting(5*60*1000);
 					File tempPluginFile = null;
@@ -1049,7 +1051,6 @@ public class PluginManager {
 					} else
 						throw e;
 				}
-		}
 		
 		cancelRunningLoads(name);
 
@@ -1065,18 +1066,21 @@ public class PluginManager {
 				if(manifest == null) {
 					Logger.error(this, "could not load manifest from plugin file");
 					pluginFile.delete();
+					if(!downloaded) continue;
 					throw new PluginNotFoundException("could not load manifest from plugin file");
 				}
 				Attributes mainAttributes = manifest.getMainAttributes();
 				if(mainAttributes == null) {
 					Logger.error(this, "manifest does not contain attributes");
 					pluginFile.delete();
+					if(!downloaded) continue;
 					throw new PluginNotFoundException("manifest does not contain attributes");
 				}
 				pluginMainClassName = mainAttributes.getValue("Plugin-Main-Class");
 				if(pluginMainClassName == null) {
 					Logger.error(this, "manifest does not contain a Plugin-Main-Class attribute");
 					pluginFile.delete();
+					if(!downloaded) continue;
 					throw new PluginNotFoundException("manifest does not contain a Plugin-Main-Class attribute");
 				}
 				if(this.isPluginLoaded(pluginMainClassName)) {
@@ -1087,14 +1091,17 @@ public class PluginManager {
 			} catch(JarException je1) {
 				Logger.error(this, "could not process jar file", je1);
 				pluginFile.delete();
+				if(!downloaded) continue;
 				throw new PluginNotFoundException("could not process jar file", je1);
 			} catch(ZipException ze1) {
 				Logger.error(this, "could not process jar file", ze1);
 				pluginFile.delete();
+				if(!downloaded) continue;
 				throw new PluginNotFoundException("could not process jar file", ze1);
 			} catch(IOException ioe1) {
 				Logger.error(this, "error processing jar file", ioe1);
 				pluginFile.delete();
+				if(!downloaded) continue;
 				throw new PluginNotFoundException("error procesesing jar file", ioe1);
 			} finally {
 				Closer.close(pluginJarFile);
@@ -1107,6 +1114,7 @@ public class PluginManager {
 				if(!(object instanceof FredPlugin)) {
 					Logger.error(this, "plugin main class is not a plugin");
 					pluginFile.delete();
+					if(!downloaded) continue;
 					throw new PluginNotFoundException("plugin main class is not a plugin");
 				}
 				if(object instanceof FredPluginWithClassLoader) {
@@ -1159,11 +1167,15 @@ public class PluginManager {
 						} catch (Throwable t) {
 							Logger.error(this, "Failed to close jar classloader for plugin: "+t, t);
 						}
-						throw new PluginNotFoundException("plugin too old: need at least version "+minVer);
+						pluginFile.delete();
+						if(!downloaded) continue;
+						throw new PluginTooOldException("plugin too old: need at least version "+minVer);
 					}
 
-					if(desc.usesXML && remoteCodeExecVuln)
+					if(desc.usesXML && remoteCodeExecVuln) {
+						pluginFile.delete();
 						throw new PluginNotFoundException("plugin cannot be loaded because your JVM is dangerously old; plugin uses XML and your JVM has remote code execution vulnerabilities in its XML parser");
+					}
 
 				}
 
@@ -1175,10 +1187,12 @@ public class PluginManager {
 			} catch(ClassNotFoundException cnfe1) {
 				Logger.error(this, "could not find plugin class", cnfe1);
 				pluginFile.delete();
+				if(!downloaded) continue;
 				throw new PluginNotFoundException("could not find plugin class", cnfe1);
 			} catch(InstantiationException ie1) {
 				Logger.error(this, "could not instantiate plugin", ie1);
 				pluginFile.delete();
+				if(!downloaded) continue;
 				throw new PluginNotFoundException("could not instantiate plugin", ie1);
 			} catch(IllegalAccessException iae1) {
 				Logger.error(this, "could not access plugin main class", iae1);
@@ -1187,6 +1201,7 @@ public class PluginManager {
 			} catch(NoClassDefFoundError ncdfe1) {
 				Logger.error(this, "could not find class def, may a missing lib?", ncdfe1);
 				pluginFile.delete();
+				if(!downloaded) continue;
 				throw new PluginNotFoundException("could not find class def, may a missing lib?", ncdfe1);
 			} catch(Throwable t) {
 				Logger.error(this, "unexpected error while plugin loading", t);
@@ -1194,6 +1209,8 @@ public class PluginManager {
 				throw new PluginNotFoundException("unexpected error while plugin loading " + t, t);
 			}
 		}
+		}
+		return null;
 	}
 
 	private String getFileDigest(File file, String digest) throws PluginNotFoundException {
