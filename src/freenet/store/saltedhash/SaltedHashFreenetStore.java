@@ -1131,6 +1131,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 */
 		private void resizeStore(final long _prevStoreSize, final boolean sleep) {
 			Logger.normal(this, "Starting datastore resize");
+			System.out.println("Resizing datastore "+name);
 
 			BatchProcessor resizeProcesser = new BatchProcessor() {
 				List<Entry> oldEntryList = new LinkedList<Entry>();
