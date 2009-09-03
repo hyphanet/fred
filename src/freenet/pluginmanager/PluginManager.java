@@ -763,7 +763,7 @@ public class PluginManager {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.getPluginClassName().equals(plugname))
+				if(pi.getPluginClassName().equals(plugname) || pi.getFilename().equals(plugname))
 					return true;
 			}
 		}

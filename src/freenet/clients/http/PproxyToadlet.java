@@ -497,7 +497,8 @@ public class PproxyToadlet extends Toadlet {
 		Iterator<OfficialPluginDescription> availablePluginIterator = availablePlugins.iterator();
 		while (availablePluginIterator.hasNext()) {
 			String pluginName = availablePluginIterator.next().name;
-			selectNode.addChild("option", "value", pluginName, pluginName);
+			if(!pm.isPluginLoaded(pluginName))
+				selectNode.addChild("option", "value", pluginName, pluginName);
 		}
 		addOfficialForm.addChild("#", " ");
 		addOfficialForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-official", l10n("Load") });
