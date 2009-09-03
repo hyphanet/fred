@@ -134,4 +134,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * etc. */
 	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context);
 
+	public boolean isStorageBroken(ObjectContainer container) {
+		return false;
+	}
+
 }

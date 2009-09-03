@@ -785,4 +785,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 //		return true;
 //	}
 //	
+	
+	public boolean isStorageBroken(ObjectContainer container) {
+		if(parent == null) return true;
+		if(ctx == null) return true;
+		return false;
+	}
+	
 }
