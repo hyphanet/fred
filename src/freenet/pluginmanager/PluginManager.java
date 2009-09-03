@@ -274,7 +274,7 @@ public class PluginManager {
 	}
 	
 	public PluginInfoWrapper startPluginOfficial(final String pluginname, boolean store, OfficialPluginDescription desc, boolean force, boolean forceHTTPS) {
-		if((alwaysLoadOfficialPluginsFromCentralServer && !force) || desc.uri == null || force && forceHTTPS) {
+		if((alwaysLoadOfficialPluginsFromCentralServer && !force)|| force && forceHTTPS) {
 			return realStartPlugin(new PluginDownLoaderOfficialHTTPS(), pluginname, store);
 		} else {
 			return realStartPlugin(new PluginDownLoaderOfficialFreenet(client, node, false), pluginname, store);
@@ -763,7 +763,7 @@ public class PluginManager {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.getPluginClassName().equals(plugname))
+				if(pi.getPluginClassName().equals(plugname) || pi.getFilename().equals(plugname))
 					return true;
 			}
 		}
@@ -888,13 +888,13 @@ public class PluginManager {
 		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"));
 		addOfficialPlugin("JSTUN", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
 		addOfficialPlugin("KeyExplorer", false, 4011, false, new FreenetURI("CHK@OzqvGdCum44k4HGg5rWVtIFUchfSPcLikiIiAKCzhB8,KaxZW1yYzQFCIV0P43WPyDPgTxkV5pyWTbfOtrH-ll0,AAIC--8/KeyExplorer.jar"));
-		addOfficialPlugin("MDNSDiscovery", false, 2, false, new FreenetURI("CHK@zRTJ-ZnMpTN4jrzuptOBMuCayTYTBUeW7TARIctpio0,6gaaqEXVuSMWZbDh0Jyl71zvLUPD71bSyZurOPkvwsU,AAIC--8/MDNSDiscovery.jar"));
+		addOfficialPlugin("MDNSDiscovery", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"));
 		addOfficialPlugin("TestGallery", false, new FreenetURI("CHK@wI4d1cOxv5L~XVcNQqEolHswSFrv96cUaviv9yHBRbY,f8jZdk-fl1lEzxMTZbIMp8kVMkwTs9P-uRJ4P3rsk68,AAIC--8/TestGallery.jar"));
 		addOfficialPlugin("ThawIndexBrowser", false, 3, true, new FreenetURI("CHK@aPJ4SXq8bcDwDI4IeZcMtEk6YrYjo5KbQfDPgHbvWFw,svusKGEL8yWfAmxA0ueXvBUny0mlSReZbvpDIA7UIXk,AAIC--8/ThawIndexBrowser.jar"));
 		addOfficialPlugin("UPnP", true, 10003, false, new FreenetURI("CHK@chunCVhavqu60gWdf1jlAzKyVhEx7Hy99BaDpoU~xlc,iI-VcHxkg66W8-61P-bHzJYTx9PYrI2GuGIjC4Lg8mI,AAIC--8/UPnP.jar"));
 		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
-		addOfficialPlugin("XMLSpider", false, 41, true);
+		addOfficialPlugin("XMLSpider", false, 41, true, new FreenetURI("CHK@Ws7ZAV786ezr8lKDrwuMHsnNAzBeAfuw-s5MumcHx0Q,cPgvmuyPHnl-1CP54C8va8nPngGpkrIRbJjWbrev9Zg,AAIC--8/XMLSpider.jar"));
 		addOfficialPlugin("Freereader", false, 2, true, new FreenetURI("CHK@ijfUy3ptA-UTk~vBpnxl92AVgLtH34FD46CJXNeJk5Q,p8ZtjT0Fg0YmA2LDt3kyxIagCQ6-KtsfwDyAVoOhQKE,AAIC--8/Freereader.jar"));
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
