@@ -148,14 +148,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		flags |= FLAG_DIRTY; // datastore is now dirty until flushAndClose()
 		writeConfigFile();
 
-		if (maxKeys != storeSize) {
-			if (prevStoreSize != 0) {
-				storeSize = Math.max(prevStoreSize, storeSize);
-				prevStoreSize = 0;
-			}
-			setMaxKeys(maxKeys, true);
-		}
-
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 
