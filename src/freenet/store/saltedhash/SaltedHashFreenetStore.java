@@ -184,13 +184,33 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags+" bloom size = "+bloomFilterSize+" keys = "+maxKeys);
 	}
+
+	private boolean started = false;
 	
-	public void start(Ticker ticker) {
+	/** If start can be completed quickly, or longStart is true, then do it. 
+	 * If longStart is false and start cannot be completed quickly, return 
+	 * true. Don't start twice. 
+	 * @throws IOException */
+	public boolean start(Ticker ticker, boolean longStart) throws IOException {
 		
-		long storeFileSize = Math.max(storeSize, prevStoreSize);
+		if(started) return true;
 		
-		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
-		setStoreFileSize(storeFileSize, true);
+		long curStoreFileSize = hdRAF.length();
+		
+		long prevFileSize = prevStoreSize * (headerBlockLength + dataBlockLength + hdPadding);
+		long curFileSize = storeSize * (headerBlockLength + dataBlockLength + hdPadding);
+		
+		if(curStoreFileSize < curFileSize) {
+			if(!longStart) {
+				if(curStoreFileSize < prevFileSize || prevFileSize <= 0)
+					return true;
+			} else {
+				System.err.println("Preallocating space for "+name);
+				WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
+				long storeFileSize = Math.max(storeSize, prevStoreSize);
+				setStoreFileSize(storeFileSize, true);
+			}
+		}
 		
 		if(ticker == null) {
 			cleanerThread.start();
@@ -202,6 +222,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 				
 			}, "Start cleaner thread", 0, true, false);
+		
+		started = true;
+		
+		return false;
 	}
 
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
@@ -643,8 +667,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		do {
 			int status = metaFC.read(mbf, Entry.METADATA_LENGTH * offset + mbf.position());
-			if (status == -1)
+			if (status == -1) {
+				Logger.error(this, "Failed to access offset "+offset);
 				throw new EOFException();
+			}
 		} while (mbf.hasRemaining());
 		mbf.flip();
 

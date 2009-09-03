@@ -3184,32 +3184,82 @@ public class Node implements TimeSkewDetectorCallback {
 			final SSKStore sskDatacache = new SSKStore(getPubKey);
 			final SaltedHashFreenetStore sskCacheFS = makeStore(bloomFilterSizeInM, "SSK", false, sskDatacache, dontResizeOnStart, masterKey);
 
-			final Runnable migrate = new MigrateOldStoreData(false);
+			boolean delay =
+				chkDataFS.start(ps, false) |
+				chkCacheFS.start(ps, false) |
+				pubkeyDataFS.start(ps, false) |
+				pubkeyCacheFS.start(ps, false) |
+				sskDataFS.start(ps, false) |
+				sskCacheFS.start(ps, false);
 			
-			this.getTicker().queueTimedJob(new Runnable() {
-
-				public void run() {
-					chkDataFS.start(ps);
-					chkCacheFS.start(ps);
-					pubkeyDataFS.start(ps);
-					pubkeyCacheFS.start(ps);
-					sskDataFS.start(ps);
-					sskCacheFS.start(ps);
-					
-					Node.this.chkDatastore = chkDatastore;
-					Node.this.chkDatacache = chkDatacache;
-					Node.this.pubKeyDatastore = pubKeyDatastore;
-					Node.this.pubKeyDatacache = pubKeyDatacache;
-					getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
-					Node.this.sskDatastore = sskDatastore;
-					Node.this.sskDatacache = sskDatacache;
-					
-					finishInitSaltHashFS(suffix, clientCore);
-					
-					migrate.run();
-				}
+			if(delay) {
 				
-			}, "Start store", 0, true, false); // Use Ticker to guarantee that this runs *after* constructors have completed.
+				System.err.println("Delayed init of datastore");
+				
+				initRAMFS();
+				
+				final Runnable migrate = new MigrateOldStoreData(false);
+				
+				this.getTicker().queueTimedJob(new Runnable() {
+					
+					public void run() {
+						System.err.println("Starting delayed init of datastore");
+						try {
+							chkDataFS.start(ps, true);
+							chkCacheFS.start(ps, true);
+							pubkeyDataFS.start(ps, true);
+							pubkeyCacheFS.start(ps, true);
+							sskDataFS.start(ps, true);
+							sskCacheFS.start(ps, true);
+						} catch (IOException e) {
+							Logger.error(this, "Failed to start datastore: "+e, e);
+							System.err.println("Failed to start datastore: "+e);
+							e.printStackTrace();
+							return;
+						}
+						
+						Node.this.chkDatastore = chkDatastore;
+						Node.this.chkDatacache = chkDatacache;
+						Node.this.pubKeyDatastore = pubKeyDatastore;
+						Node.this.pubKeyDatacache = pubKeyDatacache;
+						getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
+						Node.this.sskDatastore = sskDatastore;
+						Node.this.sskDatacache = sskDatacache;
+						
+						finishInitSaltHashFS(suffix, clientCore);
+						
+						System.err.println("Finishing delayed init of datastore");
+						migrate.run();
+					}
+					
+				}, "Start store", 0, true, false); // Use Ticker to guarantee that this runs *after* constructors have completed.
+			
+			} else {
+				
+				Node.this.chkDatastore = chkDatastore;
+				Node.this.chkDatacache = chkDatacache;
+				Node.this.pubKeyDatastore = pubKeyDatastore;
+				Node.this.pubKeyDatacache = pubKeyDatacache;
+				getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
+				Node.this.sskDatastore = sskDatastore;
+				Node.this.sskDatacache = sskDatacache;
+				
+				this.getTicker().queueTimedJob(new Runnable() {
+
+					public void run() {
+						Node.this.chkDatastore = chkDatastore;
+						Node.this.chkDatacache = chkDatacache;
+						Node.this.pubKeyDatastore = pubKeyDatastore;
+						Node.this.pubKeyDatacache = pubKeyDatacache;
+						getPubKey.setDataStore(pubKeyDatastore, pubKeyDatacache);
+						Node.this.sskDatastore = sskDatastore;
+						Node.this.sskDatacache = sskDatacache;
+						
+						finishInitSaltHashFS(suffix, clientCore);
+					}
+					
+				}, "Start store", 0, true, false);
+			}
 			
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
@@ -3244,24 +3294,48 @@ public class Node implements TimeSkewDetectorCallback {
 			final SSKStore sskClientcache = new SSKStore(getPubKey);
 			final SaltedHashFreenetStore sskDataFS = makeClientcache(bloomFilterSizeInM, "SSK", true, sskClientcache, dontResizeOnStart, clientCacheMasterKey);
 			
-			final Runnable migrate = new MigrateOldStoreData(true);
-			
-			getTicker().queueTimedJob(new Runnable() {
-
-				public void run() {
-					chkDataFS.start(ps);
-					Node.this.chkClientcache = chkClientcache;
-					pubkeyDataFS.start(ps);
-					Node.this.pubKeyClientcache = pubKeyClientcache;
-					getPubKey.setLocalDataStore(pubKeyClientcache);
-					sskDataFS.start(ps);
-					Node.this.sskClientcache = sskClientcache;
+			boolean delay = 
+				chkDataFS.start(ps, false) |
+				pubkeyDataFS.start(ps, false) |
+				sskDataFS.start(ps, false);
+				
+			if(delay) {
+				
+				System.err.println("Delayed init of client-cache");
+				
+				initRAMClientCacheFS();
+				
+				final Runnable migrate = new MigrateOldStoreData(true);
+				
+				getTicker().queueTimedJob(new Runnable() {
 					
-					migrate.run();
-				}
-				
-				
-			}, "Migrate store", 0, true, false);
+					public void run() {
+						System.err.println("Starting delayed init of client-cache");
+						try {
+							chkDataFS.start(ps, true);
+							pubkeyDataFS.start(ps, true);
+							sskDataFS.start(ps, true);
+						} catch (IOException e) {
+							Logger.error(this, "Failed to start client-cache: "+e, e);
+							System.err.println("Failed to start client-cache: "+e);
+							e.printStackTrace();
+							return;
+						}
+						Node.this.chkClientcache = chkClientcache;
+						Node.this.pubKeyClientcache = pubKeyClientcache;
+						getPubKey.setLocalDataStore(pubKeyClientcache);
+						Node.this.sskClientcache = sskClientcache;
+						
+						System.err.println("Finishing delayed init of client-cache");
+						migrate.run();
+					}
+				}, "Migrate store", 0, true, false);
+			} else {
+				Node.this.chkClientcache = chkClientcache;
+				Node.this.pubKeyClientcache = pubKeyClientcache;
+				getPubKey.setLocalDataStore(pubKeyClientcache);
+				Node.this.sskClientcache = sskClientcache;
+			}
 			
 		} catch (IOException e) {
 			System.err.println("Could not open store: " + e);
