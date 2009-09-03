@@ -5,12 +5,10 @@ package freenet.pluginmanager;
 
 import freenet.support.api.HTTPRequest;
 
-/** Standard HTTP interface for plugins. Not very flexible. Requires that
- * the plugin be threadless i.e. that it return from runPlugin reasonably
- * quickly. Use Toadlet's if you want to integrate with the main menu or
- * want more flexibility.
+/** Standard HTTP interface for plugins. Not very flexible. Use Toadlet's 
+ * if you want to integrate with the main menu or want more flexibility.
  */
-public interface FredPluginHTTP extends FredPluginThreadless {
+public interface FredPluginHTTP {
 	// Let them return null if unhandled
 	/** Handle a GET request, return HTML as a string or throw.
 	 * @throws AccessDeniedPluginHTTPException to send a 403 error.
