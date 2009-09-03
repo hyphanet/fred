@@ -3,6 +3,10 @@
 /* Bookmarks & bookmark editor */
 @import url(/static/bookmark.css);
 
+/* Fix for old Iceweasels */
+@import url(/static/themes/clean/theme.css);
+@import url(/static/statusbar.css);
+
 /* Base theme */
 @import url(/static/themes/clean-dropdown/theme.css);
 
