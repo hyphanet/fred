@@ -3246,7 +3246,7 @@ public class Node implements TimeSkewDetectorCallback {
 			
 			final Runnable migrate = new MigrateOldStoreData(true);
 			
-			executor.execute(new Runnable() {
+			getTicker().queueTimedJob(new Runnable() {
 
 				public void run() {
 					chkDataFS.start(ps);
@@ -3260,7 +3260,8 @@ public class Node implements TimeSkewDetectorCallback {
 					migrate.run();
 				}
 				
-			});
+				
+			}, "Migrate store", 0, true, false);
 			
 		} catch (IOException e) {
 			System.err.println("Could not open store: " + e);
