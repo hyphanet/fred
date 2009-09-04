@@ -5,12 +5,10 @@ import java.text.NumberFormat;
 
 import com.db4o.ObjectContainer;
 
-import freenet.clients.http.PageMaker;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
