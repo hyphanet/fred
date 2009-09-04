@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.management.modelmbean.RequiredModelMBean;
+
 import freenet.node.Ticker;
 import freenet.support.Logger;
 
@@ -54,19 +56,30 @@ public class PushDataManager {
 			Logger.minor(this, "Element updated id:" + id);
 		}
 		boolean needsUpdate = false;
+		if(elements.containsKey(id)==false){
+			if(logMINOR){
+				Logger.minor(this, "Element is updating, but not present on elements! elements:"+elements+" pages:"+pages+" awaitingNotifications:"+awaitingNotifications);
+			}
+		}
 		if (elements.containsKey(id)) for (String reqId : elements.get(id)) {
+			if(logMINOR){
+				Logger.minor(this, "Element is present on page:"+reqId+". Adding an UpdateEvent for all notification list.");
+			}
 			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
 				UpdateEvent updateEvent = new UpdateEvent(reqId, id);
 				if (notificationList.contains(updateEvent) == false) {
 					notificationList.add(updateEvent);
 					if (logMINOR) {
-						Logger.minor(this, "Notification added");
+						Logger.minor(this, "Notification("+updateEvent+") added to a notification list");
 					}
 				}
 			}
 			needsUpdate = true;
 		}
 		if (needsUpdate) {
+			if(logMINOR){
+				Logger.minor(this, "Waking up notification polls");
+			}
 			notifyAll();
 		}
 	}
@@ -80,6 +93,9 @@ public class PushDataManager {
 	 *            - The element that is rendered
 	 */
 	public synchronized void elementRendered(String requestUniqueId, BaseUpdateableElement element) {
+		if(logMINOR){
+			Logger.minor(this, "Element is rendered in page:"+requestUniqueId+" element:"+element);
+		}
 		// Add to the pages
 		if (pages.containsKey(requestUniqueId) == false) {
 			pages.put(requestUniqueId, new ArrayList<BaseUpdateableElement>());
@@ -115,12 +131,16 @@ public class PushDataManager {
 	 *            - The element's id
 	 */
 	public synchronized BaseUpdateableElement getRenderedElement(String requestId, String id) {
+		if(logMINOR){
+			Logger.minor(this, "Getting element data for element:"+id+" in page:"+requestId);
+		}
 		if (pages.get(requestId) != null) for (BaseUpdateableElement element : pages.get(requestId)) {
 			if (element.getUpdaterId(requestId).compareTo(id) == 0) {
 				element.updateState(false);
 				return element;
 			}
 		}
+		Logger.error(this, "Could not find data for the element requested. requestId:"+requestId+" id:"+id+" pages:"+pages+" keepaliveReceived:"+isKeepaliveReceived);
 		return null;
 	}
 
@@ -135,7 +155,7 @@ public class PushDataManager {
 	 */
 	public synchronized boolean failover(String originalRequestId, String newRequestId) {
 		if (logMINOR) {
-			Logger.minor(this, "Failover in, original:" + originalRequestId + " new:" + newRequestId);
+			Logger.minor(this, "Failover, original:" + originalRequestId + " new:" + newRequestId);
 		}
 		if (awaitingNotifications.containsKey(originalRequestId)) {
 			awaitingNotifications.put(newRequestId, awaitingNotifications.remove(originalRequestId));
@@ -171,8 +191,14 @@ public class PushDataManager {
 	 * @return Was it successful?
 	 */
 	public synchronized boolean keepAliveReceived(String requestId) {
+		if(logMINOR){
+			Logger.minor(this, "Keepalive is received for page:"+requestId);
+		}
 		// If the request is already deleted, then fail
 		if (isKeepaliveReceived.containsKey(requestId) == false) {
+			if(logMINOR){
+				Logger.minor(this, "Keepalive failed");
+			}
 			return false;
 		}
 		isKeepaliveReceived.put(requestId, true);
@@ -223,6 +249,9 @@ public class PushDataManager {
 			Logger.minor(this, "DeleteRequest with requestId:" + requestId);
 		}
 		if (isKeepaliveReceived.containsKey(requestId) == false) {
+			if (logMINOR) {
+				Logger.minor(this, "Request already cleaned, doing nothing");
+			}			
 			return false;
 		}
 		isKeepaliveReceived.remove(requestId);
@@ -293,9 +322,6 @@ public class PushDataManager {
 					Logger.minor(this, "Cleaner running:" + isKeepaliveReceived);
 				}
 				isScheduled = false;
-				if (logMINOR) {
-					Logger.minor(this, "Cleaner running time:" + System.currentTimeMillis());
-				}
 				for (Entry<String, Boolean> entry : new HashMap<String, Boolean>(isKeepaliveReceived).entrySet()) {
 					if (entry.getValue() == false) {
 						if (logMINOR) {
