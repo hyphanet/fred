@@ -97,6 +97,23 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.persistentBucketFactory = node.persistentTempBucketFactory;
 	}
 	
+	public HighLevelSimpleClientImpl(HighLevelSimpleClientImpl hlsc) {
+		this.eventProducer = new SimpleEventProducer();
+		this.priorityClass = hlsc.priorityClass;
+		this.bucketFactory = hlsc.bucketFactory;
+		this.persistentBucketFactory = hlsc.persistentBucketFactory;
+		this.persistentFileTracker = hlsc.persistentFileTracker;
+		this.core = hlsc.core;
+		this.curMaxLength = hlsc.curMaxLength;
+		this.curMaxMetadataLength = hlsc.curMaxMetadataLength;
+		this.curMaxTempLength = hlsc.curMaxTempLength;
+		this.random = hlsc.random;
+	}
+	
+	public HighLevelSimpleClientImpl clone() {
+		return new HighLevelSimpleClientImpl(this);
+	}
+	
 	public void setMaxLength(long maxLength) {
 		curMaxLength = maxLength;
 	}

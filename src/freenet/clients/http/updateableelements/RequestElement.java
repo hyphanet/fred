@@ -5,6 +5,7 @@ import java.text.NumberFormat;
 
 import com.db4o.ObjectContainer;
 
+import freenet.clients.http.PageMaker;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
@@ -185,6 +186,7 @@ public class RequestElement extends BaseUpdateableElement {
 	}
 
 	private HTMLNode createPriorityCell(String identifier, short priorityClass, ToadletContext ctx, String[] priorityClasses, boolean advancedModeEnabled) {
+		
 		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
 		HTMLNode priorityForm = ctx.addFormChild(priorityCell, path, "queueChangePriorityCell-" + identifier.hashCode());
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
@@ -303,7 +305,7 @@ public class RequestElement extends BaseUpdateableElement {
 	private HTMLNode createReasonCell(String failureReason) {
 		HTMLNode reasonCell = new HTMLNode("td", "class", "request-reason");
 		if (failureReason == null) {
-			reasonCell.addChild("span", "class", "failure_reason_unknown", L10n.getString("QueueToadlet.unknown"));
+			reasonCell.addChild("span", "class", "failure_reason_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 		} else {
 			reasonCell.addChild("span", "class", "failure_reason_is", failureReason);
 		}
@@ -311,12 +313,15 @@ public class RequestElement extends BaseUpdateableElement {
 	}
 
 	private HTMLNode createProgressCell(boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
+		return createProgressCell(advancedModeEnabled, started, compressing, fetched, failed, fatallyFailed, min, total, finalized, upload);
+	}
+	
+	public static HTMLNode createProgressCell(boolean advancedMode, boolean started, COMPRESS_STATE compressing, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
 		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
 		if (!started) {
 			progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.starting"));
 			return progressCell;
 		}
-		boolean advancedMode = advancedModeEnabled;
 		if(compressing == COMPRESS_STATE.WAITING && advancedMode) {
 			progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.awaitingCompression"));
 			return progressCell;

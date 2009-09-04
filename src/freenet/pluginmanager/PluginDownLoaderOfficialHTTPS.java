@@ -18,10 +18,11 @@ import java.security.cert.CertificateFactory;
 import java.util.Collection;
 import java.util.Iterator;
 
+import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
+public class PluginDownLoaderOfficialHTTPS extends PluginDownLoaderURL {
 	
 	private static final String certurl = "freenet/clients/http/staticfiles/startssl.pem";
 	private static final String certfile = "startssl.pem";
@@ -65,7 +66,7 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 	}
 
 	@Override
-	InputStream getInputStream() throws IOException {
+	InputStream getInputStream(PluginProgress progress) throws IOException {
 		File TMP_KEYSTORE = null;
 		FileInputStream fis = null;
 		InputStream is = null;
@@ -101,7 +102,7 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 
 		System.setProperty("javax.net.ssl.trustStore", TMP_KEYSTORE.toString());
 		
-		return super.getInputStream();
+		return super.getInputStream(progress);
 	}
 
 	private InputStream getCert() throws IOException {

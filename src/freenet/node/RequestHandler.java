@@ -156,6 +156,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(o instanceof KeyBlock) {
 			tag.setServedFromDatastore();
 			returnLocalData((KeyBlock) o);
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, true, true, htl);
 			return;
 		}
 
@@ -164,6 +165,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
 			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl);
 			return;
 		} else {
 			long queueTime = source.getProbableSendQueueTime();
@@ -268,6 +270,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(this) {
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
+		
+		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl);
 
 		if(tooLate) {
 			// Offer the data if there is any.
@@ -283,6 +287,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(status == RequestSender.NOT_FINISHED)
 			Logger.error(this, "onFinished() but not finished?");
 
+		
+		
 		try {
 			switch(status) {
 				case RequestSender.NOT_FINISHED:

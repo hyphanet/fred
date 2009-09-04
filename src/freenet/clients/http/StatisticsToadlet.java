@@ -196,6 +196,11 @@ public class StatisticsToadlet extends Toadlet {
 				
 				HTMLNode timeDetailBox = nextTableCell.addChild("div", "class", "infobox");
 				drawDetailedTimingsBox(timeDetailBox, ctx);
+				
+				HTMLNode byHTLBox = nextTableCell.addChild("div", "class", "infobox");
+				byHTLBox.addChild("div", "class", "infobox-header", "Success rates by HTL (remote fetches)");
+				HTMLNode byHTLContent = byHTLBox.addChild("div", "class", "infobox-content");
+				stats.fillRemoteRequestHTLsBox(byHTLContent);
 			}
 		}
 

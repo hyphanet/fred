@@ -49,7 +49,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 * AllowData annotation
 	 */
 	private static final String METHODS_MUST_HAVE_DATA = "POST";
-	private static final String METHODS_CANNOT_HAVE_DATA = "";
+	private static final String METHODS_CANNOT_HAVE_DATA = "GET";
 	private static final String METHODS_RESTRICTED_MODE = "GET POST";
 	
 	private final MultiValueTable<String,String> headers;

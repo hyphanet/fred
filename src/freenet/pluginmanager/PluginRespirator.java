@@ -152,8 +152,7 @@ public class PluginRespirator {
 					storeC.pluginStore = store;
 					container.ext().store(storeC.pluginStore, Integer.MAX_VALUE);
 				}
-				container.commit();
-				return false;
+				return true;
 			}
 		}, NativeThread.NORM_PRIORITY, false);
 	}

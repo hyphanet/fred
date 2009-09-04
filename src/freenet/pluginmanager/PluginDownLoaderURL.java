@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
+import freenet.pluginmanager.PluginManager.PluginProgress;
 import freenet.support.Logger;
 
 public class PluginDownLoaderURL extends PluginDownLoader<URL> {
@@ -25,7 +26,7 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 	}
 
 	@Override
-	InputStream getInputStream() throws IOException {
+	InputStream getInputStream(PluginProgress progress) throws IOException {
 		URLConnection urlConnection = getSource().openConnection();
 		urlConnection.setUseCaches(false);
 		urlConnection.setAllowUserInteraction(false);
@@ -100,6 +101,11 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 		}
 		while (redir);
 		return in;
+	}
+
+	@Override
+	void tryCancel() {
+		// Do nothing, not supported.
 	}
 }
 

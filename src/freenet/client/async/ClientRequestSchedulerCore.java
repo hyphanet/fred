@@ -317,7 +317,15 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				// Don't need to activate, fields should exist? FIXME
 				if(reg.nonGetRequest != null) {
 					container.activate(reg.nonGetRequest, 1);
-					if(reg.nonGetRequest.isCancelled(container)) {
+					if(reg.nonGetRequest.isStorageBroken(container)) {
+						String toString = "(throws)";
+						try {
+							toString = reg.nonGetRequest.toString();
+						} catch (Throwable t) { 
+							// It throws :|
+						};
+						Logger.error(this, "Stored SingleBlockInserter is broken, maybe leftover from database leakage?: "+toString);
+					} else if(reg.nonGetRequest.isCancelled(container)) {
 						Logger.normal(this, "RegisterMe: request cancelled: "+reg.nonGetRequest);
 					} else {
 						if(logMINOR)

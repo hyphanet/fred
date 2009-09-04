@@ -1252,17 +1252,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		
 		return pageNode;
 	}
-
-	
-	private HTMLNode createReasonCell(String failureReason) {
-		HTMLNode reasonCell = new HTMLNode("td", "class", "request-reason");
-		if (failureReason == null) {
-			reasonCell.addChild("span", "class", "failure_reason_unknown", NodeL10n.getBase().getString("QueueToadlet.unknown"));
-		} else {
-			reasonCell.addChild("span", "class", "failure_reason_is", failureReason);
-		}
-		return reasonCell;
-	}
 	
 	private HTMLNode createPanicBox(PageMaker pageMaker, ToadletContext ctx) {
 		InfoboxNode infobox = pageMaker.getInfobox("infobox-alert", NodeL10n.getBase().getString("QueueToadlet.panicButtonTitle"), "panic-button", true);

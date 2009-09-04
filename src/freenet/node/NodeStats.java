@@ -418,6 +418,13 @@ public class NodeStats implements Persistable {
 		this.avgCacheSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSuccessLocation"));
 		this.avgStoreSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSuccessLocation"));
 		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
+		
+		remoteCHKRequestsByHTL = new long[node.maxHTL()+1];
+		remoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];
+		remoteSSKRequestsByHTL = new long[node.maxHTL()+1];
+		remoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];
+		remoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
+		remoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
 	}
 	
 	protected String l10n(String key) {
@@ -2032,5 +2039,56 @@ public class NodeStats implements Persistable {
 	
 	synchronized void turtleFailed() {
 		turtleTransfersCompleted++;
+	}
+	
+	private long[] remoteCHKRequestsByHTL;
+	private long[] remoteCHKRequestsSuccessByHTL;
+	private long[] remoteCHKRequestsLocalSuccessByHTL;
+	private long[] remoteSSKRequestsByHTL;
+	private long[] remoteSSKRequestsSuccessByHTL;
+	private long[] remoteSSKRequestsLocalSuccessByHTL;
+	
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl) {
+		if(htl > node.maxHTL()) htl = node.maxHTL();
+		synchronized(this) {
+			if(ssk)
+				remoteSSKRequestsByHTL[htl]++;
+			else
+				remoteCHKRequestsByHTL[htl]++;
+			if(success) {
+				if(ssk) {
+					remoteSSKRequestsSuccessByHTL[htl]++;
+					if(local)
+						remoteSSKRequestsLocalSuccessByHTL[htl]++;
+				} else {
+					remoteCHKRequestsSuccessByHTL[htl]++;
+					if(local)
+						remoteCHKRequestsLocalSuccessByHTL[htl]++;
+				}
+			}
+		}
+	}
+	
+	public void fillRemoteRequestHTLsBox(HTMLNode html) {
+		HTMLNode table = html.addChild("table");
+		HTMLNode row = table.addChild("tr");
+		row.addChild("th", "HTL");
+		row.addChild("th", "CHKs");
+		row.addChild("th", "SSKs");
+		row = table.addChild("tr");
+		char nbsp = (char)160;
+		synchronized(this) {
+			for(int htl = remoteCHKRequestsByHTL.length-1;htl>=0;htl--) {
+				row = table.addChild("tr");
+				row.addChild("td", Integer.toString(htl));
+				double CHKRate = 0.;
+				double SSKRate = 0.;
+				if (remoteCHKRequestsByHTL[htl] > 0) CHKRate = remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl];
+				if (remoteSSKRequestsByHTL[htl] > 0) SSKRate = remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl];
+				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsLocalSuccessByHTL[htl] + "," + (remoteCHKRequestsSuccessByHTL[htl] - remoteCHKRequestsLocalSuccessByHTL[htl]) + "," + remoteCHKRequestsByHTL[htl] + ")");
+				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsLocalSuccessByHTL[htl] + "," + (remoteSSKRequestsSuccessByHTL[htl] - remoteSSKRequestsLocalSuccessByHTL[htl]) + "," + remoteSSKRequestsByHTL[htl] + ")");
+
+			}
+		}
 	}
 }

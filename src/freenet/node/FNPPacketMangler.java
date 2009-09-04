@@ -2688,7 +2688,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public String dismissButtonText() {
-			return NodeL10n.getBase().getString("UserAlert.Hide");
+			return NodeL10n.getBase().getString("UserAlert.hide");
 		}
 
 		public short getPriorityClass() {
@@ -2762,7 +2762,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 
 		public boolean shouldUnregisterOnDismiss() {
-			return false;
+			return true;
 		}
 
 		public boolean userCanDismiss() {

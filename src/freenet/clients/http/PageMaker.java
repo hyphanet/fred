@@ -283,11 +283,11 @@ public final class PageMaker {
 			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 			final HTMLNode secLevels = statusBarDiv.addChild("div", "id", "statusbar-seclevels", NodeL10n.getBase().getString("SecurityLevels.statusBarPrefix"));
 
-			final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()));
+			final HTMLNode network = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getNetworkThreatLevel()) + "\u00a0");
 			network.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.networkThreatLevelShort"));
 			network.addAttribute("class", node.securityLevels.getNetworkThreatLevel().toString().toLowerCase());
 
-			final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()));
+			final HTMLNode friends = secLevels.addChild("a", "href", "/seclevels/", SecurityLevels.localisedName(node.securityLevels.getFriendsThreatLevel()) + "\u00a0");
 			friends.addAttribute("title", NodeL10n.getBase().getString("SecurityLevels.friendsThreatLevelShort"));
 			friends.addAttribute("class", node.securityLevels.getFriendsThreatLevel().toString().toLowerCase());
 

@@ -23,9 +23,7 @@ public class PersistentStatsPutter implements DBJob {
 	private long latestNodeBytesIn = 0;
 	private long latestUptimeVal = 0;
 	private BandwidthStatsContainer latestBW = new BandwidthStatsContainer();
-	private BandwidthStatsContainer latestBWStored = new BandwidthStatsContainer();
 	private UptimeContainer latestUptime = new UptimeContainer();
-	private UptimeContainer latestUptimeStored = new UptimeContainer();
 
 	public PersistentStatsPutter(Node n) {
 		this.n = n;
@@ -38,54 +36,26 @@ public class PersistentStatsPutter implements DBJob {
 	 * @param container Database to use.
 	 */
 	public void restorePreviousData(ObjectContainer container) {
-		BandwidthStatsContainer highestBSC = null;
+		BandwidthStatsContainer storedBSC = null;
 
 		ObjectSet<BandwidthStatsContainer> BSCresult = container.query(BandwidthStatsContainer.class);
-		for(BandwidthStatsContainer bsc : BSCresult) {
-			if(highestBSC == null) {
-				highestBSC = bsc;
-				continue;
-			}
+		if(BSCresult.size() > 0) {
+			storedBSC = BSCresult.get(0);
+		} else {
+			storedBSC = new BandwidthStatsContainer();
+		}
 
-			if(highestBSC.creationTime < bsc.creationTime) {
-				highestBSC = bsc;
-			}
-		}
-		if(highestBSC == null) {
-			highestBSC = new BandwidthStatsContainer();
-		}
-		for(BandwidthStatsContainer bsc : BSCresult) {
-			if(!bsc.equals(highestBSC)) {
-				container.delete(bsc);
-			}
-		}
-		this.latestBWStored = highestBSC;
-		this.latestBW = this.latestBWStored;
+		this.latestBW = storedBSC;
 
-		UptimeContainer highestUC = null;
+		UptimeContainer storedUC = null;
 		ObjectSet<UptimeContainer> UptimeResult = container.query(UptimeContainer.class);
-		for(UptimeContainer uc : UptimeResult) {
-			if(highestUC == null) {
-				highestUC = uc;
-				continue;
-			}
+		if(UptimeResult.size() > 0) {
+			storedUC = UptimeResult.get(0);
+		} else {
+			storedUC = new UptimeContainer();
+		}
 
-			if(highestUC.creationTime < uc.creationTime) {
-				highestUC = uc;
-			}
-		}
-		if(highestUC == null) {
-			highestUC = new UptimeContainer();
-		}
-		for(UptimeContainer uc : UptimeResult) {
-			if(!uc.equals(highestUC)) {
-				container.delete(uc);
-			}
-		}
-		this.latestUptimeStored = highestUC;
-		this.latestUptime = this.latestUptimeStored;
-
-		container.commit();
+		this.latestUptime = storedUC;
 	}
 
 	public BandwidthStatsContainer getLatestBWData() {
@@ -113,18 +83,11 @@ public class PersistentStatsPutter implements DBJob {
 	}
 
 	public boolean run(ObjectContainer container, ClientContext context) {
-		container.delete(this.latestBWStored);
-		container.delete(this.latestUptimeStored);
-
 		this.updateData();
 
 		container.store(this.latestBW);
 		container.store(this.latestUptime);
-		container.commit();
 
-		this.latestBWStored = this.latestBW;
-		this.latestUptimeStored = this.latestUptime;
-
-		return false;
+		return true;
 	}
 }
