@@ -28,7 +28,6 @@ public class TrivialRunningAverage implements RunningAverage {
 		total += d;
 		reports++;
 		// TODO Auto-generated method stub
-
 	}
 
 	public void report(long d) {
@@ -39,12 +38,10 @@ public class TrivialRunningAverage implements RunningAverage {
 		return (total + r) / (reports + 1);
 	}
 
-    @Override
+	@Override
 	public Object clone() {
-    	synchronized (this) {
+		synchronized (this) {
 			return new TrivialRunningAverage(this);
 		}
-    }
-
-	
+	}
 }
