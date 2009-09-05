@@ -241,7 +241,7 @@ public class NodeUpdateManager {
 	}
 
 	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
-	public static final String NON_WINDOWS_FILENAME = "freenet-installer-nonwindows.jar";
+	public static final String NON_WINDOWS_FILENAME = "freenet-latest-installer-nonwindows.jar";
 	
 	public File getInstallerWindows() {
 		File f = new File(node.getNodeDir(), WINDOWS_FILENAME);
