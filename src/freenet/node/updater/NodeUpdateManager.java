@@ -234,6 +234,33 @@ public class NodeUpdateManager {
 		
 	}
 
+	public static final String WINDOWS_FILENAME = "freenet-latest-installer-windows.exe";
+	public static final String NON_WINDOWS_FILENAME = "freenet-installer-nonwindows.jar";
+	
+	public File getInstallerWindows() {
+		File f = new File(node.getNodeDir(), WINDOWS_FILENAME);
+		if(!(f.exists() && f.canRead() && f.length() > 0)) return null;
+		else return f;
+	}
+	
+	public File getInstallerNonWindows() {
+		File f = new File(node.getNodeDir(), NON_WINDOWS_FILENAME);
+		if(!(f.exists() && f.canRead() && f.length() > 0)) return null;
+		else return f;
+	}
+	
+	public FreenetURI getSeednodesURI() {
+		return updateURI.sskForUSK().setDocName("seednodes-"+Version.buildNumber());
+	}
+	
+	public FreenetURI getInstallerWindowsURI() {
+		return updateURI.sskForUSK().setDocName("installer-"+Version.buildNumber());
+	}
+	
+	public FreenetURI getInstallerNonWindowsURI() {
+		return updateURI.sskForUSK().setDocName("wininstaller-"+Version.buildNumber());
+	}
+	
 	public void start() throws InvalidConfigValueException {
 		
 		node.clientCore.alerts.register(alert);
@@ -243,11 +270,11 @@ public class NodeUpdateManager {
         // Fetch 3 files, each to a file in the nodeDir.
         
         SimplePuller seedrefsGetter = 
-        	new SimplePuller(updateURI.sskForUSK().setDocName("seednodes-"+Version.buildNumber()), Announcer.SEEDNODES_FILENAME);
+        	new SimplePuller(getSeednodesURI(), Announcer.SEEDNODES_FILENAME);
         SimplePuller installerGetter = 
-        	new SimplePuller(updateURI.sskForUSK().setDocName("installer-"+Version.buildNumber()), "freenet-latest-installer-nonwindows.jar");
+        	new SimplePuller(getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
         SimplePuller wininstallerGetter =
-        	new SimplePuller(updateURI.sskForUSK().setDocName("wininstaller-"+Version.buildNumber()), "freenet-latest-installer-windows.exe");
+        	new SimplePuller(getInstallerNonWindowsURI(), WINDOWS_FILENAME);
         
         seedrefsGetter.start(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 1024*1024);
         installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
