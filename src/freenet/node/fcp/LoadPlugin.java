@@ -30,6 +30,8 @@ public class LoadPlugin extends FCPMessage {
 	private final String pluginURL;
 	private final String urlType;
 	private final boolean store;
+	private final boolean force;
+	private final boolean forceHTTPS;
 
 	public LoadPlugin(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -49,6 +51,21 @@ public class LoadPlugin extends FCPMessage {
 					TYPENAME_OFFICIAL.equalsIgnoreCase(urlType) ||
 					TYPENAME_URL.equalsIgnoreCase(urlType)))
 				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unknown URL type: '"+urlType+"'", identifier, false);
+		}
+		String officialSource = fs.get("OfficialSource");
+		if(officialSource != null) {
+			if(officialSource.equalsIgnoreCase("https")) {
+				force = true;
+				forceHTTPS = true;
+			} else if(officialSource.equalsIgnoreCase("freenet")) {
+				force = true;
+				forceHTTPS = false;
+			} else {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unknown OfficialSource '"+officialSource+"'", identifier, false);
+			}
+		} else {
+			force = false;
+			forceHTTPS = false;
 		}
 		store = fs.getBoolean("Store", false);
 	}
@@ -102,7 +119,7 @@ public class LoadPlugin extends FCPMessage {
 				}
 				PluginInfoWrapper pi;
 				if (TYPENAME_OFFICIAL.equals(type)) {
-					pi = node.pluginManager.startPluginOfficial(pluginURL, store, false, false);
+					pi = node.pluginManager.startPluginOfficial(pluginURL, store, force, forceHTTPS);
 				} else if (TYPENAME_FILE.equals(type)) {
 					pi = node.pluginManager.startPluginFile(pluginURL, store);
 				} else if (TYPENAME_FREENET.equals(type)) {
