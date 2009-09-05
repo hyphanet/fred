@@ -41,6 +41,7 @@ import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /**
@@ -214,17 +215,22 @@ public class NodeUpdateManager {
 
 		public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 			File temp;
+			FileOutputStream fos = null;
 			try {
 				temp = File.createTempFile(filename, ".tmp", node.getNodeDir());
 				temp.deleteOnExit();
-				FileOutputStream fos = new FileOutputStream(temp);
+				fos = new FileOutputStream(temp);
 				BucketTools.copyTo(result.asBucket(), fos, -1);
+				fos.close();
+				fos = null;
 				FileUtil.renameTo(temp, new File(node.getNodeDir(), filename));
 				System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
 			} catch (IOException e) {
 				System.err.println("Fetched but failed to write out "+filename+" - please check that the node has permissions to write in "+node.getNodeDir()+" and particularly the file "+filename);
 				System.err.println("The error was: "+e);
 				e.printStackTrace();
+			} finally {
+				Closer.close(fos);
 			}
 		}
 
