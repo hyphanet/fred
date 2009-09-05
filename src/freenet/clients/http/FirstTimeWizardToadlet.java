@@ -75,7 +75,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
 		
 		if(currentStep == WIZARD_STEP.BROWSER_WARNING) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("browserWarningPageTitle"), false, ctx);
+			boolean incognito = request.isParameterSet("incognito");
+			
+			PageNode page = ctx.getPageMaker().getPageNode(incognito ? l10n("browserWarningIncognitoPageTitle") : l10n("browserWarningPageTitle"), false, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -83,9 +85,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 			
-			infoboxHeader.addChild("#", l10n("browserWarningShort"));
-			NodeL10n.getBase().addL10nSubstitution(infoboxContent, "FirstTimeWizardToadlet.browserWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-			infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
+			if(incognito)
+				infoboxHeader.addChild("#", l10n("browserWarningIncognitoShort"));
+			else
+				infoboxHeader.addChild("#", l10n("browserWarningShort"));
+			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			
+			if(incognito)
+				infoboxContent.addChild("p", l10n("browserWarningIncognitoSuggestion"));
+			else
+				infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
 			
 			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.MISC, NodeL10n.getBase().getString("FirstTimeWizardToadlet.clickContinue"));
 
@@ -360,7 +369,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.BROWSER_WARNING).addChild("#", NodeL10n.getBase().getString("FirstTimeWizardToadlet.clickContinue"));
+		boolean incognito = request.isParameterSet("incognito");
+		String append = incognito ? "&incognito=true" : "";
+		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.BROWSER_WARNING+append).addChild("#", NodeL10n.getBase().getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
 		thirdParagraph.addChild("a", "href", "?step="+WIZARD_STEP.FINAL).addChild("#", l10n("skipWizard"));

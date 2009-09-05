@@ -676,9 +676,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
 						path.startsWith(StaticToadlet.ROOT_URL))) {
 					try {
-						throw new PermanentRedirectException(new URI(FirstTimeWizardToadlet.TOADLET_URL));
+						throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
 					} catch(URISyntaxException e) { throw new Error(e); }
 				}
+				
 			} else {
 				// Assume it's okay.
 				fproxyHasCompletedWizard = true;
