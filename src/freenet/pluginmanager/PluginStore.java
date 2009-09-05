@@ -3,6 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import com.db4o.Db4o;
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.config.Configuration;
+import com.db4o.io.MemoryIoAdapter;
 import java.util.HashMap;
 
 /**
@@ -24,4 +29,35 @@ public class PluginStore {
 	public HashMap<String, byte[]> bytesArrays = new HashMap<String, byte[]>();
 	public HashMap<String, String> strings = new HashMap<String, String>();
 	public HashMap<String, String[]> stringsArrays = new HashMap<String, String[]>();
+
+	public byte[] exportStore() {
+		Configuration conf = Db4o.newConfiguration();
+		MemoryIoAdapter mia = new MemoryIoAdapter();
+		conf.io(mia);
+		ObjectContainer o = Db4o.openFile(conf, "Export");
+		PluginStoreContainer psc = new PluginStoreContainer();
+		psc.pluginStore = this;
+		o.ext().store(psc, Integer.MAX_VALUE);
+		o.commit();
+		o.close();
+		return mia.get("Export");
+	}
+
+	public static PluginStore importStore(byte[] exportedStore) {
+		Configuration conf = Db4o.newConfiguration();
+		MemoryIoAdapter mia = new MemoryIoAdapter();
+		conf.io(mia);
+		mia.put("Import", exportedStore);
+		ObjectContainer o = Db4o.openFile(conf, "Import");
+		ObjectSet query = o.query(PluginStoreContainer.class);
+		if(query.size() > 0) {
+			o.activate(query.get(0), Integer.MAX_VALUE);
+			PluginStore ret = ((PluginStoreContainer) query.get(0)).pluginStore;
+			o.close();
+			return ret;
+		} else {
+			o.close();
+			return null;
+		}
+	}
 }
