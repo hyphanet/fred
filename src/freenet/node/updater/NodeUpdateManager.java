@@ -1,6 +1,7 @@
 package freenet.node.updater;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
@@ -8,6 +9,13 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.FetchContext;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.ClientGetCallback;
+import freenet.client.async.ClientGetter;
+import freenet.client.async.DatabaseDisabledException;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -17,10 +25,12 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
+import freenet.node.Announcer;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
+import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.updater.UpdateDeployContext.UpdateCatastropheException;
 import freenet.node.useralerts.RevocationKeyFoundUserAlert;
@@ -30,6 +40,8 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.BucketTools;
+import freenet.support.io.FileUtil;
 
 /**
  * Supervises NodeUpdater's. Enables us to easily update multiple files, 
@@ -166,6 +178,60 @@ public class NodeUpdateManager {
         
         maxExtVersion = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
         minExtVersion = NodeStarter.REQUIRED_EXT_BUILD_NUMBER;
+        
+	}
+	
+	class SimplePuller implements ClientGetCallback {
+		
+		final FreenetURI freenetURI;
+		final String filename;
+
+		public SimplePuller(FreenetURI freenetURI, String filename) {
+			this.freenetURI = freenetURI;
+			this.filename = filename;
+		}
+		
+		public void start(short priority, long maxSize) {
+			HighLevelSimpleClient hlsc = node.clientCore.makeClient(priority);
+			FetchContext context = hlsc.getFetchContext();
+			context.maxNonSplitfileRetries = -1;
+			context.maxSplitfileBlockRetries = -1;
+			context.maxTempLength = maxSize;
+			context.maxOutputLength = maxSize;
+			ClientGetter get = new ClientGetter(this, freenetURI, context, priority, node.nonPersistentClient, null, null);
+			try {
+				node.clientCore.clientContext.start(get);
+			} catch (DatabaseDisabledException e) {
+				// Impossible
+			} catch (FetchException e) {
+				onFailure(e, null, null);
+			}
+		}
+
+		public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+			System.err.println("Failed to fetch "+filename+" : "+e);
+		}
+
+		public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+			File temp;
+			try {
+				temp = File.createTempFile(filename, ".tmp", node.getNodeDir());
+				temp.deleteOnExit();
+				FileOutputStream fos = new FileOutputStream(temp);
+				BucketTools.copyTo(result.asBucket(), fos, -1);
+				FileUtil.renameTo(temp, new File(node.getNodeDir(), filename));
+				System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
+			} catch (IOException e) {
+				System.err.println("Fetched but failed to write out "+filename+" - please check that the node has permissions to write in "+node.getNodeDir()+" and particularly the file "+filename);
+				System.err.println("The error was: "+e);
+				e.printStackTrace();
+			}
+		}
+
+		public void onMajorProgress(ObjectContainer container) {
+			// Ignore
+		}
+		
 	}
 
 	public void start() throws InvalidConfigValueException {
@@ -173,6 +239,20 @@ public class NodeUpdateManager {
 		node.clientCore.alerts.register(alert);
         
         enable(wasEnabledOnStartup);
+        
+        // Fetch 3 files, each to a file in the nodeDir.
+        
+        SimplePuller seedrefsGetter = 
+        	new SimplePuller(updateURI.sskForUSK().setDocName("seednodes-"+Version.buildNumber()), Announcer.SEEDNODES_FILENAME);
+        SimplePuller installerGetter = 
+        	new SimplePuller(updateURI.sskForUSK().setDocName("installer-"+Version.buildNumber()), "freenet-latest-installer-nonwindows.jar");
+        SimplePuller wininstallerGetter =
+        	new SimplePuller(updateURI.sskForUSK().setDocName("wininstaller-"+Version.buildNumber()), "freenet-latest-installer-windows.exe");
+        
+        seedrefsGetter.start(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 1024*1024);
+        installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
+        wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
+        
 	}
 	
 	void broadcastUOMAnnounces() {
