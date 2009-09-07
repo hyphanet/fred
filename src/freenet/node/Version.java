@@ -51,8 +51,8 @@ public class Version {
 	private static final int buildNumber = 1233;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 1224;
-	private static final int newLastGoodBuild = 1229;
+	private static final int oldLastGoodBuild = 1229;
+	private static final int newLastGoodBuild = 1231;
 	static final long transitionTime;
 
 	static {
