@@ -31,7 +31,7 @@ import freenet.support.api.HTTPRequest;
 
 public class StatisticsToadlet extends Toadlet {
 
-	static final NumberFormat thousendPoint = NumberFormat.getInstance();
+	static final NumberFormat thousandPoint = NumberFormat.getInstance();
 
 	private static class STMessageCount {
 		public String messageName;
@@ -401,7 +401,7 @@ public class StatisticsToadlet extends Toadlet {
 		jvmStatsList.addChild("li", l10n("allocMemory", "memory", SizeUtil.formatSize(allocatedJavaMem, true)));
 		jvmStatsList.addChild("li", l10n("maxMemory", "memory", SizeUtil.formatSize(maxJavaMem, true)));
 		jvmStatsList.addChild("li", l10n("threads", new String[] { "running", "max" },
-				new String[] { thousendPoint.format(threadCount), Integer.toString(stats.getThreadLimit()) }));
+				new String[] { thousandPoint.format(threadCount), Integer.toString(stats.getThreadLimit()) }));
 		jvmStatsList.addChild("li", l10n("cpus", "count", Integer.toString(availableCpus)));
 		jvmStatsList.addChild("li", l10n("javaVersion", "version", System.getProperty("java.version")));
 		jvmStatsList.addChild("li", l10n("jvmVendor", "vendor", System.getProperty("java.vendor")));
@@ -487,13 +487,13 @@ public class StatisticsToadlet extends Toadlet {
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Keys");
-		row.addChild("td", thousendPoint.format(storeKeys));
-		row.addChild("td", thousendPoint.format(cachedKeys));
+		row.addChild("td", thousandPoint.format(storeKeys));
+		row.addChild("td", thousandPoint.format(cachedKeys));
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Capacity");
-		row.addChild("td", thousendPoint.format(maxStoreKeys));
-		row.addChild("td", thousendPoint.format(maxCachedKeys));
+		row.addChild("td", thousandPoint.format(maxStoreKeys));
+		row.addChild("td", thousandPoint.format(maxCachedKeys));
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Data Size");
@@ -507,17 +507,17 @@ public class StatisticsToadlet extends Toadlet {
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Read-Requests");
-		row.addChild("td", thousendPoint.format(storeAccesses));
-		row.addChild("td", thousendPoint.format(cacheAccesses));
+		row.addChild("td", thousandPoint.format(storeAccesses));
+		row.addChild("td", thousandPoint.format(cacheAccesses));
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Successful Reads");
 		if (storeAccesses > 0)
-			row.addChild("td", thousendPoint.format(storeHits));
+			row.addChild("td", thousandPoint.format(storeHits));
 		else
 			row.addChild("td", "0");
 		if (cacheAccesses > 0)
-			row.addChild("td", thousendPoint.format(cacheHits));
+			row.addChild("td", thousandPoint.format(cacheHits));
 		else
 			row.addChild("td", "0");
 		
@@ -534,13 +534,13 @@ public class StatisticsToadlet extends Toadlet {
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Writes");
-		row.addChild("td", thousendPoint.format(storeWrites));
-		row.addChild("td", thousendPoint.format(cacheWrites));
+		row.addChild("td", thousandPoint.format(storeWrites));
+		row.addChild("td", thousandPoint.format(cacheWrites));
 				
 		/* Overall utilization is not preserved in the new table layout :(
 		storeSizeList.addChild("li", 
-				"Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
-				"\u00a0/\u00a0" + thousendPoint.format(maxOverallKeys) +
+				"Overall size:\u00a0" + thousandPoint.format(overallKeys) + 
+				"\u00a0/\u00a0" + thousandPoint.format(maxOverallKeys) +
 				"\u00a0(" + SizeUtil.formatSize(overallSize, true) + 
 				"\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
 				")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
@@ -559,8 +559,8 @@ public class StatisticsToadlet extends Toadlet {
 		if (storeFalsePos != -1 || cacheFalsePos != -1) {
 			row = storeSizeTable.addChild("tr");
 			row.addChild("td", "False Pos.");
-			row.addChild("td", thousendPoint.format(storeFalsePos));
-			row.addChild("td", thousendPoint.format(cacheFalsePos));
+			row.addChild("td", thousandPoint.format(storeFalsePos));
+			row.addChild("td", thousandPoint.format(cacheFalsePos));
 		}
 		
 		// location-based stats
