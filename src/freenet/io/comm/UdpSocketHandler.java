@@ -27,7 +27,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	 * NOT CRYPTO SAFE. DO NOT USE FOR THINGS THAT NEED CRYPTO SAFE RNG!
 	 */
 	private Random dropRandom;
-	/** If >0, 1 in _dropProbability chance of dropping a packet; for debugging */
+	/** If &gt;0, 1 in _dropProbability chance of dropping a packet; for debugging */
 	private int _dropProbability;
 	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
 	private final Node node;
