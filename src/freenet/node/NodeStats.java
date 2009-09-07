@@ -2,7 +2,12 @@ package freenet.node;
 
 import java.io.File;
 import java.text.DecimalFormat;
+import java.text.FieldPosition;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -143,14 +148,19 @@ public class NodeStats implements Persistable {
 	final TimeDecayingRunningAverage successfulChkOfferReplyBytesReceivedAverage;
 	final TimeDecayingRunningAverage successfulSskOfferReplyBytesReceivedAverage;
 	
-	final BootstrappingDecayingRunningAverage globalFetchPSuccess;
-	final BootstrappingDecayingRunningAverage chkFetchPSuccess;
-	final BootstrappingDecayingRunningAverage sskFetchPSuccess;
-	final BootstrappingDecayingRunningAverage localFetchPSuccess;
-	final BootstrappingDecayingRunningAverage remoteFetchPSuccess;
-	final BootstrappingDecayingRunningAverage blockTransferPSuccess;
-	final BootstrappingDecayingRunningAverage blockTransferFailTurtled;
-	final BootstrappingDecayingRunningAverage blockTransferFailTimeout;
+	final TrivialRunningAverage globalFetchPSuccess;
+	final TrivialRunningAverage chkLocalFetchPSuccess;
+	final TrivialRunningAverage chkRemoteFetchPSuccess;
+	final TrivialRunningAverage sskLocalFetchPSuccess;
+	final TrivialRunningAverage sskRemoteFetchPSuccess;
+	final TrivialRunningAverage blockTransferPSuccess;
+	final TrivialRunningAverage blockTransferFailTurtled;
+	final TrivialRunningAverage blockTransferFailTimeout;
+
+	int chkHourlyLocalFetchCount;
+	int chkHourlyLocalFetchSuccessCount;
+	int sskHourlyLocalFetchCount;
+	int sskHourlyLocalFetchSuccessCount;
 	
 	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
 	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
@@ -389,14 +399,19 @@ public class NodeStats implements Persistable {
 		successfulChkOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(32768+500, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulChkOfferReplyBytesReceivedAverage"), node);
 		successfulSskOfferReplyBytesReceivedAverage = new TimeDecayingRunningAverage(3072, 180000, 0.0, 1024*1024*1024, throttleFS == null ? null : throttleFS.subset("successfulSskOfferReplyBytesReceivedAverage"), node);
 		
-		globalFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
-		chkFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
-		sskFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
-		localFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
-		remoteFetchPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
-		blockTransferPSuccess = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
-		blockTransferFailTurtled = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
-		blockTransferFailTimeout = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 256 * 1024, null);
+		globalFetchPSuccess = new TrivialRunningAverage();
+		chkLocalFetchPSuccess = new TrivialRunningAverage();
+		chkRemoteFetchPSuccess = new TrivialRunningAverage();
+		sskLocalFetchPSuccess = new TrivialRunningAverage();
+		sskRemoteFetchPSuccess = new TrivialRunningAverage();
+		blockTransferPSuccess = new TrivialRunningAverage();
+		blockTransferFailTurtled = new TrivialRunningAverage();
+		blockTransferFailTimeout = new TrivialRunningAverage();
+
+		chkHourlyLocalFetchCount = 0;
+		chkHourlyLocalFetchSuccessCount = 0;
+		sskHourlyLocalFetchCount = 0;
+		sskHourlyLocalFetchSuccessCount = 0;
 		
 		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
 		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
@@ -425,6 +440,16 @@ public class NodeStats implements Persistable {
 		remoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];
 		remoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
 		remoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
+
+		hourlyRemoteCHKRequestsByHTL = new long[node.maxHTL()+1];
+		hourlyRemoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];
+		hourlyRemoteSSKRequestsByHTL = new long[node.maxHTL()+1];
+		hourlyRemoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];
+		hourlyRemoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
+		hourlyRemoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
+
+		lastHourlyTime = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		currentTime = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	}
 	
 	protected String l10n(String key) {
@@ -1295,10 +1320,10 @@ public class NodeStats implements Persistable {
 		fs.put("runningThreadCount", getActiveThreadCount());
 		
 		fs.put("globalFetchPSuccess", globalFetchPSuccess.currentValue());
-		fs.put("chkFetchPSuccess", chkFetchPSuccess.currentValue());
-		fs.put("sskFetchPSuccess", sskFetchPSuccess.currentValue());
-		fs.put("localFetchPSuccess", localFetchPSuccess.currentValue());
-		fs.put("remoteFetchPSuccess", remoteFetchPSuccess.currentValue());
+		fs.put("chkLocalFetchPSuccess", chkLocalFetchPSuccess.currentValue());
+		fs.put("chkRemoteFetchPSuccess", chkRemoteFetchPSuccess.currentValue());
+		fs.put("sskLocalFetchPSuccess", sskLocalFetchPSuccess.currentValue());
+		fs.put("sskRemoteFetchPSuccess", sskRemoteFetchPSuccess.currentValue());
 		fs.put("blockTransferPSuccess", blockTransferPSuccess.currentValue());
 		fs.put("blockTransferFailTurtled", blockTransferFailTurtled.currentValue());
 		fs.put("blockTransferFailTimeout", blockTransferFailTimeout.currentValue());
@@ -1329,29 +1354,38 @@ public class NodeStats implements Persistable {
 		return localPreemptiveRejectReasons.toTableRows(table) > 0;
 	}
 
-	public void requestCompleted(boolean succeeded, boolean isRemote, boolean isSSK) {
+	public synchronized void requestCompleted(boolean succeeded, boolean isRemote, boolean isSSK) {
 		globalFetchPSuccess.report(succeeded ? 1.0 : 0.0);
-		if(isSSK)
-			sskFetchPSuccess.report(succeeded ? 1.0 : 0.0);
-		else
-			chkFetchPSuccess.report(succeeded ? 1.0 : 0.0);
-		if(isRemote)
-			remoteFetchPSuccess.report(succeeded ? 1.0 : 0.0);
-		else
-			localFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+		if(isSSK) {
+			if (isRemote) {
+				sskRemoteFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+			} else {
+				sskLocalFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+				sskHourlyLocalFetchCount++;
+				if (succeeded) sskHourlyLocalFetchSuccessCount++;
+			}
+		} else {
+			if (isRemote) {
+				chkRemoteFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+			} else {
+				chkLocalFetchPSuccess.report(succeeded ? 1.0 : 0.0);
+				chkHourlyLocalFetchCount++;
+				if (succeeded) chkHourlyLocalFetchSuccessCount++;
+			}
+		}
 	}
 
 	private final DecimalFormat fix3p3pct = new DecimalFormat("##0.000%");
-	private final NumberFormat thousendPoint = NumberFormat.getInstance();
+	private final NumberFormat thousandPoint = NumberFormat.getInstance();
 	
 	public void fillSuccessRateBox(HTMLNode parent) {
 		HTMLNode list = parent.addChild("table", "border", "0");
-		final BootstrappingDecayingRunningAverage[] averages = new BootstrappingDecayingRunningAverage[] {
+		final RunningAverage[] averages = new RunningAverage[] {
 				globalFetchPSuccess,
-				chkFetchPSuccess,
-				sskFetchPSuccess,
-				localFetchPSuccess,
-				remoteFetchPSuccess,
+				chkLocalFetchPSuccess,
+				chkRemoteFetchPSuccess,
+				sskLocalFetchPSuccess,
+				sskRemoteFetchPSuccess,
 				blockTransferPSuccess,
 				blockTransferFailTurtled,
 				blockTransferFailTimeout
@@ -1359,10 +1393,10 @@ public class NodeStats implements Persistable {
 		final String[] names = new String[] {
 				// FIXME l10n, but atm this only shows up in advanced mode
 				"All requests",
-				"CHKs",
-				"SSKs",
-				"Local requests",
-				"Remote requests",
+				"Local CHKs",
+				"Remote CHKs",
+				"Local SSKs",
+				"Remote SSKs",
 				"Block transfers",
 				"Turtled downstream",
 				"Transfers timed out"
@@ -1380,7 +1414,7 @@ public class NodeStats implements Persistable {
 				row.addChild("td", "0");
 			} else {
 				row.addChild("td", fix3p3pct.format(averages[i].currentValue()));
-				row.addChild("td", thousendPoint.format(averages[i].countReports()));
+				row.addChild("td", thousandPoint.format(averages[i].countReports()));
 			}
 		}
 		
@@ -1397,11 +1431,11 @@ public class NodeStats implements Persistable {
 			row.addChild("td", "0");
 		} else {
 			row.addChild("td", fix3p3pct.format((double)succeeded / total));
-			row.addChild("td", thousendPoint.format(total));
+			row.addChild("td", thousandPoint.format(total));
 		}
 	}
 
-	/* Total bytes sent by requests, excluding payload */
+	/* Total bytes sent by requests and inserts, excluding payload */
 	private long chkRequestSentBytes;
 	private long chkRequestRcvdBytes;
 	private long sskRequestSentBytes;
@@ -2047,25 +2081,97 @@ public class NodeStats implements Persistable {
 	private long[] remoteSSKRequestsByHTL;
 	private long[] remoteSSKRequestsSuccessByHTL;
 	private long[] remoteSSKRequestsLocalSuccessByHTL;
+
+	private long[] hourlyRemoteCHKRequestsByHTL;
+	private long[] hourlyRemoteCHKRequestsSuccessByHTL;
+	private long[] hourlyRemoteCHKRequestsLocalSuccessByHTL;
+	private long[] hourlyRemoteSSKRequestsByHTL;
+	private long[] hourlyRemoteSSKRequestsSuccessByHTL;
+	private long[] hourlyRemoteSSKRequestsLocalSuccessByHTL;
+
+	private Calendar lastHourlyTime;
+	private Calendar currentTime;
+	private static SimpleDateFormat utcDateTime;
+	static {
+		utcDateTime = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");
+		utcDateTime.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
 	
 	void remoteRequest(boolean ssk, boolean success, boolean local, short htl) {
 		if(htl > node.maxHTL()) htl = node.maxHTL();
+		StringBuilder logEntry = null;
 		synchronized(this) {
-			if(ssk)
+			Date now = new Date();
+			currentTime.setTime(now);
+			if (lastHourlyTime.get(Calendar.HOUR_OF_DAY) != currentTime.get(Calendar.HOUR_OF_DAY)) {
+				//it's a new hour, log the hourly stats and reset them
+
+				lastHourlyTime.setTime(now);
+				logEntry = new StringBuilder("Hourly stats reporting:\n");
+
+				logEntry.append("HourlyStats: Report for hour before UTC ");
+				logEntry.append(utcDateTime.format(now, new StringBuffer(), new FieldPosition(0))).append("\n");
+				logEntry.append("HourlyStats: Node uptime (ms):\t").append(node.getUptime()).append("\n");
+				logEntry.append("HourlyStats: chkHourlyLocalFetchSuccessCount:\t").append(chkHourlyLocalFetchSuccessCount).append("\n");
+				logEntry.append("HourlyStats: chkHourlyLocalFetchCount:\t").append(chkHourlyLocalFetchCount).append("\n");
+				logEntry.append("HourlyStats: sskHourlyLocalFetchSuccessCount:\t").append(sskHourlyLocalFetchSuccessCount).append("\n");
+				logEntry.append("HourlyStats: sskHourlyLocalFetchCount:\t").append(sskHourlyLocalFetchCount).append("\n");
+
+				logEntry.append("HourlyStats: chk datacache keys:\t").append(node.getChkDatacache().keyCount()).append("\n");
+				logEntry.append("HourlyStats: chk datastore keys:\t").append(node.getChkDatastore().keyCount()).append("\n");
+				logEntry.append("HourlyStats: ssk datacache keys:\t").append(node.getSskDatacache().keyCount()).append("\n");
+				logEntry.append("HourlyStats: ssk datastore keys:\t").append(node.getSskDatastore().keyCount()).append("\n");
+
+				chkHourlyLocalFetchSuccessCount = 0;
+				chkHourlyLocalFetchCount = 0;
+				sskHourlyLocalFetchSuccessCount = 0;
+				sskHourlyLocalFetchCount = 0;
+
+				for (int i = hourlyRemoteCHKRequestsByHTL.length - 1; i >= 0; i--) {
+					logEntry.append("HourlyStats: HTL\t").append(i).append("\t");
+					logEntry.append(hourlyRemoteCHKRequestsLocalSuccessByHTL[i]).append("\t");
+					logEntry.append(hourlyRemoteCHKRequestsSuccessByHTL[i] - hourlyRemoteCHKRequestsLocalSuccessByHTL[i]).append("\t");
+					logEntry.append(hourlyRemoteCHKRequestsByHTL[i]).append("\t");
+					logEntry.append(hourlyRemoteSSKRequestsLocalSuccessByHTL[i]).append("\t");
+					logEntry.append(hourlyRemoteSSKRequestsSuccessByHTL[i] - hourlyRemoteSSKRequestsLocalSuccessByHTL[i]).append("\t");
+					logEntry.append(hourlyRemoteSSKRequestsByHTL[i]).append("\n");
+
+					hourlyRemoteCHKRequestsByHTL[i] = 0;
+					hourlyRemoteCHKRequestsSuccessByHTL[i] = 0;
+					hourlyRemoteCHKRequestsLocalSuccessByHTL[i] = 0;
+					hourlyRemoteSSKRequestsByHTL[i] = 0;
+					hourlyRemoteSSKRequestsSuccessByHTL[i] = 0;
+					hourlyRemoteSSKRequestsLocalSuccessByHTL[i] = 0;
+				}
+			}
+			if(ssk) {
 				remoteSSKRequestsByHTL[htl]++;
-			else
+				hourlyRemoteSSKRequestsByHTL[htl]++;
+			} else {
 				remoteCHKRequestsByHTL[htl]++;
+				hourlyRemoteCHKRequestsByHTL[htl]++;
+			}
 			if(success) {
 				if(ssk) {
 					remoteSSKRequestsSuccessByHTL[htl]++;
-					if(local)
+					hourlyRemoteSSKRequestsSuccessByHTL[htl]++;
+					if(local) {
 						remoteSSKRequestsLocalSuccessByHTL[htl]++;
+						hourlyRemoteSSKRequestsLocalSuccessByHTL[htl]++;
+					}
 				} else {
 					remoteCHKRequestsSuccessByHTL[htl]++;
-					if(local)
+					hourlyRemoteCHKRequestsSuccessByHTL[htl]++;
+					if(local) {
 						remoteCHKRequestsLocalSuccessByHTL[htl]++;
+						hourlyRemoteCHKRequestsLocalSuccessByHTL[htl]++;
+					}
 				}
 			}
+		}
+
+		if (logEntry != null) {
+			Logger.normal(this, logEntry.toString());
 		}
 	}
 	

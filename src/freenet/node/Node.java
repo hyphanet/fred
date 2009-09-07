@@ -4109,6 +4109,13 @@ public class Node implements TimeSkewDetectorCallback {
 	public CHKStore getChkDatastore() {
 		return chkDatastore;
 	}
+	public SSKStore getSskDatacache() {
+		return sskDatacache;
+	}
+	public SSKStore getSskDatastore() {
+		return sskDatastore;
+	}
+
 	public long getMaxTotalKeys() {
 		return maxTotalKeys;
 	}
@@ -5098,7 +5105,8 @@ public class Node implements TimeSkewDetectorCallback {
 	
 	// FIXME put this somewhere else
 	private volatile Object statsSync = new Object();
-	/** The total number of bytes of real data i.e. payload sent by the node */
+	
+	/** The total number of bytes of real data i.e.&nbsp;payload sent by the node */
 	private long totalPayloadSent;
 	
 	public void sentPayload(int len) {
@@ -5107,6 +5115,11 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
+	/**
+	 * Get the total number of bytes of payload (real data) sent by the node
+	 *
+	 * @return Total payload sent in bytes
+	 */
 	public long getTotalPayloadSent() {
 		synchronized(statsSync) {
 			return totalPayloadSent;
@@ -5260,6 +5273,11 @@ public class Node implements TimeSkewDetectorCallback {
 		return set;
 	}
 
+	/**
+	 * Get the time since the node was started in milliseconds.
+	 *
+	 * @return Uptime in milliseconds
+	 */
 	public long getUptime() {
 		return System.currentTimeMillis() - usm.getStartedTime();
 	}
