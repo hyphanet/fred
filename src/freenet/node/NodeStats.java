@@ -1391,20 +1391,19 @@ public class NodeStats implements Persistable {
 				blockTransferFailTimeout
 		};
 		final String[] names = new String[] {
-				// FIXME l10n, but atm this only shows up in advanced mode
-				"All requests",
-				"Local CHKs",
-				"Remote CHKs",
-				"Local SSKs",
-				"Remote SSKs",
-				"Block transfers",
-				"Turtled downstream",
-				"Transfers timed out"
+				l10n("allRequests"),
+				l10n("localCHKs"),
+				l10n("remoteCHKs"),
+				l10n("localSSKs"),
+				l10n("remoteSSKs"),
+				l10n("blockTransfers"),
+				l10n("turtledDownstream"),
+				l10n("transfersTimedOut")
 		};
 		HTMLNode row = list.addChild("tr");
-		row.addChild("th", "Group"); 
-		row.addChild("th", "P(success)");
-		row.addChild("th", "Count");
+		row.addChild("th", l10n("group")); 
+		row.addChild("th", l10n("pSuccess"));
+		row.addChild("th", l10n("count"));
 		
 		for(int i=0;i<averages.length;i++) {
 			row = list.addChild("tr");
@@ -1419,7 +1418,7 @@ public class NodeStats implements Persistable {
 		}
 		
 		row = list.addChild("tr");
-		row.addChild("td", "Turtle requests");
+		row.addChild("td", l10n("turtleRequests"));
 		long total;
 		long succeeded;
 		synchronized(this) {

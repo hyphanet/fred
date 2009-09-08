@@ -197,8 +197,8 @@ public class StatisticsToadlet extends Toadlet {
 				loadStatsInfobox.addChild("div", "class", "infobox-header", "Load limiting");
 				HTMLNode loadStatsContent = loadStatsInfobox.addChild("div", "class", "infobox-content");
 				HTMLNode loadStatsList = loadStatsContent.addChild("ul");
-				loadStatsList.addChild("li", "Global window: "+window);
-				loadStatsList.addChild("li", "Real global window: "+realWindow);
+				loadStatsList.addChild("li", l10n("globalWindow")+": "+window);
+				loadStatsList.addChild("li", l10n("realGlobalWindow")+": "+realWindow);
 				loadStatsList.addChild("li", starters.statsPageLine(false, false));
 				loadStatsList.addChild("li", starters.statsPageLine(true, false));
 				loadStatsList.addChild("li", starters.statsPageLine(false, true));
@@ -208,17 +208,17 @@ public class StatisticsToadlet extends Toadlet {
 				
 				// Psuccess box
 				HTMLNode successRateBox = nextTableCell.addChild("div", "class", "infobox");
-				successRateBox.addChild("div", "class", "infobox-header", "Success rates");
+				successRateBox.addChild("div", "class", "infobox-header", l10n("successRate"));
 				HTMLNode successRateContent = successRateBox.addChild("div", "class", "infobox-content");
 				stats.fillSuccessRateBox(successRateContent);
 				
 				HTMLNode timeDetailBox = nextTableCell.addChild("div", "class", "infobox");
-				timeDetailBox.addChild("div", "class", "infobox-header", "Detailed timings (local CHK fetches)");
+				timeDetailBox.addChild("div", "class", "infobox-header", l10n("chkDetailTiming"));
 				HTMLNode timingsContent = timeDetailBox.addChild("div", "class", "infobox-content");
 				stats.fillDetailedTimingsBox(timingsContent);
 				
 				HTMLNode byHTLBox = nextTableCell.addChild("div", "class", "infobox");
-				byHTLBox.addChild("div", "class", "infobox-header", "Success rates by HTL (remote fetches)");
+				byHTLBox.addChild("div", "class", "infobox-header", l10n("successByHTL"));
 				HTMLNode byHTLContent = byHTLBox.addChild("div", "class", "infobox-content");
 				stats.fillRemoteRequestHTLsBox(byHTLContent);
 			}
