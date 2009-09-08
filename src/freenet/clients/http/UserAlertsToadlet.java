@@ -20,13 +20,13 @@ import freenet.support.api.HTTPRequest;
  * @author toad
  */
 public class UserAlertsToadlet extends Toadlet {
-	
+
 	UserAlertsToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
 		this.node = node;
 		this.alerts = core.alerts;
 	}
-	
+
 	private UserAlertManager alerts;
 	private Node node;
 
@@ -35,13 +35,18 @@ public class UserAlertsToadlet extends Toadlet {
 			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
-		
+
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
-        HTMLNode pageNode = page.outer;
-        HTMLNode contentNode = page.content;
-        contentNode.addChild(alerts.createAlerts(false));
-        
-        writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+		HTMLNode alertsNode = alerts.createAlerts(false);
+		if (alertsNode.getFirstTag() == null) {
+			alertsNode = new HTMLNode("div", "class", "infobox");
+			alertsNode.addChild("div", "class", "infobox-content").addChild("div", "No news is good news :)");
+		}
+		contentNode.addChild(alertsNode);
+
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -69,5 +74,5 @@ public class UserAlertsToadlet extends Toadlet {
 	public String path() {
 		return "/alerts/";
 	}
-	
+
 }
