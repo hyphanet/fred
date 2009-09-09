@@ -313,6 +313,8 @@ class ClientRequestSelector implements KeysFetchingLocally {
 							container.activate(clientGrabber, 1);
 						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 						if(baseRGA != null) {
+							if(chosenTracker.persistent())
+								container.activate(baseRGA, 1);
 							baseRGA.remove(req, container);
 						} else {
 							// Okay, it's been removed already. Cool.
