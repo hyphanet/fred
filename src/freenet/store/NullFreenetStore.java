@@ -7,7 +7,7 @@ import com.sleepycat.je.DatabaseException;
 public class NullFreenetStore implements FreenetStore {
 
 	public NullFreenetStore(StoreCallback callback) {
-		// Ok.
+		callback.setStore(this);
 	}
 
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey,
