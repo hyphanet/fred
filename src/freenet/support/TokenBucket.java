@@ -36,35 +36,34 @@ public class TokenBucket {
 	 * @return True if we could acquire the tokens.
 	 */
 	public synchronized boolean instantGrab(long tokens) {
+		if(tokens < 0) throw new IllegalArgumentException("Can't grab negative tokens: "+tokens);
 		if(logMINOR)
 			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
 		addTokens();
 		if(logMINOR)
 			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
-		if(current > tokens) {
+		if(current >= tokens) {
 			current -= tokens;
-			if(current > max) current = max;
 			return true;
 		} else {
-			if(current > max) current = max;
 			return false;
 		}
 	}
 	
 	/**
-	 * Either grab a bunch of tokens, or don't. Never block.
+	 * Try to grab some tokens; if there aren't enough, grab all of them. Never block.
 	 * @param tokens The number of tokens to grab.
-	 * @return True if we could acquire the tokens.
+	 * @return The number of tokens grabbed.
 	 */
 	public synchronized long partialInstantGrab(long tokens) {
+		if(tokens < 0) throw new IllegalArgumentException("Can't grab negative tokens: "+tokens);
 		if(logMINOR)
 			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
 		addTokens();
 		if(logMINOR)
 			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
-		if(current > tokens) {
+		if(current >= tokens) {
 			current -= tokens;
-			if(current > max) current = max;
 			return tokens;
 		} else {
 			tokens = current;
@@ -78,14 +77,10 @@ public class TokenBucket {
 	 * @param tokens The number of tokens to remove.
 	 */
 	public synchronized void forceGrab(long tokens) {
+		if(tokens < 0) throw new IllegalArgumentException("Can't grab negative tokens: "+tokens);
 		if(logMINOR) Logger.minor(this, "forceGrab("+tokens+")");
-		if(tokens <= 0) {
-			Logger.error(this, "forceGrab("+tokens+") - negative value!!", new Exception("error"));
-			return;
-		}
 		addTokens();
 		current -= tokens;
-		if(current > max) current = max;
 		if(logMINOR) Logger.minor(this, "Removed tokens, balance now "+current);
 	}
 	
@@ -106,6 +101,7 @@ public class TokenBucket {
 	}
 	
 	public synchronized void blockingGrab(long tokens) {
+		if(tokens < 0) throw new IllegalArgumentException("Can't grab negative tokens: "+tokens);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Blocking grab: "+tokens);
 		if(tokens < max)
@@ -122,9 +118,9 @@ public class TokenBucket {
 	 * @param tokens The number of tokens to grab.
 	 */
 	public synchronized void innerBlockingGrab(long tokens) {
+		if(tokens < 0) throw new IllegalArgumentException("Can't grab negative tokens: "+tokens);
 		if(logMINOR) Logger.minor(this, "Inner blocking grab: "+tokens);
 		addTokens();
-		if(current > max) current = max;
 		if(logMINOR) Logger.minor(this, "current="+current);
 		
 		current -= tokens;
@@ -158,6 +154,7 @@ public class TokenBucket {
 	}
 
 	public synchronized void recycle(long tokens) {
+		if(tokens < 0) throw new IllegalArgumentException("Can't recycle negative tokens: "+tokens);
 		current += tokens;
 		if(current > max) current = max;
 	}
@@ -167,8 +164,8 @@ public class TokenBucket {
 	 * @param nanosPerTick The new number of nanos per tick.
 	 */
 	public synchronized void changeNanosPerTick(long nanosPerTick) {
-		// Synchronize up first, using the old nanosPerTick.
 		if(nanosPerTick <= 0) throw new IllegalArgumentException();
+		// Synchronize up first, using the old nanosPerTick.
 		addTokens();
 		this.nanosPerTick = nanosPerTick;
 		if(nanosPerTick < this.nanosPerTick)
@@ -177,9 +174,8 @@ public class TokenBucket {
 
 	public synchronized void changeBucketSize(long newMax) {
 		if(newMax <= 0) throw new IllegalArgumentException();
-		addTokensNoClip();
 		max = newMax;
-		if(current > max) current = max;
+		addTokens();
 	}
 	
 	public synchronized void changeNanosAndBucketSize(long nanosPerTick, long newMax) {
