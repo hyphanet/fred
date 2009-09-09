@@ -27,7 +27,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	private final boolean deleteOnFree;
 	
 	public TempFileBucket(long id, FilenameGenerator generator) {
-		this(id, generator, true, true);
+		// deleteOnExit -> files get stuck in a big HashSet, whether or not
+		// they are deleted. This grows without bound, it's a major memory
+		// leak.
+		this(id, generator, false, true);
 	}
 	
 	/**
