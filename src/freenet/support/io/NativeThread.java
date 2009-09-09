@@ -94,10 +94,15 @@ public class NativeThread extends Thread {
 	private static native int getLinuxPriority();	
 	
 	@Override
-	public void run() {
+	public final void run() {
 		if(!setNativePriority(currentPriority))
 			System.err.println("setNativePriority("+currentPriority+") has failed!");
 		super.run();
+		realRun();
+	}
+	
+	public void realRun() {
+		// Override this for convenience when doing new NativeThread() { ... }
 	}
 	
 	/**

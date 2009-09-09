@@ -1166,10 +1166,9 @@ public class Node implements TimeSkewDetectorCallback {
 		shutdownHook = new SemiOrderedShutdownHook();
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 		
-		shutdownHook.addEarlyJob(new Thread() {
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, false) {
 			
-			@Override
-			public void run() {
+			public void realRun() {
 				System.err.println("Stopping database jobs...");
 				if(clientCore == null) return;
 				clientCore.killDatabase();
@@ -1177,10 +1176,10 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		});
 		
-		shutdownHook.addLateJob(new Thread() {
+		shutdownHook.addLateJob(new NativeThread("Close database", NativeThread.HIGH_PRIORITY, false) {
 
 			@Override
-			public void run() {
+			public void realRun() {
 				if(db == null) return;
 				System.err.println("Rolling back unfinished transactions...");
 				db.rollback();
@@ -3436,9 +3435,9 @@ public class Node implements TimeSkewDetectorCallback {
 		storeEnvironment = env;
 		envMutableConfig = mutableConfig;
 		
-		shutdownHook.addLateJob(new Thread() {
+		shutdownHook.addLateJob(new NativeThread("Shutdown bdbje database", NativeThread.HIGH_PRIORITY, true) {
 			@Override
-			public void run() {
+			public void realRun() {
 				try {
 					storeEnvironment.close();
 					System.err.println("Successfully closed all datastores.");
