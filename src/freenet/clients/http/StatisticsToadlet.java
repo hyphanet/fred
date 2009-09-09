@@ -454,15 +454,15 @@ public class StatisticsToadlet extends Toadlet {
 	
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
 		
-		storeSizeInfobox.addChild("div", "class", "infobox-header", "Datastore");
+		storeSizeInfobox.addChild("div", "class", "infobox-header", l10n("datastore"));
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode storeSizeTable = storeSizeInfoboxContent.addChild("table", "border", "0");
 		HTMLNode row=storeSizeTable.addChild("tr");
 
 		//FIXME - Non-breaking space? "Stat-name"?
 		row.addChild("th", "");
-		row.addChild("th", "Store");
-		row.addChild("th", "Cache");
+		row.addChild("th", l10n("chkStore"));
+		row.addChild("th", l10n("chkCache"));
 		
 		final long fix32kb = 32 * 1024;
 
@@ -486,32 +486,32 @@ public class StatisticsToadlet extends Toadlet {
 		// REDFLAG Don't show database version because it's not possible to get it accurately.
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Keys");
+		row.addChild("td", l10n("keys"));
 		row.addChild("td", thousandPoint.format(storeKeys));
 		row.addChild("td", thousandPoint.format(cachedKeys));
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Capacity");
+		row.addChild("td", l10n("capacity"));
 		row.addChild("td", thousandPoint.format(maxStoreKeys));
 		row.addChild("td", thousandPoint.format(maxCachedKeys));
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Data Size");
+		row.addChild("td", l10n("datasize"));
 		row.addChild("td", SizeUtil.formatSize(storeSize, true));
 		row.addChild("td", SizeUtil.formatSize(cachedSize, true));
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Utilization");
+		row.addChild("td", l10n("utilization"));
 		row.addChild("td", fix3p1pct.format(1.0*storeKeys/maxStoreKeys));
 		row.addChild("td", fix3p1pct.format(1.0*cachedKeys/maxCachedKeys));
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Read-Requests");
+		row.addChild("td", l10n("readRequests"));
 		row.addChild("td", thousandPoint.format(storeAccesses));
 		row.addChild("td", thousandPoint.format(cacheAccesses));
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Successful Reads");
+		row.addChild("td", l10n("successfulReads"));
 		if (storeAccesses > 0)
 			row.addChild("td", thousandPoint.format(storeHits));
 		else
@@ -522,7 +522,7 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", "0");
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Success Rate");
+		row.addChild("td", l10n("successRate"));
 		if (storeAccesses > 0)
 			row.addChild("td", fix1p4.format(100.0 * storeHits / storeAccesses) + "%");
 		else
@@ -533,7 +533,7 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", "N/A");
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Writes");
+		row.addChild("td", l10n("writes"));
 		row.addChild("td", thousandPoint.format(storeWrites));
 		row.addChild("td", thousandPoint.format(cacheWrites));
 				
@@ -547,18 +547,18 @@ public class StatisticsToadlet extends Toadlet {
 		 */
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Access Rate");
-		row.addChild("td", fix1p2.format(1.0*storeAccesses/nodeUptimeSeconds)+" /sec");
-		row.addChild("td", fix1p2.format(1.0*cacheAccesses/nodeUptimeSeconds)+" /sec");
+		row.addChild("td", l10n("accessRate"));
+		row.addChild("td", fix1p2.format(1.0*storeAccesses/nodeUptimeSeconds)+" /s");
+		row.addChild("td", fix1p2.format(1.0*cacheAccesses/nodeUptimeSeconds)+" /s");
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Write Rate");
-		row.addChild("td", fix1p2.format(1.0*storeWrites/nodeUptimeSeconds)+" /sec");
-		row.addChild("td", fix1p2.format(1.0*cacheWrites/nodeUptimeSeconds)+" /sec");
+		row.addChild("td", l10n("writeRate"));
+		row.addChild("td", fix1p2.format(1.0*storeWrites/nodeUptimeSeconds)+" /s");
+		row.addChild("td", fix1p2.format(1.0*cacheWrites/nodeUptimeSeconds)+" /s");
 		
 		if (storeFalsePos != -1 || cacheFalsePos != -1) {
 			row = storeSizeTable.addChild("tr");
-			row.addChild("td", "False Pos.");
+			row.addChild("td", l10n("falsePos"));
 			row.addChild("td", thousandPoint.format(storeFalsePos));
 			row.addChild("td", thousandPoint.format(cacheFalsePos));
 		}
@@ -576,22 +576,22 @@ public class StatisticsToadlet extends Toadlet {
 		double cacheDist=Location.distance(nodeLoc, avgCacheLocation);
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Avg. Location");
+		row.addChild("td", l10n("avgLocation"));
 		row.addChild("td", fix1p4.format(avgStoreLocation));
 		row.addChild("td", fix1p4.format(avgCacheLocation));
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Avg. Success Loc.");
+		row.addChild("td", l10n("avgSuccessLoc"));
 		row.addChild("td", fix1p4.format(avgStoreSuccess));
 		row.addChild("td", fix1p4.format(avgCacheSuccess));
 		
 		row=storeSizeTable.addChild("tr");
-		row.addChild("td", "Furthest Success");
+		row.addChild("td", l10n("furthestSuccess"));
 		row.addChild("td", fix1p4.format(furthestStoreSuccess));
 		row.addChild("td", fix1p4.format(furthestCacheSuccess));
 		
 		row = storeSizeTable.addChild("tr");
-		row.addChild("td", "Avg. Distance");
+		row.addChild("td", l10n("avgDist"));
 		row.addChild("td", fix1p4.format(storeDist));
 		row.addChild("td", fix1p4.format(cacheDist));
 
@@ -608,7 +608,7 @@ public class StatisticsToadlet extends Toadlet {
 			cachePercent = 1.0;
 
 		row = storeSizeTable.addChild("tr");
-		row.addChild("td", "Distance Stats");
+		row.addChild("td", l10n("distanceStats"));
 		row.addChild("td", fix3p1pct.format(storePercent));
 		row.addChild("td", fix3p1pct.format(cachePercent));
 		
