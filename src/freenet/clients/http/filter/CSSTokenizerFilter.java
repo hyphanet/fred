@@ -1326,10 +1326,12 @@ class CSSTokenizerFilter {
 				case '"':
 					if(currentQuote=='"' && prevc!='\\')
 						currentState=STATE1;
+					buffer.append(c);
 					break;
 				case '\'':
 					if(currentQuote=='\'' && prevc!='\\')
 						currentState=STATE1;
+					buffer.append(c);
 					break;
 				case '\n':
 					if(prevc == '\r') {
@@ -1434,10 +1436,12 @@ class CSSTokenizerFilter {
 				case '"':
 					if(currentQuote=='"'&& prevc!='\\')
 						currentState=STATE2;
+					buffer.append(c);
 					break;
 				case '\'':
 					if(currentQuote=='\''&& prevc!='\\')
 						currentState=STATE2;
+					buffer.append(c);
 					break;
 				case '\n':
 					if(prevc == '\r') {
@@ -1530,10 +1534,12 @@ class CSSTokenizerFilter {
 				case '"':
 					if(currentQuote=='"'&& prevc!='\\')
 						currentState=STATE3;
+					buffer.append(c);
 					break;
 				case '\'':
 					if(currentQuote=='\''&& prevc!='\\')
 						currentState=STATE3;
+					buffer.append(c);
 					break;
 				case '\n':
 					if(prevc == '\r') {
