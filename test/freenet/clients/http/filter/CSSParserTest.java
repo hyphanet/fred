@@ -52,6 +52,8 @@ public class CSSParserTest extends TestCase {
 
 	}
 
+	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
+	private static final String CSS_STRING_NEWLINESC = " * {}\n body {";
 
 	public void testCSS1Selector() throws IOException {
 
@@ -75,14 +77,18 @@ public class CSSParserTest extends TestCase {
 		int i=0; 
 		while(itr.hasNext())
 		{
-
 			String key=itr.next().toString();
 			String value=CSS2_SELECTOR.get(key);
-			assertTrue(filter(key).contains(value));
+			System.out.println("Test "+(i++)+" : "+key+" -> "+value);
+			assertTrue("key="+key+" value="+filter(key), filter(key).contains(value));
 		}
 
 	}
 
+	public void testNewlines() throws IOException {
+		assertTrue("key="+CSS_STRING_NEWLINES+" value="+filter(CSS_STRING_NEWLINES), CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
+	}
+	
 	private String filter(String css) throws IOException {
 		StringWriter w = new StringWriter();
 		CSSParser p = new CSSParser(new StringReader(css), w, false, null);

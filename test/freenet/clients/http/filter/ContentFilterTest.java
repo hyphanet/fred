@@ -64,6 +64,11 @@ public class ContentFilterTest extends TestCase {
 	private static final String XHTML_INCOMPLETEDOCUMENTC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><body> <h1> helloworld <h2> helloworld</h2></h1></body></html>";
 	private static final String XHTML_IMPROPERNESTING="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</b></i></html>";
 	private static final String XHTML_IMPROPERNESTINGC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</i></b></html>";
+	
+	private static final String CSS_STRING_NEWLINES = "<style>* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }</style>";
+	private static final String CSS_STRING_NEWLINESC = "<style> * {}\n body {</style>";
+
+	
 	private final BucketFactory bf = new ArrayBucketFactory();
 
 	public void testHTMLFilter() throws Exception {
@@ -102,6 +107,8 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
 		assertEquals(XHTML_INCOMPLETEDOCUMENTC,HTMLFilter(XHTML_INCOMPLETEDOCUMENT));
 		assertEquals(XHTML_IMPROPERNESTINGC,HTMLFilter(XHTML_IMPROPERNESTING));
+		
+		assertEquals(CSS_STRING_NEWLINESC,HTMLFilter(CSS_STRING_NEWLINES));
 		
 	}
 		
