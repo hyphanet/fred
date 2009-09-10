@@ -1331,6 +1331,19 @@ class CSSTokenizerFilter {
 					if(currentQuote=='\'' && prevc!='\\')
 						currentState=STATE1;
 					break;
+				case '\n':
+					if(prevc == '\r') {
+						buffer.append(c);
+						break;
+					}
+					// Otherwise same as \r ...
+				case '\r':
+					if(prevc != '\\') {
+						ignoreElementsS2 = true;
+						currentState = STATE3;
+						break;
+					}
+					// Else allow it.
 				default:
 					buffer.append(c);
 				break;
@@ -1427,6 +1440,19 @@ class CSSTokenizerFilter {
 					if(currentQuote=='\''&& prevc!='\\')
 						currentState=STATE2;
 					break;
+				case '\n':
+					if(prevc == '\r') {
+						buffer.append(c);
+						break;
+					}
+					// Otherwise same as \r ...
+				case '\r':
+					if(prevc != '\\') {
+						ignoreElementsS2 = true;
+						currentState = STATE3;
+						break;
+					}
+					// Else allow it.
 				default:
 					buffer.append(c);
 				break;
@@ -1509,6 +1535,19 @@ class CSSTokenizerFilter {
 					if(currentQuote=='\''&& prevc!='\\')
 						currentState=STATE3;
 					break;
+				case '\n':
+					if(prevc == '\r') {
+						buffer.append(c);
+						break;
+					}
+					// Otherwise same as \r ...
+				case '\r':
+					if(prevc != '\\') {
+						ignoreElementsS2 = true;
+						currentState = STATE3;
+						break;
+					}
+					// Else allow it.
 				default:
 					buffer.append(c);
 				break;
