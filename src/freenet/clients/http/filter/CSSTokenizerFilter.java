@@ -1814,7 +1814,7 @@ class CSSTokenizerFilter {
 
 
 			String originalValue=value;
-			value=HTMLFilter.stripQuotes(value).toLowerCase().trim();
+			value=HTMLFilter.stripQuotes(value).trim();
 
 			if(allowedValues!=null && allowedValues.contains(value.toLowerCase())) //CSS Property has one of the explicitly defined values
 				return true;
