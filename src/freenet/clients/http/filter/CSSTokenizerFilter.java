@@ -34,6 +34,7 @@ class CSSTokenizerFilter {
 		this.cb=cb;
 		CSSPropertyVerifier.cb=cb;
 		this.debug=debug;
+		this.debug = true;
 		CSSPropertyVerifier.debug=debug;
 	}
 
@@ -1859,7 +1860,7 @@ class CSSTokenizerFilter {
 						int secondIndex=value.lastIndexOf(")");
 						if(secondIndex>firstIndex && "".equals(value.substring(secondIndex+1, value.length()).trim()))
 						{
-							String url=value.substring(firstIndex+1,secondIndex);
+							String url=value.substring(firstIndex+"url(".length(),secondIndex);
 							return isValidURI(CSSTokenizerFilter.removeQuotes(url));
 						}
 
