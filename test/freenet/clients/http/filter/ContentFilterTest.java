@@ -6,6 +6,7 @@ package freenet.clients.http.filter;
 import java.net.URI;
 
 import junit.framework.TestCase;
+import freenet.l10n.NodeL10n;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
