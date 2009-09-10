@@ -1180,7 +1180,7 @@ class CSSTokenizerFilter {
 		String defaultMedia="screen";
 		String currentMedia=defaultMedia;
 		String propertyName="",propertyValue="";
-		boolean ignoreElementsS1=false,ignoreElementsS2=false;
+		boolean ignoreElementsS1=false,ignoreElementsS2=false,closeIgnoredS2=false;
 		int x;
 		char c=0,prevc=0;
 		boolean s2Comma=false;
@@ -1351,7 +1351,6 @@ class CSSTokenizerFilter {
 				break;
 
 
-
 			case STATE2:
 				canImport=false;
 				switch(c)
@@ -1493,9 +1492,10 @@ class CSSTokenizerFilter {
 						propertyName="";
 
 					}
-					if(!ignoreElementsS2)
+					if((!ignoreElementsS2) || closeIgnoredS2) {
 						filteredTokens.append("}\n");
-					else
+						closeIgnoredS2 = false;
+					} else
 						ignoreElementsS2=false;
 					if(openBraces==0)
 					{
@@ -1544,6 +1544,7 @@ class CSSTokenizerFilter {
 				case '\r':
 					if(prevc != '\\') {
 						ignoreElementsS2 = true;
+						closeIgnoredS2 = true;
 						currentState = STATE3;
 						break;
 					}
