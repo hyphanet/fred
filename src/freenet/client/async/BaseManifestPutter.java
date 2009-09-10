@@ -423,7 +423,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 					} else {
 						runningMap.add(this);
 						if (container != null) {
-							container.store(runningMap);
+							container.ext().store(runningMap, 2);
 						}
 					}
 				}
@@ -435,7 +435,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				} else {
 					putHandlerWaitingForBlockSets.add(this);
 					if (container != null) {
-						container.store(putHandlerWaitingForBlockSets);
+						container.ext().store(putHandlerWaitingForBlockSets, 2);
 					}
 				}
 			}
@@ -446,7 +446,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				} else {
 					putHandlersWaitingForFetchable.add(this);
 					if (container != null) {
-						container.store(putHandlersWaitingForFetchable);
+						container.ext().store(putHandlersWaitingForFetchable, 2);
 					}
 				}
 			}
@@ -788,7 +788,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			synchronized(BaseManifestPutter.this) {
 				putHandlerWaitingForBlockSets.remove(this);
 				if(persistent)
-					container.store(putHandlerWaitingForBlockSets);
+					container.ext().store(putHandlerWaitingForBlockSets, 2);
 				if (freeformMode) {
 					allBlockSets = hasResolvedBase && putHandlerWaitingForBlockSets.isEmpty();
 				} else {
