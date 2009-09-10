@@ -1229,12 +1229,19 @@ class CSSTokenizerFilter {
 					break;
 
 				case '@':
-					isState1Present=true;
+					if(prevc != '\\') {
+						isState1Present=true;
+						if(debug) log("STATE1 CASE @: "+c);
+					} // Else leave it in buffer, encoded.
 					buffer.append(c);
-					if(debug) log("STATE1 CASE @: "+c);
 					break;
 
 				case '{':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					openBraces++;
 					isState1Present=false;
 					String[] parts=buffer.toString().split(" ");
@@ -1267,6 +1274,11 @@ class CSSTokenizerFilter {
 					buffer.setLength(0);
 					break;
 				case ';':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					//should be @import
 
 					if(canImport && !ignoreElementsS1 && buffer.toString().contains("@import"))
@@ -1309,6 +1321,11 @@ class CSSTokenizerFilter {
 					break;
 				case '"':
 				case '\'':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					buffer.append(c);
 					currentState=STATE1INQUOTE;
 					currentQuote=c;
@@ -1345,7 +1362,7 @@ class CSSTokenizerFilter {
 					}
 					// Otherwise same as \r ...
 				case '\r':
-					if(prevc != '\\') {
+					if(prevc == '\\') {
 						ignoreElementsS1 = true;
 						closeIgnoredS1 = true;
 						currentState = STATE1;
@@ -1367,6 +1384,11 @@ class CSSTokenizerFilter {
 				switch(c)
 				{
 				case '{':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					openBraces++;
 					if(buffer.toString().trim()!="")
 					{
@@ -1392,6 +1414,11 @@ class CSSTokenizerFilter {
 					break;
 
 				case ',':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					String filtered=recursiveSelectorVerifier(buffer.toString());
 					if(debug) log("STATE2 CASE , filtered elements"+filtered);
 					if(filtered!=null)
@@ -1411,6 +1438,11 @@ class CSSTokenizerFilter {
 
 
 				case '}':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					openBraces--;
 					if(ignoreElementsS1) {
 						ignoreElementsS1=false;
@@ -1430,6 +1462,11 @@ class CSSTokenizerFilter {
 
 				case '"':
 				case '\'':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					buffer.append(c);
 					currentState=STATE2INQUOTE;
 					currentQuote=c;
@@ -1482,12 +1519,22 @@ class CSSTokenizerFilter {
 				switch(c)
 				{
 				case ':':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					propertyName=buffer.toString().trim();
 					buffer.setLength(0);
 					if(debug) log("STATE3 CASE :: "+c);
 					break;
 
 				case ';':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					propertyValue=buffer.toString().trim();
 					buffer.setLength(0);
 					if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,propertyValue))
@@ -1498,6 +1545,11 @@ class CSSTokenizerFilter {
 					propertyName="";
 					break;
 				case '}':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					openBraces--;
 					if(propertyName!="")
 					{
@@ -1531,6 +1583,11 @@ class CSSTokenizerFilter {
 
 				case '"':
 				case '\'':
+					if(prevc == '\\') {
+						// Leave in buffer, encoded.
+						buffer.append(c);
+						break;
+					}
 					buffer.append(c);
 					currentState=STATE3INQUOTE;
 					currentQuote=c;
