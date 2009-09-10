@@ -1273,8 +1273,8 @@ class CSSTokenizerFilter {
 					{
 						if(debug) log("STATE1 CASE ;statement="+buffer.toString());
 						
-						String strbuffer=buffer.toString().toLowerCase().trim();
-						int importIndex=strbuffer.indexOf("@import");
+						String strbuffer=buffer.toString().trim();
+						int importIndex=strbuffer.toLowerCase().indexOf("@import");
 						if("".equals(strbuffer.substring(0,importIndex).trim()))
 						{
 							String str1=strbuffer.substring(importIndex+7,strbuffer.length());
@@ -1290,11 +1290,12 @@ class CSSTokenizerFilter {
 							}
 							else
 								uri=strparts[0];
+							if(debug) log("uri: "+uri+" strparts: "+strparts.length);
 							if(uri!=null && (strparts.length==1 || (strparts.length==2 && getVerifier("@media").checkValidity(null, null, strparts[1]))))
 							{
 
 								if(isValidURI(uri))
-								w.write(buffer.toString()+"\n");
+								w.write(buffer.toString()+";\n");
 							}
 						}
 					}
