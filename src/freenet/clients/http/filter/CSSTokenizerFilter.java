@@ -1339,17 +1339,20 @@ class CSSTokenizerFilter {
 					break;
 				case '\n':
 					if(prevc == '\r') {
-						buffer.append(c);
 						break;
 					}
 					// Otherwise same as \r ...
 				case '\r':
 					if(prevc != '\\') {
 						ignoreElementsS2 = true;
+						closeIgnoredS2 = true;
 						currentState = STATE3;
 						break;
+					} else {
+						// Wipe out the \ as well.
+						buffer.setLength(buffer.length()-1);
+						break;
 					}
-					// Else allow it.
 				default:
 					buffer.append(c);
 				break;
@@ -1449,17 +1452,20 @@ class CSSTokenizerFilter {
 					break;
 				case '\n':
 					if(prevc == '\r') {
-						buffer.append(c);
 						break;
 					}
 					// Otherwise same as \r ...
 				case '\r':
 					if(prevc != '\\') {
 						ignoreElementsS2 = true;
+						closeIgnoredS2 = true;
 						currentState = STATE3;
 						break;
+					} else {
+						// Wipe out the \ as well.
+						buffer.setLength(buffer.length()-1);
+						break;
 					}
-					// Else allow it.
 				default:
 					buffer.append(c);
 				break;
@@ -1547,7 +1553,6 @@ class CSSTokenizerFilter {
 					break;
 				case '\n':
 					if(prevc == '\r') {
-						buffer.append(c);
 						break;
 					}
 					// Otherwise same as \r ...
@@ -1557,8 +1562,11 @@ class CSSTokenizerFilter {
 						closeIgnoredS2 = true;
 						currentState = STATE3;
 						break;
+					} else {
+						// Wipe out the \ as well.
+						buffer.setLength(buffer.length()-1);
+						break;
 					}
-					// Else allow it.
 				default:
 					buffer.append(c);
 				break;
