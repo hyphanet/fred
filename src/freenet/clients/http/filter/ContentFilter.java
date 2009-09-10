@@ -96,7 +96,7 @@ public class ContentFilter {
 				true, true, true, true, true, false,
 				l10n("textCssReadAdvice"),
 				l10n("textCssWriteAdvice"),
-				true, "utf-8", new CSSReadFilter()));
+				true, "utf-8", null));
 		
 	}
 	

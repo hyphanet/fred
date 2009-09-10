@@ -21,7 +21,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
-public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
+public class CSSReadFilter implements ContentDataFilter {
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
@@ -53,11 +53,10 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 				throw UnknownCharsetException.create(e, charset);
 			}
 			CSSParser parser = new CSSParser(r, w, false, cb);
-			parser.parse();
+			parser.filterCSS();
 			r.close();
 		}
 		finally {
-			// Do *not* close output related things here!
 			Closer.close(strm);
 			Closer.close(isr);
 			Closer.close(r);
@@ -71,21 +70,6 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		throw new UnsupportedOperationException();
 	}
 
-	public String getCharset(Bucket bucket, String parseCharset) throws DataFilterException, IOException {
-		InputStream strm = bucket.getInputStream();
-		Writer w = new NullWriter();
-		Reader r;
-		r = new BufferedReader(new InputStreamReader(strm, parseCharset), 32768);
-		CSSParser parser = new CSSParser(r, w, false, new NullFilterCallback());
-		try {
-			parser.parse();
-		} catch (Throwable t) {
-			// Ignore ALL errors!
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
-		}
-		r.close();
-		return parser.detectedCharset;
-	}
+	
 
 }

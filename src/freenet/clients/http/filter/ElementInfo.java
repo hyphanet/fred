@@ -1,8 +1,13 @@
 package freenet.clients.http.filter;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Arrays;
+
+import freenet.support.Logger;
 public class ElementInfo {
 
-	private static HashSet<String> VOID_ELEMENTS=new HashSet<String>();
+	private final static HashSet<String> VOID_ELEMENTS=new HashSet<String>();
 	static {
 		VOID_ELEMENTS.add("area");
 		VOID_ELEMENTS.add("base");
@@ -24,8 +29,181 @@ public class ElementInfo {
 		VOID_ELEMENTS.add("source");
 		VOID_ELEMENTS.add("spacer");
 		VOID_ELEMENTS.add("wbr");
+	}
+	//Taken from HTMLFilter
+	public final static HashSet<String> HTML_ELEMENTS=new HashSet<String>();
+	static {
+		HTML_ELEMENTS.add("*");
+		HTML_ELEMENTS.add("html");
+		HTML_ELEMENTS.add("head");
+		HTML_ELEMENTS.add("title");
+		HTML_ELEMENTS.add("body");
+		HTML_ELEMENTS.add("div");
+		HTML_ELEMENTS.add("h1");
+		HTML_ELEMENTS.add("h2");
+		HTML_ELEMENTS.add("h3");
+		HTML_ELEMENTS.add("h4");
+		HTML_ELEMENTS.add("h5");
+		HTML_ELEMENTS.add("h6");
+		HTML_ELEMENTS.add("p");
+		HTML_ELEMENTS.add("caption");
+		HTML_ELEMENTS.add("span");
+		HTML_ELEMENTS.add("address");
+		HTML_ELEMENTS.add("em");
+		HTML_ELEMENTS.add("strong");
+		HTML_ELEMENTS.add("dfn");
+		HTML_ELEMENTS.add("code");
+		HTML_ELEMENTS.add("samp");
+		HTML_ELEMENTS.add("kbd");
+		HTML_ELEMENTS.add("var");
+		HTML_ELEMENTS.add("cite");
+		HTML_ELEMENTS.add("abbr");
+		HTML_ELEMENTS.add("acronym");
+		HTML_ELEMENTS.add("sub");
+		HTML_ELEMENTS.add("sup");
+		HTML_ELEMENTS.add("dt");
+		HTML_ELEMENTS.add("dd");
+		HTML_ELEMENTS.add("tt");
+		HTML_ELEMENTS.add("i");
+		HTML_ELEMENTS.add("b");
+		HTML_ELEMENTS.add("big");
+		HTML_ELEMENTS.add("small");
+		HTML_ELEMENTS.add("strike");
+		HTML_ELEMENTS.add("s");
+		HTML_ELEMENTS.add("u");
+		HTML_ELEMENTS.add("noframes");
+		HTML_ELEMENTS.add("fieldset");
+		HTML_ELEMENTS.add("xmp");
+		HTML_ELEMENTS.add("listing");
+		HTML_ELEMENTS.add("plaintext");
+		HTML_ELEMENTS.add("center");
+		HTML_ELEMENTS.add("bdo");
+		HTML_ELEMENTS.add("blockquote");
+		HTML_ELEMENTS.add("q");
+		HTML_ELEMENTS.add("br");
+		HTML_ELEMENTS.add("pre");
+		HTML_ELEMENTS.add("ins");
+		HTML_ELEMENTS.add("del");
+		HTML_ELEMENTS.add("ul");
+		HTML_ELEMENTS.add("ol");
+		HTML_ELEMENTS.add("li");
+		HTML_ELEMENTS.add("dl");
+		HTML_ELEMENTS.add("dir");
+		HTML_ELEMENTS.add("menu");
+		HTML_ELEMENTS.add("table");
+		HTML_ELEMENTS.add("thead");
+		HTML_ELEMENTS.add("tfoot");
+		HTML_ELEMENTS.add("tbody");
+		HTML_ELEMENTS.add("colgroup");
+		HTML_ELEMENTS.add("col");
+		HTML_ELEMENTS.add("tr");
+		HTML_ELEMENTS.add("th");
+		HTML_ELEMENTS.add("td");
+		HTML_ELEMENTS.add("a");
+		HTML_ELEMENTS.add("img");
+		HTML_ELEMENTS.add("map");
+		HTML_ELEMENTS.add("area");
+		HTML_ELEMENTS.add("font");
+		HTML_ELEMENTS.add("basefont");
+		HTML_ELEMENTS.add("hr");
+		HTML_ELEMENTS.add("frame");
+		HTML_ELEMENTS.add("frameset");
+		HTML_ELEMENTS.add("form");
+		HTML_ELEMENTS.add("input");
+		HTML_ELEMENTS.add("button");
+		HTML_ELEMENTS.add("select");
+		HTML_ELEMENTS.add("optgroup");
+		HTML_ELEMENTS.add("option");
+		HTML_ELEMENTS.add("textarea");
+		HTML_ELEMENTS.add("isindex");
+		HTML_ELEMENTS.add("label");
+		HTML_ELEMENTS.add("legend");
+
+	}
+	
+	
+	
+	public final static String[] HTMLELEMENTSARRAY=HTML_ELEMENTS.toArray(new String[0]);
+	public final static String[] TABLEELEMENTS=new String[]{"table","colgroup","col","tbody","thead","tfoot","tr","td","caption"};
+	//TODO
+	public final static String[] ALLBUTNONREPLACEDINLINEELEMENTS= new String[]{};
+	public final static String[] BLOCKLEVELELEMENTS=new String[]{"address","blockquote","center","dir","div","dl","fieldset","form","h1","h2","h3","h4","h5","h6","hr","isindex","menu","noframes","noscript","ol","p","pre","table","ul","dd","dt","frameset","li","tbody","td","tfoot","th","thead","tr"};
+	public final static String[] INLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","img","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var"};
+	 
+	public final static String[] NONREPLACEDINLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var" };
+	public final static String[] ELEMENTSFORPADDING;
+	static
+	{
+		List<String> list = new ArrayList<String>(Arrays.asList(HTMLELEMENTSARRAY));
+		list.removeAll(Arrays.asList(new String[]{"table","th","tr","td","table","thead","tfoot","tbody","colgroup","col"}));
+		ELEMENTSFORPADDING = list.toArray(new String[0]);
+	}
+	
+	public final static HashSet<String> LANGUAGES=new HashSet<String>();
+	static
+	{
+		LANGUAGES.add("az");
+		LANGUAGES.add("be"); 
+		LANGUAGES.add("bg");
+		LANGUAGES.add("cs");
+		LANGUAGES.add("de");
+		LANGUAGES.add("el");
+		LANGUAGES.add("en");
+		LANGUAGES.add("es");
+		LANGUAGES.add("fi");
+		LANGUAGES.add("fr");
+		LANGUAGES.add("id");
+		LANGUAGES.add("it");
+		LANGUAGES.add("ja");
+		LANGUAGES.add("ka");
+		LANGUAGES.add("kk");
+		LANGUAGES.add("ky");
+		LANGUAGES.add("lv");
+		LANGUAGES.add("mo");
+		LANGUAGES.add("nl");
+		LANGUAGES.add("no");
+		LANGUAGES.add("pl");
+		LANGUAGES.add("pt");
+		LANGUAGES.add("ro");
+		LANGUAGES.add("ru");
+		LANGUAGES.add("sv");
+		LANGUAGES.add("tl");
+		LANGUAGES.add("tr");
+		LANGUAGES.add("tt");
+		LANGUAGES.add("uk");
+		LANGUAGES.add("zh-hans");
+		LANGUAGES.add("zh-hant");
+	}
+	
+	public final static String[] MEDIAARRAY= new String[]{"all","braille","embossed","handheld","print","projection","screen","speech","tty","tv"};
+	public final static String[] VISUALMEDIA= new String[]{"handheld","print","projection","screen","tty","tv"};
+	public final static String[] AURALMEDIA=new String[]{"speech"};
+	public final static String[] VISUALPAGEDMEDIA=new String[]{"embosed","handheld","print","projection","screen","tty","tv"};
+	public final static String[] VISUALINTERACTIVEMEDIA=new String[]{"braille","handheld","print","projection","screen","speech","tty","tv"};	
+	
+	
+	public final static int UPPERLIMIT=10;
+	
+	public final static String[] FONT_LIST=new String[]{"arial", "helvetica","arial black","gadget", "comic sans ms", "comic sans ms5","courier new", "courier6", "monospace georgia1", "georgia","impact", "impact5", "charcoal6","lucida console", "monaco5","lucida sans unicode", "lucida grande","palatino linotype", "book antiqua3", "palatino6","tahoma", "geneva","times new roman", "times","trebuchet ms1", "helvetica","verdana", "verdana", "geneva","webdings", "webdings2", "wingdings", "zapf dingbats", "wingdings2", "zapf dingbats2","ms sans serif4", "geneva","ms serif4", "new york6","serif","sans-serif","cursive","fantasy","monospace"};
+	public final static HashSet<String> PSEUDOCLASS=new HashSet<String>();
+	static {
+		PSEUDOCLASS.add("first-child");
+		PSEUDOCLASS.add("link");
+		PSEUDOCLASS.add("visited");
+		PSEUDOCLASS.add("hover");
+		PSEUDOCLASS.add("active");
+		PSEUDOCLASS.add("focus");
+		PSEUDOCLASS.add("lang");
+		PSEUDOCLASS.add("first-line");
+		PSEUDOCLASS.add("first-letter");
+		PSEUDOCLASS.add("before");
+		PSEUDOCLASS.add("after");
 		
 	}
+	
+	
+	
+	
 	public static boolean isVoidElement(String element) {
 		
 		return VOID_ELEMENTS.contains(element);
@@ -37,5 +215,106 @@ public class ElementInfo {
 		if("li".equals(element)) return true;
 		return false;
 	}
+	
+	public static boolean isValidHTMLTags(String tag)
+	{
+		return (HTML_ELEMENTS.contains(tag.toLowerCase())||VOID_ELEMENTS.contains(tag.toLowerCase()));
+	}
+	
+	public static boolean isValidName(String name)
+	{
+		if(name.length()==0)
+		{
+			return false;
+		}
+		else
+		{
+			if(!((name.charAt(0)>='a' && name.charAt(0)<='z') || (name.charAt(0)>='A' && name.charAt(0)<='Z')))
+			{
+				return false;
+			}
+			else
+			{
+				
+				for(int i=1;i<name.length();i++)
+				{
+					if(!((name.charAt(i)>='a' && name.charAt(i)<='z') || (name.charAt(i)>='A' && name.charAt(i)<='Z') || (name.charAt(i)>='0' && name.charAt(i)<='9') || name.charAt(i)=='_' || name.charAt(i)==':'  || name.charAt(i)=='.' || name.charAt(i)=='-'))
+					{
+						return false;
+					}
+				}
+				
+			}
+			return true;
+		}
+	}
+	
+	public static boolean isValidIdentifier(String name)
+	{
+		if(name.length()==0)
+		{
+			return false;
+		}
+		else
+		{
+			if(!((name.charAt(0)>='a' && name.charAt(0)<='z') || (name.charAt(0)>='A' && name.charAt(0)<='Z')|| (name.charAt(0)>='0' && name.charAt(0)<='9')))
+			{
+				return false;
+			}
+			else
+			{
+				
+				for(int i=1;i<name.length();i++)
+				{
+					if(!((name.charAt(i)>='a' && name.charAt(i)<='z') || (name.charAt(i)>='A' && name.charAt(i)<='Z') || (name.charAt(i)>='0' && name.charAt(i)<='9') || name.charAt(i)=='_' || name.charAt(i)==':'  || name.charAt(i)=='.' || name.charAt(i)=='-'))
+					{
+						return false;
+					}
+				}
+				
+			}
+			return true;
+		}
+	}
+		
+		public static boolean isValidPseudoClass(String cname)
+		{
+			cname=cname.toLowerCase();
+			if(PSEUDOCLASS.contains(cname))
+				return true;
+
+			
+			else if(cname.indexOf("lang")!=-1)
+			{
+				int langIndex=cname.indexOf("lang");
+				int firstIndex=cname.indexOf("(");
+				int secondIndex=cname.lastIndexOf(")");
+				if(cname.substring(0,langIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
+				{
+					String language=CSSTokenizerFilter.removeQuotes(cname.substring(firstIndex+1,secondIndex).trim());
+					
+					if(LANGUAGES.contains(language))
+						return true;
+				}
+				
+			}
+			
+			return false;
+		}
+		
+		public static boolean isValidString(String string)
+		{
+			StringBuffer s=new StringBuffer(string);
+			for(int i=0;i<s.length();i++) 
+			{
+				char c = s.charAt(i);
+				if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r') )
+					return false;
+			}
+				return true;
+		}
+		
+			
+						
 
 }

@@ -6,7 +6,6 @@ package freenet.clients.http.filter;
 import java.net.URI;
 
 import junit.framework.TestCase;
-import freenet.l10n.NodeL10n;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -68,7 +67,7 @@ public class ContentFilterTest extends TestCase {
 
 	public void testHTMLFilter() throws Exception {
 		new NodeL10n();
-
+		
 		// General sanity checks
 		// is "relativization" working?
 		assertEquals(INTERNAL_RELATIVE_LINK, HTMLFilter(INTERNAL_RELATIVE_LINK));
@@ -96,11 +95,10 @@ public class ContentFilterTest extends TestCase {
 		// bug #2297
 		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(GenericReadFilterCallback.magicHTTPEscapeString));
 		// bug #2921
-		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("CHECKED_HTTP"));
-		assertFalse(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("http"));
-		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("CHECKED_HTTP"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("div {}"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div {}"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("div {}"));
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
-		assertEquals(XHTML_VOIDELEMENTC,HTMLFilter(XHTML_VOIDELEMENT));
 		assertEquals(XHTML_INCOMPLETEDOCUMENTC,HTMLFilter(XHTML_INCOMPLETEDOCUMENT));
 		assertEquals(XHTML_IMPROPERNESTINGC,HTMLFilter(XHTML_IMPROPERNESTING));
 		

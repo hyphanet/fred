@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
+import java.util.ArrayList;
 
 import freenet.support.Logger;
 
@@ -32,34 +32,44 @@ class CSSParser extends CSSTokenizerFilter {
 		Writer w,
 		boolean paranoidStringCheck,
 		FilterCallback cb) {
-		super(r, w, paranoidStringCheck);
+		super(r, w, cb,true);
 		this.cb = cb;
-		this.deleteErrors = super.deleteErrors;
+
 	}
 
-	@Override
-	void throwError(String s) throws DataFilterException {
-		HTMLFilter.throwFilterException(s);
-	}
-
-	@Override
-	String processImportURL(String s) throws CommentException {
-		return HTMLFilter.sanitizeURI(HTMLFilter.stripQuotes(s), "text/css", null, cb, true);
-	}
-
-	@Override
-	String processURL(String s) throws CommentException {
-		return HTMLFilter.sanitizeURI(HTMLFilter.stripQuotes(s), null, null, cb, true);
-	}
-
+/*
 	@Override
 	void log(String s) {
 		if (Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, s);
+		
 	}
 
 	@Override
 	void logError(String s) {
 		Logger.error(this, s);
+	}
+	*/
+	public static void main(String[] params)
+	{
+		
+		try{
+	    	BufferedReader input = new BufferedReader(new FileReader("/home/ashish/search.css"));
+	    	//BufferedWriter output=new BufferedWriter(new FileWriter("/home/ashish/searchfiltered.html"));
+	    	Writer output= new BufferedWriter(new OutputStreamWriter(System.out));
+
+	    	NullFilterCallback objtemp=new NullFilterCallback(); 
+	    	CSSParser pc = new CSSParser(input, output, true, objtemp);
+			//pc.debug=false;
+	    	pc.parse();
+	    	
+			
+	    	output.close();
+			
+	    }
+	    catch (IOException e) {
+	    	System.err.println(e.getMessage());
+	    }
+		
 	}
 }
