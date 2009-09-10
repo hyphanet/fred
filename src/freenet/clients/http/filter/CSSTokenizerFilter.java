@@ -1509,6 +1509,7 @@ class CSSTokenizerFilter {
 					if((!ignoreElementsS2) || closeIgnoredS2) {
 						filteredTokens.append("}\n");
 						closeIgnoredS2 = false;
+						ignoreElementsS2 = false;
 					} else
 						ignoreElementsS2=false;
 					if(openBraces==0)
