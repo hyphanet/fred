@@ -1293,9 +1293,12 @@ class CSSTokenizerFilter {
 							if(debug) log("uri: "+uri+" strparts: "+strparts.length);
 							if(uri!=null && (strparts.length==1 || (strparts.length==2 && getVerifier("@media").checkValidity(null, null, strparts[1]))))
 							{
-
-								if(isValidURI(uri))
-								w.write(buffer.toString()+";\n");
+								try {
+									w.write("@import url(\""+cb.processURI(uri, "text/css")+"\")"+(strparts.length>1 ? (" " + strparts[1]) : "")+";");
+								} catch (CommentException e) {
+									// Invalid
+									// FIXME include the message as comment, CSS-safe
+								}
 							}
 						}
 					}
