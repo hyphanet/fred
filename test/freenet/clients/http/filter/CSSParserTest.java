@@ -3,9 +3,13 @@ package freenet.clients.http.filter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Iterator;
+
+import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
 import junit.framework.TestCase;
 
 public class CSSParserTest extends TestCase {
@@ -55,7 +59,10 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
 	private static final String CSS_STRING_NEWLINESC = " * {}\n body {";
 
-	public void testCSS1Selector() throws IOException {
+	private static final String CSS_BACKGROUND_URL = "* { background: url(/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png); }";
+	private static final String CSS_BACKGROUND_URLC = " * { background:url(/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png);}\n";
+	
+	public void testCSS1Selector() throws IOException, URISyntaxException {
 
 
 		Collection c = CSS1_SELECTOR.keySet();
@@ -71,7 +78,7 @@ public class CSSParserTest extends TestCase {
 
 	}
 
-	public void testCSS2Selector() throws IOException {
+	public void testCSS2Selector() throws IOException, URISyntaxException {
 		Collection c = CSS2_SELECTOR.keySet();
 		Iterator itr = c.iterator();
 		int i=0; 
@@ -85,13 +92,18 @@ public class CSSParserTest extends TestCase {
 
 	}
 
-	public void testNewlines() throws IOException {
+	public void testNewlines() throws IOException, URISyntaxException {
 		assertTrue("key="+CSS_STRING_NEWLINES+" value="+filter(CSS_STRING_NEWLINES), CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
 	}
 	
-	private String filter(String css) throws IOException {
+	public void testBackgroundURL() throws IOException, URISyntaxException {
+		assertTrue("key="+CSS_BACKGROUND_URL+" value=\""+filter(CSS_BACKGROUND_URL)+"\"", CSS_BACKGROUND_URLC.equals(filter(CSS_BACKGROUND_URL)));
+	}
+	
+	private String filter(String css) throws IOException, URISyntaxException {
 		StringWriter w = new StringWriter();
-		CSSParser p = new CSSParser(new StringReader(css), w, false, null);
+		GenericReadFilterCallback cb = new GenericReadFilterCallback(new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null);
+		CSSParser p = new CSSParser(new StringReader(css), w, false, cb);
 		p.parse();
 		return w.toString();
 	}
