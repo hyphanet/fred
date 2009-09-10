@@ -1278,7 +1278,7 @@ class CSSTokenizerFilter {
 						if("".equals(strbuffer.substring(0,importIndex).trim()))
 						{
 							String str1=strbuffer.substring(importIndex+7,strbuffer.length());
-							String[] strparts=str1.trim().split(" ");
+							String[] strparts=split(str1);
 							strparts=FilterUtils.removeWhiteSpace(strparts);
 							String uri=null;
 							if(strparts[0].contains("url("))
@@ -1585,6 +1585,17 @@ class CSSTokenizerFilter {
 
 
 	}
+
+	/** Split up a string, taking into account CSS rules for escaping,
+	 * strings, identifiers.
+	 * @param str1
+	 * @return
+	 */
+	private String[] split(String str1) {
+		// FIXME implement properly!
+		return str1.trim().split(" ");
+	}
+
 
 	public boolean anglecheck(String value)
 	{
