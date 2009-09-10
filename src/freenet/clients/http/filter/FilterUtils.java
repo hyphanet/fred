@@ -448,7 +448,7 @@ public class FilterUtils {
 		for(String value:values)
 		{
 			if(value!=null && !("".equals(value.trim())))
-				arrayToReturn.add(CSSTokenizerFilter.removeQuotes(value.toLowerCase().trim()).trim());
+				arrayToReturn.add(CSSTokenizerFilter.removeQuotes(value.trim()).trim());
 		}
 		return arrayToReturn.toArray(new String[0]);
 	}

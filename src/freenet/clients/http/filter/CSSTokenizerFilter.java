@@ -1816,7 +1816,7 @@ class CSSTokenizerFilter {
 			String originalValue=value;
 			value=HTMLFilter.stripQuotes(value).toLowerCase().trim();
 
-			if(allowedValues!=null && allowedValues.contains(value)) //CSS Property has one of the explicitly defined values
+			if(allowedValues!=null && allowedValues.contains(value.toLowerCase())) //CSS Property has one of the explicitly defined values
 				return true;
 
 			if(isInteger && isIntegerChecker(value))
@@ -1967,7 +1967,6 @@ class CSSTokenizerFilter {
 				{
 					String temp=value.substring(first,second+1);
 					temp=CSSTokenizerFilter.removeQuotes(temp);
-					temp=temp.trim().toLowerCase();
 					doubleQuotedValues.add(temp);
 				}
 
