@@ -65,6 +65,8 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_LCASE_BACKGROUND_URL = "* { background: url(/ssk@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png); }";
 	private static final String CSS_LCASE_BACKGROUND_URLC = " * { background:url(/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png);}\n";
 	
+	private static final String CSS_IMPORT = "@import url(\"/KSK@test\");";
+	private static final String CSS_IMPORTC = "@import url(\"/KSK@test?type=text/css\");";
 	
 	public void testCSS1Selector() throws IOException, URISyntaxException {
 
@@ -105,6 +107,9 @@ public class CSSParserTest extends TestCase {
 		
 		// FIXME support lower case ssk@ in links from CSS
 		//assertTrue("key="+CSS_LCASE_BACKGROUND_URL+" value=\""+filter(CSS_LCASE_BACKGROUND_URL)+"\"", CSS_LCASE_BACKGROUND_URLC.equals(filter(CSS_LCASE_BACKGROUND_URL)));
+		
+		// FIXME support imports
+		//assertTrue("key="+CSS_IMPORT+" value=\""+filter(CSS_IMPORT)+"\"", CSS_IMPORTC.equals(filter(CSS_IMPORT)));
 	}
 	
 	private String filter(String css) throws IOException, URISyntaxException {
