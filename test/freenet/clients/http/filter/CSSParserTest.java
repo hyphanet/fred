@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
+import freenet.l10n.NodeL10n;
 import junit.framework.TestCase;
 
 public class CSSParserTest extends TestCase {
@@ -71,6 +72,16 @@ public class CSSParserTest extends TestCase {
 
 	private static final String CSS_IMPORT2 = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\") screen;";
 	private static final String CSS_IMPORT2C = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html?type=text/css\") screen;";
+
+	private static final String CSS_ESCAPED_LINK = "* { background: url(\00002f\00002fwww.google.co.uk/intl/en_uk/images/logo.gif); }";
+	private static final String CSS_ESCAPED_LINKC = " * {}\n";
+	
+	private static final String CSS_ESCAPED_LINK2 = "* { background: url(\\/\\/www.google.co.uk/intl/en_uk/images/logo.gif); }";
+	private static final String CSS_ESCAPED_LINK2C = " * {}\n";
+	
+	public void setUp() {
+		new NodeL10n();
+	}
 	
 	public void testCSS1Selector() throws IOException, URISyntaxException {
 
@@ -116,6 +127,11 @@ public class CSSParserTest extends TestCase {
 	public void testImports() throws IOException, URISyntaxException {
 		assertTrue("key="+CSS_IMPORT+" value=\""+filter(CSS_IMPORT)+"\"", CSS_IMPORTC.equals(filter(CSS_IMPORT)));
 		assertTrue("key="+CSS_IMPORT2+" value=\""+filter(CSS_IMPORT2)+"\"", CSS_IMPORT2C.equals(filter(CSS_IMPORT2)));
+	}
+	
+	public void testEscape() throws IOException, URISyntaxException {
+		assertTrue("key="+CSS_ESCAPED_LINK+" value=\""+filter(CSS_ESCAPED_LINK)+"\"", CSS_ESCAPED_LINKC.equals(filter(CSS_ESCAPED_LINK)));
+		assertTrue("key="+CSS_ESCAPED_LINK2+" value=\""+filter(CSS_ESCAPED_LINK2)+"\"", CSS_ESCAPED_LINK2C.equals(filter(CSS_ESCAPED_LINK2)));
 	}
 	
 	private String filter(String css) throws IOException, URISyntaxException {
