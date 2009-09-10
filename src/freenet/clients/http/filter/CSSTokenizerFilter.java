@@ -1180,7 +1180,7 @@ class CSSTokenizerFilter {
 		String defaultMedia="screen";
 		String currentMedia=defaultMedia;
 		String propertyName="",propertyValue="";
-		boolean ignoreElementsS1=false,ignoreElementsS2=false,closeIgnoredS2=false;
+		boolean ignoreElementsS1=false,ignoreElementsS2=false,closeIgnoredS1=false,closeIgnoredS2=false;
 		int x;
 		char c=0,prevc=0;
 		boolean s2Comma=false;
@@ -1269,7 +1269,7 @@ class CSSTokenizerFilter {
 				case ';':
 					//should be @import
 
-					if(canImport && buffer.toString().contains("@import"))
+					if(canImport && !ignoreElementsS1 && buffer.toString().contains("@import"))
 					{
 						if(debug) log("STATE1 CASE ;statement="+buffer.toString());
 						
@@ -1303,6 +1303,8 @@ class CSSTokenizerFilter {
 						}
 					}
 					isState1Present=false;
+					ignoreElementsS1 = false;
+					closeIgnoredS1 = false;
 					buffer.setLength(0);
 					break;
 				case '"':
@@ -1344,9 +1346,9 @@ class CSSTokenizerFilter {
 					// Otherwise same as \r ...
 				case '\r':
 					if(prevc != '\\') {
-						ignoreElementsS2 = true;
-						closeIgnoredS2 = true;
-						currentState = STATE3;
+						ignoreElementsS1 = true;
+						closeIgnoredS1 = true;
+						currentState = STATE1;
 						break;
 					} else {
 						// Wipe out the \ as well.
@@ -1410,9 +1412,13 @@ class CSSTokenizerFilter {
 
 				case '}':
 					openBraces--;
-					if(ignoreElementsS1)
+					if(ignoreElementsS1) {
 						ignoreElementsS1=false;
-					else
+						if(closeIgnoredS1) {
+							w.write("}\n");
+							closeIgnoredS1 = false;
+						}
+					} else
 						w.write(filteredTokens.toString()+"}\n");
 					filteredTokens.setLength(0);
 					buffer.setLength(0);
@@ -1457,9 +1463,9 @@ class CSSTokenizerFilter {
 					// Otherwise same as \r ...
 				case '\r':
 					if(prevc != '\\') {
-						ignoreElementsS2 = true;
-						closeIgnoredS2 = true;
-						currentState = STATE3;
+						ignoreElementsS1 = true;
+						closeIgnoredS1 = true;
+						currentState = STATE2;
 						break;
 					} else {
 						// Wipe out the \ as well.
