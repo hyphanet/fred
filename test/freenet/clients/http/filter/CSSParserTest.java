@@ -11,6 +11,8 @@ import java.util.Iterator;
 
 import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
 import freenet.l10n.NodeL10n;
+import freenet.support.Logger;
+import freenet.support.LoggerHook.InvalidThresholdException;
 import junit.framework.TestCase;
 
 public class CSSParserTest extends TestCase {
@@ -79,8 +81,13 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_ESCAPED_LINK2 = "* { background: url(\\/\\/www.google.co.uk/intl/en_uk/images/logo.gif); }";
 	private static final String CSS_ESCAPED_LINK2C = " * {}\n";
 	
-	public void setUp() {
+	// CSS2.1 spec, 4.1.7
+	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
+	private static final String CSS_DELETE_INVALID_SELECTORC = "h1, h2 { color:green;}\n h6 { color:black;}\n";
+	
+	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
+    	//Logger.setupStdoutLogging(Logger.MINOR, "freenet.clients.http.filter:DEBUG");
 	}
 	
 	public void testCSS1Selector() throws IOException, URISyntaxException {
@@ -96,7 +103,7 @@ public class CSSParserTest extends TestCase {
 			assertTrue(filter(key).contains(value));
 		}
 
-
+		assertTrue("key=\""+CSS_DELETE_INVALID_SELECTOR+"\" value=\""+filter(CSS_DELETE_INVALID_SELECTOR)+"\" should be \""+CSS_DELETE_INVALID_SELECTORC+"\"", CSS_DELETE_INVALID_SELECTORC.equals(filter(CSS_DELETE_INVALID_SELECTOR)));
 	}
 
 	public void testCSS2Selector() throws IOException, URISyntaxException {
