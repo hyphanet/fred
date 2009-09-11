@@ -2,6 +2,7 @@ package freenet.clients.http.updateableelements;
 
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
@@ -36,7 +37,8 @@ public class LongAlertElement extends BaseAlertElement {
 			alertsNode.addChild(manager.renderAlert(alert));
 		}
 		if (totalNumber == 0) {
-			addChild("div", "class", "infobox-content").addChild("div", "No news is good news :)");
+			alertsNode = new HTMLNode("div", "class", "infobox");
+			alertsNode.addChild("div", "class", "infobox-content").addChild("div", NodeL10n.getBase().getString("UserAlertsToadlet.noMessages"));
 		}
 		addChild(alertsNode);
 	}

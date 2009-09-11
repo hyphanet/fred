@@ -148,54 +148,58 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		String rpath = uri.getPath();
 		
-		boolean isAbsolute = false;
+		if(uri.getHost() == null) {
 		
-		if(rpath != null) {
-			if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
+			boolean isAbsolute = false;
 			
-			// Valid FreenetURI?
-			try {
-				String p = rpath;
-				while(p.startsWith("/")) {
-					isAbsolute = true;
-					p = p.substring(1);
-				}
-				FreenetURI furi = new FreenetURI(p);
-				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-				return processURI(furi, uri, overrideType, noRelative, inline);
-			} catch (MalformedURLException e) {
-				// Not a FreenetURI
-				if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
-				if(e.getMessage() != null) {
-					reason = l10n("malformedAbsoluteURL", "error", e.getMessage());
-				} else {
-					reason = l10n("couldNotParseAbsoluteFreenetURI");
+			if(rpath != null) {
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
+				
+				// Valid FreenetURI?
+				try {
+					String p = rpath;
+					while(p.startsWith("/")) {
+						isAbsolute = true;
+						p = p.substring(1);
+					}
+					FreenetURI furi = new FreenetURI(p);
+					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
+					return processURI(furi, uri, overrideType, noRelative, inline);
+				} catch (MalformedURLException e) {
+					// Not a FreenetURI
+					if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
+					if(e.getMessage() != null) {
+						reason = l10n("malformedAbsoluteURL", "error", e.getMessage());
+					} else {
+						reason = l10n("couldNotParseAbsoluteFreenetURI");
+					}
 				}
 			}
-		}
-		
-		if(!isAbsolute) {
-		
-			// Relative URI
 			
-			rpath = resolved.getPath();
-			if(rpath == null) throw new CommentException("No URI");
-			if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
-			
-			// Valid FreenetURI?
-			try {
-				String p = rpath;
-				while(p.startsWith("/")) p = p.substring(1);
-				FreenetURI furi = new FreenetURI(p);
-				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-				return processURI(furi, uri, overrideType, noRelative, inline);
-			} catch (MalformedURLException e) {
-				if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
-				if(e.getMessage() != null) {
-					reason = l10n("malformedRelativeURL", "error", e.getMessage());
-				} else {
-					reason = l10n("couldNotParseRelativeFreenetURI");
+			if(!isAbsolute) {
+				
+				// Relative URI
+				
+				rpath = resolved.getPath();
+				if(rpath == null) throw new CommentException("No URI");
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
+				
+				// Valid FreenetURI?
+				try {
+					String p = rpath;
+					while(p.startsWith("/")) p = p.substring(1);
+					FreenetURI furi = new FreenetURI(p);
+					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
+					return processURI(furi, uri, overrideType, noRelative, inline);
+				} catch (MalformedURLException e) {
+					if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
+					if(e.getMessage() != null) {
+						reason = l10n("malformedRelativeURL", "error", e.getMessage());
+					} else {
+						reason = l10n("couldNotParseRelativeFreenetURI");
+					}
 				}
+				
 			}
 		
 		}
