@@ -12,6 +12,8 @@ package freenet.clients.http.filter;
 import java.io.*;
 import java.util.*;
 import java.lang.StringBuffer;
+
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 class CSSTokenizerFilter {
@@ -1290,26 +1292,56 @@ class CSSTokenizerFilter {
 						if("".equals(strbuffer.substring(0,importIndex).trim()))
 						{
 							String str1=strbuffer.substring(importIndex+7,strbuffer.length());
-							String[] strparts=split(str1);
-							strparts=FilterUtils.removeWhiteSpace(strparts);
-							String uri=null;
-							if(strparts[0].contains("url("))
-							{
-								int firstIndex=strparts[0].indexOf("url(");
-								int secondIndex=strparts[0].lastIndexOf(")");
-								if("".equals(strparts[0].substring(0,firstIndex).trim()) && "".equals(strparts[0].substring(secondIndex+1,strparts[0].length())))
-										uri=strparts[0].substring(firstIndex+4,secondIndex);
-							}
-							else
-								uri=strparts[0];
-							if(debug) log("uri: "+uri+" strparts: "+strparts.length);
-							if(uri!=null && (strparts.length==1 || (strparts.length==2 && getVerifier("@media").checkValidity(null, null, strparts[1]))))
-							{
-								try {
-									w.write("@import url(\""+cb.processURI(uri, "text/css")+"\")"+(strparts.length>1 ? (" " + strparts[1]) : "")+";");
-								} catch (CommentException e) {
-									// Invalid
-									// FIXME include the message as comment, CSS-safe
+							ParsedWord[] strparts=split(str1);
+							boolean broke = true;
+							if(strparts != null && strparts.length > 0 && (strparts[0] instanceof ParsedURL || strparts[0] instanceof ParsedString)) {
+								broke = false;
+								String uri;
+								if(strparts[0] instanceof ParsedString) {
+									uri = ((ParsedString)strparts[0]).getDecoded();
+								} else {
+									uri = ((ParsedURL)strparts[0]).getDecoded();
+								}
+								ArrayList<String> medias = new ArrayList<String>(strparts.length-1);
+								if(strparts.length == 1) {
+								} else if(strparts.length == 2 && strparts[1] instanceof ParsedIdentifier) {
+									medias.add(((ParsedIdentifier)strparts[1]).getDecoded());
+								} else {
+									boolean first = true;
+									for(ParsedWord word : strparts) {
+										if(first) {
+											first = false;
+											continue;
+										}
+										if(word instanceof ParsedIdentifier) {
+											medias.add(((ParsedIdentifier)word).getDecoded());
+										} else if(word instanceof SimpleParsedWord) {
+											String data = ((SimpleParsedWord)word).original;
+											String[] split = FilterUtils.removeWhiteSpace(data.split(","));
+											for(String s : split) medias.add(s);
+										} else broke = true;
+									}
+								}
+								if(!broke) {
+									StringBuffer output = new StringBuffer();
+									output.append("@import url(\"");
+									try {
+										output.append(cb.processURI(uri, "text/css"));
+										output.append("\")");
+										boolean first = true;
+										for(String media : medias) {
+											if(getVerifier("@media").checkValidity(null, null, media)) {
+												if(!first) output.append(", ");
+												else output.append(' ');
+												first = false;
+												output.append(media);
+											}
+										}
+										output.append(";");
+										w.write(output.toString());
+									} catch (CommentException e) {
+										// Don't write anything
+									}
 								}
 							}
 						}
@@ -1361,6 +1393,7 @@ class CSSTokenizerFilter {
 						break;
 					}
 					// Otherwise same as \r ...
+				case '\f':
 				case '\r':
 					if(prevc == '\\') {
 						ignoreElementsS1 = true;
@@ -1503,6 +1536,7 @@ class CSSTokenizerFilter {
 						break;
 					}
 					// Otherwise same as \r ...
+				case '\f':
 				case '\r':
 					if(prevc != '\\') {
 						ignoreElementsS1 = true;
@@ -1626,6 +1660,7 @@ class CSSTokenizerFilter {
 					}
 					// Otherwise same as \r ...
 				case '\r':
+				case '\f':
 					if(prevc != '\\') {
 						ignoreElementsS2 = true;
 						closeIgnoredS2 = true;
@@ -1663,16 +1698,598 @@ class CSSTokenizerFilter {
 
 	}
 
+	abstract class ParsedWord {
+		
+		final String original;
+		/** Has decoded changed? If not we can use the original. */
+		private boolean changed;
+		
+		public ParsedWord(String original, boolean changed) {
+			this.original = original;
+			this.changed = changed;
+		}
+
+		public String encode(boolean unicode) {
+			if(!changed)
+				return original;
+			else {
+				StringBuffer out = new StringBuffer();
+				innerEncode(unicode, out);
+				return out.toString();
+			}
+		}
+		
+		abstract protected void innerEncode(boolean unicode, StringBuffer out);
+		
+	}
+	
+	/** Note that this does not represent functionThingy's. 
+	 * counter() for example can contain a string, it is difficult to 
+	 * determine whether to encode strings if we don't know they are strings!
+	 * This only handles keywords and strings.
+	 */
+	abstract class BaseParsedWord extends ParsedWord {
+		private String decoded;
+		
+		/**
+		 * @param original
+		 * @param decoded
+		 * @param changed Set this to true if we don't like the original
+		 * encoding and have changed something during decode.
+		 */
+		BaseParsedWord(String original, String decoded, boolean changed) {
+			super(original, changed);
+			this.decoded = decoded;
+		}
+		
+		protected void innerEncode(boolean unicode, StringBuffer out) {
+			char prevc = 0;
+			char c = 0;
+			for(int i=0;i<decoded.length();i++) {
+				prevc = c;
+				c = decoded.charAt(i);
+				if(!mustEncode(c, i, prevc, unicode)) {
+					out.append(c);
+				} else {
+					encodeChar(c, out);
+				}
+			}
+		}
+
+		abstract protected boolean mustEncode(char c, int i, char prevc, boolean unicode);
+		
+		private void encodeChar(char c, StringBuffer sb) {
+			String s = Integer.toHexString(c);
+			if(s.length() == 6)
+				sb.append(s);
+			else if(s.length() > 6)
+				throw new IllegalStateException();
+			else {
+				int x = 6 - s.length();
+				for(int i=0;i<x;i++)
+					sb.append('0');
+				sb.append(s);
+			}
+		}
+		
+		public String getDecoded() {
+			return decoded;
+		}
+
+	}
+	
+	class ParsedIdentifier extends BaseParsedWord {
+		
+		ParsedIdentifier(String original, String decoded, boolean changed) {
+			super(original, decoded, changed);
+		}
+		
+		protected boolean mustEncode(char c, int i, char prevc, boolean unicode) {
+			// It is an identifier.
+			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+					(c >= '0' && c <= '9') || c == '-' || c == '_'
+						|| (c >= (char)0x00A1 && !unicode)) {
+				// Cannot start with a digit or a hyphen followed by a digit.
+				if(!((i == 0 && (c >= '0' && c <= '9')) ||
+						(i == 1 && prevc == '-' &&
+								(c >= '0' && c <= '9'))))
+					return false;
+			}
+			return true;
+		}
+		
+	}
+	
+	class ParsedString extends BaseParsedWord {
+		
+		ParsedString(String original, String decoded, boolean changed, char stringChar) {
+			super(original, decoded, changed);
+			this.stringChar = stringChar;
+		}
+		
+		/** Is the word quoted? If true, the word is completely enclosed 
+		 * by the given string character (either ' or "), which are not 
+		 * included in the decoded string. */
+		final char stringChar;
+		
+		protected boolean mustEncode(char c, int i, char prevc, boolean unicode) {
+			// It is a string.
+			// Anything is allowed in a string...
+			if(c == '\r' || c == '\n' || c == '\f')
+				// Except newlines.
+				return true;
+			else if(c == stringChar)
+				// And the quote itself.
+				return true;
+			else if(c < 32 || (c >= (char)0x0080 && !unicode))
+				// And control chars, and anything outside Basic Latin (unless we know the output charset is unicode-complete).
+				return true;
+			return false;
+		}
+		
+		protected void innerEncode(boolean unicode, StringBuffer out) {
+			out.append(stringChar);
+			super.innerEncode(unicode, out);
+			out.append(stringChar);
+		}
+	}
+	
+	class ParsedURL extends ParsedString {
+		
+		ParsedURL(String original, String decoded, boolean changed, char stringChar) {
+			super(original, decoded, changed || stringChar == 0, stringChar == 0 ? '"' : stringChar);
+		}
+		
+		protected void innerEncode(boolean unicode, StringBuffer out) {
+			out.append("url(");
+			super.innerEncode(unicode, out);
+			out.append(')');
+		}
+		
+	}
+	
+	class ParsedAttr extends ParsedIdentifier {
+
+		ParsedAttr(String original, String decoded, boolean changed) {
+			super(original, decoded, changed);
+		}
+		
+		protected void innerEncode(boolean unicode, StringBuffer out) {
+			out.append("attr(");
+			super.innerEncode(unicode, out);
+			out.append(')');
+		}
+		
+	}
+	
+	/** Simple parsed word, doesn't need encoding, won't be changed. Used 
+	 * for lengths, percentages, angles, etc. All characters must be safe
+	 * and non-problematic. This is used for everything from lengths and
+	 * percentages to rgb(...) with spaces in it. Anything we don't 
+	 * understand gets a SimpleParsedWord.
+	 * */
+	class SimpleParsedWord extends ParsedWord {
+
+		public SimpleParsedWord(String original) {
+			super(original, false);
+		}
+
+		@Override
+		protected void innerEncode(boolean unicode, StringBuffer out) {
+			out.append(original);
+		}
+		
+	}
+	
+	/** Counters need special handling, partly because they contain 
+	 * attributes and strings. */
+	class ParsedCounter extends ParsedWord {
+		public ParsedCounter(String original, ParsedIdentifier identifier, ParsedIdentifier listType, ParsedString separatorString) {
+			super(original, true);
+			this.identifier = identifier;
+			this.listType = listType;
+			this.separatorString = separatorString;
+		}
+
+		private final ParsedIdentifier identifier;
+		private final ParsedIdentifier listType;
+		private final ParsedString separatorString;
+		
+		@Override
+		protected void innerEncode(boolean unicode, StringBuffer out) {
+			if(separatorString != null)
+				out.append("counters(");
+			else
+				out.append("counter(");
+			identifier.innerEncode(unicode, out);
+			if(separatorString != null) {
+				out.append(", ");
+				separatorString.innerEncode(unicode, out);
+			}
+			if(listType != null) {
+				out.append(", ");
+				listType.innerEncode(unicode, out);
+			}
+			out.append(')');
+		}
+		
+	}
+	
 	/** Split up a string, taking into account CSS rules for escaping,
 	 * strings, identifiers.
 	 * @param str1
 	 * @return
 	 */
-	private String[] split(String str1) {
-		// FIXME implement properly!
-		return str1.trim().split(" ");
+	private ParsedWord[] split(String input) {
+		if(debug) log("Splitting \""+input+"\"");
+		ArrayList<ParsedWord> words = new ArrayList<ParsedWord>();
+		char prevc = 0;
+		char c = 0;
+		// ", ' or 0 (not in string)
+		char stringchar = 0;
+		boolean escaping = false;
+		/** Eat the next linefeed due to an escape closing. We turned the
+		 * \r into a space, so we just ignore the \n. */
+		boolean eatLF = false;
+		/** The original token */
+		StringBuffer origToken = new StringBuffer(input.length());
+		/** The decoded token */
+		StringBuffer decodedToken = new StringBuffer(input.length());
+		/** We don't like the original token, it bends the spec in unacceptable ways */
+		boolean dontLikeOrigToken = false;
+		StringBuffer escape = new StringBuffer(6);
+		boolean couldBeIdentifier = true;
+		// Brackets prevent tokenisation, see e.g. rgb().
+		int bracketCount = 0;
+		for(int i=0;i<input.length();i++) {
+			prevc = c;
+			c = input.charAt(i);
+			if(stringchar == 0) {
+				if(eatLF && c == '\n') {
+					eatLF = false;
+					continue;
+				} else
+					eatLF = false;
+				// Not in a string
+				if(!escaping) {
+					if(" \t\r\n\f".indexOf(c) != -1 && bracketCount == 0) {
+						// Legal CSS whitespace
+						if(decodedToken.length() > 0) {
+							if(debug) log("Token: orig: \""+origToken.toString()+"\" decoded: \""+decodedToken.toString()+"\" dontLike="+dontLikeOrigToken+" couldBeIdentifier="+couldBeIdentifier);
+							ParsedWord word = parseToken(origToken, decodedToken, dontLikeOrigToken, couldBeIdentifier);
+							if(word == null) return null;
+							words.add(word);
+							origToken.setLength(0);
+							decodedToken.setLength(0);
+							dontLikeOrigToken = false;
+							couldBeIdentifier = true;
+						} // Else ignore.
+					} else if(c == '\"') {
+						stringchar = c;
+						origToken.append(c);
+						decodedToken.append(c);
+						couldBeIdentifier = false;
+					} else if(c == '\'') {
+						stringchar = c;
+						origToken.append(c);
+						decodedToken.append(c);
+						couldBeIdentifier = false;
+					} else if(c == '\\') {
+						origToken.append(c);
+						escape.setLength(0);
+						escaping = true;
+					} else if(c == '(') {
+						bracketCount++;
+						origToken.append(c);
+						decodedToken.append(c);
+						couldBeIdentifier = false;
+					} else if(c == ')') {
+						bracketCount--;
+						if(bracketCount < 0)
+							return null;
+						origToken.append(c);
+						decodedToken.append(c);
+						couldBeIdentifier = false;
+					} else {
+						if(couldBeIdentifier) {
+							if(!((c >= '0' && c <= '9' && origToken.length() > 0) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-' || c == '_'))
+								couldBeIdentifier = false;
+							if(origToken.length() == 1 && origToken.charAt(0) == '-' && (c >= '0' && c <= '9'))
+								couldBeIdentifier = false;
+						}
+						origToken.append(c);
+						decodedToken.append(c);
+					}
+				} else if(escaping && escape.length() == 0) {
+					if(c == '\"' || c == '\'') {
+						escaping = false;
+						origToken.append(c);
+						decodedToken.append(c);
+					} else if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+						escape.append(c);
+					} else if(c == '\n' || c == '\r' || c == '\f') {
+						// Newline. Can only be escaped in a string.
+						// Not valid so return null.
+						return null;
+					} else {
+						escaping = false;
+						origToken.append(c);
+						decodedToken.append(c);
+					}
+				} else /*if(escaping && escape.length() != 0)*/ {
+					if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+						escape.append(c);
+						if(escape.length() == 6) {
+							origToken.append(escape);
+							decodedToken.append((char)Integer.parseInt(escape.toString(), 16));
+							escape.setLength(0);
+							escaping = false;
+						}
+					} else if(" \t\r\n\f".indexOf(c) != -1) {
+						// Whitespace other than CR terminates the escape without any further significance.
+						origToken.append(escape);
+						decodedToken.append((char)Integer.parseInt(escape.toString(), 16));
+						// Convert it to standard whitespace to avoid any complications.
+						origToken.append(" ");
+						escape.setLength(0);
+						escaping = false;
+						// \r terminates the escape but might be followed by a \n
+						if(c == '\r')
+							eatLF = true;
+					} else {
+						// Already started the escape, anything other than a hex digit or whitespace is invalid.
+						return null;
+					}
+				}
+			} else {
+				// We are in a string.
+				
+				if(eatLF && c == '\n') {
+					// Slightly different meaning here.
+					// Here we do want to include it in the string.
+					eatLF = false;
+					origToken.append(c);
+					// Don't add to decoded because it is invisible along with the preceding \
+					continue;
+				} else
+					eatLF = false;
+				
+				if(c == stringchar && !escaping) {
+					origToken.append(c);
+					decodedToken.append(c);
+					stringchar = 0;
+				} else if(c == '\f' || c == '\r' || c == '\n' && !escaping) {
+					// Invalid end of line in string.
+					// The whole construct is invalid.
+					// That is, usually everything up to the next semicolon.
+					return null;
+				} else if(c == '\\' && !escaping) {
+					escaping = true;
+					escape.setLength(0);
+					origToken.append(c);
+				} else if(escaping && escape.length() == 0) {
+					if(c == '\"' || c == '\'') {
+						escaping = false;
+						origToken.append(c);
+						decodedToken.append(c);
+					} else if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+						escape.append(c);
+					} else if(c == '\r' || c == '\n' || c == '\f') {
+						// In a string, an escaped newline is equal to nothing.
+						origToken.append(c);
+						// Do not add to decodedToken because both the \ and the \n are ignored.
+						// Eat the \n if necessary (copy it to the origToken but not the decodedToken)
+						if(c == '\r') eatLF = true;
+					} else {
+						origToken.append(c);
+						decodedToken.append(c);
+					}
+				} else if(escaping/* && escape.length() > 0*/) {
+					if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+						escape.append(c);
+						if(escape.length() == 6) {
+							origToken.append(escape);
+							decodedToken.append((char)Integer.parseInt(escape.toString(), 16));
+							escape.setLength(0);
+							escaping = false;
+						}
+					} else if(" \t\r\n\f".indexOf(c) != -1) {
+						// Whitespace other than CR terminates the escape without any further significance.
+						origToken.append(escape);
+						decodedToken.append((char)Integer.parseInt(escape.toString(), 16));
+						escape.setLength(0);
+						escaping = false;
+						// \r terminates the escape but might be followed by a \n
+						if(c == '\r') {
+							eatLF = true;
+							// Messy...
+							dontLikeOrigToken = true;
+						}
+					} else {
+						// Already started the escape, anything other than a hex digit or whitespace is invalid.
+						return null;
+					}
+				} else { // escaping = false
+					origToken.append(c);
+					decodedToken.append(c);
+				}
+			}
+			
+		}
+		if(escaping && escape.length() > 0) {
+			origToken.append(escape);
+			decodedToken.append((char)Integer.parseInt(escape.toString(), 16));
+		} else if(escaping) {
+			// Newline rule?
+			dontLikeOrigToken = true;
+		}
+		if(origToken.length() > 0) {
+			if(debug) log("Token: orig: \""+origToken.toString()+"\" decoded: \""+decodedToken.toString()+"\" dontLike="+dontLikeOrigToken+" couldBeIdentifier="+couldBeIdentifier);
+			ParsedWord word = parseToken(origToken, decodedToken, dontLikeOrigToken, couldBeIdentifier);
+			if(word == null) return null;
+			words.add(word);
+		}
+		return words.toArray(new ParsedWord[words.size()]);
 	}
 
+
+	private ParsedWord parseToken(StringBuffer origToken, StringBuffer decodedToken, boolean dontLikeOrigToken, boolean couldBeIdentifier) {
+		if(origToken.length() > 2) {
+			char c = origToken.charAt(0);
+			if(c == '\'' || c == '\"') {
+				char d = origToken.charAt(origToken.length()-1);
+				if(c == d) {
+					// The word is a string.
+					decodedToken.setLength(decodedToken.length()-1);
+					decodedToken.deleteCharAt(0);
+					return new ParsedString(origToken.toString(), decodedToken.toString(), dontLikeOrigToken, c);
+				} else {
+					// No whitespace after a string...
+					return null;
+				}
+			}
+		}
+		
+		String s = origToken.toString();
+		if(couldBeIdentifier)
+			return new ParsedIdentifier(s, decodedToken.toString(), dontLikeOrigToken);
+		
+		String sl = s.toLowerCase();
+		if(sl.startsWith("url(")) {
+			if(s.endsWith(")")) {
+				decodedToken.delete(0, 4);
+				decodedToken.setLength(decodedToken.length()-1);
+				if(debug) log("stripped: "+decodedToken);
+				
+				// Trim whitespace from both ends
+				
+				String strippedOrig = s.substring(4, s.length()-1);
+				int i;
+				for(i=0;i<strippedOrig.length();i++) {
+					char c = strippedOrig.charAt(i);
+					if(!(c == ' ' || c == '\t')) break;
+				}
+				decodedToken.delete(0, i);
+				strippedOrig = strippedOrig.substring(i);
+				for(i=strippedOrig.length()-1;i>=0;i++) {
+					char c = strippedOrig.charAt(i);
+					if(!(c == ' ' || c == '\t')) break;
+				}
+				decodedToken.setLength(i+1);
+				strippedOrig = strippedOrig.substring(0, i+1);
+				
+				if(debug) log("whitespace stripped: "+strippedOrig+" decoded "+decodedToken);
+				
+				if(strippedOrig.length() == 0) return null;
+				
+				if(strippedOrig.length() > 2) {
+					char c = strippedOrig.charAt(0);
+					if(c == '\'' || c == '\"') {
+						char d = strippedOrig.charAt(strippedOrig.length()-1);
+						if(c == d) {
+							// The word is a string.
+							decodedToken.setLength(decodedToken.length()-1);
+							decodedToken.deleteCharAt(0);
+							return new ParsedURL(origToken.toString(), decodedToken.toString(), dontLikeOrigToken, c);
+						} else
+							return null;
+					}
+				}
+				return new ParsedURL(origToken.toString(), decodedToken.toString(), dontLikeOrigToken, (char)0);
+			} else return null;
+		}
+		
+		if(sl.startsWith("attr(")) {
+			if(s.endsWith(")")) {
+				decodedToken.delete(0, 5);
+				decodedToken.setLength(decodedToken.length()-1);
+				
+				// Trim whitespace from both ends
+				
+				String strippedOrig = s.substring(4, s.length()-1);
+				int i;
+				for(i=0;i<strippedOrig.length();i++) {
+					char c = strippedOrig.charAt(i);
+					if(!(c == ' ' || c == '\t')) break;
+				}
+				decodedToken.delete(0, i);
+				strippedOrig = strippedOrig.substring(i);
+				for(i=strippedOrig.length()-1;i>=0;i++) {
+					char c = strippedOrig.charAt(i);
+					if(!(c == ' ' || c == '\t')) break;
+				}
+				decodedToken.setLength(i+1);
+				strippedOrig = strippedOrig.substring(0, i+1);
+				
+				if(strippedOrig.length() == 0) return null;
+				
+				return new ParsedAttr(origToken.toString(), decodedToken.toString(), dontLikeOrigToken);
+			} else return null;
+		}
+
+		boolean plural = false;
+		if(sl.startsWith("counter(") || (plural = sl.startsWith("counters("))) {
+			if(s.endsWith(")")) {
+				decodedToken.delete(0, plural ? "counters(".length() : "counter(".length());
+				decodedToken.setLength(decodedToken.length()-1);
+				
+				// Trim whitespace from both ends
+				
+				String strippedOrig = s.substring(4, s.length()-1);
+				int i;
+				for(i=0;i<strippedOrig.length();i++) {
+					char c = strippedOrig.charAt(i);
+					if(!(c == ' ' || c == '\t')) break;
+				}
+				decodedToken.delete(0, i);
+				strippedOrig = strippedOrig.substring(i);
+				for(i=strippedOrig.length()-1;i>=0;i++) {
+					char c = strippedOrig.charAt(i);
+					if(!(c == ' ' || c == '\t')) break;
+				}
+				decodedToken.setLength(i+1);
+				strippedOrig = strippedOrig.substring(0, i+1);
+				
+				if(strippedOrig.length() == 0) return null;
+				
+				String[] split = FilterUtils.removeWhiteSpace(strippedOrig.split(","));
+				if(split.length == 0 || (plural && split.length > 3) || ((!plural) && split.length > 2) || (plural && split.length < 2))
+					return null;
+				
+				ParsedIdentifier ident = makeParsedIdentifier(split[0]);
+				if(ident == null) return null;
+				ParsedString separator = null;
+				ParsedIdentifier listType = null;
+				if(plural) {
+					separator = makeParsedString(split[1]);
+					if(separator == null) return null;
+				}
+				if(((!plural) && split.length == 2) || (plural && split.length == 3)) {
+					listType = makeParsedIdentifier(split[split.length-1]);
+					if(listType == null) return null;
+				}
+				return new ParsedCounter(origToken.toString(), ident, listType, separator);
+			} else return null;
+		}
+		
+		return new SimpleParsedWord(origToken.toString());
+	}
+
+	private ParsedIdentifier makeParsedIdentifier(String string) {
+		ParsedWord[] words = split(string);
+		if(words == null) return null;
+		if(words.length != 1) return null;
+		if(!(words[0] instanceof ParsedIdentifier)) return null;
+		return (ParsedIdentifier)words[0];
+	}
+
+	private ParsedString makeParsedString(String string) {
+		ParsedWord[] words = split(string);
+		if(words == null) return null;
+		if(words.length != 1) return null;
+		if(!(words[0] instanceof ParsedString)) return null;
+		return (ParsedString)words[0];
+	}
 
 	public boolean anglecheck(String value)
 	{
