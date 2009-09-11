@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -33,6 +34,10 @@ public class BMPFilterTest extends TestCase {
 	};
 	ArrayBucket ab;
 
+	public void setUp() {
+		new NodeL10n();
+	}
+	
 	public void testReadFilter()  {
 		BMPFilter objBMPFilter=new BMPFilter();
 		ab = new ArrayBucket();
