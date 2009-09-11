@@ -423,20 +423,5 @@ public class L10n {
 	public static String getString(String key, String pattern, String value) {
 		return getString(key, new String[] { pattern }, new String[] { value }); // FIXME code efficiently!
 	}
-	
-	public static String[] getAllNamesWithPrefix(String prefix){
-		if(fallbackTranslation==null){
-			return new String[]{};
-		}
-		List<String> toReturn=new ArrayList<String>();
-		Iterator<String> it= fallbackTranslation.keyIterator();
-		while(it.hasNext()){
-			String key=it.next();
-			if(key.startsWith(prefix)){
-				toReturn.add(key);
-			}
-		}
-		return toReturn.toArray(new String[toReturn.size()]);
-	}
 
 }

@@ -14,6 +14,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.MissingResourceException;
 
 /**
@@ -477,5 +480,20 @@ public class BaseL10n {
 			result = result.replaceAll("\\$\\{" + patterns[i] + "\\}", quoteReplacement(values[i]));
 		}
 		node.addChild("%", result);
+	}
+	
+	public String[] getAllNamesWithPrefix(String prefix){
+		if(fallbackTranslation==null){
+			return new String[]{};
+		}
+		List<String> toReturn=new ArrayList<String>();
+		Iterator<String> it= fallbackTranslation.keyIterator();
+		while(it.hasNext()){
+			String key=it.next();
+			if(key.startsWith(prefix)){
+				toReturn.add(key);
+			}
+		}
+		return toReturn.toArray(new String[toReturn.size()]);
 	}
 }

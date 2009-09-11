@@ -16,7 +16,11 @@ public class L10n {
 	 * @return The localized value
 	 */
 	public static String get(String key) {
-		return dict.get(key);
+		try{
+			return dict.get(key);
+		}catch(Exception mre){
+			return "#"+key+"#";
+		}
 	}
 
 }

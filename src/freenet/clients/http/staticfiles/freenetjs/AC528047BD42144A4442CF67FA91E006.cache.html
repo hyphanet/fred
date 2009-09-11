@@ -2803,7 +2803,7 @@ function $closeConnection(this$static){
   $cancel_0(this$static.timer);
   if (!this$static.cancelled) {
     if (!isPushingCancelledExpected) {
-      $addMessage(get_1(), $Message(new Message(), ($clinit_137() , $get(dict, 'pushingCancelled')), ($clinit_142() , ERROR), null, true));
+      $addMessage(get_2(), $Message(new Message(), get_1('pushingCancelled'), ($clinit_142() , ERROR), null, true));
     }
     this$static.cancelled = true;
   }
@@ -3209,6 +3209,22 @@ function $clinit_137(){
   dict = getDictionary('l10n');
 }
 
+function get_1(key){
+  $clinit_137();
+  var $e0;
+  try {
+    return $get(dict, key);
+  }
+   catch ($e0) {
+    $e0 = caught($e0);
+    if (instanceOf($e0, 19)) {
+      return '#' + key + '#';
+    }
+     else 
+      throw $e0;
+  }
+}
+
 var dict;
 function $Message(this$static, msg, priority, anchor, canDismiss){
   this$static.msg = msg;
@@ -3296,12 +3312,12 @@ function $redrawMessages(this$static){
     $add_1(hpanel, msgLabel);
     ($clinit_7() , msgLabel.element).parentElement.style['border'] = 'none';
     if (m.anchor != null) {
-      showElement = $Anchor_0(new Anchor(), ($clinit_137() , $get(dict, 'show')), '/alerts/#' + m.anchor);
+      showElement = $Anchor_0(new Anchor(), get_1('show'), '/alerts/#' + m.anchor);
       $add_1(hpanel, showElement);
       showElement.element.parentElement.style['border'] = 'none';
     }
     if (m.canDismiss) {
-      hideElement = $Anchor(new Anchor(), ($clinit_137() , $get(dict, 'hide')));
+      hideElement = $Anchor(new Anchor(), get_1('hide'));
       $addDomHandler(hideElement, $MessageManager$1(new MessageManager$1(), this$static, m), ($clinit_32() , TYPE));
       $add_1(hpanel, hideElement);
       hideElement.element.parentElement.style['border'] = 'none';
@@ -3354,7 +3370,7 @@ function $updateMessages(this$static){
   }
 }
 
-function get_1(){
+function get_2(){
   if (!instance) {
     instance = $MessageManager(new MessageManager());
   }
@@ -3807,12 +3823,12 @@ _.updated = updated;
 _.typeId$ = 44;
 function $ImageElementUpdater(this$static){
   var counted, newMsg;
-  this$static.lastMessage = $Message(new Message(), ($clinit_137() , $get(dict, 'imageprogress')) + 0 + '/' + 0, ($clinit_142() , MINOR), null, true);
+  this$static.lastMessage = $Message(new Message(), get_1('imageprogress') + 0 + '/' + 0, ($clinit_142() , MINOR), null, true);
   counted = $countImageProgress();
   this$static.lastCounted = counted;
   if (counted[1] != 0) {
-    newMsg = $Message(new Message(), $get(dict, 'imageprogress') + counted[0] + '/' + counted[1], MINOR, null, true);
-    $addMessage(get_1(), newMsg);
+    newMsg = $Message(new Message(), get_1('imageprogress') + counted[0] + '/' + counted[1], MINOR, null, true);
+    $addMessage(get_2(), newMsg);
     this$static.lastMessage = newMsg;
   }
   return this$static;
@@ -3858,28 +3874,28 @@ function getClass_72(){
 function updated_0(elementId, content){
   var counted, newMsg, nowCounted, previousFetched;
   previousFetched = initDim(_3I_classLit, 0, -1, 2, 1);
-  if ($indexOf_3(get_1().messages, this.lastMessage, 0) != -1) {
+  if ($indexOf_3(get_2().messages, this.lastMessage, 0) != -1) {
     previousFetched = $getProgressForElement(get_0(elementId).element);
   }
   $updated_1(elementId, content);
-  if ($indexOf_3(get_1().messages, this.lastMessage, 0) != -1) {
+  if ($indexOf_3(get_2().messages, this.lastMessage, 0) != -1) {
     counted = $getProgressForElement(get_0(elementId).element);
     nowCounted = initDim(_3I_classLit, 0, -1, 2, 1);
     nowCounted[0] = this.lastCounted[0] - previousFetched[0] + counted[0];
     nowCounted[1] = this.lastCounted[1] - previousFetched[1] + counted[1];
     this.lastCounted = nowCounted;
     if (nowCounted[1] != 0) {
-      newMsg = $Message(new Message(), ($clinit_137() , $get(dict, 'imageprogress')) + nowCounted[0] + '/' + nowCounted[1], ($clinit_142() , MINOR), null, true);
+      newMsg = $Message(new Message(), get_1('imageprogress') + nowCounted[0] + '/' + nowCounted[1], ($clinit_142() , MINOR), null, true);
       if (this.lastMessage) {
-        $replaceMessageAtPosition(get_1(), $indexOf_3(get_1().messages, this.lastMessage, 0), newMsg);
+        $replaceMessageAtPosition(get_2(), $indexOf_3(get_2().messages, this.lastMessage, 0), newMsg);
       }
        else {
-        $addMessage(get_1(), newMsg);
+        $addMessage(get_2(), newMsg);
       }
       this.lastMessage = newMsg;
     }
      else if (this.lastMessage) {
-      $removeMessage(get_1(), this.lastMessage);
+      $removeMessage(get_2(), this.lastMessage);
     }
   }
 }
@@ -3935,7 +3951,7 @@ function getClass_75(){
 
 function updated_3(elementId, content){
   $updated_1(elementId, content);
-  $updateMessages(get_1());
+  $updateMessages(get_2());
 }
 
 function XmlAlertUpdater(){
@@ -5406,7 +5422,7 @@ function contains_2(o){
   return $indexOf_3(this, o, 0) != -1;
 }
 
-function get_2(index){
+function get_3(index){
   return checkIndex(index, this.size) , this.array[index];
 }
 
@@ -5448,7 +5464,7 @@ _ = ArrayList.prototype = new AbstractList();
 _.add_0 = add_4;
 _.add = add_3;
 _.contains_0 = contains_2;
-_.get = get_2;
+_.get = get_3;
 _.getClass$ = getClass_108;
 _.isEmpty = isEmpty_0;
 _.size_0 = size_4;
@@ -5466,7 +5482,7 @@ function contains_3(o){
   return $indexOf_2(this, o) != -1;
 }
 
-function get_3(index){
+function get_4(index){
   return checkIndex(index, this.array.length) , this.array[index];
 }
 
@@ -5502,7 +5518,7 @@ function Arrays$ArrayList(){
 
 _ = Arrays$ArrayList.prototype = new AbstractList();
 _.contains_0 = contains_3;
-_.get = get_3;
+_.get = get_4;
 _.getClass$ = getClass_109;
 _.size_0 = size_5;
 _.toArray = toArray_3;
@@ -5934,7 +5950,7 @@ function init(){
   $openConnection_0(cm);
   $scheduleRepeating(keepaliveManager.timer, 60000);
   $scheduleRepeating(($clinit_136() , $clinit_79() , new TimeIncrementer$1()), 1000);
-  get_1();
+  get_2();
 }
 
 function gwtOnLoad(errFn, modName, modBase){

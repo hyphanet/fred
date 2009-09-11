@@ -11,6 +11,7 @@ import freenet.clients.http.updateableelements.ImageElement;
 import freenet.clients.http.updateableelements.XmlAlertElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 
 /** This TagReplcaerCallback adds pushing support for freesites, and replaces their img's to pushed ones */
@@ -46,10 +47,12 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 	 */
 	public static String getClientSideLocalizationScript() {
 		StringBuilder l10nBuilder = new StringBuilder("var l10n={\n");
-		for (String key : L10n.getAllNamesWithPrefix("fproxy.push")) {
+		boolean isNamePresentAtLeastOnce=false;
+		for (String key : NodeL10n.getBase().getAllNamesWithPrefix("fproxy.push")) {
 			l10nBuilder.append(key.substring("fproxy.push".length() + 1) + ": \"" + HTMLEncoder.encode(L10n.getString(key)) + "\",\n");
+			isNamePresentAtLeastOnce=true;
 		}
-		String l10n = l10nBuilder.substring(0, l10nBuilder.length() - 2);
+		String l10n = isNamePresentAtLeastOnce?l10nBuilder.substring(0, l10nBuilder.length() - 2):l10nBuilder.toString();
 		l10n = l10n.concat("\n};");
 		return l10n;
 	}
