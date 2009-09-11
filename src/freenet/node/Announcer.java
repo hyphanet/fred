@@ -61,6 +61,7 @@ public class Announcer {
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
+	public static final String SEEDNODES_FILENAME = "seednodes.fref";
 	/** Identities of nodes we have tried to connect to */
 	private final HashSet<ByteArrayWrapper> connectedToIdentities;
 	/** Total nodes added by announcement so far */
@@ -222,7 +223,7 @@ public class Announcer {
 	}
 
 	public static List<SimpleFieldSet> readSeednodes(File nodeDir) {
-		File file = new File(nodeDir, "seednodes.fref");
+		File file = new File(nodeDir, SEEDNODES_FILENAME);
 		List<SimpleFieldSet> list = new ArrayList<SimpleFieldSet>();
 		FileInputStream fis = null;
 		try {

@@ -22,12 +22,13 @@ import freenet.support.api.HTTPRequest;
  * @author toad
  */
 public class UserAlertsToadlet extends Toadlet {
-	
+
 	UserAlertsToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
 		this.node = node;
 	}
-	
+
+	private UserAlertManager alerts;
 	private Node node;
 
 	public void handleMethodGET(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -35,7 +36,7 @@ public class UserAlertsToadlet extends Toadlet {
 			super.sendErrorPage(ctx, 403, NodeL10n.getBase().getString("Toadlet.unauthorizedTitle"), NodeL10n.getBase().getString("Toadlet.unauthorized"));
 			return;
 		}
-		
+
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
         HTMLNode pageNode = page.outer;
         HTMLNode contentNode = page.content;
@@ -69,5 +70,5 @@ public class UserAlertsToadlet extends Toadlet {
 	public String path() {
 		return "/alerts/";
 	}
-	
+
 }

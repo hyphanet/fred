@@ -518,6 +518,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
     
 	public void schedule(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(cancelled) return;
+		}
 		context.getSskFetchScheduler().schedTransient.addPendingKeys(this);
 		updatePriorities();
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
@@ -525,13 +528,19 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp, valueAtSchedule);
-			if(cancelled) return;
-			long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
-			for(long i=startPoint;i<startPoint+minFailures;i++)
-				attemptsToStart.add(add(i));
-			started = true;
-			fillKeysWatching(valueAtSchedule, context);
+			if(!cancelled) {
+				long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
+				for(long i=startPoint;i<startPoint+minFailures;i++)
+					attemptsToStart.add(add(i));
+				started = true;
+				fillKeysWatching(valueAtSchedule, context);
+				return;
+			}
 		}
+		// We have been cancelled.
+		uskManager.unsubscribe(origUSK, this);
+		context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
+		uskManager.onFinished(this, true);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {

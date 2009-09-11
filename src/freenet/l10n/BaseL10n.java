@@ -36,6 +36,7 @@ public class BaseL10n {
 		ENGLISH("en", "English", "eng"),
 		SPANISH("es", "Español", "spa"),
 		DANISH("da", "Dansk", "dan"),
+		DUTCH("nl", "Nederlands", "nld"),
 		GERMAN("de", "Deutsch", "deu"),
 		FINNISH("fi", "Suomi", "fin"),
 		FRENCH("fr", "Français", "fra"),

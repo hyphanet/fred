@@ -3,6 +3,7 @@ package freenet.clients.http.updateableelements;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
+import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
@@ -16,6 +17,8 @@ public class AlertElement extends BaseAlertElement {
 		this(false,ctx);
 	}
 	
+	// oneLine==true is called by the toadlets when they want to show
+	// a summary of alerts. With a status bar, we only show full errors here.
 	public AlertElement(boolean oneLine,ToadletContext ctx) {
 		super("div", ctx);
 		this.oneLine=oneLine;
@@ -53,14 +56,12 @@ public class AlertElement extends BaseAlertElement {
 			totalNumber++;
 		}
 
-		if(totalNumber == 0 && oneLine)
-			return;
+		if(numberOfMinor == 0 && numberOfWarning == 0 && oneLine)
+			return ;
 
-		if (totalNumber == 0){
+		if (totalNumber == 0)
 			addChild(new HTMLNode("#", ""));
-			return;
-		}
-		
+
 		boolean separatorNeeded = false;
 		String separator = oneLine?", ":" | ";
 		int messageTypes=0;
@@ -80,14 +81,22 @@ public class AlertElement extends BaseAlertElement {
 		if (numberOfWarning != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(separator);
-			alertSummaryString.append(UserAlertManager.l10n("warningCountLabel")).append(' ').append(numberOfWarning);
+			if(oneLine) {
+			alertSummaryString.append(numberOfWarning).append(' ').append(UserAlertManager.l10n("warningCountLabel").replace(":", ""));
+			} else {
+				alertSummaryString.append(UserAlertManager.l10n("warningCountLabel")).append(' ').append(numberOfWarning);
+			}
 			separatorNeeded = true;
 			messageTypes++;
 		}
 		if (numberOfMinor != 0) {
 			if (separatorNeeded)
 				alertSummaryString.append(separator);
-			alertSummaryString.append(UserAlertManager.l10n("minorCountLabel")).append(' ').append(numberOfMinor);
+			if(oneLine) {
+				alertSummaryString.append(numberOfMinor).append(' ').append(UserAlertManager.l10n("minorCountLabel").replace(":", ""));
+			} else {
+				alertSummaryString.append(UserAlertManager.l10n("minorCountLabel")).append(' ').append(numberOfMinor);
+			}
 			separatorNeeded = true;
 			messageTypes++;
 		}
@@ -99,7 +108,7 @@ public class AlertElement extends BaseAlertElement {
 		HTMLNode summaryBox = null;
 
 		String classes = oneLine?"alerts-line contains-":"infobox infobox-";
-		
+
 		if (highestLevel <= UserAlert.CRITICAL_ERROR && !oneLine)
 			summaryBox = new HTMLNode("div", "class", classes + "error");
 		else if (highestLevel <= UserAlert.ERROR && !oneLine)
@@ -109,11 +118,15 @@ public class AlertElement extends BaseAlertElement {
 		else if (highestLevel <= UserAlert.MINOR)
 			summaryBox = new HTMLNode("div", "class", classes + "information");
 		summaryBox.addChild("div", "class", "infobox-header", UserAlertManager.l10n("alertsTitle"));
-		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
-		summaryContent.addChild("#", separator);
-		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
+		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content");
+		if(!oneLine) {
+			summaryContent.addChild("#", alertSummaryString.toString() + separator + " ");
+			NodeL10n.getBase().addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
 				new String[] { "link", "/link" },
 				new String[] { "<a href=\"/alerts/\">", "</a>" });
+		} else {
+			summaryContent.addChild("a", "href", "/alerts/", NodeL10n.getBase().getString("StatusBar.alerts") + " " + alertSummaryString.toString());
+		}
 		summaryBox.addAttribute("id", "messages-summary-box");
 		addChild(summaryBox);
 

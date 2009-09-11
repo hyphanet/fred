@@ -13,6 +13,8 @@ import java.net.URISyntaxException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.updateableelements.PushDataManager;
@@ -688,9 +690,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
 						path.startsWith(StaticToadlet.ROOT_URL))) {
 					try {
-						throw new PermanentRedirectException(new URI(FirstTimeWizardToadlet.TOADLET_URL));
+						throw new PermanentRedirectException(new URI(null, null, null, -1, FirstTimeWizardToadlet.TOADLET_URL, uri.getQuery(), null));
 					} catch(URISyntaxException e) { throw new Error(e); }
 				}
+				
 			} else {
 				// Assume it's okay.
 				fproxyHasCompletedWizard = true;
@@ -729,6 +732,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				if(myThread == null) return;
 			}
 			Socket conn = networkInterface.accept();
+			if (WrapperManager.hasShutdownHookBeenTriggered())
+				return;
             if(conn == null)
                 continue; // timeout
             if(Logger.shouldLog(Logger.MINOR, this))

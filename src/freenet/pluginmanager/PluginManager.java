@@ -1179,6 +1179,18 @@ public class PluginManager {
 
 				}
 
+				if(object instanceof FredPluginL10n) {
+					((FredPluginL10n)object).setLanguage(NodeL10n.getBase().getSelectedLanguage());
+				}
+
+				if(object instanceof FredPluginBaseL10n) {
+					((FredPluginBaseL10n)object).setLanguage(NodeL10n.getBase().getSelectedLanguage());
+				}
+
+				if(object instanceof FredPluginThemed) {
+					((FredPluginThemed)object).setTheme(fproxyTheme);
+				}
+
 				return (FredPlugin) object;
 			} catch(IOException ioe1) {
 				Logger.error(this, "could not load plugin", ioe1);

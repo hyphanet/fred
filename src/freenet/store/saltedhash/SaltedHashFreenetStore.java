@@ -149,7 +149,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		writeConfigFile();
 
 		callback.setStore(this);
-		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
+		shutdownHook.addEarlyJob(new NativeThread(new ShutdownDB(), "Shutdown salted hash store", NativeThread.HIGH_PRIORITY, false));
 
 		cleanerThread = new Cleaner();
 		cleanerStatusUserAlert = new CleanerStatusUserAlert(cleanerThread);
@@ -1054,8 +1054,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		@Override
-		public void run() {
-			super.run();
+		public void realRun() {
 			
 			try {
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));

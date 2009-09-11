@@ -105,7 +105,7 @@ public class OpennetManager {
 	/** Maximum number of peers. Should be 40, cut to 35 for now to avoid
 	 * disconnects while updating from old build that had PANIC_MAX_PEERS
 	 * equal to 40. */
-	public static final int MAX_PEERS_FOR_SCALING = 35;
+	public static final int MAX_PEERS_FOR_SCALING = 40;
 	/** Maximum number of peers for purposes of FOAF attack/sanity check */
 	public static final int PANIC_MAX_PEERS = 50;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */

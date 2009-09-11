@@ -19,6 +19,7 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 		return desc.uri;
 	}
 	
+	@Override
 	String getPluginName(String source) throws PluginNotFoundException {
 		return source + ".jar";
 	}

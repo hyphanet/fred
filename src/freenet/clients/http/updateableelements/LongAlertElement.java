@@ -36,7 +36,7 @@ public class LongAlertElement extends BaseAlertElement {
 			alertsNode.addChild(manager.renderAlert(alert));
 		}
 		if (totalNumber == 0) {
-			addChild(new HTMLNode("#", ""));
+			addChild("div", "class", "infobox-content").addChild("div", "No news is good news :)");
 		}
 		addChild(alertsNode);
 	}

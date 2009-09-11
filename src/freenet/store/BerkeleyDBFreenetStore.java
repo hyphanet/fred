@@ -46,6 +46,7 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.SortedLongSet;
+import freenet.support.io.NativeThread;
 
 /**
  * Freenet datastore based on BerkelyDB Java Edition by Sleepycat Software, Inc.
@@ -1836,9 +1837,14 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		
 	}
 	
-	private class ShutdownHook extends Thread {
-		@Override
-        public void run() {
+	private class ShutdownHook extends NativeThread {
+		
+        public ShutdownHook() {
+			super(name, NativeThread.HIGH_PRIORITY, false);
+			// TODO Auto-generated constructor stub
+		}
+
+		public void realRun() {
 			System.err.println("Closing database due to shutdown.");
 			close(true);
 		}

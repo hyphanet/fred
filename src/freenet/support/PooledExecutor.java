@@ -175,8 +175,7 @@ public class PooledExecutor implements Executor {
 		}
 
 		@Override
-		public void run() {
-			super.run();
+		public void realRun() {
 			long ranJobs = 0;
 			int nativePriority = getNativePriority();
 			while(true) {
