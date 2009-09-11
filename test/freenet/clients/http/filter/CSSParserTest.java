@@ -58,7 +58,7 @@ public class CSSParserTest extends TestCase {
 	}
 
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
-	private static final String CSS_STRING_NEWLINESC = " * {}\n body {";
+	private static final String CSS_STRING_NEWLINESC = " * {}\n body {}\n";
 
 	private static final String CSS_BACKGROUND_URL = "* { background: url(/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png); }";
 	private static final String CSS_BACKGROUND_URLC = " * { background:url(/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png);}\n";
@@ -114,7 +114,7 @@ public class CSSParserTest extends TestCase {
 	}
 
 	public void testNewlines() throws IOException, URISyntaxException {
-		assertTrue("key="+CSS_STRING_NEWLINES+" value="+filter(CSS_STRING_NEWLINES), CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
+		assertTrue("key=\""+CSS_STRING_NEWLINES+"\" value=\""+filter(CSS_STRING_NEWLINES)+"\" should be: \""+CSS_STRING_NEWLINESC+"\"", CSS_STRING_NEWLINESC.equals(filter(CSS_STRING_NEWLINES)));
 	}
 	
 	public void testBackgroundURL() throws IOException, URISyntaxException {

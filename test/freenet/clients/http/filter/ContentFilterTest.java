@@ -66,7 +66,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String XHTML_IMPROPERNESTINGC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</i></b></html>";
 	
 	private static final String CSS_STRING_NEWLINES = "<style>* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }</style>";
-	private static final String CSS_STRING_NEWLINESC = "<style> * {}\n body {</style>";
+	private static final String CSS_STRING_NEWLINESC = "<style> * {}\n body {}\n</style>";
 
 	
 	private final BucketFactory bf = new ArrayBucketFactory();
