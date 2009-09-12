@@ -1740,6 +1740,10 @@ class CSSTokenizerFilter {
 			}
 		}
 		
+		public String toString() {
+			return super.toString()+":\""+original+"\"";
+		}
+		
 		abstract protected void innerEncode(boolean unicode, StringBuffer out);
 		
 	}
@@ -2743,7 +2747,7 @@ class CSSTokenizerFilter {
 		 */
 		public boolean recursiveParserExpressionVerifier(String expression,ParsedWord[] words)
 		{
-			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+words+" length "+words.length);
+			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+toString(words)+" length "+words.length);
 			if((expression==null || ("".equals(expression.trim()))))
 			{
 				if(words==null || words.length == 0)
@@ -2928,7 +2932,7 @@ class CSSTokenizerFilter {
 
 			if(valueParts==null || valueParts.length==0)
 				return true;
-			if(debug) log("recursiveVariableOccuranceVerifier called with verifierIndex="+verifierIndex+" valueParts="+getSubArray(valueParts,0,valueParts.length));
+			if(debug) log("recursiveVariableOccuranceVerifier called with verifierIndex="+verifierIndex+" valueParts="+toString(valueParts));
 			for(int j=lowerLimit;j<=upperLimit;j++)
 			{
 				int k;
@@ -2953,6 +2957,17 @@ class CSSTokenizerFilter {
 
 		}
 
+		private static String toString(ParsedWord[] words) {
+			StringBuffer sb = new StringBuffer();
+			boolean first = true;
+			for(ParsedWord word : words) {
+				if(!first) sb.append(",");
+				first = false;
+				sb.append(word);
+			}
+			return sb.toString();
+		}
+
 		/*
 		 * This function verifies || operator. This function returns true only if it can consume entire value for the given parseExpression
 		 * e.g. expression is [1 || 2 || 3 || 4] and value is "Hello world program"
@@ -2964,7 +2979,7 @@ class CSSTokenizerFilter {
 		 */
 		public boolean recursiveDoubleBarVerifier(String expression,ParsedWord[] words)
 		{
-			if(debug) log("11in recursiveDoubleBarVerifier expression="+expression+" value="+words);
+			if(debug) log("11in recursiveDoubleBarVerifier expression="+expression+" value="+toString(words));
 			if(words==null || words.length == 0)
 				return true;
 
@@ -2990,16 +3005,13 @@ class CSSTokenizerFilter {
 						for(int j=0;j<words.length;j++)
 						{
 
-							result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words[j]);
+							result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(getSubArray(words, 0, j+1));
 							if(debug) log("14in for loop result:"+result+" for "+words[j]);
 							if(result)
 							{
 
-								ParsedWord[] valueToPass = new ParsedWord[words.length-1];
-								int x = 0;
-								for(int k=0;k<words.length;k++)
-									if(k!=j)
-										valueToPass[x++] = words[k];
+								ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
+								System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
 								if(debug) log("14a "+words[j]+" can be consumed by "+index+ " passing on expression="+secondPart+ " value="+valueToPass.toString());
 								result=recursiveDoubleBarVerifier(secondPart,valueToPass);
 								if(result)
