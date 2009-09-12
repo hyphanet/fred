@@ -309,6 +309,14 @@ public class FilterUtils {
 		return false;
 
 	}
+	private final static HashSet<String> cssMedia = new HashSet<String>();
+	static {
+		for(String s : new String[] {"all","braille","embossed","handheld","print","projection","screen","speech","tty","tv"})
+			cssMedia.add(s);
+	}
+	public static boolean isMedia(String media) {
+		return cssMedia.contains(media);
+	}
 	public static boolean isColor(String value,boolean isSVG)
 	{
 		value=value.trim();

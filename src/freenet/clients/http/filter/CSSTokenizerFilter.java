@@ -9,25 +9,28 @@
  author: kurmiashish
  */
 package freenet.clients.http.filter;
-import java.io.*;
-import java.util.*;
-import java.lang.StringBuffer;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 class CSSTokenizerFilter {
 	private Reader r;
 	Writer w = null;
 	FilterCallback cb;
-	boolean debug;
+	static boolean debug;
 
 	CSSTokenizerFilter(){}
 
 
-	public void log(String s)
+	public static void log(String s)
 	{
-		Logger.debug(this,s);
+		Logger.debug(CSSTokenizerFilter.class,s);
 		//System.out.println("CSSTokenizerFilter: "+s);
 	}
 	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb,boolean debug) {
@@ -91,7 +94,6 @@ class CSSTokenizerFilter {
 	static HashSet<String> allelementVerifiers=new HashSet<String>(); 
 	//Reference http://www.w3.org/TR/CSS2/propidx.html
 	static {
-		allelementVerifiers.add("@media");
 		allelementVerifiers.add("azimuth");
 		allelementVerifiers.add("background-attachment");
 		allelementVerifiers.add("background-color");
@@ -235,12 +237,7 @@ class CSSTokenizerFilter {
 	 */
 	private static void addVerifier(String element)
 	{
-		if("@media".equalsIgnoreCase(element))
-		{
-			elementVerifiers.put(element,new CSSPropertyVerifier(null,new String[] {"all","braille","embossed","handheld","print","projection","screen","speech","tty","tv"},null,null,null));
-			allelementVerifiers.remove(element);
-		}
-		else if("azimuth".equalsIgnoreCase(element))
+		if("azimuth".equalsIgnoreCase(element))
 		{      
 			auxilaryVerifiers[0]=new CSSPropertyVerifier(new String[]{"left-side","far-left","left","center-left","center","center-right","right","far-right","right-side"},null,null,true);
 			auxilaryVerifiers[1]=new CSSPropertyVerifier(new String[]{"behind"},null,null,true);
@@ -961,7 +958,7 @@ class CSSTokenizerFilter {
 	 * value: 10pt
 	 *
 	 */
-	private static boolean verifyToken(String media,String[] elements,String token,String value)
+	private static boolean verifyToken(String media,String[] elements,String token,ParsedWord[] words)
 	{
 
 		CSSPropertyVerifier obj=getVerifier(token);
@@ -969,7 +966,7 @@ class CSSTokenizerFilter {
 		{
 			return false;
 		}
-		return obj.checkValidity(media, elements, value);
+		return obj.checkValidity(media, elements, words);
 
 	}
 	/*
@@ -1246,31 +1243,47 @@ class CSSTokenizerFilter {
 					}
 					openBraces++;
 					isState1Present=false;
-					String[] parts=buffer.toString().split(" ");
+					ParsedWord[] parts=split(buffer.toString());
+					boolean valid = false;
 					if(parts.length!=2)
 					{
 						ignoreElementsS1=true;
 						if(debug) log("STATE1 CASE {: Does not have two parts. ignoring "+buffer.toString());
+						buffer.setLength(0);
 						break;
 					}
-					else
+					else if(parts[0] instanceof SimpleParsedWord && "@media".equals(((SimpleParsedWord)parts[0]).original.toLowerCase()))
 					{
-						if(verifyToken(null,null,parts[0].trim(),parts[1].trim())==true)
-						{
-							filteredTokens.append(buffer.toString()+"{ ");
-							if(debug) log("filterCSS Media verified:"+parts[0].toLowerCase());
-							if("@media".equals(parts[0].toLowerCase()))							{
-								if(debug) log("filterCSS Media of the document changed to"+parts[1]);
-								currentMedia=parts[1];
+						ArrayList<String> medias = commaListFromIdentifiers(parts, 1);
+						if(medias != null && medias.size() > 0) {
+							for(int i=0;i<medias.size();i++) {
+								if(!FilterUtils.isMedia(medias.get(i))) {
+									// Unrecognised media, don't pass it.
+									medias.remove(i);
+									i--; // Don't skip next
+								}
 							}
 						}
-						else
-						{
-							ignoreElementsS1=true;
-							if(debug) log("STATE1 CASE {: Failed verification test. ignoring "+buffer.toString());
-
+						if(medias != null && medias.size() > 0) {
+							filteredTokens.append("@media ");
+							boolean first = true;
+							for(String media : medias) {
+								if(!first) filteredTokens.append(", ");
+								else filteredTokens.append(' ');
+								first = false;
+								filteredTokens.append(media);
+							}
+							filteredTokens.append("{\n");
+							valid = true;
 						}
 					}
+					if(!valid)
+					{
+						ignoreElementsS1=true;
+						// No valid media types.
+						if(debug) log("STATE1 CASE {: Failed verification test. ignoring "+buffer.toString());
+					}
+					buffer.setLength(0);
 					s2Comma=false;
 					currentState=STATE2;
 					buffer.setLength(0);
@@ -1302,27 +1315,9 @@ class CSSTokenizerFilter {
 								} else {
 									uri = ((ParsedURL)strparts[0]).getDecoded();
 								}
-								ArrayList<String> medias = new ArrayList<String>(strparts.length-1);
-								if(strparts.length == 1) {
-								} else if(strparts.length == 2 && strparts[1] instanceof ParsedIdentifier) {
-									medias.add(((ParsedIdentifier)strparts[1]).getDecoded());
-								} else {
-									boolean first = true;
-									for(ParsedWord word : strparts) {
-										if(first) {
-											first = false;
-											continue;
-										}
-										if(word instanceof ParsedIdentifier) {
-											medias.add(((ParsedIdentifier)word).getDecoded());
-										} else if(word instanceof SimpleParsedWord) {
-											String data = ((SimpleParsedWord)word).original;
-											String[] split = FilterUtils.removeWhiteSpace(data.split(","));
-											for(String s : split) medias.add(s);
-										} else broke = true;
-									}
-								}
-								if(!broke) {
+								ArrayList<String> medias = commaListFromIdentifiers(strparts, 1);
+									
+								if(medias != null) { // None gives [0], broke gives null
 									StringBuffer output = new StringBuffer();
 									output.append("@import url(\"");
 									try {
@@ -1330,7 +1325,7 @@ class CSSTokenizerFilter {
 										output.append("\")");
 										boolean first = true;
 										for(String media : medias) {
-											if(getVerifier("@media").checkValidity(null, null, media)) {
+											if(FilterUtils.isMedia(media)) {
 												if(!first) output.append(", ");
 												else output.append(' ');
 												first = false;
@@ -1576,7 +1571,8 @@ class CSSTokenizerFilter {
 					}
 					propertyValue=buffer.toString().trim();
 					buffer.setLength(0);
-					if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,propertyValue))
+					ParsedWord[] words = split(propertyValue);
+					if(words != null && !ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,words))
 					{
 						filteredTokens.append(" "+propertyName+":"+propertyValue+";");
 						if(debug) log("STATE3 CASE ;: appending "+ propertyName+":"+propertyValue);
@@ -1595,7 +1591,7 @@ class CSSTokenizerFilter {
 						propertyValue=buffer.toString().trim();
 						buffer.setLength(0);
 						if(debug) log("Found PropertyName:"+propertyName+" propertyValue:"+propertyValue);
-						if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,propertyValue))
+						if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,split(propertyValue)))
 						{
 							filteredTokens.append(" "+propertyName+":"+propertyValue+";");
 							if(debug) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
@@ -1698,7 +1694,32 @@ class CSSTokenizerFilter {
 
 	}
 
-	abstract class ParsedWord {
+	private ArrayList<String> commaListFromIdentifiers(ParsedWord[] strparts, int offset) {
+		ArrayList<String> medias = new ArrayList<String>(strparts.length-1);
+		if(strparts.length <= offset) {
+			// Nothing to munch
+		} else if(strparts.length == offset+1 && strparts[1] instanceof ParsedIdentifier) {
+			medias.add(((ParsedIdentifier)strparts[1]).getDecoded());
+		} else {
+			boolean first = true;
+			for(ParsedWord word : strparts) {
+				if(first) {
+					first = false;
+					continue;
+				}
+				if(word instanceof ParsedIdentifier) {
+					medias.add(((ParsedIdentifier)word).getDecoded());
+				} else if(word instanceof SimpleParsedWord) {
+					String data = ((SimpleParsedWord)word).original;
+					String[] split = FilterUtils.removeWhiteSpace(data.split(","));
+					for(String s : split) medias.add(s);
+				} else return null;
+			}
+		}
+		return medias;
+	}
+
+	static abstract class ParsedWord {
 		
 		final String original;
 		/** Has decoded changed? If not we can use the original. */
@@ -1728,7 +1749,7 @@ class CSSTokenizerFilter {
 	 * determine whether to encode strings if we don't know they are strings!
 	 * This only handles keywords and strings.
 	 */
-	abstract class BaseParsedWord extends ParsedWord {
+	static abstract class BaseParsedWord extends ParsedWord {
 		private String decoded;
 		
 		/**
@@ -1778,7 +1799,7 @@ class CSSTokenizerFilter {
 
 	}
 	
-	class ParsedIdentifier extends BaseParsedWord {
+	static class ParsedIdentifier extends BaseParsedWord {
 		
 		ParsedIdentifier(String original, String decoded, boolean changed) {
 			super(original, decoded, changed);
@@ -1800,7 +1821,7 @@ class CSSTokenizerFilter {
 		
 	}
 	
-	class ParsedString extends BaseParsedWord {
+	static class ParsedString extends BaseParsedWord {
 		
 		ParsedString(String original, String decoded, boolean changed, char stringChar) {
 			super(original, decoded, changed);
@@ -1834,7 +1855,7 @@ class CSSTokenizerFilter {
 		}
 	}
 	
-	class ParsedURL extends ParsedString {
+	static class ParsedURL extends ParsedString {
 		
 		ParsedURL(String original, String decoded, boolean changed, char stringChar) {
 			super(original, decoded, changed || stringChar == 0, stringChar == 0 ? '"' : stringChar);
@@ -1848,7 +1869,7 @@ class CSSTokenizerFilter {
 		
 	}
 	
-	class ParsedAttr extends ParsedIdentifier {
+	static class ParsedAttr extends ParsedIdentifier {
 
 		ParsedAttr(String original, String decoded, boolean changed) {
 			super(original, decoded, changed);
@@ -1868,7 +1889,7 @@ class CSSTokenizerFilter {
 	 * percentages to rgb(...) with spaces in it. Anything we don't 
 	 * understand gets a SimpleParsedWord.
 	 * */
-	class SimpleParsedWord extends ParsedWord {
+	static class SimpleParsedWord extends ParsedWord {
 
 		public SimpleParsedWord(String original) {
 			super(original, false);
@@ -1883,7 +1904,7 @@ class CSSTokenizerFilter {
 	
 	/** Counters need special handling, partly because they contain 
 	 * attributes and strings. */
-	class ParsedCounter extends ParsedWord {
+	static class ParsedCounter extends ParsedWord {
 		public ParsedCounter(String original, ParsedIdentifier identifier, ParsedIdentifier listType, ParsedString separatorString) {
 			super(original, true);
 			this.identifier = identifier;
@@ -1920,7 +1941,7 @@ class CSSTokenizerFilter {
 	 * @param str1
 	 * @return
 	 */
-	private ParsedWord[] split(String input) {
+	private static ParsedWord[] split(String input) {
 		if(debug) log("Splitting \""+input+"\"");
 		ArrayList<ParsedWord> words = new ArrayList<ParsedWord>();
 		char prevc = 0;
@@ -2133,7 +2154,7 @@ class CSSTokenizerFilter {
 	}
 
 
-	private ParsedWord parseToken(StringBuffer origToken, StringBuffer decodedToken, boolean dontLikeOrigToken, boolean couldBeIdentifier) {
+	private static ParsedWord parseToken(StringBuffer origToken, StringBuffer decodedToken, boolean dontLikeOrigToken, boolean couldBeIdentifier) {
 		if(origToken.length() > 2) {
 			char c = origToken.charAt(0);
 			if(c == '\'' || c == '\"') {
@@ -2275,7 +2296,7 @@ class CSSTokenizerFilter {
 		return new SimpleParsedWord(origToken.toString());
 	}
 
-	private ParsedIdentifier makeParsedIdentifier(String string) {
+	private static ParsedIdentifier makeParsedIdentifier(String string) {
 		ParsedWord[] words = split(string);
 		if(words == null) return null;
 		if(words.length != 1) return null;
@@ -2283,7 +2304,7 @@ class CSSTokenizerFilter {
 		return (ParsedIdentifier)words[0];
 	}
 
-	private ParsedString makeParsedString(String string) {
+	private static ParsedString makeParsedString(String string) {
 		ParsedWord[] words = split(string);
 		if(words == null) return null;
 		if(words.length != 1) return null;
@@ -2540,12 +2561,18 @@ class CSSTokenizerFilter {
 
 		}
 
-		public boolean checkValidity(String value)
+		public boolean checkValidity(ParsedWord[] words)
 		{
-			return this.checkValidity(null,null, value);
+			return this.checkValidity(null,null, words);
 		}
+		
+		public boolean checkValidity(ParsedWord word)
+		{
+			return this.checkValidity(null,null, new ParsedWord[] { word });
+		}
+		
 		// Verifies whether this CSS property can have a value under given media and HTML elements
-		public boolean checkValidity(String media,String[] elements,String value )
+		public boolean checkValidity(String media,String[] elements,ParsedWord[] words)
 		{
 
 			if(!onlyValueVerifier)
@@ -2573,85 +2600,86 @@ class CSSTokenizerFilter {
 				}
 			}
 
+			if(words.length == 1) {
 
-			String originalValue=value;
-			value=HTMLFilter.stripQuotes(value).trim();
-
-			if(allowedValues!=null && allowedValues.contains(value.toLowerCase())) //CSS Property has one of the explicitly defined values
+			if(words[0] instanceof ParsedIdentifier && allowedValues != null && allowedValues.contains(((ParsedIdentifier)words[0]).getDecoded()))
+			//CSS Property has one of the explicitly defined values
 				return true;
 
-			if(isInteger && isIntegerChecker(value))
-			{
-				return true;
-			}
-
-			if(isReal && isRealChecker(value))
-			{
-				return true;
-			}
-
-			if(isPercentage && FilterUtils.isPercentage(value)) //Valid percentage X%
-			{
-				return true;
-			}
-
-			if(isLength && FilterUtils.isLength(value,false)) //Valid unit Vxx where xx is unit or V
-			{
-				return true;
-			}
-
-			if(isAngle && FilterUtils.isAngle(value))
-			{
-				return true;
-			}
-			else if(isColor)
-			{
-				if(FilterUtils.isColor(value, false))
-					return true;
-			}
-
-			if(isURI) 
-			{
-				if(value.indexOf("url(")>-1)
+			if(words[0] instanceof SimpleParsedWord) {
+				
+				String word = ((SimpleParsedWord)words[0]).original;
+				
+				// These are all numeric so they will have parsed as a SimpleParsedWord.
+				
+				if(isInteger && isIntegerChecker(word))
 				{
-
-					int firstIndex=value.indexOf("url(");
-					if("".equals(value.substring(0,firstIndex).trim()))
-					{
-						int secondIndex=value.lastIndexOf(")");
-						if(secondIndex>firstIndex && "".equals(value.substring(secondIndex+1, value.length()).trim()))
-						{
-							String url=value.substring(firstIndex+"url(".length(),secondIndex);
-							return isValidURI(CSSTokenizerFilter.removeQuotes(url));
-						}
-
-					}
-					return false;
+					return true;
 				}
+				
+				if(isReal && isRealChecker(word))
+				{
+					return true;
+				}
+				
+				if(isPercentage && FilterUtils.isPercentage(word)) //Valid percentage X%
+				{
+					return true;
+				}
+				
+				if(isLength && FilterUtils.isLength(word,false)) //Valid unit Vxx where xx is unit or V
+				{
+					return true;
+				}
+				
+				if(isAngle && FilterUtils.isAngle(word))
+				{
+					return true;
+				}
+				// This is not numeric but will still have parsed as a SimpleParsedWord, as it either starts with a # or has brackets in.
+				if(isColor)
+				{
+					if(FilterUtils.isColor(word, false))
+						return true;
+				}
+				
+				if(isShape)
+				{
+					if(FilterUtils.isValidCSSShape(word))
+						return true;
+				}
+
+				if(isFrequency)
+				{
+					if(FilterUtils.isFrequency(word))
+						return true;
+				}
+
+			}
+			
+			if(words[0] instanceof ParsedIdentifier && isColor) {
+				if(FilterUtils.isColor(((ParsedIdentifier)words[0]).getDecoded(), false))
+					return true;
+				
+			}			
+			if(isURI && words[0] instanceof ParsedURL)
+			
+			{
+				return isValidURI(CSSTokenizerFilter.removeQuotes(((ParsedURL)words[0]).getDecoded()));
 			}
 
-			if(isShape)
+			if(isIdentifier && words[0] instanceof ParsedIdentifier)
 			{
-				if(FilterUtils.isValidCSSShape(value))
+				if(ElementInfo.isValidIdentifier(((ParsedIdentifier)words[0]).getDecoded()));
 					return true;
 			}
 
-			if(isFrequency)
+			if(isString && words[0] instanceof ParsedString)
 			{
-				if(FilterUtils.isFrequency(value))
+				if(ElementInfo.isValidString((((ParsedString)words[0]).getDecoded())))
 					return true;
 			}
-
-			if(isIdentifier)
-			{
-				if(ElementInfo.isValidIdentifier(value))
-					return true;
-			}
-
-			if(isString)
-			{
-				if(ElementInfo.isValidString(value))
-					return true;
+			
 			}
 
 			/*
@@ -2671,7 +2699,7 @@ class CSSTokenizerFilter {
 
 				for(String parserExpression:parserExpressions)
 				{
-					boolean result=recursiveParserExpressionVerifier(parserExpression,originalValue);
+					boolean result=recursiveParserExpressionVerifier(parserExpression,words);
 
 					if(result)
 						return true;
@@ -2706,42 +2734,16 @@ class CSSTokenizerFilter {
 		 * If all combinations are failed then it would return false. If any combination gives true value
 		 * then return value would be true.
 		 */
-		public boolean recursiveParserExpressionVerifier(String expression,String value)
+		public boolean recursiveParserExpressionVerifier(String expression,ParsedWord[] words)
 		{
-			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+value);
+			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+words);
 			if((expression==null || ("".equals(expression.trim()))))
 			{
-				if((value==null || ("".equals(value.trim()))))
+				if(words==null || words.length == 0)
 					return true;
 				else 
 					return false;
 			}
-			ArrayList<String> doubleQuotedValues=new ArrayList<String>();
-			while(value.indexOf('"')!=-1)
-			{
-				int first,second;
-				first=value.indexOf('"');
-				second=value.indexOf('"',first+1);
-				if(second==-1)
-					return false;
-				else
-				{
-					String temp=value.substring(first,second+1);
-					temp=CSSTokenizerFilter.removeQuotes(temp);
-					doubleQuotedValues.add(temp);
-				}
-
-				StringBuffer newValue=new StringBuffer();
-				newValue.append(value.substring(0, first));
-				if(second!=value.length()-1)
-					newValue.append(value.substring(second+1,value.length()));
-				value=newValue.toString();
-			}
-			
-			String[] valueParts=value.trim().split(" ");
-			valueParts=FilterUtils.removeWhiteSpace(valueParts);
-			valueParts=CSSTokenizerFilter.concat(valueParts,doubleQuotedValues.toArray(new String[0]));
-			expression=expression.trim();
 			
 			int tokensCanBeGivenLowerLimit=1,tokensCanBeGivenUpperLimit=1;
 			for(int i=0;i<expression.length();i++)
@@ -2766,25 +2768,21 @@ class CSSTokenizerFilter {
 					String secondPart="";
 					if(endIndex!=expression.length())
 						secondPart=expression.substring(endIndex+1,expression.length());
-					for(int j=1;j<=noOfa+1 && j<=valueParts.length;j++)
+					for(int j=1;j<=noOfa+1 && j<=words.length;j++)
 					{
 						if(debug) log("2Making recursiveDoubleBarVerifier to consume "+j+" words");
-						StringBuffer partToPassToDB=new StringBuffer("");
-						for(int k=0;k<j;k++)
-						{
-							partToPassToDB.append(valueParts[k]+" ");
-						}
+						ParsedWord[] partToPassToDB = new ParsedWord[j];
+						System.arraycopy(words, 0, partToPassToDB, 0, j);
 						if(debug) log("3Calling recursiveDoubleBarVerifier with "+firstPart+" "+partToPassToDB.toString());
-						if(recursiveDoubleBarVerifier(firstPart,partToPassToDB.toString())) //This function is written to verify || operator.
+						if(recursiveDoubleBarVerifier(firstPart,partToPassToDB)) //This function is written to verify || operator.
 						{
-							StringBuffer partToPass=new StringBuffer("");
-							for(int k=j;k<valueParts.length;k++)
-								partToPass.append(valueParts[k]+" ");
+							ParsedWord[] partToPass = new ParsedWord[words.length-j];
+							System.arraycopy(words, j, partToPass, 0, words.length-j);
 							if(debug) log("4recursiveDoubleBarVerifier true calling itself with "+secondPart+partToPass.toString());
-							if(recursiveParserExpressionVerifier(secondPart,partToPass.toString()))
+							if(recursiveParserExpressionVerifier(secondPart,partToPass))
 								return true;
 						}
-						if(debug) log("5Back to recursiveDoubleBarVerifier "+j+" "+(noOfa+1)+" "+valueParts.length);
+						if(debug) log("5Back to recursiveDoubleBarVerifier "+j+" "+(noOfa+1)+" "+words.length);
 					}
 					return false;
 				}
@@ -2792,17 +2790,16 @@ class CSSTokenizerFilter {
 				{
 					String firstPart=expression.substring(0,i);
 					String secondPart=expression.substring(i+1,expression.length());
-					if(valueParts!=null && valueParts.length>0)
+					if(words!=null && words.length>0)
 					{
 						int index=Integer.parseInt(firstPart);
-						boolean result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(valueParts[0]);
+						boolean result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words[0]);
 						if(result)
 						{
-							StringBuffer partToPass=new StringBuffer();
-							for(int a=1;a<valueParts.length;a++)
-								partToPass.append(valueParts[a]+" ");
+							ParsedWord[] partToPass = new ParsedWord[words.length-1];
+							System.arraycopy(words, 1, partToPass, 0, words.length-1);
 							if(debug) log("8First part is true. partToPass="+partToPass.toString());
-							if(recursiveParserExpressionVerifier(secondPart,partToPass.toString()))
+							if(recursiveParserExpressionVerifier(secondPart,partToPass))
 								return true;
 						}
 					}
@@ -2813,19 +2810,18 @@ class CSSTokenizerFilter {
 					String firstPart=expression.substring(0,i);
 					String secondPart=expression.substring(i+1,expression.length());
 					int index=Integer.parseInt(firstPart);
-					if(valueParts.length>0)
+					if(words.length>0)
 					{
-						boolean result= CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(valueParts[0]);
+						boolean result= CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words[0]);
 						if(result)
 						{
-							StringBuffer partToPass=new StringBuffer();
-							for(int a=1;a<valueParts.length;a++)
-								partToPass.append(valueParts[a]+" ");
-							if(recursiveParserExpressionVerifier(secondPart,partToPass.toString()))
+							ParsedWord[] partToPass = new ParsedWord[words.length-1];
+							System.arraycopy(words, 1, partToPass, 0, words.length-1);
+							if(recursiveParserExpressionVerifier(secondPart,partToPass))
 								return true;
 						}
 					}
-					else if(recursiveParserExpressionVerifier(secondPart,value))
+					else if(recursiveParserExpressionVerifier(secondPart,words))
 						return true;
 
 					return false;
@@ -2861,11 +2857,11 @@ class CSSTokenizerFilter {
 								for(int l=tokensCanBeGivenLowerLimit;l<=tokensCanBeGivenUpperLimit;l++)
 								{
 									if(debug) log("recursiveParserExpressionVerifier j="+j+" l="+l);
-									boolean result=recursiveVariableOccuranceVerifier(index,getSubArray(valueParts,0,j*l),lowerLimit,upperLimit,tokensCanBeGivenLowerLimit,tokensCanBeGivenUpperLimit);
+									boolean result=recursiveVariableOccuranceVerifier(index,getSubArray(words,0,j*l),lowerLimit,upperLimit,tokensCanBeGivenLowerLimit,tokensCanBeGivenUpperLimit);
 									if(result)
 									{
 										if(debug) log("TRUE j="+j+" l="+l+" result is true");
-										if(recursiveParserExpressionVerifier(secondPart,getStringFromArray(valueParts,j*l,valueParts.length)))
+										if(recursiveParserExpressionVerifier(secondPart,getSubArray(words,j*l,words.length)))
 											return true;
 									}
 								}
@@ -2882,7 +2878,7 @@ class CSSTokenizerFilter {
 			//Single verifier object
 			if(debug) log("10Single token:"+expression);
 			int index=Integer.parseInt(expression);
-			return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(value);
+			return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words);
 
 
 		}
@@ -2903,9 +2899,9 @@ class CSSTokenizerFilter {
 
 		}
 		//Creates a new sub array from the main array and returns it.
-		public static String[] getSubArray(String[] array,int lowerIndex,int upperIndex)
+		public static ParsedWord[] getSubArray(ParsedWord[] array,int lowerIndex,int upperIndex)
 		{
-			String[] arrayToReturn=new String[upperIndex-lowerIndex];
+			ParsedWord[] arrayToReturn=new ParsedWord[upperIndex-lowerIndex];
 			if(array!=null && lowerIndex<array.length)
 			{
 				for(int i=lowerIndex;i<upperIndex && i<array.length;i++)
@@ -2920,12 +2916,12 @@ class CSSTokenizerFilter {
 		/*
 		 * For verifying part of the ParseExpression with [] operator.
 		 */
-		public boolean recursiveVariableOccuranceVerifier(int verifierIndex,String[] valueParts,int lowerLimit,int upperLimit,int tokensCanBeGivenLowerLimit,int tokensCanBeGivenUpperLimit)
+		public boolean recursiveVariableOccuranceVerifier(int verifierIndex,ParsedWord[] valueParts,int lowerLimit,int upperLimit,int tokensCanBeGivenLowerLimit,int tokensCanBeGivenUpperLimit)
 		{
 
 			if(valueParts==null || valueParts.length==0)
 				return true;
-			if(debug) log("recursiveVariableOccuranceVerifier called with verifierIndex="+verifierIndex+" valueParts="+getStringFromArray(valueParts,0,valueParts.length));
+			if(debug) log("recursiveVariableOccuranceVerifier called with verifierIndex="+verifierIndex+" valueParts="+getSubArray(valueParts,0,valueParts.length));
 			for(int j=lowerLimit;j<=upperLimit;j++)
 			{
 				int k;
@@ -2935,7 +2931,7 @@ class CSSTokenizerFilter {
 					for(int l=tokensCanBeGivenLowerLimit;l<=tokensCanBeGivenUpperLimit && k*l<valueParts.length;l++)
 					{
 
-						String valueArgument=getStringFromArray(valueParts,k*l,l);
+						ParsedWord[] valueArgument=getSubArray(valueParts,k*l,l);
 						if(CSSTokenizerFilter.auxilaryVerifiers[verifierIndex].checkValidity(valueArgument))
 						{
 							if(debug) log("recursiveVariableOccuranceVerifier: "+l+" tokens can be consumed");
@@ -2959,13 +2955,11 @@ class CSSTokenizerFilter {
 		 * 3 would try to consume "Hello" and rest would try to consume "world program"
 		 * and so on.
 		 */
-		public boolean recursiveDoubleBarVerifier(String expression,String value)
+		public boolean recursiveDoubleBarVerifier(String expression,ParsedWord[] words)
 		{
-			if(debug) log("11in recursiveDoubleBarVerifier expression="+expression+" value="+value);
-			if((value==null || ("".equals(value.trim()))))
+			if(debug) log("11in recursiveDoubleBarVerifier expression="+expression+" value="+words);
+			if(words==null || words.length == 0)
 				return true;
-
-			String[] valueParts=value.trim().split(" ");
 
 			for(int i=0;i<expression.length();i++)
 			{
@@ -2975,7 +2969,7 @@ class CSSTokenizerFilter {
 					String secondPart=expression.substring(i+1,expression.length());
 					if(debug) log("12in a firstPart="+firstPart+" secondPart="+secondPart);
 
-					boolean result=recursiveDoubleBarVerifier(secondPart,value);
+					boolean result=recursiveDoubleBarVerifier(secondPart,words);
 					if(result)
 					{
 						if(debug) log("13if part of the loop is true");
@@ -2986,23 +2980,24 @@ class CSSTokenizerFilter {
 					else
 					{
 						int index=Integer.parseInt(firstPart);
-						for(int j=0;j<valueParts.length;j++)
+						for(int j=0;j<words.length;j++)
 						{
 
-							result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(valueParts[j]);
-							if(debug) log("14in for loop result:"+result+" for "+valueParts[j]);
+							result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words[j]);
+							if(debug) log("14in for loop result:"+result+" for "+words[j]);
 							if(result)
 							{
 
-								StringBuffer valueToPass=new StringBuffer();
-								for(int k=0;k<valueParts.length;k++)
+								ParsedWord[] valueToPass = new ParsedWord[words.length-1];
+								int x = 0;
+								for(int k=0;k<words.length;k++)
 									if(k!=j)
-										valueToPass.append(valueParts[k]+" ");
-								if(debug) log("14a "+valueParts[j]+" can be consumed by "+index+ " passing on expression="+secondPart+ " value="+valueToPass.toString());
-								result=recursiveDoubleBarVerifier(secondPart,valueToPass.toString());
+										valueToPass[x++] = words[k];
+								if(debug) log("14a "+words[j]+" can be consumed by "+index+ " passing on expression="+secondPart+ " value="+valueToPass.toString());
+								result=recursiveDoubleBarVerifier(secondPart,valueToPass);
 								if(result)
 								{
-									if(debug) log("15else part is true, value consumed="+valueParts[j]);
+									if(debug) log("15else part is true, value consumed="+words[j]);
 									return true;
 								}
 							}
@@ -3015,8 +3010,8 @@ class CSSTokenizerFilter {
 
 			//Single token
 			int index=Integer.parseInt(expression);
-			if(debug) log("16Single token:"+expression+" with value=*"+value.trim()+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(value));
-			return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(value.trim());
+			if(debug) log("16Single token:"+expression+" with value=*"+words+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words));
+			return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words);
 
 
 		}
@@ -3036,85 +3031,53 @@ class CSSTokenizerFilter {
 		}
 
 		@Override
-		public boolean checkValidity(String media,String[] elements,String value )
+		public boolean checkValidity(String media,String[] elements,ParsedWord[] value)
 		{
 			if(debug) log("contentPropertyVerifier checkValidity called");
 
-			value=HTMLFilter.stripQuotes(value).toLowerCase().trim();
-
-			if(allowedValues!=null && allowedValues.contains(value))
+			if(value.length != 1) return false;
+			
+			if(value[0] instanceof ParsedIdentifier && allowedValues!=null && allowedValues.contains(((ParsedIdentifier)value[0]).getDecoded()))
 				return true;
 
 			//String processing
-			if(ElementInfo.isValidString(value))
+			if(value[0] instanceof ParsedString && ElementInfo.isValidString((((ParsedString)value[0]).getDecoded())))
 				return true;
 
-			//Counter processing
-			int counterEnds=value.indexOf("counter");
-			if(counterEnds!=-1)
-			{
-				int firstIndex=value.indexOf("(");
-				int secondIndex=value.indexOf(")");
-				if(debug) log("contentPropertyVerifier firstIndex="+firstIndex+" secondIndex="+secondIndex+" value="+value);
-				if(("".equals(value.substring(counterEnds+7, firstIndex).trim())) && ("".equals(value.substring(secondIndex+1, value.length()).trim())))
-				{
-					if(firstIndex<secondIndex)
-					{
-						String[] valueParts=value.substring(firstIndex+1,secondIndex).split(",");
-						valueParts=FilterUtils.removeWhiteSpace(valueParts);
-						if(debug) log("contentPropertyVerifier valuePartsLength="+valueParts.length);
-						if(valueParts.length==1 || valueParts.length==2 || valueParts.length==3)
-						{
-							if(ElementInfo.isValidIdentifier(valueParts[0]))
-							{
-								if(valueParts.length==1)
-									return true;
-								HashSet<String> listStyleType=new HashSet<String>();
-								listStyleType.add("disc");
-								listStyleType.add("circle");
-								listStyleType.add("square");
-								listStyleType.add("decimal");
-								listStyleType.add("decimal-leading-zero");
-								listStyleType.add("lower-roman");
-								listStyleType.add("upper-roman");
-								listStyleType.add("disc lower-greek");
-								listStyleType.add("lower-latin");
-								listStyleType.add("upper-latin");
-								listStyleType.add("armenian");
-								listStyleType.add("georgian");
-								listStyleType.add("lower-alpha");
-								listStyleType.add("upper-alpha");
-								listStyleType.add("none");
-								if(listStyleType.contains(valueParts[1]) || ElementInfo.isValidString(valueParts[1]))
-								{
-									if(valueParts.length==2)
-										return true;
-
-									if(listStyleType.contains(valueParts[2]))
-										return true;
-								}
-							}
-
-						}
-
-					}
+			if(value[0] instanceof ParsedCounter) {
+				ParsedCounter counter = (ParsedCounter)value[0];
+				if(counter.listType != null) {
+					HashSet<String> listStyleType=new HashSet<String>();
+					listStyleType.add("disc");
+					listStyleType.add("circle");
+					listStyleType.add("square");
+					listStyleType.add("decimal");
+					listStyleType.add("decimal-leading-zero");
+					listStyleType.add("lower-roman");
+					listStyleType.add("upper-roman");
+					listStyleType.add("disc lower-greek");
+					listStyleType.add("lower-latin");
+					listStyleType.add("upper-latin");
+					listStyleType.add("armenian");
+					listStyleType.add("georgian");
+					listStyleType.add("lower-alpha");
+					listStyleType.add("upper-alpha");
+					listStyleType.add("none");
+					if(!listStyleType.contains(counter.listType.getDecoded())) return false;
 				}
+				if(counter.identifier != null && !ElementInfo.isValidIdentifier(counter.identifier.getDecoded()))
+					return false;
+				if(counter.separatorString != null && !ElementInfo.isValidString(counter.separatorString.getDecoded()))
+					return false;
+				return true;
 			}
-
-			int attrIndex=value.indexOf("attr");
-			if(attrIndex!=-1)
-			{
-				int firstIndex=value.indexOf("(");
-				int secondIndex=value.lastIndexOf(")");
-				if(debug) log("contentPropertyVerifier attr found");
-				if(("".equals(value.substring(0,firstIndex).trim())) && ("".equals(value.substring(secondIndex+1,value.length()).trim())))
-				{
-					String strIdentifier=value.substring(firstIndex+1, secondIndex);
-					if(ElementInfo.isValidIdentifier(strIdentifier))
-						return true;
-				}
-
+			
+			if(value[0] instanceof ParsedAttr) {
+				ParsedAttr attr = (ParsedAttr) value[0];
+				if(ElementInfo.isValidIdentifier(attr.getDecoded()))
+					return true;
 			}
+			
 			return false;
 
 		}
@@ -3128,27 +3091,38 @@ class CSSTokenizerFilter {
 	static class FontPartPropertyVerifier extends CSSPropertyVerifier
 	{
 		@Override
-		public boolean checkValidity(String value)
+		public boolean checkValidity(ParsedWord[] value)
 		{
 
 			if(debug) log("FontPartPropertyVerifier called with "+value);
 			CSSPropertyVerifier fontSize=new CSSPropertyVerifier(new String[] {"xx-small","x-small","small","medium","large","x-large","xx-large","larger","smaller","inherit"},new String[]{"le","pe"},null,true);
-			if(value.indexOf("/")!=-1)
-			{
-				int slashIndex=value.indexOf("/");
-				String firstPart=value.substring(0,slashIndex);
-				String secondPart=value.substring(slashIndex+1,value.length());
-				if(debug) log("FontPartPropertyVerifier FirstPart="+firstPart+" secondPart="+secondPart);
-				CSSPropertyVerifier lineHeight=new CSSPropertyVerifier(new String[] {"normal","inherit"},new String[]{"le","pe","re","in"},null,true);
-				if(fontSize.checkValidity(firstPart) && lineHeight.checkValidity(secondPart))
-					return true;
+			if(fontSize.checkValidity(value)) return true;
+			
+			for(ParsedWord word : value) {
+				// Token by token
+				if(fontSize.checkValidity(word)) continue;
+				if(word instanceof SimpleParsedWord) {
+					String orig = ((SimpleParsedWord)word).original;
+					if(orig.indexOf("/")!=-1)
+					{
+						int slashIndex=orig.indexOf("/");
+						String firstPart=orig.substring(0,slashIndex);
+						String secondPart=orig.substring(slashIndex+1,orig.length());
+						if(debug) log("FontPartPropertyVerifier FirstPart="+firstPart+" secondPart="+secondPart);
+						CSSPropertyVerifier lineHeight=new CSSPropertyVerifier(new String[] {"normal","inherit"},new String[]{"le","pe","re","in"},null,true);
+						ParsedWord[] first = split(firstPart);
+						ParsedWord[] second = split(secondPart);
+						if(first.length == 1 && second.length == 1 &&
+								fontSize.checkValidity(first) && lineHeight.checkValidity(second))
+							continue;
+					}
+				}
+			
 			}
-			else
-				return fontSize.checkValidity(value);
-			return false;
+			return true;
 
 		}
-
+		
 	}
 
 
