@@ -62,6 +62,8 @@ public class CSSParserTest extends TestCase {
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] { }", "h1[foo=\"bar bar\"]");
+		CSS2_SELECTOR.put("h1[foo=\"bar+bar\"] { }", "h1[foo=\"bar+bar\"]");
+		CSS2_SELECTOR.put("h1[foo=\"bar\\\" bar\"] { }", "h1[foo=\"bar\\\" bar\"]");
 	}
 
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
