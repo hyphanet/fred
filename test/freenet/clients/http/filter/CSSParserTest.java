@@ -165,6 +165,12 @@ public class CSSParserTest extends TestCase {
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", " h2 { color:red;}\n");
 		propertyTests.put("h2 { color: red\0 }", " h2 { color:red;}\n");
+		
+		// Fonts
+		propertyTests.put("h2 { font-family: times new roman;}\n", " h2 { font-family:times new roman;}\n");
+		propertyTests.put("h2 { font-family: Times New Roman;}\n", " h2 { font-family:Times New Roman;}\n");
+		propertyTests.put("h2 { font-family: inherit;}\n", " h2 { font-family:inherit;}\n");
+//		propertyTests.put("h2 { font: Times New Roman;}\n", " h2 { font:Times New Roman;}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {

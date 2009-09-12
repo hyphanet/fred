@@ -506,10 +506,7 @@ class CSSTokenizerFilter {
 		else if("font-family".equalsIgnoreCase(element))
 		{      
 
-			auxilaryVerifiers[26]=new CSSPropertyVerifier(ElementInfo.FONT_LIST,null,null,true);
-			auxilaryVerifiers[57]=new CSSPropertyVerifier(new String[] {","},null,null,true);
-			auxilaryVerifiers[58]=new CSSPropertyVerifier(null,null,new String[]{"57 26"},true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[]{"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"26 58<0,"+ElementInfo.UPPERLIMIT+">[2,2]"}));
+			elementVerifiers.put(element,new FontPropertyVerifier());
 			allelementVerifiers.remove(element);
 		}
 		else if("font-size".equalsIgnoreCase(element))
@@ -554,10 +551,7 @@ class CSSTokenizerFilter {
 			 */
 			auxilaryVerifiers[31]=new FontPartPropertyVerifier();
 			//font-family
-			auxilaryVerifiers[26]=new CSSPropertyVerifier(ElementInfo.FONT_LIST,null,null,true);
-			auxilaryVerifiers[57]=new CSSPropertyVerifier(new String[] {","},null,null,true);
-			auxilaryVerifiers[58]=new CSSPropertyVerifier(null,null,new String[]{"57 26"},true);
-			auxilaryVerifiers[59]=new CSSPropertyVerifier(new String[]{"inherit"},null,new String[]{"26 58<0,"+ElementInfo.UPPERLIMIT+">[2,2]"},true);
+			auxilaryVerifiers[59]=new FontPropertyVerifier();
 
 
 			/*
@@ -3155,7 +3149,7 @@ class CSSTokenizerFilter {
 	static class FontPartPropertyVerifier extends CSSPropertyVerifier
 	{
 		@Override
-		public boolean checkValidity(ParsedWord[] value)
+		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value)
 		{
 
 			if(debug) log("FontPartPropertyVerifier called with "+value);
@@ -3189,5 +3183,144 @@ class CSSTokenizerFilter {
 		
 	}
 
+	static class FontPropertyVerifier extends CSSPropertyVerifier {
+		
+		FontPropertyVerifier() {
+			super(null, new String[] { "inherit" }, ElementInfo.VISUALMEDIA);
+		}
+		
+		@Override
+		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value)
+		{
+			if(value.length == 1) {
+				if(value[0] instanceof ParsedIdentifier && allowedValues != null && allowedValues.contains(((ParsedIdentifier)value[0]).getDecoded()))
+				//CSS Property has one of the explicitly defined values
+					return true;
+			}			
+			if(allowedMedia!=null) {
+				boolean allowed = false;
+				for(String m : media)
+					if(allowedMedia.contains(m)) {
+						allowed = true;
+						break;
+					}
+				if(!allowed) {
+					if(debug) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
+					
+					return false;
+				}
+			}
+			if(debug) log("font verifier: "+toString(value));
+			ArrayList<String> fontWords = new ArrayList<String>();
+			// FIXME delete fonts we don't know about but let through ones we do.
+			// Or allow unknown fonts given [a-z][A-Z][0-9] ???
+outer:		for(int i=0;i<value.length;i++) {
+				ParsedWord word = value[i];
+				String s = null;
+				if(word instanceof ParsedString) {
+					// It's actually quoted, great.
+					if(ElementInfo.isSpecificFontFamily((((ParsedString)word).getDecoded())))
+						continue;
+					if(ElementInfo.isGenericFontFamily((((ParsedString)word).getDecoded())))
+						continue;
+				} else if(word instanceof ParsedIdentifier) {
+					s = (((ParsedIdentifier)word).getDecoded());
+					if(ElementInfo.isGenericFontFamily(s))
+						continue;
+				} else if(word instanceof SimpleParsedWord) {
+					s = ((SimpleParsedWord)word).original;
+					if(s.endsWith(",")) {
+						s = s.substring(0, s.length()-1);
+						s = s.trim();
+						if(ElementInfo.isGenericFontFamily(s))
+							continue;
+						if(ElementInfo.isSpecificFontFamily(s))
+							continue;
+						return false;
+					}
+				} else
+					return false;
+				// Unquoted multi-word font, or unquoted single-word font.
+				// Unfortunately fonts can be ambiguous...
+				// Therefore we do not accept a single-word font unless it is either quoted or ends in a comma.
+				fontWords.add(s);
+				if(i == value.length-1)
+					return validFontWords(fontWords);
+				if(!possiblyValidFontWords(fontWords))
+					return false;
+				boolean last = false;
+				for(int j=i+1;j<value.length;j++) {
+					ParsedWord newWord = value[j];
+					if (j == value.length-1) last = true;
+					if(newWord instanceof SimpleParsedWord) {
+						String s1 = ((SimpleParsedWord)newWord).original;
+						if(s1.endsWith(",")) {
+							s1 = s1.substring(0, s1.length()-1).trim();
+							if(s1.equals("")) {
+								if(validFontWords(fontWords)) {
+									fontWords.clear();
+									i = j;
+									continue outer;
+								} else
+									return false;
+							}
+							ParsedWord[] newWords = split(s1);
+							if(newWords == null || newWords.length > 1)
+								return false; // Impossible?
+							if(newWords.length == 0) {
+								if(validFontWords(fontWords)) {
+									fontWords.clear();
+									i = j;
+									continue outer;
+								} else
+									return false;
+							}								
+							newWord = newWords[0];
+							last = true;
+							j--;
+							continue; // Try again
+						}
+						fontWords.add(s1);
+					}
+					if(last) {
+						if(validFontWords(fontWords)) {
+							// Valid. Good.
+							if(j == (value.length-1))
+								return true;
+							i = j;
+							continue outer;
+						} else return false;
+					}
+					if(!possiblyValidFontWords(fontWords))
+						return false;
+				}
+			}
+			return true;
+			}
+
+		private boolean possiblyValidFontWords(ArrayList<String> fontWords) {
+			StringBuffer sb = new StringBuffer();
+			boolean first = true;
+			for(String s : fontWords) {
+				if(!first) sb.append(' ');
+				first = false;
+				sb.append(s);
+			}
+			String s = sb.toString().toLowerCase();
+			return ElementInfo.isWordPrefixOrMatchOfSpecificFontFamily(s);
+		}
+
+		private boolean validFontWords(ArrayList<String> fontWords) {
+			StringBuffer sb = new StringBuffer();
+			boolean first = true;
+			for(String s : fontWords) {
+				if(!first) sb.append(' ');
+				first = false;
+				sb.append(s);
+			}
+			return ElementInfo.isSpecificFontFamily(sb.toString().toLowerCase());
+		}
+		
+	}
 
 }
