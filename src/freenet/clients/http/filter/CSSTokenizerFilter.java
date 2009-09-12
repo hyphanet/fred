@@ -2997,12 +2997,7 @@ class CSSTokenizerFilter {
 					String secondPart=expression.substring(i+1,expression.length());
 					if(debug) log("12in a firstPart="+firstPart+" secondPart="+secondPart);
 
-					boolean result=recursiveDoubleBarVerifier(secondPart,words);
-					if(result)
-					{
-						if(debug) log("13if part of the loop is true");
-						return true;
-					}
+					boolean result=false;
 
 					if(1==2) {}
 					else
