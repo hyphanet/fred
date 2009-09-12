@@ -1105,36 +1105,88 @@ class CSSTokenizerFilter {
 	public String recursiveSelectorVerifier(String selectorString)
 	{
 		selectorString=selectorString.toLowerCase().trim();
-		if(selectorString.indexOf(" ")==-1 && selectorString.indexOf(">")==-1 && selectorString.indexOf("+")==-1)
-			return HTMLelementVerifier(selectorString);
+		
+		// Parse but don't tokenise.
+		
 		int plusIndex,gtIndex,spaceIndex;
-		plusIndex=selectorString.indexOf("+");
-		if(plusIndex==-1)
-			plusIndex=50000;
-		gtIndex=selectorString.indexOf(">");
-		if(gtIndex==-1)
-			gtIndex=50000;
-		spaceIndex=selectorString.indexOf(" ");
-		if(spaceIndex==-1)
-			spaceIndex=50000;
+		plusIndex = 50000;
+		gtIndex = 50000;
+		spaceIndex = 50000;
+		int index = -1;
+		char selector = 0;
+		
+		char c;
+		char quoting = 0;
+		boolean escaping = false;
+		boolean eatLF = false;
+		int escapedDigits = 0;
+		for(int i=0;i<selectorString.length();i++) {
+			c = selectorString.charAt(i);
+			if(c == '+' && quoting == 0 && !escaping) {
+				if(index == -1) {
+					plusIndex = i;
+					index = i;
+					selector = c;
+				}
+			} else if(c == '>' && quoting == 0 && !escaping) {
+				if(index == -1) {
+					gtIndex = i;
+					index = i;
+					selector = c;
+				}
+			} else if(c == ' ' && quoting == 0 && !escaping) {
+				if(index == -1) {
+					spaceIndex = i;
+					index = i;
+					selector = c;
+				}
+			} else if(c == '\'' && quoting == 0 && !escaping) {
+				quoting = c;
+			} else if(c == '\"' && quoting == 0 && !escaping) {
+				quoting = c;
+			} else if(c == quoting) {
+				quoting = 0;
+			} else if(c == '\n' && eatLF) {
+				// Ok
+				escaping = false;
+				eatLF = false;
+			} else if((c == '\r' || c == '\n' || c == '\f') && !(quoting != 0 && escaping)) {
+				// No newlines unless in a string *and* quoted!
+				return null;
+			} else if(c == '\r' && escaping && escapedDigits == 0) {
+				escaping = false;
+				eatLF = true;
+			} else if((c == '\n' || c == '\f') && escaping) {
+				if(escapedDigits == 0)
+					escaping = false;
+				else return null; // Invalid
+			} else if(escaping && ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+				escapedDigits++;
+				if(escapedDigits == 6)
+					escaping = false;
+			} else if(escaping && escapedDigits > 0 && (" \t\r\n\f".indexOf(c) != -1)) {
+				escaping = false;
+				if(c == '\r') eatLF = true;
+			} else if(c == '\\' && !escaping) {
+				escaping = true;
+			} else if(c == '\\' && escaping && escapedDigits > 0) {
+				return null; // Invalid
+			} else if(c == '\\' && escaping) {
+				escaping = false;
+			} else if(escaping) {
+				// Any other character can be escaped.
+			}
+			eatLF = false;
+		}
+		
+		if(debug) log("index= "+index+" quoting="+quoting+" selector="+selector+" for \""+selectorString+"\"");
+		
+		if(quoting != 0) return null; // Mismatched quotes
+		
+		if(index == -1)
+			return HTMLelementVerifier(selectorString);
+		
 		String[] parts=new String[2];
-		int index;
-		char selector;
-		if((plusIndex<gtIndex) && (plusIndex<spaceIndex))
-		{
-			index=plusIndex;
-			selector='+';
-		}
-		else if((gtIndex<plusIndex) && (gtIndex<spaceIndex))
-		{
-			index=gtIndex;
-			selector='>';
-		}
-		else
-		{
-			index=spaceIndex;
-			selector=' ';
-		}
 
 		parts[0]=selectorString.substring(0,index);
 		parts[1]=selectorString.substring(index+1,selectorString.length());
