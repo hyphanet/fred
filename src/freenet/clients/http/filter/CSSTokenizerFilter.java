@@ -2956,7 +2956,7 @@ class CSSTokenizerFilter {
 			return false;
 		}
 
-		private static String toString(ParsedWord[] words) {
+		static String toString(ParsedWord[] words) {
 			if(words == null) return null;
 			StringBuffer sb = new StringBuffer();
 			boolean first = true;
@@ -3046,7 +3046,7 @@ class CSSTokenizerFilter {
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value)
 		{
-			if(debug) log("contentPropertyVerifier checkValidity called");
+			if(debug) log("contentPropertyVerifier checkValidity called: "+toString(value));
 
 			if(value.length != 1) return false;
 			
