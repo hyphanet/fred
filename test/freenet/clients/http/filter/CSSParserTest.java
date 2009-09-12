@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
@@ -92,15 +93,39 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
 	private static final String CSS_DELETE_INVALID_SELECTORC = "h1, h2 { color:green;}\n h6 { color:black;}\n";
 	
-	private final static HashMap<String, String> propertyTests = new HashMap<String, String>();
+	private final static LinkedHashMap<String, String> propertyTests = new LinkedHashMap<String, String>();
 	static {
 		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech {\n h1 { azimuth:30deg;}\n}\n");
+		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech {\n h1 { azimuth:0.877171rad;}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech {\n h1 { azimuth:left-side behind;}\n}\n");
 		// Invalid combination
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech {\n h1 {}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: inherit }; }", "@media speech {\n h1 { azimuth:inherit;}\n}\n");
 		// Wrong media type
 		propertyTests.put("h1 { azimuth: inherit }", " h1 {}\n");
+		
+		propertyTests.put("td { background-attachment: scroll}", " td { background-attachment:scroll;}\n");
+		propertyTests.put("td { background-color: rgb(255, 255, 255)}", " td { background-color:rgb(255, 255, 255);}\n");
+		// Invalid element
+		propertyTests.put("silly { background-attachment: scroll}", "");
+		propertyTests.put("h3 { background-position: 30% top}", " h3 { background-position:30% top;}\n");
+		// Url with an encoded space
+		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", " h3 { background-image:url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}\n");
+		// Url with a space
+		// FIXME rewrite such properties. For now we will just delete them.
+		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", " h3 {}\n");
+		// Url with lower case chk@
+		// FIXME rewrite such properties. For now we will just delete them.
+		propertyTests.put("h3 { background-image: url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", " h3 {}\n");
+		
+		// FIXME url without ""
+		// FIXME import without url()
+		
+		// Mixed background
+		//propertyTests.put("h3 { background: scroll transparent 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 {background: scroll transparent 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\")}\n");
+		propertyTests.put("h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", " h3 { background:url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}\n");
+		propertyTests.put("h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", " h3 { background:scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}\n");
+		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", " h3 { background:scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {

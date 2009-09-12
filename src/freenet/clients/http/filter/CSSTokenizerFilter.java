@@ -2743,7 +2743,7 @@ class CSSTokenizerFilter {
 		 */
 		public boolean recursiveParserExpressionVerifier(String expression,ParsedWord[] words)
 		{
-			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+words);
+			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+words+" length "+words.length);
 			if((expression==null || ("".equals(expression.trim()))))
 			{
 				if(words==null || words.length == 0)
