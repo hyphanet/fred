@@ -2681,8 +2681,7 @@ class CSSTokenizerFilter {
 
 			if(isIdentifier && words[0] instanceof ParsedIdentifier)
 			{
-				if(ElementInfo.isValidIdentifier(((ParsedIdentifier)words[0]).getDecoded()));
-					return true;
+				return true;
 			}
 
 			if(isString && words[0] instanceof ParsedString)
@@ -3079,8 +3078,6 @@ class CSSTokenizerFilter {
 					listStyleType.add("none");
 					if(!listStyleType.contains(counter.listType.getDecoded())) return false;
 				}
-				if(counter.identifier != null && !ElementInfo.isValidIdentifier(counter.identifier.getDecoded()))
-					return false;
 				if(counter.separatorString != null && !ElementInfo.isValidString(counter.separatorString.getDecoded()))
 					return false;
 				return true;
@@ -3088,8 +3085,7 @@ class CSSTokenizerFilter {
 			
 			if(value[0] instanceof ParsedAttr) {
 				ParsedAttr attr = (ParsedAttr) value[0];
-				if(ElementInfo.isValidIdentifier(attr.getDecoded()))
-					return true;
+				return true;
 			}
 			
 			return false;
