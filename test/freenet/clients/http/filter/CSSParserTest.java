@@ -58,7 +58,10 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1:lang(fr) { }","h1:lang(fr)");
 		CSS2_SELECTOR.put("h1>h2 { }","h1>h2");
 		CSS2_SELECTOR.put("h1+h2 { }", "h1+h2");
-
+		CSS2_SELECTOR.put("div.foo { }", "div.foo");
+		
+		// Spaces in a selector string
+		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] { }", "h1[foo=\"bar bar\"]");
 	}
 
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
@@ -155,8 +158,8 @@ public class CSSParserTest extends TestCase {
 //		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:\"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}\n");
 		
 		// Strip nulls
-		propertyTests.put("h2 { color: red }", "h2 { color:red;}\n");
-		propertyTests.put("h2 { color: red\0 }", "h2 { color:red;}\n");
+		propertyTests.put("h2 { color: red }", " h2 { color:red;}\n");
+		propertyTests.put("h2 { color: red\0 }", " h2 { color:red;}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {
@@ -174,7 +177,7 @@ public class CSSParserTest extends TestCase {
 
 			String key=itr.next().toString();
 			String value=CSS1_SELECTOR.get(key);
-			assertTrue(filter(key).contains(value));
+			assertTrue("key=\""+key+"\" value=\""+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
 		}
 
 		assertTrue("key=\""+CSS_DELETE_INVALID_SELECTOR+"\" value=\""+filter(CSS_DELETE_INVALID_SELECTOR)+"\" should be \""+CSS_DELETE_INVALID_SELECTORC+"\"", CSS_DELETE_INVALID_SELECTORC.equals(filter(CSS_DELETE_INVALID_SELECTOR)));
