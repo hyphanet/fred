@@ -2747,7 +2747,7 @@ class CSSTokenizerFilter {
 		 */
 		public boolean recursiveParserExpressionVerifier(String expression,ParsedWord[] words)
 		{
-			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+toString(words)+" length "+words.length);
+			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+toString(words));
 			if((expression==null || ("".equals(expression.trim()))))
 			{
 				if(words==null || words.length == 0)
@@ -2958,6 +2958,7 @@ class CSSTokenizerFilter {
 		}
 
 		private static String toString(ParsedWord[] words) {
+			if(words == null) return null;
 			StringBuffer sb = new StringBuffer();
 			boolean first = true;
 			for(ParsedWord word : words) {
