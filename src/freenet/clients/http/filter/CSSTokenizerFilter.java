@@ -1216,6 +1216,8 @@ class CSSTokenizerFilter {
 				}
 				if(debug) log("Comment detected: buffer="+buffer);
 			}
+			if(c == 0)
+				continue; // Strip nulls
 			switch(currentState)
 			{
 			case STATE1: 

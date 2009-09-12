@@ -153,6 +153,10 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: \"string with spaces\" }", " h1 { content:\"string with spaces\";}\n");
 		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:attr(\\ \\ attr\\ with\\ spaces);}\n");
 //		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:\"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}\n");
+		
+		// Strip nulls
+		propertyTests.put("h2 { color: red }", "h2 { color:red;}\n");
+		propertyTests.put("h2 { color: red\0 }", "h2 { color:red;}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {
