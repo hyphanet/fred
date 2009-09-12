@@ -2862,24 +2862,10 @@ class CSSTokenizerFilter {
 						{
 							int lowerLimit=Integer.parseInt(strLimits[0]);
 							int upperLimit=Integer.parseInt(strLimits[1]);
-							for(int j=lowerLimit;j<=upperLimit;j++)
-							{
-
-								for(int l=tokensCanBeGivenLowerLimit;l<=tokensCanBeGivenUpperLimit;l++)
-								{
-									if(debug) log("recursiveParserExpressionVerifier j="+j+" l="+l);
-									boolean result=recursiveVariableOccuranceVerifier(index,getSubArray(words,0,j*l),lowerLimit,upperLimit,tokensCanBeGivenLowerLimit,tokensCanBeGivenUpperLimit);
-									if(result)
-									{
-										if(debug) log("TRUE j="+j+" l="+l+" result is true");
-										if(recursiveParserExpressionVerifier(secondPart,getSubArray(words,j*l,words.length)))
-											return true;
-									}
-								}
-
-							}
+							
+							if(recursiveVariableOccuranceVerifier(index, words, lowerLimit,upperLimit,tokensCanBeGivenLowerLimit,tokensCanBeGivenUpperLimit, secondPart))
+								return true;
 						}
-
 					}
 
 					return false;
@@ -2927,34 +2913,48 @@ class CSSTokenizerFilter {
 		/*
 		 * For verifying part of the ParseExpression with [] operator.
 		 */
-		public boolean recursiveVariableOccuranceVerifier(int verifierIndex,ParsedWord[] valueParts,int lowerLimit,int upperLimit,int tokensCanBeGivenLowerLimit,int tokensCanBeGivenUpperLimit)
+		public boolean recursiveVariableOccuranceVerifier(int verifierIndex,ParsedWord[] valueParts,int lowerLimit,int upperLimit,int tokensCanBeGivenLowerLimit,int tokensCanBeGivenUpperLimit, String secondPart)
 		{
 
-			if(valueParts==null || valueParts.length==0)
+			if(debug) log("recursiveVariableOccurranceVerifier("+verifierIndex+","+toString(valueParts)+","+lowerLimit+","+upperLimit+","+tokensCanBeGivenLowerLimit+","+tokensCanBeGivenUpperLimit+","+secondPart+")");
+			if((valueParts==null || valueParts.length==0) && lowerLimit == 0)
 				return true;
-			if(debug) log("recursiveVariableOccuranceVerifier called with verifierIndex="+verifierIndex+" valueParts="+toString(valueParts));
-			for(int j=lowerLimit;j<=upperLimit;j++)
-			{
-				int k;
-				for(k=0;k<j;k++)
-				{
-
-					for(int l=tokensCanBeGivenLowerLimit;l<=tokensCanBeGivenUpperLimit && k*l<valueParts.length;l++)
-					{
-
-						ParsedWord[] valueArgument=getSubArray(valueParts,k*l,l);
-						if(CSSTokenizerFilter.auxilaryVerifiers[verifierIndex].checkValidity(valueArgument))
-						{
-							if(debug) log("recursiveVariableOccuranceVerifier: "+l+" tokens can be consumed");
-							boolean result=recursiveVariableOccuranceVerifier(verifierIndex,getSubArray(valueParts,k*l+l,valueParts.length),j,upperLimit,tokensCanBeGivenLowerLimit,tokensCanBeGivenUpperLimit);
-							if(result)
-								return true;
-						}
-					}
+			
+			if(lowerLimit == 0) {
+				// There could be secondPart.
+				if(recursiveParserExpressionVerifier(secondPart, valueParts)) {
+					if(debug) log("recursiveVariableOccurranceVerifier completed by "+secondPart);
+					return true;
 				}
 			}
+			
+			// There can be no more parts.
+			if(upperLimit == 0) {
+				if(debug) log("recursiveVariableOccurranceVerifier: no more parts");
+				return false;
+			}
+			
+			for(int i=tokensCanBeGivenLowerLimit; i<=tokensCanBeGivenUpperLimit && i <= valueParts.length;i++) {
+				ParsedWord[] before = new ParsedWord[i];
+				System.arraycopy(valueParts, 0, before, 0, i);
+				if(CSSTokenizerFilter.auxilaryVerifiers[verifierIndex].checkValidity(before)) {
+					if(i == valueParts.length && lowerLimit <= 1) {
+						if(recursiveParserExpressionVerifier(secondPart, new ParsedWord[0])) {
+							if(debug) log("recursiveVariableOccurranceVerifier completed with no more parts by "+secondPart);
+							return true;
+						} else {
+							if(debug) log("recursiveVariableOccurranceVerifier: satisfied self but nothing left to match "+secondPart);
+							return false;
+						}
+					}
+					ParsedWord[] after = new ParsedWord[valueParts.length-i];
+					System.arraycopy(valueParts, i, before, 0, valueParts.length-i);
+					if(recursiveVariableOccuranceVerifier(verifierIndex, after, lowerLimit-1, upperLimit-1, tokensCanBeGivenLowerLimit, tokensCanBeGivenUpperLimit, secondPart))
+						return true;
+				}
+			}
+			
 			return false;
-
 		}
 
 		private static String toString(ParsedWord[] words) {
