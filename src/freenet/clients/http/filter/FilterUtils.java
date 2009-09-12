@@ -113,6 +113,13 @@ public class FilterUtils {
 				return true;
 		}
 		catch(Exception e){ }
+		try
+		{
+			double dval=Double.parseDouble(lengthValue);
+			if(dval>=0)
+				return true;
+		}
+		catch(Exception e){ }
 		return false;
 	}
 	public static boolean isAngle(String value)
