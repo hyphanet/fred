@@ -83,7 +83,7 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_IMPORT_NOURL_TWOMEDIAS = "@import \"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\" screen tty;";
 	private static final String CSS_IMPORT_NOURL_TWOMEDIASC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html?type=text/css\") screen, tty;";
 	
-	private static final String CSS_ESCAPED_LINK = "* { background: url(\00002f\00002fwww.google.co.uk/intl/en_uk/images/logo.gif); }";
+	private static final String CSS_ESCAPED_LINK = "* { background: url(\\00002f\\00002fwww.google.co.uk/intl/en_uk/images/logo.gif); }";
 	private static final String CSS_ESCAPED_LINKC = " * {}\n";
 	
 	private static final String CSS_ESCAPED_LINK2 = "* { background: url(\\/\\/www.google.co.uk/intl/en_uk/images/logo.gif); }";
