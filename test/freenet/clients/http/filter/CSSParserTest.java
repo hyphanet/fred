@@ -148,6 +148,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("table { counter-increment: c\\ \\}oun\\:ter1\\; 1}", " table { counter-increment:c\\ \\}oun\\:ter1\\; 1;}\n");
 		propertyTests.put("table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", " table { counter-increment:\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}\n");
 		propertyTests.put("table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", " table { counter-increment:\\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}\n");
+		
+		// Content tests
+		propertyTests.put("h1 { content: \"string with spaces\" }", " h1 { content:\"string with spaces\";}\n");
+		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:attr(\\ \\ attr\\ with\\ spaces);}\n");
+//		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:\"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {
