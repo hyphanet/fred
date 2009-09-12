@@ -1052,6 +1052,11 @@ public class FreenetURI implements Cloneable {
 		return "CHK".equals(keyType);
 	}
 
+	/** Is this key a KSK? */
+	public boolean isKSK() {
+		return "KSK".equals(keyType);
+	}
+
 	/** Convert a USK into an SSK by appending "-" and the suggested edition
 	 * to the document name and changing the key type. */
 	public FreenetURI sskForUSK() {
