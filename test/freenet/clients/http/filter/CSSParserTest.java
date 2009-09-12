@@ -109,7 +109,11 @@ public class CSSParserTest extends TestCase {
 		// Invalid element
 		propertyTests.put("silly { background-attachment: scroll}", "");
 		propertyTests.put("h3 { background-position: 30% top}", " h3 { background-position:30% top;}\n");
+		// Fractional lengths
 		propertyTests.put("h3 { background-position: 3.3cm 20%}", " h3 { background-position:3.3cm 20%;}\n");
+		// Negative fractional lengths
+		propertyTests.put("h3 { background-position: -0.87em 20%}", " h3 { background-position:-0.87em 20%;}\n");
+		
 		// Url with an encoded space
 		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", " h3 { background-image:url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}\n");
 		// Url with a space
