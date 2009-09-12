@@ -8,6 +8,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map.Entry;
 
 import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
 import freenet.l10n.NodeL10n;
@@ -91,9 +92,20 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
 	private static final String CSS_DELETE_INVALID_SELECTORC = "h1, h2 { color:green;}\n h6 { color:black;}\n";
 	
+	private final static HashMap<String, String> propertyTests = new HashMap<String, String>();
+	static {
+		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech {\n h1 { azimuth:30deg;}\n}\n");
+		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech {\n h1 { azimuth:left-side behind;}\n}\n");
+		// Invalid combination
+		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech {\n h1 {}\n}\n");
+		propertyTests.put("@media speech { h1 { azimuth: inherit }; }", "@media speech {\n h1 { azimuth:inherit;}\n}\n");
+		// Wrong media type
+		propertyTests.put("h1 { azimuth: inherit }", " h1 {}\n");
+	}
+	
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
-    	//Logger.setupStdoutLogging(Logger.MINOR, "freenet.clients.http.filter:DEBUG");
+    	Logger.setupStdoutLogging(Logger.MINOR, "freenet.clients.http.filter:DEBUG");
 	}
 	
 	public void testCSS1Selector() throws IOException, URISyntaxException {
@@ -147,6 +159,14 @@ public class CSSParserTest extends TestCase {
 	public void testEscape() throws IOException, URISyntaxException {
 		assertTrue("key="+CSS_ESCAPED_LINK+" value=\""+filter(CSS_ESCAPED_LINK)+"\"", CSS_ESCAPED_LINKC.equals(filter(CSS_ESCAPED_LINK)));
 		assertTrue("key="+CSS_ESCAPED_LINK2+" value=\""+filter(CSS_ESCAPED_LINK2)+"\"", CSS_ESCAPED_LINK2C.equals(filter(CSS_ESCAPED_LINK2)));
+	}
+	
+	public void testProperties() throws IOException, URISyntaxException {
+		for(Entry<String, String> entry : propertyTests.entrySet()) {
+			String key = entry.getKey();
+			String value = entry.getValue();
+			assertTrue("key=\""+key+"\" encoded=\""+filter(key)+"\" should be \""+value+"\"", value.equals(filter(key)));
+		}
 	}
 	
 	private String filter(String css) throws IOException, URISyntaxException {

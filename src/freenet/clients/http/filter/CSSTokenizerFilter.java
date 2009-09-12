@@ -958,7 +958,7 @@ class CSSTokenizerFilter {
 	 * value: 10pt
 	 *
 	 */
-	private static boolean verifyToken(String media,String[] elements,String token,ParsedWord[] words)
+	private static boolean verifyToken(String[] media,String[] elements,String token,ParsedWord[] words)
 	{
 
 		CSSPropertyVerifier obj=getVerifier(token);
@@ -1177,7 +1177,7 @@ class CSSTokenizerFilter {
 		StringBuffer buffer=new StringBuffer();
 		int openBraces=0;
 		String defaultMedia="screen";
-		String currentMedia=defaultMedia;
+		String[] currentMedia=new String[] {defaultMedia};
 		String propertyName="",propertyValue="";
 		boolean ignoreElementsS1=false,ignoreElementsS2=false,closeIgnoredS1=false,closeIgnoredS2=false;
 		int x;
@@ -1269,12 +1269,12 @@ class CSSTokenizerFilter {
 							boolean first = true;
 							for(String media : medias) {
 								if(!first) filteredTokens.append(", ");
-								else filteredTokens.append(' ');
 								first = false;
 								filteredTokens.append(media);
 							}
-							filteredTokens.append("{\n");
+							filteredTokens.append(" {\n");
 							valid = true;
+							currentMedia = medias.toArray(new String[medias.size()]);
 						}
 					}
 					if(!valid)
@@ -1487,7 +1487,7 @@ class CSSTokenizerFilter {
 						w.write(filteredTokens.toString()+"}\n");
 					filteredTokens.setLength(0);
 					buffer.setLength(0);
-					currentMedia=defaultMedia;
+					currentMedia=new String[] {defaultMedia};
 					isState1Present=false;
 					currentState=STATE1;
 					if(debug) log("STATE2 CASE }: "+c);
@@ -2572,16 +2572,23 @@ class CSSTokenizerFilter {
 		}
 		
 		// Verifies whether this CSS property can have a value under given media and HTML elements
-		public boolean checkValidity(String media,String[] elements,ParsedWord[] words)
+		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] words)
 		{
 
 			if(!onlyValueVerifier)
 			{
-				if(allowedMedia!=null && !allowedMedia.contains(media.trim().toLowerCase()))
-				{
-					if(debug) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
-
-					return false;
+				if(allowedMedia!=null) {
+					boolean allowed = false;
+					for(String m : media)
+						if(allowedMedia.contains(m)) {
+							allowed = true;
+							break;
+						}
+					if(!allowed) {
+						if(debug) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
+						
+						return false;
+					}
 				}
 				if(elements!=null)
 				{
@@ -3031,7 +3038,7 @@ class CSSTokenizerFilter {
 		}
 
 		@Override
-		public boolean checkValidity(String media,String[] elements,ParsedWord[] value)
+		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value)
 		{
 			if(debug) log("contentPropertyVerifier checkValidity called");
 
