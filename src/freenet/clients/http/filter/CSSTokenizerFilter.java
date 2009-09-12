@@ -2983,11 +2983,17 @@ class CSSTokenizerFilter {
 			if(words==null || words.length == 0)
 				return true;
 
+			String ignoredParts;
+			String firstPart = "";
+			int lastA = -1;
 			for(int i=0;i<expression.length();i++)
 			{
 				if(expression.charAt(i)=='a')
 				{
-					String firstPart=expression.substring(0,i);
+					if(!firstPart.equals("")) ignoredParts = firstPart+"a";
+					else ignoredParts = "";
+					firstPart=expression.substring(lastA+1,i);
+					lastA = i;
 					String secondPart=expression.substring(i+1,expression.length());
 					if(debug) log("12in a firstPart="+firstPart+" secondPart="+secondPart);
 
@@ -3006,14 +3012,14 @@ class CSSTokenizerFilter {
 						{
 
 							result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(getSubArray(words, 0, j+1));
-							if(debug) log("14in for loop result:"+result+" for "+words[j]);
+							if(debug) log("14in for loop result:"+result+" for "+toString(words)+" for "+firstPart);
 							if(result)
 							{
 
 								ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 								System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
-								if(debug) log("14a "+words[j]+" can be consumed by "+index+ " passing on expression="+secondPart+ " value="+valueToPass.toString());
-								result=recursiveDoubleBarVerifier(secondPart,valueToPass);
+								if(debug) log("14a "+toString(words)+" can be consumed by "+index+ " passing on expression="+(ignoredParts+secondPart)+ " value="+toString(valueToPass));
+								result=recursiveDoubleBarVerifier(ignoredParts+secondPart,valueToPass);
 								if(result)
 								{
 									if(debug) log("15else part is true, value consumed="+words[j]);
@@ -3023,10 +3029,10 @@ class CSSTokenizerFilter {
 
 						}
 					}
-					return false;
 				}
 			}
 
+			if(lastA != -1) return false;
 			//Single token
 			int index=Integer.parseInt(expression);
 			if(debug) log("16Single token:"+expression+" with value=*"+words+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words));
