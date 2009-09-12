@@ -64,6 +64,9 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] { }", "h1[foo=\"bar bar\"]");
 		CSS2_SELECTOR.put("h1[foo=\"bar+bar\"] { }", "h1[foo=\"bar+bar\"]");
 		CSS2_SELECTOR.put("h1[foo=\"bar\\\" bar\"] { }", "h1[foo=\"bar\\\" bar\"]");
+		// Wierd one from the CSS spec
+		CSS2_SELECTOR.put("p[example=\"public class foo\\\n{\\\n    private int x;\\\n\\\n    foo(int x) {\\\n        this.x = x;\\\n    }\\\n\\\n}\"] { color: red }", 
+				"p[example=\"public class foo{    private int x;    foo(int x) {        this.x = x;    }}\"] { color:red;}\n");
 	}
 
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
@@ -193,8 +196,8 @@ public class CSSParserTest extends TestCase {
 		{
 			String key=itr.next().toString();
 			String value=CSS2_SELECTOR.get(key);
-			System.out.println("Test "+(i++)+" : "+key+" -> "+value);
-			assertTrue("key="+key+" value="+filter(key), filter(key).contains(value));
+			System.err.println("Test "+(i++)+" : "+key+" -> "+value);
+			assertTrue("key="+key+" value="+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
 		}
 
 	}
