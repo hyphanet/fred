@@ -108,15 +108,14 @@ public class FilterUtils {
 		System.out.println("lengthValue: "+lengthValue);
 		try
 		{
-			int intval=Integer.parseInt(lengthValue);
-			if(intval>=0)
-				return true;
+			Integer.parseInt(lengthValue);
+			return true;
 		}
 		catch(Exception e){ }
 		try
 		{
 			double dval=Double.parseDouble(lengthValue);
-			if(dval>=0)
+			if(!(Double.isInfinite(dval) || Double.isNaN(dval)))
 				return true;
 		}
 		catch(Exception e){ }
