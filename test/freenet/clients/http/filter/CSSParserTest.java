@@ -137,6 +137,17 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20%;}", " h3 { background:scroll rgb(100%, 2%, 1%) 3.3cm 20%;}\n");
 		propertyTests.put("h3 { background: 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}", " h3 { background:3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}\n");
 		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", " h3 { background:scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}\n");
+		
+		// Counters
+		propertyTests.put("table { counter-increment: counter1 1}", " table { counter-increment:counter1 1;}\n");
+		// Counters with whacky identifiers
+		propertyTests.put("table { counter-increment: c\\ounter1 1}", " table { counter-increment:c\\ounter1 1;}\n");
+		propertyTests.put("table { counter-increment: c\\ ounter1 1}", " table { counter-increment:c\\ ounter1 1;}\n");
+		propertyTests.put("table { counter-increment: c\\ \\}ounter1 1}", " table { counter-increment:c\\ \\}ounter1 1;}\n");
+		propertyTests.put("table { counter-increment: c\\ \\}oun\\:ter1 1}", " table { counter-increment:c\\ \\}oun\\:ter1 1;}\n");
+		propertyTests.put("table { counter-increment: c\\ \\}oun\\:ter1\\; 1}", " table { counter-increment:c\\ \\}oun\\:ter1\\; 1;}\n");
+		propertyTests.put("table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", " table { counter-increment:\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}\n");
+		propertyTests.put("table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", " table { counter-increment:\\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {
