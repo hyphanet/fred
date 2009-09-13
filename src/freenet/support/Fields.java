@@ -820,7 +820,7 @@ public abstract class Fields {
 					l = ++m; // gets the insertion point right on the last loop
 				}
 			}
-			return -m-1;
+			return ~m;
 
 		} else {
 			// comparator
@@ -836,7 +836,7 @@ public abstract class Fields {
 					l = ++m; // gets the insertion point right on the last loop
 				}
 			}
-			return -m-1;
+			return ~m;
 
 		}
 
