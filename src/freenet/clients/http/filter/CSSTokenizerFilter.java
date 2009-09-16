@@ -9,7 +9,10 @@
  author: kurmiashish
  */
 package freenet.clients.http.filter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -27,11 +30,14 @@ class CSSTokenizerFilter {
 
 	CSSTokenizerFilter(){}
 
+	
+//	private static PrintStream log;
 
 	public static void log(String s)
 	{
 		Logger.debug(CSSTokenizerFilter.class,s);
 		//System.out.println("CSSTokenizerFilter: "+s);
+		//log.println(s);
 	}
 	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb,boolean debug) {
 		this.r=r;
@@ -41,6 +47,11 @@ class CSSTokenizerFilter {
 		this.debug=debug;
 		this.debug = true;
 		CSSPropertyVerifier.debug=debug;
+//		try {
+//			log = new PrintStream(new FileOutputStream("log"));
+//		} catch (FileNotFoundException e) {
+//			throw new Error(e);
+//		}
 	}
 
 	public void parse() throws IOException
@@ -2601,6 +2612,7 @@ class CSSTokenizerFilter {
 		{
 			Logger.debug(this,"CSSPropertyVerifier "+s);
 			//System.out.println("CSSPropertyVerifier "+s);
+			//log.println(s);
 		}
 
 		public static boolean isValidURI(String URI)
@@ -3303,17 +3315,21 @@ outer:		for(int i=0;i<value.length;i++) {
 				// Unquoted multi-word font, or unquoted single-word font.
 				// Unfortunately fonts can be ambiguous...
 				// Therefore we do not accept a single-word font unless it is either quoted or ends in a comma.
+				fontWords.clear();
 				fontWords.add(s);
 				if(debug) log("first word: \""+s+"\"");
 				if(i == value.length-1) {
-					if(debug) log("last word. font words: "+fontWords.toArray()+" valid="+validFontWords(fontWords));
+					if(debug) log("last word. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()]))+" valid="+validFontWords(fontWords));
 					return validFontWords(fontWords);
 				}
 				if(!possiblyValidFontWords(fontWords))
 					return false;
 				boolean last = false;
+				ParsedWord w = null;
 				for(int j=i+1;j<value.length;j++) {
 					ParsedWord newWord = value[j];
+					if(w != null) newWord = w;
+					w = null;
 					if (j == value.length-1) last = true;
 					String s1;
 					if(newWord instanceof SimpleParsedWord) {
@@ -3341,7 +3357,7 @@ outer:		for(int i=0;i<value.length;i++) {
 								} else
 									return false;
 							}								
-							newWord = newWords[0];
+							w = newWords[0];
 							last = true;
 							j--;
 							continue; // Try again
