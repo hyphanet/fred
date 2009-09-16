@@ -2217,8 +2217,10 @@ class CSSTokenizerFilter {
 					decodedToken.deleteCharAt(0);
 					return new ParsedString(origToken.toString(), decodedToken.toString(), dontLikeOrigToken, c);
 				} else {
-					// No whitespace after a string...
-					return null;
+					if(d != ',') {
+						// No whitespace after a string...
+						return null;
+					} else return new SimpleParsedWord(origToken.toString());
 				}
 			}
 		}
@@ -3269,6 +3271,29 @@ outer:		for(int i=0;i<value.length;i++) {
 						if(ElementInfo.isSpecificFontFamily(s)) {
 							hadFont = true;
 							continue;
+						}
+						if(debug) log("had comma, splitting: \""+s+"\"");
+						ParsedWord[] newWords = split(s);
+						if(newWords.length != 1)
+							return false;
+						word = newWords[0];
+						if(word instanceof ParsedString) {
+							String decoded = (((ParsedString)word).getDecoded());
+							if(debug) log("decoded with comma: \""+decoded+"\"");
+							// It's actually quoted, great.
+							if(ElementInfo.isSpecificFontFamily(decoded.toLowerCase())) {
+								hadFont = true;
+								continue;
+							} if(ElementInfo.isGenericFontFamily(decoded.toLowerCase())) {
+								hadFont = true;
+								continue;
+							}
+						} else if(word instanceof ParsedIdentifier) {
+							s = (((ParsedIdentifier)word).getDecoded());
+							if(ElementInfo.isGenericFontFamily(s)) {
+								hadFont = true;
+								continue;
+							}
 						}
 						if(debug) log("impossible to match a font");
 						return false;

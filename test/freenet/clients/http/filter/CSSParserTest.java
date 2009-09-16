@@ -174,6 +174,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font-family: Times New Reman;}\n", " h2 {}\n");
 		propertyTests.put("h2 { font-family: \"Times New Reman\";}\n", " h2 {}\n");
 		propertyTests.put("h2 { font-family: \"Times New Roman\" , \"Arial\";}\n"," h2 { font-family:\"Times New Roman\" , \"Arial\";}\n"); 
+		propertyTests.put("h2 { font-family: \"Times New Roman\", \"Arial\";}\n"," h2 { font-family:\"Times New Roman\", \"Arial\";}\n"); 
 //		propertyTests.put("h2 { font-family: Times, Arial, Helvetica;}\n", " h2 {font-family:Times, Arial, Helvetica;}\n");
 		propertyTests.put("h2 { font: Times New Roman;}\n", " h2 { font:Times New Roman;}\n");
 		propertyTests.put("h2 { font: \"Times New Roman\";}\n", " h2 { font:\"Times New Roman\";}\n");
