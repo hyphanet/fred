@@ -106,6 +106,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech {\n h1 { azimuth:30deg;}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech {\n h1 { azimuth:0.877171rad;}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech {\n h1 { azimuth:left-side behind;}\n}\n");
+		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech {\n h1 { azimuth:behind;}\n}\n");
 		// Invalid combination
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech {\n h1 {}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: inherit }; }", "@media speech {\n h1 { azimuth:inherit;}\n}\n");
@@ -191,6 +192,19 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: medium \"Times New Roman\";}\n", " h2 { font:medium \"Times New Roman\";}\n");
 		propertyTests.put("h2 { font: Times New Reman;}\n", " h2 {}\n");
 		propertyTests.put("h2 { font: medium Times New Roman, Arial Black;}\n", " h2 { font:medium Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: italic small-caps 500 1.5em Times New Roman, Arial Black;}\n", " h2 { font:italic small-caps 500 1.5em Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: small-caps 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 1.5em/12pt Times New Roman, Arial Black;}\n");
+//		propertyTests.put("h2 { font: 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:500 1.5em/12pt Times New Roman, Arial Black;}\n");
+//		propertyTests.put("h2 { font: small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: 500 \"Times New Roman\";}\n", " h2 { font:500 \"Times New Roman\";}\n");
+		propertyTests.put("h2 { font-weight: 500;}\n", " h2 { font-weight:500;}\n");
+//		propertyTests.put("h2 { font: normal \"Times New Roman\";}\n", " h2 { font:normal \"Times New Roman\";}\n");
+//		propertyTests.put("h2 { font: 500 normal \"Times New Roman\";}\n", " h2 { font:500 normal \"Times New Roman\";}\n");
+//		propertyTests.put("h2 { font: 500 normal Times New Roman;}\n", " h2 { font:500 normal Times New Roman;}\n");
+//		propertyTests.put("h2 { font: 500 normal Times New Roman, Arial Black;}\n", " h2 { font:500 normal Times New Roman, Arial Black;}\n");
+//		propertyTests.put("h2 { font: 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
+//		propertyTests.put("h2 { font: small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {

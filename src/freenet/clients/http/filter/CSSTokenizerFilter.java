@@ -3069,6 +3069,7 @@ class CSSTokenizerFilter {
 
 			String ignoredParts;
 			String firstPart = "";
+			String secondPart = "";
 			int lastA = -1;
 			for(int i=0;i<expression.length();i++)
 			{
@@ -3078,7 +3079,7 @@ class CSSTokenizerFilter {
 					else ignoredParts = "";
 					firstPart=expression.substring(lastA+1,i);
 					lastA = i;
-					String secondPart=expression.substring(i+1,expression.length());
+					secondPart=expression.substring(i+1,expression.length());
 					if(debug) log("12in a firstPart="+firstPart+" secondPart="+secondPart);
 
 					boolean result=false;
@@ -3102,6 +3103,14 @@ class CSSTokenizerFilter {
 						}
 					}
 				}
+			}
+			
+			// We don't check the last token above.
+			if(!secondPart.isEmpty()) {
+				//Single token
+				int index=Integer.parseInt(secondPart);
+				if(debug) log("16Single token:"+secondPart+" with value=*"+words+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words));
+				return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words);
 			}
 
 			if(lastA != -1) return false;
