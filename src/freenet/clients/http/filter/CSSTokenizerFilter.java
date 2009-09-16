@@ -506,7 +506,7 @@ class CSSTokenizerFilter {
 		else if("font-family".equalsIgnoreCase(element))
 		{      
 
-			elementVerifiers.put(element,new FontPropertyVerifier());
+			elementVerifiers.put(element,new FontPropertyVerifier(false));
 			allelementVerifiers.remove(element);
 		}
 		else if("font-size".equalsIgnoreCase(element))
@@ -551,7 +551,7 @@ class CSSTokenizerFilter {
 			 */
 			auxilaryVerifiers[31]=new FontPartPropertyVerifier();
 			//font-family
-			auxilaryVerifiers[59]=new FontPropertyVerifier();
+			auxilaryVerifiers[59]=new FontPropertyVerifier(true);
 
 
 			/*
@@ -559,7 +559,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[53]=new CSSPropertyVerifier(ElementInfo.FONT_LIST,null,null,true);
 			auxilaryVerifiers[54]=new CSSPropertyVerifier(new String[]{"inherit"},null,new String[]{"53 53<0,"+ElementInfo.UPPERLIMIT+">"},true);
 			 */
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"caption","icon","menu","message-box","small-caption","status-bar","inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"30<0,1>[1,3] 31<1,1>[1,3] 59<1,1>[1,"+ElementInfo.UPPERLIMIT+"]"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"caption","icon","menu","message-box","small-caption","status-bar","inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"30<0,1>[1,3] 31<0,1>[1,3] 59"}));
 			//elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"caption","icon","menu","message-box","small-caption","status-bar","inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"31<1,1>[1,3]"}));
 			allelementVerifiers.remove(element);
 		}
@@ -2491,10 +2491,14 @@ class CSSTokenizerFilter {
 			this(allowedElements,allowedValues,allowedMedia,null,null);
 		}
 
-
-		CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String[] expression,boolean onlyValueVerifier)
-		{
+		CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String[] expression,boolean onlyValueVerifier) {
 			this(null,allowedValues,null,possibleValues,expression);
+			this.onlyValueVerifier=onlyValueVerifier;
+		}
+
+		CSSPropertyVerifier(String[] allowedValues,String[] possibleValues,String[] expression,String[] media, boolean onlyValueVerifier)
+		{
+			this(null,allowedValues,media,possibleValues,expression);
 			this.onlyValueVerifier=onlyValueVerifier;
 
 		}
@@ -2902,6 +2906,11 @@ class CSSTokenizerFilter {
 						}
 						String firstPart=expression.substring(0,i);
 						String secondPart=expression.substring(firstIndex,expression.length());
+						if(secondPart.length() > 0 && secondPart.charAt(0) == ' ') {
+							secondPart = secondPart.substring(1);
+						} else if(secondPart.length() > 0) {
+							throw new IllegalStateException("Don't know what to do with char after <>[]: "+secondPart.charAt(0));
+						}
 						if(debug) log("9in < firstPart="+firstPart+" secondPart="+secondPart+" tokensCanBeGivenLowerLimit="+tokensCanBeGivenLowerLimit+" tokensCanBeGivenUpperLimit="+tokensCanBeGivenUpperLimit);
 						int index=Integer.parseInt(firstPart);
 						String[] strLimits=expression.substring(i+1,tindex).split(",");
@@ -2942,6 +2951,12 @@ class CSSTokenizerFilter {
 				return "";
 
 		}
+		/*
+		 * This function takes an array of string and concatenates everything in a " " seperated string.
+		 */
+		public static String getStringFromArray(String[] parts) {
+			return getStringFromArray(parts, 0, parts.length-1);
+		}
 		//Creates a new sub array from the main array and returns it.
 		public static ParsedWord[] getSubArray(ParsedWord[] array,int lowerIndex,int upperIndex)
 		{
@@ -2967,7 +2982,7 @@ class CSSTokenizerFilter {
 			if((valueParts==null || valueParts.length==0) && lowerLimit == 0)
 				return true;
 			
-			if(lowerLimit == 0) {
+			if(lowerLimit <= 0) {
 				// There could be secondPart.
 				if(recursiveParserExpressionVerifier(secondPart, valueParts)) {
 					if(debug) log("recursiveVariableOccurranceVerifier completed by "+secondPart);
@@ -2985,6 +3000,7 @@ class CSSTokenizerFilter {
 				ParsedWord[] before = new ParsedWord[i];
 				System.arraycopy(valueParts, 0, before, 0, i);
 				if(CSSTokenizerFilter.auxilaryVerifiers[verifierIndex].checkValidity(before)) {
+					if(debug) log("first "+i+" tokens using "+verifierIndex+" match "+toString(before));
 					if(i == valueParts.length && lowerLimit <= 1) {
 						if(recursiveParserExpressionVerifier(secondPart, new ParsedWord[0])) {
 							if(debug) log("recursiveVariableOccurranceVerifier completed with no more parts by "+secondPart);
@@ -2993,9 +3009,11 @@ class CSSTokenizerFilter {
 							if(debug) log("recursiveVariableOccurranceVerifier: satisfied self but nothing left to match "+secondPart);
 							return false;
 						}
-					}
+					} else if(i == valueParts.length && lowerLimit > 1)
+						return false;
 					ParsedWord[] after = new ParsedWord[valueParts.length-i];
-					System.arraycopy(valueParts, i, before, 0, valueParts.length-i);
+					System.arraycopy(valueParts, i, after, 0, valueParts.length-i);
+					if(debug) log("rest of tokens: "+toString(after));
 					if(recursiveVariableOccuranceVerifier(verifierIndex, after, lowerLimit-1, upperLimit-1, tokensCanBeGivenLowerLimit, tokensCanBeGivenUpperLimit, secondPart))
 						return true;
 				}
@@ -3152,7 +3170,7 @@ class CSSTokenizerFilter {
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value)
 		{
 
-			if(debug) log("FontPartPropertyVerifier called with "+value);
+			if(debug) log("FontPartPropertyVerifier called with "+toString(value));
 			CSSPropertyVerifier fontSize=new CSSPropertyVerifier(new String[] {"xx-small","x-small","small","medium","large","x-large","xx-large","larger","smaller","inherit"},new String[]{"le","pe"},null,true);
 			if(fontSize.checkValidity(value)) return true;
 			
@@ -3175,6 +3193,7 @@ class CSSTokenizerFilter {
 							continue;
 					}
 				}
+				return false;
 			
 			}
 			return true;
@@ -3185,19 +3204,22 @@ class CSSTokenizerFilter {
 
 	static class FontPropertyVerifier extends CSSPropertyVerifier {
 		
-		FontPropertyVerifier() {
-			super(null, new String[] { "inherit" }, ElementInfo.VISUALMEDIA);
+		FontPropertyVerifier(boolean valueOnly) {
+			super(null, null, null, ElementInfo.VISUALMEDIA, valueOnly);
 		}
 		
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value)
 		{
+			if(debug) log("font verifier: "+toString(value));
 			if(value.length == 1) {
-				if(value[0] instanceof ParsedIdentifier && allowedValues != null && allowedValues.contains(((ParsedIdentifier)value[0]).getDecoded()))
+				if(value[0] instanceof ParsedIdentifier && "inherit".equals(((ParsedIdentifier)value[0]).getDecoded())) {
 				//CSS Property has one of the explicitly defined values
+					if(debug) log("font: inherit");
 					return true;
+				}
 			}			
-			if(allowedMedia!=null) {
+			if(allowedMedia!=null && !onlyValueVerifier) {
 				boolean allowed = false;
 				for(String m : media)
 					if(allowedMedia.contains(m)) {
@@ -3210,7 +3232,6 @@ class CSSTokenizerFilter {
 					return false;
 				}
 			}
-			if(debug) log("font verifier: "+toString(value));
 			ArrayList<String> fontWords = new ArrayList<String>();
 			// FIXME delete fonts we don't know about but let through ones we do.
 			// Or allow unknown fonts given [a-z][A-Z][0-9] ???
@@ -3218,10 +3239,12 @@ outer:		for(int i=0;i<value.length;i++) {
 				ParsedWord word = value[i];
 				String s = null;
 				if(word instanceof ParsedString) {
+					String decoded = (((ParsedString)word).getDecoded());
+					if(debug) log("decoded: \""+decoded+"\"");
 					// It's actually quoted, great.
-					if(ElementInfo.isSpecificFontFamily((((ParsedString)word).getDecoded())))
+					if(ElementInfo.isSpecificFontFamily(decoded.toLowerCase()))
 						continue;
-					if(ElementInfo.isGenericFontFamily((((ParsedString)word).getDecoded())))
+					if(ElementInfo.isGenericFontFamily(decoded.toLowerCase()))
 						continue;
 				} else if(word instanceof ParsedIdentifier) {
 					s = (((ParsedIdentifier)word).getDecoded());
@@ -3236,6 +3259,7 @@ outer:		for(int i=0;i<value.length;i++) {
 							continue;
 						if(ElementInfo.isSpecificFontFamily(s))
 							continue;
+						if(debug) log("impossible to match a font");
 						return false;
 					}
 				} else
@@ -3244,16 +3268,20 @@ outer:		for(int i=0;i<value.length;i++) {
 				// Unfortunately fonts can be ambiguous...
 				// Therefore we do not accept a single-word font unless it is either quoted or ends in a comma.
 				fontWords.add(s);
-				if(i == value.length-1)
+				if(debug) log("first word: \""+s+"\"");
+				if(i == value.length-1) {
+					if(debug) log("last word. font words: "+fontWords.toArray()+" valid="+validFontWords(fontWords));
 					return validFontWords(fontWords);
+				}
 				if(!possiblyValidFontWords(fontWords))
 					return false;
 				boolean last = false;
 				for(int j=i+1;j<value.length;j++) {
 					ParsedWord newWord = value[j];
 					if (j == value.length-1) last = true;
+					String s1;
 					if(newWord instanceof SimpleParsedWord) {
-						String s1 = ((SimpleParsedWord)newWord).original;
+						s1 = ((SimpleParsedWord)newWord).original;
 						if(s1.endsWith(",")) {
 							s1 = s1.substring(0, s1.length()-1).trim();
 							if(s1.equals("")) {
@@ -3280,21 +3308,30 @@ outer:		for(int i=0;i<value.length;i++) {
 							j--;
 							continue; // Try again
 						}
-						fontWords.add(s1);
-					}
+					} else if(newWord instanceof ParsedIdentifier) {
+						s1 = ((ParsedIdentifier)newWord).getDecoded();
+					} else return false;
+					fontWords.add(s1);
+					if(debug) log("adding word: \""+s1+"\"");
 					if(last) {
 						if(validFontWords(fontWords)) {
 							// Valid. Good.
-							if(j == (value.length-1))
+							if(j == (value.length-1)) {
+								if(debug) log("font: reached last in inner loop, valid. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()])));
 								return true;
+							}
 							i = j;
 							continue outer;
-						} else return false;
+						} else {
+							if(debug) log("font: not valid at end");
+							return false;
+						}
 					}
 					if(!possiblyValidFontWords(fontWords))
 						return false;
 				}
 			}
+			if(debug) log("font: reached end, valid");
 			return true;
 			}
 
