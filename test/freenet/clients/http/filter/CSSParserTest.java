@@ -103,10 +103,14 @@ public class CSSParserTest extends TestCase {
 	
 	private final static LinkedHashMap<String, String> propertyTests = new LinkedHashMap<String, String>();
 	static {
+		// Check that the last part of a double bar works
+		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech {\n h1 { azimuth:behind;}\n}\n");
+		propertyTests.put("td { background-position:bottom;}\n", " td { background-position:bottom;}\n");
+		propertyTests.put("td { background:repeat-x;}\n", " td { background:repeat-x;}\n");
+		
 		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech {\n h1 { azimuth:30deg;}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech {\n h1 { azimuth:0.877171rad;}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech {\n h1 { azimuth:left-side behind;}\n}\n");
-		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech {\n h1 { azimuth:behind;}\n}\n");
 		// Invalid combination
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech {\n h1 {}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: inherit }; }", "@media speech {\n h1 { azimuth:inherit;}\n}\n");
