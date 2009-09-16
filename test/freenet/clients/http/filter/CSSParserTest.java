@@ -183,6 +183,14 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: \"Times New Roman\";}\n", " h2 { font:\"Times New Roman\";}\n");
 		propertyTests.put("h2 { font: medium \"Times New Roman\";}\n", " h2 { font:medium \"Times New Roman\";}\n");
 		propertyTests.put("h2 { font: Times New Reman;}\n", " h2 {}\n");
+		propertyTests.put("h2 { font: medium Times New Roman, Arial Black;}\n", " h2 { font:medium Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: italic small-caps 500 1.5em Times New Roman, Arial Black;}\n", " h2 { font:italic small-caps 500 1.5em Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: small-caps 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:500 1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: 500 \"Times New Roman\";}\n", " h2 { font:500 \"Times New Roman\";}\n");
+		propertyTests.put("h2 { font-weight: 500;}\n", " h2 { font-weight:500;}\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {

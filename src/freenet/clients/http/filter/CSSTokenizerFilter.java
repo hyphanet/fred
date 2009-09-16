@@ -2687,6 +2687,10 @@ class CSSTokenizerFilter {
 				
 				String word = ((SimpleParsedWord)words[0]).original;
 				
+				// Numeric explicitly defined value is possible
+				if(allowedValues != null && allowedValues.contains(word))
+					return true;
+				
 				// These are all numeric so they will have parsed as a SimpleParsedWord.
 				
 				if(isInteger && isIntegerChecker(word))
