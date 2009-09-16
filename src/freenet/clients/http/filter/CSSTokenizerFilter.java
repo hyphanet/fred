@@ -3232,6 +3232,7 @@ class CSSTokenizerFilter {
 					return false;
 				}
 			}
+			boolean hadFont = false;
 			ArrayList<String> fontWords = new ArrayList<String>();
 			// FIXME delete fonts we don't know about but let through ones we do.
 			// Or allow unknown fonts given [a-z][A-Z][0-9] ???
@@ -3242,23 +3243,33 @@ outer:		for(int i=0;i<value.length;i++) {
 					String decoded = (((ParsedString)word).getDecoded());
 					if(debug) log("decoded: \""+decoded+"\"");
 					// It's actually quoted, great.
-					if(ElementInfo.isSpecificFontFamily(decoded.toLowerCase()))
+					if(ElementInfo.isSpecificFontFamily(decoded.toLowerCase())) {
+						hadFont = true;
 						continue;
-					if(ElementInfo.isGenericFontFamily(decoded.toLowerCase()))
+					} if(ElementInfo.isGenericFontFamily(decoded.toLowerCase())) {
+						hadFont = true;
 						continue;
+					}
 				} else if(word instanceof ParsedIdentifier) {
 					s = (((ParsedIdentifier)word).getDecoded());
-					if(ElementInfo.isGenericFontFamily(s))
+					if(ElementInfo.isGenericFontFamily(s)) {
+						hadFont = true;
 						continue;
+					}
 				} else if(word instanceof SimpleParsedWord) {
 					s = ((SimpleParsedWord)word).original;
 					if(s.endsWith(",")) {
 						s = s.substring(0, s.length()-1);
 						s = s.trim();
-						if(ElementInfo.isGenericFontFamily(s))
+						if(s.isEmpty() && hadFont) continue; // Separates one font from another
+						if(ElementInfo.isGenericFontFamily(s)) {
+							hadFont = true;
 							continue;
-						if(ElementInfo.isSpecificFontFamily(s))
+						}
+						if(ElementInfo.isSpecificFontFamily(s)) {
+							hadFont = true;
 							continue;
+						}
 						if(debug) log("impossible to match a font");
 						return false;
 					}
@@ -3288,6 +3299,7 @@ outer:		for(int i=0;i<value.length;i++) {
 								if(validFontWords(fontWords)) {
 									fontWords.clear();
 									i = j;
+									hadFont = true;
 									continue outer;
 								} else
 									return false;
@@ -3299,6 +3311,7 @@ outer:		for(int i=0;i<value.length;i++) {
 								if(validFontWords(fontWords)) {
 									fontWords.clear();
 									i = j;
+									hadFont = true;
 									continue outer;
 								} else
 									return false;
