@@ -108,6 +108,9 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("td { background-position:bottom;}\n", " td { background-position:bottom;}\n");
 		propertyTests.put("td { background:repeat-x;}\n", " td { background:repeat-x;}\n");
 		
+		// Double bar: recurse after recognising last element
+		propertyTests.put("td { background:repeat-x no transparent scroll;}\n", " td { background:repeat-x no transparent scroll;}\n");
+		
 		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech {\n h1 { azimuth:30deg;}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech {\n h1 { azimuth:0.877171rad;}\n}\n");
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech {\n h1 { azimuth:left-side behind;}\n}\n");

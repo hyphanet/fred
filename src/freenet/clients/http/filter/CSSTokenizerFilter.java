@@ -3075,7 +3075,7 @@ class CSSTokenizerFilter {
 			{
 				if(i == expression.length() || expression.charAt(i)=='a')
 				{
-					if(!firstPart.equals("")) ignoredParts = firstPart+"a";
+					if(!firstPart.equals("")) ignoredParts = firstPart;
 					else ignoredParts = "";
 					firstPart=expression.substring(lastA+1,i);
 					lastA = i;
@@ -3083,7 +3083,7 @@ class CSSTokenizerFilter {
 						secondPart = "";
 					else
 						secondPart=expression.substring(i+1,expression.length());
-					if(debug) log("12in a firstPart="+firstPart+" secondPart="+secondPart);
+					if(debug) log("12in a firstPart="+firstPart+" secondPart="+secondPart+" for expression "+expression+" i "+i);
 
 					boolean result=false;
 
@@ -3097,7 +3097,11 @@ class CSSTokenizerFilter {
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
 							if(debug) log("14a "+toString(words)+" can be consumed by "+index+ " passing on expression="+(ignoredParts+secondPart)+ " value="+toString(valueToPass));
-							result=recursiveDoubleBarVerifier(ignoredParts+secondPart,valueToPass);
+							String pattern = ignoredParts+(secondPart.isEmpty()?"":"a")+secondPart;
+							if(valueToPass.length == 0 && pattern.isEmpty())
+								return true;
+							if(pattern.isEmpty()) return false;
+							result=recursiveDoubleBarVerifier(pattern,valueToPass);
 							if(result)
 							{
 								if(debug) log("15else part is true, value consumed="+words[j]);
