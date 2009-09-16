@@ -3067,7 +3067,7 @@ class CSSTokenizerFilter {
 			if(words==null || words.length == 0)
 				return true;
 
-			String ignoredParts;
+			String ignoredParts="";
 			String firstPart = "";
 			String secondPart = "";
 			int lastA = -1;
@@ -3075,7 +3075,12 @@ class CSSTokenizerFilter {
 			{
 				if(i == expression.length() || expression.charAt(i)=='a')
 				{
-					if(!firstPart.equals("")) ignoredParts = firstPart;
+					if(!firstPart.equals("")) {
+						if(ignoredParts.length() == 0)
+							ignoredParts = firstPart;
+						else
+							ignoredParts = ignoredParts+"a"+firstPart;
+					}
 					else ignoredParts = "";
 					firstPart=expression.substring(lastA+1,i);
 					lastA = i;
@@ -3096,8 +3101,8 @@ class CSSTokenizerFilter {
 						{
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
-							if(debug) log("14a "+toString(words)+" can be consumed by "+index+ " passing on expression="+(ignoredParts+secondPart)+ " value="+toString(valueToPass));
-							String pattern = ignoredParts+(secondPart.isEmpty()?"":"a")+secondPart;
+							String pattern = ignoredParts+(ignoredParts.isEmpty()?"":"a")+secondPart;
+							if(debug) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
 							if(valueToPass.length == 0 && pattern.isEmpty())
 								return true;
 							if(pattern.isEmpty()) return false;
