@@ -165,7 +165,7 @@ public class CSSParserTest extends TestCase {
 		// Content tests
 		propertyTests.put("h1 { content: \"string with spaces\" }", " h1 { content:\"string with spaces\";}\n");
 		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:attr(\\ \\ attr\\ with\\ spaces);}\n");
-//		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:\"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}\n");
+		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", " h1 { content:\"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}\n");
 		
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", " h2 { color:red;}\n");
@@ -199,11 +199,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: italic small-caps 500 1.5em Times New Roman, Arial Black;}\n", " h2 { font:italic small-caps 500 1.5em Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:1.5em/12pt Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: small-caps 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 1.5em/12pt Times New Roman, Arial Black;}\n");
-//		propertyTests.put("h2 { font: 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:500 1.5em/12pt Times New Roman, Arial Black;}\n");
-//		propertyTests.put("h2 { font: small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:500 1.5em/12pt Times New Roman, Arial Black;}\n");
+		propertyTests.put("h2 { font: small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 500 1.5em/12pt Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: 500 \"Times New Roman\";}\n", " h2 { font:500 \"Times New Roman\";}\n");
 		propertyTests.put("h2 { font-weight: 500;}\n", " h2 { font-weight:500;}\n");
-//		propertyTests.put("h2 { font: normal \"Times New Roman\";}\n", " h2 { font:normal \"Times New Roman\";}\n");
+		propertyTests.put("h2 { font: normal \"Times New Roman\";}\n", " h2 { font:normal \"Times New Roman\";}\n");
 //		propertyTests.put("h2 { font: 500 normal \"Times New Roman\";}\n", " h2 { font:500 normal \"Times New Roman\";}\n");
 //		propertyTests.put("h2 { font: 500 normal Times New Roman;}\n", " h2 { font:500 normal Times New Roman;}\n");
 //		propertyTests.put("h2 { font: 500 normal Times New Roman, Arial Black;}\n", " h2 { font:500 normal Times New Roman, Arial Black;}\n");
