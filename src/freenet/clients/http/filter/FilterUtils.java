@@ -94,12 +94,14 @@ public class FilterUtils {
 		if(value.charAt(value.length()-1)=='%')
 			lengthValue=value.substring(0,value.length()-2);
 		}
+		boolean units = false;
 		if(lengthValue==null && value.length()>2) //Valid unit Vxx where xx is unit or V
 		{
 			String unit=value.substring(value.length()-2, value.length());
-			if(allowedUnits.contains(unit))
+			if(allowedUnits.contains(unit)) {
 				lengthValue=value.substring(0,value.length()-2);
-			else
+				units = true;
+			} else
 				lengthValue=value.substring(0,value.length());
 		}
 		else
@@ -108,13 +110,15 @@ public class FilterUtils {
 		System.out.println("lengthValue: "+lengthValue);
 		try
 		{
-			Integer.parseInt(lengthValue);
+			int x = Integer.parseInt(lengthValue);
+			if(!units && !isSVG && x != 0) return false;
 			return true;
 		}
 		catch(Exception e){ }
 		try
 		{
 			double dval=Double.parseDouble(lengthValue);
+			if(!units && !isSVG && dval != 0) return false;
 			if(!(Double.isInfinite(dval) || Double.isNaN(dval)))
 				return true;
 		}
