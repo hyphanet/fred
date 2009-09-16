@@ -13,6 +13,7 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
+import freenet.node.SendableRequest;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -459,6 +460,43 @@ public class DatastoreChecker implements PrioRunnable {
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing DatastoreChecker in database", new Exception("error"));
 		return false;
+	}
+
+	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context) {
+		short prio = request.getPriorityClass(container);
+		if(!persistent) {
+			synchronized(this) {
+				int index = transientGetters[prio].indexOf(request);
+				if(index == -1) return;
+				transientGetters[prio].remove(index);
+				transientKeys[prio].remove(index);
+				transientBlockSets[prio].remove(index);
+			}
+		} else {
+			synchronized(this) {
+				int index = persistentGetters[prio].indexOf(request);
+				if(index != -1) {
+					persistentKeys[prio].remove(index);
+					persistentGetters[prio].remove(index);
+					persistentSchedulers[prio].remove(index);
+					persistentCheckerItems[prio].remove(index);
+					persistentBlockSets[prio].remove(index);
+				}
+			}
+			ObjectSet<DatastoreCheckerItem> results = 
+				container.queryByExample(new DatastoreCheckerItem(request, context.nodeDBHandle, (short)0, null));
+			if(results.size() == 0) return;
+			if(results.size() != 1) {
+				try {
+					Logger.error(this, "Multiple DatastoreCheckerItem's for "+request);
+				} catch (Throwable e) {
+					// Ignore, toString() error
+					Logger.error(this, "Multiple DatastoreCheckerItem's for request");
+				}
+			}
+			for(DatastoreCheckerItem item : results)
+				container.delete(item);
+		}
 	}
 	
 }
