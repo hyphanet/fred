@@ -204,7 +204,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: 500 \"Times New Roman\";}\n", " h2 { font:500 \"Times New Roman\";}\n");
 		propertyTests.put("h2 { font-weight: 500;}\n", " h2 { font-weight:500;}\n");
 		propertyTests.put("h2 { font: normal \"Times New Roman\";}\n", " h2 { font:normal \"Times New Roman\";}\n");
-//		propertyTests.put("h2 { font: 500 normal \"Times New Roman\";}\n", " h2 { font:500 normal \"Times New Roman\";}\n");
+		propertyTests.put("h2 { font: 500 normal \"Times New Roman\";}\n", " h2 { font:500 normal \"Times New Roman\";}\n");
 //		propertyTests.put("h2 { font: 500 normal Times New Roman;}\n", " h2 { font:500 normal Times New Roman;}\n");
 //		propertyTests.put("h2 { font: 500 normal Times New Roman, Arial Black;}\n", " h2 { font:500 normal Times New Roman, Arial Black;}\n");
 //		propertyTests.put("h2 { font: 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
