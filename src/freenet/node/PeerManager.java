@@ -940,7 +940,7 @@ public class PeerManager {
 			if(logMINOR)
 				Logger.minor(this, "p.loc=" + loc + ", target=" + target + ", d=" + Location.distance(loc, target) + " usedD=" + diff + " timedOut=" + timedOut + " for " + p.getPeer());
 			boolean chosen = false;
-			if(diff < closestDistance || (diff - closestDistance < Double.MIN_VALUE*2 && (direct || realDiff < closestRealDistance))) {
+			if(diff < closestDistance || (Math.abs(diff - closestDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealDistance))) {
 				closestDistance = diff;
 				closest = p;
 				chosen = true;
@@ -949,7 +949,7 @@ public class PeerManager {
 					Logger.minor(this, "New best: " + diff + " (" + loc + " for " + p.getPeer());
 			}
 			boolean backedOff = p.isRoutingBackedOff();
-			if(backedOff && (diff < closestBackedOffDistance || (diff - closestBackedOffDistance < Double.MIN_VALUE*2 && (direct || realDiff < closestRealBackedOffDistance))) && !timedOut) {
+			if(backedOff && (diff < closestBackedOffDistance || (Math.abs(diff - closestBackedOffDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealBackedOffDistance))) && !timedOut) {
 				closestBackedOffDistance = diff;
 				closestBackedOff = p;
 				chosen = true;
@@ -957,7 +957,7 @@ public class PeerManager {
 				if(logMINOR)
 					Logger.minor(this, "New best-backed-off: " + diff + " (" + loc + " for " + p.getPeer());
 			}
-			if(!backedOff && (diff < closestNotBackedOffDistance || (diff - closestNotBackedOffDistance < Double.MIN_VALUE*2 && (direct || realDiff < closestRealNotBackedOffDistance))) && !timedOut) {
+			if(!backedOff && (diff < closestNotBackedOffDistance || (Math.abs(diff - closestNotBackedOffDistance) < Double.MIN_VALUE*2 && (direct || realDiff < closestRealNotBackedOffDistance))) && !timedOut) {
 				closestNotBackedOffDistance = diff;
 				closestNotBackedOff = p;
 				chosen = true;
