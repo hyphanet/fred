@@ -81,7 +81,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		// and the choice of nodes to start and finish are deterministic, so
 		// the overall result should be more or less deterministic.
 		waitForPingAverage(0.98, nodes, new DummyRandomSource(3143), MAX_PINGS, 5000);
-
+		System.exit(0);
 	}
 
 	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) throws InterruptedException {
