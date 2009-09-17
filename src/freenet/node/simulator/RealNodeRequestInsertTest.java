@@ -37,8 +37,8 @@ import freenet.support.math.SimpleRunningAverage;
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
     static final int NUMBER_OF_NODES = 100;
-    static final int DEGREE = 5;
-    static final short MAX_HTL = (short)5;
+    static final int DEGREE = 10;
+    static final short MAX_HTL = (short)10;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
@@ -118,7 +118,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 //Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
                 
                 //boolean isSSK = requestNumber % 2 == 1;
-                boolean isSSK = false;
+                boolean isSSK = true;
                 
                 FreenetURI testKey;
                 ClientKey insertKey;
