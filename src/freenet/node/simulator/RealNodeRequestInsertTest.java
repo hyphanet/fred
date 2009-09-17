@@ -36,9 +36,9 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 100;
-    static final int DEGREE = 10;
-    static final short MAX_HTL = (short)10;
+    static final int NUMBER_OF_NODES = 500;
+    static final int DEGREE = 5;
+    static final short MAX_HTL = (short)5;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
     static final boolean ENABLE_SWAPPING = false;
@@ -51,8 +51,13 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
+
+    // FIXME: HACK: High bwlimit makes the "other" requests not affect the test requests.
+    // Real solution is to get rid of the "other" requests!!
+    static final int BWLIMIT = 1000*1024;
     
-    public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
+    //public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
+    public static final int DARKNET_PORT_BASE = 8000;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
@@ -70,14 +75,14 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         NodeStarter.globalTestInit(name, false, Logger.ERROR, "", true);
         System.out.println("Insert/retrieve test");
         System.out.println();
-        DummyRandomSource random = new DummyRandomSource();
+        DummyRandomSource random = new DummyRandomSource(3142);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 12000, ENABLE_FOAF, false, true, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
@@ -93,7 +98,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         
         waitForAllConnected(nodes);
         
-        waitForPingAverage(0.95, nodes, random, MAX_PINGS, 1000);
+        waitForPingAverage(0.5, nodes, new DummyRandomSource(3143), MAX_PINGS, 1000);
+        
+        random = new DummyRandomSource(3144);
         
         System.out.println();
         System.out.println("Ping average > 95%, lets do some inserts/requests");
@@ -106,6 +113,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 		int fetchSuccesses = 0;
         while(true) {
             try {
+    			waitForAllConnected(nodes);
+
                 requestNumber++;
                 try {
                     Thread.sleep(100);
