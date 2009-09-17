@@ -52,13 +52,14 @@ public class ClientContext {
 	public transient final FilenameGenerator fg;
 	public transient FilenameGenerator persistentFG;
 	public transient final RealCompressor rc;
+	public transient final DatastoreChecker checker;
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			PersistentTempBucketFactory ptbf, BucketFactory tbf, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom, 
 			Random fastWeakRandom, Ticker ticker, 
-			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc) {
+			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker) {
 		this.bootID = core.node.bootID;
 		this.fecQueue = fecQueue;
 		jobRunner = core;
@@ -77,6 +78,7 @@ public class ClientContext {
 		this.fg = fg;
 		this.persistentFG = persistentFG;
 		this.rc = rc;
+		this.checker = checker;
 	}
 	
 	public void init(RequestStarterGroup starters) {

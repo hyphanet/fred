@@ -12,7 +12,7 @@ import java.util.StringTokenizer;
  * This class contains static methods used for parsing boolean and unsigned
  * long fields in Freenet messages. Also some general utility methods for
  * dealing with string and numeric data.
- * 
+ *
  * @author oskar
  */
 public abstract class Fields {
@@ -79,7 +79,7 @@ public abstract class Fields {
 	 * Long.toHexString() but not necessarily one produced by
 	 * Long.toString(x,16) since that method will produce a string like '-FF'
 	 * for negative longs values.
-	 * 
+	 *
 	 * @param hex
 	 *            A string in capital or lower case hex, of no more then 16
 	 *            characters.
@@ -112,7 +112,7 @@ public abstract class Fields {
 	 * Integer.toHexString() but not necessarily one produced by
 	 * Integer.toString(x,16) since that method will produce a string like
 	 * '-FF' for negative integer values.
-	 * 
+	 *
 	 * @param hex
 	 *            A string in capital or lower case hex, of no more then 16
 	 *            characters.
@@ -139,7 +139,7 @@ public abstract class Fields {
 	/**
 	 * Finds the boolean value of the field, by doing a caseless match with the
 	 * strings "true" and "false".
-	 * 
+	 *
 	 * @param s
 	 *            The string
 	 * @param def
@@ -173,7 +173,7 @@ public abstract class Fields {
 
 	/**
 	 * Converts a boolean to a String of either "true" or "false".
-	 * 
+	 *
 	 * @param b
 	 *            the boolean value to convert.
 	 * @return A "true" or "false" String.
@@ -242,7 +242,7 @@ public abstract class Fields {
 	 * to be of the form YYYYMMDD-HH:MM:SS (where seconds may include a
 	 * decimal) or YYYYMMDD (in which case 00:00:00 is assumed for time).
 	 * Another accepted format is +/-{integer}{day|month|year|minute|second}
-	 * 
+	 *
 	 * @return millis of the epoch of at the time described.
 	 */
 	public static final long dateTime(String date)
@@ -454,7 +454,7 @@ public abstract class Fields {
 	}
 
 	/**
-	 * Convert an array of longs to an array of bytes, using a 
+	 * Convert an array of longs to an array of bytes, using a
 	 * consistent endianness.
 	 */
 	public static byte[] longsToBytes(long[] longs) {
@@ -479,8 +479,8 @@ public abstract class Fields {
 	/**
 	 * Convert an array of bytes to an array of longs.
 	 * @param buf
-	 * @param length 
-	 * @param offset 
+	 * @param length
+	 * @param offset
 	 * @return
 	 */
 	public static long[] bytesToLongs(byte[] buf, int offset, int length) {
@@ -572,7 +572,7 @@ public abstract class Fields {
 		}
 		return buf;
 	}
-	
+
 	public static byte[] intToBytes(int x) {
 		byte[] buf = new byte[4];
 			for(int j = 0; j < 4; j++) {
@@ -581,7 +581,7 @@ public abstract class Fields {
 			}
 		return buf;
 	}
-	
+
 	public static long parseLong(String s, long defaultValue) {
 		try {
 			return Long.parseLong(s);
@@ -696,7 +696,7 @@ public abstract class Fields {
 		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
 			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0 && (isSize || MULTIPLES[i] % 1000 == 0)) {
 				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
-				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i])) 
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
 				break;
 			}
@@ -776,6 +776,70 @@ public abstract class Fields {
 			else if(values[middle] < key)
 				begin = middle + 1;
 		}
+	}
+
+	/**
+	** Search a range of the given array using binary search. We use this
+	** because the corresponding method in java.util.Arrays is only available
+	** in JDK6 or later.
+	**
+	** Note that this implementation behaves exactly the same way as the one
+	** from Arrays, as opposed to {@link binarySearch(long[], long, int, int)}.
+	** In particular, the right endpoint here is <b>exclusive</b>.
+	**
+	** TODO JDK6: make this @deprecated when we move to JDK6.
+	**
+	** @throws ClassCastException if the comparator is {@code null} and the
+	**         array contains elements that are not {@link Comparable}, or the
+	**         comparator cannot handle any elements of the array.
+	** @throws IllegalArgumentException if {@code li} > {@code ri}
+	** @throws ArrayIndexOutOfBoundsException if {@code li} < 0 or {@code ri} >
+	**         {@code arr.length}.
+	*/
+	public static <T> int binarySearch(T[] arr, int li, int ri, T key, Comparator<? super T> cmp) {
+		int l = li, r = ri, m = 0, c = 0;
+
+		if (li > ri) {
+			throw new IllegalArgumentException("L-index must not be greater than R-index");
+		}
+		if (li < 0 || ri > arr.length) {
+			throw new ArrayIndexOutOfBoundsException();
+		}
+
+		if (cmp == null) {
+			// natural ordering
+			while (l<=r) {
+				m = (l+r)>>>1;
+				c = ((Comparable<T>)arr[m]).compareTo(key);
+
+				if (c == 0) {
+					return m;
+				} else if (c > 0) {
+					r = m-1;
+				} else {
+					l = ++m; // gets the insertion point right on the last loop
+				}
+			}
+			return ~m;
+
+		} else {
+			// comparator
+			while (l<=r) {
+				m = (l+r)>>>1;
+				c = cmp.compare(arr[m], key);
+
+				if (c == 0) {
+					return m;
+				} else if (c > 0) {
+					r = m-1;
+				} else {
+					l = ++m; // gets the insertion point right on the last loop
+				}
+			}
+			return ~m;
+
+		}
+
 	}
 
 	/**

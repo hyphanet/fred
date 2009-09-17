@@ -42,7 +42,7 @@ public class UserAlertsToadlet extends Toadlet {
 		HTMLNode alertsNode = alerts.createAlerts(false);
 		if (alertsNode.getFirstTag() == null) {
 			alertsNode = new HTMLNode("div", "class", "infobox");
-			alertsNode.addChild("div", "class", "infobox-content").addChild("div", "No news is good news :)");
+			alertsNode.addChild("div", "class", "infobox-content").addChild("div", NodeL10n.getBase().getString("UserAlertsToadlet.noMessages"));
 		}
 		contentNode.addChild(alertsNode);
 

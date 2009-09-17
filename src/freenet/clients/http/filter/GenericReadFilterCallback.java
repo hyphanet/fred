@@ -142,59 +142,80 @@ public class GenericReadFilterCallback implements FilterCallback {
 		
 		// Try as an absolute URI
 		
+		URI origURI = uri;
+		
+		// Convert localhost uri's to relative internal ones.
+		
+		String host = uri.getHost();
+		if(host != null && (host.equals("localhost") || host.equals("127.0.0.1")) && uri.getPort() == 8888) {
+			try {
+				uri = new URI(null, null, null, -1, uri.getPath(), uri.getQuery(), uri.getFragment());
+			} catch (URISyntaxException e) {
+				Logger.error(this, "URI "+uri+" looked like localhost but could not parse", e);
+				throw new CommentException("URI looked like localhost but could not parse: "+e);
+			}
+			host = null;
+		}
+		
 		String rpath = uri.getPath();
 		
-		boolean isAbsolute = false;
+		if(host == null) {
 		
-		if(rpath != null) {
-			if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
+			boolean isAbsolute = false;
 			
-			// Valid FreenetURI?
-			try {
-				String p = rpath;
-				while(p.startsWith("/")) {
-					isAbsolute = true;
-					p = p.substring(1);
-				}
-				FreenetURI furi = new FreenetURI(p);
-				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-				return processURI(furi, uri, overrideType, noRelative, inline);
-			} catch (MalformedURLException e) {
-				// Not a FreenetURI
-				if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
-				if(e.getMessage() != null) {
-					reason = l10n("malformedAbsoluteURL", "error", e.getMessage());
-				} else {
-					reason = l10n("couldNotParseAbsoluteFreenetURI");
-				}
-			}
-		}
-		
-		if(!isAbsolute) {
-		
-			// Relative URI
-			
-			rpath = resolved.getPath();
-			if(rpath == null) throw new CommentException("No URI");
-			if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
-			
-			// Valid FreenetURI?
-			try {
-				String p = rpath;
-				while(p.startsWith("/")) p = p.substring(1);
-				FreenetURI furi = new FreenetURI(p);
-				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-				return processURI(furi, uri, overrideType, noRelative, inline);
-			} catch (MalformedURLException e) {
-				if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
-				if(e.getMessage() != null) {
-					reason = l10n("malformedRelativeURL", "error", e.getMessage());
-				} else {
-					reason = l10n("couldNotParseRelativeFreenetURI");
+			if(rpath != null) {
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
+				
+				// Valid FreenetURI?
+				try {
+					String p = rpath;
+					while(p.startsWith("/")) {
+						isAbsolute = true;
+						p = p.substring(1);
+					}
+					FreenetURI furi = new FreenetURI(p);
+					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
+					return processURI(furi, uri, overrideType, noRelative, inline);
+				} catch (MalformedURLException e) {
+					// Not a FreenetURI
+					if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
+					if(e.getMessage() != null) {
+						reason = l10n("malformedAbsoluteURL", "error", e.getMessage());
+					} else {
+						reason = l10n("couldNotParseAbsoluteFreenetURI");
+					}
 				}
 			}
+			
+			if(!isAbsolute) {
+				
+				// Relative URI
+				
+				rpath = resolved.getPath();
+				if(rpath == null) throw new CommentException("No URI");
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
+				
+				// Valid FreenetURI?
+				try {
+					String p = rpath;
+					while(p.startsWith("/")) p = p.substring(1);
+					FreenetURI furi = new FreenetURI(p);
+					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
+					return processURI(furi, uri, overrideType, noRelative, inline);
+				} catch (MalformedURLException e) {
+					if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
+					if(e.getMessage() != null) {
+						reason = l10n("malformedRelativeURL", "error", e.getMessage());
+					} else {
+						reason = l10n("couldNotParseRelativeFreenetURI");
+					}
+				}
+				
+			}
 		
 		}
+		
+		uri = origURI;
 		
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
 			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;

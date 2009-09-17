@@ -2182,6 +2182,12 @@ public class NodeStats implements Persistable {
 		row.addChild("th", "SSKs");
 		row = table.addChild("tr");
 		char nbsp = (char)160;
+		int totalCHKLocalSuccess = 0;
+		int totalCHKSuccess = 0;
+		int totalCHKIncoming = 0;
+		int totalSSKLocalSuccess = 0;
+		int totalSSKSuccess = 0;
+		int totalSSKIncoming = 0;
 		synchronized(this) {
 			for(int htl = remoteCHKRequestsByHTL.length-1;htl>=0;htl--) {
 				row = table.addChild("tr");
@@ -2193,7 +2199,22 @@ public class NodeStats implements Persistable {
 				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsLocalSuccessByHTL[htl] + "," + (remoteCHKRequestsSuccessByHTL[htl] - remoteCHKRequestsLocalSuccessByHTL[htl]) + "," + remoteCHKRequestsByHTL[htl] + ")");
 				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsLocalSuccessByHTL[htl] + "," + (remoteSSKRequestsSuccessByHTL[htl] - remoteSSKRequestsLocalSuccessByHTL[htl]) + "," + remoteSSKRequestsByHTL[htl] + ")");
 
+				totalCHKLocalSuccess += remoteCHKRequestsLocalSuccessByHTL[htl];
+				totalCHKSuccess += remoteCHKRequestsSuccessByHTL[htl];
+				totalCHKIncoming += remoteCHKRequestsByHTL[htl];
+				totalSSKLocalSuccess += remoteSSKRequestsLocalSuccessByHTL[htl];
+				totalSSKSuccess += remoteSSKRequestsSuccessByHTL[htl];
+				totalSSKIncoming += remoteSSKRequestsByHTL[htl];
 			}
+			double totalCHKRate = 0.0;
+			double totalSSKRate = 0.0;
+			if (totalCHKIncoming > 0) totalCHKRate = totalCHKSuccess * 1.0 / totalCHKIncoming;
+			if (totalSSKIncoming > 0) totalSSKRate = totalSSKSuccess * 1.0 / totalSSKIncoming;
+
+			row = table.addChild("tr");
+			row.addChild("td", "Total");
+			row.addChild("td", fix3p3pct.format(totalCHKRate) + nbsp + "("+ totalCHKLocalSuccess + "," + (totalCHKSuccess - totalCHKLocalSuccess) + "," + totalCHKIncoming + ")");
+			row.addChild("td", fix3p3pct.format(totalSSKRate) + nbsp + "("+ totalSSKLocalSuccess + "," + (totalSSKSuccess - totalSSKLocalSuccess) + "," + totalSSKIncoming + ")");
 		}
 	}
 }

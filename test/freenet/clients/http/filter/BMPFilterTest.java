@@ -39,6 +39,7 @@ public class BMPFilterTest extends TestCase {
 	}
 	
 	public void testReadFilter()  {
+		new NodeL10n();
 		BMPFilter objBMPFilter=new BMPFilter();
 		ab = new ArrayBucket();
 		for (Object[] test : testImages) {

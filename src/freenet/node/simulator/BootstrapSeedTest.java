@@ -52,7 +52,7 @@ public class BootstrapSeedTest {
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "bootstrap-test", false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
+        node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "bootstrap-test", false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging

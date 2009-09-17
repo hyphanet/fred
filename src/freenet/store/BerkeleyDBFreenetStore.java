@@ -1840,7 +1840,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	private class ShutdownHook extends NativeThread {
 		
         public ShutdownHook() {
-			super(name, NativeThread.HIGH_PRIORITY, false);
+			super(name, NativeThread.HIGH_PRIORITY, true);
 			// TODO Auto-generated constructor stub
 		}
 

@@ -1166,7 +1166,7 @@ public class Node implements TimeSkewDetectorCallback {
 		shutdownHook = new SemiOrderedShutdownHook();
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 		
-		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, false) {
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 			
 			public void realRun() {
 				System.err.println("Stopping database jobs...");
@@ -1176,7 +1176,7 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		});
 		
-		shutdownHook.addLateJob(new NativeThread("Close database", NativeThread.HIGH_PRIORITY, false) {
+		shutdownHook.addLateJob(new NativeThread("Close database", NativeThread.HIGH_PRIORITY, true) {
 
 			@Override
 			public void realRun() {
@@ -2599,6 +2599,7 @@ public class Node implements TimeSkewDetectorCallback {
 		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
 		dbConfig.objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
 		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
+		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("getter").indexed(true);
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("index").indexed(true);
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("bucket").indexed(true);
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("factory").indexed(true);

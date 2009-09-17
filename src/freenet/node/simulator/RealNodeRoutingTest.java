@@ -27,9 +27,9 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRoutingTest extends RealNodeTest {
 
-	static final int NUMBER_OF_NODES = 500;
-	static final int DEGREE = 10;
-	static final short MAX_HTL = (short) 10;
+	static final int NUMBER_OF_NODES = 100;
+	static final int DEGREE = 5;
+	static final short MAX_HTL = (short) 5;
 	static final boolean START_WITH_IDEAL_LOCATIONS = true;
 	static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
 	static final int MAX_PINGS = 2000;
@@ -52,19 +52,20 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		wd.mkdir();
 		//NOTE: globalTestInit returns in ignored random source
 		NodeStarter.globalTestInit(dir, false, Logger.ERROR, "", true);
-		DummyRandomSource random = new DummyRandomSource();
+		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
+		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);
 		Node[] nodes = new Node[NUMBER_OF_NODES];
 		Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
 		Executor executor = new PooledExecutor();
 		for(int i = 0; i < NUMBER_OF_NODES; i++) {
 			System.err.println("Creating node " + i);
-			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, null);
+			nodes[i] = NodeStarter.createTestNode(DARKNET_PORT_BASE + i, 0, dir, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500 * NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF, false, true, null);
 			Logger.normal(RealNodeRoutingTest.class, "Created node " + i);
 		}
 		Logger.normal(RealNodeRoutingTest.class, "Created " + NUMBER_OF_NODES + " nodes");
 		// Now link them up
-		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
 
 		Logger.normal(RealNodeRoutingTest.class, "Added random links");
 
@@ -75,8 +76,12 @@ public class RealNodeRoutingTest extends RealNodeTest {
 
 		waitForAllConnected(nodes);
 
-		waitForPingAverage(0.98, nodes, random, MAX_PINGS, 5000);
-
+		// Make the choice of nodes to ping to and from deterministic too.
+		// There is timing noise because of all the nodes, but the network
+		// and the choice of nodes to start and finish are deterministic, so
+		// the overall result should be more or less deterministic.
+		waitForPingAverage(0.98, nodes, new DummyRandomSource(3143), MAX_PINGS, 5000);
+		System.exit(0);
 	}
 
 	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) throws InterruptedException {
@@ -161,6 +166,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 					Logger.error(RealNodeRoutingTest.class, "Caught " + t, t);
 				}
 			}
+			System.err.println("Average path length for successful requests: "+totalHopsTaken/successes);
 			if(pings > 10 && avg.currentValue() > accuracy && ((double) successes / ((double) (failures + successes)) > accuracy)) {
 				System.err.println();
 				System.err.println("Reached " + (accuracy * 100) + "% accuracy.");

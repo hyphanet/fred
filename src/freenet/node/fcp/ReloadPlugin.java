@@ -53,7 +53,7 @@ public class ReloadPlugin extends FCPMessage {
 
 		node.executor.execute(new Runnable() {
 			public void run() {
-				PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
+				PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
 				if (pi == null) {
 					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {

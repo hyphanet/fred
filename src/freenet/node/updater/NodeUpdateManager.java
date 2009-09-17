@@ -275,16 +275,20 @@ public class NodeUpdateManager {
         
         // Fetch 3 files, each to a file in the nodeDir.
         
-        SimplePuller seedrefsGetter = 
-        	new SimplePuller(getSeednodesURI(), Announcer.SEEDNODES_FILENAME);
-        SimplePuller installerGetter = 
-        	new SimplePuller(getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
-        SimplePuller wininstallerGetter =
-        	new SimplePuller(getInstallerNonWindowsURI(), WINDOWS_FILENAME);
-        
-        seedrefsGetter.start(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 1024*1024);
-        installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
-        wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
+        if(wasEnabledOnStartup) {
+        	
+        	SimplePuller seedrefsGetter = 
+        		new SimplePuller(getSeednodesURI(), Announcer.SEEDNODES_FILENAME);
+        	SimplePuller installerGetter = 
+        		new SimplePuller(getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
+        	SimplePuller wininstallerGetter =
+        		new SimplePuller(getInstallerNonWindowsURI(), WINDOWS_FILENAME);
+        	
+        	seedrefsGetter.start(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 1024*1024);
+        	installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
+        	wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
+        	
+        }
         
 	}
 	
