@@ -483,19 +483,24 @@ public class DatastoreChecker implements PrioRunnable {
 					persistentBlockSets[prio].remove(index);
 				}
 			}
-			ObjectSet<DatastoreCheckerItem> results = 
-				container.queryByExample(new DatastoreCheckerItem(request, context.nodeDBHandle, (short)0, null));
-			if(results.size() == 0) return;
-			if(results.size() != 1) {
-				try {
-					Logger.error(this, "Multiple DatastoreCheckerItem's for "+request);
-				} catch (Throwable e) {
-					// Ignore, toString() error
-					Logger.error(this, "Multiple DatastoreCheckerItem's for request");
+			Query query = 
+				container.query();
+			query.constrain(DatastoreCheckerItem.class);
+			query.descend("getter").constrain(request).identity();
+			ObjectSet<DatastoreCheckerItem> results = query.execute();
+			int deleted = 0;
+			for(DatastoreCheckerItem item : results) {
+				if(item.nodeDBHandle != context.nodeDBHandle) continue;
+				if(deleted == 1) {
+					try {
+						Logger.error(this, "Multiple DatastoreCheckerItem's for "+request);
+					} catch (Throwable e) {
+						// Ignore, toString() error
+						Logger.error(this, "Multiple DatastoreCheckerItem's for request");
+					}
 				}
-			}
-			for(DatastoreCheckerItem item : results)
 				container.delete(item);
+			}
 		}
 	}
 	
