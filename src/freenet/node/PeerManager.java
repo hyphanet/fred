@@ -804,9 +804,15 @@ public class PeerManager {
 			key = null;
 		if(logMINOR)
 			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length);
+		
+		double myLoc = node.getLocation();
+		
 		double maxDiff = Double.MAX_VALUE;
 		if(!ignoreSelf)
-			maxDiff = Location.distance(node.lm.getLocation(), target);
+			maxDiff = Location.distance(myLoc, target);
+		
+		double prevLoc = -1.0;
+		if(pn != null) prevLoc = pn.getLocation();
 
 		/**
 		 * Routing order:
@@ -900,6 +906,18 @@ public class PeerManager {
 			double[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (node.shallWeRouteAccordingToOurPeersLocation())) {
 				for(double l : peersLocation) {
+					boolean ignoreLoc = false; // Because we've already been there
+					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
+							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+						ignoreLoc = true;
+					else {
+						for(PeerNode cmpPN : routedTo)
+							if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
+								ignoreLoc = true;
+								break;
+							}
+					}
+					if(ignoreLoc) continue;
 					double newDiff = Location.distance(l, target);
 					if(newDiff < diff) {
 						loc = l;
