@@ -27,9 +27,9 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRoutingTest extends RealNodeTest {
 
-	static final int NUMBER_OF_NODES = 500;
-	static final int DEGREE = 10;
-	static final short MAX_HTL = (short) 10;
+	static final int NUMBER_OF_NODES = 100;
+	static final int DEGREE = 5;
+	static final short MAX_HTL = (short) 5;
 	static final boolean START_WITH_IDEAL_LOCATIONS = true;
 	static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
 	static final int MAX_PINGS = 2000;
@@ -52,7 +52,8 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		wd.mkdir();
 		//NOTE: globalTestInit returns in ignored random source
 		NodeStarter.globalTestInit(dir, false, Logger.ERROR, "", true);
-		DummyRandomSource random = new DummyRandomSource();
+		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
+		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);
 		Node[] nodes = new Node[NUMBER_OF_NODES];
 		Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
@@ -75,7 +76,11 @@ public class RealNodeRoutingTest extends RealNodeTest {
 
 		waitForAllConnected(nodes);
 
-		waitForPingAverage(0.98, nodes, random, MAX_PINGS, 5000);
+		// Make the choice of nodes to ping to and from deterministic too.
+		// There is timing noise because of all the nodes, but the network
+		// and the choice of nodes to start and finish are deterministic, so
+		// the overall result should be more or less deterministic.
+		waitForPingAverage(0.98, nodes, new DummyRandomSource(3143), MAX_PINGS, 5000);
 
 	}
 
