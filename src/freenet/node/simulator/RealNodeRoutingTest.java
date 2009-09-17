@@ -65,7 +65,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		}
 		Logger.normal(RealNodeRoutingTest.class, "Created " + NUMBER_OF_NODES + " nodes");
 		// Now link them up
-		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+		makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
 
 		Logger.normal(RealNodeRoutingTest.class, "Added random links");
 

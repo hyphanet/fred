@@ -82,7 +82,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         
         // Now link them up
-        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS);
+        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         

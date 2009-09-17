@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
+import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Location;
@@ -38,7 +39,7 @@ public class RealNodeTest {
 	        [0..n], some nodes tend to have *much* higher connections than the degree (the first few),
 	        starving the latter ones.
 	 */
-	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree, boolean forceNeighbourConnections)
+	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree, boolean forceNeighbourConnections, RandomSource random)
 	{
 		if(idealLocations) {
 			// First set the locations up so we don't spend a long time swapping just to stabilise each network.
@@ -70,7 +71,7 @@ public class RealNodeTest {
 				if (a.getLocation() == b.getLocation()) continue;
 				double p = 1.0 / distance (a, b) / norm;
 				for (int n = 0; n < degree / 2; n++) {
-					if (Math.random() < p) {
+					if (random.nextFloat() < p) {
 						connect(a, b);
 						break;
 					}
