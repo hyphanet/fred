@@ -402,8 +402,8 @@ public class NodeStarter implements WrapperListener {
 		if(ipAddressOverride != null)
 			configFS.putSingle("node.ipAddressOverride", ipAddressOverride);
 		if(longPingTimes) {
-			configFS.put("node.maxPingTime", 20000);
-			configFS.put("node.subMaxPingTime", 10000);
+			configFS.put("node.maxPingTime", 100000);
+			configFS.put("node.subMaxPingTime", 50000);
 		}
 		
 		PersistentConfig config = new PersistentConfig(configFS);
