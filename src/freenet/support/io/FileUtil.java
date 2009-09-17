@@ -19,7 +19,6 @@ import java.lang.reflect.Method;
 import java.util.Random;
 
 import freenet.client.DefaultMIMETypes;
-import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 
@@ -244,7 +243,7 @@ final public class FileUtil {
 		StringBuilder sb = new StringBuilder(s.length());
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
-			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"'))
+			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"') || (c == '|'))
 				continue;
 			if(Character.isDigit(c))
 				sb.append(c);
