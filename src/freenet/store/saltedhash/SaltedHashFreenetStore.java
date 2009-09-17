@@ -149,7 +149,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		writeConfigFile();
 
 		callback.setStore(this);
-		shutdownHook.addEarlyJob(new NativeThread(new ShutdownDB(), "Shutdown salted hash store", NativeThread.HIGH_PRIORITY, false));
+		shutdownHook.addEarlyJob(new NativeThread(new ShutdownDB(), "Shutdown salted hash store", NativeThread.HIGH_PRIORITY, true));
 
 		cleanerThread = new Cleaner();
 		cleanerStatusUserAlert = new CleanerStatusUserAlert(cleanerThread);

@@ -1166,7 +1166,7 @@ public class Node implements TimeSkewDetectorCallback {
 		shutdownHook = new SemiOrderedShutdownHook();
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 		
-		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, false) {
+		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 			
 			public void realRun() {
 				System.err.println("Stopping database jobs...");
@@ -1176,7 +1176,7 @@ public class Node implements TimeSkewDetectorCallback {
 			
 		});
 		
-		shutdownHook.addLateJob(new NativeThread("Close database", NativeThread.HIGH_PRIORITY, false) {
+		shutdownHook.addLateJob(new NativeThread("Close database", NativeThread.HIGH_PRIORITY, true) {
 
 			@Override
 			public void realRun() {
