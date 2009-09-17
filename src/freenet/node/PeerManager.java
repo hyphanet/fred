@@ -804,9 +804,15 @@ public class PeerManager {
 			key = null;
 		if(logMINOR)
 			Logger.minor(this, "Choosing closest peer: connectedPeers=" + peers.length);
+		
+		double myLoc = node.getLocation();
+		
 		double maxDiff = Double.MAX_VALUE;
 		if(!ignoreSelf)
-			maxDiff = Location.distance(node.lm.getLocation(), target);
+			maxDiff = Location.distance(myLoc, target);
+		
+		double prevLoc = -1.0;
+		if(pn != null) prevLoc = pn.getLocation();
 
 		/**
 		 * Routing order:
@@ -818,19 +824,24 @@ public class PeerManager {
 		 */
 		PeerNode closest = null;
 		double closestDistance = Double.MAX_VALUE;
+		// If closestDistance is FOAF, this is the real distance.
+		// Reset every time closestDistance is.
+		double closestRealDistance = Double.MAX_VALUE;
 
 		PeerNode closestBackedOff = null;
 		double closestBackedOffDistance = Double.MAX_VALUE;
+		double closestRealBackedOffDistance = Double.MAX_VALUE;
 
 		PeerNode closestNotBackedOff = null;
 		double closestNotBackedOffDistance = Double.MAX_VALUE;
+		double closestRealNotBackedOffDistance = Double.MAX_VALUE;
 
 		PeerNode leastRecentlyTimedOut = null;
 		long timeLeastRecentlyTimedOut = Long.MAX_VALUE;
 
 		PeerNode leastRecentlyTimedOutBackedOff = null;
 		long timeLeastRecentlyTimedOutBackedOff = Long.MAX_VALUE;
-
+		
 		TimedOutNodesList entry = null;
 
 		if(key != null)
@@ -888,15 +899,30 @@ public class PeerManager {
 			boolean timedOut = timeout > now;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
-			double diff = Location.distance(loc, target);
+			boolean direct = true;
+			double realDiff = Location.distance(loc, target);
+			double diff = realDiff;
 			
 			double[] peersLocation = p.getPeersLocation();
 			if((peersLocation != null) && (node.shallWeRouteAccordingToOurPeersLocation())) {
 				for(double l : peersLocation) {
+					boolean ignoreLoc = false; // Because we've already been there
+					if(Math.abs(l - myLoc) < Double.MIN_VALUE * 2 ||
+							Math.abs(l - prevLoc) < Double.MIN_VALUE * 2)
+						ignoreLoc = true;
+					else {
+						for(PeerNode cmpPN : routedTo)
+							if(Math.abs(l - cmpPN.getLocation()) < Double.MIN_VALUE * 2) {
+								ignoreLoc = true;
+								break;
+							}
+					}
+					if(ignoreLoc) continue;
 					double newDiff = Location.distance(l, target);
 					if(newDiff < diff) {
 						loc = l;
 						diff = newDiff;
+						direct = false;
 					}
 				}
 				if(logMINOR)
@@ -914,25 +940,28 @@ public class PeerManager {
 			if(logMINOR)
 				Logger.minor(this, "p.loc=" + loc + ", target=" + target + ", d=" + Location.distance(loc, target) + " usedD=" + diff + " timedOut=" + timedOut + " for " + p.getPeer());
 			boolean chosen = false;
-			if(diff < closestDistance) {
+			if(diff < closestDistance || (diff - closestDistance < Double.MIN_VALUE*2 && (direct || realDiff < closestRealDistance))) {
 				closestDistance = diff;
 				closest = p;
 				chosen = true;
+				closestRealDistance = realDiff;
 				if(logMINOR)
 					Logger.minor(this, "New best: " + diff + " (" + loc + " for " + p.getPeer());
 			}
 			boolean backedOff = p.isRoutingBackedOff();
-			if(backedOff && (diff < closestBackedOffDistance) && !timedOut) {
+			if(backedOff && (diff < closestBackedOffDistance || (diff - closestBackedOffDistance < Double.MIN_VALUE*2 && (direct || realDiff < closestRealBackedOffDistance))) && !timedOut) {
 				closestBackedOffDistance = diff;
 				closestBackedOff = p;
 				chosen = true;
+				closestRealBackedOffDistance = realDiff;
 				if(logMINOR)
 					Logger.minor(this, "New best-backed-off: " + diff + " (" + loc + " for " + p.getPeer());
 			}
-			if(!backedOff && (diff < closestNotBackedOffDistance) && !timedOut) {
+			if(!backedOff && (diff < closestNotBackedOffDistance || (diff - closestNotBackedOffDistance < Double.MIN_VALUE*2 && (direct || realDiff < closestRealNotBackedOffDistance))) && !timedOut) {
 				closestNotBackedOffDistance = diff;
 				closestNotBackedOff = p;
 				chosen = true;
+				closestRealNotBackedOffDistance = realDiff;
 				if(logMINOR)
 					Logger.minor(this, "New best-not-backed-off: " + diff + " (" + loc + " for " + p.getPeer());
 			}
