@@ -39,8 +39,6 @@ class FailureTableEntry implements TimedOutNodesList {
 	
 	// FIXME Note that just because a node is in this list doesn't mean it DNFed or RFed.
 	// We include *ALL* nodes we routed to here!
-	// FIXME also we don't have accurate times for when we routed to them - we only 
-	// have the terminal time for the request.
 	/** WeakReference's to PeerNode's we have requested it from */
 	WeakReference<PeerNode>[] requestedNodes;
 	/** Their locations when we requested it. This may be needed in the future to
@@ -214,15 +212,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		int ret = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
 			PeerNode got = requestedNodes[i] == null ? null : requestedNodes[i].get();
-			if(got == requestedFrom) {
-				// Update existing entry
-				includedAlready = true;
-				requestedLocs[i] = requestedFrom.getLocation();
-				requestedBootIDs[i] = requestedFrom.getBootID();
-				requestedTimes[i] = now;
-				ret = i;
-				break;
-			} else if(got == null)
+			if(got == null)
 				nulls++;
 		}
 		if(includedAlready && nulls == 0) return ret;
@@ -438,14 +428,17 @@ class FailureTableEntry implements TimedOutNodesList {
 
 	/** Get the timeout time for the given peer. See the comments at the 
 	 * top of the file for why we don't take HTL into account. */
-	public synchronized long getTimeoutTime(PeerNode peer) {
+	public synchronized long getTimeoutTime(PeerNode peer, short htl, long now) {
+		long timeout = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference<PeerNode> ref = requestedNodes[i];
 			if(ref != null && ref.get() == peer) {
-				return requestedTimeouts[i];
+				long thisTimeout = requestedTimeouts[i];
+				if(thisTimeout > timeout && thisTimeout > now)
+					timeout = requestedTimeouts[i];
 			}
 		}
-		return -1; // not timed out
+		return timeout;
 	}
 	
 	public synchronized boolean cleanup() {
