@@ -70,7 +70,7 @@ public class SlashdotStoreTest extends TestCase {
 		ClientCHKBlock block = encodeBlock(test);
 		store.put(block, false);
 		
-		Thread.sleep(800);
+		Thread.sleep(2000);
 		
 		ClientCHK key = block.getClientKey();
 		
