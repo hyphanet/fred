@@ -251,4 +251,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		// Ignore
 	}
 
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		throw new UnsupportedOperationException();
+	}
+
 }
