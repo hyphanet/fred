@@ -123,7 +123,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
 		if(persistent())
 			container.activate(client, 1);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
 			Logger.minor(this, "Starting "+this);
 		try {
 			this.targetURI.checkInsertURI();
@@ -134,12 +135,21 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			boolean cancel = false;
 			synchronized(this) {
 				if(restart) {
-					if(currentState != null && !finished) return false;
+					if(currentState != null && !finished) {
+						if(logMINOR) Logger.minor(this, "Can't restart, not finished and currentState != null : "+currentState);
+						return false;
+					}
 					finished = false;
 				}
-				if(startedStarting) return false;
+				if(startedStarting) {
+					if(logMINOR) Logger.minor(this, "Can't "+(restart?"restart":"start")+" : startedStarting = true");
+					return false;
+				}
 				startedStarting = true;
-				if(currentState != null) return false;
+				if(currentState != null) {
+					if(logMINOR) Logger.minor(this, "Can't "+(restart?"restart":"start")+" : currentState != null : "+currentState);
+					return false;
+				}
 				cancel = this.cancelled;
 				if(!cancel) {
 					if(!binaryBlob) {
