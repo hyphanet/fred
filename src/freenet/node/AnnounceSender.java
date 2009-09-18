@@ -130,7 +130,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
             if(onlyNode == null) {
             	// Route it
             	next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1,
-				        null, null);
+				        null, null, htl);
             } else {
             	next = onlyNode;
             	if(nodesRoutedTo.contains(onlyNode)) {
