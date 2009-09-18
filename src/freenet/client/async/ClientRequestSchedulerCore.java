@@ -334,8 +334,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 					}
 					container.delete(reg);
 					container.deactivate(reg.nonGetRequest, 1);
+				} else {
+					// Was trying to register something that has already been deleted.
+					// Delete it.
+					container.delete(reg);
+					container.deactivate(reg, 1);
 				}
-				container.deactivate(reg, 1);
 				if(System.currentTimeMillis() > deadline) break;
 			}
 			boolean boost = sched.isQueueAlmostEmpty();
