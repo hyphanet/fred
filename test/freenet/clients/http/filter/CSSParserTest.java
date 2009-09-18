@@ -214,6 +214,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: 500 normal Times New Roman, Arial Black;}\n", " h2 { font:500 normal Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
+		
+		// Space is not required either after or before comma!
+		propertyTests.put("h2 { font-family: Verdana,sans }", " h2 { font-family:Verdana,sans;}\n");
+		// This one is from the text Activelink Index
+		propertyTests.put("h2 { font: normal 12px/15px Verdana,sans }", " h2 { font:normal 12px/15px Verdana,sans }\n");
 	}
 	
 	public void setUp() throws InvalidThresholdException {
