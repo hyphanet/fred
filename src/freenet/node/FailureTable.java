@@ -337,7 +337,7 @@ public class FailureTable implements OOMHook {
 		
 		boolean weAsked = entry.askedFromPeer(peer, now);
 		boolean heAsked = entry.askedByPeer(peer, now);
-		if(!(weAsked || ((key instanceof NodeCHK) && heAsked))) {
+		if(!(weAsked || heAsked)) {
 			if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
 			if(entry.isEmpty(now)) {
 				synchronized(this) {
