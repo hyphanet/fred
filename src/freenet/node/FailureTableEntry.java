@@ -29,6 +29,13 @@ class FailureTableEntry implements TimedOutNodesList {
 	 * (weak, but useful if combined with other measures) protection against seizure. */
 	long[] requestorBootIDs;
 	short[] requestorHTLs;
+	
+	// We do *not* take into account the HTL at which a request failed when
+	// checking for a timeout. This is a tradeoff between exploring more of
+	// the network versus better routing - here we go for exploring more of
+	// the network. Taking the other option breaks the ULPR test, but
+	// there are arguments either way... FIXME review this decision.
+	
 	// FIXME Note that just because a node is in this list doesn't mean it DNFed or RFed.
 	// We include *ALL* nodes we routed to here!
 	// FIXME also we don't have accurate times for when we routed to them - we only 
