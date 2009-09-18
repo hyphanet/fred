@@ -86,28 +86,6 @@ class FailureTableEntry implements TimedOutNodesList {
 		requestedTimeoutHTLs = EMPTY_SHORT_ARRAY;
 	}
 	
-	/**
-	 * Called when there is a failure which could cause a block to be added: Either a DataNotFound, or a
-	 * RecentlyFailed.
-	 * @param htl2
-	 * @param requestors
-	 * @param requestedFrom
-	 */
-	public void onFailure(short htl2, short origHTL, PeerNode[] requestors, PeerNode[] requestedFrom, int timeout, long now) {
-		if(logMINOR)
-			Logger.minor(this, "onFailure("+htl2+",requestors="+Arrays.toString(requestors)+",requestedFrom="+Arrays.toString(requestedFrom)+",timeout="+timeout);
-		synchronized(this) {
-			if(requestors != null) {
-				for(int i=0;i<requestors.length;i++)
-					addRequestor(requestors[i], now, origHTL);
-			}
-			if(requestedFrom != null) {
-				for(int i=0;i<requestedFrom.length;i++)
-					addRequestedFrom(requestedFrom[i], now);
-			}
-		}
-	}
-	
 	public synchronized void failedTo(PeerNode routedTo, int timeout, long now, short htl) {
 		if(logMINOR) {
 			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+timeout);
