@@ -28,7 +28,7 @@ public class NativeBigIntegerTest extends TestCase {
 
 	TestIntegers nativeTest;
 	TestIntegers javaTest;
-	//TestIntegers java7Test;
+	TestIntegers java7Test;
 
 	protected void setUp() throws Exception {
 		if (!NativeBigInteger.isNative())
@@ -55,12 +55,12 @@ public class NativeBigIntegerTest extends TestCase {
 			new NativeBigInteger(randbytes)
 		);
 
-		/*java7Test = new TestIntegers7(
+		java7Test = new TestIntegers7(
 			"java7",
 			new java7.math.BigInteger(_sampleGenerator),
 			new java7.math.BigInteger(_samplePrime),
 			new java7.math.BigInteger(randbytes)
-		);*/
+		);
 
 	}
 
@@ -72,20 +72,20 @@ public class NativeBigIntegerTest extends TestCase {
 
 		printInfo(nativeTest.getReport());
 		printInfo(javaTest.getReport());
-		//printInfo(java7Test.getReport());
+		printInfo(java7Test.getReport());
 		printInfo("native = " + (nativeTest.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
-		//printInfo("java 7 = " + (java7Test.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
+		printInfo("java 7 = " + (java7Test.getTime() * 100.0 / javaTest.getTime()) + "% of pure java time");
 	}
 
 	public void testModPow() {
 		for (runsProcessed = 0; runsProcessed < numRuns; runsProcessed++) {
 			BigInteger nativeVal = nativeTest.modPow();
 			BigInteger javaVal = javaTest.modPow();
-			//BigInteger java7Val = java7Test.modPow();
+			BigInteger java7Val = java7Test.modPow();
 
 			assertEquals(nativeVal, javaVal);
-			//assertEquals(javaVal, java7Val);
-			//assertEquals(java7Val, nativeVal);
+			assertEquals(javaVal, java7Val);
+			assertEquals(java7Val, nativeVal);
 		}
 	}
 
@@ -93,11 +93,11 @@ public class NativeBigIntegerTest extends TestCase {
 		for (runsProcessed = 0; runsProcessed < numRuns; runsProcessed++) {
 			double nativeVal = nativeTest.doubleValue();
 			double javaVal = javaTest.doubleValue();
-			//double java7Val = java7Test.doubleValue();
+			double java7Val = java7Test.doubleValue();
 
 			assertEquals(nativeVal, javaVal);
-			//assertEquals(javaVal, java7Val);
-			//assertEquals(java7Val, nativeVal);
+			assertEquals(javaVal, java7Val);
+			assertEquals(java7Val, nativeVal);
 		}
 	}
 
@@ -159,7 +159,7 @@ public class NativeBigIntegerTest extends TestCase {
 
 	}
 
-	/*static class TestIntegers7 extends TestIntegers {
+	static class TestIntegers7 extends TestIntegers {
 
 		final java7.math.BigInteger g;
 		final java7.math.BigInteger p;
@@ -191,6 +191,6 @@ public class NativeBigIntegerTest extends TestCase {
 			return r;
 		}
 
-	}*/
+	}
 
 }
