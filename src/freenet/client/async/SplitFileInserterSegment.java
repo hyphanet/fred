@@ -1569,6 +1569,14 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 		}
 	}
+	
+	public boolean isStorageBroken(ObjectContainer container) {
+		if(putter == null) return true;
+		if(parent == null) return true;
+		if(dataRetries == null) return true;
+		if(checkRetries == null) return true;
+		return false;
+	}
 
 
 }
