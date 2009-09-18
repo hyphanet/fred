@@ -102,7 +102,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		long tStart = System.currentTimeMillis();
 		Query query = container.query();
 		query.constrain(PersistentCooldownQueueItem.class);
-		query.descend("time").constrain(Long.valueOf(now + dontCareAfterMillis)).smaller();
+		query.descend("time").constrain(Long.valueOf(now + dontCareAfterMillis)).smaller().and(query.descend("parent").constrain(this).identity());
 		ObjectSet results = query.execute();
 		long seenAfter = Long.MAX_VALUE;
 		if(results.hasNext()) {
