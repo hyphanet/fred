@@ -314,7 +314,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			PeerNode pn = ref.get();
 			if(pn == null) continue;
 			if(pn.getBootID() != requestedBootIDs[i]) continue;
-			if(!set.add(pn)) continue;
+			if(set.contains(pn)) continue;
 			pn.offer(key);
 		}
 	}
@@ -426,7 +426,7 @@ class FailureTableEntry implements TimedOutNodesList {
 				if(requestedTimeoutHTLs[i] >= htl) {
 					long thisTimeout = requestedTimeouts[i];
 					if(thisTimeout > timeout && thisTimeout > now)
-						timeout = thisTimeout;
+						timeout = requestedTimeouts[i];
 				}
 			}
 		}
