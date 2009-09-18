@@ -423,9 +423,11 @@ class FailureTableEntry implements TimedOutNodesList {
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference<PeerNode> ref = requestedNodes[i];
 			if(ref != null && ref.get() == peer) {
-				long thisTimeout = requestedTimeouts[i];
-				if(thisTimeout > timeout && thisTimeout > now)
-					timeout = requestedTimeouts[i];
+				if(requestedTimeoutHTLs[i] >= htl) {
+					long thisTimeout = requestedTimeouts[i];
+					if(thisTimeout > timeout && thisTimeout > now)
+						timeout = requestedTimeouts[i];
+				}
 			}
 		}
 		return timeout;

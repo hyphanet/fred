@@ -452,7 +452,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             
             // Route it
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        key);
+			        key, htl);
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)
