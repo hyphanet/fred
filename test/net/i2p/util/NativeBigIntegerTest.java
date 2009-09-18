@@ -43,16 +43,16 @@ public class NativeBigIntegerTest extends TestCase {
 
 		javaTest = new TestIntegers(
 			"java",
-			new BigInteger(_sampleGenerator),
-			new BigInteger(_samplePrime),
-			new BigInteger(randbytes)
+			new BigInteger(1, _sampleGenerator),
+			new BigInteger(1, _samplePrime),
+			new BigInteger(1, randbytes)
 		);
 
 		nativeTest = new TestIntegers(
 			"native",
-			new NativeBigInteger(_sampleGenerator),
-			new NativeBigInteger(_samplePrime),
-			new NativeBigInteger(randbytes)
+			new NativeBigInteger(1, _sampleGenerator),
+			new NativeBigInteger(1, _samplePrime),
+			new NativeBigInteger(1, randbytes)
 		);
 
 		/*java7Test = new TestIntegers7(
