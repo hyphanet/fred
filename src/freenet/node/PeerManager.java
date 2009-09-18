@@ -778,8 +778,8 @@ public class PeerManager {
 	}
 
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
-	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL) {
-		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL);
+	        int minVersion, List<Double> addUnpickedLocsTo, Key key) {
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key);
 	}
 
 	/**
@@ -795,7 +795,7 @@ public class PeerManager {
 	 * to avoid routing to nodes which have recently failed for the same key.
 	 */
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double target, boolean ignoreSelf,
-	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key, short outgoingHTL) {
+	        boolean calculateMisrouting, int minVersion, List<Double> addUnpickedLocsTo, double maxDistance, Key key) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers;
@@ -895,7 +895,7 @@ public class PeerManager {
 			
 			long timeout = -1;
 			if(entry != null)
-				timeout = entry.getTimeoutTime(p, outgoingHTL, now);
+				timeout = entry.getTimeoutTime(p);
 			boolean timedOut = timeout > now;
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
