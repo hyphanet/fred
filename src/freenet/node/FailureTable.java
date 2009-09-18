@@ -365,9 +365,11 @@ public class FailureTable implements OOMHook {
 			trimOffersList(now);
 		}
 		
-		// Now, does anyone want it?
-		
-		node.clientCore.maybeQueueOfferedKey(key, entry.othersWant(peer));
+		// Accept the offer.
+		// Either a peer wants it, in which case we want it for them,
+		// or we want it, or we have requested it in the past, in which case
+		// we will probably want it in the future.
+		node.clientCore.queueOfferedKey(key);
 	}
 
 	private synchronized void trimOffersList(long now) {

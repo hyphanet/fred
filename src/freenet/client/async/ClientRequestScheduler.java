@@ -927,42 +927,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else schedCore.countNegative();
 	}
 
-	/** If we want the offered key, or if force is enabled, queue it */
-	public void maybeQueueOfferedKey(final Key key, boolean force) {
+	/** Queue the offered key */
+	public void queueOfferedKey(final Key key) {
 		if(logMINOR)
-			Logger.minor(this, "maybeQueueOfferedKey("+key+","+force);
-		short priority = Short.MAX_VALUE;
-		if(force) {
-			// FIXME what priority???
-			priority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
-		}
-		priority = schedTransient.getKeyPrio(key, priority, null, clientContext);
-		if(priority < Short.MAX_VALUE) {
-			offeredKeys.queueKey(key);
-			starter.wakeUp();
-		}
-		
-		final short oldPrio = priority;
-		
-		try {
-			jobRunner.queue(new DBJob() {
-
-				public boolean run(ObjectContainer container, ClientContext context) {
-					// Don't activate/deactivate the key, because it's not persistent in the first place!!
-					short priority = schedCore.getKeyPrio(key, oldPrio, container, context);
-					if(priority >= oldPrio) return false; // already on list at >= priority
-					offeredKeys.queueKey(key.cloneKey());
-					starter.wakeUp();
-					return false;
-				}
-				public String toString() {
-					return super.toString()+"(maybequeueofferedkey)";
-				}
-				
-			}, NativeThread.NORM_PRIORITY, false);
-		} catch (DatabaseDisabledException e) {
-			// Nothing more to do
-		}
+			Logger.minor(this, "queueOfferedKey("+key);
+		offeredKeys.queueKey(key);
+		starter.wakeUp();
 	}
 
 	public void dequeueOfferedKey(Key key) {

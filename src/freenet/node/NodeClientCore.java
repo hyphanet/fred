@@ -1568,12 +1568,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return fcpServer.hasFinishedStart();
 	}
 
-	/** Pass the offered key down to the client layer.
-	 * If the client layer wants it, or force is enabled, queue it. */
-	public void maybeQueueOfferedKey(Key key, boolean force) {
+	/** Queue the offered key. */
+	public void queueOfferedKey(Key key) {
 		ClientRequestScheduler sched =
 			key instanceof NodeSSK ? requestStarters.sskFetchScheduler : requestStarters.chkFetchScheduler;
-		sched.maybeQueueOfferedKey(key, force);
+		sched.queueOfferedKey(key);
 	}
 
 	public void dequeueOfferedKey(Key key) {
