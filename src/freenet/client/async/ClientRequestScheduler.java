@@ -635,7 +635,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		try {
 		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 		long noLaterThan = Long.MAX_VALUE;
-		if(!isInsertScheduler) {
+		boolean checkCooldownQueue = mightBeActive == null || System.currentTimeMillis() > nextQueueFillRequestStarterQueue;
+		if((!isInsertScheduler) && checkCooldownQueue) {
 			if(persistentCooldownQueue != null)
 				noLaterThan = moveKeysFromCooldownQueue(persistentCooldownQueue, true, container);
 			noLaterThan = Math.min(noLaterThan, moveKeysFromCooldownQueue(transientCooldownQueue, false, container));
@@ -698,7 +699,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(request == null) {
 				synchronized(ClientRequestScheduler.this) {
 					// Don't wake up for a while, but no later than the time we expect the next item to come off the cooldown queue
-					if(!added) {
+					if(checkCooldownQueue && !added) {
 						nextQueueFillRequestStarterQueue = 
 							System.currentTimeMillis() + WAIT_AFTER_NOTHING_TO_START;
 						if(nextQueueFillRequestStarterQueue > noLaterThan)

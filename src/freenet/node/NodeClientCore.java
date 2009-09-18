@@ -231,7 +231,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			this.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
 					try {
-						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, true);
 						getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
 					} catch (DatabaseDisabledException e) {
 						// Should be safe to ignore.

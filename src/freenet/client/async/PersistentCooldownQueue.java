@@ -102,9 +102,9 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		long tStart = System.currentTimeMillis();
 		Query query = container.query();
 		query.constrain(PersistentCooldownQueueItem.class);
-		query.descend("time").constrain(Long.valueOf(now)).smaller()
-			.and(query.descend("parent").constrain(this).identity());
+		query.descend("time").constrain(Long.valueOf(now + dontCareAfterMillis)).smaller().and(query.descend("parent").constrain(this).identity());
 		ObjectSet results = query.execute();
+		long seenAfter = Long.MAX_VALUE;
 		if(results.hasNext()) {
 			long tEnd = System.currentTimeMillis();
 			if(tEnd - tStart > 1000)
@@ -116,11 +116,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			while(results.hasNext() && v.size() < maxCount) {
 				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
 				if(i.time >= now) {
-					Logger.error(this, "removeKeyBefore(): time >= now: diff="+(now-i.time));
+					if(i.time < seenAfter) seenAfter = i.time;
 					continue;
 				}
 				if(i.parent != this) {
-					Logger.error(this, "parent="+i.parent+" but should be "+this);
 					continue;
 				}
 				container.activate(i.key, 5);
@@ -137,26 +136,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			}
 			if(!v.isEmpty()) {
 				return v.toArray(new Key[v.size()]);
-			} else {
-				query = container.query();
-				query.descend("time").orderAscending().constrain(Long.valueOf(now + dontCareAfterMillis)).smaller().
-					and(query.descend("parent").constrain(this).identity());
-				results = query.execute();
-				if(results.hasNext()) {
-					return ((PersistentCooldownQueueItem) results.next()).time;
-				} else {
-					return null;
-				}
 			}
-		} else {
-			long tEnd = System.currentTimeMillis();
-			if(tEnd - tStart > 1000)
-				Logger.error(this, "Query took "+(tEnd-tStart));
-			else
-				if(Logger.shouldLog(Logger.MINOR, this))
-					Logger.minor(this, "Query took "+(tEnd-tStart));
-			return null;
 		}
+		if(seenAfter < Long.MAX_VALUE) return seenAfter;
+		return null;
 	}
 
 	public long size(ObjectContainer container) {

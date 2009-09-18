@@ -714,7 +714,7 @@ public class PersistentBlobTempBucketFactory {
 								Logger.error(this, "Tag with bucket beyond end of file! index="+tag.index+" bucket="+tag.bucket);
 								continue;
 							}
-							container.delete(tags.next());
+							container.delete(tag);
 							deleted++;
 							if(deleted > 1024) break;
 						}
