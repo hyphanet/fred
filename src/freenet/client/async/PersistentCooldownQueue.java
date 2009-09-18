@@ -104,7 +104,6 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		query.constrain(PersistentCooldownQueueItem.class);
 		query.descend("time").orderAscending().constrain(Long.valueOf(now + dontCareAfterMillis)).smaller().and(query.descend("parent").constrain(this).identity());
 		ObjectSet results = query.execute();
-		long seenAfter = Long.MAX_VALUE;
 		if(results.hasNext()) {
 			long tEnd = System.currentTimeMillis();
 			if(tEnd - tStart > 1000)
@@ -138,7 +137,6 @@ public class PersistentCooldownQueue implements CooldownQueue {
 				return v.toArray(new Key[v.size()]);
 			}
 		}
-		if(seenAfter < Long.MAX_VALUE) return seenAfter;
 		return null;
 	}
 
