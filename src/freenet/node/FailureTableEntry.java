@@ -296,7 +296,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	 * Called after a) the data has been stored, and b) this entry has been removed from the FT */
 	public synchronized void offer() {
 		HashSet<PeerNode> set = new HashSet<PeerNode>();
-		if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us:");
+		if(logMINOR) Logger.minor(this, "Sending offers to nodes which requested the key from us: ("+requestorNodes.length+")");
 		for(int i=0;i<requestorNodes.length;i++) {
 			WeakReference<PeerNode> ref = requestorNodes[i];
 			if(ref == null) continue;
@@ -306,9 +306,10 @@ class FailureTableEntry implements TimedOutNodesList {
 			if(!set.add(pn)) {
 				Logger.error(this, "Node is in requestorNodes twice: "+pn);
 			}
+			if(logMINOR) Logger.minor(this, "Offering to "+pn);
 			pn.offer(key);
 		}
-		if(logMINOR) Logger.minor(this, "Sending offers to nodes which we sent the key to:");
+		if(logMINOR) Logger.minor(this, "Sending offers to nodes which we sent the key to: ("+requestedNodes.length+")");
 		for(int i=0;i<requestedNodes.length;i++) {
 			WeakReference<PeerNode> ref = requestedNodes[i];
 			if(ref == null) continue;
@@ -316,6 +317,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			if(pn == null) continue;
 			if(pn.getBootID() != requestedBootIDs[i]) continue;
 			if(!set.add(pn)) continue;
+			if(logMINOR) Logger.minor(this, "Offering to "+pn);
 			pn.offer(key);
 		}
 	}
@@ -555,7 +557,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			}
 			if(now - requestorTimes[i] < MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
 				if(requestorHTLs[i] < htl) htl = requestorHTLs[i];
-			} 
+			}
 			anyValid = true;
 		}
 		if(!anyValid) {
