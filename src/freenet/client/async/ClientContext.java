@@ -22,6 +22,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
+import freenet.support.io.PersistentFileTracker;
 import freenet.support.io.PersistentTempBucketFactory;
 
 /**
@@ -43,6 +44,7 @@ public class ClientContext {
 	public transient final RandomSource random;
 	public transient final ArchiveManager archiveManager;
 	public transient PersistentTempBucketFactory persistentBucketFactory;
+	public transient PersistentFileTracker persistentFileTracker;
 	public transient final BucketFactory tempBucketFactory;
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
@@ -56,7 +58,7 @@ public class ClientContext {
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
-			PersistentTempBucketFactory ptbf, BucketFactory tbf, HealingQueue hq,
+			PersistentTempBucketFactory ptbf, BucketFactory tbf, PersistentFileTracker tracker, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom, 
 			Random fastWeakRandom, Ticker ticker, 
 			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc, DatastoreChecker checker) {

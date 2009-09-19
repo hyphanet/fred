@@ -15,8 +15,6 @@ import freenet.support.io.PersistentFileTracker;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class InsertContext implements Cloneable {
 
-	public final BucketFactory persistentBucketFactory;
-	public final PersistentFileTracker persistentFileTracker;
 	/** If true, don't try to compress the data */
 	public boolean dontCompress;
 	/** Splitfile algorithm. */
@@ -46,11 +44,9 @@ public class InsertContext implements Cloneable {
 	 */
 	public String compressorDescriptor;
 
-	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
+	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean canWriteClientCache, String compressorDescriptor) {
-		this.persistentFileTracker = tracker;
-		this.persistentBucketFactory = persistentBF;
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
@@ -63,8 +59,6 @@ public class InsertContext implements Cloneable {
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
-		this.persistentFileTracker = ctx.persistentFileTracker;
-		this.persistentBucketFactory = ctx.persistentBucketFactory;
 		this.dontCompress = ctx.dontCompress;
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;

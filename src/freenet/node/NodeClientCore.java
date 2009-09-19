@@ -330,11 +330,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		
 		healingQueue = new SimpleHealingQueue(
-				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
+				new InsertContext(
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker);
+		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		
