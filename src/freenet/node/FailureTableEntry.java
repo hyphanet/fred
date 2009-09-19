@@ -556,6 +556,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			if(now - requestorTimes[i] < MAX_TIME_BETWEEN_REQUEST_AND_OFFER) {
 				if(requestorHTLs[i] < htl) htl = requestorHTLs[i];
 			} 
+			anyValid = true;
 		}
 		if(!anyValid) {
 			requestorNodes = EMPTY_WEAK_REFERENCE;
