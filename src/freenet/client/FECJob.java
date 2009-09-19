@@ -92,6 +92,8 @@ public class FECJob {
 		this.checkBlockStatus = null;
 		this.blockLength = blockLength;
 		this.bucketFactory = bucketFactory;
+		if(bucketFactory == null)
+			throw new NullPointerException();
 		this.callback = callback;
 		this.isADecodingJob = isADecodingJob;
 		this.persistent = persistent;
