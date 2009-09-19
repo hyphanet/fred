@@ -229,6 +229,7 @@ public abstract class FECCodec {
 	protected void realEncode(Bucket[] dataBlockStatus,
 		Bucket[] checkBlockStatus, int blockLength, BucketFactory bf)
 		throws IOException {
+		if(bf == null) throw new NullPointerException();
 		loadFEC();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		//		Runtime.getRuntime().gc();
