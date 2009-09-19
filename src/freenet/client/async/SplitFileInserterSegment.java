@@ -261,7 +261,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						try {
 							checkBlocks[i] = SerializableToFieldSetBucketUtil
 									.create(bucketFS, context.random,
-											ctx.persistentFileTracker);
+											context.persistentFileTracker);
 							if (logMINOR)
 								Logger.minor(this, "Check block " + i + " : "
 										+ checkBlocks[i]);
@@ -351,7 +351,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			} else {
 				try {
 					dataBlocks[i] = SerializableToFieldSetBucketUtil.create(
-							bucketFS, context.random, ctx.persistentFileTracker);
+							bucketFS, context.random, context.persistentFileTracker);
 					if (logMINOR)
 						Logger.minor(this, "Data block " + i + " : "
 								+ dataBlocks[i]);
@@ -431,7 +431,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							for(int i=0;i<dataBlocks.length;i++)
 								container.activate(dataBlocks[i], 5);
 						}
-						job = encodeJob = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, persistent ? blockInsertContext.persistentBucketFactory : context.tempBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
+						job = encodeJob = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, persistent ? context.persistentBucketFactory : context.tempBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
 					}
 				}				
 				fin = false;
@@ -1568,6 +1568,14 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				dataBlocks[i] = null;
 			}
 		}
+	}
+	
+	public boolean isStorageBroken(ObjectContainer container) {
+		if(putter == null) return true;
+		if(parent == null) return true;
+		if(dataRetries == null) return true;
+		if(checkRetries == null) return true;
+		return false;
 	}
 
 

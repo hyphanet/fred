@@ -165,9 +165,20 @@ public class RandomGrabArray implements RemoveRandom {
 							RandomGrabArrayItem item = reqs[i];
 							if(persistent)
 								container.activate(item, 1);
-							if(item == null) {
+							if(item == null)
 								continue;
-							} else if(item.isEmpty(container)) {
+							boolean broken = false;
+							broken = persistent && item.isStorageBroken(container);
+							if(broken) {
+								Logger.error(this, "Storage broken on "+item);
+								try {
+									item.removeFrom(container, context);
+								} catch (Throwable t) {
+									// Ignore
+									container.delete(item);
+								}
+							}
+							if(item.isEmpty(container) || broken) {
 								changedMe = true;
 								// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
 								reqs[i] = null;
@@ -272,7 +283,18 @@ public class RandomGrabArray implements RemoveRandom {
 				if(persistent)
 					container.activate(ret, 1);
 				oret = ret;
-				if(ret.isEmpty(container)) {
+				boolean broken = false;
+				broken = persistent && ret.isStorageBroken(container);
+				if(broken) {
+					Logger.error(this, "Storage broken on "+ret);
+					try {
+						ret.removeFrom(container, context);
+					} catch (Throwable t) {
+						// Ignore
+						container.delete(ret);
+					}
+				}
+				if(broken || ret.isEmpty(container)) {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 					ret = null;
 					// Will be removed in the do{} loop

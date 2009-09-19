@@ -337,7 +337,7 @@ public class FailureTable implements OOMHook {
 		
 		boolean weAsked = entry.askedFromPeer(peer, now);
 		boolean heAsked = entry.askedByPeer(peer, now);
-		if(!(weAsked || ((key instanceof NodeCHK) && heAsked))) {
+		if(!(weAsked || heAsked)) {
 			if(logMINOR) Logger.minor(this, "Not propagating key: weAsked="+weAsked+" heAsked="+heAsked);
 			if(entry.isEmpty(now)) {
 				synchronized(this) {
@@ -365,9 +365,11 @@ public class FailureTable implements OOMHook {
 			trimOffersList(now);
 		}
 		
-		// Now, does anyone want it?
-		
-		node.clientCore.maybeQueueOfferedKey(key, entry.othersWant(peer));
+		// Accept the offer.
+		// Either a peer wants it, in which case we want it for them,
+		// or we want it, or we have requested it in the past, in which case
+		// we will probably want it in the future.
+		node.clientCore.queueOfferedKey(key);
 	}
 
 	private synchronized void trimOffersList(long now) {

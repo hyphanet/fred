@@ -18,6 +18,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -87,6 +88,8 @@ public class NodeUpdateManager {
 	private String revocationMessage;
 	private volatile boolean hasBeenBlown;
 	private volatile boolean peersSayBlown;
+	private boolean updateSeednodes;
+	private boolean updateInstallers;
 	
 	/** Is there a new main jar ready to deploy? */
 	private volatile boolean hasNewMainJar;
@@ -170,6 +173,52 @@ public class NodeUpdateManager {
 			throw new InvalidConfigValueException(l10n("invalidExtURI", "error", e.getLocalizedMessage()));
 		}
 
+		updaterConfig.register("updateSeednodes", wasEnabledOnStartup, 6, true, true, "NodeUpdateManager.updateSeednodes", "NodeUpdateManager.updateSeednodesLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return updateSeednodes;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(updateSeednodes == val) return;
+						updateSeednodes = val;
+						if(val)
+							throw new NodeNeedRestartException("Must restart to fetch the seednodes");
+						else
+							throw new NodeNeedRestartException("Must restart to stop the seednodes fetch if it is still running");
+					}
+			
+		});
+		
+		updateSeednodes = updaterConfig.getBoolean("updateSeednodes");
+		
+		updaterConfig.register("updateInstallers", wasEnabledOnStartup, 6, true, true, "NodeUpdateManager.updateInstallers", "NodeUpdateManager.updateInstallersLong",
+				new BooleanCallback() {
+
+					@Override
+					public Boolean get() {
+						return updateInstallers;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(updateInstallers == val) return;
+						updateInstallers = val;
+						if(val)
+							throw new NodeNeedRestartException("Must restart to fetch the installers");
+						else
+							throw new NodeNeedRestartException("Must restart to stop the installers fetches if they are still running");
+					}
+			
+		});
+		
+		updateInstallers = updaterConfig.getBoolean("updateInstallers");
+		
+		
+		
         updaterConfig.finishedInitialization();
         
         this.revocationChecker = new RevocationChecker(this, new File(node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
@@ -223,8 +272,10 @@ public class NodeUpdateManager {
 				BucketTools.copyTo(result.asBucket(), fos, -1);
 				fos.close();
 				fos = null;
-				FileUtil.renameTo(temp, new File(node.getNodeDir(), filename));
-				System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
+				if(FileUtil.renameTo(temp, new File(node.getNodeDir(), filename)))
+					System.out.println("Successfully fetched "+filename+" for version "+Version.buildNumber());
+				else
+					System.out.println("Failed to rename "+temp+" to "+filename+" after fetching it from Freenet.");
 			} catch (IOException e) {
 				System.err.println("Fetched but failed to write out "+filename+" - please check that the node has permissions to write in "+node.getNodeDir()+" and particularly the file "+filename);
 				System.err.println("The error was: "+e);
@@ -275,16 +326,20 @@ public class NodeUpdateManager {
         
         // Fetch 3 files, each to a file in the nodeDir.
         
-        if(wasEnabledOnStartup) {
-        	
+        if(updateSeednodes) {
+        
         	SimplePuller seedrefsGetter = 
         		new SimplePuller(getSeednodesURI(), Announcer.SEEDNODES_FILENAME);
+        	seedrefsGetter.start(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 1024*1024);
+        }
+        
+        if(updateInstallers) {
         	SimplePuller installerGetter = 
         		new SimplePuller(getInstallerWindowsURI(), NON_WINDOWS_FILENAME);
         	SimplePuller wininstallerGetter =
         		new SimplePuller(getInstallerNonWindowsURI(), WINDOWS_FILENAME);
         	
-        	seedrefsGetter.start(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 1024*1024);
+        	
         	installerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
         	wininstallerGetter.start(RequestStarter.UPDATE_PRIORITY_CLASS, 32*1024*1024);
         	
