@@ -30,13 +30,6 @@ class FailureTableEntry implements TimedOutNodesList {
 	long[] requestorBootIDs;
 	short[] requestorHTLs;
 	
-	// We do *not* take into account the HTL at which a request failed when
-	// checking for a timeout (aka per-node failure tables). This is a 
-	// tradeoff between exploring more of the network versus better routing 
-	// - here we go for exploring more of the network. Taking the other 
-	// option breaks the ULPR test, but there are arguments either way... 
-	// FIXME review this decision.
-	
 	// FIXME Note that just because a node is in this list doesn't mean it DNFed or RFed.
 	// We include *ALL* nodes we routed to here!
 	/** WeakReference's to PeerNode's we have requested it from */
@@ -426,8 +419,9 @@ class FailureTableEntry implements TimedOutNodesList {
 		return true;
 	}
 
-	/** Get the timeout time for the given peer. See the comments at the 
-	 * top of the file for why we don't take HTL into account. */
+	/** Get the timeout time for the given peer, taking HTL into account.
+	 * If there was a timeout at HTL 1, and we are now sending a request at
+	 * HTL 2, we ignore the timeout. */
 	public synchronized long getTimeoutTime(PeerNode peer, short htl, long now) {
 		long timeout = -1;
 		for(int i=0;i<requestedNodes.length;i++) {
