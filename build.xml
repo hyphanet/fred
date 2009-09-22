@@ -112,6 +112,7 @@
 				<path refid="lib.path"/>
 			</classpath>
 			<!-- following a very temporary list of files to be build -->
+			<include name="java7/**/*.java"/>
 			<include name="freenet/**/*.java"/>
 			<include name="net/i2p/util/*.java"/>
 			<exclude name="**/package-info.java"/>
