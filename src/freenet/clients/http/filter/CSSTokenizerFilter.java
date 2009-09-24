@@ -3410,7 +3410,7 @@ outer:		for(int i=0;i<value.length;i++) {
 						}
 						
 						String[] split;
-						if(s.contains(",")) {
+						if(s1.contains(",")) {
 							split = s1.split(",");
 						} else
 							split = new String[] { s1 };
@@ -3419,7 +3419,7 @@ outer:		for(int i=0;i<value.length;i++) {
 							String subword = split[k];
 							ParsedWord[] parsed = split(subword);
 							if(parsed.length != 1) {
-								if(debug) log("subword "+subword+" from "+s+" cannot parse into one word");
+								if(debug) log("subword "+subword+" from "+s1+" cannot parse into one word");
 								return false;
 							}
 							String keyword;
@@ -3429,11 +3429,11 @@ outer:		for(int i=0;i<value.length;i++) {
 							} else if(parsed[0] instanceof ParsedIdentifier) {
 								keyword = (((ParsedIdentifier)parsed[0]).getDecoded());
 							} else {
-								if(debug) log("subword "+subword+" from "+s+" parses to unrecognised type "+parsed[0]);
+								if(debug) log("subword "+subword+" from "+s1+" parses to unrecognised type "+parsed[0]);
 								return false;
 							}
 							keyword = keyword.toLowerCase();
-							if(debug) log("keyword "+i+" of "+split.length+" is \""+keyword+"\"");
+							if(debug) log("keyword "+k+" of "+split.length+" is \""+keyword+"\"");
 							
 							if(k == 0 && (split.length > 0 || endComma)) {
 								fontWords.add(keyword);
@@ -3465,9 +3465,10 @@ outer:		for(int i=0;i<value.length;i++) {
 						}
 						
 						if(fontWords.isEmpty()) {
+							if(debug) log("fontWords empty, continuing outer loop");
 							i = j;
 							continue outer; // Everything happily eaten.
-						}
+						} // Else looking for another keyword
 					} else if(newWord instanceof ParsedIdentifier) {
 						s1 = ((ParsedIdentifier)newWord).getDecoded();
 						fontWords.add(s1);
@@ -3484,6 +3485,10 @@ outer:		for(int i=0;i<value.length;i++) {
 						return false;
 					}
 				}
+				// Still looking for another keyword...
+				if(validFontWords(fontWords))
+					return true;
+				return false;
 			}
 			if(debug) log("font: reached end, valid");
 			return true;
