@@ -46,6 +46,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
+import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -804,10 +805,14 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				
 				HTMLNode optionList = infoboxContent.addChild("ul");
-				
-				if((e.mode == FetchException.NOT_IN_ARCHIVE || e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) && (core.node.pluginManager.isPluginLoaded("plugins.KeyExplorer.KeyExplorer"))) {
+
+				PluginInfoWrapper keyExplorer;
+				if((e.mode == FetchException.NOT_IN_ARCHIVE || e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) && ((keyExplorer = core.node.pluginManager.getPluginInfo("plugins.KeyExplorer.KeyExplorer")) != null)) {
 					option = optionList.addChild("li");
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
+					if (keyExplorer.getPluginLongVersion() > 4999)
+						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/KeyExplorer/?automf=true&key=" + key.toString() + "\">", "</a>" });
+					else
+						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
 				}
 				
 				if(!e.isFatal() && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {

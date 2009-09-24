@@ -49,7 +49,7 @@ public class GetPluginInfo extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetPluginInfo detailed requires full access", identifier, false);
 		}
 
-		PluginInfoWrapper pi = node.pluginManager.getFCPPluginInfo(plugname);
+		PluginInfoWrapper pi = node.pluginManager.getPluginInfo(plugname);
 		if (pi == null) {
 			handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 		} else {

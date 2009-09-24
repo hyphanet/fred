@@ -2,6 +2,8 @@ package freenet.support;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
+
 public interface RandomGrabArrayItem {
 
 	/** If true, will be automatically removed from the RGA, and not returned.
@@ -27,4 +29,8 @@ public interface RandomGrabArrayItem {
 	 * If the user doesn't implement persistence, simply return false here and 
 	 * pass false into the constructor. */
 	public boolean persistent();
+	
+	public boolean isStorageBroken(ObjectContainer container);
+
+	public void removeFrom(ObjectContainer container, ClientContext context);
 }

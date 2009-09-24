@@ -170,4 +170,9 @@ public class SimpleSendableInsert extends SendableInsert {
 	public boolean canWriteClientCache(ObjectContainer container) {
 		return false;
 	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		// Transient-only
+		throw new UnsupportedOperationException();
+	}
 }

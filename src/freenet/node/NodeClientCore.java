@@ -231,7 +231,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			this.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
 					try {
-						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
+						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, true);
 						getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
 					} catch (DatabaseDisabledException e) {
 						// Should be safe to ignore.
@@ -330,11 +330,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		
 		healingQueue = new SimpleHealingQueue(
-				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
+				new InsertContext(
 						0, 2, 0, 0, new SimpleEventProducer(),
 						false, Compressor.DEFAULT_COMPRESSORDESCRIPTOR), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor);
+		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor, storeChecker);
 		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		
@@ -1568,12 +1568,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		return fcpServer.hasFinishedStart();
 	}
 
-	/** Pass the offered key down to the client layer.
-	 * If the client layer wants it, or force is enabled, queue it. */
-	public void maybeQueueOfferedKey(Key key, boolean force) {
+	/** Queue the offered key. */
+	public void queueOfferedKey(Key key) {
 		ClientRequestScheduler sched =
 			key instanceof NodeSSK ? requestStarters.sskFetchScheduler : requestStarters.chkFetchScheduler;
-		sched.maybeQueueOfferedKey(key, force);
+		sched.queueOfferedKey(key);
 	}
 
 	public void dequeueOfferedKey(Key key) {

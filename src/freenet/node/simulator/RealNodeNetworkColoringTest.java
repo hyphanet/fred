@@ -83,21 +83,21 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetA[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, true, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'A' node "+totalNodes);
         }
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetB[i] = 
-			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
+			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, true, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'B' node "+totalNodes);
         }
 		for(int i=0;i<BRIDGES;i++) {
 			allNodes[totalNodes] =
             bridges[i] = 
-			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false,null);
+			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false,true,null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created bridge node "+totalNodes);
         }
@@ -105,8 +105,8 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         Logger.normal(RealNodeRoutingTest.class, "Created "+totalNodes+" nodes");
 		
         // Now link them up
-        makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */, DEGREE, false);
-		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */, DEGREE, false);
+        makeKleinbergNetwork(subnetA, true /* make it easy, we're not testing swapping here */, DEGREE, false, random);
+		makeKleinbergNetwork(subnetB, true /* make it easy, we're not testing swapping here */, DEGREE, false, random);
 		
 		int aTarget = countLeafs(subnetA)+1;
 		int bTarget = countLeafs(subnetB)+1;

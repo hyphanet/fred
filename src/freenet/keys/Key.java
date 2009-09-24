@@ -41,7 +41,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
     final byte[] routingKey;
     
     /** Code for 256-bit AES with PCFB and SHA-256 */
-    static final byte ALGO_AES_PCFB_256_SHA256 = 2;
+    public static final byte ALGO_AES_PCFB_256_SHA256 = 2;
 
     protected Key(byte[] routingKey) {
     	this.routingKey = routingKey;

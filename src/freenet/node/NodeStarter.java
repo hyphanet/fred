@@ -341,7 +341,7 @@ public class NodeStarter implements WrapperListener {
 		boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
 		int outputBandwidthLimit, boolean enableFOAF,
-		boolean connectToSeednodes, String ipAddressOverride) throws NodeInitException {
+		boolean connectToSeednodes, boolean longPingTimes, String ipAddressOverride) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -401,6 +401,10 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.encryptPersistentTempBuckets", false);
 		if(ipAddressOverride != null)
 			configFS.putSingle("node.ipAddressOverride", ipAddressOverride);
+		if(longPingTimes) {
+			configFS.put("node.maxPingTime", 100000);
+			configFS.put("node.subMaxPingTime", 50000);
+		}
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 

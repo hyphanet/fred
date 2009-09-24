@@ -8,7 +8,7 @@ public class StringValidityChecker {
 	/**
 	 * Taken from http://kb.mozillazine.org/Network.IDN.blacklist_chars
 	 */
-	static HashSet<Character> idnBlacklist = new HashSet<Character>(Arrays.asList(
+	static final HashSet<Character> idnBlacklist = new HashSet<Character>(Arrays.asList(
 			new Character[] {
 					0x0020, /* SPACE */
 					0x00A0, /* NO-BREAK SPACE */
@@ -97,7 +97,15 @@ public class StringValidityChecker {
 					0xFFFC, /* OBJECT REPLACEMENT CHARACTER */
 					0xFFFD, /* REPLACEMENT CHARACTER */
 			}));
+	
+	static final HashSet<Character> windowsReservedFilenameCharacters = new HashSet<Character>(Arrays.asList(
+			new Character[] { '/', '\\', '?', '%', '*', ':', '|', '\"', '<', '>'}));
 
+	
+	public static boolean isWindowsReservedFilenameCharacter(Character c) {
+		return windowsReservedFilenameCharacters.contains(c);
+	}
+	
 	public static boolean containsNoIDNBlacklistCharacters(String text) {
 		for(Character c : text.toCharArray()) {
 			if(idnBlacklist.contains(c))

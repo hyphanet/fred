@@ -121,4 +121,8 @@ public abstract class SendableGet extends BaseSendableGet {
 		return false;
 	}
 	
+	public void unregister(ObjectContainer container, ClientContext context) {
+		super.unregister(container, context);
+		context.checker.removeRequest(this, persistent, container, context);
+	}
 }

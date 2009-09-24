@@ -146,9 +146,24 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		
 		// Try as an absolute URI
 		
+		URI origURI = uri;
+		
+		// Convert localhost uri's to relative internal ones.
+		
+		String host = uri.getHost();
+		if(host != null && (host.equals("localhost") || host.equals("127.0.0.1")) && uri.getPort() == 8888) {
+			try {
+				uri = new URI(null, null, null, -1, uri.getPath(), uri.getQuery(), uri.getFragment());
+			} catch (URISyntaxException e) {
+				Logger.error(this, "URI "+uri+" looked like localhost but could not parse", e);
+				throw new CommentException("URI looked like localhost but could not parse: "+e);
+			}
+			host = null;
+		}
+		
 		String rpath = uri.getPath();
 		
-		if(uri.getHost() == null) {
+		if(host == null) {
 		
 			boolean isAbsolute = false;
 			
@@ -203,6 +218,8 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			}
 		
 		}
+		
+		uri = origURI;
 		
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
 			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;

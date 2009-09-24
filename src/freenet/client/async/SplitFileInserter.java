@@ -92,7 +92,7 @@ public class SplitFileInserter implements ClientPutState {
 		Bucket[] dataBuckets;
 		context.jobRunner.setCommitThisTransaction();
 		try {
-			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, persistent ? ctx.persistentBucketFactory : context.tempBucketFactory, freeData, persistent, container);
+			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, persistent ? context.persistentBucketFactory : context.tempBucketFactory, freeData, persistent, container);
 				if(dataBuckets[dataBuckets.length-1].size() < CHKBlock.DATA_LENGTH) {
 					Bucket oldData = dataBuckets[dataBuckets.length-1];
 					dataBuckets[dataBuckets.length-1] = BucketTools.pad(oldData, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), (int) oldData.size());
