@@ -2120,6 +2120,7 @@ public class NodeStats implements Persistable {
 				logEntry.append("HourlyStats: chk datastore keys:\t").append(node.getChkDatastore().keyCount()).append("\n");
 				logEntry.append("HourlyStats: ssk datacache keys:\t").append(node.getSskDatacache().keyCount()).append("\n");
 				logEntry.append("HourlyStats: ssk datastore keys:\t").append(node.getSskDatastore().keyCount()).append("\n");
+				logEntry.append("HourlyStats: build:\t").append(Version.buildNumber()).append("\n");
 
 				chkHourlyLocalFetchSuccessCount = 0;
 				chkHourlyLocalFetchCount = 0;
