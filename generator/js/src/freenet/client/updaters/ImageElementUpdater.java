@@ -9,6 +9,7 @@ import freenet.client.l10n.L10n;
 import freenet.client.messages.Message;
 import freenet.client.messages.MessageManager;
 import freenet.client.messages.Priority;
+import freenet.client.FreenetJs;
 
 /** An Updater that replaces the element and refreshes the image loading's overall progress message */
 public class ImageElementUpdater extends ReplacerUpdater {
@@ -92,9 +93,17 @@ public class ImageElementUpdater extends ReplacerUpdater {
 			Element input = inputs.getItem(j);
 			// Gets the data if the corresponding input is found
 			if (input.getAttribute("name").compareTo("fetchedBlocks") == 0) {
-				fetched = Integer.parseInt(input.getAttribute("value"));
+				try {
+					fetched = Integer.parseInt(input.getAttribute("value"));
+				} catch (NumberFormatException e) {
+					FreenetJs.log("fetchedBlocks value \""+input.getAttribute("value")+"\" is invalid: "+e);
+				}
 			} else if (input.getAttribute("name").compareTo("requiredBlocks") == 0) {
-				total = Integer.parseInt(input.getAttribute("value"));
+				try {
+					total = Integer.parseInt(input.getAttribute("value"));
+				} catch (NumberFormatException e) {
+					FreenetJs.log("requiredBlocks value \""+input.getAttribute("value")+"\" is invalid: "+e);
+				}
 			}
 		}
 		return new int[] { fetched, total };

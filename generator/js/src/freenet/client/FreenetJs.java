@@ -15,13 +15,15 @@ import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
 
+import freenet.client.tools.Base64;
+
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
 public class FreenetJs implements EntryPoint {
 
 	/** Debug mode. If true, the client will log. Should ba false at production */
-	public static boolean				isDebug						= false;
+	public static boolean				isDebug						= true;
 
 	/** The requestId. It is used to identify this instance to the server */
 	public static String				requestId;
@@ -65,11 +67,9 @@ public class FreenetJs implements EntryPoint {
 			// Only log id debug is enabled
 			if (isDebug) {
 				// Write the log back to the server
-				/*
-				 * try{ FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",URL.encode(msg))); }catch(Exception e){
-				 * 
-				 * }
-				 */
+				 try{ FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",urlEncode(msg))); }catch(Exception e){
+				 
+				 }
 				// Write the log to the console
 				nativeLog(msg);
 				// Write the log to the page
@@ -84,6 +84,35 @@ public class FreenetJs implements EntryPoint {
 		}
 	}
 
+	/** Base 64 causes some bizarre data corruption, probably because / and + are not allowed in URLs.
+	  * Java's URLEncoder isn't available, and Freenet's URLEncoder doesn't compile: getBytes() doesn't work.
+	  * So hack together a pathetic feature incomplete encoder that doesn't use getBytes(). 
+	  * REDFLAG: THIS IS NOT REMOTELY SAFE!!!! */
+	private static String urlEncode(String s) {
+		StringBuffer sb = new StringBuffer(s.length());
+		for(int i=0;i<s.length();i++) {
+			char c = s.charAt(i);
+			if(c == '%') {
+				sb.append("%25");
+			} else if(c == '?') {
+				sb.append("%3f");
+			} else if(c == '&') {
+				sb.append("%26");
+			} else if(c == '#') {
+				sb.append("%23");
+			} else if(c == '/') {
+				sb.append("%2f");
+			} else if(c == '=') {
+				sb.append("%3d");
+			} else if(c == ':') {
+				sb.append("%3a");
+			} else if(c == ';') {
+				sb.append("%3b");
+			} else sb.append(c);
+		}
+		return sb.toString();
+	}
+	
 	/** Exported method to let external sources turn on logging */
 	public static final void enableDebug() {
 		isDebug = true;

@@ -9,7 +9,11 @@ import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.UpdaterConstants;
+import freenet.support.Base64;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.api.HTTPRequest;
 
 /** This toadlet is used to let the client write to the logs */
@@ -27,7 +31,11 @@ public class LogWritebackToadlet extends Toadlet {
 
 	public void handleMethodGET(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		if (logMINOR) {
-			Logger.minor(this, "GWT:" + req.getParam("msg"));
+			try {
+				Logger.minor(this, "GWT:" + new String(URLDecoder.decode(req.getParam("msg"), false)));
+			} catch (URLEncodedFormatException e) {
+				Logger.error(this, "Invalid GWT:"+req.getParam("msg"));
+			}
 		}
 		writeHTMLReply(ctx, 200, "OK", UpdaterConstants.SUCCESS);
 	}

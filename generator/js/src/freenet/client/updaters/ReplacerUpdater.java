@@ -19,7 +19,11 @@ public class ReplacerUpdater implements IUpdater {
 		} catch (Exception e) {
 			FreenetJs.log("Error when setting html" + e.toString());
 		}
-		FreenetJs.log("content after update:" + RootPanel.get(elementId).getElement().getInnerHTML());
+		try {
+			FreenetJs.log("content after update:" + RootPanel.get(elementId).getElement().getInnerHTML());
+		} catch (Exception e) {
+			FreenetJs.log("Error logging content after update "+e);
+		}
 	}
 
 }
