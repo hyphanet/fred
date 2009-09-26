@@ -5658,7 +5658,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 	
-	public class AlreadySetPasswordException extends Exception {
+	public static class AlreadySetPasswordException extends Exception {
 		
 	}
 
