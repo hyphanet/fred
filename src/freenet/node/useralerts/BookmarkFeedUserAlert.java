@@ -6,7 +6,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
-import freenet.node.fcp.ReceivedBookmarkFeed;
+import freenet.node.fcp.BookmarkFeed;
 import freenet.support.HTMLNode;
 
 public class BookmarkFeedUserAlert extends AbstractUserAlert {
@@ -45,9 +45,10 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	@Override
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(l10n("peerName")).append("\n").append(name).append("\n");
-		sb.append(l10n("bookmarkURI")).append("\n").append(uri).append("\n");
-		sb.append(l10n("bookmarkDescription")).append("\n").append(description);
+		sb.append(l10n("peerName")).append(" ").append(name).append("\n");
+		sb.append(l10n("bookmarkURI")).append(" ").append(uri).append("\n");
+		if(description != null && description.length() != 0)
+			sb.append(l10n("bookmarkDescription")).append(" ").append(description);
 		return sb.toString();
 	}
 
@@ -103,8 +104,8 @@ public class BookmarkFeedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public ReceivedBookmarkFeed getFCPMessage() {
-		return new ReceivedBookmarkFeed(getTitle(), getShortText(), getText(), sourceNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
+	public BookmarkFeed getFCPMessage() {
+		return new BookmarkFeed(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime(), sourceNodeName, composed, sent, received, name, uri, description, hasAnActivelink);
 	}
 
 	@Override

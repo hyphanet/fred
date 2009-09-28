@@ -7,7 +7,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.ReceivedDownloadFeedMessage;
+import freenet.node.fcp.URIFeedMessage;
 import freenet.support.HTMLNode;
 
 public class DownloadFeedUserAlert extends AbstractUserAlert {
@@ -41,9 +41,9 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 	@Override
 	public String getText() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(l10n("fileURI")).append("\n").append(uri).append("\n");
+		sb.append(l10n("fileURI")).append(" ").append(uri).append("\n");
 		if(description != null && description.length() != 0)
-			sb.append(l10n("fileDescription")).append("\n").append(description);
+			sb.append(l10n("fileDescription")).append(" ").append(description);
 		return sb.toString();
 	}
 
@@ -93,7 +93,7 @@ public class DownloadFeedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public FCPMessage getFCPMessage() {
-		return new ReceivedDownloadFeedMessage(getTitle(), getShortText(), getText(),
+		return new URIFeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime(),
 				sourceNodeName, composed, sent, received, uri, description);
 	}
 

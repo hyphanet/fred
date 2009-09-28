@@ -101,7 +101,7 @@ import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.ReceivedStatusFeedMessage;
+import freenet.node.fcp.FeedMessage;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
@@ -2958,7 +2958,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 
 		public FCPMessage getFCPMessage() {
-			return new ReceivedStatusFeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
+			return new FeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 		}
 
 		public HTMLNode getHTMLText() {

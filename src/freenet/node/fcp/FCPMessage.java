@@ -49,12 +49,12 @@ public abstract class FCPMessage {
 			return new ClientPutDiskDirMessage(fs);
 		if(name.equals(ClientPutMessage.NAME))
 			return new ClientPutMessage(fs);
-		if(name.equals(SendBookmarkFeedMessage.NAME))
-			return new SendBookmarkFeedMessage(fs);
-		if(name.equals(SendDownloadFeedMessage.NAME))
-			return new SendDownloadFeedMessage(fs);
-		if(name.equals(SendTextFeedMessage.NAME))
-			return new SendTextFeedMessage(fs);
+		if(name.equals(SendBookmarMessage.NAME))
+			return new SendBookmarMessage(fs);
+		if(name.equals(SendURIMessage.NAME))
+			return new SendURIMessage(fs);
+		if(name.equals(SendTextMessage.NAME))
+			return new SendTextMessage(fs);
 		if(name.equals(FCPPluginMessage.NAME))
 			return new FCPPluginMessage(fs);
 		if(name.equals(GenerateSSKMessage.NAME))

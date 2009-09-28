@@ -19,7 +19,7 @@
 package freenet.node.useralerts;
 
 import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.ReceivedStatusFeedMessage;
+import freenet.node.fcp.FeedMessage;
 import freenet.support.HTMLNode;
 
 /**
@@ -169,7 +169,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	}
 
 	public FCPMessage getFCPMessage() {
-		return new ReceivedStatusFeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
+		return new FeedMessage(getTitle(), getShortText(), getText(), getPriorityClass(), getUpdatedTime());
 	}
 
 }
