@@ -9,14 +9,14 @@ import freenet.node.DarknetPeerNode;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.BucketTools;
 
-public class SendBookmarMessage extends SendPeerMessage {
+public class SendBookmarkMessage extends SendPeerMessage {
 
 	public final static String NAME = "SendBookmark";
 	private final FreenetURI uri;
 	private final String name;
 	private final boolean hasAnAnActiveLink;
 
-	public SendBookmarMessage(SimpleFieldSet fs)
+	public SendBookmarkMessage(SimpleFieldSet fs)
 			throws MessageInvalidException {
 		super(fs);
 		try {
