@@ -150,14 +150,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>(fetcher.decompressors);
 		if(fetcher.uri == null) throw new NullPointerException();
 		this.uri = persistent ? fetcher.uri.clone() : fetcher.uri;
-		if(parent instanceof ClientGetter) {
-			metaSnoop = ((ClientGetter)parent).getMetaSnoop();
-			bucketSnoop = ((ClientGetter)parent).getBucketSnoop();
-		}
-		else {
-			metaSnoop = null;
-			bucketSnoop = null;
-		}
+		this.metaSnoop = fetcher.metaSnoop;
+		this.bucketSnoop = fetcher.bucketSnoop;
 	}
 
 	// Process the completed data. May result in us going to a
