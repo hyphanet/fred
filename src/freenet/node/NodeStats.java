@@ -448,6 +448,13 @@ public class NodeStats implements Persistable {
 		hourlyRemoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
 		hourlyRemoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
 
+		hourlyRemoteCHKLocalSuccessDistByHTL = new double[node.maxHTL()+1];
+		hourlyRemoteCHKRemoteSuccessDistByHTL = new double[node.maxHTL()+1];
+		hourlyRemoteCHKFailureDistByHTL = new double[node.maxHTL()+1];
+		hourlyRemoteSSKLocalSuccessDistByHTL = new double[node.maxHTL()+1];
+		hourlyRemoteSSKRemoteSuccessDistByHTL = new double[node.maxHTL()+1];
+		hourlyRemoteSSKFailureDistByHTL = new double[node.maxHTL()+1];
+
 		lastHourlyTime = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		currentTime = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	}
@@ -2088,6 +2095,13 @@ public class NodeStats implements Persistable {
 	private long[] hourlyRemoteSSKRequestsSuccessByHTL;
 	private long[] hourlyRemoteSSKRequestsLocalSuccessByHTL;
 
+	private double[] hourlyRemoteCHKLocalSuccessDistByHTL;
+	private double[] hourlyRemoteCHKRemoteSuccessDistByHTL;
+	private double[] hourlyRemoteCHKFailureDistByHTL;
+	private double[] hourlyRemoteSSKLocalSuccessDistByHTL;
+	private double[] hourlyRemoteSSKRemoteSuccessDistByHTL;
+	private double[] hourlyRemoteSSKFailureDistByHTL;
+
 	private Calendar lastHourlyTime;
 	private Calendar currentTime;
 	private static SimpleDateFormat utcDateTime;
@@ -2096,7 +2110,7 @@ public class NodeStats implements Persistable {
 		utcDateTime.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 	
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl) {
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location) {
 		if(htl > node.maxHTL()) htl = node.maxHTL();
 		StringBuilder logEntry = null;
 		synchronized(this) {
@@ -2129,12 +2143,29 @@ public class NodeStats implements Persistable {
 
 				for (int i = hourlyRemoteCHKRequestsByHTL.length - 1; i >= 0; i--) {
 					logEntry.append("HourlyStats: HTL\t").append(i).append("\t");
-					logEntry.append(hourlyRemoteCHKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteCHKRequestsSuccessByHTL[i] - hourlyRemoteCHKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteCHKRequestsByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteSSKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteSSKRequestsSuccessByHTL[i] - hourlyRemoteSSKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteSSKRequestsByHTL[i]).append("\n");
+
+					long nLocalCHKSuccess = hourlyRemoteCHKRequestsLocalSuccessByHTL[i];
+					long nRemoteCHKSuccess = hourlyRemoteCHKRequestsSuccessByHTL[i] - nLocalCHKSuccess;
+					long nTotalCHK = hourlyRemoteCHKRequestsByHTL[i];
+					long nLocalSSKSuccess = hourlyRemoteSSKRequestsLocalSuccessByHTL[i];
+					long nRemoteSSKSuccess = hourlyRemoteSSKRequestsSuccessByHTL[i] - nLocalSSKSuccess;
+					long nTotalSSK = hourlyRemoteSSKRequestsByHTL[i];
+
+					logEntry.append(nLocalCHKSuccess).append("\t");
+					logEntry.append(nRemoteCHKSuccess).append("\t");
+					logEntry.append(nTotalCHK).append("\t");
+
+					logEntry.append(nLocalSSKSuccess).append("\t");
+					logEntry.append(nRemoteSSKSuccess).append("\t");
+					logEntry.append(nTotalSSK).append("\t");
+
+					logEntry.append(hourlyRemoteCHKLocalSuccessDistByHTL[i] / nLocalCHKSuccess).append("\t");
+					logEntry.append(hourlyRemoteCHKRemoteSuccessDistByHTL[i] / nRemoteCHKSuccess).append("\t");
+					logEntry.append(hourlyRemoteCHKFailureDistByHTL[i] / (nTotalCHK - nLocalCHKSuccess - nRemoteCHKSuccess)).append("\t");
+
+					logEntry.append(hourlyRemoteSSKLocalSuccessDistByHTL[i] / nLocalSSKSuccess).append("\t");
+					logEntry.append(hourlyRemoteSSKRemoteSuccessDistByHTL[i] / nRemoteSSKSuccess).append("\t");
+					logEntry.append(hourlyRemoteSSKFailureDistByHTL[i] / (nTotalSSK - nLocalSSKSuccess - nRemoteSSKSuccess)).append("\n");
 
 					hourlyRemoteCHKRequestsByHTL[i] = 0;
 					hourlyRemoteCHKRequestsSuccessByHTL[i] = 0;
@@ -2142,8 +2173,24 @@ public class NodeStats implements Persistable {
 					hourlyRemoteSSKRequestsByHTL[i] = 0;
 					hourlyRemoteSSKRequestsSuccessByHTL[i] = 0;
 					hourlyRemoteSSKRequestsLocalSuccessByHTL[i] = 0;
+
+					hourlyRemoteCHKLocalSuccessDistByHTL[i] = 0;
+					hourlyRemoteCHKRemoteSuccessDistByHTL[i] = 0;
+					hourlyRemoteCHKFailureDistByHTL[i] = 0;
+					hourlyRemoteSSKLocalSuccessDistByHTL[i] = 0;
+					hourlyRemoteSSKRemoteSuccessDistByHTL[i] = 0;
+					hourlyRemoteSSKFailureDistByHTL[i] = 0;
 				}
 			}
+			double rawDist = Location.distance(node.getLocation(), location);
+			double logDist;
+			if (rawDist > 0 && rawDist <= 0.5) {
+				logDist = Math.log(rawDist) / Math.log(2.0);
+			} else {
+				logDist = -1;
+			}
+
+
 			if(ssk) {
 				remoteSSKRequestsByHTL[htl]++;
 				hourlyRemoteSSKRequestsByHTL[htl]++;
@@ -2158,6 +2205,9 @@ public class NodeStats implements Persistable {
 					if(local) {
 						remoteSSKRequestsLocalSuccessByHTL[htl]++;
 						hourlyRemoteSSKRequestsLocalSuccessByHTL[htl]++;
+						hourlyRemoteSSKLocalSuccessDistByHTL[htl] += logDist;
+					} else {
+						hourlyRemoteSSKRemoteSuccessDistByHTL[htl] += logDist;
 					}
 				} else {
 					remoteCHKRequestsSuccessByHTL[htl]++;
@@ -2165,7 +2215,16 @@ public class NodeStats implements Persistable {
 					if(local) {
 						remoteCHKRequestsLocalSuccessByHTL[htl]++;
 						hourlyRemoteCHKRequestsLocalSuccessByHTL[htl]++;
+						hourlyRemoteCHKLocalSuccessDistByHTL[htl] += logDist;
+					} else {
+						hourlyRemoteCHKRemoteSuccessDistByHTL[htl] += logDist;
 					}
+				}
+			} else {
+				if (ssk) {
+					hourlyRemoteSSKFailureDistByHTL[htl] += logDist;
+				} else {
+					hourlyRemoteCHKFailureDistByHTL[htl] += logDist;
 				}
 			}
 		}
