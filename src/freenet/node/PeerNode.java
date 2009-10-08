@@ -724,7 +724,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long arkNo = 0;
 		try {
 			String arkPubKey = fs.get("ark.pubURI");
-
 			arkNo = fs.getLong("ark.number", -1);
 			if(arkPubKey == null && arkNo <= -1) {
 				// ark.pubURI and ark.number are always optional as a pair
