@@ -11,7 +11,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.PeerNode;
 import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.ReceivedTextFeedMessage;
+import freenet.node.fcp.TextFeedMessage;
 import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
@@ -112,8 +112,8 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 
 	@Override
 	public FCPMessage getFCPMessage() {
-		return new ReceivedTextFeedMessage(getTitle(),
-				getShortText(), getText(), sourceNodeName,
+		return new TextFeedMessage(getTitle(),
+				getShortText(), getText(), getPriorityClass(), getUpdatedTime(), sourceNodeName,
 				composedTime, sentTime, receivedTime, messageText);
 	}
 

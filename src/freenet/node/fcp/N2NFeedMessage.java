@@ -5,14 +5,14 @@ import com.db4o.ObjectContainer;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
-public abstract class ReceivedN2NFeedMessage extends ReceivedFeedMessage {
+public abstract class N2NFeedMessage extends FeedMessage {
 
 	protected final String sourceNodeName;
 	protected final long composed, sent, received;
 
-	public ReceivedN2NFeedMessage(String header, String shortText, String text,
+	public N2NFeedMessage(String header, String shortText, String text, short priorityClass, long updatedTime,
 			String sourceNodeName, long composed, long sent, long received) {
-		super(header, shortText, text);
+		super(header, shortText, text, priorityClass, updatedTime);
 		this.sourceNodeName = sourceNodeName;
 		this.composed = composed;
 		this.sent = sent;

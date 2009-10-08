@@ -156,7 +156,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(o instanceof KeyBlock) {
 			tag.setServedFromDatastore();
 			returnLocalData((KeyBlock) o);
-			node.nodeStats.remoteRequest(key instanceof NodeSSK, true, true, htl);
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, true, true, htl, key.toNormalizedDouble());
 			return;
 		}
 
@@ -165,7 +165,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			status = RequestSender.DATA_NOT_FOUND; // for byte logging
 			node.failureTable.onFinalFailure(key, null, htl, htl, FailureTable.REJECT_TIME, source);
 			sendTerminal(dnf);
-			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl);
+			node.nodeStats.remoteRequest(key instanceof NodeSSK, false, false, htl, key.toNormalizedDouble());
 			return;
 		} else {
 			long queueTime = source.getProbableSendQueueTime();
@@ -271,7 +271,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
-		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl);
+		node.nodeStats.remoteRequest(key instanceof NodeSSK, status == RequestSender.SUCCESS, false, htl, key.toNormalizedDouble());
 
 		if(tooLate) {
 			// Offer the data if there is any.
