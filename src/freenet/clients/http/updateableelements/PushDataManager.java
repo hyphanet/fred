@@ -65,13 +65,18 @@ public class PushDataManager {
 			if(logMINOR){
 				Logger.minor(this, "Element is present on page:"+reqId+". Adding an UpdateEvent for all notification list.");
 			}
-			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
+			for(Map.Entry<String, List<UpdateEvent>> entry : awaitingNotifications.entrySet()) {
+//			for (List<UpdateEvent> notificationList : awaitingNotifications.values()) {
+				List<UpdateEvent> notificationList = entry.getValue();
 				UpdateEvent updateEvent = new UpdateEvent(reqId, id);
 				if (notificationList.contains(updateEvent) == false) {
 					notificationList.add(updateEvent);
 					if (logMINOR) {
-						Logger.minor(this, "Notification("+updateEvent+") added to a notification list");
+						Logger.minor(this, "Notification("+updateEvent+") added to a notification list for "+entry.getKey());
 					}
+				} else {
+					if (logMINOR)
+						Logger.minor(this, "Not notifying "+entry.getKey()+" because already on list");
 				}
 			}
 			needsUpdate = true;
