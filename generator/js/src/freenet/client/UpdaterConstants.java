@@ -21,7 +21,12 @@ public class UpdaterConstants {
 	public static final String	XMLALERT_UPDATER			= "XmlAlertUpdater";
 	// End of Updaters
 
-	public static final int		KEEPALIVE_INTERVAL_SECONDS	= 60;
+	// 10 minute timeout.
+	// We get a notification on page closure unless the browser dies, and
+	// CSS fetches and manual downloads can occupy many connections (e.g.
+	// The Activelink Index has 8 CSS's), so don't set it too low.
+	
+	public static final int		KEEPALIVE_INTERVAL_SECONDS	= 600;
 
 	public static final String	SUCCESS						= "SUCCESS";
 
