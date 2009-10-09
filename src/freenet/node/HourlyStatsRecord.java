@@ -90,6 +90,14 @@ public class HourlyStatsRecord {
 		utcDateTime.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
+	private static final DecimalFormat fix3p3pct = new DecimalFormat("##0.000%");
+	private static final DecimalFormat fix4p = new DecimalFormat("#.0000");
+
+	private static double fixNaN(double d) {
+		if (Double.isNaN(d)) return 0.;
+		return d;
+	}
+
 	public synchronized String toString() {
 		StringBuilder s = new StringBuilder();
 		s.append("HourlyStats: Report for hour beginning with UTC ");
@@ -110,17 +118,15 @@ public class HourlyStatsRecord {
 			s.append(line.sskRemoteSuccessDist.countReports()).append("\t");
 			s.append(line.sskFailureDist.countReports()).append("\t");
 
-			s.append(line.chkLocalSuccessDist.currentValue()).append("\t");
-			s.append(line.chkRemoteSuccessDist.currentValue()).append("\t");
-			s.append(line.chkFailureDist.currentValue()).append("\t");
-			s.append(line.sskLocalSuccessDist.currentValue()).append("\t");
-			s.append(line.sskRemoteSuccessDist.currentValue()).append("\t");
-			s.append(line.sskFailureDist.currentValue()).append("\n");
+			s.append(fix4p.format(fixNaN(line.chkLocalSuccessDist.currentValue()))).append("\t");
+			s.append(fix4p.format(fixNaN(line.chkRemoteSuccessDist.currentValue()))).append("\t");
+			s.append(fix4p.format(fixNaN(line.chkFailureDist.currentValue()))).append("\t");
+			s.append(fix4p.format(fixNaN(line.sskLocalSuccessDist.currentValue()))).append("\t");
+			s.append(fix4p.format(fixNaN(line.sskRemoteSuccessDist.currentValue()))).append("\t");
+			s.append(fix4p.format(fixNaN(line.sskFailureDist.currentValue()))).append("\n");
 		}
 		return s.toString();
 	}
-
-	private static final DecimalFormat fix3p3pct = new DecimalFormat("##0.000%");
 
 	public void fillRemoteRequestHTLsBox(HTMLNode html) {
 		HTMLNode table = html.addChild("table");
