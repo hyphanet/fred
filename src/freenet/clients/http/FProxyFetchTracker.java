@@ -145,8 +145,11 @@ public class FProxyFetchTracker implements Runnable {
 			}
 		}
 		if(toRemove != null)
-		for(FProxyFetchInProgress r : toRemove)
+		for(FProxyFetchInProgress r : toRemove) {
+			if(logMINOR)
+				Logger.minor(this, "Cancelling for "+r);
 			r.finishCancel();
+		}
 		if(needRequeue)
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
 	}
