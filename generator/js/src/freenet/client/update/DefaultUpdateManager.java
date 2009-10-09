@@ -98,7 +98,7 @@ public class DefaultUpdateManager implements IUpdateManager {
 				String updaterType = Base64.decode(response.getText().split("[:]")[1]);
 				// The new content
 				String newContent = Base64.decode(response.getText().split("[:]")[2]);
-				FreenetJs.log("Element will be updated with type:" + updaterType + " and content:" + newContent);
+				FreenetJs.log("Element "+elementId+" will be updated with type:" + updaterType + " and content:" + newContent);
 				// Update the element with the given updater with the got content
 				updaters.get(updaterType).updated(elementId, newContent);
 			}
