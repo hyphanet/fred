@@ -61,13 +61,15 @@ public class FreenetJs implements EntryPoint {
 		MessageManager.get();
 	}
 
+	static long logCounter;
+	
 	/** Log a message */
 	public static final void log(String msg) {
 		try {
 			// Only log id debug is enabled
 			if (isDebug) {
 				// Write the log back to the server
-				 try{ FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",urlEncode(msg))); }catch(Exception e){
+				 try{ FreenetRequest.sendRequest(UpdaterConstants.logWritebackPath, new QueryParameter("msg",requestId+":"+(logCounter++)+":"+urlEncode(msg))); }catch(Exception e){
 				 
 				 }
 				// Write the log to the console
