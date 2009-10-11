@@ -825,9 +825,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					try {
 						if(count) {
 							long queued = core.requestStarters.chkFetchScheduler.countPersistentWaitingKeys(container);
-							System.err.println("Total waiting CHKs: "+queued);
+							Logger.minor(this, "Total waiting CHKs: "+queued);
 							long reallyQueued = core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container);
-							System.err.println("Total queued CHK requests: "+reallyQueued);
+							Logger.minor(this, "Total queued CHK requests: "+reallyQueued);
 							PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 							pageNode = page.outer;
 							HTMLNode contentNode = page.content;
@@ -984,8 +984,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					totalQueuedUploadSize += size;
 			}
 		}
-		System.err.println("Total queued downloads: "+SizeUtil.formatSize(totalQueuedDownloadSize));
-		System.err.println("Total queued uploads: "+SizeUtil.formatSize(totalQueuedUploadSize));
+		Logger.minor(this, "Total queued downloads: "+SizeUtil.formatSize(totalQueuedDownloadSize));
+		Logger.minor(this, "Total queued uploads: "+SizeUtil.formatSize(totalQueuedUploadSize));
 		
 		Comparator<ClientRequest> jobComparator = new Comparator<ClientRequest>() {
 			public int compare(ClientRequest firstRequest, ClientRequest secondRequest) {
