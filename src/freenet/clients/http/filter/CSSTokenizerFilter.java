@@ -3280,7 +3280,8 @@ outer:		for(int i=0;i<value.length;i++) {
 					} if(ElementInfo.isGenericFontFamily(decoded.toLowerCase())) {
 						hadFont = true;
 						continue;
-					}
+					} else
+						s = decoded;
 				} else if(word instanceof ParsedIdentifier) {
 					s = (((ParsedIdentifier)word).getDecoded());
 					if(ElementInfo.isGenericFontFamily(s)) {
@@ -3362,6 +3363,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				// Unfortunately fonts can be ambiguous...
 				// Therefore we do not accept a single-word font unless it is either quoted or ends in a comma.
 				fontWords.clear();
+				assert(s != null);
 				fontWords.add(s);
 				if(debug) log("first word: \""+s+"\"");
 				if(i == value.length-1) {
@@ -3507,6 +3509,9 @@ outer:		for(int i=0;i<value.length;i++) {
 		}
 
 		private boolean validFontWords(ArrayList<String> fontWords) {
+			for(String s : fontWords) {
+				if(s == null) throw new NullPointerException(); 
+			}
 			if(fontWords.size() == 1) {
 				if(ElementInfo.isGenericFontFamily(fontWords.get(0)))
 					return true;
