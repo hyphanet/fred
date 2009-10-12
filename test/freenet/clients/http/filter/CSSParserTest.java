@@ -217,6 +217,8 @@ public class CSSParserTest extends TestCase {
 		
 		// Space is not required either after or before comma!
 		propertyTests.put("h2 { font-family: Verdana,sans-serif }", " h2 { font-family:Verdana,sans-serif;}\n");
+		// Case in generic keywords
+		propertyTests.put("h2 { font-family: Verdana,Sans-Serif }", " h2 { font-family:Verdana,Sans-Serif;}\n");
 		// This one is from the text Activelink Index
 		propertyTests.put("h2 { font: normal 12px/15px Verdana,sans-serif }", " h2 { font:normal 12px/15px Verdana,sans-serif;}\n");
 		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", " h2 { font-family:times new roman,arial,verdana;}\n");

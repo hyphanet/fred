@@ -3513,7 +3513,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				if(s == null) throw new NullPointerException(); 
 			}
 			if(fontWords.size() == 1) {
-				if(ElementInfo.isGenericFontFamily(fontWords.get(0)))
+				if(ElementInfo.isGenericFontFamily(fontWords.get(0).toLowerCase()))
 					return true;
 			}
 			StringBuffer sb = new StringBuffer();
