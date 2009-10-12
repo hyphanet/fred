@@ -597,6 +597,9 @@ public class PersistentBlobTempBucketFactory {
 							// Move one key.
 							PersistentBlobTempBucketTag newTag = freeSlots.remove(lFirstSlot);
 							
+							if(newTag == null)
+								throw new NullPointerException();
+							
 							PersistentBlobTempBucket shadow = null;
 							if(shadows.containsKey(lastCommitted)) {
 								shadow = shadows.get(lastCommitted);
