@@ -225,7 +225,17 @@ public class PersistentBlobTempBucket implements Bucket {
 		}
 		boolean p;
 		synchronized(this) {
-			if(tag == null) throw new NullPointerException();
+			if(tag == null) {
+				if(!container.ext().isActive(this)) {
+					Logger.error(this, "NOT ACTIVE IN storeTo()!!", new Exception("error"));
+					container.activate(this, 1);
+					if(tag == null) {
+						throw new NullPointerException("Activated but tag still null!");
+					}
+				} else {
+					throw new NullPointerException("Active but tag null!");
+				}
+			}
 			p = persisted;
 			persisted = true;
 		}
