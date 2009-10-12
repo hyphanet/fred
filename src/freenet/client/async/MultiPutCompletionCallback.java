@@ -133,7 +133,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 					}
 				} else {
 					// Delete the old failure mode, use the new one
-					this.e.removeFrom(container);
+					if(persistent)
+						this.e.removeFrom(container);
 					this.e = e;
 				}
 				

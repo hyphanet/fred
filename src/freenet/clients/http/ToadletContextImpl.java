@@ -464,7 +464,16 @@ public class ToadletContextImpl implements ToadletContext {
 		} catch (Throwable t) {
 			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
 			try {
-				sendError(sock.getOutputStream(), 500, "Internal Error", t.toString(), true, null);
+				String msg = "<html><head><title>"+NodeL10n.getBase().getString("Toadlet.internalErrorTitle")+
+						"</title></head><body><h1>"+NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				t.printStackTrace(pw);
+				pw.flush();
+				msg = msg + sw.toString() + "</pre></body></html>";
+				byte[] messageBytes = msg.getBytes("UTF-8");
+				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true);
+				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {
 				// ignore and return
 			}

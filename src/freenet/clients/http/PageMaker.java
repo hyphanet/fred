@@ -96,7 +96,7 @@ public final class PageMaker {
 	private List<SubMenu> menuList = new ArrayList<SubMenu>();
 	private Map<String, SubMenu> subMenus = new HashMap<String, SubMenu>();
 	
-	private class SubMenu {
+	private static class SubMenu {
 		
 		/** Name of the submenu */
 		private final String navigationLinkText;

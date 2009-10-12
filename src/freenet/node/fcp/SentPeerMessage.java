@@ -5,14 +5,14 @@ import com.db4o.ObjectContainer;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
-public class SentFeedMessage extends FCPMessage {
+public class SentPeerMessage extends FCPMessage {
 
-	public static final String NAME = "SentFeed";
+	public static final String NAME = "SentPeer";
 
 	public final String identifier;
 	public final int nodeStatus;
 
-	public SentFeedMessage(String identifier, int nodeStatus) {
+	public SentPeerMessage(String identifier, int nodeStatus) {
 		this.identifier = identifier;
 		this.nodeStatus = nodeStatus;
 	}
@@ -22,6 +22,7 @@ public class SentFeedMessage extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		fs.put("NodeStatus", nodeStatus);
+		//TODO Textual description of the node status?
 		return fs;
 	}
 
