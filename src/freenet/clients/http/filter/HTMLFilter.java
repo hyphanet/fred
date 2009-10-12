@@ -2002,18 +2002,33 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		@Override
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
-			if (t.unparsedAttrs.length != 2)
+			if (t.unparsedAttrs.length != 2 && t.unparsedAttrs.length != 3) {
+				Logger.minor(this, "Deleting xml declaration, invalid length");
 				return null;
-			if (!t.unparsedAttrs[0].equals("version=\"1.0\""))
+			}
+			if (t.unparsedAttrs.length == 3 && !t.unparsedAttrs[2].equals("?")) {
+				Logger.minor(this, "Deleting xml declaration, invalid ending (length 2)");
 				return null;
-			if (!t.unparsedAttrs[1].startsWith("encoding=\"")
-				&& !t.unparsedAttrs[1].endsWith("\"?"))
+			}
+			if (t.unparsedAttrs.length == 2 && !t.unparsedAttrs[1].endsWith("?")) {
+				Logger.minor(this, "Deleting xml declaration, invalid ending (length 3)");
 				return null;
-			if (!t
-				.unparsedAttrs[1]
-				.substring(10, t.unparsedAttrs[1].length() - 2)
-				.equalsIgnoreCase(pc.charset))
+			}
+			if (!t.unparsedAttrs[0].equals("version=\"1.0\"")) {
+				Logger.minor(this, "Deleting xml declaration, invalid version");
 				return null;
+			}
+			if (!(t.unparsedAttrs[1].startsWith("encoding=\"")
+				&& (t.unparsedAttrs[1].endsWith("\"?") || t.unparsedAttrs[1].endsWith("\"")))) {
+				Logger.minor(this, "Deleting xml declaration, invalid encoding");
+				return null;
+			}
+			if (!t.unparsedAttrs[1]
+				.substring(10, t.unparsedAttrs[1].length() - 1)
+				.equalsIgnoreCase(pc.charset)) {
+				Logger.minor(this, "Deleting xml declaration (invalid charset " + t.unparsedAttrs[1].substring(10, t.unparsedAttrs[1].length() - 1) + ")");
+				return null;
+			}
 			return t;
 		}
 	}
