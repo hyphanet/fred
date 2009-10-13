@@ -65,7 +65,7 @@ public class HourlyStatsRecord {
 		double rawDist = Location.distance(node.getLocation(), location);
 		if (rawDist <= 0.0) rawDist = Double.MIN_VALUE;
 		double logDist = Math.log(rawDist) / Math.log(2.0);
-		assert logDist < (-1.0 + Double.MIN_NORMAL);
+		assert logDist < (-1.0 + 0x1.0p-1022/* Double.MIN_NORMAL */);
 		int distBucket = ((int)Math.floor(-1 * logDist));
 		if (distBucket >= byDist.length) distBucket = byDist.length - 1;
 
