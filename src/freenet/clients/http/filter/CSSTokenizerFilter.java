@@ -1242,6 +1242,9 @@ class CSSTokenizerFilter {
 		boolean s2Comma=false;
 		boolean canImport=true; //import statement can occur only in the beginning
 
+		String whitespaceAfterColon = "";
+		
+		
 		while(true)
 		{
 			try
@@ -1302,7 +1305,27 @@ class CSSTokenizerFilter {
 					}
 					openBraces++;
 					isState1Present=false;
-					ParsedWord[] parts=split(buffer.toString());
+					
+					int i = 0;
+					for(i=0;i<buffer.length();i++) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					String braceSpace = buffer.substring(0, i);
+					buffer.delete(0, i);
+					for(i=buffer.length()-1;i>=0;i--) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					i++;
+					String postSpace = buffer.substring(i);
+					buffer.setLength(i);
+					ParsedWord[] parts=split(buffer.toString().trim());
+					buffer.setLength(0);
 					boolean valid = false;
 					if(parts.length!=2)
 					{
@@ -1315,7 +1338,7 @@ class CSSTokenizerFilter {
 					{
 						ArrayList<String> medias = commaListFromIdentifiers(parts, 1);
 						if(medias != null && medias.size() > 0) {
-							for(int i=0;i<medias.size();i++) {
+							for(i=0;i<medias.size();i++) {
 								if(!FilterUtils.isMedia(medias.get(i))) {
 									// Unrecognised media, don't pass it.
 									medias.remove(i);
@@ -1324,6 +1347,7 @@ class CSSTokenizerFilter {
 							}
 						}
 						if(medias != null && medias.size() > 0) {
+							filteredTokens.append(braceSpace);
 							filteredTokens.append("@media ");
 							boolean first = true;
 							for(String media : medias) {
@@ -1331,7 +1355,8 @@ class CSSTokenizerFilter {
 								first = false;
 								filteredTokens.append(media);
 							}
-							filteredTokens.append(" {\n");
+							filteredTokens.append(postSpace);
+							filteredTokens.append("{");
 							valid = true;
 							currentMedia = medias.toArray(new String[medias.size()]);
 						}
@@ -1476,6 +1501,18 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
+					
+					int i = 0;
+					for(i=0;i<buffer.length();i++) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					if(debug) log("Appending whitespace in state2: \""+buffer.substring(0,i)+"\"");
+					String ws = buffer.substring(0, i);
+					buffer.delete(0, i);
+					
 					openBraces++;
 					if(buffer.toString().trim()!="")
 					{
@@ -1487,7 +1524,8 @@ class CSSTokenizerFilter {
 								filteredTokens.append(",");
 								s2Comma=false;
 							}
-							filteredTokens.append(" "+filtered);
+							filteredTokens.append(ws);
+							filteredTokens.append(filtered);
 							filteredTokens.append(" {");
 						}
 						else
@@ -1511,13 +1549,13 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
-					String filtered=recursiveSelectorVerifier(buffer.toString());
+					String filtered=recursiveSelectorVerifier(buffer.toString().trim());
 					if(debug) log("STATE2 CASE , filtered elements"+filtered);
 					if(filtered!=null)
 					{
 						if(s2Comma)
 						{
-							filteredTokens.append(", "+ filtered);
+							filteredTokens.append(","+ filtered);
 						}
 						else
 						{
@@ -1539,11 +1577,11 @@ class CSSTokenizerFilter {
 					if(ignoreElementsS1) {
 						ignoreElementsS1=false;
 						if(closeIgnoredS1) {
-							w.write("}\n");
+							w.write("}");
 							closeIgnoredS1 = false;
 						}
 					} else
-						w.write(filteredTokens.toString()+"}\n");
+						w.write(filteredTokens.toString()+"}");
 					filteredTokens.setLength(0);
 					buffer.setLength(0);
 					currentMedia=new String[] {defaultMedia};
@@ -1617,7 +1655,17 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
-					propertyName=buffer.toString().trim();
+					int i = 0;
+					for(i=0;i<buffer.length();i++) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					if(debug) log("Appending whitespace: "+buffer.substring(0,i));
+					filteredTokens.append(buffer.substring(0, i));
+					propertyName=buffer.delete(0, i).toString().trim();
+					if(debug) log("Property name: "+propertyName);
 					buffer.setLength(0);
 					if(debug) log("STATE3 CASE :: "+c);
 					break;
@@ -1628,12 +1676,24 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
-					propertyValue=buffer.toString().trim();
+					
+					i = 0;
+					for(i=0;i<buffer.length();i++) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					if(debug) log("Appending whitespace: "+buffer.substring(0,i));
+					whitespaceAfterColon = buffer.substring(0, i);
+					propertyValue=buffer.delete(0, i).toString().trim();
+					if(debug) log("Property value: "+propertyValue);
 					buffer.setLength(0);
+
 					ParsedWord[] words = split(propertyValue);
 					if(words != null && !ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,words))
 					{
-						filteredTokens.append(" "+propertyName+":"+propertyValue+";");
+						filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 						if(debug) log("STATE3 CASE ;: appending "+ propertyName+":"+propertyValue);
 					}
 					propertyName="";
@@ -1647,19 +1707,36 @@ class CSSTokenizerFilter {
 					openBraces--;
 					if(propertyName!="")
 					{
+						
+						i = 0;
+						for(i=0;i<buffer.length();i++) {
+							char c1 = buffer.charAt(i);
+							if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+								continue;
+							break;
+						}
+						if(debug) log("Appending whitespace: "+buffer.substring(0,i));
+						whitespaceAfterColon = buffer.substring(0, i);
+						buffer.delete(0, i);
+						
+						// Don't bother with whitespace at end, if we are here
+						// we are going to have to add a ; anyway, so we have already changed the string.
+						
 						propertyValue=buffer.toString().trim();
+						if(debug) log("Property value: "+propertyValue);
 						buffer.setLength(0);
+
 						if(debug) log("Found PropertyName:"+propertyName+" propertyValue:"+propertyValue);
 						if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,split(propertyValue)))
 						{
-							filteredTokens.append(" "+propertyName+":"+propertyValue+";");
+							filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 							if(debug) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
 						}
 						propertyName="";
 
 					}
 					if((!ignoreElementsS2) || closeIgnoredS2) {
-						filteredTokens.append("}\n");
+						filteredTokens.append("}");
 						closeIgnoredS2 = false;
 						ignoreElementsS2 = false;
 					} else
@@ -1749,7 +1826,16 @@ class CSSTokenizerFilter {
 			}
 
 		}
-
+		
+		int i = 0;
+		for(i=0;i<buffer.length();i++) {
+			char c1 = buffer.charAt(i);
+			if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+				continue;
+			break;
+		}
+		buffer.setLength(i);
+		w.write(buffer.toString());
 
 	}
 
