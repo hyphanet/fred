@@ -7,6 +7,12 @@ import java.util.Arrays;
 import freenet.support.Logger;
 public class ElementInfo {
 
+	static boolean disallowUnknownSpecificFonts = false;
+	/** If true, and above is false, allow font names only if they consist
+	 * entirely of spaces, numbers, letters, and ._-,+~
+	 */
+	static boolean disallowNonAlnumFonts = true;
+	
 	private final static HashSet<String> VOID_ELEMENTS=new HashSet<String>();
 	static {
 		VOID_ELEMENTS.add("area");
@@ -205,11 +211,22 @@ public class ElementInfo {
 	// FIXME use HashSet<String> or even enum.
 	
 	public static boolean isSpecificFontFamily(String font) {
-		for(String s : FONT_LIST)
-			if(s.equals(font)) return true;
-		return false;
+		if(disallowUnknownSpecificFonts) {
+			for(String s : FONT_LIST)
+				if(s.equals(font)) return true;
+			return false;
+		} else if(disallowNonAlnumFonts) {
+			for(int i=0;i<font.length();i++) {
+				char c = font.charAt(i);
+				if(!(Character.isLetterOrDigit(c) || c == ' ' || c == '.' || c == '_' || c == '-' || c == ',' || c == '+' || c == '~')) return false;
+			}
+			return true;
+		}
+		// Allow anything. The caller will have enforced that unquoted font names must not contain non-identifier characters.
+		return true;
 	}
 	
+	/** font must be lower-case */
 	public static boolean isGenericFontFamily(String font) {
 		for(String s : GENERIC_FONT_KEYWORDS)
 			if(s.equals(font)) return true;

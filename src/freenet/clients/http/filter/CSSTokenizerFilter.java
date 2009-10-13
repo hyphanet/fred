@@ -3331,6 +3331,7 @@ outer:		for(int i=0;i<value.length;i++) {
 						} else if(parsed[0] instanceof ParsedIdentifier) {
 							keyword = (((ParsedIdentifier)parsed[0]).getDecoded());
 						} else {
+							// Unquoted, so not safe to allow wierd characters.
 							if(debug) log("subword "+subword+" from "+s+" parses to unrecognised type "+parsed[0]);
 							return false;
 						}
@@ -3431,6 +3432,7 @@ outer:		for(int i=0;i<value.length;i++) {
 							} else if(parsed[0] instanceof ParsedIdentifier) {
 								keyword = (((ParsedIdentifier)parsed[0]).getDecoded());
 							} else {
+								// Unquoted, so not safe to allow wierd characters.
 								if(debug) log("subword "+subword+" from "+s1+" parses to unrecognised type "+parsed[0]);
 								return false;
 							}
@@ -3497,15 +3499,21 @@ outer:		for(int i=0;i<value.length;i++) {
 			}
 
 		private boolean possiblyValidFontWords(ArrayList<String> fontWords) {
-			StringBuffer sb = new StringBuffer();
-			boolean first = true;
-			for(String s : fontWords) {
-				if(!first) sb.append(' ');
-				first = false;
-				sb.append(s);
+			if(ElementInfo.disallowUnknownSpecificFonts) {
+				StringBuffer sb = new StringBuffer();
+				boolean first = true;
+				for(String s : fontWords) {
+					if(!first) sb.append(' ');
+					first = false;
+					sb.append(s);
+				}
+				String s = sb.toString().toLowerCase();
+				return ElementInfo.isWordPrefixOrMatchOfSpecificFontFamily(s);
+			} else {
+				for(String s : fontWords)
+					if(!ElementInfo.isSpecificFontFamily(s)) return false;
+				return true;
 			}
-			String s = sb.toString().toLowerCase();
-			return ElementInfo.isWordPrefixOrMatchOfSpecificFontFamily(s);
 		}
 
 		private boolean validFontWords(ArrayList<String> fontWords) {

@@ -188,8 +188,6 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font-family: Times New Roman;}\n", " h2 { font-family:Times New Roman;}\n");
 		propertyTests.put("h2 { font-family: \"Times New Roman\";}\n", " h2 { font-family:\"Times New Roman\";}\n");
 		propertyTests.put("h2 { font-family: inherit;}\n", " h2 { font-family:inherit;}\n");
-		propertyTests.put("h2 { font-family: Times New Reman;}\n", " h2 {}\n");
-		propertyTests.put("h2 { font-family: \"Times New Reman\";}\n", " h2 {}\n");
 		propertyTests.put("h2 { font-family: \"Times New Roman\" , \"Arial\";}\n"," h2 { font-family:\"Times New Roman\" , \"Arial\";}\n"); 
 		propertyTests.put("h2 { font-family: \"Times New Roman\", \"Arial\";}\n"," h2 { font-family:\"Times New Roman\", \"Arial\";}\n"); 
 		propertyTests.put("h2 { font-family: \"Times New Roman\", \"Arial\", \"Helvetica\";}\n"," h2 { font-family:\"Times New Roman\", \"Arial\", \"Helvetica\";}\n");
@@ -199,7 +197,6 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: Times New Roman;}\n", " h2 { font:Times New Roman;}\n");
 		propertyTests.put("h2 { font: \"Times New Roman\";}\n", " h2 { font:\"Times New Roman\";}\n");
 		propertyTests.put("h2 { font: medium \"Times New Roman\";}\n", " h2 { font:medium \"Times New Roman\";}\n");
-		propertyTests.put("h2 { font: Times New Reman;}\n", " h2 {}\n");
 		propertyTests.put("h2 { font: medium Times New Roman, Arial Black;}\n", " h2 { font:medium Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: italic small-caps 500 1.5em Times New Roman, Arial Black;}\n", " h2 { font:italic small-caps 500 1.5em Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: 1.5em/12pt Times New Roman, Arial Black;}\n", " h2 { font:1.5em/12pt Times New Roman, Arial Black;}\n");
@@ -221,6 +218,15 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font-family: Verdana,Sans-Serif }", " h2 { font-family:Verdana,Sans-Serif;}\n");
 		// This one is from the text Activelink Index
 		propertyTests.put("h2 { font: normal 12px/15px Verdana,sans-serif }", " h2 { font:normal 12px/15px Verdana,sans-serif;}\n");
+		// From Activelink Index. This is invalid but browsers will probably change sans to sans-serif; and we will allow it as it might be a generic font family.
+		propertyTests.put("h2 { font:normal 12px/15px Verdana,sans}", " h2 { font:normal 12px/15px Verdana,sans;}\n");
+		// Some fonts that are not on the list but are syntactically valid
+		propertyTests.put("h2 { font-family: Times New Reman;}\n", " h2 { font-family:Times New Reman;}\n");
+		propertyTests.put("h2 { font-family: \"Times New Reman\";}\n", " h2 { font-family:\"Times New Reman\";}\n");
+		propertyTests.put("h2 { font: Times New Reman;}\n", " h2 { font:Times New Reman;}\n");
+		propertyTests.put("h2 { font-family: zaphod beeblebrox,bitstream vera sans,arial,sans-serif}", " h2 { font-family:zaphod beeblebrox,bitstream vera sans,arial,sans-serif;}\n");
+		// NOT syntactically valid
+		propertyTests.put("h2 { font-family: http://www.badguy.com/myfont.ttf}", " h2 {}\n");
 		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", " h2 { font-family:times new roman,arial,verdana;}\n");
 	}
 	
