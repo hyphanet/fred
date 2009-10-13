@@ -12,9 +12,16 @@ import freenet.support.math.TrivialRunningAverage;
 
 /** A record of stats during a single hour */
 public class HourlyStatsRecord {
+	private static final int N_DISTANCE_GROUPS = 16;
 	private final boolean completeHour;
 	private boolean finishedReporting;
-	private HTLStats[] byHTL;
+
+	/**(Logarithmic) routing distances grouped by HTL*/
+	private StatsLine[] byHTL;
+
+	/**HTL grouped by (logarithmic) routing distance*/
+	private StatsLine[] byDist;
+
 	private Date beginTime;
 	private final Node node;
 
@@ -23,12 +30,15 @@ public class HourlyStatsRecord {
 	  * @param completeHour Whether this record began at the start of the hour
 	  */
 	public HourlyStatsRecord(Node node, boolean completeHour) {
+		this.node = node;
 		this.completeHour = completeHour;
 		finishedReporting = false;
-		byHTL = new HTLStats[node.maxHTL() + 1];
-		for (int i = 0; i < byHTL.length; i++) byHTL[i] = new HTLStats();
+		byHTL = new StatsLine[node.maxHTL() + 1];
+		for (int i = 0; i < byHTL.length; i++) byHTL[i] = new StatsLine();
+		byDist = new StatsLine[N_DISTANCE_GROUPS];
+		for (int i = 0; i < byDist.length; i++) byDist[i] = new StatsLine();
+
 		beginTime = new Date();
-		this.node = node;
 	}
 
 	/** Mark this record as complete and stop recording. */
@@ -56,26 +66,34 @@ public class HourlyStatsRecord {
 		if (rawDist <= 0.0) rawDist = Double.MIN_VALUE;
 		double logDist = Math.log(rawDist) / Math.log(2.0);
 		assert logDist < (-1.0 + Double.MIN_NORMAL);
+		int distBucket = ((int)Math.floor(-1 * logDist));
+		if (distBucket >= byDist.length) distBucket = byDist.length - 1;
 
 		if (success) {
 			if (ssk) {
 				if (local) {
-					byHTL[htl].sskLocalSuccessDist.report(logDist);
+					byHTL[htl].sskLocalSuccess.report(logDist);
+					byDist[distBucket].sskLocalSuccess.report(htl);
 				} else {
-					byHTL[htl].sskRemoteSuccessDist.report(logDist);
+					byHTL[htl].sskRemoteSuccess.report(logDist);
+					byDist[distBucket].sskRemoteSuccess.report(htl);
 				}
 			} else {
 				if (local) {
-					byHTL[htl].chkLocalSuccessDist.report(logDist);
+					byHTL[htl].chkLocalSuccess.report(logDist);
+					byDist[distBucket].chkLocalSuccess.report(htl);
 				} else {
-					byHTL[htl].chkRemoteSuccessDist.report(logDist);
+					byHTL[htl].chkRemoteSuccess.report(logDist);
+					byDist[distBucket].chkRemoteSuccess.report(htl);
 				}
 			}
 		} else {
 			if (ssk) {
-				byHTL[htl].sskFailureDist.report(logDist);
+				byHTL[htl].sskFailure.report(logDist);
+				byDist[distBucket].sskFailure.report(htl);
 			} else {
-				byHTL[htl].chkFailureDist.report(logDist);
+				byHTL[htl].chkFailure.report(logDist);
+				byDist[distBucket].chkFailure.report(htl);
 			}
 		}
 	}
@@ -109,21 +127,11 @@ public class HourlyStatsRecord {
 
 		for (int i = byHTL.length - 1; i >= 0; i--) {
 			s.append("HourlyStats: HTL\t").append(i).append("\t");
-			HTLStats line = byHTL[i];
-
-			s.append(line.chkLocalSuccessDist.countReports()).append("\t");
-			s.append(line.chkRemoteSuccessDist.countReports()).append("\t");
-			s.append(line.chkFailureDist.countReports()).append("\t");
-			s.append(line.sskLocalSuccessDist.countReports()).append("\t");
-			s.append(line.sskRemoteSuccessDist.countReports()).append("\t");
-			s.append(line.sskFailureDist.countReports()).append("\t");
-
-			s.append(fix4p.format(fixNaN(line.chkLocalSuccessDist.currentValue()))).append("\t");
-			s.append(fix4p.format(fixNaN(line.chkRemoteSuccessDist.currentValue()))).append("\t");
-			s.append(fix4p.format(fixNaN(line.chkFailureDist.currentValue()))).append("\t");
-			s.append(fix4p.format(fixNaN(line.sskLocalSuccessDist.currentValue()))).append("\t");
-			s.append(fix4p.format(fixNaN(line.sskRemoteSuccessDist.currentValue()))).append("\t");
-			s.append(fix4p.format(fixNaN(line.sskFailureDist.currentValue()))).append("\n");
+			s.append(byHTL[i].toString()).append("\n");
+		}
+		for (int i = 0; i < byDist.length; i++) {
+			s.append("HourlyStats: logDist\t").append(i).append("\t");
+			s.append(byDist[i].toString()).append("\n");
 		}
 		return s.toString();
 	}
@@ -146,14 +154,14 @@ public class HourlyStatsRecord {
 			for(int htl = byHTL.length - 1; htl >= 0; htl--) {
 				row = table.addChild("tr");
 				row.addChild("td", Integer.toString(htl));
-				HTLStats line = byHTL[htl];
-				int chkLS = (int)line.chkLocalSuccessDist.countReports();
-				int chkRS = (int)line.chkRemoteSuccessDist.countReports();
-				int chkF = (int)line.chkFailureDist.countReports();
+				StatsLine line = byHTL[htl];
+				int chkLS = (int)line.chkLocalSuccess.countReports();
+				int chkRS = (int)line.chkRemoteSuccess.countReports();
+				int chkF = (int)line.chkFailure.countReports();
 				int chkT = chkLS + chkRS + chkF;
-				int sskLS = (int)line.sskLocalSuccessDist.countReports();
-				int sskRS = (int)line.sskRemoteSuccessDist.countReports();
-				int sskF = (int)line.sskFailureDist.countReports();
+				int sskLS = (int)line.sskLocalSuccess.countReports();
+				int sskRS = (int)line.sskRemoteSuccess.countReports();
+				int sskF = (int)line.sskFailure.countReports();
 				int sskT = sskLS + sskRS + sskF;
 
 				double chkRate = 0.;
@@ -183,22 +191,40 @@ public class HourlyStatsRecord {
 		}
 	}
 
-	private class HTLStats {
-		//Log sums, ie geometric means
-		TrivialRunningAverage chkLocalSuccessDist;
-		TrivialRunningAverage chkRemoteSuccessDist;
-		TrivialRunningAverage chkFailureDist;
-		TrivialRunningAverage sskLocalSuccessDist;
-		TrivialRunningAverage sskRemoteSuccessDist;
-		TrivialRunningAverage sskFailureDist;
+	private class StatsLine {
+		TrivialRunningAverage chkLocalSuccess;
+		TrivialRunningAverage chkRemoteSuccess;
+		TrivialRunningAverage chkFailure;
+		TrivialRunningAverage sskLocalSuccess;
+		TrivialRunningAverage sskRemoteSuccess;
+		TrivialRunningAverage sskFailure;
 
-		HTLStats() {
-			chkLocalSuccessDist = new TrivialRunningAverage();
-			chkRemoteSuccessDist = new TrivialRunningAverage();
-			chkFailureDist = new TrivialRunningAverage();
-			sskLocalSuccessDist = new TrivialRunningAverage();
-			sskRemoteSuccessDist = new TrivialRunningAverage();
-			sskFailureDist = new TrivialRunningAverage();
+		StatsLine() {
+			chkLocalSuccess = new TrivialRunningAverage();
+			chkRemoteSuccess = new TrivialRunningAverage();
+			chkFailure = new TrivialRunningAverage();
+			sskLocalSuccess = new TrivialRunningAverage();
+			sskRemoteSuccess = new TrivialRunningAverage();
+			sskFailure = new TrivialRunningAverage();
+		}
+
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+
+			sb.append(chkLocalSuccess.countReports()).append("\t");
+			sb.append(chkRemoteSuccess.countReports()).append("\t");
+			sb.append(chkFailure.countReports()).append("\t");
+			sb.append(sskLocalSuccess.countReports()).append("\t");
+			sb.append(sskRemoteSuccess.countReports()).append("\t");
+			sb.append(sskFailure.countReports()).append("\t");
+
+			sb.append(fix4p.format(fixNaN(chkLocalSuccess.currentValue()))).append("\t");
+			sb.append(fix4p.format(fixNaN(chkRemoteSuccess.currentValue()))).append("\t");
+			sb.append(fix4p.format(fixNaN(chkFailure.currentValue()))).append("\t");
+			sb.append(fix4p.format(fixNaN(sskLocalSuccess.currentValue()))).append("\t");
+			sb.append(fix4p.format(fixNaN(sskRemoteSuccess.currentValue()))).append("\t");
+			sb.append(fix4p.format(fixNaN(sskFailure.currentValue()))).append("\t");
+			return sb.toString();
 		}
 	}
 }
