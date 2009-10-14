@@ -27,17 +27,17 @@ public class CSSParserTest extends TestCase {
 	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<String,String>();
 	static
 	{
-		CSS1_SELECTOR.put("h1 { }","h1");
-		CSS1_SELECTOR.put("h1:link { }","h1:link");
-		CSS1_SELECTOR.put("h1:visited { }","h1:visited");
-		CSS1_SELECTOR.put("h1.warning { }","h1.warning");
-		CSS1_SELECTOR.put("h1#myid { }","h1#myid");
-		CSS1_SELECTOR.put("h1 h2 { }","h1 h2");
-		CSS1_SELECTOR.put("h1:active { }","h1:active");
-		CSS1_SELECTOR.put("h1:hover { }","h1:hover");
-		CSS1_SELECTOR.put("h1:focus { }" ,"h1:focus");
-		CSS1_SELECTOR.put("h1:first-line { }" ,"h1:first-line");
-		CSS1_SELECTOR.put("h1:first-letter { }" ,"h1:first-letter");
+		CSS1_SELECTOR.put("h1 {}","h1");
+		CSS1_SELECTOR.put("h1:link {}","h1:link");
+		CSS1_SELECTOR.put("h1:visited {}","h1:visited");
+		CSS1_SELECTOR.put("h1.warning {}","h1.warning");
+		CSS1_SELECTOR.put("h1#myid {}","h1#myid");
+		CSS1_SELECTOR.put("h1 h2 {}","h1 h2");
+		CSS1_SELECTOR.put("h1:active {}","h1:active");
+		CSS1_SELECTOR.put("h1:hover {}","h1:hover");
+		CSS1_SELECTOR.put("h1:focus {}" ,"h1:focus");
+		CSS1_SELECTOR.put("h1:first-line {}" ,"h1:first-line");
+		CSS1_SELECTOR.put("h1:first-letter {}" ,"h1:first-letter");
 
 
 
@@ -48,29 +48,29 @@ public class CSSParserTest extends TestCase {
 	private final static HashMap<String,String> CSS2_SELECTOR= new HashMap<String,String>();
 	static
 	{
-		CSS2_SELECTOR.put("* { }","*");
-		CSS2_SELECTOR.put("h1[foo] { }","h1[foo]");
-		CSS2_SELECTOR.put("h1[foo=\"bar\"] { }", "h1[foo=\"bar\"]"); 
-		CSS2_SELECTOR.put("h1[foo~=\"bar\"] { }", "h1[foo~=\"bar\"]");
-		CSS2_SELECTOR.put("h1[foo~=\"bar\"] { }","h1[foo~=\"bar\"]");
-		CSS2_SELECTOR.put("h1[foo|=\"en\"] { }","h1[foo|=\"en\"]");
-		CSS2_SELECTOR.put("h1:first-child { }","h1:first-child");
-		CSS2_SELECTOR.put("h1:lang(fr) { }","h1:lang(fr)");
-		CSS2_SELECTOR.put("h1>h2 { }","h1>h2");
-		CSS2_SELECTOR.put("h1+h2 { }", "h1+h2");
-		CSS2_SELECTOR.put("div.foo { }", "div.foo");
+		CSS2_SELECTOR.put("* {}","*");
+		CSS2_SELECTOR.put("h1[foo] {}","h1[foo]");
+		CSS2_SELECTOR.put("h1[foo=\"bar\"] {}", "h1[foo=\"bar\"]"); 
+		CSS2_SELECTOR.put("h1[foo~=\"bar\"] {}", "h1[foo~=\"bar\"]");
+		CSS2_SELECTOR.put("h1[foo~=\"bar\"] {}","h1[foo~=\"bar\"]");
+		CSS2_SELECTOR.put("h1[foo|=\"en\"] {}","h1[foo|=\"en\"]");
+		CSS2_SELECTOR.put("h1:first-child {}","h1:first-child");
+		CSS2_SELECTOR.put("h1:lang(fr) {}","h1:lang(fr)");
+		CSS2_SELECTOR.put("h1>h2 {}","h1>h2");
+		CSS2_SELECTOR.put("h1+h2 {}", "h1+h2");
+		CSS2_SELECTOR.put("div.foo {}", "div.foo");
 		
 		// Spaces in a selector string
-		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] { }", "h1[foo=\"bar bar\"]");
-		CSS2_SELECTOR.put("h1[foo=\"bar+bar\"] { }", "h1[foo=\"bar+bar\"]");
-		CSS2_SELECTOR.put("h1[foo=\"bar\\\" bar\"] { }", "h1[foo=\"bar\\\" bar\"]");
+		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");
+		CSS2_SELECTOR.put("h1[foo=\"bar+bar\"] {}", "h1[foo=\"bar+bar\"]");
+		CSS2_SELECTOR.put("h1[foo=\"bar\\\" bar\"] {}", "h1[foo=\"bar\\\" bar\"]");
 		// Wierd one from the CSS spec
 		CSS2_SELECTOR.put("p[example=\"public class foo\\\n{\\\n    private int x;\\\n\\\n    foo(int x) {\\\n        this.x = x;\\\n    }\\\n\\\n}\"] { color: red }", 
 				"p[example=\"public class foo{    private int x;    foo(int x) {        this.x = x;    }}\"] { color: red;}");
 	}
 
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
-	private static final String CSS_STRING_NEWLINESC = "* { }\nbody {\n }\n";
+	private static final String CSS_STRING_NEWLINESC = "* {}\nbody {}\n";
 
 	private static final String CSS_BACKGROUND_URL = "* { background: url(/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png); }";
 	private static final String CSS_BACKGROUND_URLC = "* { background: url(\"/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png\");}";
@@ -111,10 +111,10 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_IMPORT_NOURLC = "@import url(\"style.css?type=text/css\");";
 	
 	private static final String CSS_ESCAPED_LINK = "* { background: url(\\00002f\\00002fwww.google.co.uk/intl/en_uk/images/logo.gif); }\n";
-	private static final String CSS_ESCAPED_LINKC = "* { }\n";
+	private static final String CSS_ESCAPED_LINKC = "* {}\n";
 	
 	private static final String CSS_ESCAPED_LINK2 = "* { background: url(\\/\\/www.google.co.uk/intl/en_uk/images/logo.gif); }\n";
-	private static final String CSS_ESCAPED_LINK2C = "* { }\n";
+	private static final String CSS_ESCAPED_LINK2C = "* {}\n";
 	
 	// CSS2.1 spec, 4.1.7
 	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
@@ -129,12 +129,12 @@ public class CSSParserTest extends TestCase {
 		// Check that the last part of a double bar works
 		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech { h1 { azimuth: behind;}}");
 		
-		propertyTests.put("h1 { color: red; rotation: 70minutes }", "h1 { color: red; }");
+		propertyTests.put("h1 { color: red; rotation: 70minutes }", "h1 { color: red;}");
 		propertyTests.put("@media screen { h1 { color: red; }\nh1[id=\"\n]}", "@media screen { h1 { color: red;}}");
 		propertyTests.put("@media screen { h1 { color: red; }}", "@media screen { h1 { color: red;}}");
-		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\n \ncolor: green;}");
-		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {  \ncolor: green;}");
-//		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen { }");
+		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\ncolor: green;}");
+		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {\ncolor: green;}");
+//		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen {}");
 		
 		propertyTests.put("td { background-position:bottom;}\n", "td { background-position:bottom;}\n");
 		propertyTests.put("td { background:repeat-x;}\n", "td { background:repeat-x;}\n");
@@ -148,10 +148,10 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech { h1 { azimuth: 0.877171rad;}}");
 		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech { h1 { azimuth: left-side behind;}}");
 		// Invalid combination
-		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech { h1 { }}");
+		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech { h1 {}}");
 		propertyTests.put("@media speech { h1 { azimuth: inherit }; }", "@media speech { h1 { azimuth: inherit;}}");
 		// Wrong media type
-		propertyTests.put("h1 { azimuth: inherit }", "h1 { }");
+		propertyTests.put("h1 { azimuth: inherit }", "h1 {}");
 		
 		propertyTests.put("td { background-attachment: scroll}", "td { background-attachment: scroll;}");
 		propertyTests.put("td { background-color: rgb(255, 255, 255)}", "td { background-color: rgb(255, 255, 255);}");
@@ -165,7 +165,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("td { background-color: rgb(110%, 0%, 0%)}", "td { background-color: rgb(110%, 0%, 0%);}");
 		
 		// Invalid element
-		propertyTests.put("silly { background-attachment: scroll}", " ");
+		propertyTests.put("silly { background-attachment: scroll}", "");
 		propertyTests.put("h3 { background-position: 30% top}", "h3 { background-position: 30% top;}");
 		// Fractional lengths
 		propertyTests.put("h3 { background-position: 3.3cm 20%}", "h3 { background-position: 3.3cm 20%;}");
@@ -200,11 +200,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h3 { background: 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}", "h3 { background: 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		// CSS escapes, url escapes, combinations of the two
-		propertyTests.put("h3 { background: url(\"\\/\\/www.google.com/google.png\");}", "h3 { }");
-		propertyTests.put("h3 { background: url(\"\\2f \\2f www.google.com/google.png\");}", "h3 { }");
-		propertyTests.put("h3 { background: url(\"\\00002f\\00002fwww.google.com/google.png\");}", "h3 { }");
-		propertyTests.put("h3 { background: url(\"%2f%2fwww.google.com/google.png\");}", "h3 { }");
-		propertyTests.put("h3 { background: url(\"\\25 2f\\25 2fwww.google.com/google.png\");}", "h3 { }");
+		propertyTests.put("h3 { background: url(\"\\/\\/www.google.com/google.png\");}", "h3 {}");
+		propertyTests.put("h3 { background: url(\"\\2f \\2f www.google.com/google.png\");}", "h3 {}");
+		propertyTests.put("h3 { background: url(\"\\00002f\\00002fwww.google.com/google.png\");}", "h3 {}");
+		propertyTests.put("h3 { background: url(\"%2f%2fwww.google.com/google.png\");}", "h3 {}");
+		propertyTests.put("h3 { background: url(\"\\25 2f\\25 2fwww.google.com/google.png\");}", "h3 {}");
 		
 		// Counters
 		propertyTests.put("table { counter-increment: counter1 1}", "table { counter-increment: counter1 1;}");
@@ -232,9 +232,9 @@ public class CSSParserTest extends TestCase {
 		// Lengths must have a unit
 		propertyTests.put("h2 { border-width: 1.5em;}\n","h2 { border-width: 1.5em;}\n");
 		propertyTests.put("h2 { border-width: 12px;}\n","h2 { border-width: 12px;}\n");
-		propertyTests.put("h2 { border-width: 1.5;}\n","h2 { }\n");
+		propertyTests.put("h2 { border-width: 1.5;}\n","h2 {}\n");
 		propertyTests.put("h2 { border-width: 0;}\n","h2 { border-width: 0;}\n");
-		propertyTests.put("h2 { border-width: 10;}\n","h2 { }\n");
+		propertyTests.put("h2 { border-width: 10;}\n","h2 {}\n");
 		
 		// Fonts
 		propertyTests.put("h2 { font-family: times new roman;}\n", "h2 { font-family: times new roman;}\n");
@@ -265,7 +265,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", "h2 { font: 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", "h2 { font: small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
 		// There was a point where this worked, it's wrong.
-		propertyTests.put("h2 { font: times 10pt new roman;}\n", "h2 { }\n");
+		propertyTests.put("h2 { font: times 10pt new roman;}\n", "h2 {}\n");
 		propertyTests.put("h2 { font: 10pt times new roman;}\n", "h2 { font: 10pt times new roman;}\n");
 		
 		// Space is not required either after or before comma!
@@ -282,7 +282,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: Times New Reman;}\n", "h2 { font: Times New Reman;}\n");
 		propertyTests.put("h2 { font-family: zaphod beeblebrox,bitstream vera sans,arial,sans-serif}", "h2 { font-family: zaphod beeblebrox,bitstream vera sans,arial,sans-serif;}");
 		// NOT syntactically valid
-		propertyTests.put("h2 { font-family: http://www.badguy.com/myfont.ttf}", "h2 {  }");
+		propertyTests.put("h2 { font-family: http://www.badguy.com/myfont.ttf}", "h2 {}");
 		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", "h2 { font-family: times new roman,arial,verdana;}");
 	}
 	

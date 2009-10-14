@@ -66,7 +66,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String XHTML_IMPROPERNESTINGC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</i></b></html>";
 	
 	private static final String CSS_STRING_NEWLINES = "<style>* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }</style>";
-	private static final String CSS_STRING_NEWLINESC = "<style>* { }\nbody {\n }\n</style>";
+	private static final String CSS_STRING_NEWLINESC = "<style>* {}\nbody {}\n</style>";
 
 	
 	private final BucketFactory bf = new ArrayBucketFactory();
@@ -101,9 +101,9 @@ public class ContentFilterTest extends TestCase {
 		// bug #2297
 		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(GenericReadFilterCallback.magicHTTPEscapeString));
 		// bug #2921
-		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("div {  }"));
-		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div {  }"));
-		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("div {  }"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("div {}"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div {}"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("div {}"));
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
 		assertEquals(XHTML_INCOMPLETEDOCUMENTC,HTMLFilter(XHTML_INCOMPLETEDOCUMENT));
 		assertEquals(XHTML_IMPROPERNESTINGC,HTMLFilter(XHTML_IMPROPERNESTING));

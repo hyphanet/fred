@@ -1243,6 +1243,7 @@ class CSSTokenizerFilter {
 		boolean canImport=true; //import statement can occur only in the beginning
 
 		String whitespaceAfterColon = "";
+		String whitespaceBeforeProperty = "";
 		
 		
 		while(true)
@@ -1669,7 +1670,7 @@ class CSSTokenizerFilter {
 						break;
 					}
 					if(debug) log("Appending whitespace: "+buffer.substring(0,i));
-					filteredTokens.append(buffer.substring(0, i));
+					whitespaceBeforeProperty = buffer.substring(0, i);
 					propertyName=buffer.delete(0, i).toString().trim();
 					if(debug) log("Property name: "+propertyName);
 					buffer.setLength(0);
@@ -1700,6 +1701,8 @@ class CSSTokenizerFilter {
 					if(words != null && !ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
 					{
 						if(changedAnything(words)) propertyValue = reconstruct(words);
+						filteredTokens.append(whitespaceBeforeProperty);
+						whitespaceBeforeProperty = "";
 						filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 						if(debug) log("STATE3 CASE ;: appending "+ propertyName+":"+propertyValue);
 						if(debug) log("filtered tokens now: \""+filteredTokens.toString()+"\"");
@@ -1742,6 +1745,8 @@ class CSSTokenizerFilter {
 						if(!ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
 						{
 							if(changedAnything(words)) propertyValue = reconstruct(words);
+							filteredTokens.append(whitespaceBeforeProperty);
+							whitespaceBeforeProperty = "";
 							filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 							if(debug) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
 						}
