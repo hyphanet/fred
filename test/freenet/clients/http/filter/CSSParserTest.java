@@ -175,6 +175,9 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}");
 		propertyTests.put("table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}");
 		
+		// Varying the number of words matched by each occurrence in a double bar.
+		propertyTests.put("table { counter-reset: mycounter 1 hiscounter myothercounter 2;}", "table { counter-reset: mycounter 1 hiscounter myothercounter 2;}");
+		
 		// Content tests
 		propertyTests.put("h1 { content: \"string with spaces\" }", "h1 { content: \"string with spaces\";}");
 		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: attr(\\ \\ attr\\ with\\ spaces);}");
