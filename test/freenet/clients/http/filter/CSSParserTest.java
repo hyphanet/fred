@@ -134,7 +134,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media screen { h1 { color: red; }}", "@media screen { h1 { color: red;}}");
 		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\ncolor: green;}");
 		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {\ncolor: green;}");
-//		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen {}");
+		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen {}");
 		
 		propertyTests.put("td { background-position:bottom;}\n", "td { background-position:bottom;}\n");
 		propertyTests.put("td { background:repeat-x;}\n", "td { background:repeat-x;}\n");
