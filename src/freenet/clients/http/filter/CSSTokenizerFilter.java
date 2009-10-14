@@ -1,18 +1,12 @@
-
-
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */ 
-
 
 /*  
  author: kurmiashish
  */
 package freenet.clients.http.filter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -20,7 +14,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-import freenet.client.async.ClientGetter;
 import freenet.support.Logger;
 
 class CSSTokenizerFilter {
