@@ -2,9 +2,6 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */ 
 
-/*  
- author: kurmiashish
- */
 package freenet.clients.http.filter;
 import java.io.IOException;
 import java.io.Reader;
@@ -16,6 +13,11 @@ import java.util.Map;
 
 import freenet.support.Logger;
 
+/** Comprehensive CSS2.1 filter. The old jflex-based filter was very far 
+ * from comprehensive.
+ * @author kurmiashish
+ * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+ */
 class CSSTokenizerFilter {
 	private Reader r;
 	Writer w = null;
