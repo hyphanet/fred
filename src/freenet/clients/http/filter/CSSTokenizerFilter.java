@@ -2742,7 +2742,7 @@ class CSSTokenizerFilter {
 
 		public static boolean isValidURI(ParsedURL word)
 		{
-			String w = CSSTokenizerFilter.removeQuotes(word.getDecoded());
+			String w = CSSTokenizerFilter.removeOuterQuotes(word.getDecoded());
 			//if(debug) log("CSSPropertyVerifier isVaildURI called cb="+cb);
 			try
 			{
@@ -3670,6 +3670,16 @@ outer:		for(int i=0;i<value.length;i++) {
 			return ElementInfo.isSpecificFontFamily(sb.toString().toLowerCase());
 		}
 		
+	}
+
+	public static String removeOuterQuotes(String decoded) {
+		if(decoded.length() < 2) return decoded;
+		char first = decoded.charAt(0);
+		if(!(first == '\'' || first == '\"')) return decoded;
+		if(decoded.charAt(decoded.length()-1) == first) {
+			return decoded.substring(1, decoded.length()-1);
+		}
+		return decoded;
 	}
 
 }
