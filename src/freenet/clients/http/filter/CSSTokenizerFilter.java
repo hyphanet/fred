@@ -3370,6 +3370,11 @@ class CSSTokenizerFilter {
 			super(null, null, null, ElementInfo.VISUALMEDIA, valueOnly);
 		}
 		
+		// FIXME: We do not change the tokens.
+		// We probably should put in quotes around unquoted font family names, put spaces after commas etc, but
+		// this may be a bit tricky: we'd have to put spaces etc inside some words, and delete some words...
+		// Quite possible, but not a high priority, "verdana,arial,times new roman,sans-serif" is not dangerous, it's just hard to parse.
+		
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value)
 		{
