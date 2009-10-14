@@ -1236,7 +1236,7 @@ class CSSTokenizerFilter {
 		String defaultMedia="screen";
 		String[] currentMedia=new String[] {defaultMedia};
 		String propertyName="",propertyValue="";
-		boolean ignoreElementsS1=false,ignoreElementsS2=false,closeIgnoredS1=false,closeIgnoredS2=false;
+		boolean ignoreElementsS1=false,ignoreElementsS2=false,ignoreElementsS3=false,closeIgnoredS1=false,closeIgnoredS2=false;
 		int x;
 		char c=0,prevc=0;
 		boolean s2Comma=false;
@@ -1574,14 +1574,20 @@ class CSSTokenizerFilter {
 						break;
 					}
 					openBraces--;
-					if(ignoreElementsS1) {
-						ignoreElementsS1=false;
-						if(closeIgnoredS1) {
-							w.write("}");
-							closeIgnoredS1 = false;
-						}
-					} else
-						w.write(filteredTokens.toString()+"}");
+					if(!ignoreElementsS1) {
+						if(ignoreElementsS2) {
+							ignoreElementsS2=false;
+							if(closeIgnoredS2) {
+								w.write("}");
+								closeIgnoredS2 = false;
+							}
+						} else
+							w.write(filteredTokens.toString()+"}");
+					} else {
+						// Ignore.
+						// We are going back to STATE1, so reset ignoreElementsS1
+						ignoreElementsS1 = false;
+					}
 					filteredTokens.setLength(0);
 					buffer.setLength(0);
 					currentMedia=new String[] {defaultMedia};
@@ -1631,8 +1637,8 @@ class CSSTokenizerFilter {
 				case '\f':
 				case '\r':
 					if(prevc != '\\') {
-						ignoreElementsS1 = true;
-						closeIgnoredS1 = true;
+						ignoreElementsS2 = true;
+						closeIgnoredS2 = true;
 						currentState = STATE2;
 						break;
 					} else {
@@ -1684,19 +1690,23 @@ class CSSTokenizerFilter {
 							continue;
 						break;
 					}
-					if(debug) log("Appending whitespace: "+buffer.substring(0,i));
+					if(debug) log("Appending whitespace after colon: \""+buffer.substring(0,i)+"\"");
 					whitespaceAfterColon = buffer.substring(0, i);
 					propertyValue=buffer.delete(0, i).toString().trim();
 					if(debug) log("Property value: "+propertyValue);
 					buffer.setLength(0);
 
 					ParsedWord[] words = split(propertyValue);
-					if(words != null && !ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,words))
+					if(words != null && !ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
 					{
 						if(changedAnything(words)) propertyValue = reconstruct(words);
 						filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 						if(debug) log("STATE3 CASE ;: appending "+ propertyName+":"+propertyValue);
+						if(debug) log("filtered tokens now: \""+filteredTokens.toString()+"\"");
+					} else {
+						if(debug) log("filtered tokens now (ignored): \""+filteredTokens.toString()+"\"");
 					}
+					ignoreElementsS3 = false;
 					propertyName="";
 					break;
 				case '}':
@@ -1716,7 +1726,7 @@ class CSSTokenizerFilter {
 								continue;
 							break;
 						}
-						if(debug) log("Appending whitespace: "+buffer.substring(0,i));
+						if(debug) log("Appending whitespace after colon (}): "+buffer.substring(0,i));
 						whitespaceAfterColon = buffer.substring(0, i);
 						buffer.delete(0, i);
 						
@@ -1729,26 +1739,27 @@ class CSSTokenizerFilter {
 
 						if(debug) log("Found PropertyName:"+propertyName+" propertyValue:"+propertyValue);
 						words = split(propertyValue);
-						if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,words))
+						if(!ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
 						{
 							if(changedAnything(words)) propertyValue = reconstruct(words);
 							filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 							if(debug) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
 						}
 						propertyName="";
-
 					}
+					ignoreElementsS3 = false;
 					if((!ignoreElementsS2) || closeIgnoredS2) {
 						filteredTokens.append("}");
 						closeIgnoredS2 = false;
 						ignoreElementsS2 = false;
 					} else
 						ignoreElementsS2=false;
-					if(openBraces==0)
-					{
+					if(!ignoreElementsS1) {
 						w.write(filteredTokens.toString());
-						filteredTokens.setLength(0);
+						if(debug) log("writing filtered tokens: \""+filteredTokens.toString()+"\"");
 					}
+					filteredTokens.setLength(0);
+					whitespaceAfterColon = "";
 					currentState=STATE2;
 					buffer.setLength(0);
 					s2Comma=false;
@@ -1797,8 +1808,7 @@ class CSSTokenizerFilter {
 				case '\r':
 				case '\f':
 					if(prevc != '\\') {
-						ignoreElementsS2 = true;
-						closeIgnoredS2 = true;
+						ignoreElementsS3 = true;
 						currentState = STATE3;
 						break;
 					} else {

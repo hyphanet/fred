@@ -128,6 +128,14 @@ public class CSSParserTest extends TestCase {
 	static {
 		// Check that the last part of a double bar works
 		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech { h1 { azimuth: behind;}}");
+		
+		propertyTests.put("h1 { color: red; rotation: 70minutes }", "h1 { color: red; }");
+		propertyTests.put("@media screen { h1 { color: red; }\nh1[id=\"\n]}", "@media screen { h1 { color: red;}}");
+		propertyTests.put("@media screen { h1 { color: red; }}", "@media screen { h1 { color: red;}}");
+		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\n \ncolor: green;}");
+		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {  \ncolor: green;}");
+//		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen { }");
+		
 		propertyTests.put("td { background-position:bottom;}\n", "td { background-position:bottom;}\n");
 		propertyTests.put("td { background:repeat-x;}\n", "td { background:repeat-x;}\n");
 		
