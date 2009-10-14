@@ -934,8 +934,9 @@ class CSSTokenizerFilter {
 
 	/*
 	 * This function returns the Verifier for a property. If it is not already loaded in the elementVerifier, then it is loaded and then returned to the caller.
+	 * FIXME: Lazy init probably doesn't make sense, but while we are initting lazily, we need to hold a lock here.
 	 */
-	private static CSSPropertyVerifier getVerifier(String element)
+	private synchronized static CSSPropertyVerifier getVerifier(String element)
 	{
 		element=element.toLowerCase();
 		if(elementVerifiers.get(element)!=null)
