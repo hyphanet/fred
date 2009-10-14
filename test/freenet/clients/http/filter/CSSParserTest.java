@@ -88,6 +88,15 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_IMPORT2 = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\") screen;";
 	private static final String CSS_IMPORT2C = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html?type=text/css\") screen;";
 
+	private static final String CSS_IMPORT_MULTI_MEDIA = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\") projection, tv;";
+	private static final String CSS_IMPORT_MULTI_MEDIAC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html?type=text/css\") projection, tv;";
+
+	private static final String CSS_IMPORT_MULTI_MEDIA_BOGUS = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\") projection, tvvv;";
+	private static final String CSS_IMPORT_MULTI_MEDIA_BOGUSC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html?type=text/css\") projection;";
+
+	private static final String CSS_IMPORT_MULTI_MEDIA_ALL = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\") all;";
+	private static final String CSS_IMPORT_MULTI_MEDIA_ALLC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html?type=text/css\") all;";
+
 	private static final String CSS_IMPORT_SPACE_IN_STRING = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") screen;";
 	private static final String CSS_IMPORT_SPACE_IN_STRINGC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page?type=text/css\") screen;";
 	
@@ -298,6 +307,9 @@ public class CSSParserTest extends TestCase {
 	public void testImports() throws IOException, URISyntaxException {
 		assertTrue("key="+CSS_IMPORT+" value=\""+filter(CSS_IMPORT)+"\"", CSS_IMPORTC.equals(filter(CSS_IMPORT)));
 		assertTrue("key="+CSS_IMPORT2+" value=\""+filter(CSS_IMPORT2)+"\"", CSS_IMPORT2C.equals(filter(CSS_IMPORT2)));
+		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA)+"\"", CSS_IMPORT_MULTI_MEDIAC.equals(filter(CSS_IMPORT_MULTI_MEDIA)));
+		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA_BOGUS+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA_BOGUS)+"\"", CSS_IMPORT_MULTI_MEDIA_BOGUSC.equals(filter(CSS_IMPORT_MULTI_MEDIA_BOGUS)));
+		assertTrue("key="+CSS_IMPORT_MULTI_MEDIA_ALL+" value=\""+filter(CSS_IMPORT_MULTI_MEDIA_ALL)+"\"", CSS_IMPORT_MULTI_MEDIA_ALLC.equals(filter(CSS_IMPORT_MULTI_MEDIA_ALL)));
 		assertTrue("key="+CSS_IMPORT_TYPE+" value=\""+filter(CSS_IMPORT_TYPE)+"\"", CSS_IMPORT_TYPEC.equals(filter(CSS_IMPORT_TYPE)));
 		assertTrue("key="+CSS_IMPORT_SPACE_IN_STRING+" value=\""+filter(CSS_IMPORT_SPACE_IN_STRING)+"\"", CSS_IMPORT_SPACE_IN_STRINGC.equals(filter(CSS_IMPORT_SPACE_IN_STRING)));
 		assertTrue("key="+CSS_IMPORT_NOURL_TWOMEDIAS+" value=\""+filter(CSS_IMPORT_NOURL_TWOMEDIAS)+"\"", CSS_IMPORT_NOURL_TWOMEDIASC.equals(filter(CSS_IMPORT_NOURL_TWOMEDIAS)));
