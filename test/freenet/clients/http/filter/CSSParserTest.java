@@ -174,6 +174,12 @@ public class CSSParserTest extends TestCase {
 		// url without "" in properties
 		propertyTests.put("h3 { background-image: url(/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page) }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		
+		// Escapes in strings
+		propertyTests.put("h3 { background-image: url(/KSK@\\something.png);}", "h3 { background-image: url(\"/KSK@something.png\");}");
+		propertyTests.put("h3 { background-image: url(/KSK@\\something.png?type=image/png\\26 force=true);}", "h3 { background-image: url(\"/KSK@something.png?type=image/png\");}");
+		propertyTests.put("h3 { background-image: url(/KSK@\\something.png?type=image/png\\000026force=true);}", "h3 { background-image: url(\"/KSK@something.png?type=image/png\");}");
+//		propertyTests.put("h3 { background-image: url(/KSK@\\\"something\\\".png?type=image/png\\000026force=true);}", "h3 { background-image: url(\"/KSK@%26something%26.png?type=image/png\");}");
+		
 		// Mixed background
 		propertyTests.put("h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
