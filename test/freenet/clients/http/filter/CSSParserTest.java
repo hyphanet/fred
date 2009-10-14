@@ -191,6 +191,9 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20%;}", "h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20%;}");
 		propertyTests.put("h3 { background: 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}", "h3 { background: 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { background: url(\"\\/\\/www.google.com/google.png\");}", "h3 { }");
+		propertyTests.put("h3 { background: url(\"\\2f \\2f www.google.com/google.png\");}", "h3 { }");
+		propertyTests.put("h3 { background: url(\"\\00002f\\00002fwww.google.com/google.png\");}", "h3 { }");
 		
 		// Counters
 		propertyTests.put("table { counter-increment: counter1 1}", "table { counter-increment: counter1 1;}");
