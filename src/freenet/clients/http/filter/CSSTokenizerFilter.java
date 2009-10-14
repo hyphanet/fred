@@ -1693,6 +1693,7 @@ class CSSTokenizerFilter {
 					ParsedWord[] words = split(propertyValue);
 					if(words != null && !ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,words))
 					{
+						if(changedAnything(words)) propertyValue = reconstruct(words);
 						filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 						if(debug) log("STATE3 CASE ;: appending "+ propertyName+":"+propertyValue);
 					}
@@ -1727,8 +1728,10 @@ class CSSTokenizerFilter {
 						buffer.setLength(0);
 
 						if(debug) log("Found PropertyName:"+propertyName+" propertyValue:"+propertyValue);
-						if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,split(propertyValue)))
+						words = split(propertyValue);
+						if(!ignoreElementsS2 && verifyToken(currentMedia,elements,propertyName,words))
 						{
+							if(changedAnything(words)) propertyValue = reconstruct(words);
 							filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
 							if(debug) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
 						}
@@ -1839,6 +1842,33 @@ class CSSTokenizerFilter {
 
 	}
 
+	private String reconstruct(ParsedWord[] words) {
+		StringBuilder sb = new StringBuilder();
+		boolean first = true;
+		for(ParsedWord word : words) {
+			if(!first) sb.append(" ");
+			if(!word.changed) {
+				sb.append(word.original);
+				if(debug) log("Adding word (original): \""+word.original+"\"");
+			} else {
+				sb.append(word.encode(false)); // FIXME check if charset is full unicode, if so pass true
+				if(debug) log("Adding word (new): \""+word.encode(false)+"\"");
+			}
+			first = false;
+		}
+		if(debug) log("Reconstructed: \""+sb.toString()+"\"");
+		return sb.toString();
+	}
+
+
+	private boolean changedAnything(ParsedWord[] words) {
+		for(ParsedWord word : words) {
+			if(word.changed) return true;
+		}
+		return false;
+	}
+
+
 	private ArrayList<String> commaListFromIdentifiers(ParsedWord[] strparts, int offset) {
 		ArrayList<String> medias = new ArrayList<String>(strparts.length-1);
 		if(strparts.length <= offset) {
@@ -1868,7 +1898,7 @@ class CSSTokenizerFilter {
 		
 		final String original;
 		/** Has decoded changed? If not we can use the original. */
-		private boolean changed;
+		protected boolean changed;
 		
 		public ParsedWord(String original, boolean changed) {
 			this.original = original;
@@ -1946,6 +1976,11 @@ class CSSTokenizerFilter {
 			return decoded;
 		}
 
+		public void setNewValue(String s) {
+			this.changed = true;
+			this.decoded = s;
+		}
+
 	}
 	
 	static class ParsedIdentifier extends BaseParsedWord {
@@ -2014,6 +2049,10 @@ class CSSTokenizerFilter {
 			out.append("url(");
 			super.innerEncode(unicode, out);
 			out.append(')');
+		}
+
+		public void setNewURL(String s) {
+			super.setNewValue(s);
 		}
 		
 	}
@@ -2701,13 +2740,19 @@ class CSSTokenizerFilter {
 			//log.println(s);
 		}
 
-		public static boolean isValidURI(String URI)
+		public static boolean isValidURI(ParsedURL word)
 		{
+			String w = CSSTokenizerFilter.removeQuotes(word.getDecoded());
 			//if(debug) log("CSSPropertyVerifier isVaildURI called cb="+cb);
 			try
 			{
 				//if(debug) log("CSSPropertyVerifier isVaildURI "+cb.processURI(URI, null));
-				return URI.equals(cb.processURI(URI, null));
+				String s = cb.processURI(w, null);
+				if(s == null || s.equals("")) return false;
+				if(s.equals(w)) return true;
+				if(debug) Logger.minor(CSSTokenizerFilter.class, "New url: \""+s+"\" from \""+w+"\"");
+				word.setNewURL(s);
+				return true;
 			}
 			catch(CommentException e)
 			{
@@ -2832,7 +2877,7 @@ class CSSTokenizerFilter {
 			if(isURI && words[0] instanceof ParsedURL)
 			
 			{
-				return isValidURI(CSSTokenizerFilter.removeQuotes(((ParsedURL)words[0]).getDecoded()));
+				return isValidURI((ParsedURL)words[0]);
 			}
 
 			if(isIdentifier && words[0] instanceof ParsedIdentifier)
