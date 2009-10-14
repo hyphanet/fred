@@ -134,6 +134,15 @@ public class CSSParserTest extends TestCase {
 		
 		propertyTests.put("td { background-attachment: scroll}", "td { background-attachment: scroll;}");
 		propertyTests.put("td { background-color: rgb(255, 255, 255)}", "td { background-color: rgb(255, 255, 255);}");
+		propertyTests.put("td { background-color: #fff}", "td { background-color: #fff;}");
+		propertyTests.put("td { background-color: #ffffff}", "td { background-color: #ffffff;}");
+		propertyTests.put("td { background-color: rgb(100%,0%,50%)}", "td { background-color: rgb(100%,0%,50%);}");
+		propertyTests.put("td { background-color: rgb(100%, 0%, 50%)}", "td { background-color: rgb(100%, 0%, 50%);}");
+		// Values outside the standard RGB device gamut are allowed by the spec, they will be clipped and may be representible on some devices.
+		propertyTests.put("td { background-color: rgb(300, 0, 0)}", "td { background-color: rgb(300, 0, 0);}");
+		propertyTests.put("td { background-color: rgb(255, -10, 0)}", "td { background-color: rgb(255, -10, 0);}");
+		propertyTests.put("td { background-color: rgb(110%, 0%, 0%)}", "td { background-color: rgb(110%, 0%, 0%);}");
+		
 		// Invalid element
 		propertyTests.put("silly { background-attachment: scroll}", " ");
 		propertyTests.put("h3 { background-position: 30% top}", "h3 { background-position: 30% top;}");

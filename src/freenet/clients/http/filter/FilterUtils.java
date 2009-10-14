@@ -384,13 +384,15 @@ public class FilterUtils {
 					if(colorParts[i].indexOf('%')==colorParts[i].length()-1)
 					{
 						int intPart=Integer.parseInt(colorParts[i].substring(0,colorParts[i].length()-1));
-						if(!(intPart>=0 && intPart<=100))
+						// CSS allows out-of-range colors, they will be clipped and may be important on printers, HDR displays etc.
+						if(isSVG && !(intPart>=0 && intPart<=100))
 							isValidColorParts=false;
 					}
 					else
 					{
 						int intPart=Integer.parseInt(colorParts[i]);
-						if(!(intPart>=0 && intPart<=255))
+						// CSS allows out-of-range colors, they will be clipped and may be important on printers, HDR displays etc.
+						if(isSVG && !(intPart>=0 && intPart<=255))
 							isValidColorParts=false;
 					}
 
