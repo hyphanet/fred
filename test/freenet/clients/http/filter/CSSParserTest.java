@@ -120,6 +120,10 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
 	private static final String CSS_DELETE_INVALID_SELECTORC = "h1, h2 {color: green;}\nh6 {color: black;}\n";
 	
+	// Invalid media type
+	
+	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
+	
 	private final static LinkedHashMap<String, String> propertyTests = new LinkedHashMap<String, String>();
 	static {
 		// Check that the last part of a double bar works
@@ -281,6 +285,7 @@ public class CSSParserTest extends TestCase {
 		}
 
 		assertTrue("key=\""+CSS_DELETE_INVALID_SELECTOR+"\" value=\""+filter(CSS_DELETE_INVALID_SELECTOR)+"\" should be \""+CSS_DELETE_INVALID_SELECTORC+"\"", CSS_DELETE_INVALID_SELECTORC.equals(filter(CSS_DELETE_INVALID_SELECTOR)));
+		assertTrue("key=\""+CSS_INVALID_MEDIA_CASCADE+"\" value=\""+filter(CSS_INVALID_MEDIA_CASCADE)+"\"", "".equals(filter(CSS_INVALID_MEDIA_CASCADE)));
 	}
 
 	public void testCSS2Selector() throws IOException, URISyntaxException {
