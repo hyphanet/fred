@@ -32,7 +32,7 @@ class CSSParser extends CSSTokenizerFilter {
 		Writer w,
 		boolean paranoidStringCheck,
 		FilterCallback cb) {
-		super(r, w, cb,true);
+		super(r, w, cb);
 		this.cb = cb;
 
 	}

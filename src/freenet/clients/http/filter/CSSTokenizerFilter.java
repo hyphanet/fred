@@ -45,11 +45,10 @@ class CSSTokenizerFilter {
 		//System.out.println("CSSTokenizerFilter: "+s);
 		//log.println(s);
 	}
-	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb,boolean debug) {
+	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb) {
 		this.r=r;
 		this.w = w;
 		this.cb=cb;
-		CSSPropertyVerifier.debug=debug;
 //		try {
 //			log = new PrintStream(new FileOutputStream("log"));
 //		} catch (FileNotFoundException e) {
