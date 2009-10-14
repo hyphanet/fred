@@ -240,6 +240,9 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: 500 normal Times New Roman, Arial Black;}\n", "h2 { font: 500 normal Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", "h2 { font: 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
 		propertyTests.put("h2 { font: small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n", "h2 { font: small-caps 500 normal 1.5em/12pt Times New Roman, Arial Black;}\n");
+		// There was a point where this worked, it's wrong.
+		propertyTests.put("h2 { font: times 10pt new roman;}\n", "h2 { }\n");
+		propertyTests.put("h2 { font: 10pt times new roman;}\n", "h2 { font: 10pt times new roman;}\n");
 		
 		// Space is not required either after or before comma!
 		propertyTests.put("h2 { font-family: Verdana,sans-serif }", "h2 { font-family: Verdana,sans-serif;}");
