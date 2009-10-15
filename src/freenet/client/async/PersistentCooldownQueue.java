@@ -4,6 +4,8 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.ListIterator;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -29,8 +31,16 @@ public class PersistentCooldownQueue implements CooldownQueue {
 	
 	private long cooldownTime;
 
+	/** Cache of items found by removeKeyBefore() that could not be returned. 
+	 * Kept deactivated to minimise memory usage, but if we have a big 
+	 * backlog, this can avoid having to re-run the query. */
+	private transient LinkedList<PersistentCooldownQueueItem> itemsFromLastTime;
+	
+	private static final int KEEP_ITEMS_FROM_LAST_TIME = 1024;
+	
 	void setCooldownTime(long time) {
 		cooldownTime = time;
+		itemsFromLastTime = new LinkedList<PersistentCooldownQueueItem>();
 	}
 
 	public long add(Key key, SendableGet client, ObjectContainer container) {
@@ -82,6 +92,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			found = true;
 			PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
 			i.delete(container);
+			itemsFromLastTime.remove(i);
 		}
 		return found;
 	}
@@ -102,6 +113,42 @@ public class PersistentCooldownQueue implements CooldownQueue {
 //				return true;
 //			}
 //		});
+
+		ArrayList v = null;
+		if(!itemsFromLastTime.isEmpty()) {
+			if(v == null)
+				v = new ArrayList(Math.min(maxCount, itemsFromLastTime.size()));
+			Logger.error(this, "Overflow handling in cooldown queue: reusing items from last time, now "+itemsFromLastTime.size());
+			for(ListIterator<PersistentCooldownQueueItem> it = itemsFromLastTime.listIterator();it.hasNext() && v.size() < maxCount;) {
+				PersistentCooldownQueueItem i = it.next();
+				container.activate(i, 1);
+				if(i.parent != this && i.parent != altQueue) {
+					container.deactivate(i, 1);
+					continue;
+				}
+				if(i.time >= now) {
+					container.deactivate(i, 1);
+					if(v.isEmpty()) return i.time;
+					return v.toArray(new Key[v.size()]);
+				}
+
+				container.activate(i.key, 5);
+				if(i.client == null || !container.ext().isStored(i.client)) {
+					Logger.normal(this, "Client has been removed but not the persistent cooldown queue item: time "+i.time+" for key "+i.key);
+				}
+				if(i.key == null) {
+					Logger.error(this, "Key is null on cooldown queue! i = "+i+" client="+i.client+" key as bytes = "+i.keyAsBytes);
+				} else {
+					v.add(i.key.cloneKey());
+					i.key.removeFrom(container);
+				}
+				i.delete(container);
+				it.remove();
+			}
+		}
+		if(v != null && v.size() == maxCount)
+			return v.toArray(new Key[v.size()]);
+		
 		// Lets re-code it in SODA.
 		long tStart = System.currentTimeMillis();
 		Query query = container.query();
@@ -114,11 +161,12 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		if(results.hasNext()) {
 			long tEnd = System.currentTimeMillis();
 			if(tEnd - tStart > 1000)
-				Logger.error(this, "Query took "+(tEnd-tStart));
+				Logger.error(this, "Query took "+(tEnd-tStart)+" for "+results.size());
 			else
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Query took "+(tEnd-tStart));
-			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
+			if(v == null)
+				v = new ArrayList(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
 				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
 				if(i.parent != this && i.parent != altQueue) {
@@ -141,6 +189,12 @@ public class PersistentCooldownQueue implements CooldownQueue {
 				i.delete(container);
 			}
 			if(!v.isEmpty()) {
+				while(results.hasNext() && itemsFromLastTime.size() < KEEP_ITEMS_FROM_LAST_TIME) {
+					PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
+					container.deactivate(i, 1);
+					itemsFromLastTime.add(i);
+				}
+				Logger.error(this, "Overflow handling in cooldown queue: added items, items from last time now "+itemsFromLastTime.size());
 				return v.toArray(new Key[v.size()]);
 			}
 		}
