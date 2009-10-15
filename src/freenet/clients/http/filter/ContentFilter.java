@@ -38,26 +38,26 @@ public class ContentFilter {
 				true, true, null, null, false, false, false, false, false, false,
 				l10n("textPlainReadAdvice"),
 				l10n("textPlainWriteAdvice"),
-				true, "US-ASCII", null));
+				true, "US-ASCII", null, false));
 		
 		// GIF - has a filter 
 		register(new MIMEType("image/gif", "gif", new String[0], new String[0], 
 				true, false, new GIFFilter(), null, false, false, false, false, false, false,
 				l10n("imageGifReadAdvice"),
 				l10n("imageGifWriteAdvice"),
-				false, null, null));
+				false, null, null, false));
 		
 		// JPEG - has a filter
 		register(new MIMEType("image/jpeg", "jpeg", new String[0], new String[] { "jpg" },
 				true, false, new JPEGFilter(true, true), null, false, false, false, false, false, false,
 				l10n("imageJpegReadAdvice"),
-				l10n("imageJpegWriteAdvice"), false, null, null));
+				l10n("imageJpegWriteAdvice"), false, null, null, false));
 		
 		// PNG - has a filter
 		register(new MIMEType("image/png", "png", new String[0], new String[0],
 				true, false, new PNGFilter(true, true, true), null, false, false, false, false, true, false,
 				l10n("imagePngReadAdvice"),
-				l10n("imagePngWriteAdvice"), false, null, null));
+				l10n("imagePngWriteAdvice"), false, null, null, false));
 
 
 		// BMP - has a filter
@@ -65,7 +65,7 @@ public class ContentFilter {
 		register(new MIMEType("image/bmp", "bmp", new String[] { "image/x-bmp","image/x-bitmap","image/x-xbitmap","image/x-win-bitmap","image/x-windows-bmp","image/ms-bmp","image/x-ms-bmp","application/bmp","application/x-bmp","application/x-win-bitmap"  }, new String[0],
 				true, false, new BMPFilter(), null, false, false, false, false, true, false,
 				l10n("imageBMPReadAdvice"),
-				l10n("imageBMPWriteAdvice"), false, null, null));	
+				l10n("imageBMPWriteAdvice"), false, null, null, false));	
 
 
 		
@@ -73,14 +73,14 @@ public class ContentFilter {
 		register(new MIMEType("image/x-icon", "ico", new String[] { "image/vnd.microsoft.icon", "image/ico", "application/ico"}, 
 				new String[0], true, false, null, null, false, false, false, false, false, false,
 				l10n("imageIcoReadAdvice"),
-				l10n("imageIcoWriteAdvice"), false, null, null));
+				l10n("imageIcoWriteAdvice"), false, null, null, false));
 		
 		// PDF - very dangerous - FIXME ideally we would have a filter, this is such a common format...
 		register(new MIMEType("application/pdf", "pdf", new String[] { "application/x-pdf" }, new String[0],
 				false, false, null, null, true, true, true, false, true, true,
 				l10n("applicationPdfReadAdvice"),
 				l10n("applicationPdfWriteAdvice"),
-				false, null, null));
+				false, null, null, false));
 		
 		// HTML - dangerous if not filtered
 		register(new MIMEType("text/html", "html", new String[] { "text/xhtml", "text/xml+xhtml", "application/xhtml+xml" }, new String[] { "htm" },
@@ -88,7 +88,7 @@ public class ContentFilter {
 				true, true, true, true, true, true, 
 				l10n("textHtmlReadAdvice"),
 				l10n("textHtmlWriteAdvice"),
-				true, "iso-8859-1", new HTMLFilter()));
+				true, "iso-8859-1", new HTMLFilter(), false));
 		
 		// CSS - danagerous if not filtered, not sure about the filter
 		register(new MIMEType("text/css", "css", new String[0], new String[0],
@@ -96,7 +96,7 @@ public class ContentFilter {
 				true, true, true, true, true, false,
 				l10n("textCssReadAdvice"),
 				l10n("textCssWriteAdvice"),
-				true, "utf-8", null));
+				true, "utf-8", null, true));
 		
 	}
 	
@@ -138,7 +138,9 @@ public class ContentFilter {
 	 *            The bucket factory used to create the bucket to return the filtered data in.
 	 * @param typeName
 	 *            MIME type for input data
-	 * 
+	 * @param maybeCharset 
+	 * 			  MIME type of the referring document, as a hint, some types,
+	 * 			  such as CSS, will inherit it if no other data is available.
 	 * @throws IOException
 	 *             If an internal error involving buckets occurred.
 	 * @throws UnsafeContentTypeException
@@ -146,7 +148,7 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {
+	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb, String maybeCharset) throws UnsafeContentTypeException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName);
 		String type = typeName;
@@ -192,7 +194,7 @@ public class ContentFilter {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
-					charset = detectCharset(data, handler);
+					charset = detectCharset(data, handler, maybeCharset);
 				}
 				
 				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb));
@@ -210,7 +212,7 @@ public class ContentFilter {
 		}
 	}
 
-	private static String detectCharset(Bucket data, MIMEType handler) throws IOException {
+	private static String detectCharset(Bucket data, MIMEType handler, String maybeCharset) throws IOException {
 		
 		// Detect charset
 		
@@ -262,6 +264,10 @@ public class ContentFilter {
 			}
 			
 		}
+		
+		// If no BOM, use the charset from the referring document.
+		if(handler.useMaybeCharset && maybeCharset != null && !maybeCharset.isEmpty())
+			return maybeCharset;
 		
 		// If it doesn't have a BOM, then it's *probably* safe to use as default.
 		

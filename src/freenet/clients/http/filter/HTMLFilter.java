@@ -1362,7 +1362,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, pc.cb, pc, false);
+						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, false);
 						if (uri != null) {
 							uri = HTMLEncoder.encode(uri);
 							hn.put(x, uri);
@@ -1377,7 +1377,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, pc.cb, pc, true);
+						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, true);
 						if (uri != null) {
 							uri = HTMLEncoder.encode(uri);
 							hn.put(x, uri);
@@ -1712,6 +1712,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String hreflang = getHashString(h, "hreflang");
 			String charset = null;
+			String maybecharset = null;
 			String type = getHashString(h, "type");
 			if (type != null) {
 				String[] typesplit = splitType(type);
@@ -1729,6 +1730,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String c = getHashString(h, "charset");
 			if (c != null)
 				charset = c;
+			else
+				// Browser will use the referring document's charset if there
+				// is no BOM and we don't specify one in HTTP.
+				// So we need to pass this information to the filter.
+				// We cannot force the mime type with the charset, because if
+				// we do that, we might be wrong - if there is a BOM or @charset 
+				// we want to use that. E.g. chinese pages might have the
+				// page in GB18030 and the borrowed CSS in ISO-8859-1 or UTF-8.
+				maybecharset = pc.charset;
 			String href = getHashString(h, "href");
 			if (href != null) {
 				final String[] rels = new String[] { "rel", "rev" };
@@ -1753,7 +1763,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				//					type+" and charset "+charset,
 				//					Logger.DEBUG);
 				href = HTMLDecoder.decode(href);
-				href = htmlSanitizeURI(href, type, charset, pc.cb, pc, false);
+				href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
 				if (href != null) {
 					href = HTMLEncoder.encode(href);
 					hn.put("href", href);
@@ -2128,7 +2138,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static String sanitizeURI(String uri, FilterCallback cb, boolean inline) throws CommentException {
-		return sanitizeURI(uri, null, null, cb, inline);
+		return sanitizeURI(uri, null, null, null, cb, inline);
 	}
 
 	/*
@@ -2196,11 +2206,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String suri,
 			String overrideType,
 			String overrideCharset,
+			String maybeCharset,
 			FilterCallback cb,
 			HTMLParseContext pc,
 			boolean inline) {
 		try {
-			return sanitizeURI(suri, overrideType, overrideCharset, cb, inline);
+			return sanitizeURI(suri, overrideType, overrideCharset, maybeCharset, cb, inline);
 		} catch (CommentException e) {
             pc.writeAfterTag.append("<!-- ").append(HTMLEncoder.encode(e.toString())).append(" -->");
 			return null;
@@ -2211,12 +2222,23 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String suri,
 		String overrideType,
 		String overrideCharset,
+		String maybeCharset,
 		FilterCallback cb, boolean inline) throws CommentException {
 		if(logMINOR)
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" ) inline="+inline, new Exception("debug"));
+		boolean addMaybe = false;
 		if((overrideCharset != null) && (overrideCharset.length() > 0))
 			overrideType += "; charset="+overrideCharset;
-		return cb.processURI(suri, overrideType, false, inline);
+		else if(maybeCharset != null)
+			addMaybe = true;
+		String retval = cb.processURI(suri, overrideType, false, inline);
+		if(addMaybe) {
+			if(retval.indexOf('?') != -1)
+				retval += "&maybecharset="+maybeCharset;
+			else
+				retval += "?maybecharset="+maybeCharset;
+		}
+		return retval;
 	}
 
 	static String getHashString(Map<String, Object> h, String key) {
