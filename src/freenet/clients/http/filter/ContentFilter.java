@@ -297,10 +297,17 @@ public class ContentFilter {
 			}
 			if(startsWith(data, bom_utf8))
 				return "UTF-8";
-			if(startsWith(data, bom_utf16_be) || startsWith(data, bom_utf16_le))
-				return "UTF-16";
-			if(startsWith(data, bom_utf32_be) || startsWith(data, bom_utf32_le))
-				return "UTF-32";
+			if(startsWith(data, bom_utf16_be))
+				return "UTF-16BE";
+			if(startsWith(data, bom_utf16_le))
+				return "UTF-16LE";
+			if(startsWith(data, bom_utf32_be))
+				return "UTF-32BE";
+			if(startsWith(data, bom_utf32_le))
+				return "UTF-32LE";
+			// We do NOT support UTF-32-2143 or UTF-32-3412
+			// Java does not have charset support for them, and well,
+			// very few people create web content on a PDP-11!
 			if(startsWith(data, bom_scsu))
 				return "SCSU";
 			if(startsWith(data, bom_utf7_1) || startsWith(data, bom_utf7_2) || startsWith(data, bom_utf7_3) || startsWith(data, bom_utf7_4) || startsWith(data, bom_utf7_5))
