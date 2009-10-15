@@ -20,6 +20,7 @@ import freenet.crypt.SHA256;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
@@ -981,7 +982,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 		 * nodes with little RAM it would be bad...
 		 */
 		final int MAX_KEYS = 20;
-		Object ret = queue.removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS);
+		Object ret;
+		ClientRequestScheduler otherScheduler = 
+			(isSSKScheduler ? this.clientContext.getSskFetchScheduler() : this.clientContext.getChkFetchScheduler());
+		if(queue instanceof PersistentCooldownQueue) {
+			ret = ((PersistentCooldownQueue)queue).removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS, (PersistentCooldownQueue)otherScheduler.persistentCooldownQueue);
+		} else
+			ret = queue.removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS);
 		if(ret == null) return Long.MAX_VALUE;
 		if(ret instanceof Long) {
 			return (Long) ret;
@@ -992,7 +999,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			restoreKey(key, container, now);
+			if(key instanceof NodeSSK == isSSKScheduler)
+				restoreKey(key, container, now);
+			else
+				otherScheduler.restoreKey(key, container, now); 
 			if(persistent)
 				container.deactivate(key, 5);
 		}

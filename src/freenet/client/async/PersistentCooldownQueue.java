@@ -87,6 +87,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 	}
 
 	public Object removeKeyBefore(final long now, long dontCareAfterMillis, ObjectContainer container, int maxCount) {
+		return removeKeyBefore(now, dontCareAfterMillis, container, maxCount, null);
+	}
+	
+	public Object removeKeyBefore(final long now, long dontCareAfterMillis, ObjectContainer container, int maxCount, PersistentCooldownQueue altQueue) {
 		// Will be called repeatedly until no more keys are returned, so it doesn't
 		// matter very much if they're not in order.
 		
@@ -117,7 +121,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
 				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
-				if(i.parent != this) {
+				if(i.parent != this && i.parent != altQueue) {
 					continue;
 				}
 				if(i.time >= now) {
