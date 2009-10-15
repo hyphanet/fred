@@ -1449,7 +1449,7 @@ class CSSTokenizerFilter {
 						detectedCharset = s;
 						if(logDEBUG) log("Detected charset: \""+detectedCharset+"\"");
 						if(stopAtDetectedCharset) return;
-						if(passedCharset != null && !detectedCharset.equals(passedCharset)) {
+						if(passedCharset != null && !detectedCharset.equalsIgnoreCase(passedCharset)) {
 							Logger.normal(this, "Detected charset \""+detectedCharset+"\" differs from passed in charset \""+passedCharset+"\"");
 							throw new IOException("Detected charset differs from passed in charset");
 						}
