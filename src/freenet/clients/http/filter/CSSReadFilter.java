@@ -52,7 +52,7 @@ public class CSSReadFilter implements ContentDataFilter {
 				Closer.close(os);
 				throw UnknownCharsetException.create(e, charset);
 			}
-			CSSParser parser = new CSSParser(r, w, false, cb);
+			CSSParser parser = new CSSParser(r, w, false, cb, charset, false);
 			parser.filterCSS();
 			r.close();
 		}

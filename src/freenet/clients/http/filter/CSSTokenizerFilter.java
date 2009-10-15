@@ -25,12 +25,18 @@ class CSSTokenizerFilter {
 	// FIXME use this
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
+	private final String passedCharset;
+	private String detectedCharset;
+	private final boolean stopAtDetectedCharset;
 	
 	static {
 		Logger.registerClass(CSSTokenizerFilter.class);
 	}
 	
-	CSSTokenizerFilter(){}
+	CSSTokenizerFilter(){
+		passedCharset = "UTF-8";
+		stopAtDetectedCharset = false;
+	}
 	
 //	private static PrintStream log;
 
@@ -40,10 +46,12 @@ class CSSTokenizerFilter {
 		//System.out.println("CSSTokenizerFilter: "+s);
 		//log.println(s);
 	}
-	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb) {
+	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb, String charset, boolean stopAtDetectedCharset) {
 		this.r=r;
 		this.w = w;
 		this.cb=cb;
+		passedCharset = charset;
+		this.stopAtDetectedCharset = stopAtDetectedCharset;
 //		try {
 //			log = new PrintStream(new FileOutputStream("log"));
 //		} catch (FileNotFoundException e) {
@@ -1243,6 +1251,8 @@ class CSSTokenizerFilter {
 		String whitespaceAfterColon = "";
 		String whitespaceBeforeProperty = "";
 		
+		boolean charsetPossible = true;
+		boolean bomPossible = true;
 		
 		while(true)
 		{
@@ -1262,6 +1272,15 @@ class CSSTokenizerFilter {
 				w.flush();
 				break;
 			}
+			if(x == (char) 0xFEFF) {
+				if(bomPossible) {
+					// BOM
+					if(logDEBUG) log("Ignoring BOM");
+					w.write(x);
+				}
+				continue;
+			}
+			bomPossible = false;
 			prevc=c;
 			c=(char) x;
 			if(logDEBUG) log("Read: "+c);
@@ -1297,6 +1316,7 @@ class CSSTokenizerFilter {
 					break;
 
 				case '{':
+					charsetPossible=false;
 					if(prevc == '\\') {
 						// Leave in buffer, encoded.
 						buffer.append(c);
@@ -1423,11 +1443,23 @@ class CSSTokenizerFilter {
 								}
 							}
 						}
+					} else if(charsetPossible && buffer.toString().startsWith("@charset ")) {
+						String s = buffer.delete(0, "@charset ".length()).toString();
+						s = removeOuterQuotes(s);
+						detectedCharset = s;
+						if(logDEBUG) log("Detected charset: \""+detectedCharset+"\"");
+						if(stopAtDetectedCharset) return;
+						if(passedCharset != null && !detectedCharset.equals(passedCharset)) {
+							Logger.normal(this, "Detected charset \""+detectedCharset+"\" differs from passed in charset \""+passedCharset+"\"");
+							throw new IOException("Detected charset differs from passed in charset");
+						}
+						w.write("@charset \""+detectedCharset+"\";");
 					}
 					isState1Present=false;
 					ignoreElementsS1 = false;
 					closeIgnoredS1 = false;
 					buffer.setLength(0);
+					charsetPossible=false;
 					break;
 				case '"':
 				case '\'':
@@ -1492,6 +1524,7 @@ class CSSTokenizerFilter {
 
 			case STATE2:
 				canImport=false;
+				charsetPossible=false;
 				switch(c)
 				{
 				case '{':
@@ -1610,6 +1643,7 @@ class CSSTokenizerFilter {
 
 			case STATE2INQUOTE:
 				if(logDEBUG) log("STATE2INQUOTE: "+c);
+				charsetPossible=false;
 				switch(c)
 				{
 				case '"':
@@ -1646,6 +1680,7 @@ class CSSTokenizerFilter {
 				break;
 
 			case STATE3:
+				charsetPossible=false;
 				switch(c)
 				{
 				case ':':
@@ -1784,6 +1819,7 @@ class CSSTokenizerFilter {
 				break;
 
 			case STATE3INQUOTE:
+				charsetPossible=false;
 				if(logDEBUG) log("STATE3INQUOTE: "+c);
 				switch(c)
 				{
@@ -1820,6 +1856,7 @@ class CSSTokenizerFilter {
 				break;
 
 			case STATECOMMENT:
+				charsetPossible=false;
 				switch(c)
 				{
 				case '/':

@@ -31,10 +31,11 @@ class CSSParser extends CSSTokenizerFilter {
 		Reader r,
 		Writer w,
 		boolean paranoidStringCheck,
-		FilterCallback cb) {
-		super(r, w, cb);
+		FilterCallback cb,
+		String charset,
+		boolean stopAtDetectedCharset) {
+		super(r, w, cb, charset, stopAtDetectedCharset);
 		this.cb = cb;
-
 	}
 
 /*
@@ -59,7 +60,7 @@ class CSSParser extends CSSTokenizerFilter {
 	    	Writer output= new BufferedWriter(new OutputStreamWriter(System.out));
 
 	    	NullFilterCallback objtemp=new NullFilterCallback(); 
-	    	CSSParser pc = new CSSParser(input, output, true, objtemp);
+	    	CSSParser pc = new CSSParser(input, output, true, objtemp, "UTF-8", false);
 			//pc.debug=false;
 	    	pc.parse();
 	    	
