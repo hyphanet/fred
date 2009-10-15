@@ -212,13 +212,29 @@ public class ContentFilter {
 		}
 	}
 
-	private static String detectCharset(Bucket data, MIMEType handler, String maybeCharset) throws IOException {
+	public static String detectCharset(Bucket data, MIMEType handler, String maybeCharset) throws IOException {
 		
 		// Detect charset
 		
 		String charset = detectBOM(data);
 		
 		if((charset == null) && (handler.charsetExtractor != null)) {
+			
+			charset = handler.charsetExtractor.getCharsetByBOM(data);
+			if(charset != null) {
+				// These detections are not firm, and can detect a family e.g. ASCII, EBCDIC,
+				// so check with the full extractor.
+				try {
+					if((charset = handler.charsetExtractor.getCharset(data, charset)) != null) {
+				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
+						return charset;
+					}
+				} catch (DataFilterException e) {
+					// Ignore
+				}
+				
+			}
 
 			// Obviously, this is slow!
 			// This is why we need to detect on insert.
