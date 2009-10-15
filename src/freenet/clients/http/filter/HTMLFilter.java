@@ -2258,6 +2258,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
+
+	public String getCharsetByBOM(Bucket data) throws DataFilterException {
+		// No enhanced BOMs.
+		// FIXME XML BOMs???
+		return null;
+	}
 	
 
 }

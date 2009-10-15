@@ -3,8 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,6 +17,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashMap;
 
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -95,6 +98,78 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			Closer.close(r);
 			Closer.close(w);
 		}
+	}
+
+	// CSS 2.1 section 4.4.
+	// In all cases these will be confirmed by calling getCharset().
+	// We do not use all of the BOMs suggested.
+	// No point using the two for UTF-8 and similar ASCII-based charsets, 
+	// because we try that first anyway.
+	// Also, we do not use true BOMs.
+	
+	static final byte[] utf16be = parse("00 40 00 63 00 68 00 61 00 72 00 73 00 65 00 74 00 20 00 22");
+	static final byte[] utf16le = parse("40 00 63 00 68 00 61 00 72 00 73 00 65 00 74 00 20 00 22 00");
+	static final byte[] utf32_le = parse("40 00 00 00 63 00 00 00 68 00 00 00 61 00 00 00 72 00 00 00 73 00 00 00 65 00 00 00 74 00 00 00 20 00 00 00 22 00 00 00");
+	static final byte[] utf32_be = parse("00 00 00 40 00 00 00 63 00 00 00 68 00 00 00 61 00 00 00 72 00 00 00 73 00 00 00 65 00 00 00 74 00 00 00 20 00 00 00 22");
+	static final byte[] ebcdic = parse("7C 83 88 81 99 A2 85 A3 40 7F");
+	static final byte[] ibm1026 = parse("AE 83 88 81 99 A2 85 A3 40 FC");
+
+	// Not supported.
+	static final byte[] utf32_2143 = parse("00 00 40 00 00 00 63 00 00 00 68 00 00 00 61 00 00 00 72 00 00 00 73 00 00 00 65 00 00 00 74 00 00 00 20 00 00 00 22 00");
+	static final byte[] utf32_3412 = parse("00 40 00 00 00 63 00 00 00 68 00 00 00 61 00 00 00 72 00 00 00 73 00 00 00 65 00 00 00 74 00 00 00 20 00 00 00 22 00 00");
+	static final byte[] gsm = parse("00 63 68 61 72 73 65 74 20 22");
+	
+	static final int maxBOMLength = Math.max(utf16be.length, Math.max(utf16le.length, Math.max(utf32_le.length, Math.max(utf32_be.length, Math.max(ebcdic.length, Math.max(ibm1026.length, Math.max(utf32_2143.length, Math.max(utf32_3412.length, gsm.length))))))));
+	
+	static final byte[] parse(String s) {
+		s.replace(" ", "");
+		return HexUtil.hexToBytes(s);
+	}
+	
+	public String getCharsetByBOM(Bucket bucket) throws DataFilterException, IOException {
+		
+		InputStream is = null;
+		try {
+			byte[] data = new byte[maxBOMLength];
+			is = new BufferedInputStream(bucket.getInputStream());
+			int read = 0;
+			while(read < data.length) {
+				int x;
+				try {
+					x = is.read(data, read, data.length - read);
+				} catch(EOFException e) {
+					x = -1;
+				}
+				if(x <= 0)
+					break;
+			}
+			is.close();
+			is = null;
+			if(ContentFilter.startsWith(data, utf16be))
+				return "UTF-16BE";
+			if(ContentFilter.startsWith(data, utf16le))
+				return "UTF-16LE";
+			if(ContentFilter.startsWith(data, utf32_be))
+				return "UTF-32BE";
+			if(ContentFilter.startsWith(data, utf32_le))
+				return "UTF-32LE";
+			if(ContentFilter.startsWith(data, ebcdic))
+				return "IBM01140";
+			if(ContentFilter.startsWith(data, ibm1026))
+				return "IBM1026";
+			
+			// Unsupported BOMs
+			
+			if(ContentFilter.startsWith(data, utf32_2143))
+				throw new UnsupportedCharsetInFilterException("UTF-32-2143");
+			if(ContentFilter.startsWith(data, utf32_3412))
+				throw new UnsupportedCharsetInFilterException("UTF-32-3412");
+			if(ContentFilter.startsWith(data, gsm))
+				throw new UnsupportedCharsetInFilterException("GSM 03.38");
+		} finally {
+			Closer.close(is);
+		}
+		return null;
 	}
 
 }

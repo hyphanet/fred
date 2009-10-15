@@ -354,7 +354,7 @@ public class ContentFilter {
 	static byte[] bom_utf32_2143 = new byte[] { (byte)0x00, (byte)0x00, (byte)0xff, (byte)0xfe };
 	static byte[] bom_utf32_3412 = new byte[] { (byte)0xfe, (byte)0xff, (byte)0x00, (byte)0x00 };
 
-	private static boolean startsWith(byte[] data, byte[] cmp) {
+	public static boolean startsWith(byte[] data, byte[] cmp) {
 		for(int i=0;i<cmp.length;i++) {
 			if(data[i] != cmp[i]) return false;
 		}
