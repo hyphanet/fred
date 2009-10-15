@@ -122,7 +122,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	static final int maxBOMLength = Math.max(utf16be.length, Math.max(utf16le.length, Math.max(utf32_le.length, Math.max(utf32_be.length, Math.max(ebcdic.length, Math.max(ibm1026.length, Math.max(utf32_2143.length, Math.max(utf32_3412.length, gsm.length))))))));
 	
 	static final byte[] parse(String s) {
-		s.replace(" ", "");
+		s = s.replaceAll(" ", "");
 		return HexUtil.hexToBytes(s);
 	}
 	
