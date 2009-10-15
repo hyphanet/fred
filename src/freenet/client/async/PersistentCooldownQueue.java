@@ -102,7 +102,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		long tStart = System.currentTimeMillis();
 		Query query = container.query();
 		query.constrain(PersistentCooldownQueueItem.class);
-		query.descend("time").orderAscending().constrain(Long.valueOf(now + dontCareAfterMillis)).smaller().and(query.descend("parent").constrain(this).identity());
+		// Don't constrain on parent.
+		// parent index is humongous, so we get a huge memory spike, queries take ages.
+		// Just check manually.
+		query.descend("time").orderAscending().constrain(Long.valueOf(now + dontCareAfterMillis)).smaller();
 		ObjectSet results = query.execute();
 		if(results.hasNext()) {
 			long tEnd = System.currentTimeMillis();
