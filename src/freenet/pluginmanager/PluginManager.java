@@ -96,7 +96,7 @@ public class PluginManager {
 	
 	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 
-	public PluginManager(Node node) {
+	public PluginManager(Node node, int lastVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		// config
@@ -171,6 +171,14 @@ public class PluginManager {
 
 		toStart = pmconfig.getStringArr("loadplugin");
 		
+		if(lastVersion < 1237 && contains(toStart, "XMLLibrarian") && !contains(toStart, "Library")) {
+			String[] newToStart = new String[toStart.length+1];
+			System.arraycopy(toStart, 0, newToStart, 0, toStart.length);
+			newToStart[toStart.length] = "Library";
+			toStart = newToStart;
+			System.err.println("Loading Library plugin, replaces XMLLibrarian, when upgrading from pre-1237");
+		}
+		
 		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromHTTPS", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
 
 			@Override
@@ -203,6 +211,12 @@ public class PluginManager {
 
 		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
 		selfinstance = this;
+	}
+
+	private boolean contains(String[] array, String string) {
+		for(String s : array)
+			if(string.equals(s)) return true;
+		return false;
 	}
 
 	private boolean started;

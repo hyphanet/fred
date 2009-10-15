@@ -2504,7 +2504,7 @@ public class Node implements TimeSkewDetectorCallback {
 		// Initialize the plugin manager
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
-		pluginManager = new PluginManager(this);
+		pluginManager = new PluginManager(this, lastVersion);
 		
 		// FIXME
 		// Short timeouts and JVM timeouts with nothing more said than the above have been seen...
