@@ -365,4 +365,23 @@ public class CSSParserTest extends TestCase {
 		p.parse();
 		return w.toString();
 	}
+	
+	public void testCharset() throws IOException, URISyntaxException {
+		// Test whether @charset is passed through when it is correct.
+		String test = "@charset \"UTF-8\";\nh2 { color: red;}";
+		assertTrue("key=\""+test+"\" value=\""+filter(test)+"\"", filter(test).equals(test));
+		// No quote marks
+		String testUnquoted = "@charset UTF-8;\nh2 { color: red;}";
+		assertTrue("key=\""+test+"\" value=\""+filter(test)+"\"", filter(testUnquoted).equals(test));
+		// Test whether the parse fails when @charset is not correct.
+		String testFail = "@charset ISO-8859-1;\nh2 { color: red;};";
+		try {
+			filter(test).equals("");
+			assertFalse("Bogus @charset should have been deleted, but result is \""+filter(testFail)+"\"", false);
+		} catch (IOException e) {
+			// Ok.
+		}
+		// FIXME: test charset extraction.
+		// FIXME: test automatic charset extraction and filtering.
+	}
 }
