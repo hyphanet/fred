@@ -308,6 +308,12 @@ public class ContentFilter {
 			// We do NOT support UTF-32-2143 or UTF-32-3412
 			// Java does not have charset support for them, and well,
 			// very few people create web content on a PDP-11!
+			
+			if(startsWith(data, bom_utf32_2143))
+				throw new UnsupportedCharsetInFilterException("UTF-32-2143");
+			if(startsWith(data, bom_utf32_3412))
+				throw new UnsupportedCharsetInFilterException("UTF-32-3412");
+				
 			if(startsWith(data, bom_scsu))
 				return "SCSU";
 			if(startsWith(data, bom_utf7_1) || startsWith(data, bom_utf7_2) || startsWith(data, bom_utf7_3) || startsWith(data, bom_utf7_4) || startsWith(data, bom_utf7_5))
@@ -343,6 +349,10 @@ public class ContentFilter {
 	static byte[] bom_utf7_5 = new byte[] { (byte)0x2B, (byte)0x2F, (byte)0x76, (byte) 0x38, (byte) 0x2D };
 	static byte[] bom_utf_ebcdic = new byte[] { (byte)0xDD, (byte)0x73, (byte)0x66, (byte)0x73 };
 	static byte[] bom_bocu_1 = new byte[] { (byte)0xFB, (byte)0xEE, (byte)0x28 };
+	
+	// These BOMs are invalid. That is, we do not support them, they will produce an unrecoverable error, since we cannot decode them, but the browser might be able to, as e.g. the CSS spec refers to them.
+	static byte[] bom_utf32_2143 = new byte[] { (byte)0x00, (byte)0x00, (byte)0xff, (byte)0xfe };
+	static byte[] bom_utf32_3412 = new byte[] { (byte)0xfe, (byte)0xff, (byte)0x00, (byte)0x00 };
 
 	private static boolean startsWith(byte[] data, byte[] cmp) {
 		for(int i=0;i<cmp.length;i++) {
