@@ -1317,6 +1317,8 @@ class CSSTokenizerFilter {
 
 				case '{':
 					charsetPossible=false;
+					if(stopAtDetectedCharset)
+						return;
 					if(prevc == '\\') {
 						// Leave in buffer, encoded.
 						buffer.append(c);
@@ -1525,6 +1527,8 @@ class CSSTokenizerFilter {
 			case STATE2:
 				canImport=false;
 				charsetPossible=false;
+				if(stopAtDetectedCharset)
+					return;
 				switch(c)
 				{
 				case '{':
@@ -1681,6 +1685,8 @@ class CSSTokenizerFilter {
 
 			case STATE3:
 				charsetPossible=false;
+				if(stopAtDetectedCharset)
+					return;
 				switch(c)
 				{
 				case ':':
@@ -1820,6 +1826,8 @@ class CSSTokenizerFilter {
 
 			case STATE3INQUOTE:
 				charsetPossible=false;
+				if(stopAtDetectedCharset)
+					return;
 				if(logDEBUG) log("STATE3INQUOTE: "+c);
 				switch(c)
 				{
@@ -1857,6 +1865,8 @@ class CSSTokenizerFilter {
 
 			case STATECOMMENT:
 				charsetPossible=false;
+				if(stopAtDetectedCharset)
+					return;
 				switch(c)
 				{
 				case '/':
@@ -3725,4 +3735,7 @@ outer:		for(int i=0;i<value.length;i++) {
 		return decoded;
 	}
 
+	public String detectedCharset() {
+		return detectedCharset;
+	}
 }

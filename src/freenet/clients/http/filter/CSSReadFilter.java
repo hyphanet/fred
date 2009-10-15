@@ -21,7 +21,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
-public class CSSReadFilter implements ContentDataFilter {
+public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
@@ -70,6 +70,31 @@ public class CSSReadFilter implements ContentDataFilter {
 		throw new UnsupportedOperationException();
 	}
 
-	
+	public String getCharset(Bucket data, String charset) throws DataFilterException, IOException {
+		if(Logger.shouldLog(Logger.DEBUG, this))
+			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
+		InputStream strm = data.getInputStream();
+		NullWriter w = new NullWriter();
+		InputStreamReader isr;
+		BufferedReader r = null;
+		try {
+			try {
+				isr = new InputStreamReader(strm, charset);
+				r = new BufferedReader(isr, 32768);
+			} catch(UnsupportedEncodingException e) {
+				throw UnknownCharsetException.create(e, charset);
+			}
+			CSSParser parser = new CSSParser(r, w, false, new NullFilterCallback(), null, true);
+			parser.filterCSS();
+			r.close();
+			r = null;
+			return parser.detectedCharset();
+		}
+		finally {
+			Closer.close(strm);
+			Closer.close(r);
+			Closer.close(w);
+		}
+	}
 
 }
