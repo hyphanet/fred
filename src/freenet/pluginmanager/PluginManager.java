@@ -96,7 +96,7 @@ public class PluginManager {
 	
 	static final short PRIO = RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 
-	public PluginManager(Node node) {
+	public PluginManager(Node node, int lastVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		// config
@@ -171,6 +171,14 @@ public class PluginManager {
 
 		toStart = pmconfig.getStringArr("loadplugin");
 		
+		if(lastVersion < 1237 && contains(toStart, "XMLLibrarian") && !contains(toStart, "Library")) {
+			String[] newToStart = new String[toStart.length+1];
+			System.arraycopy(toStart, 0, newToStart, 0, toStart.length);
+			newToStart[toStart.length] = "Library";
+			toStart = newToStart;
+			System.err.println("Loading Library plugin, replaces XMLLibrarian, when upgrading from pre-1237");
+		}
+		
 		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromHTTPS", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
 
 			@Override
@@ -203,6 +211,12 @@ public class PluginManager {
 
 		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
 		selfinstance = this;
+	}
+
+	private boolean contains(String[] array, String string) {
+		for(String s : array)
+			if(string.equals(s)) return true;
+		return false;
 	}
 
 	private boolean started;
@@ -913,6 +927,7 @@ public class PluginManager {
 		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
 		addOfficialPlugin("XMLSpider", false, 41, true, new FreenetURI("CHK@Ws7ZAV786ezr8lKDrwuMHsnNAzBeAfuw-s5MumcHx0Q,cPgvmuyPHnl-1CP54C8va8nPngGpkrIRbJjWbrev9Zg,AAIC--8/XMLSpider.jar"));
 		addOfficialPlugin("Freereader", false, 2, true, new FreenetURI("CHK@ijfUy3ptA-UTk~vBpnxl92AVgLtH34FD46CJXNeJk5Q,p8ZtjT0Fg0YmA2LDt3kyxIagCQ6-KtsfwDyAVoOhQKE,AAIC--8/Freereader.jar"));
+		addOfficialPlugin("Library", false, 1, true, new FreenetURI("CHK@iWml5dwVavKmqZh6K6uUUEP8daBSxoQEE3WKpuHNSW0,K4xGaH3zRbVT6wVV7mGFespZMOzzg7rJF92Y-7NXnt0,AAIC--8/Library.jar"));
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}

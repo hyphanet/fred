@@ -433,7 +433,16 @@ public class WelcomeToadlet extends Toadlet {
         searchBox.addChild("div", "class", "infobox-header").addChild("span", "class", "search-title-label", NodeL10n.getBase().getString("WelcomeToadlet.searchBoxLabel"));
 		HTMLNode searchBoxContent = searchBox.addChild("div", "class", "infobox-content");
 		// Search form
-        if(core.node.pluginManager != null && 
+		if(core.node.pluginManager != null &&
+				core.node.pluginManager.isPluginLoaded("plugins.Library.Main")) {
+        	// FIXME: Remove this once we have a non-broken index.
+        	searchBoxContent.addChild("span", "class", "search-warning-text", l10n("searchBoxWarningSlow"));
+			HTMLNode searchForm = container.addFormChild(searchBoxContent, "/library/", "searchform");
+        	searchForm.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
+        	searchForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", l10n("searchFreenet") });
+        	// Search must be in a new window so that the user is able to browse the bookmarks.
+        	searchForm.addAttribute("target", "_blank");
+		} else if(core.node.pluginManager != null && 
         		core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
         	// FIXME: Remove this once we have a non-broken index.
         	searchBoxContent.addChild("span", "class", "search-warning-text", l10n("searchBoxWarningSlow"));
@@ -448,6 +457,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode textSpan = searchBoxContent.addChild("span", "class", "search-not-availible-warning");
 			NodeL10n.getBase().addL10nSubstitution(textSpan, "WelcomeToadlet.searchPluginNotLoaded", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/\">", "</a>" });
 		}
+		
 
         if (ctx.getPageMaker().getTheme().fetchKeyBoxAboveBookmarks) {
             this.putFetchKeyBox(ctx, contentNode);
