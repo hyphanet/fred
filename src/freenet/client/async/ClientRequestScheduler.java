@@ -984,7 +984,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final int MAX_KEYS = 20;
 		Object ret;
 		ClientRequestScheduler otherScheduler = 
-			(isSSKScheduler ? this.clientContext.getSskFetchScheduler() : this.clientContext.getChkFetchScheduler());
+			((!isSSKScheduler) ? this.clientContext.getSskFetchScheduler() : this.clientContext.getChkFetchScheduler());
 		if(queue instanceof PersistentCooldownQueue) {
 			ret = ((PersistentCooldownQueue)queue).removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS, (PersistentCooldownQueue)otherScheduler.persistentCooldownQueue);
 		} else
