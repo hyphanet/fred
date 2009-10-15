@@ -3,6 +3,7 @@ package freenet.clients.http.filter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -12,9 +13,13 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
+import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.BucketTools;
 import junit.framework.TestCase;
 
 public class CSSParserTest extends TestCase {
@@ -286,9 +291,13 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", "h2 { font-family: times new roman,arial,verdana;}");
 	}
 	
+	MIMEType cssMIMEType;
+	
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
     	Logger.setupStdoutLogging(Logger.MINOR, "freenet.clients.http.filter:DEBUG");
+    	ContentFilter.init();
+    	cssMIMEType = ContentFilter.getMIMEType("text/css");
 	}
 	
 	public void testCSS1Selector() throws IOException, URISyntaxException {
@@ -381,7 +390,79 @@ public class CSSParserTest extends TestCase {
 		} catch (IOException e) {
 			// Ok.
 		}
-		// FIXME: test charset extraction.
-		// FIXME: test automatic charset extraction and filtering.
+		// Test charset extraction
+		getCharsetTest("UTF-8");
+		getCharsetTest("UTF-16BE");
+		getCharsetTest("UTF-16LE");
+		getCharsetTest("UTF-32BE");
+		getCharsetTest("UTF-32LE");
+		
+		getCharsetTest("ISO-8859-1");
+		getCharsetTest("ISO-8859-15");
+		// FIXME add more ascii-based code pages?
+		
+		// IBM 1141-1144, 1147, 1149 do not use the same EBCDIC codes for the basic english alphabet.
+		// But we can support these four EBCDIC variants.
+		
+		getCharsetTest("IBM01140");
+		getCharsetTest("IBM01145", "IBM01140");
+		getCharsetTest("IBM01146", "IBM01140");
+		getCharsetTest("IBM01148", "IBM01140");
+		
+		getCharsetTest("IBM1026");
+		
+		// Some unsupported charsets. These should not get through the filter.
+		
+//		charsetTestUnsupported("IBM01141");
+//		charsetTestUnsupported("IBM01142");
+//		charsetTestUnsupported("IBM01143");
+//		charsetTestUnsupported("IBM01144");
+//		charsetTestUnsupported("IBM01147");
+//		charsetTestUnsupported("IBM01149");
+	}
+	
+	private void getCharsetTest(String charset) throws DataFilterException, IOException, URISyntaxException {
+		getCharsetTest(charset, null);
+	}
+	
+	private void getCharsetTest(String charset, String family) throws DataFilterException, IOException, URISyntaxException {
+		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
+		byte[] bytes = original.getBytes(charset);
+		CSSReadFilter filter = new CSSReadFilter();
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
+		// Detect with original charset.
+		String detectedCharset = filter.getCharset(bucket, charset);
+		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" even when parsing with correct charset", charset.equalsIgnoreCase(detectedCharset));
+		String bomCharset = detectedCharset = filter.getCharsetByBOM(bucket);
+		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || family.equalsIgnoreCase(detectedCharset));
+		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
+		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
+		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null);
+		assertTrue("ContentFilter.filter() returned wrong charset \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
+		String filtered = new String(BucketTools.toByteArray(fo.data), charset);
+		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" for charset \""+charset+"\"", original.equals(filtered));
+	}
+	
+	private void charsetTestUnsupported(String charset) throws DataFilterException, IOException, URISyntaxException {
+		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
+		byte[] bytes = original.getBytes(charset);
+		CSSReadFilter filter = new CSSReadFilter();
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
+		String detectedCharset;
+		String bomCharset = detectedCharset = filter.getCharsetByBOM(bucket);
+		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from getCharsetByBOM", detectedCharset == null);
+		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
+		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null);
+		try {
+			FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null);
+			assertTrue("ContentFilter.filter() returned charset \""+fo.type+"\" should be unknown testing unsupported charset \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
+			String filtered = new String(BucketTools.toByteArray(fo.data), charset);
+			assertTrue("ContentFilter.filter() returns something: \""+filtered+"\" should be empty as unsupported charset, original: \""+original+"\" for charset \""+charset+"\"", filtered.equals(""));
+		} catch (UnsupportedCharsetInFilterException e) {
+			// Ok.
+		} catch (IOException e) {
+			// Ok.
+		}
+		
 	}
 }
