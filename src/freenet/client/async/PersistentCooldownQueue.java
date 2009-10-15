@@ -117,12 +117,12 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
 				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
+				if(i.parent != this) {
+					continue;
+				}
 				if(i.time >= now) {
 					if(v.isEmpty()) return i.time;
 					break;
-				}
-				if(i.parent != this) {
-					continue;
 				}
 				container.activate(i.key, 5);
 				if(i.client == null || !container.ext().isStored(i.client)) {
