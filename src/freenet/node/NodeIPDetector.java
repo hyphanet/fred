@@ -216,12 +216,9 @@ public class NodeIPDetector {
 			}
 		}
 		
-		if((!addedValidIP) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
-			addresses.add(oldIPAddress);
-			// Don't set addedValidIP.
-			// There is an excellent chance that this is out of date.
-			// So we still want to nag the user, until we have some confirmation.
-		}
+		boolean hadAddedValidIP = addedValidIP;
+		
+		int confidence = 0;
 		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
@@ -261,6 +258,7 @@ public class NodeIPDetector {
 			if(countsByPeer.size() == 1) {
 				Iterator<FreenetInetAddress> it = countsByPeer.keySet().iterator();
 				FreenetInetAddress addr = it.next();
+				confidence = countsByPeer.get(addr);
 				Logger.minor(this, "Everyone agrees we are "+addr);
 				if(!addresses.contains(addr)) {
 					if(addr.isRealInternetAddress(false, false, false))
@@ -297,6 +295,7 @@ public class NodeIPDetector {
 							if(best.isRealInternetAddress(false, false, false))
 								addedValidIP = true;
 						}
+ 						confidence = bestPopularity;
 						if((secondBest != null) && (secondBestPopularity > 1)) {
 							if(!addresses.contains(secondBest)) {
 								Logger.minor(this, "Adding second best peer "+secondBest+" ("+secondBest+ ')');
@@ -309,6 +308,15 @@ public class NodeIPDetector {
 				}
 			}
 		}
+		
+		// Add the old address only if we have no choice, or if we only have the word of two peers to go on.
+		if((hadAddedValidIP || confidence > 2) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
+			addresses.add(oldIPAddress);
+			// Don't set addedValidIP.
+			// There is an excellent chance that this is out of date.
+			// So we still want to nag the user, until we have some confirmation.
+		}
+		
 	   	return addedValidIP;
 	}
 	
