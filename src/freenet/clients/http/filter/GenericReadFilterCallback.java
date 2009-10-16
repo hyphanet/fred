@@ -175,7 +175,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 					}
 					FreenetURI furi = new FreenetURI(p);
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-					return processURI(furi, uri, overrideType, noRelative, inline);
+					return processURI(furi, uri, overrideType, noRelative || isAbsolute, inline);
 				} catch (MalformedURLException e) {
 					// Not a FreenetURI
 					if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
@@ -255,6 +255,12 @@ public class GenericReadFilterCallback implements FilterCallback {
 			// re-encode, but at least it works...
 			
 			StringBuilder sb = new StringBuilder();
+			if(strippedBaseURI.getScheme() != null && !noRelative) {
+				sb.append(strippedBaseURI.getScheme());
+				sb.append("://");
+				sb.append(strippedBaseURI.getAuthority());
+				assert(path.startsWith("/"));
+			}
 			sb.append(path);
 			if(typeOverride != null) {
 				sb.append("?type=");
@@ -270,7 +276,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			if(!noRelative)
 				uri = strippedBaseURI.relativize(uri);
 			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI);
+				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI+" stripped base uri="+strippedBaseURI.toString());
 			return uri.toASCIIString();
 		} catch (URISyntaxException e) {
 			Logger.error(this, "Could not parse own URI: path="+path+", typeOverride="+typeOverride+", frag="+u.getFragment()+" : "+e, e);

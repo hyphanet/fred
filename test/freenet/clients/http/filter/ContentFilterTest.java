@@ -7,6 +7,7 @@ import java.net.URI;
 
 import junit.framework.TestCase;
 import freenet.l10n.NodeL10n;
+import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -19,7 +20,9 @@ import freenet.support.io.ArrayBucketFactory;
 public class ContentFilterTest extends TestCase {
 	private static final String BASE_URI_PROTOCOL = "http";
 	private static final String BASE_URI_CONTENT = "localhost:8888";
+	private static final String BASE_KEY = "USK@0I8gctpUE32CM0iQhXaYpCMvtPPGfT4pjXm01oid5Zc,3dAcn4fX2LyxO6uCnWFTx-2HKZ89uruurcKwLSCxbZ4,AQACAAE/Ultimate-Freenet-Index/55/";
 	private static final String BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/';
+	private static final String ALT_BASE_URI = BASE_URI_PROTOCOL+"://"+BASE_URI_CONTENT+'/'+BASE_KEY;
 	
 	private static final String EXTERNAL_LINK = "www.evilwebsite.gov";
 	private static final String EXTERNAL_LINK_OK = "<a />";
@@ -30,6 +33,8 @@ public class ContentFilterTest extends TestCase {
 	
 	private static final String INTERNAL_RELATIVE_LINK = "<a href=\"/KSK@gpl.txt\" />";
 	private static final String INTERNAL_ABSOLUTE_LINK = "<a href=\""+BASE_URI+"KSK@gpl.txt\" />";
+	
+	private static final String INTERNAL_RELATIVE_LINK1 = "<a href=\"test.html\" />";
 	
 	// @see bug #710
 	private static final String ANCHOR_TEST = "<a href=\"#test\" />";
@@ -64,14 +69,25 @@ public class ContentFilterTest extends TestCase {
 	private static final String XHTML_INCOMPLETEDOCUMENTC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><body> <h1> helloworld <h2> helloworld</h2></h1></body></html>";
 	private static final String XHTML_IMPROPERNESTING="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</b></i></html>";
 	private static final String XHTML_IMPROPERNESTINGC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</i></b></html>";
+	
+	//private static final String CSS_STRING_NEWLINES = "<style>* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }</style>";
+	//private static final String CSS_STRING_NEWLINESC = "<style>* {}\nbody {}\n</style>";
+
+	private static final String HTML_STYLESHEET_MAYBECHARSET = "<link rel=\"stylesheet\" href=\"test.css\">";
+	private static final String HTML_STYLESHEET_MAYBECHARSETC = "<link rel=\"stylesheet\" href=\"test.css?type=text/css&amp;maybecharset=ISO-8859-1\">";
+	
 	private final BucketFactory bf = new ArrayBucketFactory();
 
 	public void testHTMLFilter() throws Exception {
 		new NodeL10n();
-
+		
+    	Logger.setupStdoutLogging(Logger.MINOR, "freenet.clients.http.filter.Generic:DEBUG");
+		
 		// General sanity checks
 		// is "relativization" working?
 		assertEquals(INTERNAL_RELATIVE_LINK, HTMLFilter(INTERNAL_RELATIVE_LINK));
+		assertEquals(INTERNAL_RELATIVE_LINK, HTMLFilter(INTERNAL_RELATIVE_LINK, true));
+		assertEquals(INTERNAL_RELATIVE_LINK1, HTMLFilter(INTERNAL_RELATIVE_LINK1, true));
 		assertEquals(INTERNAL_RELATIVE_LINK, HTMLFilter(INTERNAL_ABSOLUTE_LINK));
 		// are external links stripped out ?
 		assertTrue(HTMLFilter(EXTERNAL_LINK_CHECK1).startsWith(EXTERNAL_LINK_OK));
@@ -107,8 +123,12 @@ public class ContentFilterTest extends TestCase {
 	}
 		
 	private String HTMLFilter(String data) throws Exception {
+		return HTMLFilter(data, false);
+	}
+	
+	private String HTMLFilter(String data, boolean alt) throws Exception {
 		String typeName = "text/html";
-		URI baseURI = new URI(BASE_URI);
+		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
 		
 		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null).data.toString();
