@@ -77,7 +77,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String HTML_STYLESHEET_MAYBECHARSETC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
 	
 	private static final String HTML_STYLESHEET_CHARSET = "<link rel=\"stylesheet\" charset=\"utf-8\" href=\"test.css\">";
-	private static final String HTML_STYLESHEET_CHARSETC = "<link charset=\"utf-8\" rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css%23%20charset=utf-8\">";
+	private static final String HTML_STYLESHEET_CHARSETC = "<link charset=\"utf-8\" rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css%3b%20charset=utf-8\">";
 	
 	private final BucketFactory bf = new ArrayBucketFactory();
 
