@@ -103,10 +103,10 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	// CSS 2.1 section 4.4.
 	// In all cases these will be confirmed by calling getCharset().
 	// We do not use all of the BOMs suggested.
-	// No point using the two for UTF-8 and similar ASCII-based charsets, 
-	// because we try that first anyway.
 	// Also, we do not use true BOMs.
 	
+	// We do check for ascii, even though it's the first one to check for anyway, because of the "as specified" rule: if it starts with @charset in ascii, it MUST have a valid charset, or we ignore the whole sheet, as per the spec.
+	static final byte[] ascii = parse("40 63 68 61 72 73 65 74 20 22");
 	static final byte[] utf16be = parse("00 40 00 63 00 68 00 61 00 72 00 73 00 65 00 74 00 20 00 22");
 	static final byte[] utf16le = parse("40 00 63 00 68 00 61 00 72 00 73 00 65 00 74 00 20 00 22 00");
 	static final byte[] utf32_le = parse("40 00 00 00 63 00 00 00 68 00 00 00 61 00 00 00 72 00 00 00 73 00 00 00 65 00 00 00 74 00 00 00 20 00 00 00 22 00 00 00");
@@ -145,6 +145,8 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			is.close();
 			is = null;
+			if(ContentFilter.startsWith(data, ascii))
+				return new BOMDetection("UTF-8", true);
 			if(ContentFilter.startsWith(data, utf16be))
 				return new BOMDetection("UTF-16BE", true);
 			if(ContentFilter.startsWith(data, utf16le))
