@@ -1451,14 +1451,14 @@ class CSSTokenizerFilter {
 						s = removeOuterQuotes(s);
 						detectedCharset = s;
 						if(logDEBUG) log("Detected charset: \""+detectedCharset+"\"");
+						if(!Charset.isSupported(detectedCharset)) {
+							Logger.normal(this, "Charset not supported: "+detectedCharset);
+							throw new UnsupportedCharsetInFilterException("Charset not supported: "+detectedCharset);
+						}
 						if(stopAtDetectedCharset) return;
 						if(passedCharset != null && !detectedCharset.equalsIgnoreCase(passedCharset)) {
 							Logger.normal(this, "Detected charset \""+detectedCharset+"\" differs from passed in charset \""+passedCharset+"\"");
 							throw new IOException("Detected charset differs from passed in charset");
-						}
-						if(!Charset.isSupported(detectedCharset)) {
-							Logger.normal(this, "Charset not supported: "+detectedCharset);
-							throw new UnsupportedCharsetInFilterException("Charset not supported: "+detectedCharset);
 						}
 						w.write("@charset \""+detectedCharset+"\";");
 					}
