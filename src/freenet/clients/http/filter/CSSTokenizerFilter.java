@@ -6,6 +6,7 @@ package freenet.clients.http.filter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1454,6 +1455,10 @@ class CSSTokenizerFilter {
 						if(passedCharset != null && !detectedCharset.equalsIgnoreCase(passedCharset)) {
 							Logger.normal(this, "Detected charset \""+detectedCharset+"\" differs from passed in charset \""+passedCharset+"\"");
 							throw new IOException("Detected charset differs from passed in charset");
+						}
+						if(!Charset.isSupported(detectedCharset)) {
+							Logger.normal(this, "Charset not supported: "+detectedCharset);
+							throw new UnsupportedCharsetInFilterException("Charset not supported: "+detectedCharset);
 						}
 						w.write("@charset \""+detectedCharset+"\";");
 					}
