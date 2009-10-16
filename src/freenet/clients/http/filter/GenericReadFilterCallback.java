@@ -258,7 +258,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			sb.append(path);
 			if(typeOverride != null) {
 				sb.append("?type=");
-				sb.append(typeOverride);
+				sb.append(freenet.support.URLEncoder.encode(typeOverride, "", false, "="));
 			}
 			if(u.getFragment() != null) {
 				sb.append('#');
