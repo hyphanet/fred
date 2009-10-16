@@ -86,7 +86,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String FRAME_SRC_CHARSET_BADC = "<frame src=\"test.html?type=text/html%3b%20charset=UTF-8\">";
 	
 	private static final String FRAME_SRC_CHARSET_BAD1 = "<frame src=\"test.html?type=text/html; charset=UTF-8%26max-size=4194304\">";
-	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html%3b%20charset=UTF-8%26max-size=4194304\">";
+	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html\">";
 	
 	private final BucketFactory bf = new ArrayBucketFactory();
 

@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 
 import freenet.clients.http.HTTPRequestImpl;
@@ -17,6 +18,8 @@ import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback {
@@ -239,6 +242,29 @@ public class GenericReadFilterCallback implements FilterCallback {
 		String typeOverride = req.getParam("type", null);
 		if(overrideType != null)
 			typeOverride = overrideType;
+
+		if(typeOverride != null) {
+			String[] split = HTMLFilter.splitType(typeOverride);
+			if(split[1] != null) {
+				String charset = split[1];
+				if(charset != null) {
+					try {
+						charset = URLDecoder.decode(charset, false);
+					} catch (URLEncodedFormatException e) {
+						charset = null;
+					}
+				}
+				if(charset != null && charset.indexOf('&') != -1)
+					charset = null;
+				if(charset != null && !Charset.isSupported(charset))
+					charset = null;
+				if(charset != null)
+					typeOverride = split[0]+"; charset="+charset;
+				else
+					typeOverride = split[0];
+			}
+		}
+		
 		// REDFLAG any other options we should support? 
 		// Obviously we don't want to support ?force= !!
 		// At the moment, ?type= and ?force= are the only options supported by FProxy anyway.

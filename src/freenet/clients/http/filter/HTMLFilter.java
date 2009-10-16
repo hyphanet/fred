@@ -2151,7 +2151,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * lot more flexible than that. (avian) TEXT/PLAIN; format=flowed;
 	 * charset=US-ASCII IMAGE/JPEG; name=test.jpeg; x-unix-mode=0644
 	 */
-	static String[] splitType(String type) {
+	public static String[] splitType(String type) {
 		StringFieldParser sfp;
 		String charset = null, param, name, value;
 		int x;
