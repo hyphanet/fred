@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
+import freenet.clients.http.filter.CharsetExtractor.BOMDetection;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
@@ -397,8 +398,8 @@ public class CSSParserTest extends TestCase {
 		getCharsetTest("UTF-32BE");
 		getCharsetTest("UTF-32LE");
 		
-		getCharsetTest("ISO-8859-1");
-		getCharsetTest("ISO-8859-15");
+		getCharsetTest("ISO-8859-1", "UTF-8");
+		getCharsetTest("ISO-8859-15", "UTF-8");
 		// FIXME add more ascii-based code pages?
 		
 		// IBM 1141-1144, 1147, 1149 do not use the same EBCDIC codes for the basic english alphabet.
@@ -433,8 +434,9 @@ public class CSSParserTest extends TestCase {
 		// Detect with original charset.
 		String detectedCharset = filter.getCharset(bucket, charset);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" even when parsing with correct charset", charset.equalsIgnoreCase(detectedCharset));
-		String bomCharset = detectedCharset = filter.getCharsetByBOM(bucket);
-		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || family.equalsIgnoreCase(detectedCharset));
+		BOMDetection bom = filter.getCharsetByBOM(bucket);
+		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
+		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
 		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
 		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null);
@@ -449,13 +451,15 @@ public class CSSParserTest extends TestCase {
 		CSSReadFilter filter = new CSSReadFilter();
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
 		String detectedCharset;
-		String bomCharset = detectedCharset = filter.getCharsetByBOM(bucket);
+		BOMDetection bom = filter.getCharsetByBOM(bucket);
+		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from getCharsetByBOM", detectedCharset == null);
 		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
-		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null);
+		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
 		try {
 			FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null);
-			assertTrue("ContentFilter.filter() returned charset \""+fo.type+"\" should be unknown testing unsupported charset \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
+			// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
+			assertTrue("ContentFilter.filter() returned charset \""+fo.type+"\" should be unknown testing unsupported charset \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset) || fo.type.equalsIgnoreCase("text/css; charset=utf-8"));
 			String filtered = new String(BucketTools.toByteArray(fo.data), charset);
 			assertTrue("ContentFilter.filter() returns something: \""+filtered+"\" should be empty as unsupported charset, original: \""+original+"\" for charset \""+charset+"\"", filtered.equals(""));
 		} catch (UnsupportedCharsetInFilterException e) {
