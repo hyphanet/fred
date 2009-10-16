@@ -310,7 +310,7 @@ public class NodeIPDetector {
 		}
 		
 		// Add the old address only if we have no choice, or if we only have the word of two peers to go on.
-		if((hadAddedValidIP || confidence <= 2) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
+		if((!(hadAddedValidIP || confidence > 2)) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
 			addresses.add(oldIPAddress);
 			// Don't set addedValidIP.
 			// There is an excellent chance that this is out of date.
