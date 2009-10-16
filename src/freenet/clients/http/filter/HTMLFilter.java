@@ -16,6 +16,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,8 @@ import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
@@ -1727,8 +1730,20 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							+ charset);
 			}
 			String c = getHashString(h, "charset");
-			if (c != null)
+			if (c != null) {
 				charset = c;
+			}
+			if(charset != null) {
+				try {
+					charset = URLDecoder.decode(charset, false);
+				} catch (URLEncodedFormatException e) {
+					charset = null;
+				}
+			}
+			if(charset != null && charset.indexOf('&') != -1)
+				charset = null;
+			if(charset != null && !Charset.isSupported(charset))
+				charset = null;
 			String href = getHashString(h, "href");
 			if (href != null) {
 				final String[] rels = new String[] { "rel", "rev" };
