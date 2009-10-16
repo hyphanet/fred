@@ -74,7 +74,10 @@ public class ContentFilterTest extends TestCase {
 	private static final String CSS_STRING_NEWLINESC = "<style>* {}\nbody {}\n</style>";
 
 	private static final String HTML_STYLESHEET_MAYBECHARSET = "<link rel=\"stylesheet\" href=\"test.css\">";
-	private static final String HTML_STYLESHEET_MAYBECHARSETC = "<link rel=\"stylesheet\" href=\"test.css?type=text/css&amp;maybecharset=ISO-8859-1\">";
+	private static final String HTML_STYLESHEET_MAYBECHARSETC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
+	
+	private static final String HTML_STYLESHEET_CHARSET = "<link rel=\"stylesheet\" charset=\"utf-8\" href=\"test.css\">";
+	private static final String HTML_STYLESHEET_CHARSETC = "<link charset=\"utf-8\" rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css%23%20charset=utf-8\">";
 	
 	private final BucketFactory bf = new ArrayBucketFactory();
 
@@ -120,6 +123,9 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(XHTML_IMPROPERNESTINGC,HTMLFilter(XHTML_IMPROPERNESTING));
 		
 		assertEquals(CSS_STRING_NEWLINESC,HTMLFilter(CSS_STRING_NEWLINES));
+		
+		assertEquals(HTML_STYLESHEET_MAYBECHARSETC, HTMLFilter(HTML_STYLESHEET_MAYBECHARSET, true));
+		assertEquals(HTML_STYLESHEET_CHARSETC, HTMLFilter(HTML_STYLESHEET_CHARSET, true));
 		
 	}
 		

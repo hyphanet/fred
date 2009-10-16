@@ -2232,7 +2232,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" ) inline="+inline, new Exception("debug"));
 		boolean addMaybe = false;
 		if((overrideCharset != null) && (overrideCharset.length() > 0))
-			overrideType += "; charset="+overrideCharset;
+			overrideType += "%23%20charset="+overrideCharset;
 		else if(maybeCharset != null)
 			addMaybe = true;
 		String retval = cb.processURI(suri, overrideType, false, inline);
