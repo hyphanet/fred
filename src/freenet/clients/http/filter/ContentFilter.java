@@ -222,21 +222,23 @@ public class ContentFilter {
 		if((charset == null) && (handler.charsetExtractor != null)) {
 			
 			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(data);
-			charset = bom.charset;
-			if(charset != null) {
-				// These detections are not firm, and can detect a family e.g. ASCII, EBCDIC,
-				// so check with the full extractor.
-				try {
-					if((charset = handler.charsetExtractor.getCharset(data, charset)) != null) {
-				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
-				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
-						return charset;
-					} else if(bom.mustHaveCharset)
-						throw new UndetectableCharsetException(bom.charset);
-				} catch (DataFilterException e) {
-					// Ignore
+			if(bom != null) {
+				charset = bom.charset;
+				if(charset != null) {
+					// These detections are not firm, and can detect a family e.g. ASCII, EBCDIC,
+					// so check with the full extractor.
+					try {
+						if((charset = handler.charsetExtractor.getCharset(data, charset)) != null) {
+							if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+								Logger.minor(ContentFilter.class, "Returning charset: "+charset);
+							return charset;
+						} else if(bom.mustHaveCharset)
+							throw new UndetectableCharsetException(bom.charset);
+					} catch (DataFilterException e) {
+						// Ignore
+					}
+					
 				}
-				
 			}
 
 			// Obviously, this is slow!
