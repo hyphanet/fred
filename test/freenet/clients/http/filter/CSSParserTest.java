@@ -413,12 +413,12 @@ public class CSSParserTest extends TestCase {
 		
 		// Some unsupported charsets. These should not get through the filter.
 		
-//		charsetTestUnsupported("IBM01141");
-//		charsetTestUnsupported("IBM01142");
-//		charsetTestUnsupported("IBM01143");
-//		charsetTestUnsupported("IBM01144");
-//		charsetTestUnsupported("IBM01147");
-//		charsetTestUnsupported("IBM01149");
+		charsetTestUnsupported("IBM01141");
+		charsetTestUnsupported("IBM01142");
+		charsetTestUnsupported("IBM01143");
+		charsetTestUnsupported("IBM01144");
+		charsetTestUnsupported("IBM01147");
+		charsetTestUnsupported("IBM01149");
 	}
 	
 	private void getCharsetTest(String charset) throws DataFilterException, IOException, URISyntaxException {

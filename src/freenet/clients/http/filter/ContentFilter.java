@@ -12,6 +12,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Hashtable;
 
+import freenet.clients.http.filter.CharsetExtractor.BOMDetection;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -220,7 +221,8 @@ public class ContentFilter {
 		
 		if((charset == null) && (handler.charsetExtractor != null)) {
 			
-			charset = handler.charsetExtractor.getCharsetByBOM(data);
+			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(data);
+			charset = bom.charset;
 			if(charset != null) {
 				// These detections are not firm, and can detect a family e.g. ASCII, EBCDIC,
 				// so check with the full extractor.
@@ -229,7 +231,8 @@ public class ContentFilter {
 				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
-					}
+					} else if(bom.mustHaveCharset)
+						throw new UndetectableCharsetException(bom.charset);
 				} catch (DataFilterException e) {
 					// Ignore
 				}

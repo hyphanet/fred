@@ -27,6 +27,19 @@ public interface CharsetExtractor {
 	 * @throws DataFilterException
 	 * @throws IOException 
 	 */
-	String getCharsetByBOM(Bucket data) throws DataFilterException, IOException;
+	BOMDetection getCharsetByBOM(Bucket data) throws DataFilterException, IOException;
+	
+	public class BOMDetection {
+		/** The charset, guessed from the first few characters. */
+		final String charset;
+		/** If this is true, getCharset() must return a charset, if it does
+		 * not, we ignore the whole stylesheet. See CSS 2.1 section 4.4, at
+		 * the end, "as specified" rule. */
+		final boolean mustHaveCharset;
+		BOMDetection(String charset, boolean mustHaveCharset) {
+			this.charset = charset;
+			this.mustHaveCharset = mustHaveCharset;
+		}
+	}
 	
 }

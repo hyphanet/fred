@@ -126,7 +126,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		return HexUtil.hexToBytes(s);
 	}
 	
-	public String getCharsetByBOM(Bucket bucket) throws DataFilterException, IOException {
+	public BOMDetection getCharsetByBOM(Bucket bucket) throws DataFilterException, IOException {
 		
 		InputStream is = null;
 		try {
@@ -146,17 +146,17 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			is.close();
 			is = null;
 			if(ContentFilter.startsWith(data, utf16be))
-				return "UTF-16BE";
+				return new BOMDetection("UTF-16BE", true);
 			if(ContentFilter.startsWith(data, utf16le))
-				return "UTF-16LE";
+				return new BOMDetection("UTF-16LE", true);
 			if(ContentFilter.startsWith(data, utf32_be))
-				return "UTF-32BE";
+				return new BOMDetection("UTF-32BE", true);
 			if(ContentFilter.startsWith(data, utf32_le))
-				return "UTF-32LE";
+				return new BOMDetection("UTF-32LE", true);
 			if(ContentFilter.startsWith(data, ebcdic))
-				return "IBM01140";
+				return new BOMDetection("IBM01140", true);
 			if(ContentFilter.startsWith(data, ibm1026))
-				return "IBM1026";
+				return new BOMDetection("IBM1026", true);
 			
 			// Unsupported BOMs
 			
