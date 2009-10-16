@@ -82,7 +82,11 @@ public class ContentFilterTest extends TestCase {
 	private static final String HTML_STYLESHEET_CHARSET_BAD1 = "<link rel=\"stylesheet\" type=\"text/css; charset=utf-8&max-size=4194304\" href=\"test.css\">";
 	private static final String HTML_STYLESHEET_CHARSET_BAD1C = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css\">";
 	
+	private static final String FRAME_SRC_CHARSET_BAD = "<frame src=\"test.html?type=text/html; charset=UTF-8&max-size=4194304\">";
+	private static final String FRAME_SRC_CHARSET_BADC = "<frame src=\"test.html?type=text/html%3b%20charset=UTF-8\">";
 	
+	private static final String FRAME_SRC_CHARSET_BAD1 = "<frame src=\"test.html?type=text/html; charset=UTF-8%26max-size=4194304\">";
+	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html%3b%20charset=UTF-8%26max-size=4194304\">";
 	
 	private final BucketFactory bf = new ArrayBucketFactory();
 
@@ -134,7 +138,8 @@ public class ContentFilterTest extends TestCase {
 		//assertEquals(HTML_STYLESHEET_CHARSETC, HTMLFilter(HTML_STYLESHEET_CHARSET, true));
 		assertEquals(HTML_STYLESHEET_CHARSET_BADC, HTMLFilter(HTML_STYLESHEET_CHARSET_BAD, true));
 		assertEquals(HTML_STYLESHEET_CHARSET_BAD1C, HTMLFilter(HTML_STYLESHEET_CHARSET_BAD1, true));
-		
+		assertEquals(FRAME_SRC_CHARSET_BADC, HTMLFilter(FRAME_SRC_CHARSET_BAD, true));
+		assertEquals(FRAME_SRC_CHARSET_BAD1C, HTMLFilter(FRAME_SRC_CHARSET_BAD1, true));
 	}
 		
 	private String HTMLFilter(String data) throws Exception {
