@@ -252,7 +252,7 @@ public class ElementInfo {
 		return false;
 	}
 	
-	public static boolean isValidHTMLTags(String tag)
+	public static boolean isValidHTMLTag(String tag)
 	{
 		return (HTML_ELEMENTS.contains(tag.toLowerCase())||VOID_ELEMENTS.contains(tag.toLowerCase()));
 	}
