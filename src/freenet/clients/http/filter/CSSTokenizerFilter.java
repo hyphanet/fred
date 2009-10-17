@@ -1072,8 +1072,13 @@ class CSSTokenizerFilter {
 					attSelectionParts=new String[2];
 					attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("~="));
 					attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+3,attSelection.length());
-				} else
-					attSelectionParts=attSelection.split("=");
+				} else if(attSelection.indexOf('=') != -1){
+					attSelectionParts=new String[2];
+					attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("="));
+					attSelectionParts[1]=attSelection.substring(attSelection.indexOf("=")+2,attSelection.length());
+				} else {
+					attSelectionParts=new String[] { attSelection };
+				}
 				
 				//Verifying whether each character is alphanumeric or _
 				if(logDEBUG) log("HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
