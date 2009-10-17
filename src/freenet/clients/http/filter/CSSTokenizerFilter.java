@@ -1100,7 +1100,7 @@ class CSSTokenizerFilter {
 				if(attSelectionParts.length > 1) {
 					// What about the right hand side?
 					// The grammar says it's an IDENT.
-					
+					if(logDEBUG) log("RHS is \""+attSelectionParts[1]+"\"");
 					if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
 				}
 			}
