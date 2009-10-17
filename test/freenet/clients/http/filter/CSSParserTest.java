@@ -7,6 +7,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
@@ -72,6 +73,34 @@ public class CSSParserTest extends TestCase {
 		// Wierd one from the CSS spec
 		CSS2_SELECTOR.put("p[example=\"public class foo\\\n{\\\n    private int x;\\\n\\\n    foo(int x) {\\\n        this.x = x;\\\n    }\\\n\\\n}\"] { color: red }", 
 				"p[example=\"public class foo{    private int x;    foo(int x) {        this.x = x;    }}\"] { color: red;}");
+		// Escaped anything inside an attribute selector. This is allowed.
+		CSS2_SELECTOR.put("h1[foo=\"hello\\202 \"] {}", "h1[foo=\"hello\\202 \"] {}");
+		// Escaped quotes inside a string inside an attribute selector. This is allowed.
+		CSS2_SELECTOR.put("h1[foo=\"\\\"test\\\"\"] {}", "h1[foo=\"\\\"test\\\"\"] {}");
+		
+	}
+	
+	private final static HashSet<String> CSS2_BAD_SELECTOR= new HashSet<String>();
+	static
+	{
+		// Doubled =
+		CSS2_BAD_SELECTOR.add("h1[foo=bar=bat] {}");
+		CSS2_BAD_SELECTOR.add("h1[foo~=bar~=bat] {}");
+		CSS2_BAD_SELECTOR.add("h1[foo|=bar|=bat] {}");
+		// Escaping ]
+		CSS2_BAD_SELECTOR.add("h1[foo=bar\\] {}");
+		CSS2_BAD_SELECTOR.add("h1[foo=\"bar\\] {}");
+		// Unclosed string
+		CSS2_BAD_SELECTOR.add("h1[foo=\"bar] {}");
+		
+		// THE FOLLOWING ARE VALID BUT DISALLOWED
+		// ] inside string inside attribute selector: way too confusing for parsers.
+		// FIXME one day we should escape the ] to make this both valid and easy to parse, rather than dropping it.
+		CSS2_BAD_SELECTOR.add("h1[foo=\"bar]\"] {}");
+		CSS2_BAD_SELECTOR.add("h1[foo=bar\\]] {}");
+		// Closing an escape with \r\n. This is supported by verifying and splitting logic, but not by the tokeniser.
+		// FIXME fix this.
+		CSS2_BAD_SELECTOR.add("h1[foo=\"hello\\202\r\n\"] {}");
 	}
 
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
@@ -345,6 +374,12 @@ public class CSSParserTest extends TestCase {
 			assertTrue("key="+key+" value="+filter(key)+"\" should be \""+value+"\"", filter(key).contains(value));
 		}
 
+		i=0;
+		for(String key : CSS2_BAD_SELECTOR) {
+			System.err.println("Bad selector test "+(i++));
+			assertTrue("".equals(filter(key)));
+		}
+		
 	}
 
 	public void testNewlines() throws IOException, URISyntaxException {

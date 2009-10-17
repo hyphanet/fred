@@ -986,6 +986,7 @@ class CSSTokenizerFilter {
 	 */
 	public String HTMLelementVerifier(String elementString)
 	{
+		if(logDEBUG) log("varifying element/selector: \""+elementString+"\"");
 		String HTMLelement="",pseudoClass="",className="",id="";
 		boolean isValid=true;
 		StringBuffer fBuffer=new StringBuffer();
@@ -1130,6 +1131,7 @@ class CSSTokenizerFilter {
 	 */
 	public String recursiveSelectorVerifier(String selectorString)
 	{
+		if(logDEBUG) log("selector: \""+selectorString+"\"");
 		selectorString=selectorString.toLowerCase().trim();
 		
 		// Parse but don't tokenise.
@@ -1170,7 +1172,7 @@ class CSSTokenizerFilter {
 				quoting = c;
 			} else if(c == '\"' && quoting == 0 && !escaping) {
 				quoting = c;
-			} else if(c == quoting) {
+			} else if(c == quoting && !escaping) {
 				quoting = 0;
 			} else if(c == '\n' && eatLF) {
 				// Ok
@@ -1178,6 +1180,7 @@ class CSSTokenizerFilter {
 				eatLF = false;
 			} else if((c == '\r' || c == '\n' || c == '\f') && !(quoting != 0 && escaping)) {
 				// No newlines unless in a string *and* quoted!
+				if(logDEBUG) log("no newlines unless in a string *and* quoted at index "+i);
 				return null;
 			} else if(c == '\r' && escaping && escapedDigits == 0) {
 				escaping = false;
@@ -1185,7 +1188,10 @@ class CSSTokenizerFilter {
 			} else if((c == '\n' || c == '\f') && escaping) {
 				if(escapedDigits == 0)
 					escaping = false;
-				else return null; // Invalid
+				else {
+					if(logDEBUG) log("invalid newline escaping at char "+i);
+					return null; // Invalid
+				}
 			} else if(escaping && ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
 				escapedDigits++;
 				if(escapedDigits == 6)
@@ -1196,11 +1202,13 @@ class CSSTokenizerFilter {
 			} else if(c == '\\' && !escaping) {
 				escaping = true;
 			} else if(c == '\\' && escaping && escapedDigits > 0) {
+				if(logDEBUG) log("backslash but already escaping with digits at char "+i);
 				return null; // Invalid
 			} else if(c == '\\' && escaping) {
 				escaping = false;
 			} else if(escaping) {
 				// Any other character can be escaped.
+				escaping = false;
 			}
 			eatLF = false;
 		}
