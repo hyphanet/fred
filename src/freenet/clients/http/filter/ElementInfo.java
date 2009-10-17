@@ -192,7 +192,7 @@ public class ElementInfo {
 	public final static String[] MEDIAARRAY= new String[]{"all","braille","embossed","handheld","print","projection","screen","speech","tty","tv"};
 	public final static String[] VISUALMEDIA= new String[]{"handheld","print","projection","screen","tty","tv"};
 	public final static String[] AURALMEDIA=new String[]{"speech"};
-	public final static String[] VISUALPAGEDMEDIA=new String[]{"embosed","handheld","print","projection","screen","tty","tv"};
+	public final static String[] VISUALPAGEDMEDIA=new String[]{"embossed","handheld","print","projection","screen","tty","tv"};
 	public final static String[] VISUALINTERACTIVEMEDIA=new String[]{"braille","handheld","print","projection","screen","speech","tty","tv"};	
 	
 	
