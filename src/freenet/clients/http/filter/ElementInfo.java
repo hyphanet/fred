@@ -370,6 +370,13 @@ public class ElementInfo {
 		
 		public static boolean isValidPseudoClass(String cname)
 		{
+			if(cname.indexOf(':') != -1) {
+				// Pseudo-classes can be chained, at least dynamic ones can, see CSS2.1 section 5.11.3
+				String[] split = cname.split(":");
+				for(String s : split)
+					if(!isValidPseudoClass(s)) return false;
+				return true;
+			}
 			cname=cname.toLowerCase();
 			if(PSEUDOCLASS.contains(cname))
 				return true;

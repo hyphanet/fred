@@ -77,7 +77,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1[foo=\"hello\\202 \"] {}", "h1[foo=\"hello\\202 \"] {}");
 		// Escaped quotes inside a string inside an attribute selector. This is allowed.
 		CSS2_SELECTOR.put("h1[foo=\"\\\"test\\\"\"] {}", "h1[foo=\"\\\"test\\\"\"] {}");
-		
+		CSS2_SELECTOR.put("a:focus:hover { background: white;}", "a:focus:hover { background: white;}");
 	}
 	
 	private final static HashSet<String> CSS2_BAD_SELECTOR= new HashSet<String>();
