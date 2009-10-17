@@ -780,8 +780,8 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[42]=new CSSPropertyVerifier(null,new String[]{"ur"},null,true);
 			auxilaryVerifiers[43]=new CSSPropertyVerifier(new String[]{"mix"},null,null,true);
 			auxilaryVerifiers[44]=new CSSPropertyVerifier(new String[]{"repeat"},null,null,true);
-			auxilaryVerifiers[45]=new CSSPropertyVerifier(null,null,new String[]{"42a43"},true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"auto","none","inherit"},ElementInfo.AURALMEDIA,null,new String[]{"44 45<0,1>[1,2]"}));
+			auxilaryVerifiers[45]=new CSSPropertyVerifier(null,null,new String[]{"43a44"},true);
+			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"auto","none","inherit"},ElementInfo.AURALMEDIA,null,new String[]{"42 45<0,1>[1,2]"}));
 			allelementVerifiers.remove(element);
 
 

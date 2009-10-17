@@ -345,6 +345,11 @@ public class CSSParserTest extends TestCase {
 		// Shape
 		propertyTests.put("p { clip: rect(5px, 40px, 45px, 5px); }", "p { clip: rect(5px, 40px, 45px, 5px); }");
 		propertyTests.put("p { clip: rect(auto, auto, 45px, 5px); }", "p { clip: rect(auto, auto, 45px, 5px); }");
+		
+		// play-during
+		propertyTests.put("@media speech { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media speech { blockquote.sad { play-during: url(\"violins.aiff\");}}");
+		propertyTests.put("@media speech { blockquote Q   { play-during: url(\"harp.wav\") mix }}", "@media speech { blockquote q { play-during: url(\"harp.wav\") mix;}}");
+		propertyTests.put("@media speech { span.quiet     { play-during: none } }", "@media speech { span.quiet { play-during: none;}}");
 	}
 	
 	MIMEType cssMIMEType;
