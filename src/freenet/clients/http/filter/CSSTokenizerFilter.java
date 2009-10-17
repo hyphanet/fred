@@ -1780,6 +1780,7 @@ class CSSTokenizerFilter {
 					}
 					ignoreElementsS3 = false;
 					propertyName="";
+					propertyValue="";
 					break;
 				case '}':
 					if(prevc == '\\') {
