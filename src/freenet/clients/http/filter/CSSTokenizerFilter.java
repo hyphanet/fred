@@ -1351,6 +1351,22 @@ class CSSTokenizerFilter {
 					}
 					String braceSpace = buffer.substring(0, i);
 					buffer.delete(0, i);
+					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+						braceSpace +=buffer.substring(0, 4);
+						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
+							Logger.error(this, "<!-- not followed by whitespace!");
+							return;
+						}
+						buffer.delete(0, 4);
+						for(i=0;i<buffer.length();i++) {
+							char c1 = buffer.charAt(i);
+							if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+								continue;
+							break;
+						}
+						braceSpace += buffer.substring(0, i);
+						buffer.delete(0, i);
+					}
 					for(i=buffer.length()-1;i>=0;i--) {
 						char c1 = buffer.charAt(i);
 						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
@@ -1361,6 +1377,7 @@ class CSSTokenizerFilter {
 					String postSpace = buffer.substring(i);
 					buffer.setLength(i);
 					ParsedWord[] parts=split(buffer.toString().trim());
+					if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(parts));
 					buffer.setLength(0);
 					boolean valid = false;
 					if(parts.length!=2)
@@ -1414,8 +1431,26 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
+					if(logDEBUG) log("buffer in state 1 ; : \""+buffer.toString()+"\"");
 					//should be @import
 
+					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+						w.write(buffer.substring(0, 4));
+						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
+							Logger.error(this, "<!-- not followed by whitespace!");
+							return;
+						}
+						buffer.delete(0, 4);
+						for(i=0;i<buffer.length();i++) {
+							char c1 = buffer.charAt(i);
+							if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+								continue;
+							break;
+						}
+						w.write(buffer.substring(0, i));
+						buffer.delete(0, i);
+					}
+					
 					if(canImport && !ignoreElementsS1 && buffer.toString().contains("@import"))
 					{
 						if(logDEBUG) log("STATE1 CASE ;statement="+buffer.toString());
@@ -1506,7 +1541,9 @@ class CSSTokenizerFilter {
 					buffer.append(c);
 				if(!isState1Present)
 				{
-					currentState=STATE2;	
+					String s = buffer.toString().trim();
+					if(!(s.equals("") || s.equals("<") || s.equals("<!") || s.equals("<!-") || s.equals("<!--")))
+						currentState=STATE2;	
 				}
 				if(logDEBUG) log("STATE1 default CASE: "+c);
 				break;
@@ -1577,6 +1614,23 @@ class CSSTokenizerFilter {
 					String ws = buffer.substring(0, i);
 					buffer.delete(0, i);
 					
+					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+						ws+=buffer.substring(0, 4);
+						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
+							Logger.error(this, "<!-- not followed by whitespace!");
+							return;
+						}
+						buffer.delete(0, 4);
+						for(i=0;i<buffer.length();i++) {
+							char c1 = buffer.charAt(i);
+							if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+								continue;
+							break;
+						}
+						ws+=buffer.substring(0, i);
+						buffer.delete(0, i);
+					}
+					
 					openBraces++;
 					if(buffer.toString().trim()!="")
 					{
@@ -1622,6 +1676,26 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("Appending whitespace in state2: \""+buffer.substring(0,i)+"\"");
 					ws = buffer.substring(0, i);
 					buffer.delete(0, i);
+					
+					if(!s2Comma) {
+						if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
+							filteredTokens.append(buffer.substring(0, 4));
+							if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
+								Logger.error(this, "<!-- not followed by whitespace!");
+								return;
+							}
+							buffer.delete(0, 4);
+							for(i=0;i<buffer.length();i++) {
+								char c1 = buffer.charAt(i);
+								if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+									continue;
+								break;
+							}
+							filteredTokens.append(buffer.substring(0, i));
+							buffer.delete(0, i);
+						}
+					}
+					
 					
 					String filtered=recursiveSelectorVerifier(buffer.toString().trim());
 					if(logDEBUG) log("STATE2 CASE , filtered elements"+filtered);
@@ -1935,6 +2009,8 @@ class CSSTokenizerFilter {
 
 		}
 		
+		if(logDEBUG) log("Remaining buffer: \""+buffer+"\"");
+		
 		int i = 0;
 		for(i=0;i<buffer.length();i++) {
 			char c1 = buffer.charAt(i);
@@ -1942,8 +2018,21 @@ class CSSTokenizerFilter {
 				continue;
 			break;
 		}
-		buffer.setLength(i);
-		w.write(buffer.toString());
+		w.write(buffer.substring(0, i));
+		buffer.delete(0, i);
+		
+		while(buffer.toString().trim().equals("-->")) {
+			w.write("-->");
+			buffer.delete(0, 3);
+			for(i=0;i<buffer.length();i++) {
+				char c1 = buffer.charAt(i);
+				if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+					continue;
+				break;
+			}
+			w.write(buffer.substring(0, i));
+			buffer.delete(0, i);
+		}
 
 	}
 

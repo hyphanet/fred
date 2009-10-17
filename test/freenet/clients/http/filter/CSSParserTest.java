@@ -177,6 +177,9 @@ public class CSSParserTest extends TestCase {
 	
 	private static final String CSS_BOGUS_AT_RULE = "@three-dee { h3 { color: red;} }";
 	
+	private static final String PRESERVE_CDO_CDC = "<!-- @import url(\"style.css\");\n<!-- @media screen { <!-- h3 { color: red;} } -->";
+	private static final String PRESERVE_CDO_CDCC = "<!-- @import url(\"style.css?type=text/css&maybecharset=UTF-8\");\n<!-- @media screen { <!-- h3 { color: red;}} -->";
+	
 	// Invalid media type
 	
 	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
@@ -433,6 +436,7 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key="+CSS_IMPORT_NOURL+" value=\""+filter(CSS_IMPORT_NOURL)+"\"", CSS_IMPORT_NOURLC.equals(filter(CSS_IMPORT_NOURL)));
 		assertTrue("key="+CSS_IMPORT_BRACKET+" value=\""+filter(CSS_IMPORT_BRACKET)+"\"", CSS_IMPORT_BRACKETC.equals(filter(CSS_IMPORT_BRACKET)));
 		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", "".equals(filter(CSS_BOGUS_AT_RULE)));
+		assertTrue("key="+PRESERVE_CDO_CDC+" value=\""+filter(PRESERVE_CDO_CDC)+"\"", PRESERVE_CDO_CDCC.equals(filter(PRESERVE_CDO_CDC)));
 	}
 	
 	public void testEscape() throws IOException, URISyntaxException {
