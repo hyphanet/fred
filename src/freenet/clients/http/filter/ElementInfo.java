@@ -256,6 +256,13 @@ public class ElementInfo {
 		return (HTML_ELEMENTS.contains(tag.toLowerCase())||VOID_ELEMENTS.contains(tag.toLowerCase()));
 	}
 	
+	/**
+	 * According to the HTML spec, ID must begin with a letter A-Za-z, and 
+	 * may be followed by any number of [a-zA-Z0-9-_:.]. It is not spelled
+	 * out what is allowed in class, but we are assuming the same is true
+	 * there.
+	 * @return Whether the string is a valid ID for HTML purposes.
+	 */
 	public static boolean isValidName(String name)
 	{
 		if(name.length()==0)
