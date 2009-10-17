@@ -3142,7 +3142,7 @@ class CSSTokenizerFilter {
 				return arrayToReturn;
 			}
 			else
-				return null;
+				return new ParsedWord[0];
 		}
 		/*
 		 * For verifying part of the ParseExpression with [] operator.
