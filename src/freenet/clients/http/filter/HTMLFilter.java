@@ -16,6 +16,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,8 @@ import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
@@ -1730,7 +1733,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String c = getHashString(h, "charset");
 			if (c != null)
 				charset = c;
-			else if("link".equalsIgnoreCase(p.element)) {
+			if(charset != null) {
+				try {
+					charset = URLDecoder.decode(charset, false);
+				} catch (URLEncodedFormatException e) {
+					charset = null;
+				}
+			}
+			if(charset != null && charset.indexOf('&') != -1)
+				charset = null;
+			if(charset != null && !Charset.isSupported(charset))
+				charset = null;
+			if(charset == null && "link".equalsIgnoreCase(p.element)) {
 				String rel = getHashString(h, "rel");
 				if(rel.equals("alternate") || rel.equals("stylesheet")) {
 					// Browser will use the referring document's charset if there
@@ -2150,7 +2164,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * lot more flexible than that. (avian) TEXT/PLAIN; format=flowed;
 	 * charset=US-ASCII IMAGE/JPEG; name=test.jpeg; x-unix-mode=0644
 	 */
-	static String[] splitType(String type) {
+	public static String[] splitType(String type) {
 		StringFieldParser sfp;
 		String charset = null, param, name, value;
 		int x;

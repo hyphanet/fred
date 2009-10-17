@@ -118,7 +118,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		if(!itemsFromLastTime.isEmpty()) {
 			if(v == null)
 				v = new ArrayList(Math.min(maxCount, itemsFromLastTime.size()));
-			Logger.error(this, "Overflow handling in cooldown queue: reusing items from last time, now "+itemsFromLastTime.size());
+			Logger.normal(this, "Overflow handling in cooldown queue: reusing items from last time, now "+itemsFromLastTime.size());
 			for(ListIterator<PersistentCooldownQueueItem> it = itemsFromLastTime.listIterator();it.hasNext() && v.size() < maxCount;) {
 				PersistentCooldownQueueItem i = it.next();
 				container.activate(i, 1);
@@ -194,7 +194,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 					container.deactivate(i, 1);
 					itemsFromLastTime.add(i);
 				}
-				Logger.error(this, "Overflow handling in cooldown queue: added items, items from last time now "+itemsFromLastTime.size());
+				Logger.normal(this, "Overflow handling in cooldown queue: added items, items from last time now "+itemsFromLastTime.size());
 				return v.toArray(new Key[v.size()]);
 			}
 		}
