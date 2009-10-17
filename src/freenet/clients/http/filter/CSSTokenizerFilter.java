@@ -2306,7 +2306,7 @@ class CSSTokenizerFilter {
 						couldBeIdentifier = false;
 					} else {
 						if(couldBeIdentifier) {
-							if(!((c >= '0' && c <= '9' && origToken.length() > 0) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-' || c == '_'))
+							if(!((c >= '0' && c <= '9' && origToken.length() > 0) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-' || c == '_' || c >= 0xA1))
 								couldBeIdentifier = false;
 							if(origToken.length() == 1 && origToken.charAt(0) == '-' && (c >= '0' && c <= '9'))
 								couldBeIdentifier = false;
