@@ -1229,7 +1229,7 @@ class CSSTokenizerFilter {
 		parts[0]=selectorString.substring(0,index);
 		parts[1]=selectorString.substring(index+1,selectorString.length());
 		if(logDEBUG) log("recursiveSelectorVerifier parts[0]=" + parts[0]+" parts[1]="+parts[1]);
-		parts[0]=recursiveSelectorVerifier(parts[0]);
+		parts[0]=HTMLelementVerifier(parts[0]);
 		parts[1]=recursiveSelectorVerifier(parts[1]);
 		if(parts[0]!=null && parts[1]!=null)
 			return parts[0]+selector+parts[1];
