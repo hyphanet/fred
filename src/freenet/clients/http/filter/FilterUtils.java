@@ -476,21 +476,18 @@ public class FilterUtils {
 	{
 		return URI.equals(sanitizeURI(cb,URI));
 	}
-	public static String[] splitOnCharArray(String value,char[] splitOn)
+	public static String[] splitOnCharArray(String value,String splitOn)
 	{
 		ArrayList<String> pointPairs=new ArrayList<String>();
 		//Creating HashMap for faster search operation
-		HashSet<Character> charToSplit=new HashSet<Character>();
 		int i;
-		for(i=0;i<splitOn.length;i++)
-			charToSplit.add(splitOn[i]);
 		int prev=0;
 		for(i=0;i<value.length();i++)
 		{
-			if(charToSplit.contains(value.charAt(i)))
+			if(splitOn.indexOf(value.charAt(i))!=-1)
 			{
 				pointPairs.add(value.substring(prev,i));
-				while(i<value.length() && charToSplit.contains(value.charAt(i)))
+				while(i<value.length() && splitOn.indexOf(value.charAt(i))!=-1)
 				{
 					i++;
 				}
@@ -501,7 +498,7 @@ public class FilterUtils {
 		boolean isLastElement=false;
 		for(i=prev;i<value.length();i++)
 		{
-			if(!charToSplit.contains(value.charAt(i)))
+			if(splitOn.indexOf(value.charAt(i))==-1)
 			{
 				isLastElement=true;
 				break;
@@ -515,9 +512,8 @@ public class FilterUtils {
 	}
 	public static boolean isPointPair(String value)
 	{
-		char[] whiteSpaces=new char[]{' ','\n','\t'};
 		System.out.println("isPointPair is calld with value="+value);
-		String[] pointPairs=splitOnCharArray(value,whiteSpaces);
+		String[] pointPairs=splitOnCharArray(value," \n\t");
 		for(int i=0;i<pointPairs.length;i++)
 		{
 			String[] strParts=pointPairs[i].split(",");
