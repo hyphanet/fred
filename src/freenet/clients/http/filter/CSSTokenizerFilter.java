@@ -2395,6 +2395,8 @@ class CSSTokenizerFilter {
 					} else {
 						origToken.append(c);
 						decodedToken.append(c);
+						// Escape one character.
+						escaping = false;
 					}
 				} else if(escaping/* && escape.length() > 0*/) {
 					if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
@@ -2485,11 +2487,11 @@ class CSSTokenizerFilter {
 				}
 				decodedToken.delete(0, i);
 				strippedOrig = strippedOrig.substring(i);
-				for(i=strippedOrig.length()-1;i>=0;i++) {
+				for(i=strippedOrig.length()-1;i>=0;i--) {
 					char c = strippedOrig.charAt(i);
 					if(!(c == ' ' || c == '\t')) break;
 				}
-				decodedToken.setLength(i+1);
+				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
 				
 				if(logDEBUG) log("whitespace stripped: "+strippedOrig+" decoded "+decodedToken);
@@ -2504,6 +2506,7 @@ class CSSTokenizerFilter {
 							// The word is a string.
 							decodedToken.setLength(decodedToken.length()-1);
 							decodedToken.deleteCharAt(0);
+							if(logDEBUG) log("creating url(): orig=\""+origToken.toString()+"\" decoded=\""+decodedToken.toString()+"\"");
 							return new ParsedURL(origToken.toString(), decodedToken.toString(), dontLikeOrigToken, c);
 						} else
 							return null;
@@ -2528,11 +2531,11 @@ class CSSTokenizerFilter {
 				}
 				decodedToken.delete(0, i);
 				strippedOrig = strippedOrig.substring(i);
-				for(i=strippedOrig.length()-1;i>=0;i++) {
+				for(i=strippedOrig.length()-1;i>=0;i--) {
 					char c = strippedOrig.charAt(i);
 					if(!(c == ' ' || c == '\t')) break;
 				}
-				decodedToken.setLength(i+1);
+				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
 				
 				if(strippedOrig.length() == 0) return null;
@@ -2557,11 +2560,11 @@ class CSSTokenizerFilter {
 				}
 				decodedToken.delete(0, i);
 				strippedOrig = strippedOrig.substring(i);
-				for(i=strippedOrig.length()-1;i>=0;i++) {
+				for(i=strippedOrig.length()-1;i>=0;i--) {
 					char c = strippedOrig.charAt(i);
 					if(!(c == ' ' || c == '\t')) break;
 				}
-				decodedToken.setLength(i+1);
+				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
 				
 				if(strippedOrig.length() == 0) return null;

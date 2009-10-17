@@ -139,6 +139,9 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_IMPORT_NOURL_TWOMEDIAS = "@import \"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html\" screen tty;";
 	private static final String CSS_IMPORT_NOURL_TWOMEDIASC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/1-1.html?type=text/css&maybecharset=UTF-8\") screen, tty;";
 	
+	private static final String CSS_IMPORT_BRACKET = "@import url(\"/KSK@thingy\\)\");";
+	private static final String CSS_IMPORT_BRACKETC = "@import url(\"/KSK@thingy%29?type=text/css&maybecharset=UTF-8\");";
+	
 	// Unquoted URL is invalid.
 	private static final String CSS_IMPORT_UNQUOTED = "@import style.css;";
 	
@@ -411,6 +414,7 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key="+CSS_IMPORT_NOURL_TWOMEDIAS+" value=\""+filter(CSS_IMPORT_NOURL_TWOMEDIAS)+"\"", CSS_IMPORT_NOURL_TWOMEDIASC.equals(filter(CSS_IMPORT_NOURL_TWOMEDIAS)));
 		assertTrue("key="+CSS_IMPORT_UNQUOTED+" should be empty", "".equals(filter(CSS_IMPORT_UNQUOTED)));
 		assertTrue("key="+CSS_IMPORT_NOURL+" value=\""+filter(CSS_IMPORT_NOURL)+"\"", CSS_IMPORT_NOURLC.equals(filter(CSS_IMPORT_NOURL)));
+		assertTrue("key="+CSS_IMPORT_BRACKET+" value=\""+filter(CSS_IMPORT_BRACKET)+"\"", CSS_IMPORT_BRACKETC.equals(filter(CSS_IMPORT_BRACKET)));
 	}
 	
 	public void testEscape() throws IOException, URISyntaxException {
