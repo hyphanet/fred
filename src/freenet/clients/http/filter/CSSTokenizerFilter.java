@@ -1915,6 +1915,7 @@ class CSSTokenizerFilter {
 				break;
 
 			case STATECOMMENT:
+				// FIXME sanitize (remove potentially dangerous chars) and preserve comments.
 				charsetPossible=false;
 				if(stopAtDetectedCharset)
 					return;
