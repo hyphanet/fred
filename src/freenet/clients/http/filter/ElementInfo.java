@@ -299,22 +299,67 @@ public class ElementInfo {
 		}
 		else
 		{
-			if(!((name.charAt(0)>='a' && name.charAt(0)<='z') || (name.charAt(0)>='A' && name.charAt(0)<='Z')|| (name.charAt(0)>='0' && name.charAt(0)<='9')))
-			{
+			boolean escape = false;
+			boolean escapeNewline = false;
+			boolean digitsAllowed = false;
+			int unicodeChars = 0;
+			for(int i=0;i<name.length();i++) {
+				char c = name.charAt(i);
+				if(escape) {
+					// Whitespace after an escape can be \r\n
+					if(escapeNewline) {
+						escapeNewline = false;
+						escape = false;
+						if(c == '\n') continue;;
+					}
+					escapeNewline = false;
+					if(('0' <= c && '9' >= c) || ('a' <= c && 'f' >= c) || ('A' <= c && 'F' >= c)) {
+						if(unicodeChars == 5) {
+							// Full 6 character escape.
+							unicodeChars = 0;
+							escape = false;
+							continue;
+						} else {
+							unicodeChars++;
+							continue;
+						}
+					}
+					if(unicodeChars > 0) {
+						if(c == '\r') {
+							escapeNewline = true;
+							unicodeChars = 0;
+							continue;
+						} else if(!(c == '\n' || c == '\f' || c == '\t' || c == ' ')) {
+							// Only whitespace is allowed after a unicode character escape.
+							return false;
+						}
+					}
+					if(c == '\r' || c == '\n' || c == '\f')
+						// Explicitly not allowed to escape these, see grammar, and 4.1.3.
+						return false;
+					// Directly escaped character
+					escape = false;
+					continue;
+				}
+				if(digitsAllowed && c>='0' && c<='9') {
+					continue;
+				}
+				if(c == '-') continue;
+				digitsAllowed = true;
+				if(c == '_') continue;
+				if(c>='a' && c<='z') continue;
+				if(c>='A' && c<='Z') continue;
+				// Spec strictly speaking allows control chars, but let's disallow them here as a paranoid precaution.
+				if(c >= 0200 && !Character.isISOControl(c)) continue;
+				
+			}
+			
+			if(escape) {
+				// Still in an escape.
+				// Might be dangerous e.g. escaping the ] in E[foo=blah] could change the meaning completely.
 				return false;
 			}
-			else
-			{
-				
-				for(int i=1;i<name.length();i++)
-				{
-					if(!((name.charAt(i)>='a' && name.charAt(i)<='z') || (name.charAt(i)>='A' && name.charAt(i)<='Z') || (name.charAt(i)>='0' && name.charAt(i)<='9') || name.charAt(i)=='_' || name.charAt(i)==':'  || name.charAt(i)=='.' || name.charAt(i)=='-'))
-					{
-						return false;
-					}
-				}
-				
-			}
+			
 			return true;
 		}
 	}
@@ -344,16 +389,83 @@ public class ElementInfo {
 			return false;
 		}
 		
-		public static boolean isValidString(String string)
+		public static boolean isValidString(String name)
 		{
-			StringBuffer s=new StringBuffer(string);
-			for(int i=0;i<s.length();i++) 
-			{
-				char c = s.charAt(i);
-				if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r') )
-					return false;
+			boolean escape = false;
+			boolean escapeNewline = false;
+			int unicodeChars = 0;
+			for(int i=0;i<name.length();i++) {
+			char c = name.charAt(i);
+				if(escape) {
+					// Whitespace after an escape can be \r\n
+					if(escapeNewline) {
+						escapeNewline = false;
+						escape = false;
+						if(c == '\n') continue;;
+					}
+					escapeNewline = false;
+					if(('0' <= c && '9' >= c) || ('a' <= c && 'f' >= c) || ('A' <= c && 'F' >= c)) {
+						if(unicodeChars == 5) {
+							// Full 6 character escape.
+							unicodeChars = 0;
+							escape = false;
+							continue;
+						} else {
+							unicodeChars++;
+							continue;
+						}
+					}
+					if(unicodeChars > 0) {
+						if(c == '\r') {
+							escapeNewline = true;
+							unicodeChars = 0;
+							continue;
+						} else if(!(c == '\n' || c == '\f' || c == '\t' || c == ' ')) {
+							// Only whitespace is allowed after a unicode character escape.
+							return false;
+						}
+					}
+					if(c == '\r') {
+						escapeNewline = true;
+						continue;
+					}
+					if(c == '\r' || c == '\n' || c == '\f') {
+						// Newline is allowed escaped in a string. 
+						escape = false;
+						continue;
+					}
+					
+					// Directly escaped character
+					escape = false;
+					continue;
+				}
+				
+				// No unquoted quotes
+				if(c == '\'' || c == '\"') return false;
+				
+				// No unquoted newlines
+				if(c == '\r' || c == '\n' || c == '\f') return false;
+				
+				// Allow everything else.
+				continue;
 			}
-				return true;
+			
+			if(escape) {
+				// Still in an escape.
+				// Might be dangerous.
+				return false;
+			}
+				
+			return true;
+		}
+
+		public static boolean isValidStringWithQuotes(String string) {
+			if(string.length() < 2) return false;
+			if((string.charAt(0) == '\'' && string.charAt(string.length()-1) == '\'') ||
+					(string.charAt(0) == '\"' && string.charAt(string.length()-1) == '\"')) {
+				string = string.substring(1, string.length()-1);
+				return isValidString(string);
+			} else return false;
 		}
 		
 			

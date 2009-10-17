@@ -1042,6 +1042,7 @@ class CSSTokenizerFilter {
 		{
 			if(className!="")
 			{
+				// Note that the definition of isValidName() allows chained classes because it allows . in class names.
 				if(!ElementInfo.isValidName(className))
 					isValid=false;
 			}
@@ -1072,7 +1073,6 @@ class CSSTokenizerFilter {
 				else
 					attSelectionParts=attSelection.split("=");
 				
-				
 				//Verifying whether each character is alphanumeric or _
 				if(logDEBUG) log("HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
 				
@@ -1088,6 +1088,13 @@ class CSSTokenizerFilter {
 						if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='-'))
 							isValid=false;
 					}
+				}
+				
+				if(attSelectionParts.length > 1) {
+					// What about the right hand side?
+					// The grammar says it's an IDENT.
+					
+					if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
 				}
 			}
 
