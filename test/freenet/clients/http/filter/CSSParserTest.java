@@ -137,6 +137,9 @@ public class CSSParserTest extends TestCase {
 		
 	private static final String BOM = "\ufeffh3 { color:red;}";
 	
+	private static final String COMMENT = "/* this is a comment */h1 { color: red;}";
+	private static final String COMMENTC = "h1 { color: red;}";
+	
 	// Invalid media type
 	
 	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
@@ -515,5 +518,9 @@ public class CSSParserTest extends TestCase {
 		assertTrue("ContentFilter.filter() returned wrong charset with maybeCharset: \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
 		String filtered = new String(BucketTools.toByteArray(fo.data), charset);
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));
+	}
+	
+	public void testComment() throws IOException, URISyntaxException {
+		assertTrue("value=\""+filter(COMMENT)+"\"",COMMENTC.equals(filter(COMMENT)));
 	}
 }
