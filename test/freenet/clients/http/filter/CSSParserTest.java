@@ -469,4 +469,21 @@ public class CSSParserTest extends TestCase {
 		}
 		
 	}
+	
+	public void testMaybeCharset() throws UnsafeContentTypeException, URISyntaxException, IOException {
+		testUseMaybeCharset("UTF-8");
+		testUseMaybeCharset("UTF-16");
+		testUseMaybeCharset("UTF-32LE");
+		testUseMaybeCharset("IBM01140");
+	}
+	
+	private void testUseMaybeCharset(String charset) throws URISyntaxException, UnsafeContentTypeException, IOException {
+		String original = "h2 { color: red;}";
+		byte[] bytes = original.getBytes(charset);
+		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
+		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, charset);
+		assertTrue("ContentFilter.filter() returned wrong charset with maybeCharset: \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
+		String filtered = new String(BucketTools.toByteArray(fo.data), charset);
+		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));
+	}
 }
