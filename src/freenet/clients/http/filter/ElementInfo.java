@@ -144,6 +144,7 @@ public class ElementInfo {
 		ELEMENTSFORPADDING = list.toArray(new String[0]);
 	}
 	
+	// FIXME add some more languages.
 	public final static HashSet<String> LANGUAGES=new HashSet<String>();
 	static
 	{
@@ -391,6 +392,7 @@ public class ElementInfo {
 				{
 					String language=CSSTokenizerFilter.removeQuotes(cname.substring(firstIndex+1,secondIndex).trim());
 					
+					// FIXME accept unknown languages as long as they are [a-z-]
 					if(LANGUAGES.contains(language))
 						return true;
 				}
