@@ -175,6 +175,8 @@ public class CSSParserTest extends TestCase {
 	
 	private static final String CSS_COMMA_WHITESPACE = "body { padding: 0px;\n}\n\nh1, h2, h3 {\nmargin: 0px;\n}";
 	
+	private static final String CSS_BOGUS_AT_RULE = "@three-dee { h3 { color: red;} }";
+	
 	// Invalid media type
 	
 	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
@@ -350,6 +352,13 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media speech { blockquote.sad { play-during: url(\"violins.aiff\");}}");
 		propertyTests.put("@media speech { blockquote Q   { play-during: url(\"harp.wav\") mix }}", "@media speech { blockquote q { play-during: url(\"harp.wav\") mix;}}");
 		propertyTests.put("@media speech { span.quiet     { play-during: none } }", "@media speech { span.quiet { play-during: none;}}");
+		
+		// Grandchildren
+		propertyTests.put("div { color: red;}", "div { color: red;}");
+		propertyTests.put("div * { color: red;}", "div * { color: red;}");
+		propertyTests.put("div * p { color: red;}", "div * p { color: red;}");
+		propertyTests.put("div * p[href] { color: red;}", "div * p[href] { color: red;}");
+		propertyTests.put("div p *[href] { color: red;}", "div p *[href] { color: red;}");
 	}
 	
 	MIMEType cssMIMEType;
@@ -420,6 +429,7 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key="+CSS_IMPORT_UNQUOTED+" should be empty", "".equals(filter(CSS_IMPORT_UNQUOTED)));
 		assertTrue("key="+CSS_IMPORT_NOURL+" value=\""+filter(CSS_IMPORT_NOURL)+"\"", CSS_IMPORT_NOURLC.equals(filter(CSS_IMPORT_NOURL)));
 		assertTrue("key="+CSS_IMPORT_BRACKET+" value=\""+filter(CSS_IMPORT_BRACKET)+"\"", CSS_IMPORT_BRACKETC.equals(filter(CSS_IMPORT_BRACKET)));
+		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", "".equals(filter(CSS_BOGUS_AT_RULE)));
 	}
 	
 	public void testEscape() throws IOException, URISyntaxException {
