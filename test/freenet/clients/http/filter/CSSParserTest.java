@@ -336,6 +336,9 @@ public class CSSParserTest extends TestCase {
 		// NOT syntactically valid
 		propertyTests.put("h2 { font-family: http://www.badguy.com/myfont.ttf}", "h2 {}");
 		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", "h2 { font-family: times new roman,arial,verdana;}");
+		
+		// Short percentage value
+		propertyTests.put("body { bottom: 1%;}", "body { bottom: 1%;}");
 	}
 	
 	MIMEType cssMIMEType;

@@ -68,7 +68,7 @@ public class FilterUtils {
 	public static boolean isPercentage(String value)
 	{
 		System.out.println("isPercentage is called with:"+value);
-		if (value.length()>2 && value.charAt(value.length()-1)=='%') //Valid percentage X%
+		if (value.length()>=2 && value.charAt(value.length()-1)=='%') //Valid percentage X%
 		{
 			try
 			{
