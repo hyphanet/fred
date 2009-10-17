@@ -266,6 +266,7 @@ public class CSSParserTest extends TestCase {
 		// Counters
 		propertyTests.put("table { counter-increment: counter1 1}", "table { counter-increment: counter1 1;}");
 		// Counters with whacky identifiers
+		propertyTests.put("table { counter-increment: \\202 ounter1 1}", "table { counter-increment: \\202 ounter1 1;}");
 		propertyTests.put("table { counter-increment: c\\ounter1 1}", "table { counter-increment: c\\ounter1 1;}");
 		propertyTests.put("table { counter-increment: c\\ ounter1 1}", "table { counter-increment: c\\ ounter1 1;}");
 		propertyTests.put("table { counter-increment: c\\ \\}ounter1 1}", "table { counter-increment: c\\ \\}ounter1 1;}");
@@ -281,6 +282,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: \"string with spaces\" }", "h1 { content: \"string with spaces\";}");
 		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: attr(\\ \\ attr\\ with\\ spaces);}");
 		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}");
+		propertyTests.put("h1 { content: \"string with curly brackets { }\";}", "h1 { content: \"string with curly brackets { }\";}");
 		
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", "h2 { color: red;}");
