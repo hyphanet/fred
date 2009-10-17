@@ -39,7 +39,6 @@ public class ElementInfo {
 	//Taken from HTMLFilter
 	public final static HashSet<String> HTML_ELEMENTS=new HashSet<String>();
 	static {
-		HTML_ELEMENTS.add("*");
 		HTML_ELEMENTS.add("html");
 		HTML_ELEMENTS.add("head");
 		HTML_ELEMENTS.add("title");

@@ -1038,7 +1038,7 @@ class CSSTokenizerFilter {
 
 		}
 
-		if((ElementInfo.isValidHTMLTags(HTMLelement)) || ("".equals(HTMLelement.trim()) && (className!="" || id!="")))
+		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTags(HTMLelement)) || ("".equals(HTMLelement.trim()) && (className!="" || id!="")))
 		{
 			if(className!="")
 			{
