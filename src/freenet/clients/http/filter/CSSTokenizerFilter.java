@@ -107,6 +107,10 @@ class CSSTokenizerFilter {
 	 * When retrieving a Verifier object, first it is searched in elementVerifiers to see if it is already loaded.
 	 * If it is not loaded then allelementVerifiers is checked to see if the property name is valid. If it is valid, then the desired Verifier object is loaded in allelemntVerifiers.
 	 */
+	
+	// FIXME this is probably overkill, initialising all of them on startup would probably be cleaner code, less synchronization, at very little memory cost.
+	// FIXME check how many bytes we save by lazy init here.
+	
 	static Map<String, CSSPropertyVerifier> elementVerifiers = new HashMap<String, CSSPropertyVerifier>();
 	static HashSet<String> allelementVerifiers=new HashSet<String>(); 
 	//Reference http://www.w3.org/TR/CSS2/propidx.html
