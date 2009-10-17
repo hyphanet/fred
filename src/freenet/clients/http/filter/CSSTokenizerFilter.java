@@ -1805,6 +1805,19 @@ class CSSTokenizerFilter {
 							if(logDEBUG) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
 						}
 						propertyName="";
+					} else {
+						// Whitespace at end
+						i = 0;
+						for(i=0;i<buffer.length();i++) {
+							char c1 = buffer.charAt(i);
+							if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+								continue;
+							break;
+						}
+						if(logDEBUG) log("Appending whitespace after colon (}): "+buffer.substring(0,i));
+						filteredTokens.append(buffer.substring(0, i));
+						buffer.delete(0, i);
+						
 					}
 					ignoreElementsS3 = false;
 					if((!ignoreElementsS2) || closeIgnoredS2) {

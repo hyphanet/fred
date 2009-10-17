@@ -74,13 +74,13 @@ public class CSSParserTest extends TestCase {
 	}
 
 	private static final String CSS_STRING_NEWLINES = "* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }";
-	private static final String CSS_STRING_NEWLINESC = "* {}\nbody {}\n";
+	private static final String CSS_STRING_NEWLINESC = "* {}\nbody { }\n";
 
 	private static final String CSS_BACKGROUND_URL = "* { background: url(/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png); }";
-	private static final String CSS_BACKGROUND_URLC = "* { background: url(\"/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png\");}";
+	private static final String CSS_BACKGROUND_URLC = "* { background: url(\"/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png\"); }";
 	
 	private static final String CSS_LCASE_BACKGROUND_URL = "* { background: url(/ssk@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png); }\n";
-	private static final String CSS_LCASE_BACKGROUND_URLC = "* { background: url(\"/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png\");}\n";
+	private static final String CSS_LCASE_BACKGROUND_URLC = "* { background: url(\"/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png\"); }\n";
 	
 	// not adding ?type=text/css is exploitable, so check for it.
 	private static final String CSS_IMPORT = "@import url(\"/KSK@test\");";
@@ -115,10 +115,10 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_IMPORT_NOURLC = "@import url(\"style.css?type=text/css&maybecharset=UTF-8\");";
 	
 	private static final String CSS_ESCAPED_LINK = "* { background: url(\\00002f\\00002fwww.google.co.uk/intl/en_uk/images/logo.gif); }\n";
-	private static final String CSS_ESCAPED_LINKC = "* {}\n";
+	private static final String CSS_ESCAPED_LINKC = "* { }\n";
 	
 	private static final String CSS_ESCAPED_LINK2 = "* { background: url(\\/\\/www.google.co.uk/intl/en_uk/images/logo.gif); }\n";
-	private static final String CSS_ESCAPED_LINK2C = "* {}\n";
+	private static final String CSS_ESCAPED_LINK2C = "* { }\n";
 	
 	// CSS2.1 spec, 4.1.7
 	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
@@ -138,7 +138,7 @@ public class CSSParserTest extends TestCase {
 	private static final String COMMENT = "/* this is a comment */h1 { color: red;}";
 	private static final String COMMENTC = "h1 { color: red;}";
 	
-	private static final String CSS_COMMA_WHITESPACE = "body { padding: 0px;}\n\nh1, h2, h3 {\nmargin: 0px;}";
+	private static final String CSS_COMMA_WHITESPACE = "body { padding: 0px;\n}\n\nh1, h2, h3 {\nmargin: 0px;\n}";
 	
 	// Invalid media type
 	
@@ -150,10 +150,10 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech { h1 { azimuth: behind;}}");
 		
 		propertyTests.put("h1 { color: red; rotation: 70minutes }", "h1 { color: red;}");
-		propertyTests.put("@media screen { h1 { color: red; }\nh1[id=\"\n]}", "@media screen { h1 { color: red;}}");
-		propertyTests.put("@media screen { h1 { color: red; }}", "@media screen { h1 { color: red;}}");
-		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\ncolor: green;}");
-		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {\ncolor: green;}");
+		propertyTests.put("@media screen { h1 { color: red; }\nh1[id=\"\n]}", "@media screen { h1 { color: red; }}");
+		propertyTests.put("@media screen { h1 { color: red; }}", "@media screen { h1 { color: red; }}");
+		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\ncolor: green;\n}");
+		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {\ncolor: green;\n}");
 		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen {}");
 		
 		propertyTests.put("td { background-position:bottom;}\n", "td { background-position:bottom;}\n");

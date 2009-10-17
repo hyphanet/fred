@@ -71,7 +71,7 @@ public class ContentFilterTest extends TestCase {
 	private static final String XHTML_IMPROPERNESTINGC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</i></b></html>";
 	
 	private static final String CSS_STRING_NEWLINES = "<style>* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }</style>";
-	private static final String CSS_STRING_NEWLINESC = "<style>* {}\nbody {}\n</style>";
+	private static final String CSS_STRING_NEWLINESC = "<style>* {}\nbody { }\n</style>";
 
 	private static final String HTML_STYLESHEET_MAYBECHARSET = "<link rel=\"stylesheet\" href=\"test.css\">";
 	private static final String HTML_STYLESHEET_MAYBECHARSETC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
