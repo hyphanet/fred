@@ -126,6 +126,12 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
 	private static final String CSS_DELETE_INVALID_SELECTORC = "h1, h2 {color: green;}\nh6 {color: black;}\n";
 	
+	private static final String LATE_CHARSET = "h3 { color:red;}\n@charset \"UTF-8\";";
+	private static final String LATE_CHARSETC = "h3 { color:red;}\n";
+	
+	private static final String WRONG_CHARSET = "@charset \"UTF-16\";";
+	private static final String NONSENSE_CHARSET = "@charset \"idiot\";";
+	
 	// Invalid media type
 	
 	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
@@ -420,6 +426,22 @@ public class CSSParserTest extends TestCase {
 		charsetTestUnsupported("IBM01144");
 		charsetTestUnsupported("IBM01147");
 		charsetTestUnsupported("IBM01149");
+		
+		// Late charset is invalid
+		assertTrue("key="+LATE_CHARSET+" value=\""+filter(LATE_CHARSET)+"\"", LATE_CHARSETC.equals(filter(LATE_CHARSET)));
+		try {
+			String output = filter(WRONG_CHARSET);
+			assertFalse("Should complain that detected charset differs from real charset, but returned \""+output+"\"", true);
+		} catch (IOException e) {
+			// Ok.
+			// FIXME should have a dedicated exception.
+		}
+		try {
+			String output = filter(NONSENSE_CHARSET);
+			assertFalse("wrong charset output is \""+output+"\" but it should throw!", true);
+		} catch (UnsupportedCharsetInFilterException e) {
+			// Ok.
+		}
 	}
 	
 	private void getCharsetTest(String charset) throws DataFilterException, IOException, URISyntaxException {
