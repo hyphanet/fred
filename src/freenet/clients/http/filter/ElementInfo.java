@@ -347,6 +347,10 @@ public class ElementInfo {
 				if(c == '-') continue;
 				digitsAllowed = true;
 				if(c == '_') continue;
+				if(c == '\\') {
+					escape = true;
+					continue;
+				}
 				if(c>='a' && c<='z') continue;
 				if(c>='A' && c<='Z') continue;
 				// Spec strictly speaking allows control chars, but let's disallow them here as a paranoid precaution.
