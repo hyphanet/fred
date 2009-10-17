@@ -1427,7 +1427,16 @@ class CSSTokenizerFilter {
 									StringBuffer output = new StringBuffer();
 									output.append("@import url(\"");
 									try {
-										output.append(cb.processURI(uri, "text/css"));
+										// Add ?maybecharset= even though there might be a ?type= with a charset, we will ignore maybecharset if there is.
+										// We behave similarly in <link rel=stylesheet...> if there is a ?type= in the URL.
+										String s = cb.processURI(uri, "text/css");
+										if(passedCharset != null) {
+											if(s.indexOf('?') == -1)
+												s += "?maybecharset="+passedCharset;
+											else
+												s += "&maybecharset="+passedCharset;
+										}
+										output.append(s);
 										output.append("\")");
 										boolean first = true;
 										for(String media : medias) {
