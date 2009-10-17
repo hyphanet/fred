@@ -80,10 +80,10 @@ public class ContentFilterTest extends TestCase {
 	private static final String HTML_STYLESHEET_CHARSETC = "<link charset=\"utf-8\" rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css%3b%20charset=utf-8\">";
 
 	private static final String HTML_STYLESHEET_CHARSET_BAD = "<link rel=\"stylesheet\" charset=\"utf-8&max-size=4194304\" href=\"test.css\">";
-	private static final String HTML_STYLESHEET_CHARSET_BADC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css\">";
+	private static final String HTML_STYLESHEET_CHARSET_BADC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
 	
 	private static final String HTML_STYLESHEET_CHARSET_BAD1 = "<link rel=\"stylesheet\" type=\"text/css; charset=utf-8&max-size=4194304\" href=\"test.css\">";
-	private static final String HTML_STYLESHEET_CHARSET_BAD1C = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css\">";
+	private static final String HTML_STYLESHEET_CHARSET_BAD1C = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
 	
 	private static final String FRAME_SRC_CHARSET = "<frame src=\"test.html?type=text/html; charset=UTF-8\">";
 	private static final String FRAME_SRC_CHARSETC = "<frame src=\"test.html?type=text/html%3b%20charset=UTF-8\">";
