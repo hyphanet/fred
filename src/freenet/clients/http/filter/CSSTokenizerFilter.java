@@ -882,7 +882,6 @@ class CSSTokenizerFilter {
 		}
 		else if("vertical-align".equalsIgnoreCase(element))
 		{      
-			//TODO: inline-level and 'table-cell' elements 
 			elementVerifiers.put(element,new CSSPropertyVerifier(concat(ElementInfo.INLINEELEMENTS,new String[]{"th","td"}),new String[] {"baseline","sub","super","top","text-top","middle","bottom","text-bottom","inherit"},ElementInfo.VISUALMEDIA,new String[]{"pe","le"}));
 			allelementVerifiers.remove(element);
 		}
