@@ -3,16 +3,15 @@ package freenet.clients.http.filter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
-import freenet.clients.http.filter.CSSTokenizerFilter.CSSPropertyVerifier;
+import junit.framework.TestCase;
 import freenet.clients.http.filter.CharsetExtractor.BOMDetection;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.l10n.NodeL10n;
@@ -21,7 +20,6 @@ import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
-import junit.framework.TestCase;
 
 public class CSSParserTest extends TestCase {
 
@@ -139,6 +137,8 @@ public class CSSParserTest extends TestCase {
 	
 	private static final String COMMENT = "/* this is a comment */h1 { color: red;}";
 	private static final String COMMENTC = "h1 { color: red;}";
+	
+	private static final String CSS_COMMA_WHITESPACE = "body { padding: 0px;}\n\nh1, h2, h3 {\nmargin: 0px;}";
 	
 	// Invalid media type
 	
@@ -522,5 +522,9 @@ public class CSSParserTest extends TestCase {
 	
 	public void testComment() throws IOException, URISyntaxException {
 		assertTrue("value=\""+filter(COMMENT)+"\"",COMMENTC.equals(filter(COMMENT)));
+	}
+	
+	public void testWhitespace() throws IOException, URISyntaxException {
+		assertTrue("value=\""+filter(CSS_COMMA_WHITESPACE)+"\"", CSS_COMMA_WHITESPACE.equals(filter(CSS_COMMA_WHITESPACE)));
 	}
 }

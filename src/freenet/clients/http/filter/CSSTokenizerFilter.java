@@ -1599,19 +1599,26 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
+					for(i=0;i<buffer.length();i++) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					if(logDEBUG) log("Appending whitespace in state2: \""+buffer.substring(0,i)+"\"");
+					ws = buffer.substring(0, i);
+					buffer.delete(0, i);
+					
 					String filtered=recursiveSelectorVerifier(buffer.toString().trim());
 					if(logDEBUG) log("STATE2 CASE , filtered elements"+filtered);
 					if(filtered!=null)
 					{
 						if(s2Comma)
-						{
-							filteredTokens.append(","+ filtered);
-						}
+							filteredTokens.append(",");
 						else
-						{
-							filteredTokens.append(filtered);
 							s2Comma=true;
-						}
+						filteredTokens.append(ws);
+						filteredTokens.append(filtered);
 					}
 					buffer.setLength(0);
 					break;	
