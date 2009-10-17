@@ -453,7 +453,7 @@ public class FilterUtils {
 		for(String value:values)
 		{
 			if(value!=null && !("".equals(value.trim())))
-				arrayToReturn.add(CSSTokenizerFilter.removeQuotes(value.trim()).trim());
+				arrayToReturn.add(CSSTokenizerFilter.removeOuterQuotes(value.trim()).trim());
 		}
 		return arrayToReturn.toArray(new String[0]);
 	}

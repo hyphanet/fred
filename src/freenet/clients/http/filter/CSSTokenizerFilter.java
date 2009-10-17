@@ -2612,45 +2612,6 @@ class CSSTokenizerFilter {
 	}
 
 	/*
-	 * Function to remove quotes.
-	 */
-	public static String removeQuotes(String value)
-	{
-		boolean firstQuote=false;
-		StringBuffer newValue=new StringBuffer();
-		int i;
-		for(i=0;i<value.length();i++)
-		{
-			if(value.charAt(i)=='"')
-			{ 
-				if(!firstQuote)
-					firstQuote=true;
-				else
-				{
-					if(i<value.length())
-					{
-						if("".equals(value.substring(i+1,value.length()).trim()))
-							break;
-					}
-					else
-					{
-						return newValue.toString();
-					}
-
-				}
-			}
-			else
-				newValue.append(value.charAt(i));
-		}
-		for(int j=i+1;j<value.length();j++)
-			newValue.append(value.charAt(j));
-		return newValue.toString();
-
-
-
-	}
-
-	/*
 	 * Basic class to verify value for a CSS Property. This class can verify values which are
 	 * Integer,Real,Percentage, <Length>, <Angle>, <Color>, <URI>, <Shape> and so on.
 	 * parserExpression is used for verifying regular expression for Property value
