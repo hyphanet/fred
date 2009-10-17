@@ -450,6 +450,11 @@ public class ElementInfo {
 				// No unquoted newlines
 				if(c == '\r' || c == '\n' || c == '\f') return false;
 				
+				if(c == '\\') {
+					escape = true;
+					continue;
+				}
+				
 				// Allow everything else.
 				continue;
 			}
