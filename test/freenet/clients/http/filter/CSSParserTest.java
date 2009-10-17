@@ -93,6 +93,8 @@ public class CSSParserTest extends TestCase {
 		// Unclosed string
 		CSS2_BAD_SELECTOR.add("h1[foo=\"bar] {}");
 		
+		CSS2_BAD_SELECTOR.add("h1:langblahblah(fr) {}");
+		
 		// THE FOLLOWING ARE VALID BUT DISALLOWED
 		// ] inside string inside attribute selector: way too confusing for parsers.
 		// FIXME one day we should escape the ] to make this both valid and easy to parse, rather than dropping it.
