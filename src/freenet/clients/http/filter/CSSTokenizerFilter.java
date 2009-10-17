@@ -60,17 +60,6 @@ class CSSTokenizerFilter {
 //		}
 	}
 
-	public void parse() throws IOException
-	{
-		try
-		{
-			filterCSS();
-		}
-		catch(IOException e)
-		{
-			throw e;
-		}
-	}
 	public boolean isValidURI(String URI)
 	{
 		try
@@ -1241,7 +1230,7 @@ class CSSTokenizerFilter {
 
 
 	// main function
-	public void filterCSS() throws IOException {
+	public void parse() throws IOException {
 
 		final int STATE1=1; //State corresponding to @page,@media etc
 		final int STATE2=2; //State corresponding to HTML element like body
