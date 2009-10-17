@@ -295,19 +295,11 @@ public class FilterUtils {
 			if(shapeParts.length==4)
 			{
 				boolean isValidShapeParts=true;
-				int temp;
-				for(int i=0;i<shapeParts.length && isValidShapeParts;i++)
+				for(String s : shapeParts)
 				{
-					try
-					{
-						temp=Integer.parseInt(shapeParts[i]);
-						if(temp<0)
-							isValidShapeParts=false;
-					}
-					catch(Exception e)
-					{
-						isValidShapeParts=false;
-					}
+					s = s.trim();
+					if(!(s.equalsIgnoreCase("auto") || isLength(s, false)))
+						return false;
 				}
 				if(isValidShapeParts)
 					return true;

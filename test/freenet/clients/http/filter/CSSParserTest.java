@@ -339,6 +339,9 @@ public class CSSParserTest extends TestCase {
 		
 		// Short percentage value
 		propertyTests.put("body { bottom: 1%;}", "body { bottom: 1%;}");
+		// Shape
+		propertyTests.put("p { clip: rect(5px, 40px, 45px, 5px); }", "p { clip: rect(5px, 40px, 45px, 5px); }");
+		propertyTests.put("p { clip: rect(auto, auto, 45px, 5px); }", "p { clip: rect(auto, auto, 45px, 5px); }");
 	}
 	
 	MIMEType cssMIMEType;
