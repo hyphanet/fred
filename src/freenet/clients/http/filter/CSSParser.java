@@ -3,10 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
-import java.io.*;
-import java.util.ArrayList;
-
-import freenet.support.Logger;
+import java.io.Reader;
+import java.io.Writer;
 
 /**
  * WARNING: this is not as thorough as the HTML filter - we do not
@@ -36,42 +34,6 @@ class CSSParser extends CSSTokenizerFilter {
 		boolean stopAtDetectedCharset) {
 		super(r, w, cb, charset, stopAtDetectedCharset);
 		this.cb = cb;
-	}
-
-/*
-	@Override
-	void log(String s) {
-		if (Logger.shouldLog(Logger.DEBUG, this))
-			Logger.debug(this, s);
-		
-	}
-
-	@Override
-	void logError(String s) {
-		Logger.error(this, s);
-	}
-	*/
-	public static void main(String[] params)
-	{
-		
-		try{
-	    	BufferedReader input = new BufferedReader(new FileReader("/home/ashish/search.css"));
-	    	//BufferedWriter output=new BufferedWriter(new FileWriter("/home/ashish/searchfiltered.html"));
-	    	Writer output= new BufferedWriter(new OutputStreamWriter(System.out));
-
-	    	NullFilterCallback objtemp=new NullFilterCallback(); 
-	    	CSSParser pc = new CSSParser(input, output, true, objtemp, "UTF-8", false);
-			//pc.debug=false;
-	    	pc.parse();
-	    	
-			
-	    	output.close();
-			
-	    }
-	    catch (IOException e) {
-	    	System.err.println(e.getMessage());
-	    }
-		
 	}
 
 }
