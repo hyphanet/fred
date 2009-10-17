@@ -1283,7 +1283,7 @@ class CSSTokenizerFilter {
 			if(x==-1)
 			{
 				if(filteredTokens.toString().trim().length()!=0)
-					w.write("<!--(Deleted unfinished elements)"+filteredTokens.toString()+"-->");
+					w.write("/* (Deleted unfinished elements)"+filteredTokens.toString()+" */");
 				w.flush();
 				break;
 			}
