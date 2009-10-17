@@ -14,11 +14,8 @@ public class FilterUtils {
 	{
 		try
 		{
-			int intValue=Integer.parseInt(strValue);
-			if(intValue>-2147483648 && intValue<2147483647)
-				return true;
-			else
-				return false;
+			Integer.parseInt(strValue);
+			return true;
 		}
 		catch(Exception e)
 		{
