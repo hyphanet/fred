@@ -18,6 +18,10 @@ import freenet.support.Logger;
  * from comprehensive.
  * @author kurmiashish
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+ * 
+ * FIXME: Rewrite to parse properly. This works but is rather spaghettified.
+ * JFlex on its own obviously won't work, but JFlex plus a proper grammr 
+ * should work fine.
  */
 class CSSTokenizerFilter {
 	private Reader r;
