@@ -2611,52 +2611,6 @@ class CSSTokenizerFilter {
 		return (ParsedString)words[0];
 	}
 
-	public boolean anglecheck(String value)
-	{
-		boolean isValid=true;
-		int index=-1;
-		if(value.indexOf("deg")>-1)
-		{
-			index=value.indexOf("deg");
-			String secondpart=value.substring(index,value.length()).trim();
-			if(logDEBUG) log("found deg: second part:"+secondpart+":" );
-			if(!("deg".equals(secondpart)))
-				isValid=false;
-		}
-		else if(value.indexOf("grad")>-1)
-		{
-			index=value.indexOf("grad");
-			String secondpart=value.substring(index,value.length()).trim();
-			if(logDEBUG) log("found grad: second part:"+secondpart+":" );
-			if(!("grad".equals(secondpart)))
-				isValid=false;
-		}
-		else if(value.indexOf("rad")>-1)
-		{
-			index=value.indexOf("rad");
-			String secondpart=value.substring(index,value.length()).trim();
-			if(logDEBUG) log("found rad: second part:"+secondpart+":" );
-			if(!("rad".equals(secondpart)))
-				isValid=false;
-		}
-		if(index!=-1 && isValid)
-		{
-			String firstPart=value.substring(0,index);
-			try
-			{
-				if(logDEBUG) log("Angle Value: first part:"+firstPart);
-				float temp=Float.parseFloat(firstPart);
-				return true;
-			}
-			catch(Exception e)
-			{
-				if(logDEBUG) log("Could not convert the String to angle value");
-
-			}
-		}
-		return false;
-	}
-
 	/*
 	 * Function to remove quotes.
 	 */
