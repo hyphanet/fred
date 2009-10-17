@@ -1300,7 +1300,7 @@ class CSSTokenizerFilter {
 			prevc=c;
 			c=(char) x;
 			if(logDEBUG) log("Read: "+c);
-			if(prevc=='/' && c=='*' && currentState!=STATE1INQUOTE && currentState!=STATE2INQUOTE && currentState!=STATE3INQUOTE)
+			if(prevc=='/' && c=='*' && currentState!=STATE1INQUOTE && currentState!=STATE2INQUOTE && currentState!=STATE3INQUOTE&&currentState!=STATECOMMENT)
 			{
 				stateBeforeComment=currentState;
 				currentState=STATECOMMENT;
