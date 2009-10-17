@@ -132,6 +132,11 @@ public class CSSParserTest extends TestCase {
 	private static final String WRONG_CHARSET = "@charset \"UTF-16\";";
 	private static final String NONSENSE_CHARSET = "@charset \"idiot\";";
 	
+	private static final String LATE_BOM = "h3 { color:red;}\n\ufeffh4 { color:blue;}";
+	private static final String LATE_BOMC = "h3 { color:red;}\nh4 { color:blue;}";
+		
+	private static final String BOM = "\ufeffh3 { color:red;}";
+	
 	// Invalid media type
 	
 	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
@@ -442,6 +447,9 @@ public class CSSParserTest extends TestCase {
 		} catch (UnsupportedCharsetInFilterException e) {
 			// Ok.
 		}
+		
+		assertTrue(BOM.equals(filter(BOM)));
+		assertTrue("output=\""+filter(LATE_BOM)+"\"",LATE_BOMC.equals(filter(LATE_BOM)));
 	}
 	
 	private void getCharsetTest(String charset) throws DataFilterException, IOException, URISyntaxException {
