@@ -27,8 +27,8 @@ public class CSSParserTest extends TestCase {
 
 
 
+	// FIXME should specify exact output values
 	/** CSS1 Selectors */
-
 	private final static HashMap<String,String> CSS1_SELECTOR= new HashMap<String,String>();
 	static
 	{
@@ -49,6 +49,7 @@ public class CSSParserTest extends TestCase {
 
 	}
 
+	// FIXME should specify exact output values
 	/** CSS2 Selectors */
 	private final static HashMap<String,String> CSS2_SELECTOR= new HashMap<String,String>();
 	static
