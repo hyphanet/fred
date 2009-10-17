@@ -126,12 +126,20 @@ public class ElementInfo {
 
 	}
 	
-	
+	static final HashSet<String> REPLACED_ELEMENTS = new HashSet<String>();
+	static {
+		REPLACED_ELEMENTS.add("img");
+		REPLACED_ELEMENTS.add("object");
+		REPLACED_ELEMENTS.add("textarea");
+		REPLACED_ELEMENTS.add("select");
+		REPLACED_ELEMENTS.add("input"); // ??? Most input's aren't???
+		REPLACED_ELEMENTS.add("applet");
+		REPLACED_ELEMENTS.add("button");
+	}
 	
 	public final static String[] HTMLELEMENTSARRAY=HTML_ELEMENTS.toArray(new String[0]);
 	public final static String[] TABLEELEMENTS=new String[]{"table","colgroup","col","tbody","thead","tfoot","tr","td","caption"};
-	//TODO
-	public final static String[] ALLBUTNONREPLACEDINLINEELEMENTS= new String[]{};
+	public final static String[] ALLBUTNONREPLACEDINLINEELEMENTS= makeAllButNonReplacedInlineElements();
 	public final static String[] BLOCKLEVELELEMENTS=new String[]{"address","blockquote","center","dir","div","dl","fieldset","form","h1","h2","h3","h4","h5","h6","hr","isindex","menu","noframes","noscript","ol","p","pre","table","ul","dd","dt","frameset","li","tbody","td","tfoot","th","thead","tr"};
 	public final static String[] INLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","img","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var"};
 	 
@@ -226,6 +234,16 @@ public class ElementInfo {
 		return true;
 	}
 	
+	private static String[] makeAllButNonReplacedInlineElements() {
+		// all elements but non-replaced inline elements, table rows, and row groups
+		HashSet<String> elements = new HashSet<String>(HTML_ELEMENTS);
+		for(String s : REPLACED_ELEMENTS)
+			elements.remove(s);
+		elements.remove("tr");
+		elements.remove("tbody");
+		return elements.toArray(new String[elements.size()]);
+	}
+
 	/** font must be lower-case */
 	public static boolean isGenericFontFamily(String font) {
 		for(String s : GENERIC_FONT_KEYWORDS)
