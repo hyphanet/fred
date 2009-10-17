@@ -1789,6 +1789,7 @@ class CSSTokenizerFilter {
 						break;
 					}
 					openBraces--;
+					// This (string!=) is okay as we set it directly by propertyName="" to indicate there is no property name.
 					if(propertyName!="")
 					{
 						
