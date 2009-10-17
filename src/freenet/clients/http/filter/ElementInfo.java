@@ -380,7 +380,7 @@ public class ElementInfo {
 				int langIndex=cname.indexOf("lang");
 				int firstIndex=cname.indexOf("(");
 				int secondIndex=cname.lastIndexOf(")");
-				if(cname.substring(0,langIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
+				if(cname.substring(langIndex+4,firstIndex).trim().equals("") && cname.substring(0,langIndex).trim().equals("") && cname.substring(secondIndex+1,cname.length()).trim().equals(""))
 				{
 					String language=CSSTokenizerFilter.removeQuotes(cname.substring(firstIndex+1,secondIndex).trim());
 					
