@@ -1,11 +1,7 @@
 package freenet.clients.http.filter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-
-import freenet.support.HTMLNode;
 
 public class FilterUtils {
 
