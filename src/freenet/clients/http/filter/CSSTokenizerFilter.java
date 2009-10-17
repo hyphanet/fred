@@ -1141,9 +1141,9 @@ class CSSTokenizerFilter {
 		// Parse but don't tokenise.
 		
 		int plusIndex,gtIndex,spaceIndex;
-		plusIndex = 50000;
-		gtIndex = 50000;
-		spaceIndex = 50000;
+		plusIndex = Integer.MAX_VALUE;
+		gtIndex = Integer.MAX_VALUE;
+		spaceIndex = Integer.MAX_VALUE;
 		int index = -1;
 		char selector = 0;
 		
