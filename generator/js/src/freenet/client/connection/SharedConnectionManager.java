@@ -82,13 +82,7 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 		};
 		// Sets the message counter
 		if (Cookies.getCookie(MESSAGE_COUNTER) != null) {
-			// Go back to see all messages so far.
-			// It is quite possible that lag and single-threaded javascript has resulted in a bunch of messages relevant to us being queued before we reach this point.
-			// It has been seen in practice on slow browsers, with very few windows open.
-			// Note that *this will not fix the problem* if there is heavy load...
-			// FIXME maybe we could poll for all our unloaded images after some period?
-			messageCounter = Long.parseLong(Cookies.getCookie(MESSAGE_COUNTER)) - MAX_MESSAGES;
-			if(messageCounter < 0) messageCounter = 0;
+			messageCounter = Long.parseLong(Cookies.getCookie(MESSAGE_COUNTER));
 		} else {
 			messageCounter = 0;
 		}
