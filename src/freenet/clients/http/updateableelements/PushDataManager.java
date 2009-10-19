@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.management.modelmbean.RequiredModelMBean;
-
 import freenet.node.Ticker;
 import freenet.support.Logger;
 
@@ -31,6 +29,8 @@ public class PushDataManager {
 
 	/** Stores whether a keepalive was received for a request since the Cleaner last run */
 	private Map<String, Boolean>						isKeepaliveReceived		= new HashMap<String, Boolean>();
+	
+	private Map<String, Boolean>						isFirstKeepaliveReceived		= new HashMap<String, Boolean>();
 
 	/** The Cleaner that runs periodically and cleanes the failing requests */
 	private Ticker										cleaner;
@@ -207,6 +207,8 @@ public class PushDataManager {
 			return false;
 		}
 		isKeepaliveReceived.put(requestId, true);
+		isFirstKeepaliveReceived.put(requestId, true);
+		notifyAll();
 		return true;
 	}
 
@@ -221,7 +223,7 @@ public class PushDataManager {
 		if (logMINOR) {
 			Logger.minor(this, "Polling for notification:" + requestId);
 		}
-		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0) {
+		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0 && isFirstKeepaliveReceived.containsKey(awaitingNotifications.get(requestId).get(0).requestId)==false) {
 			try {
 				wait();
 			} catch (InterruptedException ie) {
@@ -260,6 +262,7 @@ public class PushDataManager {
 			return false;
 		}
 		isKeepaliveReceived.remove(requestId);
+		isFirstKeepaliveReceived.remove(requestId);
 		// Iterate over all the pushed elements present on the page
 		for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(requestId))) {
 			pages.get(requestId).remove(element);

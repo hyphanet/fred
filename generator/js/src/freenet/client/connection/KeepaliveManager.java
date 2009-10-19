@@ -40,6 +40,7 @@ public class KeepaliveManager implements IConnectionManager {
 
 	@Override
 	public void openConnection() {
+		timer.run();
 		timer.scheduleRepeating(UpdaterConstants.KEEPALIVE_INTERVAL_SECONDS * 1000);
 	}
 

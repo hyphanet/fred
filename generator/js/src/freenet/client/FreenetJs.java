@@ -23,7 +23,7 @@ import freenet.client.tools.Base64;
 public class FreenetJs implements EntryPoint {
 
 	/** Debug mode. If true, the client will log. Should ba false at production */
-	public static boolean				isDebug						= true;
+	public static boolean				isDebug						= false;
 
 	/** The requestId. It is used to identify this instance to the server */
 	public static String				requestId;
