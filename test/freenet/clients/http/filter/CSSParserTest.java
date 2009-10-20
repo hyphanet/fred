@@ -66,6 +66,16 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1+h2 {}", "h1+h2");
 		CSS2_SELECTOR.put("div.foo {}", "div.foo");
 		CSS2_SELECTOR.put("p.marine.pastoral { color: green }", "p.marine.pastoral");
+		CSS2_SELECTOR.put("[lang=fr] {}", "[lang=fr] {}");
+		CSS2_SELECTOR.put(".warning {}", ".warning {}");
+		CSS2_SELECTOR.put("#myid {}", "#myid {}");
+		CSS2_SELECTOR.put("h1 em { color: blue;}", "h1 em { color: blue;}");
+		CSS2_SELECTOR.put("div * p { color: blue;}", "div * p { color: blue;}");
+		CSS2_SELECTOR.put("div p *[href] { color: blue;}", "div p *[href] { color: blue;}");
+		CSS2_SELECTOR.put("body > P { line-height: 1.3 }", "body>p { line-height: 1.3;}");
+		CSS2_SELECTOR.put("div ol>li p { color: green;}", "div ol>li p { color: green;}");
+		CSS2_SELECTOR.put("h1 + h2 { margin-top: -5mm }", "h1+h2 { margin-top: -5mm;}");
+		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm;}");
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");
