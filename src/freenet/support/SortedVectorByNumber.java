@@ -61,10 +61,11 @@ public class SortedVectorByNumber {
 			data = newData;
 		}
 		if(persistent) container.store(this);
-		verify(container);
+		
+		assert(verify(container));
 	}
 
-	private synchronized void verify(ObjectContainer container) {
+	private synchronized boolean verify(ObjectContainer container) {
 		IntNumberedItem lastItem = null;
 		for(int i=0;i<length;i++) {
 			IntNumberedItem item = data[i];
@@ -79,6 +80,8 @@ public class SortedVectorByNumber {
 		for(int i=length;i<data.length;i++)
 			if(data[i] != null)
 				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != null");
+		
+		return true;
 	}
 
 	/**
@@ -134,7 +137,8 @@ public class SortedVectorByNumber {
 		length++;
 		if(persistent)
 			container.store(this);
-		verify(container);
+		
+		assert(verify(container));
 	}
 
 	public synchronized int count() {
