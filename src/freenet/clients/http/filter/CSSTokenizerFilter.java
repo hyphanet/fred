@@ -1277,6 +1277,7 @@ class CSSTokenizerFilter {
 		
 		boolean charsetPossible = true;
 		boolean bomPossible = true;
+		int openBracesStartingS3 = 0;
 		
 		while(true)
 		{
@@ -1679,6 +1680,8 @@ class CSSTokenizerFilter {
 						if(logDEBUG) log("STATE2 CASE { filtered elements"+filtered);
 					}
 					currentState=STATE3;
+					openBracesStartingS3 = openBraces;
+					if(logDEBUG) log("STATE2 -> STATE3, openBracesStartingS3 = "+openBracesStartingS3);
 					buffer.setLength(0);
 					break;
 
@@ -1825,6 +1828,12 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
+					if(openBraces > openBracesStartingS3) {
+						// Correctly tokenise bogus properties containing {}'s, see CSS2.1 section 4.1.6.
+						buffer.append(c);
+						if(logDEBUG) log("openBraces now "+openBraces+" not moving on because openBracesStartingS3="+openBracesStartingS3+" in S3");
+						break;
+					}
 					int i = 0;
 					for(i=0;i<buffer.length();i++) {
 						char c1 = buffer.charAt(i);
@@ -1844,6 +1853,12 @@ class CSSTokenizerFilter {
 					if(prevc == '\\') {
 						// Leave in buffer, encoded.
 						buffer.append(c);
+						break;
+					}
+					if(openBraces > openBracesStartingS3) {
+						// Correctly tokenise bogus properties containing {}'s, see CSS2.1 section 4.1.6.
+						buffer.append(c);
+						if(logDEBUG) log("openBraces now "+openBraces+" not moving on because openBracesStartingS3="+openBracesStartingS3+" in S3");
 						break;
 					}
 					
@@ -1883,6 +1898,12 @@ class CSSTokenizerFilter {
 						break;
 					}
 					openBraces--;
+					if(openBraces > openBracesStartingS3-1) {
+						// Correctly tokenise bogus properties containing {}'s, see CSS2.1 section 4.1.6.
+						buffer.append(c);
+						if(logDEBUG) log("openBraces now "+openBraces+" not moving on because openBracesStartingS3="+openBracesStartingS3+" in S3");
+						break;
+					}
 					// This (string!=) is okay as we set it directly by propertyName="" to indicate there is no property name.
 					if(propertyName!="")
 					{
@@ -1949,6 +1970,12 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("STATE3 CASE }: "+c);
 					break;
 
+				case '{':
+					// Correctly tokenise invalid properties including {}, see CSS2 section 4.1.6.
+					openBraces++;
+					buffer.append(c);
+					if(logDEBUG) log("openBraces now "+openBraces+" in S3");
+					break;
 				case '"':
 				case '\'':
 					if(prevc == '\\') {
