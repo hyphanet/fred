@@ -78,6 +78,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1 + h2 { margin-top: -5mm }", "h1+h2 { margin-top: -5mm;}");
 		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm;}");
 		CSS2_SELECTOR.put("span[class=example] { color: blue; }", "span[class=example] { color: blue; }");
+		CSS2_SELECTOR.put("span[hello=\"cleveland\"][goodbye=\"columbus\"] { color: blue; }", "span[hello=\"cleveland\"][goodbye=\"columbus\"] { color: blue; }");
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");

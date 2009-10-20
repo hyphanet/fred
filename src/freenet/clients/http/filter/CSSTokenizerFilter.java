@@ -994,14 +994,16 @@ class CSSTokenizerFilter {
 		String HTMLelement="",pseudoClass="",className="",id="";
 		boolean isValid=true;
 		StringBuffer fBuffer=new StringBuffer();
-		String attSelection="";
-		if(elementString.indexOf('[')!=-1 && elementString.indexOf(']')!=-1 && (elementString.indexOf('[')<elementString.indexOf(']')))
+		ArrayList<String> attSelections = null;
+		while(elementString.indexOf('[')!=-1 && elementString.indexOf(']')!=-1 && (elementString.indexOf('[')<elementString.indexOf(']')))
 		{
-			attSelection=elementString.substring(elementString.indexOf('[')+1,elementString.indexOf(']')).trim();
+			String attSelection=elementString.substring(elementString.indexOf('[')+1,elementString.indexOf(']')).trim();
 			StringBuffer buf=new StringBuffer(elementString);
 			buf.delete(elementString.indexOf('['), elementString.indexOf(']')+1);
 			elementString=buf.toString();
 			if(logDEBUG) log("attSelection="+attSelection+"  elementString="+elementString);
+			if(attSelections == null) attSelections = new ArrayList<String>();
+			attSelections.add(attSelection);
 		}
 		if(elementString.indexOf(':')!=-1)
 		{
@@ -1043,7 +1045,7 @@ class CSSTokenizerFilter {
 
 		}
 
-		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement)) || ("".equals(HTMLelement.trim()) && (className!="" || id!="" || attSelection!="" || pseudoClass!="")))
+		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement)) || ("".equals(HTMLelement.trim()) && (className!="" || id!="" || attSelections!=null || pseudoClass!="")))
 		{
 			if(className!="")
 			{
@@ -1063,50 +1065,52 @@ class CSSTokenizerFilter {
 					isValid=false;
 			}
 
-			if(isValid && attSelection!="")
+			if(isValid && attSelections!=null)
 			{
 				String[] attSelectionParts;
 				
-				if(attSelection.indexOf("|=")!=-1)
-				{
-					attSelectionParts=new String[2];
-					attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("|="));
-					attSelectionParts[1]=attSelection.substring(attSelection.indexOf("|=")+2,attSelection.length());
-				}
-				else if(attSelection.indexOf("~=")!=-1) {
-					attSelectionParts=new String[2];
-					attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("~="));
-					attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+2,attSelection.length());
-				} else if(attSelection.indexOf('=') != -1){
-					attSelectionParts=new String[2];
-					attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("="));
-					attSelectionParts[1]=attSelection.substring(attSelection.indexOf("=")+1,attSelection.length());
-				} else {
-					attSelectionParts=new String[] { attSelection };
-				}
-				
-				//Verifying whether each character is alphanumeric or _
-				if(logDEBUG) log("HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
-				
-				if(attSelectionParts[0].length()==0)
-					isValid=false;
-				else
-				{
-					char c=attSelectionParts[0].charAt(0);
-					if(!((c>='a' && c<='z') || (c>='A' && c<='Z')))
-						isValid=false;
-					for(int i=1;i<attSelectionParts[0].length();i++)
+				for(String attSelection : attSelections) {
+					if(attSelection.indexOf("|=")!=-1)
 					{
-						if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='-'))
-							isValid=false;
+						attSelectionParts=new String[2];
+						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("|="));
+						attSelectionParts[1]=attSelection.substring(attSelection.indexOf("|=")+2,attSelection.length());
 					}
-				}
-				
-				if(attSelectionParts.length > 1) {
-					// What about the right hand side?
-					// The grammar says it's an IDENT.
-					if(logDEBUG) log("RHS is \""+attSelectionParts[1]+"\"");
-					if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
+					else if(attSelection.indexOf("~=")!=-1) {
+						attSelectionParts=new String[2];
+						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("~="));
+						attSelectionParts[1]=attSelection.substring(attSelection.indexOf("~=")+2,attSelection.length());
+					} else if(attSelection.indexOf('=') != -1){
+						attSelectionParts=new String[2];
+						attSelectionParts[0]=attSelection.substring(0,attSelection.indexOf("="));
+						attSelectionParts[1]=attSelection.substring(attSelection.indexOf("=")+1,attSelection.length());
+					} else {
+						attSelectionParts=new String[] { attSelection };
+					}
+					
+					//Verifying whether each character is alphanumeric or _
+					if(logDEBUG) log("HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
+					
+					if(attSelectionParts[0].length()==0)
+						isValid=false;
+					else
+					{
+						char c=attSelectionParts[0].charAt(0);
+						if(!((c>='a' && c<='z') || (c>='A' && c<='Z')))
+							isValid=false;
+						for(int i=1;i<attSelectionParts[0].length();i++)
+						{
+							if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || c=='_' || c=='-'))
+								isValid=false;
+						}
+					}
+					
+					if(attSelectionParts.length > 1) {
+						// What about the right hand side?
+						// The grammar says it's an IDENT.
+						if(logDEBUG) log("RHS is \""+attSelectionParts[1]+"\"");
+						if(!(ElementInfo.isValidIdentifier(attSelectionParts[1]) || ElementInfo.isValidStringWithQuotes(attSelectionParts[1]))) isValid = false;
+					}
 				}
 			}
 
@@ -1120,8 +1124,10 @@ class CSSTokenizerFilter {
 					fBuffer.append("#"+id);
 				if(pseudoClass!="")
 					fBuffer.append(":"+pseudoClass);
-				if(attSelection!="")
-					fBuffer.append("["+attSelection+"]");
+				if(attSelections!=null) {
+					for(String attSelection:attSelections)
+						fBuffer.append("["+attSelection+"]");
+				}
 				return fBuffer.toString();
 			}
 		}
