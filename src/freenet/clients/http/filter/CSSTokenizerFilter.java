@@ -1428,6 +1428,9 @@ class CSSTokenizerFilter {
 						ignoreElementsS1=true;
 						// No valid media types.
 						if(logDEBUG) log("STATE1 CASE {: Failed verification test. ignoring "+buffer.toString());
+					} else {
+						w.write(filteredTokens.toString());
+						filteredTokens.setLength(0);
 					}
 					buffer.setLength(0);
 					s2Comma=false;

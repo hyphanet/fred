@@ -151,6 +151,15 @@ public class CSSParserTest extends TestCase {
 	// Unquoted URL is invalid.
 	private static final String CSS_IMPORT_UNQUOTED = "@import style.css;";
 	
+	private static final String CSS_LATE_IMPORT = "@import \"subs.css\";\nh1 { color: blue;}\n@import \"list.css\";";
+	private static final String CSS_LATE_IMPORTC = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\nh1 { color: blue;}\n";
+	
+	private static final String CSS_LATE_IMPORT2 = "@import \"subs.css\";\n@media print {\n@import \"print-main.css\";\n\n}\nh1 { color: blue }";
+	private static final String CSS_LATE_IMPORT2C = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\n@media print {}\nh1 { color: blue;}";
+	
+	private static final String CSS_LATE_IMPORT3 = "@import \"subs.css\";\n@media print {\n@import \"print-main.css\";\nbody { font-size: 10pt;}\n}\nh1 { color: blue }";
+	private static final String CSS_LATE_IMPORT3C = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\n@media print {}\nh1 { color: blue;}";
+	
 	// Quoted without url() is valid.
 	private static final String CSS_IMPORT_NOURL = "@import \"style.css\";";
 	private static final String CSS_IMPORT_NOURLC = "@import url(\"style.css?type=text/css&maybecharset=UTF-8\");";
@@ -470,6 +479,9 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key="+CSS_IMPORT_UNQUOTED+" should be empty", "".equals(filter(CSS_IMPORT_UNQUOTED)));
 		assertTrue("key="+CSS_IMPORT_NOURL+" value=\""+filter(CSS_IMPORT_NOURL)+"\"", CSS_IMPORT_NOURLC.equals(filter(CSS_IMPORT_NOURL)));
 		assertTrue("key="+CSS_IMPORT_BRACKET+" value=\""+filter(CSS_IMPORT_BRACKET)+"\"", CSS_IMPORT_BRACKETC.equals(filter(CSS_IMPORT_BRACKET)));
+		assertTrue("key="+CSS_LATE_IMPORT+" value=\""+filter(CSS_LATE_IMPORT)+"\"", CSS_LATE_IMPORTC.equals(filter(CSS_LATE_IMPORT)));
+		assertTrue("key="+CSS_LATE_IMPORT2+" value=\""+filter(CSS_LATE_IMPORT2)+"\"", CSS_LATE_IMPORT2C.equals(filter(CSS_LATE_IMPORT2)));
+		assertTrue("key="+CSS_LATE_IMPORT3+" value=\""+filter(CSS_LATE_IMPORT3)+"\"", CSS_LATE_IMPORT3C.equals(filter(CSS_LATE_IMPORT3)));
 		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", "".equals(filter(CSS_BOGUS_AT_RULE)));
 		assertTrue("key="+PRESERVE_CDO_CDC+" value=\""+filter(PRESERVE_CDO_CDC)+"\"", PRESERVE_CDO_CDCC.equals(filter(PRESERVE_CDO_CDC)));
 	}
