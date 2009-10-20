@@ -1045,7 +1045,7 @@ class CSSTokenizerFilter {
 
 		}
 
-		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement)) || ("".equals(HTMLelement.trim()) && (className!="" || id!="" || attSelections!=null || pseudoClass!="")))
+		if("*".equals(HTMLelement) || (ElementInfo.isValidHTMLTag(HTMLelement.toLowerCase())) || ("".equals(HTMLelement.trim()) && (className!="" || id!="" || attSelections!=null || pseudoClass!="")))
 		{
 			if(className!="")
 			{
@@ -1142,7 +1142,7 @@ class CSSTokenizerFilter {
 	public String recursiveSelectorVerifier(String selectorString)
 	{
 		if(logDEBUG) log("selector: \""+selectorString+"\"");
-		selectorString=selectorString.toLowerCase().trim();
+		selectorString=selectorString.trim();
 		
 		// Parse but don't tokenise.
 		

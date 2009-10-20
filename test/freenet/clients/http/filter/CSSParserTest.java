@@ -73,12 +73,12 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1 em { color: blue;}", "h1 em { color: blue;}");
 		CSS2_SELECTOR.put("div * p { color: blue;}", "div * p { color: blue;}");
 		CSS2_SELECTOR.put("div p *[href] { color: blue;}", "div p *[href] { color: blue;}");
-		CSS2_SELECTOR.put("body > P { line-height: 1.3 }", "body>p { line-height: 1.3;}");
+		CSS2_SELECTOR.put("body > P { line-height: 1.3 }", "body>P { line-height: 1.3;}");
 		CSS2_SELECTOR.put("div ol>li p { color: green;}", "div ol>li p { color: green;}");
 		CSS2_SELECTOR.put("h1 + h2 { margin-top: -5mm }", "h1+h2 { margin-top: -5mm;}");
 		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm;}");
 		CSS2_SELECTOR.put("span[class=example] { color: blue; }", "span[class=example] { color: blue; }");
-		CSS2_SELECTOR.put("span[hello=\"cleveland\"][goodbye=\"columbus\"] { color: blue; }", "span[hello=\"cleveland\"][goodbye=\"columbus\"] { color: blue; }");
+		CSS2_SELECTOR.put("span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }", "span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }");
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");
@@ -334,7 +334,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		// HTML tags are case insensitive, but we downcase them.
-		propertyTests.put("H3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("H3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "H3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
@@ -470,7 +470,7 @@ public class CSSParserTest extends TestCase {
 		
 		// play-during
 		propertyTests.put("@media speech { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media speech { blockquote.sad { play-during: url(\"violins.aiff\");}}");
-		propertyTests.put("@media speech { blockquote Q   { play-during: url(\"harp.wav\") mix }}", "@media speech { blockquote q { play-during: url(\"harp.wav\") mix;}}");
+		propertyTests.put("@media speech { blockquote Q   { play-during: url(\"harp.wav\") mix }}", "@media speech { blockquote Q { play-during: url(\"harp.wav\") mix;}}");
 		propertyTests.put("@media speech { span.quiet     { play-during: none } }", "@media speech { span.quiet { play-during: none;}}");
 		
 		// Grandchildren
