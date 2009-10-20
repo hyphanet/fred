@@ -2083,6 +2083,10 @@ class CSSTokenizerFilter {
 			buffer.delete(0, i);
 		}
 
+		// FIXME CSS2.1 section 4.2 "Unexpected end of style sheet".
+		// We do NOT auto-close at the end.
+		// It might be worth implementing this one day.
+		
 	}
 
 	private String reconstruct(ParsedWord[] words) {

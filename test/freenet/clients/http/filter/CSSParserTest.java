@@ -433,6 +433,10 @@ public class CSSParserTest extends TestCase {
 		// Block parsing error handling
 		propertyTests.put("* { causta: \"}\" + ({7} * '\\'') } h2 { color: red;}", "* {} h2 { color: red;}");
 		propertyTests.put("* { causta: \"}\" + ({inner-property: blahblahblah;} * '\\'') } h2 { color: red;}", "* {} h2 { color: red;}");
+		
+		// Auto-close of style sheet. NOT IMPLEMENTED! The first test tests that we handle unclosed sheet sanely, the second is commented out but would test closing it and parsing it.
+		propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {/* (Deleted unfinished elements)\n  p:before { */ ");
+		//propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {\n  p:before { content: 'Hello'; }}");
 	}
 	
 	MIMEType cssMIMEType;
