@@ -1742,11 +1742,12 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
-					openBraces--;
-					if(!ignoreElementsS1) {
+					if(openBraces > 0 && !ignoreElementsS1) {
+						openBraces--;
 						// ignoreElementsS2 is irrelevant here, we are not *adding to* filteredTokens.
 						w.write(filteredTokens.toString()+"}");
 					} else {
+						if(openBraces > 0) openBraces--;
 						// Ignore.
 						// We are going back to STATE1, so reset ignoreElementsS1
 						ignoreElementsS1 = false;

@@ -190,7 +190,8 @@ public class CSSParserTest extends TestCase {
 	
 	private static final String CSS_COMMA_WHITESPACE = "body { padding: 0px;\n}\n\nh1, h2, h3 {\nmargin: 0px;\n}";
 	
-	private static final String CSS_BOGUS_AT_RULE = "@three-dee { h3 { color: red;} }";
+	private static final String CSS_BOGUS_AT_RULE = "@three-dee { h3 { color: red;} }\nh1 { color: blue;}";
+	private static final String CSS_BOGUS_AT_RULEC = "\nh1 { color: blue;}";
 	
 	private static final String PRESERVE_CDO_CDC = "<!-- @import url(\"style.css\");\n<!-- @media screen { <!-- h3 { color: red;} } -->";
 	private static final String PRESERVE_CDO_CDCC = "<!-- @import url(\"style.css?type=text/css&maybecharset=UTF-8\");\n<!-- @media screen { <!-- h3 { color: red;}} -->";
@@ -220,6 +221,12 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("p { color:green; color: }", "p { color:green;}");
 		propertyTests.put("p { color:red;   color:; color:green }", "p { color:red; color:green;}");
 		propertyTests.put("p { color:green; color{;color:maroon} }", "p { color:green; }");
+		// 4.2 Malformed statements, with a valid rule added on
+		propertyTests.put("p @here {color: red}\ntd { color:red;}", "\ntd { color:red;}");
+		propertyTests.put("@foo @bar;\ntd { color:red;}", "\ntd { color:red;}");
+		propertyTests.put("}} {{ - }}", "");
+		propertyTests.put(") ( {} ) p {color: red }", "");
+		propertyTests.put(") ( {} ) p {color: red }\ntd { color:red;}", "\ntd { color:red;}");
 		
 		propertyTests.put("td { background-position:bottom;}\n", "td { background-position:bottom;}\n");
 		propertyTests.put("td { background:repeat-x;}\n", "td { background:repeat-x;}\n");
@@ -501,7 +508,7 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key="+CSS_LATE_IMPORT+" value=\""+filter(CSS_LATE_IMPORT)+"\"", CSS_LATE_IMPORTC.equals(filter(CSS_LATE_IMPORT)));
 		assertTrue("key="+CSS_LATE_IMPORT2+" value=\""+filter(CSS_LATE_IMPORT2)+"\"", CSS_LATE_IMPORT2C.equals(filter(CSS_LATE_IMPORT2)));
 		assertTrue("key="+CSS_LATE_IMPORT3+" value=\""+filter(CSS_LATE_IMPORT3)+"\"", CSS_LATE_IMPORT3C.equals(filter(CSS_LATE_IMPORT3)));
-		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", "".equals(filter(CSS_BOGUS_AT_RULE)));
+		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", CSS_BOGUS_AT_RULEC.equals(filter(CSS_BOGUS_AT_RULE)));
 		assertTrue("key="+PRESERVE_CDO_CDC+" value=\""+filter(PRESERVE_CDO_CDC)+"\"", PRESERVE_CDO_CDCC.equals(filter(PRESERVE_CDO_CDC)));
 	}
 	
