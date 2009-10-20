@@ -255,6 +255,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("td { background-color: rgb(300, 0, 0)}", "td { background-color: rgb(300, 0, 0);}");
 		propertyTests.put("td { background-color: rgb(255, -10, 0)}", "td { background-color: rgb(255, -10, 0);}");
 		propertyTests.put("td { background-color: rgb(110%, 0%, 0%)}", "td { background-color: rgb(110%, 0%, 0%);}");
+		propertyTests.put("td { background-color: rgb(5.5%, -100%, 0%)}", "td { background-color: rgb(5.5%, -100%, 0%);}");
 		
 		// Invalid element
 		propertyTests.put("silly { background-attachment: scroll}", "");

@@ -369,30 +369,8 @@ public class FilterUtils {
 			boolean isValidColorParts=true;;
 			for(int i=0; i<colorParts.length && isValidColorParts;i++)
 			{
-				colorParts[i]=colorParts[i].trim();
-				try
-				{
-					if(colorParts[i].indexOf('%')==colorParts[i].length()-1)
-					{
-						int intPart=Integer.parseInt(colorParts[i].substring(0,colorParts[i].length()-1));
-						// CSS allows out-of-range colors, they will be clipped and may be important on printers, HDR displays etc.
-						if(isSVG && !(intPart>=0 && intPart<=100))
-							isValidColorParts=false;
-					}
-					else
-					{
-						int intPart=Integer.parseInt(colorParts[i]);
-						// CSS allows out-of-range colors, they will be clipped and may be important on printers, HDR displays etc.
-						if(isSVG && !(intPart>=0 && intPart<=255))
-							isValidColorParts=false;
-					}
-
-				}
-				catch(Exception e)
-				{
-					isValidColorParts=false;
-				}
-
+				if(!(isPercentage(colorParts[i].trim()) || isInteger(colorParts[i].trim())))
+					isValidColorParts = false;
 			}
 			if(isValidColorParts)
 				return true;
