@@ -59,6 +59,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1[foo=\"bar\"] {}", "h1[foo=\"bar\"]"); 
 		CSS2_SELECTOR.put("h1[foo~=\"bar\"] {}", "h1[foo~=\"bar\"]");
 		CSS2_SELECTOR.put("h1[foo|=\"en\"] {}","h1[foo|=\"en\"]");
+		CSS2_SELECTOR.put("[foo|=\"en\"] {}","[foo|=\"en\"]");
 		CSS2_SELECTOR.put("h1:first-child {}","h1:first-child");
 		CSS2_SELECTOR.put("h1:lang(fr) {}","h1:lang(fr)");
 		CSS2_SELECTOR.put("h1>h2 {}","h1>h2");
