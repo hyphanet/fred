@@ -210,6 +210,16 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\ncolor: green;\n}");
 		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {\ncolor: green;\n}");
 		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen {}");
+		propertyTests.put("img { float: left }", "img { float: left;}");
+		propertyTests.put("img { float: left here }", "img {}");
+		propertyTests.put("img { background: \"red\" }", "img {}");
+		propertyTests.put("img { border-width: 3 }", "img {}");
+		// 4.2 Malformed declarations
+		propertyTests.put("p { color:green }", "p { color:green;}");
+		propertyTests.put("p { color:green; color }", "p { color:green; }");
+		propertyTests.put("p { color:green; color: }", "p { color:green;}");
+		propertyTests.put("p { color:red;   color:; color:green }", "p { color:red; color:green;}");
+		propertyTests.put("p { color:green; color{;color:maroon} }", "p { color:green; }");
 		
 		propertyTests.put("td { background-position:bottom;}\n", "td { background-position:bottom;}\n");
 		propertyTests.put("td { background:repeat-x;}\n", "td { background:repeat-x;}\n");
@@ -384,6 +394,11 @@ public class CSSParserTest extends TestCase {
 		// NOT syntactically valid
 		propertyTests.put("h2 { font-family: http://www.badguy.com/myfont.ttf}", "h2 {}");
 		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", "h2 { font-family: times new roman,arial,verdana;}");
+		// Misc
+		propertyTests.put("h2 {\n  font-weight: bold;\n  font-size: 12px;\n  line-height: 14px;\n  font-family: Helvetica;\n  font-variant: normal;\n  font-style: normal\n}", "h2 {\n  font-weight: bold;\n  font-size: 12px;\n  line-height: 14px;\n  font-family: Helvetica;\n  font-variant: normal;\n  font-style: normal;}");
+		propertyTests.put("h1 { color: red; font-style: 12pt }", "h1 { color: red;}");
+		propertyTests.put("p { color: blue; font-vendor: any;\n    font-variant: small-caps }", "p { color: blue;\n    font-variant: small-caps;}");
+		propertyTests.put("em em { font-style: normal }", "em em { font-style: normal;}");
 		
 		// Short percentage value
 		propertyTests.put("body { bottom: 1%;}", "body { bottom: 1%;}");
