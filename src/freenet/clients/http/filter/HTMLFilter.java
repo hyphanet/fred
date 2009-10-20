@@ -1757,6 +1757,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						// page in GB18030 and the borrowed CSS in ISO-8859-1 or UTF-8.
 						maybecharset = pc.charset;
 					}
+					String media = getHashString(h, "media");
+					if(media != null)
+						media = CSSReadFilter.filterMediaList(media);
+					if(media != null)
+						hn.put("media", media);
 				}
 			}
 			String href = getHashString(h, "href");

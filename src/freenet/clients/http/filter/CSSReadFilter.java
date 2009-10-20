@@ -177,4 +177,27 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		return null;
 	}
 
+	public static String filterMediaList(String media) {
+		String[] split = media.split(",");
+		boolean first = true;
+		StringBuffer sb = new StringBuffer();
+		for(String m : split) {
+			m = m.trim();
+			int i;
+			for(i=0;i<m.length();i++) {
+				char c = m.charAt(i);
+				if(!('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) || ('0' <= c && '9' >= c) || c == '-')
+					break;
+			}
+			m = m.substring(0, i);
+			if(FilterUtils.isMedia(m)) {
+				if(!first) sb.append(", ");
+				sb.append(m);
+				first = false;
+			}
+		}
+		if(sb.length() != 0) return sb.toString();
+		else return null;
+	}
+
 }
