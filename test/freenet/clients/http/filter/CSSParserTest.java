@@ -74,24 +74,24 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1 em { color: blue;}", "h1 em { color: blue;}");
 		CSS2_SELECTOR.put("div * p { color: blue;}", "div * p { color: blue;}");
 		CSS2_SELECTOR.put("div p *[href] { color: blue;}", "div p *[href] { color: blue;}");
-		CSS2_SELECTOR.put("body > P { line-height: 1.3 }", "body>P { line-height: 1.3;}");
+		CSS2_SELECTOR.put("body > P { line-height: 1.3 }", "body>P { line-height: 1.3 }");
 		CSS2_SELECTOR.put("div ol>li p { color: green;}", "div ol>li p { color: green;}");
-		CSS2_SELECTOR.put("h1 + h2 { margin-top: -5mm }", "h1+h2 { margin-top: -5mm;}");
-		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm;}");
+		CSS2_SELECTOR.put("h1 + h2 { margin-top: -5mm }", "h1+h2 { margin-top: -5mm }");
+		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm }");
 		CSS2_SELECTOR.put("span[class=example] { color: blue; }", "span[class=example] { color: blue; }");
 		CSS2_SELECTOR.put("span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }", "span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }");
-		CSS2_SELECTOR.put("div > p:first-child { text-indent: 0 }", "div>p:first-child { text-indent: 0;}");
-		CSS2_SELECTOR.put("div > p:FIRST-CHILD { text-indent: 0 }", "div>p:FIRST-CHILD { text-indent: 0;}");
-		CSS2_SELECTOR.put("p:first-child em { font-weight : bold }", "p:first-child em { font-weight: bold;}");
+		CSS2_SELECTOR.put("div > p:first-child { text-indent: 0 }", "div>p:first-child { text-indent: 0 }");
+		CSS2_SELECTOR.put("div > p:FIRST-CHILD { text-indent: 0 }", "div>p:FIRST-CHILD { text-indent: 0 }");
+		CSS2_SELECTOR.put("p:first-child em { font-weight : bold }", "p:first-child em { font-weight: bold }");
 		CSS2_SELECTOR.put("* > a:first-child {}", "*>a:first-child {}");
-		CSS2_SELECTOR.put(":link { color: red }", ":link { color: red;}");
+		CSS2_SELECTOR.put(":link { color: red }", ":link { color: red }");
 		// REDFLAG: link vs visited is safe for Freenet as there is no scripting.
 		// If there was scripting it would not be safe, although datastore probing is probably the greater threat.
-		CSS2_SELECTOR.put("a.external:visited { color: blue }", "a.external:visited { color: blue;}");
-		CSS2_SELECTOR.put("a:focus:hover { background: white }", "a:focus:hover { background: white;}");
+		CSS2_SELECTOR.put("a.external:visited { color: blue }", "a.external:visited { color: blue }");
+		CSS2_SELECTOR.put("a:focus:hover { background: white }", "a:focus:hover { background: white }");
 		CSS2_SELECTOR.put("p:first-line { text-transform: uppercase;}", "p:first-line { text-transform: uppercase;}");
 		// CONFORMANCE: :first-line can only be attached to block-level, we don't enforce this, it is not dangerous.
-		CSS2_SELECTOR.put("p:first-letter { font-size: 3em; font-weight: normal }", "p:first-letter { font-size: 3em; font-weight: normal;}");
+		CSS2_SELECTOR.put("p:first-letter { font-size: 3em; font-weight: normal }", "p:first-letter { font-size: 3em; font-weight: normal }");
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");
@@ -99,7 +99,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1[foo=\"bar\\\" bar\"] {}", "h1[foo=\"bar\\\" bar\"]");
 		// Wierd one from the CSS spec
 		CSS2_SELECTOR.put("p[example=\"public class foo\\\n{\\\n    private int x;\\\n\\\n    foo(int x) {\\\n        this.x = x;\\\n    }\\\n\\\n}\"] { color: red }", 
-				"p[example=\"public class foo{    private int x;    foo(int x) {        this.x = x;    }}\"] { color: red;}");
+				"p[example=\"public class foo{    private int x;    foo(int x) {        this.x = x;    }}\"] { color: red }");
 		// Escaped anything inside an attribute selector. This is allowed.
 		CSS2_SELECTOR.put("h1[foo=\"hello\\202 \"] {}", "h1[foo=\"hello\\202 \"] {}");
 		// Escaped quotes inside a string inside an attribute selector. This is allowed.
@@ -187,10 +187,10 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_LATE_IMPORTC = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\nh1 { color: blue;}\n";
 	
 	private static final String CSS_LATE_IMPORT2 = "@import \"subs.css\";\n@media print {\n@import \"print-main.css\";\n\n}\nh1 { color: blue }";
-	private static final String CSS_LATE_IMPORT2C = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\n@media print {}\nh1 { color: blue;}";
+	private static final String CSS_LATE_IMPORT2C = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\n@media print {}\nh1 { color: blue }";
 	
 	private static final String CSS_LATE_IMPORT3 = "@import \"subs.css\";\n@media print {\n@import \"print-main.css\";\nbody { font-size: 10pt;}\n}\nh1 { color: blue }";
-	private static final String CSS_LATE_IMPORT3C = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\n@media print {}\nh1 { color: blue;}";
+	private static final String CSS_LATE_IMPORT3C = "@import url(\"subs.css?type=text/css&maybecharset=UTF-8\");\n@media print {}\nh1 { color: blue }";
 	
 	// Quoted without url() is valid.
 	private static final String CSS_IMPORT_NOURL = "@import \"style.css\";";
@@ -204,7 +204,7 @@ public class CSSParserTest extends TestCase {
 	
 	// CSS2.1 spec, 4.1.7
 	private static final String CSS_DELETE_INVALID_SELECTOR = "h1, h2 {color: green }\nh3, h4 & h5 {color: red }\nh6 {color: black }\n";
-	private static final String CSS_DELETE_INVALID_SELECTORC = "h1, h2 {color: green;}\nh6 {color: black;}\n";
+	private static final String CSS_DELETE_INVALID_SELECTORC = "h1, h2 {color: green }\nh6 {color: black }\n";
 	
 	private static final String LATE_CHARSET = "h3 { color:red;}\n@charset \"UTF-8\";";
 	private static final String LATE_CHARSETC = "h3 { color:red;}\n";
@@ -235,24 +235,24 @@ public class CSSParserTest extends TestCase {
 	private final static LinkedHashMap<String, String> propertyTests = new LinkedHashMap<String, String>();
 	static {
 		// Check that the last part of a double bar works
-		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech { h1 { azimuth: behind;}}");
+		propertyTests.put("@media speech { h1 { azimuth: behind }; }", "@media speech { h1 { azimuth: behind }}");
 		
-		propertyTests.put("h1 { color: red; rotation: 70minutes }", "h1 { color: red;}");
+		propertyTests.put("h1 { color: red; rotation: 70minutes }", "h1 { color: red; }");
 		propertyTests.put("@media screen { h1 { color: red; }\nh1[id=\"\n]}", "@media screen { h1 { color: red; }}");
 		propertyTests.put("@media screen { h1 { color: red; }}", "@media screen { h1 { color: red; }}");
 		propertyTests.put("p { color: green;\nfont-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p { color: green;\ncolor: green;\n}");
 		propertyTests.put("p { font-family: 'Courier New Times\ncolor: red;\ncolor: green;\n}", "p {\ncolor: green;\n}");
 		propertyTests.put("@media screen { h1[id=\"\n]}", "@media screen {}");
-		propertyTests.put("img { float: left }", "img { float: left;}");
-		propertyTests.put("img { float: left here }", "img {}");
-		propertyTests.put("img { background: \"red\" }", "img {}");
-		propertyTests.put("img { border-width: 3 }", "img {}");
+		propertyTests.put("img { float: left }", "img { float: left }");
+		propertyTests.put("img { float: left here }", "img { }");
+		propertyTests.put("img { background: \"red\" }", "img { }");
+		propertyTests.put("img { border-width: 3 }", "img { }");
 		// 4.2 Malformed declarations
-		propertyTests.put("p { color:green }", "p { color:green;}");
-		propertyTests.put("p { color:green; color }", "p { color:green; }");
-		propertyTests.put("p { color:green; color: }", "p { color:green;}");
-		propertyTests.put("p { color:red;   color:; color:green }", "p { color:red; color:green;}");
-		propertyTests.put("p { color:green; color{;color:maroon} }", "p { color:green; }");
+		propertyTests.put("p { color:green }", "p { color:green }");
+		propertyTests.put("p { color:green; color }", "p { color:green;  }");
+		propertyTests.put("p { color:green; color: }", "p { color:green; }");
+		propertyTests.put("p { color:red;   color:; color:green }", "p { color:red; color:green }");
+		propertyTests.put("p { color:green; color{;color:maroon} }", "p { color:green;  }");
 		// 4.2 Malformed statements, with a valid rule added on
 		propertyTests.put("p @here {color: red}\ntd { color:red;}", "\ntd { color:red;}");
 		propertyTests.put("@foo @bar;\ntd { color:red;}", "\ntd { color:red;}");
@@ -268,51 +268,51 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("td { background:repeat-x no transparent;}\n", "td { background:repeat-x no transparent;}\n");
 		propertyTests.put("td { background:repeat-x no transparent scroll;}\n", "td { background:repeat-x no transparent scroll;}\n");
 		
-		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech { h1 { azimuth: 30deg;}}");
-		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech { h1 { azimuth: 0.877171rad;}}");
-		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech { h1 { azimuth: left-side behind;}}");
+		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech { h1 { azimuth: 30deg }}");
+		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech { h1 { azimuth: 0.877171rad }}");
+		propertyTests.put("@media speech { h1 { azimuth: left-side behind }; }", "@media speech { h1 { azimuth: left-side behind }}");
 		// Invalid combination
-		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech { h1 {}}");
-		propertyTests.put("@media speech { h1 { azimuth: inherit }; }", "@media speech { h1 { azimuth: inherit;}}");
+		propertyTests.put("@media speech { h1 { azimuth: left-side behind 30deg }; }", "@media speech { h1 { }}");
+		propertyTests.put("@media speech { h1 { azimuth: inherit }; }", "@media speech { h1 { azimuth: inherit }}");
 		// Wrong media type
-		propertyTests.put("h1 { azimuth: inherit }", "h1 {}");
+		propertyTests.put("h1 { azimuth: inherit }", "h1 { }");
 		
-		propertyTests.put("td { background-attachment: scroll}", "td { background-attachment: scroll;}");
-		propertyTests.put("td { background-color: rgb(255, 255, 255)}", "td { background-color: rgb(255, 255, 255);}");
-		propertyTests.put("td { background-color: #fff}", "td { background-color: #fff;}");
-		propertyTests.put("td { background-color: #ffffff}", "td { background-color: #ffffff;}");
-		propertyTests.put("td { background-color: rgb(100%,0%,50%)}", "td { background-color: rgb(100%,0%,50%);}");
-		propertyTests.put("td { background-color: rgb(100%, 0%, 50%)}", "td { background-color: rgb(100%, 0%, 50%);}");
+		propertyTests.put("td { background-attachment: scroll}", "td { background-attachment: scroll}");
+		propertyTests.put("td { background-color: rgb(255, 255, 255)}", "td { background-color: rgb(255, 255, 255)}");
+		propertyTests.put("td { background-color: #fff}", "td { background-color: #fff}");
+		propertyTests.put("td { background-color: #ffffff}", "td { background-color: #ffffff}");
+		propertyTests.put("td { background-color: rgb(100%,0%,50%)}", "td { background-color: rgb(100%,0%,50%)}");
+		propertyTests.put("td { background-color: rgb(100%, 0%, 50%)}", "td { background-color: rgb(100%, 0%, 50%)}");
 		// Values outside the standard RGB device gamut are allowed by the spec, they will be clipped and may be representible on some devices.
-		propertyTests.put("td { background-color: rgb(300, 0, 0)}", "td { background-color: rgb(300, 0, 0);}");
-		propertyTests.put("td { background-color: rgb(255, -10, 0)}", "td { background-color: rgb(255, -10, 0);}");
-		propertyTests.put("td { background-color: rgb(110%, 0%, 0%)}", "td { background-color: rgb(110%, 0%, 0%);}");
-		propertyTests.put("td { background-color: rgb(5.5%, -100%, 0%)}", "td { background-color: rgb(5.5%, -100%, 0%);}");
+		propertyTests.put("td { background-color: rgb(300, 0, 0)}", "td { background-color: rgb(300, 0, 0)}");
+		propertyTests.put("td { background-color: rgb(255, -10, 0)}", "td { background-color: rgb(255, -10, 0)}");
+		propertyTests.put("td { background-color: rgb(110%, 0%, 0%)}", "td { background-color: rgb(110%, 0%, 0%)}");
+		propertyTests.put("td { background-color: rgb(5.5%, -100%, 0%)}", "td { background-color: rgb(5.5%, -100%, 0%)}");
 		
 		// Invalid element
 		propertyTests.put("silly { background-attachment: scroll}", "");
 		// Percentage in background-position
-		propertyTests.put("h3 { background-position: 30% top}", "h3 { background-position: 30% top;}");
-		propertyTests.put("h3 { background-position: 120% top}", "h3 { background-position: 120% top;}");
-		propertyTests.put("h3 { background-position: 8.5% top}", "h3 { background-position: 8.5% top;}");
-		propertyTests.put("p { line-height: 120% }", "p { line-height: 120%;}");
+		propertyTests.put("h3 { background-position: 30% top}", "h3 { background-position: 30% top}");
+		propertyTests.put("h3 { background-position: 120% top}", "h3 { background-position: 120% top}");
+		propertyTests.put("h3 { background-position: 8.5% top}", "h3 { background-position: 8.5% top}");
+		propertyTests.put("p { line-height: 120% }", "p { line-height: 120% }");
 		// Fractional lengths
-		propertyTests.put("h3 { background-position: 3.3cm 20%}", "h3 { background-position: 3.3cm 20%;}");
+		propertyTests.put("h3 { background-position: 3.3cm 20%}", "h3 { background-position: 3.3cm 20%}");
 		// Negative fractional lengths
-		propertyTests.put("h3 { background-position: -0.87em 20%}", "h3 { background-position: -0.87em 20%;}");
+		propertyTests.put("h3 { background-position: -0.87em 20%}", "h3 { background-position: -0.87em 20%}");
 		
 		// Urls
-		propertyTests.put("li { list-style: url(/KSK@redball.png) disc}", "li { list-style: url(\"/KSK@redball.png\") disc;}");
+		propertyTests.put("li { list-style: url(/KSK@redball.png) disc}", "li { list-style: url(\"/KSK@redball.png\") disc}");
 		
 		// Url with an encoded space
-		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		// Url with a space
-		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		// Url with lower case chk@
-		propertyTests.put("h3 { background-image: url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { background-image: url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		
 		// url without "" in properties
-		propertyTests.put("h3 { background-image: url(/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page) }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { background-image: url(/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page) }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		
 		// Escapes in strings
 		propertyTests.put("h3 { background-image: url(/KSK@\\something.png);}", "h3 { background-image: url(\"/KSK@something.png\");}");
@@ -344,21 +344,21 @@ public class CSSParserTest extends TestCase {
 		
 		
 		// Mixed background
-		propertyTests.put("h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		// CSS is case insensitive except for parts not under CSS control.
-		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
-		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
+		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		// HTML tags are case insensitive, but we downcase them.
-		propertyTests.put("H3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "H3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
-		propertyTests.put("h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
-		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
-		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
-		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll rgb(100%, 2%, 1%) url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("H3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "H3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
+		propertyTests.put("h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
+		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
+		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
+		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll rgb(100%, 2%, 1%) url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		propertyTests.put("h3 { background: 3.3cm 20%;}", "h3 { background: 3.3cm 20%;}");
 		propertyTests.put("h3 { background: scroll 3.3cm 20%;}", "h3 { background: scroll 3.3cm 20%;}");
 		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20%;}", "h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20%;}");
 		propertyTests.put("h3 { background: 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}", "h3 { background: 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
-		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll rgb(100%, 2%, 1%) 3.3cm 20% url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }");
 		// CSS escapes, url escapes, combinations of the two
 		propertyTests.put("h3 { background: url(\"\\/\\/www.google.com/google.png\");}", "h3 {}");
 		propertyTests.put("h3 { background: url(\"\\2f \\2f www.google.com/google.png\");}", "h3 {}");
@@ -367,25 +367,25 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h3 { background: url(\"\\25 2f\\25 2fwww.google.com/google.png\");}", "h3 {}");
 		
 		// Counters
-		propertyTests.put("table { counter-increment: counter1 1}", "table { counter-increment: counter1 1;}");
+		propertyTests.put("table { counter-increment: counter1 1}", "table { counter-increment: counter1 1}");
 		// Counters with whacky identifiers
-		propertyTests.put("table { counter-increment: \u0202ounter1 1}", "table { counter-increment: \u0202ounter1 1;}");
-		propertyTests.put("table { counter-increment: \\202 ounter1 1}", "table { counter-increment: \\202 ounter1 1;}");
-		propertyTests.put("table { counter-increment: c\\ounter1 1}", "table { counter-increment: c\\ounter1 1;}");
-		propertyTests.put("table { counter-increment: c\\ ounter1 1}", "table { counter-increment: c\\ ounter1 1;}");
-		propertyTests.put("table { counter-increment: c\\ \\}ounter1 1}", "table { counter-increment: c\\ \\}ounter1 1;}");
-		propertyTests.put("table { counter-increment: c\\ \\}oun\\:ter1 1}", "table { counter-increment: c\\ \\}oun\\:ter1 1;}");
-		propertyTests.put("table { counter-increment: c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: c\\ \\}oun\\:ter1\\; 1;}");
-		propertyTests.put("table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}");
-		propertyTests.put("table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1;}");
+		propertyTests.put("table { counter-increment: \u0202ounter1 1}", "table { counter-increment: \u0202ounter1 1}");
+		propertyTests.put("table { counter-increment: \\202 ounter1 1}", "table { counter-increment: \\202 ounter1 1}");
+		propertyTests.put("table { counter-increment: c\\ounter1 1}", "table { counter-increment: c\\ounter1 1}");
+		propertyTests.put("table { counter-increment: c\\ ounter1 1}", "table { counter-increment: c\\ ounter1 1}");
+		propertyTests.put("table { counter-increment: c\\ \\}ounter1 1}", "table { counter-increment: c\\ \\}ounter1 1}");
+		propertyTests.put("table { counter-increment: c\\ \\}oun\\:ter1 1}", "table { counter-increment: c\\ \\}oun\\:ter1 1}");
+		propertyTests.put("table { counter-increment: c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: c\\ \\}oun\\:ter1\\; 1}");
+		propertyTests.put("table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: \\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}");
+		propertyTests.put("table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}", "table { counter-increment: \\000032\\2 \\32 \\ c\\ \\}oun\\:ter1\\; 1}");
 		
 		// Varying the number of words matched by each occurrence in a double bar.
 		propertyTests.put("table { counter-reset: mycounter 1 hiscounter myothercounter 2;}", "table { counter-reset: mycounter 1 hiscounter myothercounter 2;}");
 		
 		// Content tests
-		propertyTests.put("h1 { content: \"string with spaces\" }", "h1 { content: \"string with spaces\";}");
-		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: attr(\\ \\ attr\\ with\\ spaces);}");
-		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}");
+		propertyTests.put("h1 { content: \"string with spaces\" }", "h1 { content: \"string with spaces\" }");
+		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: attr(\\ \\ attr\\ with\\ spaces) }");
+		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }");
 		propertyTests.put("h1 { content: \"string with curly brackets { }\";}", "h1 { content: \"string with curly brackets { }\";}");
 		propertyTests.put("h1 { content: \"\\\"\";}", "h1 { content: \"\\\"\";}");
 		// Invalid escapes in a string
@@ -408,8 +408,8 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: counter(\\202 \\ \\test, none);}", "h1 { content: counter(\\000202\\000020test, none);}");
 		
 		// Strip nulls
-		propertyTests.put("h2 { color: red }", "h2 { color: red;}");
-		propertyTests.put("h2 { color: red\0 }", "h2 { color: red;}");
+		propertyTests.put("h2 { color: red }", "h2 { color: red }");
+		propertyTests.put("h2 { color: red\0 }", "h2 { color: red }");
 		
 		// Lengths must have a unit
 		propertyTests.put("h2 { border-width: 1.5em;}\n","h2 { border-width: 1.5em;}\n");
@@ -421,7 +421,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { margin: 0.5em;}", "h1 { margin: 0.5em;}");
 		propertyTests.put("h1 { margin: 1ex;}", "h1 { margin: 1ex;}");
 		propertyTests.put("p { font-size: 12px;}", "p { font-size: 12px;}");
-		propertyTests.put("h3 { word-spacing: 4mm }", "h3 { word-spacing: 4mm;}");
+		propertyTests.put("h3 { word-spacing: 4mm }", "h3 { word-spacing: 4mm }");
 		
 		// Fonts
 		propertyTests.put("h2 { font-family: times new roman;}\n", "h2 { font-family: times new roman;}\n");
@@ -456,26 +456,26 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h2 { font: 10pt times new roman;}\n", "h2 { font: 10pt times new roman;}\n");
 		
 		// Space is not required either after or before comma!
-		propertyTests.put("h2 { font-family: Verdana,sans-serif }", "h2 { font-family: Verdana,sans-serif;}");
+		propertyTests.put("h2 { font-family: Verdana,sans-serif }", "h2 { font-family: Verdana,sans-serif }");
 		// Case in generic keywords
-		propertyTests.put("h2 { font-family: Verdana,Sans-Serif }", "h2 { font-family: Verdana,Sans-Serif;}");
+		propertyTests.put("h2 { font-family: Verdana,Sans-Serif }", "h2 { font-family: Verdana,Sans-Serif }");
 		// This one is from the text Activelink Index
-		propertyTests.put("h2 { font: normal 12px/15px Verdana,sans-serif }", "h2 { font: normal 12px/15px Verdana,sans-serif;}");
+		propertyTests.put("h2 { font: normal 12px/15px Verdana,sans-serif }", "h2 { font: normal 12px/15px Verdana,sans-serif }");
 		// From Activelink Index. This is invalid but browsers will probably change sans to sans-serif; and we will allow it as it might be a generic font family.
-		propertyTests.put("h2 { font:normal 12px/15px Verdana,sans}", "h2 { font:normal 12px/15px Verdana,sans;}");
+		propertyTests.put("h2 { font:normal 12px/15px Verdana,sans}", "h2 { font:normal 12px/15px Verdana,sans}");
 		// Some fonts that are not on the list but are syntactically valid
 		propertyTests.put("h2 { font-family: Times New Reman;}\n", "h2 { font-family: Times New Reman;}\n");
 		propertyTests.put("h2 { font-family: \"Times New Reman\";}\n", "h2 { font-family: \"Times New Reman\";}\n");
 		propertyTests.put("h2 { font: Times New Reman;}\n", "h2 { font: Times New Reman;}\n");
-		propertyTests.put("h2 { font-family: zaphod beeblebrox,bitstream vera sans,arial,sans-serif}", "h2 { font-family: zaphod beeblebrox,bitstream vera sans,arial,sans-serif;}");
+		propertyTests.put("h2 { font-family: zaphod beeblebrox,bitstream vera sans,arial,sans-serif}", "h2 { font-family: zaphod beeblebrox,bitstream vera sans,arial,sans-serif}");
 		// NOT syntactically valid
 		propertyTests.put("h2 { font-family: http://www.badguy.com/myfont.ttf}", "h2 {}");
-		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", "h2 { font-family: times new roman,arial,verdana;}");
+		propertyTests.put("h2 { font-family: times new roman,arial,verdana }", "h2 { font-family: times new roman,arial,verdana }");
 		// Misc
-		propertyTests.put("h2 {\n  font-weight: bold;\n  font-size: 12px;\n  line-height: 14px;\n  font-family: Helvetica;\n  font-variant: normal;\n  font-style: normal\n}", "h2 {\n  font-weight: bold;\n  font-size: 12px;\n  line-height: 14px;\n  font-family: Helvetica;\n  font-variant: normal;\n  font-style: normal;}");
-		propertyTests.put("h1 { color: red; font-style: 12pt }", "h1 { color: red;}");
-		propertyTests.put("p { color: blue; font-vendor: any;\n    font-variant: small-caps }", "p { color: blue;\n    font-variant: small-caps;}");
-		propertyTests.put("em em { font-style: normal }", "em em { font-style: normal;}");
+		propertyTests.put("h2 {\n  font-weight: bold;\n  font-size: 12px;\n  line-height: 14px;\n  font-family: Helvetica;\n  font-variant: normal;\n  font-style: normal\n}", "h2 {\n  font-weight: bold;\n  font-size: 12px;\n  line-height: 14px;\n  font-family: Helvetica;\n  font-variant: normal;\n  font-style: normal\n}");
+		propertyTests.put("h1 { color: red; font-style: 12pt }", "h1 { color: red; }");
+		propertyTests.put("p { color: blue; font-vendor: any;\n    font-variant: small-caps }", "p { color: blue;\n    font-variant: small-caps }");
+		propertyTests.put("em em { font-style: normal }", "em em { font-style: normal }");
 		
 		// voice-family
 		// FIXME implement properly, reuse the font code.
@@ -489,9 +489,9 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("p { clip: rect(auto, auto, 45px, 5px); }", "p { clip: rect(auto, auto, 45px, 5px); }");
 		
 		// play-during
-		propertyTests.put("@media speech { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media speech { blockquote.sad { play-during: url(\"violins.aiff\");}}");
-		propertyTests.put("@media speech { blockquote Q   { play-during: url(\"harp.wav\") mix }}", "@media speech { blockquote Q { play-during: url(\"harp.wav\") mix;}}");
-		propertyTests.put("@media speech { span.quiet     { play-during: none } }", "@media speech { span.quiet { play-during: none;}}");
+		propertyTests.put("@media speech { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media speech { blockquote.sad { play-during: url(\"violins.aiff\") }}");
+		propertyTests.put("@media speech { blockquote Q   { play-during: url(\"harp.wav\") mix }}", "@media speech { blockquote Q { play-during: url(\"harp.wav\") mix }}");
+		propertyTests.put("@media speech { span.quiet     { play-during: none } }", "@media speech { span.quiet { play-during: none }}");
 		
 		// Grandchildren
 		propertyTests.put("div { color: red;}", "div { color: red;}");
@@ -506,8 +506,8 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("* { background: \"red\";}", "* {}");
 		
 		// Block parsing error handling
-		propertyTests.put("* { causta: \"}\" + ({7} * '\\'') } h2 { color: red;}", "* {} h2 { color: red;}");
-		propertyTests.put("* { causta: \"}\" + ({inner-property: blahblahblah;} * '\\'') } h2 { color: red;}", "* {} h2 { color: red;}");
+		propertyTests.put("* { causta: \"}\" + ({7} * '\\'') } h2 { color: red;}", "* { } h2 { color: red;}");
+		propertyTests.put("* { causta: \"}\" + ({inner-property: blahblahblah;} * '\\'') } h2 { color: red;}", "* { } h2 { color: red;}");
 		
 		// Auto-close of style sheet. NOT IMPLEMENTED! The first test tests that we handle unclosed sheet sanely, the second is commented out but would test closing it and parsing it.
 		propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {\n  p:before {}} ");

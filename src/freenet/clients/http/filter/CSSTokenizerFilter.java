@@ -1923,6 +1923,15 @@ class CSSTokenizerFilter {
 						break;
 					}
 					if(openBraces < 0) openBraces = 0;
+					for(i=buffer.length()-1;i>=0;i--) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					i++;
+					String postSpace = buffer.substring(i);
+					buffer.setLength(i);
 					// This (string!=) is okay as we set it directly by propertyName="" to indicate there is no property name.
 					if(propertyName!="")
 					{
@@ -1938,9 +1947,6 @@ class CSSTokenizerFilter {
 						whitespaceAfterColon = buffer.substring(0, i);
 						buffer.delete(0, i);
 						
-						// Don't bother with whitespace at end, if we are here
-						// we are going to have to add a ; anyway, so we have already changed the string.
-						
 						propertyValue=buffer.toString().trim();
 						if(logDEBUG) log("Property value: "+propertyValue);
 						buffer.setLength(0);
@@ -1952,7 +1958,7 @@ class CSSTokenizerFilter {
 							if(changedAnything(words)) propertyValue = reconstruct(words);
 							filteredTokens.append(whitespaceBeforeProperty);
 							whitespaceBeforeProperty = "";
-							filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue+";");
+							filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue);
 							if(logDEBUG) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
 						}
 						propertyName="";
@@ -1972,6 +1978,7 @@ class CSSTokenizerFilter {
 					}
 					ignoreElementsS3 = false;
 					if((!ignoreElementsS2) || closeIgnoredS2) {
+						filteredTokens.append(postSpace);
 						filteredTokens.append("}");
 						closeIgnoredS2 = false;
 						ignoreElementsS2 = false;
