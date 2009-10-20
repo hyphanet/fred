@@ -66,12 +66,18 @@ public class FilterUtils {
 		System.out.println("isPercentage is called with:"+value);
 		if (value.length()>=2 && value.charAt(value.length()-1)=='%') //Valid percentage X%
 		{
+			// Percentages are <number>%
+			// That means they can be positive, negative, zero, >100%, and they can contain decimal points.
 			try
 			{
-				int intvalue=Integer.parseInt(value.substring(0,value.length()-1));
-				System.out.println("Trying to parse"+value.substring(0,value.length()-1));
-				if(intvalue>0)
-					return true;
+				Integer.parseInt(value.substring(0,value.length()-1));
+				return true;
+			}
+			catch(Exception e) { }
+			try
+			{
+				Double.parseDouble(value.substring(0,value.length()-1));
+				return true;
 			}
 			catch(Exception e) { }
 		}

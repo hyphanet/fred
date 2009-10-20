@@ -258,7 +258,11 @@ public class CSSParserTest extends TestCase {
 		
 		// Invalid element
 		propertyTests.put("silly { background-attachment: scroll}", "");
+		// Percentage in background-position
 		propertyTests.put("h3 { background-position: 30% top}", "h3 { background-position: 30% top;}");
+		propertyTests.put("h3 { background-position: 120% top}", "h3 { background-position: 120% top;}");
+		propertyTests.put("h3 { background-position: 8.5% top}", "h3 { background-position: 8.5% top;}");
+		propertyTests.put("p { line-height: 120% }", "p { line-height: 120%;}");
 		// Fractional lengths
 		propertyTests.put("h3 { background-position: 3.3cm 20%}", "h3 { background-position: 3.3cm 20%;}");
 		// Negative fractional lengths
@@ -349,9 +353,14 @@ public class CSSParserTest extends TestCase {
 		// Lengths must have a unit
 		propertyTests.put("h2 { border-width: 1.5em;}\n","h2 { border-width: 1.5em;}\n");
 		propertyTests.put("h2 { border-width: 12px;}\n","h2 { border-width: 12px;}\n");
+		propertyTests.put("h2 { border-width: -12px;}\n","h2 { border-width: -12px;}\n");
 		propertyTests.put("h2 { border-width: 1.5;}\n","h2 {}\n");
 		propertyTests.put("h2 { border-width: 0;}\n","h2 { border-width: 0;}\n");
 		propertyTests.put("h2 { border-width: 10;}\n","h2 {}\n");
+		propertyTests.put("h1 { margin: 0.5em;}", "h1 { margin: 0.5em;}");
+		propertyTests.put("h1 { margin: 1ex;}", "h1 { margin: 1ex;}");
+		propertyTests.put("p { font-size: 12px;}", "p { font-size: 12px;}");
+		propertyTests.put("h3 { word-spacing: 4mm }", "h3 { word-spacing: 4mm;}");
 		
 		// Fonts
 		propertyTests.put("h2 { font-family: times new roman;}\n", "h2 { font-family: times new roman;}\n");
