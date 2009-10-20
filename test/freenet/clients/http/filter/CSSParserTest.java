@@ -437,6 +437,12 @@ public class CSSParserTest extends TestCase {
 		// Auto-close of style sheet. NOT IMPLEMENTED! The first test tests that we handle unclosed sheet sanely, the second is commented out but would test closing it and parsing it.
 		propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {/* (Deleted unfinished elements)\n  p:before { */ ");
 		//propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {\n  p:before { content: 'Hello'; }}");
+		
+		// Integers
+		propertyTests.put("p { line-height: 0;}", "p { line-height: 0;}");
+		propertyTests.put("p { line-height: -0;}", "p { line-height: -0;}");
+		propertyTests.put("p { line-height: +0;}", "p { line-height: +0;}");
+		propertyTests.put("p { line-height: +0.1;}", "p { line-height: +0.1;}");
 	}
 	
 	MIMEType cssMIMEType;
