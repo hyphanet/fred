@@ -81,6 +81,13 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("span[class=example] { color: blue; }", "span[class=example] { color: blue; }");
 		CSS2_SELECTOR.put("span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }", "span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }");
 		CSS2_SELECTOR.put("div > p:first-child { text-indent: 0 }", "div>p:first-child { text-indent: 0;}");
+		CSS2_SELECTOR.put("div > p:FIRST-CHILD { text-indent: 0 }", "div>p:FIRST-CHILD { text-indent: 0;}");
+		CSS2_SELECTOR.put("p:first-child em { font-weight : bold }", "p:first-child em { font-weight: bold;}");
+		CSS2_SELECTOR.put("* > a:first-child {}", "*>a:first-child {}");
+		CSS2_SELECTOR.put(":link { color: red }", ":link { color: red;}");
+		// REDFLAG: link vs visited is safe for Freenet as there is no scripting.
+		// If there was scripting it would not be safe, although datastore probing is probably the greater threat.
+		CSS2_SELECTOR.put("a.external:visited { color: blue }", "a.external:visited { color: blue;}");
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");
