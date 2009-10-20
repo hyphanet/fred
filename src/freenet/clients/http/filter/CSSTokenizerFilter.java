@@ -1446,6 +1446,15 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("buffer in state 1 ; : \""+buffer.toString()+"\"");
 					//should be @import
 
+					for(i=0;i<buffer.length();i++) {
+						char c1 = buffer.charAt(i);
+						if(c1 == ' ' || c1 == '\f' || c1 == '\t' || c1 == '\r' || c1 == '\n')
+							continue;
+						break;
+					}
+					w.write(buffer.substring(0, i));
+					buffer.delete(0, i);
+					
 					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
 						w.write(buffer.substring(0, 4));
 						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {

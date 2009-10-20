@@ -115,8 +115,8 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_LCASE_BACKGROUND_URLC = "* { background: url(\"/SSK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text-76/activelink.png\"); }\n";
 	
 	// not adding ?type=text/css is exploitable, so check for it.
-	private static final String CSS_IMPORT = "@import url(\"/KSK@test\");";
-	private static final String CSS_IMPORTC = "@import url(\"/KSK@test?type=text/css&maybecharset=UTF-8\");";
+	private static final String CSS_IMPORT = "  @import url(\"/KSK@test\");\n@import url(\"/KSK@test2\");";
+	private static final String CSS_IMPORTC = "  @import url(\"/KSK@test?type=text/css&maybecharset=UTF-8\");\n@import url(\"/KSK@test2?type=text/css&maybecharset=UTF-8\");";
 
 	private static final String CSS_IMPORT_TYPE = "@import url(\"/KSK@test?type=text/plain\");";
 	private static final String CSS_IMPORT_TYPEC = "@import url(\"/KSK@test?type=text/css&maybecharset=UTF-8\");";
