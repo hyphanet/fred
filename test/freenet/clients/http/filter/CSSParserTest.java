@@ -279,6 +279,7 @@ public class CSSParserTest extends TestCase {
 		
 		// Partially bogus media
 		propertyTests.put("@media screen, 3D {\n  P { color: green; }\n}", "@media screen {\n  P { color: green; }}");
+		propertyTests.put("@media screen, tv {\n  P { color: green; }\n}", "@media screen, tv {\n  P { color: green; }}");
 		
 		propertyTests.put("td { background-attachment: scroll}", "td { background-attachment: scroll}");
 		propertyTests.put("td { background-color: rgb(255, 255, 255)}", "td { background-color: rgb(255, 255, 255)}");
@@ -531,6 +532,46 @@ public class CSSParserTest extends TestCase {
 		// !important
 		propertyTests.put("body {\n  color: black !important;\n  background: white !important;\n}", "body {\n  color: black !important;\n  background: white !important;\n}");
 		propertyTests.put("p { text-indent: 1em ! important }", "p { text-indent: 1em ! important }");
+		
+		// Box model
+		propertyTests.put("LI { color: white; background: blue; margin: 12px 12px 12px 12px; padding: 12px 0px 12px 12px; list-style: none }", "LI { color: white; background: blue; margin: 12px 12px 12px 12px; padding: 12px 0px 12px 12px; list-style: none }");
+		propertyTests.put("LI.withborder { border-style: dashed; border-width: medium; border-color: lime; }", "LI.withborder { border-style: dashed; border-width: medium; border-color: lime; }");
+		propertyTests.put("li { margin-top: inherit; margin-bottom: auto; margin-right: 12px; margin-left: 33%; }", "li { margin-top: inherit; margin-bottom: auto; margin-right: 12px; margin-left: 33%; }");
+		propertyTests.put("h3 { padding: 32in 3.3%; }", "h3 { padding: 32in 3.3%; }");
+		propertyTests.put("h3 { padding: inherit }", "h3 { padding: inherit }");
+		propertyTests.put("h1 { border-width: thin medium thick 23pc }", "h1 { border-width: thin medium thick 23pc }");
+		propertyTests.put("div { border-color: red transparent green #f0f }", "div { border-color: red transparent green #f0f }");
+		propertyTests.put("#xy34 { border-style: none dotted solid inset }", "#xy34 { border-style: none dotted solid inset }");
+		propertyTests.put("#xy34 { border-style: solid dotted }", "#xy34 { border-style: solid dotted }");
+		propertyTests.put("h1 { border-bottom: thick solid red }", "h1 { border-bottom: thick solid red }");
+		propertyTests.put("h1[foo] { border: solid red; }", "h1[foo] { border: solid red; }");
+		
+		// Visual formatting
+		propertyTests.put("body { display: inline }\np { display: block }", "body { display: inline }\np { display: block }");
+		propertyTests.put("body.abc { display: run-in }", "body.abc { display: run-in }");
+		propertyTests.put("body.abc { display: none }", "body.abc { display: none }");
+		propertyTests.put("body.abc { display: inherit }", "body.abc { display: inherit }");
+		propertyTests.put("@media screen { h1#first { position: fixed } }\n@media print { h1#first { position: static } }", "@media screen { h1#first { position: fixed }}\n@media print { h1#first { position: static }}");
+		propertyTests.put("body { top: auto; left: inherit; right: 23em; bottom: 3.2% }", "body { top: auto; left: inherit; right: 23em; bottom: 3.2% }");
+		propertyTests.put("EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }", "EM { padding: 2px; margin: 1em; border-width: medium; border-style: dashed; line-height: 2.4em; }");
+		propertyTests.put("p { width: 10em; border: solid aqua; }\nspan { float: left; width: 5em; height: 5em; border: solid blue; }", "p { width: 10em; border: solid aqua; }\nspan { float: left; width: 5em; height: 5em; border: solid blue; }");
+		propertyTests.put("img.icon { float: left; margin-left: 0; }", "img.icon { float: left; margin-left: 0; }");
+		propertyTests.put("i { float: inherit } b { float: none }", "i { float: inherit } b { float: none }");
+		propertyTests.put("img { clear: right }", "img { clear: right }");
+		propertyTests.put("body { display: block; font-size:12px; line-height: 200%; width: 400px; height: 400px }", "body { display: block; font-size:12px; line-height: 200%; width: 400px; height: 400px }");
+		propertyTests.put("#inner { float: right; width: 130px; color: blue }", "#inner { float: right; width: 130px; color: blue }");
+		propertyTests.put(".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }", ".abc { z-index: auto; } h1 p { z-index: 3; } h2 p { z-index: inherit }");
+		propertyTests.put("blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }", "blockquote { direction: rtl; unicode-bidi: BIDI-OVERRIDE }");
+		
+		// Visual details
+		propertyTests.put("p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }", "p { width: 100px } h1,h2,h3 { width: 150% } body { width: auto }");
+		propertyTests.put("body { min-width: 80%; max-width: 32px; } table { max-width: none }", "body { min-width: 80%; max-width: 32px; } table { max-width: none }");
+		propertyTests.put("p { height: 100px; min-height: inherit; max-height: 33% }", "p { height: 100px; min-height: inherit; max-height: 33% }");
+		propertyTests.put("div { line-height: 1.2; font-size: 10pt }", "div { line-height: 1.2; font-size: 10pt }");
+		propertyTests.put("div { line-height: 1.2em; font-size: 10pt }", "div { line-height: 1.2em; font-size: 10pt }");
+		propertyTests.put("div { line-height: 120%; font-size: 10pt }", "div { line-height: 120%; font-size: 10pt }");
+		propertyTests.put("th { vertical-align: 67%; } td { vertical-align: 33px } li { vertical-align: sub }", "th { vertical-align: 67%; } td { vertical-align: 33px } li { vertical-align: sub }");
+		
 	}
 	
 	MIMEType cssMIMEType;
