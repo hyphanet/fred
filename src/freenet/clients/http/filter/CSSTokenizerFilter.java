@@ -904,6 +904,7 @@ class CSSTokenizerFilter {
 		}
 		else if("voice-family".equalsIgnoreCase(element))
 		{      
+			// FIXME implement properly, reuse the font code.
 			//generic-voice & //specific-voice
 			auxilaryVerifiers[52]=new CSSPropertyVerifier(new String[]{"male","female","child"},new String[]{"st"},null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"inherit"},null,ElementInfo.AURALMEDIA,new String[]{"52<0,"+ElementInfo.UPPERLIMIT+"> 52"}));

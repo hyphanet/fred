@@ -70,6 +70,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("[lang=fr] {}", "[lang=fr] {}");
 		CSS2_SELECTOR.put(".warning {}", ".warning {}");
 		CSS2_SELECTOR.put("#myid {}", "#myid {}");
+		CSS2_SELECTOR.put("h1#chapter1 {}", "h1#chapter1 {}");
 		CSS2_SELECTOR.put("h1 em { color: blue;}", "h1 em { color: blue;}");
 		CSS2_SELECTOR.put("div * p { color: blue;}", "div * p { color: blue;}");
 		CSS2_SELECTOR.put("div p *[href] { color: blue;}", "div p *[href] { color: blue;}");
@@ -79,6 +80,7 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("h1.opener + h2 { margin-top: -5mm }", "h1.opener+h2 { margin-top: -5mm;}");
 		CSS2_SELECTOR.put("span[class=example] { color: blue; }", "span[class=example] { color: blue; }");
 		CSS2_SELECTOR.put("span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }", "span[hello=\"Cleveland\"][goodbye=\"Columbus\"] { color: blue; }");
+		CSS2_SELECTOR.put("div > p:first-child { text-indent: 0 }", "div>p:first-child { text-indent: 0;}");
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");
@@ -95,6 +97,8 @@ public class CSSParserTest extends TestCase {
 		// Whitespace before > or +, and selector chaining.
 		CSS2_SELECTOR.put("h1[foo] h2 > p + b { color: green;}", "h1[foo] h2>p+b { color: green;}");
 		CSS2_SELECTOR.put("h1[foo] h2 > p + b:before { color: green;}", "h1[foo] h2>p+b:before { color: green;}");
+		
+		// REDFLAG: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
 	}
 	
 	private final static HashSet<String> CSS2_BAD_SELECTOR= new HashSet<String>();
@@ -461,6 +465,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { color: red; font-style: 12pt }", "h1 { color: red;}");
 		propertyTests.put("p { color: blue; font-vendor: any;\n    font-variant: small-caps }", "p { color: blue;\n    font-variant: small-caps;}");
 		propertyTests.put("em em { font-style: normal }", "em em { font-style: normal;}");
+		
+		// voice-family
+		// FIXME implement properly, reuse the font code.
+//		CSS2_SELECTOR.put("p[character=romeo]\n     { voice-family: \"Laurence Olivier\", charles, male }", "p[character=romeo]\n     { voice-family: \"Laurence Olivier\", charles, male }");
+
 		
 		// Short percentage value
 		propertyTests.put("body { bottom: 1%;}", "body { bottom: 1%;}");
