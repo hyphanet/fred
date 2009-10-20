@@ -31,8 +31,8 @@ class CSSParser extends CSSTokenizerFilter {
 		boolean paranoidStringCheck,
 		FilterCallback cb,
 		String charset,
-		boolean stopAtDetectedCharset) {
-		super(r, w, cb, charset, stopAtDetectedCharset);
+		boolean stopAtDetectedCharset, boolean isInline) {
+		super(r, w, cb, charset, stopAtDetectedCharset, isInline);
 		this.cb = cb;
 	}
 

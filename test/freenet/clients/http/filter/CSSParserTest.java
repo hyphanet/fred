@@ -293,8 +293,8 @@ public class CSSParserTest extends TestCase {
 		
 		// Invalid because sabotages tokenisation with the standard grammar (CSS2.1 4.3.4)
 		propertyTests.put("h3 { background-image: url(/KSK@));}", "h3 {}");
-		propertyTests.put("h3 { background-image: url(/KSK@');}", "/* (Deleted unfinished elements)h3 { */ ");
-		propertyTests.put("h3 { background-image: url(/KSK@\");}", "/* (Deleted unfinished elements)h3 { */ ");
+		propertyTests.put("h3 { background-image: url(/KSK@');}", "h3 {} ");
+		propertyTests.put("h3 { background-image: url(/KSK@\");}", "h3 {} ");
 		propertyTests.put("h3 { background-image: url(/KSK@ test ));}", "h3 {}");
 		// This *is* valid.
 		propertyTests.put("h3 { background-image: url(/KSK@ );}", "h3 { background-image: url(\"/KSK@\");}");
@@ -473,7 +473,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("* { causta: \"}\" + ({inner-property: blahblahblah;} * '\\'') } h2 { color: red;}", "* {} h2 { color: red;}");
 		
 		// Auto-close of style sheet. NOT IMPLEMENTED! The first test tests that we handle unclosed sheet sanely, the second is commented out but would test closing it and parsing it.
-		propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {/* (Deleted unfinished elements)\n  p:before { */ ");
+		propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {\n  p:before {}} ");
 		//propertyTests.put("@media screen {\n  p:before { content: 'Hello", "@media screen {\n  p:before { content: 'Hello'; }}");
 		
 		// Integers
@@ -576,7 +576,7 @@ public class CSSParserTest extends TestCase {
 	private String filter(String css) throws IOException, URISyntaxException {
 		StringWriter w = new StringWriter();
 		GenericReadFilterCallback cb = new GenericReadFilterCallback(new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null);
-		CSSParser p = new CSSParser(new StringReader(css), w, false, cb, "UTF-8", false);
+		CSSParser p = new CSSParser(new StringReader(css), w, false, cb, "UTF-8", false, false);
 		p.parse();
 		return w.toString();
 	}

@@ -38,6 +38,7 @@ class CSSTokenizerFilter {
 	private final String passedCharset;
 	private String detectedCharset;
 	private final boolean stopAtDetectedCharset;
+	private final boolean isInline;
 	
 	static {
 		Logger.registerClass(CSSTokenizerFilter.class);
@@ -46,6 +47,7 @@ class CSSTokenizerFilter {
 	CSSTokenizerFilter(){
 		passedCharset = "UTF-8";
 		stopAtDetectedCharset = false;
+		isInline = false;
 	}
 	
 //	private static PrintStream log;
@@ -56,12 +58,13 @@ class CSSTokenizerFilter {
 		//System.out.println("CSSTokenizerFilter: "+s);
 		//log.println(s);
 	}
-	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb, String charset, boolean stopAtDetectedCharset) {
+	CSSTokenizerFilter(Reader r, Writer w, FilterCallback cb, String charset, boolean stopAtDetectedCharset, boolean isInline) {
 		this.r=r;
 		this.w = w;
 		this.cb=cb;
 		passedCharset = charset;
 		this.stopAtDetectedCharset = stopAtDetectedCharset;
+		this.isInline = isInline;
 //		try {
 //			log = new PrintStream(new FileOutputStream("log"));
 //		} catch (FileNotFoundException e) {
@@ -1279,6 +1282,10 @@ class CSSTokenizerFilter {
 		boolean bomPossible = true;
 		int openBracesStartingS3 = 0;
 		
+		if(isInline) {
+			currentState = STATE3;
+		}
+		
 		while(true)
 		{
 			try
@@ -1292,9 +1299,6 @@ class CSSTokenizerFilter {
 
 			if(x==-1)
 			{
-				if(filteredTokens.toString().trim().length()!=0)
-					w.write("/* (Deleted unfinished elements)"+filteredTokens.toString()+" */");
-				w.flush();
 				break;
 			}
 			if(x == (char) 0xFEFF) {
@@ -1394,8 +1398,7 @@ class CSSTokenizerFilter {
 					{
 						ignoreElementsS1=true;
 						if(logDEBUG) log("STATE1 CASE {: Does not have two parts. ignoring "+buffer.toString());
-						buffer.setLength(0);
-						break;
+						valid = false;
 					}
 					else if(parts[0] instanceof SimpleParsedWord && "@media".equals(((SimpleParsedWord)parts[0]).original.toLowerCase()))
 					{
@@ -1745,7 +1748,12 @@ class CSSTokenizerFilter {
 					if(openBraces > 0 && !ignoreElementsS1) {
 						openBraces--;
 						// ignoreElementsS2 is irrelevant here, we are not *adding to* filteredTokens.
-						w.write(filteredTokens.toString()+"}");
+						if(openBraces >= 0)
+							filteredTokens.append('}');
+						else
+							openBraces = 0;
+						if(logDEBUG) log("Writing \""+filteredTokens+"\"");
+						w.write(filteredTokens.toString());
 					} else {
 						if(openBraces > 0) openBraces--;
 						// Ignore.
@@ -1757,6 +1765,7 @@ class CSSTokenizerFilter {
 					currentMedia=new String[] {defaultMedia};
 					isState1Present=false;
 					currentState=STATE1;
+					if(isInline) return;
 					if(logDEBUG) log("STATE2 CASE }: "+c);
 					break;
 
@@ -1903,8 +1912,10 @@ class CSSTokenizerFilter {
 						// Correctly tokenise bogus properties containing {}'s, see CSS2.1 section 4.1.6.
 						buffer.append(c);
 						if(logDEBUG) log("openBraces now "+openBraces+" not moving on because openBracesStartingS3="+openBracesStartingS3+" in S3");
+						if(openBraces < 0) openBraces = 0;
 						break;
 					}
+					if(openBraces < 0) openBraces = 0;
 					// This (string!=) is okay as we set it directly by propertyName="" to indicate there is no property name.
 					if(propertyName!="")
 					{
@@ -1966,6 +1977,7 @@ class CSSTokenizerFilter {
 					filteredTokens.setLength(0);
 					whitespaceAfterColon = "";
 					currentState=STATE2;
+					if(isInline) return;
 					buffer.setLength(0);
 					s2Comma=false;
 					if(logDEBUG) log("STATE3 CASE }: "+c);
@@ -2058,6 +2070,11 @@ class CSSTokenizerFilter {
 
 		}
 		
+		if(logDEBUG) log("Filtered tokens: \""+filteredTokens+"\"");
+		w.write(filteredTokens.toString());
+		for(int i=0;i<openBraces;i++)
+			w.write('}');
+
 		if(logDEBUG) log("Remaining buffer: \""+buffer+"\"");
 		
 		int i = 0;

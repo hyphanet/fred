@@ -1526,7 +1526,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		void processStyle(HTMLParseContext pc) {
 			try {
 				pc.currentStyleScriptChunk =
-					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb, pc);
+					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb, pc, false);
 			} catch (DataFilterException e) {
 				Logger.error(this, "Error parsing style: "+e, e);
 				pc.currentStyleScriptChunk = "";
@@ -1606,7 +1606,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			String style = getHashString(h, "style");
 			if (style != null) {
-				style = sanitizeStyle(style, pc.cb, pc);
+				style = sanitizeStyle(style, pc.cb, pc, true);
 				if (style != null)
 					style = escapeQuotes(style);
 				if (style != null)
@@ -2104,14 +2104,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	}
 	
-	static String sanitizeStyle(String style, FilterCallback cb, HTMLParseContext hpc) throws DataFilterException {
+	static String sanitizeStyle(String style, FilterCallback cb, HTMLParseContext hpc, boolean isInline) throws DataFilterException {
 		if(style == null) return null;
 		if(hpc.noOutput) return null;
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
 		style = style.trim();
 		if(logMINOR) Logger.minor(HTMLFilter.class, "Sanitizing style: " + style);
-		CSSParser pc = new CSSParser(r, w, false, cb, hpc.charset, false);
+		CSSParser pc = new CSSParser(r, w, false, cb, hpc.charset, false, isInline);
 		try {
 			pc.parse();
 		} catch (IOException e) {
