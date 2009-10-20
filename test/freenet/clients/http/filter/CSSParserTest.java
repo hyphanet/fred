@@ -137,7 +137,7 @@ public class CSSParserTest extends TestCase {
 	private static final String CSS_IMPORT_SPACE_IN_STRINGC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page?type=text/css&maybecharset=UTF-8\") screen;";
 	
 	private static final String CSS_IMPORT_QUOTED_STUFF = "@import url(\"/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page \\) \\\\ \\\' \\\" \") screen;";
-	private static final String CSS_IMPORT_QUOTED_STUFFC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page%20%29%20%5c%20%27%20%22?type=text/css&maybecharset=UTF-8\") screen;";
+	private static final String CSS_IMPORT_QUOTED_STUFFC = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page%20%29%20%5c%20%27%20%22%20?type=text/css&maybecharset=UTF-8\") screen;";
 	
 	private static final String CSS_IMPORT_QUOTED_STUFF2 = "@import url(/chk@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page \\) \\\\ \\\' \\\" ) screen;";
 	private static final String CSS_IMPORT_QUOTED_STUFF2C = "@import url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page%20%29%20%5c%20%27%20%22?type=text/css&maybecharset=UTF-8\") screen;";
@@ -294,7 +294,21 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h3 { background-image: url(/KSK@));}", "h3 {}");
 		propertyTests.put("h3 { background-image: url(/KSK@');}", "/* (Deleted unfinished elements)h3 { */ ");
 		propertyTests.put("h3 { background-image: url(/KSK@\");}", "/* (Deleted unfinished elements)h3 { */ ");
-		propertyTests.put("h3 { background-image: url(/KSK@ ));}", "h3 {}");
+		propertyTests.put("h3 { background-image: url(/KSK@ test ));}", "h3 {}");
+		// This *is* valid.
+		propertyTests.put("h3 { background-image: url(/KSK@ );}", "h3 { background-image: url(\"/KSK@\");}");
+		
+		// Quoting the wierd bits
+		propertyTests.put("h3 { background-image: url(/KSK@\\));}", "h3 { background-image: url(\"/KSK@%29\");}");
+		propertyTests.put("h3 { background-image: url(/KSK@\\');}", "h3 { background-image: url(\"/KSK@%27\");}"); 
+		propertyTests.put("h3 { background-image: url(/KSK@\\\");}", "h3 { background-image: url(\"/KSK@%22\");}");
+		propertyTests.put("h3 { background-image: url(/KSK@\\ );}", "h3 { background-image: url(\"/KSK@%20\");}");
+		// Valid in quoted URLs
+		propertyTests.put("h3 { background-image: url(\"/KSK@)\");}", "h3 { background-image: url(\"/KSK@%29\");}");
+		propertyTests.put("h3 { background-image: url(\"/KSK@'\");}", "h3 { background-image: url(\"/KSK@%27\");}"); 
+		propertyTests.put("h3 { background-image: url(\"/KSK@\\\"\");}", "h3 { background-image: url(\"/KSK@%22\");}");
+		propertyTests.put("h3 { background-image: url(\"/KSK@ \");}", "h3 { background-image: url(\"/KSK@%20\");}");
+		
 		
 		// Mixed background
 		propertyTests.put("h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");

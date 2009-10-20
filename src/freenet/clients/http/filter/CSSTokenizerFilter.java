@@ -2634,6 +2634,7 @@ class CSSTokenizerFilter {
 				for(i=strippedOrig.length()-1;i>=0;i--) {
 					char c = strippedOrig.charAt(i);
 					if(!(c == ' ' || c == '\t')) break;
+					if(i > 0 && strippedOrig.charAt(i-1) == '\\') break;
 				}
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
@@ -2678,6 +2679,7 @@ class CSSTokenizerFilter {
 				for(i=strippedOrig.length()-1;i>=0;i--) {
 					char c = strippedOrig.charAt(i);
 					if(!(c == ' ' || c == '\t')) break;
+					if(i > 0 && strippedOrig.charAt(i-1) == '\\') break;
 				}
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
@@ -2707,6 +2709,7 @@ class CSSTokenizerFilter {
 				for(i=strippedOrig.length()-1;i>=0;i--) {
 					char c = strippedOrig.charAt(i);
 					if(!(c == ' ' || c == '\t')) break;
+					if(i > 0 && strippedOrig.charAt(i-1) == '\\') break;
 				}
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
