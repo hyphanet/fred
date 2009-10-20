@@ -520,6 +520,10 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("p { line-height: -0;}", "p { line-height: -0;}");
 		propertyTests.put("p { line-height: +0;}", "p { line-height: +0;}");
 		propertyTests.put("p { line-height: +0.1;}", "p { line-height: +0.1;}");
+		
+		// !important
+		propertyTests.put("body {\n  color: black !important;\n  background: white !important;\n}", "body {\n  color: black !important;\n  background: white !important;\n}");
+		propertyTests.put("p { text-indent: 1em ! important }", "p { text-indent: 1em ! important }");
 	}
 	
 	MIMEType cssMIMEType;

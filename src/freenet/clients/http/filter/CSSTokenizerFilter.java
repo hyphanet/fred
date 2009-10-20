@@ -983,9 +983,30 @@ class CSSTokenizerFilter {
 		{
 			return false;
 		}
+		int important = checkImportant(words);
+		if(important > 0) {
+			if(words.length == important) return true; // Eh? !important on its own!
+			ParsedWord[] newWords = new ParsedWord[words.length-important];
+			System.arraycopy(words, 0, newWords, 0, newWords.length);
+			words = newWords;
+		}
 		return obj.checkValidity(media, elements, words, cb);
 
 	}
+	
+	private int checkImportant(ParsedWord[] words) {
+		if(words.length == 0) return 0;
+		if(words.length >= 1 && words[words.length-1] instanceof SimpleParsedWord) {
+			if(((SimpleParsedWord)words[words.length-1]).original.equalsIgnoreCase("!important")) return 1;
+		}
+		if(words.length >= 2 && words[words.length-1] instanceof ParsedIdentifier && words[words.length-2] instanceof SimpleParsedWord) {
+			if(((SimpleParsedWord)words[words.length-2]).original.equals("!") &&
+				((ParsedIdentifier)words[words.length-1]).original.equalsIgnoreCase("important"))
+				return 2;
+		}
+		return 0;
+	}
+
 	/*
 	 * This function accepts an HTML element(along with class name, ID, pseudo class and attribute selector) and determines whether it is valid or not.
 	 */
