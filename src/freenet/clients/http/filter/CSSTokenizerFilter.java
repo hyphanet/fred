@@ -3031,7 +3031,7 @@ class CSSTokenizerFilter {
 
 			if(words.length == 1) {
 
-			if(words[0] instanceof ParsedIdentifier && allowedValues != null && allowedValues.contains(((ParsedIdentifier)words[0]).getDecoded()))
+			if(words[0] instanceof ParsedIdentifier && allowedValues != null && allowedValues.contains(((ParsedIdentifier)words[0]).original))
 			//CSS Property has one of the explicitly defined values
 				return true;
 
@@ -3091,7 +3091,7 @@ class CSSTokenizerFilter {
 			}
 			
 			if(words[0] instanceof ParsedIdentifier && isColor) {
-				if(FilterUtils.isColor(((ParsedIdentifier)words[0]).getDecoded(), false))
+				if(FilterUtils.isColor(((ParsedIdentifier)words[0]).original, false))
 					return true;
 				
 			}			

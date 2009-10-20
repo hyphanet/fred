@@ -507,6 +507,10 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("* { border: \"none\";}", "* {}");
 		propertyTests.put("* { background: \"red\";}", "* {}");
 		
+		// Keywords may not be quoted
+		propertyTests.put("* { color: r\\ed; }", "* { }");
+		propertyTests.put("* { width: au\\to }", "* { }");
+		
 		// Block parsing error handling
 		propertyTests.put("* { causta: \"}\" + ({7} * '\\'') } h2 { color: red;}", "* { } h2 { color: red;}");
 		propertyTests.put("* { causta: \"}\" + ({inner-property: blahblahblah;} * '\\'') } h2 { color: red;}", "* { } h2 { color: red;}");
