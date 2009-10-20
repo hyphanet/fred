@@ -419,7 +419,10 @@ public class ElementInfo {
 			
 			return false;
 		}
-		
+
+		/** Is the string valid and safe?
+		 * @param name The string to parse, in its original encoded form.
+		 */
 		public static boolean isValidString(String name)
 		{
 			boolean escape = false;

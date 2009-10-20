@@ -298,7 +298,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: attr(\\ \\ attr\\ with\\ spaces);}");
 		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}");
 		propertyTests.put("h1 { content: \"string with curly brackets { }\";}", "h1 { content: \"string with curly brackets { }\";}");
-//		propertyTests.put("h1 { content: \"\\\"\";}", "h1 { content: \"\\\"\";}");
+		propertyTests.put("h1 { content: \"\\\"\";}", "h1 { content: \"\\\"\";}");
 		
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", "h2 { color: red;}");

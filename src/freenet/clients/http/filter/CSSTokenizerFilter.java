@@ -1858,7 +1858,7 @@ class CSSTokenizerFilter {
 						if(logDEBUG) log("STATE3 CASE ;: appending "+ propertyName+":"+propertyValue);
 						if(logDEBUG) log("filtered tokens now: \""+filteredTokens.toString()+"\"");
 					} else {
-						if(logDEBUG) log("filtered tokens now (ignored): \""+filteredTokens.toString()+"\"");
+						if(logDEBUG) log("filtered tokens now (ignored): \""+filteredTokens.toString()+"\" words="+CSSPropertyVerifier.toString(words)+" ignoreS1="+ignoreElementsS1+" ignoreS2="+ignoreElementsS2+" ignoreS3="+ignoreElementsS3);
 					}
 					ignoreElementsS3 = false;
 					propertyName="";
@@ -3007,8 +3007,11 @@ class CSSTokenizerFilter {
 
 			if(isString && words[0] instanceof ParsedString)
 			{
-				if(ElementInfo.isValidString((((ParsedString)words[0]).getDecoded())))
-					return true;
+				// REDFLAG: STRING PARSING
+				// The string is valid or the tokeniser would not have created a ParsedString.
+				// Conforming UAs will not do anything dangerous with it.
+				// Wierd extensions could do dangerous things with it, but we can't really prevent that e.g. Skype will turn numbers into links!
+				return true;
 			}
 			
 			}
@@ -3402,8 +3405,8 @@ class CSSTokenizerFilter {
 				return true;
 
 			//String processing
-			if(value[0] instanceof ParsedString && ElementInfo.isValidString((((ParsedString)value[0]).getDecoded())))
-				return true;
+			if(value[0] instanceof ParsedString)
+				return true; // REDFLAG: STRING PARSING: The string is valid, and conforming UAs won't do anything bad with it, they will just display it as text. Of course, wierd extensions may do wierd things with it, but there's not much we can do about that e.g. Skype turns numbers looking like phone numbers into links.
 
 			if(value[0] instanceof ParsedCounter) {
 				ParsedCounter counter = (ParsedCounter)value[0];
