@@ -268,6 +268,9 @@ public class CSSParserTest extends TestCase {
 		// Negative fractional lengths
 		propertyTests.put("h3 { background-position: -0.87em 20%}", "h3 { background-position: -0.87em 20%;}");
 		
+		// Urls
+		propertyTests.put("li { list-style: url(/KSK@redball.png) disc}", "li { list-style: url(\"/KSK@redball.png\") disc;}");
+		
 		// Url with an encoded space
 		propertyTests.put("h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background-image: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		// Url with a space
@@ -283,6 +286,15 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h3 { background-image: url(/KSK@\\something.png?type=image/png\\26 force=true);}", "h3 { background-image: url(\"/KSK@something.png?type=image/png\");}");
 		propertyTests.put("h3 { background-image: url(/KSK@\\something.png?type=image/png\\000026force=true);}", "h3 { background-image: url(\"/KSK@something.png?type=image/png\");}");
 		propertyTests.put("h3 { background-image: url(/KSK@\\\"something\\\".png?type=image/png\\000026force=true);}", "h3 { background-image: url(\"/KSK@%22something%22.png?type=image/png\");}");
+		// urls with whitespace after url(
+		propertyTests.put("h3 { background-image: url( /KSK@\\\"something\\\".png?type=image/png\\000026force=true );}", "h3 { background-image: url(\"/KSK@%22something%22.png?type=image/png\");}");
+		propertyTests.put("h3 { background-image: url( \"/KSK@\\\"something\\\".png?type=image/png\\000026force=true\" );}", "h3 { background-image: url(\"/KSK@%22something%22.png?type=image/png\");}");
+		
+		// Invalid because sabotages tokenisation with the standard grammar (CSS2.1 4.3.4)
+		propertyTests.put("h3 { background-image: url(/KSK@));}", "h3 {}");
+		propertyTests.put("h3 { background-image: url(/KSK@');}", "/* (Deleted unfinished elements)h3 { */ ");
+		propertyTests.put("h3 { background-image: url(/KSK@\");}", "/* (Deleted unfinished elements)h3 { */ ");
+		propertyTests.put("h3 { background-image: url(/KSK@ ));}", "h3 {}");
 		
 		// Mixed background
 		propertyTests.put("h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
