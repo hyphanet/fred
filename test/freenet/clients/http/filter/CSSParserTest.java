@@ -88,6 +88,10 @@ public class CSSParserTest extends TestCase {
 		// REDFLAG: link vs visited is safe for Freenet as there is no scripting.
 		// If there was scripting it would not be safe, although datastore probing is probably the greater threat.
 		CSS2_SELECTOR.put("a.external:visited { color: blue }", "a.external:visited { color: blue;}");
+		CSS2_SELECTOR.put("a:focus:hover { background: white }", "a:focus:hover { background: white;}");
+		CSS2_SELECTOR.put("p:first-line { text-transform: uppercase;}", "p:first-line { text-transform: uppercase;}");
+		// CONFORMANCE: :first-line can only be attached to block-level, we don't enforce this, it is not dangerous.
+		CSS2_SELECTOR.put("p:first-letter { font-size: 3em; font-weight: normal }", "p:first-letter { font-size: 3em; font-weight: normal;}");
 		
 		// Spaces in a selector string
 		CSS2_SELECTOR.put("h1[foo=\"bar bar\"] {}", "h1[foo=\"bar bar\"]");
