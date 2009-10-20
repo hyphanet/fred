@@ -94,6 +94,10 @@ public class ContentFilterTest extends TestCase {
 	private static final String FRAME_SRC_CHARSET_BAD1 = "<frame src=\"test.html?type=text/html; charset=UTF-8%26max-size=4194304\">";
 	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html\">";
 	
+	// From CSS spec
+	
+	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
+	
 	private final BucketFactory bf = new ArrayBucketFactory();
 
 	public void testHTMLFilter() throws Exception {
@@ -148,6 +152,8 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(FRAME_SRC_CHARSETC, HTMLFilter(FRAME_SRC_CHARSET, true));
 		assertEquals(FRAME_SRC_CHARSET_BADC, HTMLFilter(FRAME_SRC_CHARSET_BAD, true));
 		assertEquals(FRAME_SRC_CHARSET_BAD1C, HTMLFilter(FRAME_SRC_CHARSET_BAD1, true));
+		
+		assertEquals(CSS_SPEC_EXAMPLE1, HTMLFilter(CSS_SPEC_EXAMPLE1));
 	}
 		
 	private String HTMLFilter(String data) throws Exception {

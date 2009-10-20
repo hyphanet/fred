@@ -22,6 +22,11 @@ import freenet.support.Logger;
  * FIXME: Rewrite to parse properly. This works but is rather spaghettified.
  * JFlex on its own obviously won't work, but JFlex plus a proper grammr 
  * should work fine.
+ * 
+ * According to the CSS2.1 spec, in some cases spaces between tokens are
+ * optional. We do NOT support this! A grammar-based parser might, although
+ * really it's horrible, we shouldn't support it if it's not widely used...
+ * See end of 1.4.2.1.
  */
 class CSSTokenizerFilter {
 	private Reader r;

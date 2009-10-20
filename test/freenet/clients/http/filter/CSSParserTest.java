@@ -256,6 +256,11 @@ public class CSSParserTest extends TestCase {
 		
 		// Mixed background
 		propertyTests.put("h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		// CSS is case insensitive except for parts not under CSS control.
+		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		propertyTests.put("h3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
+		// HTML tags are case insensitive, but we downcase them.
+		propertyTests.put("H3 { BACKGROUND: URL(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test page\") }", "h3 { BACKGROUND: url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
 		propertyTests.put("h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\") }", "h3 { background: scroll #f00 url(\"/CHK@~~vxVQDfC9m8sR~M9zWJQKzCxLeZRWy6T1pWLM2XX74,2LY7xwOdUGv0AeJ2WKRXZG6NmiUL~oqVLKnh3XdviZU,AAIC--8/test%20page\");}");
@@ -293,6 +298,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: attr(\\ \\ attr\\ with\\ spaces);}");
 		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}");
 		propertyTests.put("h1 { content: \"string with curly brackets { }\";}", "h1 { content: \"string with curly brackets { }\";}");
+//		propertyTests.put("h1 { content: \"\\\"\";}", "h1 { content: \"\\\"\";}");
 		
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", "h2 { color: red;}");
@@ -371,6 +377,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div * p { color: red;}", "div * p { color: red;}");
 		propertyTests.put("div * p[href] { color: red;}", "div * p[href] { color: red;}");
 		propertyTests.put("div p *[href] { color: red;}", "div p *[href] { color: red;}");
+		
+		// Quotes not allowed around keywords
+		propertyTests.put("* { width: \"auto\";}", "* {}");
+		propertyTests.put("* { border: \"none\";}", "* {}");
+		propertyTests.put("* { background: \"red\";}", "* {}");
 	}
 	
 	MIMEType cssMIMEType;
