@@ -406,6 +406,8 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: attr(\\}\\ test);}", "h1 { content: attr(\\}\\ test);}");
 		// Refer to counters
 		propertyTests.put("h1 { content: counter(\\202 \\ \\test, none);}", "h1 { content: counter(\\000202\\000020test, none);}");
+		propertyTests.put("h1:before {content: counter(chapno, upper-roman) \". \"}", "h1:before {content: counter(chapno, upper-roman) \". \"}");
+		propertyTests.put("p.special:before {content: \"Special! \"}", "p.special:before {content: \"Special! \"}");
 		
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", "h2 { color: red }");
