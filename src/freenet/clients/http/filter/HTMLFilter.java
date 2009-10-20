@@ -1744,17 +1744,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				charset = null;
 			if(charset != null && !Charset.isSupported(charset))
 				charset = null;
-			if(charset == null && "link".equalsIgnoreCase(p.element)) {
+			if("link".equalsIgnoreCase(p.element)) {
 				String rel = getHashString(h, "rel");
 				if(rel.equals("alternate") || rel.equals("stylesheet")) {
-					// Browser will use the referring document's charset if there
-					// is no BOM and we don't specify one in HTTP.
-					// So we need to pass this information to the filter.
-					// We cannot force the mime type with the charset, because if
-					// we do that, we might be wrong - if there is a BOM or @charset 
-					// we want to use that. E.g. chinese pages might have the
-					// page in GB18030 and the borrowed CSS in ISO-8859-1 or UTF-8.
-					maybecharset = pc.charset;
+					if(charset == null) {
+						// Browser will use the referring document's charset if there
+						// is no BOM and we don't specify one in HTTP.
+						// So we need to pass this information to the filter.
+						// We cannot force the mime type with the charset, because if
+						// we do that, we might be wrong - if there is a BOM or @charset 
+						// we want to use that. E.g. chinese pages might have the
+						// page in GB18030 and the borrowed CSS in ISO-8859-1 or UTF-8.
+						maybecharset = pc.charset;
+					}
 				}
 			}
 			String href = getHashString(h, "href");
