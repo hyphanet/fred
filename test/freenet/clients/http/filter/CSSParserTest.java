@@ -277,6 +277,9 @@ public class CSSParserTest extends TestCase {
 		// Wrong media type
 		propertyTests.put("h1 { azimuth: inherit }", "h1 { }");
 		
+		// Partially bogus media
+		propertyTests.put("@media screen, 3D {\n  P { color: green; }\n}", "@media screen {\n  P { color: green; }}");
+		
 		propertyTests.put("td { background-attachment: scroll}", "td { background-attachment: scroll}");
 		propertyTests.put("td { background-color: rgb(255, 255, 255)}", "td { background-color: rgb(255, 255, 255)}");
 		propertyTests.put("td { background-color: #fff}", "td { background-color: #fff}");

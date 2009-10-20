@@ -1422,7 +1422,7 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(parts));
 					buffer.setLength(0);
 					boolean valid = false;
-					if(parts.length!=2)
+					if(parts.length<2)
 					{
 						ignoreElementsS1=true;
 						if(logDEBUG) log("STATE1 CASE {: Does not have two parts. ignoring "+buffer.toString());
