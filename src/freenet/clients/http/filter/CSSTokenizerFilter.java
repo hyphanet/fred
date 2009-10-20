@@ -1155,19 +1155,19 @@ class CSSTokenizerFilter {
 		for(int i=0;i<selectorString.length();i++) {
 			c = selectorString.charAt(i);
 			if(c == '+' && quoting == 0 && !escaping) {
-				if(index == -1) {
+				if(index == -1 || index == i-1 && selector == ' ') {
 					plusIndex = i;
 					index = i;
 					selector = c;
 				}
 			} else if(c == '>' && quoting == 0 && !escaping) {
-				if(index == -1) {
+				if(index == -1 || index == i-1 && selector == ' ') {
 					gtIndex = i;
 					index = i;
 					selector = c;
 				}
 			} else if(c == ' ' && quoting == 0 && !escaping) {
-				if(index == -1) {
+				if(index == -1 || index == i-1 && selector == ' ') {
 					spaceIndex = i;
 					index = i;
 					selector = c;
@@ -1217,7 +1217,7 @@ class CSSTokenizerFilter {
 			eatLF = false;
 		}
 		
-		if(logDEBUG) log("index= "+index+" quoting="+quoting+" selector="+selector+" for \""+selectorString+"\"");
+		if(logDEBUG) log("index="+index+" quoting="+quoting+" selector="+selector+" for \""+selectorString+"\"");
 		
 		if(quoting != 0) return null; // Mismatched quotes
 		
@@ -1226,8 +1226,8 @@ class CSSTokenizerFilter {
 		
 		String[] parts=new String[2];
 
-		parts[0]=selectorString.substring(0,index);
-		parts[1]=selectorString.substring(index+1,selectorString.length());
+		parts[0]=selectorString.substring(0,index).trim();
+		parts[1]=selectorString.substring(index+1,selectorString.length()).trim();
 		if(logDEBUG) log("recursiveSelectorVerifier parts[0]=" + parts[0]+" parts[1]="+parts[1]);
 		parts[0]=HTMLelementVerifier(parts[0]);
 		parts[1]=recursiveSelectorVerifier(parts[1]);
