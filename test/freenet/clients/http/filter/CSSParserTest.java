@@ -299,6 +299,22 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces) }", "h1 { content: \"string with spaces\" attr(\\ \\ attr\\ with\\ spaces);}");
 		propertyTests.put("h1 { content: \"string with curly brackets { }\";}", "h1 { content: \"string with curly brackets { }\";}");
 		propertyTests.put("h1 { content: \"\\\"\";}", "h1 { content: \"\\\"\";}");
+		// Invalid escapes in a string
+		propertyTests.put("h1 { content: \"\\1\";}", "h1 {}");
+		propertyTests.put("h1 { content: \"\\f\";}", "h1 {}");
+		propertyTests.put("h1 { content: \"\\\n\";}", "h1 {}");
+		propertyTests.put("h1 { content: \"\\\r\";}", "h1 {}");
+		propertyTests.put("h1 { content: \"\\\f\";}", "h1 {}");
+		// Valid escapes in a string
+		propertyTests.put("h1 { content: \"\\202 \";}", "h1 { content: \"\\202 \";}");
+		propertyTests.put("h1 { content: \"\\g \";}", "h1 { content: \"\\g \";}");
+		propertyTests.put("h1 { content: \"\\\t \";}", "h1 { content: \"\\\t \";}");
+		propertyTests.put("h1 { content: \"\\} \";}", "h1 { content: \"\\} \";}");
+		// Valid escapes in an identifier
+		propertyTests.put("h1 { content: attr(\\202 \\ test);}", "h1 { content: attr(\\202 \\ test);}");
+		propertyTests.put("h1 { content: attr(\\000202\\ test);}", "h1 { content: attr(\\000202\\ test);}");
+		propertyTests.put("h1 { content: attr(\\;\\ test);}", "h1 { content: attr(\\;\\ test);}");
+		propertyTests.put("h1 { content: attr(\\}\\ test);}", "h1 { content: attr(\\}\\ test);}");
 		
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", "h2 { color: red;}");
