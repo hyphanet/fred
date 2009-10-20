@@ -371,6 +371,8 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("h1 { content: attr(\\000202\\ test);}", "h1 { content: attr(\\000202\\ test);}");
 		propertyTests.put("h1 { content: attr(\\;\\ test);}", "h1 { content: attr(\\;\\ test);}");
 		propertyTests.put("h1 { content: attr(\\}\\ test);}", "h1 { content: attr(\\}\\ test);}");
+		// Refer to counters
+		propertyTests.put("h1 { content: counter(\\202 \\ test, none);}", "h1 { content: counter(\\000202\\000020test, none);}");
 		
 		// Strip nulls
 		propertyTests.put("h2 { color: red }", "h2 { color: red;}");

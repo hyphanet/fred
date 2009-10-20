@@ -2207,6 +2207,7 @@ class CSSTokenizerFilter {
 		
 		private void encodeChar(char c, StringBuffer sb) {
 			String s = Integer.toHexString(c);
+			sb.append('\\');
 			if(s.length() == 6)
 				sb.append(s);
 			else if(s.length() > 6)
@@ -2240,13 +2241,13 @@ class CSSTokenizerFilter {
 			// It is an identifier.
 			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 					(c >= '0' && c <= '9') || c == '-' || c == '_'
-						|| (c >= (char)0x00A1 && !unicode)) {
+						|| (c >= (char)0x00A1 && unicode)) {
 				// Cannot start with a digit or a hyphen followed by a digit.
 				if(!((i == 0 && (c >= '0' && c <= '9')) ||
 						(i == 1 && prevc == '-' &&
 								(c >= '0' && c <= '9'))))
 					return false;
-			}
+			} 
 			return true;
 		}
 		
@@ -2693,12 +2694,13 @@ class CSSTokenizerFilter {
 		boolean plural = false;
 		if(sl.startsWith("counter(") || (plural = sl.startsWith("counters("))) {
 			if(s.endsWith(")")) {
-				decodedToken.delete(0, plural ? "counters(".length() : "counter(".length());
+				int len = plural ? "counters(".length() : "counter(".length();
+				decodedToken.delete(0, len);
 				decodedToken.setLength(decodedToken.length()-1);
 				
 				// Trim whitespace from both ends
 				
-				String strippedOrig = s.substring(4, s.length()-1);
+				String strippedOrig = s.substring(len, s.length()-1);
 				int i;
 				for(i=0;i<strippedOrig.length();i++) {
 					char c = strippedOrig.charAt(i);
