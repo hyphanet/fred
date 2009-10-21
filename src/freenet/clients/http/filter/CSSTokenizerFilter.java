@@ -3718,7 +3718,7 @@ class CSSTokenizerFilter {
 		{
 			if(logDEBUG) log("font verifier: "+toString(value));
 			if(value.length == 1) {
-				if(value[0] instanceof ParsedIdentifier && "inherit".equalsIgnoreCase(((ParsedIdentifier)value[0]).getDecoded())) {
+				if(value[0] instanceof ParsedIdentifier && "inherit".equalsIgnoreCase(((ParsedIdentifier)value[0]).original)) {
 				//CSS Property has one of the explicitly defined values
 					if(logDEBUG) log("font: inherit");
 					return true;
@@ -3744,7 +3744,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				ParsedWord word = value[i];
 				String s = null;
 				if(word instanceof ParsedString) {
-					String decoded = (((ParsedString)word).getDecoded());
+					String decoded = (((ParsedString)word).original);
 					if(logDEBUG) log("decoded: \""+decoded+"\"");
 					// It's actually quoted, great.
 					if(isSpecificFamily(decoded.toLowerCase())) {
@@ -3754,7 +3754,7 @@ outer:		for(int i=0;i<value.length;i++) {
 					} else
 						s = decoded;
 				} else if(word instanceof ParsedIdentifier) {
-					s = (((ParsedIdentifier)word).getDecoded());
+					s = (((ParsedIdentifier)word).original);
 					if(isGenericFamily(s)) {
 						continue;
 					}
@@ -3789,7 +3789,7 @@ outer:		for(int i=0;i<value.length;i++) {
 					if (j == value.length-1) last = true;
 					String s1;
 					if(newWord instanceof ParsedIdentifier) {
-						s1 = ((ParsedIdentifier)newWord).getDecoded();
+						s1 = ((ParsedIdentifier)newWord).original;
 						fontWords.add(s1);
 						if(logDEBUG) log("adding word: \""+s1+"\"");
 						if(last) {
