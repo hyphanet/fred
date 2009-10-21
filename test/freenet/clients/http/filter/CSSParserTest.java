@@ -686,7 +686,12 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}");
 		propertyTests.put("@media aural { blockquote Q   { play-during: url(\"harp.wav\") mix }}","@media aural { blockquote Q { play-during: url(\"harp.wav\") mix }}");
 		propertyTests.put("@media speech { span.quiet     { play-during: none }}", "@media speech { span.quiet { play-during: none }}");
-		
+		propertyTests.put("@media speech { h1   { elevation: above } tr.a { elevation: 60deg } tr.b { elevation: 30deg } tr.c { elevation: level }}", "@media speech { h1 { elevation: above } tr.a { elevation: 60deg } tr.b { elevation: 30deg } tr.c { elevation: level }}");
+		propertyTests.put("@media speech { body { speech-rate: slow } i,em { speech-rate: 450.1 }}","@media speech { body { speech-rate: slow } i,em { speech-rate: 450.1 }}");
+		propertyTests.put("@media speech { body { pitch: x-low } i { pitch: 5kHz } b { pitch: 500Hz }}", "@media speech { body { pitch: x-low } i { pitch: 5kHz } b { pitch: 500Hz }}");
+		propertyTests.put("@media speech { body { pitch-range: 50; stress: 20 } h1,h2,h3 { pitch-range: 10.0; stress: 5.0 } p { pitch-range: inherit; stress: inherit; richness: 20 }}", "@media speech { body { pitch-range: 50; stress: 20 } h1,h2,h3 { pitch-range: 10.0; stress: 5.0 } p { pitch-range: inherit; stress: inherit; richness: 20 }}");
+		propertyTests.put("@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}", "@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}");
+		propertyTests.put("@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}", "@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}");
 	}
 	
 	MIMEType cssMIMEType;
