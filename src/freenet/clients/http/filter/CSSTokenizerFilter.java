@@ -3526,7 +3526,7 @@ class CSSTokenizerFilter {
 					listStyleType.add("decimal-leading-zero");
 					listStyleType.add("lower-roman");
 					listStyleType.add("upper-roman");
-					listStyleType.add("disc lower-greek");
+					listStyleType.add("lower-greek");
 					listStyleType.add("lower-latin");
 					listStyleType.add("upper-latin");
 					listStyleType.add("armenian");
