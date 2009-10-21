@@ -2842,7 +2842,6 @@ class CSSTokenizerFilter {
 		public boolean onlyValueVerifier=false;
 		public String[] cssPropertyList=null; 
 		public String[] parserExpressions=null;
-		public static boolean debug;
 		CSSPropertyVerifier()
 		{}
 
@@ -2973,7 +2972,7 @@ class CSSTokenizerFilter {
 				String s = cb.processURI(w, null);
 				if(s == null || s.equals("")) return false;
 				if(s.equals(w)) return true;
-				if(debug) Logger.minor(CSSTokenizerFilter.class, "New url: \""+s+"\" from \""+w+"\"");
+				if(logDEBUG) Logger.minor(CSSTokenizerFilter.class, "New url: \""+s+"\" from \""+w+"\"");
 				word.setNewURL(s);
 				return true;
 			}
@@ -3010,7 +3009,7 @@ class CSSTokenizerFilter {
 							break;
 						}
 					if(!allowed) {
-						if(debug) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
+						if(logDEBUG) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
 						
 						return false;
 					}
@@ -3024,7 +3023,7 @@ class CSSTokenizerFilter {
 
 							if(!allowedElements.contains(element.trim().toLowerCase()))
 							{
-								if(debug) log("checkValidity: element is not allowed:"+element);
+								if(logDEBUG) log("checkValidity: element is not allowed:"+element);
 								return false;
 							}
 						}
@@ -3173,7 +3172,7 @@ class CSSTokenizerFilter {
 		 */
 		public boolean recursiveParserExpressionVerifier(String expression,ParsedWord[] words, FilterCallback cb)
 		{
-			if(debug) log("1recursiveParserExpressionVerifier called: with "+expression+" "+toString(words));
+			if(logDEBUG) log("1recursiveParserExpressionVerifier called: with "+expression+" "+toString(words));
 			if((expression==null || ("".equals(expression.trim()))))
 			{
 				if(words==null || words.length == 0)
@@ -3207,19 +3206,19 @@ class CSSTokenizerFilter {
 						secondPart=expression.substring(endIndex+1,expression.length());
 					for(int j=1;j<=noOfa+1 && j<=words.length;j++)
 					{
-						if(debug) log("2Making recursiveDoubleBarVerifier to consume "+j+" words");
+						if(logDEBUG) log("2Making recursiveDoubleBarVerifier to consume "+j+" words");
 						ParsedWord[] partToPassToDB = new ParsedWord[j];
 						System.arraycopy(words, 0, partToPassToDB, 0, j);
-						if(debug) log("3Calling recursiveDoubleBarVerifier with "+firstPart+" "+partToPassToDB.toString());
+						if(logDEBUG) log("3Calling recursiveDoubleBarVerifier with "+firstPart+" "+partToPassToDB.toString());
 						if(recursiveDoubleBarVerifier(firstPart,partToPassToDB,cb)) //This function is written to verify || operator.
 						{
 							ParsedWord[] partToPass = new ParsedWord[words.length-j];
 							System.arraycopy(words, j, partToPass, 0, words.length-j);
-							if(debug) log("4recursiveDoubleBarVerifier true calling itself with "+secondPart+partToPass.toString());
+							if(logDEBUG) log("4recursiveDoubleBarVerifier true calling itself with "+secondPart+partToPass.toString());
 							if(recursiveParserExpressionVerifier(secondPart,partToPass,cb))
 								return true;
 						}
-						if(debug) log("5Back to recursiveDoubleBarVerifier "+j+" "+(noOfa+1)+" "+words.length);
+						if(logDEBUG) log("5Back to recursiveDoubleBarVerifier "+j+" "+(noOfa+1)+" "+words.length);
 					}
 					return false;
 				}
@@ -3235,7 +3234,7 @@ class CSSTokenizerFilter {
 						{
 							ParsedWord[] partToPass = new ParsedWord[words.length-1];
 							System.arraycopy(words, 1, partToPass, 0, words.length-1);
-							if(debug) log("8First part is true. partToPass="+partToPass.toString());
+							if(logDEBUG) log("8First part is true. partToPass="+partToPass.toString());
 							if(recursiveParserExpressionVerifier(secondPart,partToPass, cb))
 								return true;
 						}
@@ -3286,7 +3285,7 @@ class CSSTokenizerFilter {
 						} else if(secondPart.length() > 0) {
 							throw new IllegalStateException("Don't know what to do with char after <>[]: "+secondPart.charAt(0));
 						}
-						if(debug) log("9in < firstPart="+firstPart+" secondPart="+secondPart+" tokensCanBeGivenLowerLimit="+tokensCanBeGivenLowerLimit+" tokensCanBeGivenUpperLimit="+tokensCanBeGivenUpperLimit);
+						if(logDEBUG) log("9in < firstPart="+firstPart+" secondPart="+secondPart+" tokensCanBeGivenLowerLimit="+tokensCanBeGivenLowerLimit+" tokensCanBeGivenUpperLimit="+tokensCanBeGivenUpperLimit);
 						int index=Integer.parseInt(firstPart);
 						String[] strLimits=expression.substring(i+1,tindex).split(",");
 						if(strLimits.length==2)
@@ -3304,7 +3303,7 @@ class CSSTokenizerFilter {
 
 			}
 			//Single verifier object
-			if(debug) log("10Single token:"+expression);
+			if(logDEBUG) log("10Single token:"+expression);
 			int index=Integer.parseInt(expression);
 			return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words, cb);
 
@@ -3353,21 +3352,21 @@ class CSSTokenizerFilter {
 		public boolean recursiveVariableOccuranceVerifier(int verifierIndex,ParsedWord[] valueParts,int lowerLimit,int upperLimit,int tokensCanBeGivenLowerLimit,int tokensCanBeGivenUpperLimit, String secondPart, FilterCallback cb)
 		{
 
-			if(debug) log("recursiveVariableOccurranceVerifier("+verifierIndex+","+toString(valueParts)+","+lowerLimit+","+upperLimit+","+tokensCanBeGivenLowerLimit+","+tokensCanBeGivenUpperLimit+","+secondPart+")");
+			if(logDEBUG) log("recursiveVariableOccurranceVerifier("+verifierIndex+","+toString(valueParts)+","+lowerLimit+","+upperLimit+","+tokensCanBeGivenLowerLimit+","+tokensCanBeGivenUpperLimit+","+secondPart+")");
 			if((valueParts==null || valueParts.length==0) && lowerLimit == 0)
 				return true;
 			
 			if(lowerLimit <= 0) {
 				// There could be secondPart.
 				if(recursiveParserExpressionVerifier(secondPart, valueParts, cb)) {
-					if(debug) log("recursiveVariableOccurranceVerifier completed by "+secondPart);
+					if(logDEBUG) log("recursiveVariableOccurranceVerifier completed by "+secondPart);
 					return true;
 				}
 			}
 			
 			// There can be no more parts.
 			if(upperLimit == 0) {
-				if(debug) log("recursiveVariableOccurranceVerifier: no more parts");
+				if(logDEBUG) log("recursiveVariableOccurranceVerifier: no more parts");
 				return false;
 			}
 			
@@ -3375,20 +3374,20 @@ class CSSTokenizerFilter {
 				ParsedWord[] before = new ParsedWord[i];
 				System.arraycopy(valueParts, 0, before, 0, i);
 				if(CSSTokenizerFilter.auxilaryVerifiers[verifierIndex].checkValidity(before, cb)) {
-					if(debug) log("first "+i+" tokens using "+verifierIndex+" match "+toString(before));
+					if(logDEBUG) log("first "+i+" tokens using "+verifierIndex+" match "+toString(before));
 					if(i == valueParts.length && lowerLimit <= 1) {
 						if(recursiveParserExpressionVerifier(secondPart, new ParsedWord[0], cb)) {
-							if(debug) log("recursiveVariableOccurranceVerifier completed with no more parts by "+secondPart);
+							if(logDEBUG) log("recursiveVariableOccurranceVerifier completed with no more parts by "+secondPart);
 							return true;
 						} else {
-							if(debug) log("recursiveVariableOccurranceVerifier: satisfied self but nothing left to match "+secondPart);
+							if(logDEBUG) log("recursiveVariableOccurranceVerifier: satisfied self but nothing left to match "+secondPart);
 							return false;
 						}
 					} else if(i == valueParts.length && lowerLimit > 1)
 						return false;
 					ParsedWord[] after = new ParsedWord[valueParts.length-i];
 					System.arraycopy(valueParts, i, after, 0, valueParts.length-i);
-					if(debug) log("rest of tokens: "+toString(after));
+					if(logDEBUG) log("rest of tokens: "+toString(after));
 					if(recursiveVariableOccuranceVerifier(verifierIndex, after, lowerLimit-1, upperLimit-1, tokensCanBeGivenLowerLimit, tokensCanBeGivenUpperLimit, secondPart, cb))
 						return true;
 				}
@@ -3420,7 +3419,7 @@ class CSSTokenizerFilter {
 		 */
 		public boolean recursiveDoubleBarVerifier(String expression,ParsedWord[] words,FilterCallback cb)
 		{
-			if(debug) log("11in recursiveDoubleBarVerifier expression="+expression+" value="+toString(words));
+			if(logDEBUG) log("11in recursiveDoubleBarVerifier expression="+expression+" value="+toString(words));
 			if(words==null || words.length == 0)
 				return true;
 
@@ -3445,7 +3444,7 @@ class CSSTokenizerFilter {
 						secondPart = "";
 					else
 						secondPart=expression.substring(i+1,expression.length());
-					if(debug) log("12in a firstPart="+firstPart+" secondPart="+secondPart+" for expression "+expression+" i "+i);
+					if(logDEBUG) log("12in a firstPart="+firstPart+" secondPart="+secondPart+" for expression "+expression+" i "+i);
 
 					boolean result=false;
 
@@ -3453,20 +3452,20 @@ class CSSTokenizerFilter {
 					for(int j=0;j<words.length;j++)
 					{
 						result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(getSubArray(words, 0, j+1), cb);
-						if(debug) log("14in for loop result:"+result+" for "+toString(words)+" for "+firstPart);
+						if(logDEBUG) log("14in for loop result:"+result+" for "+toString(words)+" for "+firstPart);
 						if(result)
 						{
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
 							String pattern = ignoredParts+(ignoredParts.isEmpty()?"":"a")+secondPart;
-							if(debug) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
+							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
 							if(valueToPass.length == 0)
 								return true;
 							if(pattern.isEmpty()) return false;
 							result=recursiveDoubleBarVerifier(pattern,valueToPass, cb);
 							if(result)
 							{
-								if(debug) log("15else part is true, value consumed="+words[j]);
+								if(logDEBUG) log("15else part is true, value consumed="+words[j]);
 								return true;
 							}
 						}
@@ -3477,7 +3476,7 @@ class CSSTokenizerFilter {
 			if(lastA != -1) return false;
 			//Single token
 			int index=Integer.parseInt(expression);
-			if(debug) log("16Single token:"+expression+" with value=*"+words+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words,cb));
+			if(logDEBUG) log("16Single token:"+expression+" with value=*"+words+"* validity="+CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words,cb));
 			return CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(words,cb);
 
 
@@ -3500,7 +3499,7 @@ class CSSTokenizerFilter {
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
 		{
-			if(debug) log("contentPropertyVerifier checkValidity called: "+toString(value));
+			if(logDEBUG) log("contentPropertyVerifier checkValidity called: "+toString(value));
 
 			if(value.length != 1) return false;
 			
@@ -3570,7 +3569,7 @@ class CSSTokenizerFilter {
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
 		{
 
-			if(debug) log("FontPartPropertyVerifier called with "+toString(value));
+			if(logDEBUG) log("FontPartPropertyVerifier called with "+toString(value));
 			CSSPropertyVerifier fontSize=new CSSPropertyVerifier(new String[] {"xx-small","x-small","small","medium","large","x-large","xx-large","larger","smaller","inherit"},new String[]{"le","pe"},null,true);
 			if(fontSize.checkValidity(value, cb)) return true;
 			
@@ -3584,7 +3583,7 @@ class CSSTokenizerFilter {
 						int slashIndex=orig.indexOf("/");
 						String firstPart=orig.substring(0,slashIndex);
 						String secondPart=orig.substring(slashIndex+1,orig.length());
-						if(debug) log("FontPartPropertyVerifier FirstPart="+firstPart+" secondPart="+secondPart);
+						if(logDEBUG) log("FontPartPropertyVerifier FirstPart="+firstPart+" secondPart="+secondPart);
 						CSSPropertyVerifier lineHeight=new CSSPropertyVerifier(new String[] {"normal","inherit"},new String[]{"le","pe","re","in"},null,true);
 						ParsedWord[] first = split(firstPart);
 						ParsedWord[] second = split(secondPart);
@@ -3616,11 +3615,11 @@ class CSSTokenizerFilter {
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
 		{
-			if(debug) log("font verifier: "+toString(value));
+			if(logDEBUG) log("font verifier: "+toString(value));
 			if(value.length == 1) {
 				if(value[0] instanceof ParsedIdentifier && "inherit".equals(((ParsedIdentifier)value[0]).getDecoded())) {
 				//CSS Property has one of the explicitly defined values
-					if(debug) log("font: inherit");
+					if(logDEBUG) log("font: inherit");
 					return true;
 				}
 			}			
@@ -3632,7 +3631,7 @@ class CSSTokenizerFilter {
 						break;
 					}
 				if(!allowed) {
-					if(debug) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
+					if(logDEBUG) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
 					
 					return false;
 				}
@@ -3646,7 +3645,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				String s = null;
 				if(word instanceof ParsedString) {
 					String decoded = (((ParsedString)word).getDecoded());
-					if(debug) log("decoded: \""+decoded+"\"");
+					if(logDEBUG) log("decoded: \""+decoded+"\"");
 					// It's actually quoted, great.
 					if(ElementInfo.isSpecificFontFamily(decoded.toLowerCase())) {
 						hadFont = true;
@@ -3667,13 +3666,13 @@ outer:		for(int i=0;i<value.length;i++) {
 					s = s.trim();
 					if(s.equals(",")) {
 						if(hadFont) continue; // OK, there was a previous font.
-						if(debug) log("out of context comma");
+						if(logDEBUG) log("out of context comma");
 						return false;
 					}
 					if(s.startsWith(",")) {
 						if(!hadFont) {
 							// There was a previous font.
-							if(debug) log("out of context comma (2)");
+							if(logDEBUG) log("out of context comma (2)");
 							return false;
 						}
 						s = s.substring(1);
@@ -3695,7 +3694,7 @@ outer:		for(int i=0;i<value.length;i++) {
 						String subword = split[j];
 						ParsedWord[] parsed = split(subword);
 						if(parsed.length != 1) {
-							if(debug) log("subword "+subword+" from "+s+" cannot parse into one word");
+							if(logDEBUG) log("subword "+subword+" from "+s+" cannot parse into one word");
 							return false;
 						}
 						String keyword;
@@ -3706,7 +3705,7 @@ outer:		for(int i=0;i<value.length;i++) {
 							keyword = (((ParsedIdentifier)parsed[0]).getDecoded());
 						} else {
 							// Unquoted, so not safe to allow wierd characters.
-							if(debug) log("subword "+subword+" from "+s+" parses to unrecognised type "+parsed[0]);
+							if(logDEBUG) log("subword "+subword+" from "+s+" parses to unrecognised type "+parsed[0]);
 							return false;
 						}
 						keyword = keyword.toLowerCase();
@@ -3720,7 +3719,7 @@ outer:		for(int i=0;i<value.length;i++) {
 								hadFont = true;
 								continue;
 							} else {
-								if(debug) log("not a valid token (separated by commas): "+keyword+" from "+subword+" from "+s+" in main loop");
+								if(logDEBUG) log("not a valid token (separated by commas): "+keyword+" from "+subword+" from "+s+" in main loop");
 								return false;
 							}
 						} else {
@@ -3740,9 +3739,9 @@ outer:		for(int i=0;i<value.length;i++) {
 				fontWords.clear();
 				assert(s != null);
 				fontWords.add(s);
-				if(debug) log("first word: \""+s+"\"");
+				if(logDEBUG) log("first word: \""+s+"\"");
 				if(i == value.length-1) {
-					if(debug) log("last word. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()]))+" valid="+validFontWords(fontWords));
+					if(logDEBUG) log("last word. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()]))+" valid="+validFontWords(fontWords));
 					return validFontWords(fontWords);
 				}
 				if(!possiblyValidFontWords(fontWords))
@@ -3765,14 +3764,14 @@ outer:		for(int i=0;i<value.length;i++) {
 								i = j;
 								continue outer;
 							} else {
-								if(debug) log("comma but can't parse font words: "+fontWords.toArray(new String[fontWords.size()]));
+								if(logDEBUG) log("comma but can't parse font words: "+fontWords.toArray(new String[fontWords.size()]));
 								return false;
 							}
 						}
 						
 						if(s1.startsWith(",")) {
 							if(!validFontWords(fontWords)) {
-								if(debug) log("comma but can't parse font words (2): "+fontWords.toArray(new String[fontWords.size()]));
+								if(logDEBUG) log("comma but can't parse font words (2): "+fontWords.toArray(new String[fontWords.size()]));
 								return false;
 							}
 							fontWords.clear();
@@ -3796,7 +3795,7 @@ outer:		for(int i=0;i<value.length;i++) {
 							String subword = split[k];
 							ParsedWord[] parsed = split(subword);
 							if(parsed.length != 1) {
-								if(debug) log("subword "+subword+" from "+s1+" cannot parse into one word");
+								if(logDEBUG) log("subword "+subword+" from "+s1+" cannot parse into one word");
 								return false;
 							}
 							String keyword;
@@ -3807,11 +3806,11 @@ outer:		for(int i=0;i<value.length;i++) {
 								keyword = (((ParsedIdentifier)parsed[0]).getDecoded());
 							} else {
 								// Unquoted, so not safe to allow wierd characters.
-								if(debug) log("subword "+subword+" from "+s1+" parses to unrecognised type "+parsed[0]);
+								if(logDEBUG) log("subword "+subword+" from "+s1+" parses to unrecognised type "+parsed[0]);
 								return false;
 							}
 							keyword = keyword.toLowerCase();
-							if(debug) log("keyword "+k+" of "+split.length+" is \""+keyword+"\"");
+							if(logDEBUG) log("keyword "+k+" of "+split.length+" is \""+keyword+"\"");
 							
 							if(k == 0 && (split.length > 0 || endComma)) {
 								fontWords.add(keyword);
@@ -3832,7 +3831,7 @@ outer:		for(int i=0;i<value.length;i++) {
 									hadFont = true;
 									continue;
 								} else {
-									if(debug) log("not a valid token (separated by commas): "+keyword+" from "+subword+" from "+s1+" in second loop");
+									if(logDEBUG) log("not a valid token (separated by commas): "+keyword+" from "+subword+" from "+s1+" in second loop");
 									return false;
 								}
 							} else {
@@ -3843,23 +3842,23 @@ outer:		for(int i=0;i<value.length;i++) {
 						}
 						
 						if(fontWords.isEmpty()) {
-							if(debug) log("fontWords empty, continuing outer loop");
+							if(logDEBUG) log("fontWords empty, continuing outer loop");
 							i = j;
 							continue outer; // Everything happily eaten.
 						} // Else looking for another keyword
 					} else if(newWord instanceof ParsedIdentifier) {
 						s1 = ((ParsedIdentifier)newWord).getDecoded();
 						fontWords.add(s1);
-						if(debug) log("adding word: \""+s1+"\"");
+						if(logDEBUG) log("adding word: \""+s1+"\"");
 						if(last) {
 							if(validFontWords(fontWords)) {
 								// Valid. Good.
-								if(debug) log("font: reached last in inner loop, valid. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()])));
+								if(logDEBUG) log("font: reached last in inner loop, valid. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()])));
 								return true;
 							}
 						}
 					} else {
-						if(debug) log("cannot parse "+newWord);
+						if(logDEBUG) log("cannot parse "+newWord);
 						return false;
 					}
 				}
@@ -3868,7 +3867,7 @@ outer:		for(int i=0;i<value.length;i++) {
 					return true;
 				return false;
 			}
-			if(debug) log("font: reached end, valid");
+			if(logDEBUG) log("font: reached end, valid");
 			return true;
 			}
 
