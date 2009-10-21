@@ -1310,6 +1310,7 @@ class CSSTokenizerFilter {
 		boolean charsetPossible = true;
 		boolean bomPossible = true;
 		int openBracesStartingS3 = 0;
+		boolean forPage = false;
 		
 		if(isInline) {
 			currentState = STATE3;
@@ -1419,18 +1420,25 @@ class CSSTokenizerFilter {
 					i++;
 					String postSpace = buffer.substring(i);
 					buffer.setLength(i);
-					ParsedWord[] parts=split(buffer.toString().trim());
+					String orig = buffer.toString().trim();
+					ParsedWord[] parts=split(orig);
 					if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(parts));
 					buffer.setLength(0);
 					boolean valid = false;
-					if(parts.length<2)
+					if(parts.length<1)
 					{
 						ignoreElementsS1=true;
-						if(logDEBUG) log("STATE1 CASE {: Does not have two parts. ignoring "+buffer.toString());
+						if(logDEBUG) log("STATE1 CASE {: Does not have one part. ignoring "+buffer.toString());
 						valid = false;
 					}
 					else if(parts[0] instanceof SimpleParsedWord && "@media".equals(((SimpleParsedWord)parts[0]).original.toLowerCase()))
 					{
+						if(parts.length<2)
+						{
+							ignoreElementsS1=true;
+							if(logDEBUG) log("STATE1 CASE {: Does not have two parts. ignoring "+buffer.toString());
+							valid = false;
+						} else {
 						ArrayList<String> medias = commaListFromIdentifiers(parts, 1);
 						if(medias != null && medias.size() > 0) {
 							for(i=0;i<medias.size();i++) {
@@ -1455,6 +1463,33 @@ class CSSTokenizerFilter {
 							valid = true;
 							currentMedia = medias.toArray(new String[medias.size()]);
 						}
+						}
+					} else if(parts[0] instanceof SimpleParsedWord && "@page".equals(((SimpleParsedWord)parts[0]).original.toLowerCase()))
+						{
+						if(parts.length == 0) {
+							valid = true;
+						} else {
+							valid = true;
+							for(int j=1;j<parts.length;j++) {
+								if(!(parts[j] instanceof SimpleParsedWord)) {
+									valid = false;
+									break;
+								} else {
+									String s = ((SimpleParsedWord)parts[j]).original;
+									if(!(s.equalsIgnoreCase(":left") || s.equalsIgnoreCase(":right") || s.equals(":first"))) {
+										valid = false;
+										break;
+									}
+								}
+							}
+						}
+						if(valid) {
+							forPage = true;
+							filteredTokens.append(braceSpace);
+							filteredTokens.append(orig);
+							filteredTokens.append(postSpace);
+							filteredTokens.append("{");
+						}
 					}
 					if(!valid)
 					{
@@ -1467,7 +1502,12 @@ class CSSTokenizerFilter {
 					}
 					buffer.setLength(0);
 					s2Comma=false;
-					currentState=STATE2;
+					if(forPage) {
+						currentState=STATE3;
+						openBracesStartingS3 = openBraces;
+					} else {
+						currentState=STATE2;
+					}
 					buffer.setLength(0);
 					break;
 				case ';':
@@ -2014,7 +2054,12 @@ class CSSTokenizerFilter {
 					}
 					filteredTokens.setLength(0);
 					whitespaceAfterColon = "";
-					currentState=STATE2;
+					if(forPage) {
+						forPage = false;
+						currentState = STATE1;
+					} else {
+						currentState=STATE2;
+					}
 					if(isInline) return;
 					buffer.setLength(0);
 					s2Comma=false;

@@ -594,6 +594,16 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("LI:before { content: counters(item, \".\") }", "LI:before { content: counters(item, \".\") }");
 		propertyTests.put("LI:before { content: counters(item, \".\") \" \" }", "LI:before { content: counters(item, \".\") \" \" }");
 		propertyTests.put("OL { counter-reset: item }\nLI { display: block }\nLI:before { content: counters(item, \".\") \" \"; counter-increment: item }", "OL { counter-reset: item }\nLI { display: block }\nLI:before { content: counters(item, \".\") \" \"; counter-increment: item }");
+		propertyTests.put("H1:before        { content: counter(chno, upper-latin) \". \" }", "H1:before { content: counter(chno, upper-latin) \". \" }");
+		propertyTests.put("BLOCKQUOTE:after { content: \" [\" counter(bq, lower-greek) \"]\" }", "BLOCKQUOTE:after { content: \" [\" counter(bq, lower-greek) \"]\" }");
+		propertyTests.put("ol { list-style-type: lower-roman }   ", "ol { list-style-type: lower-roman }   ");
+		propertyTests.put("ol { list-style-image: url(ol.png); } ul { list-style-image: none }", "ol { list-style-image: url(\"ol.png\"); } ul { list-style-image: none }");
+		propertyTests.put("ul         { list-style: outside }\nul.compact { list-style: inside }", "ul { list-style: outside }\nul.compact { list-style: inside }");
+		propertyTests.put("ul { list-style: upper-roman inside url(ul.png) }", "ul { list-style: upper-roman inside url(\"ul.png\") }");
+		propertyTests.put("ol.alpha > li { list-style: lower-alpha }", "ol.alpha>li { list-style: lower-alpha }");
+		
+		// Paged media
+		propertyTests.put("@page { margin: 3cm; }", "@page { margin: 3cm; }");
 	}
 	
 	MIMEType cssMIMEType;
