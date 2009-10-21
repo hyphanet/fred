@@ -134,6 +134,14 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put("@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}",
 				"@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}");
 		CSS2_SELECTOR.put("@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}", "@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}");
+		CSS2_SELECTOR.put("@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") } }", "@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") }}");
+		CSS2_SELECTOR.put("@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}","@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}");
+		CSS2_SELECTOR.put("@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}", "@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}");
+		CSS2_SELECTOR.put("@media speech { h1 {cue: url(\"pop.au\") }}", "@media speech { h1 {cue: url(\"pop.au\") }}");
+		CSS2_SELECTOR.put("@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}");
+		CSS2_SELECTOR.put("@media aural { blockquote Q   { play-during: url(\"harp.wav\") mix }}","@media aural { blockquote Q { play-during: url(\"harp.wav\") mix }}");
+		CSS2_SELECTOR.put("@media speech { span.quiet     { play-during: none }}", "@media speech { span.quiet { play-during: none }}");
+		
 		// CONFORMANCE: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
 	}
 	
