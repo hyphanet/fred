@@ -3543,6 +3543,13 @@ class CSSTokenizerFilter {
 				return true;
 			}
 			
+			if(value[0] instanceof ParsedURL) {
+				// CONFORMANCE: This is required by the spec, and quite useful in practice.
+				// Browsers in practice only support images here.
+				// However, as long as they respect the MIME type - and if they don't we are screwed anyway - this should be safe even if it allows including text, CSS and HTML.
+				return isValidURI((ParsedURL)value[0], cb);
+			}
+			
 			return false;
 
 		}

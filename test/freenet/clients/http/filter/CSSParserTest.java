@@ -572,6 +572,17 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("div { line-height: 120%; font-size: 10pt }", "div { line-height: 120%; font-size: 10pt }");
 		propertyTests.put("th { vertical-align: 67%; } td { vertical-align: 33px } li { vertical-align: sub }", "th { vertical-align: 67%; } td { vertical-align: 33px } li { vertical-align: sub }");
 		
+		// Visual effects
+		propertyTests.put("#scroller { overflow: scroll; height: 5em; margin: 5em; }", "#scroller { overflow: scroll; height: 5em; margin: 5em; }");
+		propertyTests.put("body { clip: auto } h1,h2,h3 { clip: inherit } p { clip: rect(5px, 40px, 45px, 5px); }", "body { clip: auto } h1,h2,h3 { clip: inherit } p { clip: rect(5px, 40px, 45px, 5px); }");
+		propertyTests.put("#container2 { position: absolute; top: 2in; left: 2in; width: 2in; visibility: hidden; }", "#container2 { position: absolute; top: 2in; left: 2in; width: 2in; visibility: hidden; }");
+		
+		// Generated content
+		propertyTests.put("p.note:before { content: \"Note: \" } p.note { border: solid green }", "p.note:before { content: \"Note: \" } p.note { border: solid green }");
+		propertyTests.put("q:before { content: open-quote; color: red }", "q:before { content: open-quote; color: red }");
+		propertyTests.put("body:after { content: \"The End\"; display: block; margin-top: 2em; text-align: center; }", "body:after { content: \"The End\"; display: block; margin-top: 2em; text-align: center; }");
+		propertyTests.put("h1:before { content: \"Chapter \" counter(test) \" \" open-quote attr(chaptername) close-quote }", "h1:before { content: \"Chapter \" counter(test) \" \" open-quote attr(chaptername) close-quote }");
+		propertyTests.put("em:before { content: url(\"emphasis.png\") }", "em:before { content: url(\"emphasis.png\") }");
 	}
 	
 	MIMEType cssMIMEType;
