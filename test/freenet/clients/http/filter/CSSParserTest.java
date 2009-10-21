@@ -108,8 +108,11 @@ public class CSSParserTest extends TestCase {
 		// Whitespace before > or +, and selector chaining.
 		CSS2_SELECTOR.put("h1[foo] h2 > p + b { color: green;}", "h1[foo] h2>p+b { color: green;}");
 		CSS2_SELECTOR.put("h1[foo] h2 > p + b:before { color: green;}", "h1[foo] h2>p+b:before { color: green;}");
+		CSS2_SELECTOR.put("table          { border-collapse: collapse; border: 5px solid yellow; } *#col1         { border: 3px solid black; } td             { border: 1px solid red; padding: 1em; } td.cell5       { border: 5px dashed blue; } td.cell6       { border: 5px solid green; }",
+				"table { border-collapse: collapse; border: 5px solid yellow; } *#col1 { border: 3px solid black; } td { border: 1px solid red; padding: 1em; } td.cell5 { border: 5px dashed blue; } td.cell6 { border: 5px solid green; }");
+		CSS2_SELECTOR.put("td { border-right: hidden; border-bottom: hidden }", "td { border-right: hidden; border-bottom: hidden }");
 		
-		// REDFLAG: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
+		// CONFORMANCE: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
 	}
 	
 	private final static HashSet<String> CSS2_BAD_SELECTOR= new HashSet<String>();
