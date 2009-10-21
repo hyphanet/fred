@@ -308,7 +308,7 @@ class CSSTokenizerFilter {
 
 		else if("border-collapse".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.TABLEELEMENTS,new String[] {"collapse","separate","inherit"},ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"collapse","separate","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
@@ -429,13 +429,13 @@ class CSSTokenizerFilter {
 		}
 		else if("caption-side".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"caption"},new String[] {"top","bottom","inherit"},ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"top","bottom","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("clear".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.BLOCKLEVELELEMENTS,new String[] {"none","left","right","both","inherit"},ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","left","right","both","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("clip".equalsIgnoreCase(element))
@@ -517,7 +517,7 @@ class CSSTokenizerFilter {
 		}
 		else if("empty-cells".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"th","td"},new String[] {"show","hide","inherit"},ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"show","hide","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("float".equalsIgnoreCase(element))
@@ -661,27 +661,27 @@ class CSSTokenizerFilter {
 		}
 		else if("max-height".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ALLBUTNONREPLACEDINLINEELEMENTS,new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("max-width".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ALLBUTNONREPLACEDINLINEELEMENTS,new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("min-height".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ALLBUTNONREPLACEDINLINEELEMENTS,new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("min-width".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ALLBUTNONREPLACEDINLINEELEMENTS,new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("orphans".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.BLOCKLEVELELEMENTS,new String[] {"inherit"},ElementInfo.VISUALPAGEDMEDIA,new String[]{"in"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALPAGEDMEDIA,new String[]{"in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("outline-color".equalsIgnoreCase(element))
@@ -717,23 +717,23 @@ class CSSTokenizerFilter {
 		}
 		else if("padding-top".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ELEMENTSFORPADDING,new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("padding-right".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ELEMENTSFORPADDING,new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-bottom".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ELEMENTSFORPADDING,new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-left".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.ELEMENTSFORPADDING,new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding".equalsIgnoreCase(element))
@@ -745,17 +745,17 @@ class CSSTokenizerFilter {
 		}
 		else if("page-break-after".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.BLOCKLEVELELEMENTS,new String[] {"auto","always","avoid","left","right","inherit"},ElementInfo.VISUALPAGEDMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right","inherit"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("page-break-before".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.BLOCKLEVELELEMENTS,new String[] {"auto","always","avoid","left","right","inherit"},ElementInfo.VISUALPAGEDMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right","inherit"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("page-break-inside".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.BLOCKLEVELELEMENTS,new String[] {"auto","avoid","inherit"},ElementInfo.VISUALPAGEDMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","avoid","inherit"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("pause-after".equalsIgnoreCase(element))
@@ -822,7 +822,7 @@ class CSSTokenizerFilter {
 		}
 		else if("speak-header".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[]{"th","td"},new String[] {"once","always","inherit"},ElementInfo.AURALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"once","always","inherit"},ElementInfo.AURALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
@@ -854,12 +854,12 @@ class CSSTokenizerFilter {
 		}
 		else if("table-layout".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier( concat(ElementInfo.INLINEELEMENTS,ElementInfo.TABLEELEMENTS),new String[] {"auto","fixed","inherit"},ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"auto","fixed","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-align".equalsIgnoreCase(element))
 		{
-			elementVerifiers.put(element,new CSSPropertyVerifier( concat(concat(ElementInfo.INLINEELEMENTS,ElementInfo.TABLEELEMENTS),ElementInfo.BLOCKLEVELELEMENTS),new String[] {"left","right", "center", "justify" ,"inherit"},ElementInfo.VISUALMEDIA));
+			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"left","right", "center", "justify" ,"inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-decoration".equalsIgnoreCase(element))
@@ -874,7 +874,7 @@ class CSSTokenizerFilter {
 		}
 		else if("text-indent".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier( concat(concat(ElementInfo.INLINEELEMENTS,ElementInfo.TABLEELEMENTS),ElementInfo.BLOCKLEVELELEMENTS),new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-transform".equalsIgnoreCase(element))
@@ -894,7 +894,7 @@ class CSSTokenizerFilter {
 		}
 		else if("vertical-align".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(concat(ElementInfo.INLINEELEMENTS,new String[]{"th","td"}),new String[] {"baseline","sub","super","top","text-top","middle","bottom","text-bottom","inherit"},ElementInfo.VISUALMEDIA,new String[]{"pe","le"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"baseline","sub","super","top","text-top","middle","bottom","text-bottom","inherit"},ElementInfo.VISUALMEDIA,new String[]{"pe","le"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("visibility".equalsIgnoreCase(element))
@@ -923,7 +923,7 @@ class CSSTokenizerFilter {
 		}
 		else if("widows".equalsIgnoreCase(element))
 		{      
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.BLOCKLEVELELEMENTS,new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"in"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("width".equalsIgnoreCase(element))

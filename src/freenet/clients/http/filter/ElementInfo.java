@@ -137,20 +137,20 @@ public class ElementInfo {
 		REPLACED_ELEMENTS.add("button");
 	}
 	
-	public final static String[] HTMLELEMENTSARRAY=HTML_ELEMENTS.toArray(new String[0]);
-	public final static String[] TABLEELEMENTS=new String[]{"table","colgroup","col","tbody","thead","tfoot","tr","td","caption"};
-	public final static String[] ALLBUTNONREPLACEDINLINEELEMENTS= makeAllButNonReplacedInlineElements();
-	public final static String[] BLOCKLEVELELEMENTS=new String[]{"address","blockquote","center","dir","div","dl","fieldset","form","h1","h2","h3","h4","h5","h6","hr","isindex","menu","noframes","noscript","ol","p","pre","table","ul","dd","dt","frameset","li","tbody","td","tfoot","th","thead","tr"};
-	public final static String[] INLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","img","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var"};
+	//public final static String[] HTMLELEMENTSARRAY=HTML_ELEMENTS.toArray(new String[0]);
+	//public final static String[] TABLEELEMENTS=new String[]{"table","colgroup","col","tbody","thead","tfoot","tr","td","caption"};
+	//public final static String[] ALLBUTNONREPLACEDINLINEELEMENTS= makeAllButNonReplacedInlineElements();
+	//public final static String[] BLOCKLEVELELEMENTS=new String[]{"address","blockquote","center","dir","div","dl","fieldset","form","h1","h2","h3","h4","h5","h6","hr","isindex","menu","noframes","noscript","ol","p","pre","table","ul","dd","dt","frameset","li","tbody","td","tfoot","th","thead","tr"};
+	//public final static String[] INLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","img","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var"};
 	 
-	public final static String[] NONREPLACEDINLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var" };
-	public final static String[] ELEMENTSFORPADDING;
-	static
-	{
-		List<String> list = new ArrayList<String>(Arrays.asList(HTMLELEMENTSARRAY));
-		list.removeAll(Arrays.asList(new String[]{"table","th","tr","td","table","thead","tfoot","tbody","colgroup","col"}));
-		ELEMENTSFORPADDING = list.toArray(new String[0]);
-	}
+	//public final static String[] NONREPLACEDINLINEELEMENTS=new String[]{"a","abbr","acronym","b", "basefont","bdo","big","br","cite","code","dfn","em","font","i","input","kbd","label","q","s","samp","select","small","span","strike","strong","sub","sup","textarea","tt","u","var" };
+	//public final static String[] ELEMENTSFORPADDING;
+//	static
+//	{
+//		List<String> list = new ArrayList<String>(Arrays.asList(HTMLELEMENTSARRAY));
+//		list.removeAll(Arrays.asList(new String[]{"table","th","tr","td","table","thead","tfoot","tbody","colgroup","col"}));
+//		ELEMENTSFORPADDING = list.toArray(new String[0]);
+//	}
 	
 	// FIXME add some more languages.
 	public final static HashSet<String> LANGUAGES=new HashSet<String>();
