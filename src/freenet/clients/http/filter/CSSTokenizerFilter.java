@@ -3503,7 +3503,7 @@ class CSSTokenizerFilter {
 						{
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
-							String pattern = ignoredParts+(ignoredParts.isEmpty()?"":"a")+secondPart;
+							String pattern = ignoredParts+((ignoredParts.isEmpty()||secondPart.isEmpty())?"":"a")+secondPart;
 							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
 							if(valueToPass.length == 0)
 								return true;

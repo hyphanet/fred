@@ -264,9 +264,16 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("td { background:repeat-x;}\n", "td { background:repeat-x;}\n");
 		
 		// Double bar: recurse after recognising last element
-		propertyTests.put("td { background:repeat-x no;}\n", "td { background:repeat-x no;}\n");
-		propertyTests.put("td { background:repeat-x no transparent;}\n", "td { background:repeat-x no transparent;}\n");
-		propertyTests.put("td { background:repeat-x no transparent scroll;}\n", "td { background:repeat-x no transparent scroll;}\n");
+		propertyTests.put("td { background:repeat-x none;}\n", "td { background:repeat-x none;}\n");
+		propertyTests.put("td { background:repeat-x none transparent;}\n", "td { background:repeat-x none transparent;}\n");
+		propertyTests.put("td { background:repeat-x none transparent scroll;}\n", "td { background:repeat-x none transparent scroll;}\n");
+		
+		// Typo should not cause it to throw!
+		propertyTests.put("td { background:no;}\n", "td {}\n");
+		// This one was throwing NumberFormatException in double bar verifier
+		propertyTests.put("td { background:repeat-x no;}\n", "td {}\n");
+		propertyTests.put("td { background:repeat-x no transparent;}\n", "td {}\n");
+		propertyTests.put("td { background:repeat-x no transparent scroll;}\n", "td {}\n");
 		
 		propertyTests.put("@media speech { h1 { azimuth: 30deg }; }", "@media speech { h1 { azimuth: 30deg }}");
 		propertyTests.put("@media speech { h1 { azimuth: 0.877171rad }; }", "@media speech { h1 { azimuth: 0.877171rad }}");
@@ -604,6 +611,22 @@ public class CSSParserTest extends TestCase {
 		
 		// Paged media
 		propertyTests.put("@page { margin: 3cm; }", "@page { margin: 3cm; }");
+		propertyTests.put("@page :left {\n  margin-left: 4cm;\n  margin-right: 3cm;\n}", "@page :left {\n  margin-left: 4cm;\n  margin-right: 3cm;\n}");
+		propertyTests.put("@page :first { margin-top: 10cm } * { margin: 10px }", "@page :first { margin-top: 10cm } * { margin: 10px }");
+		propertyTests.put("h1 { page-break-before: always; orphans: 3; widows: 4 } h2 { page-break-after: inherit; orphans: 277; widows: inherit } h3 { page-break-inside: avoid; orphans: inherit; widows: 10 }", "h1 { page-break-before: always; orphans: 3; widows: 4 } h2 { page-break-after: inherit; orphans: 277; widows: inherit } h3 { page-break-inside: avoid; orphans: inherit; widows: 10 }");
+		
+		// Colors
+		propertyTests.put("em { color: rgb(255,0,0) }", "em { color: rgb(255,0,0) }");
+		propertyTests.put("body { background: url(\"background.jpeg\") }", "body { background: url(\"background.jpeg\") }");
+		propertyTests.put("body { background-color: green } table { background-color: transparent } h1, h2, h3 { background-color: #F00 }", "body { background-color: green } table { background-color: transparent } h1, h2, h3 { background-color: #F00 }");
+		propertyTests.put("body { background-image: url(\"marble.png\") } p { background-image: none }", "body { background-image: url(\"marble.png\") } p { background-image: none }");
+		propertyTests.put("body {\n  background: white url(\"pendant.png\");\n  background-repeat: repeat-y;\n  background-position: center;\n}", "body {\n  background: white url(\"pendant.png\");\n  background-repeat: repeat-y;\n  background-position: center;\n}");
+		propertyTests.put("body { background-attachment: fixed }", "body { background-attachment: fixed }");
+		propertyTests.put("body { background: white url(ledger.png) fixed; }", "body { background: white url(\"ledger.png\") fixed; }");
+		propertyTests.put("body { background-position: 100% 100% } h1 { background-position: 3% bottom } h2 { background-position: 3cm 2mm } h3 { background-position: right } h4 { background-position: center bottom } h5 { background-position: inherit }", "body { background-position: 100% 100% } h1 { background-position: 3% bottom } h2 { background-position: 3cm 2mm } h3 { background-position: right } h4 { background-position: center bottom } h5 { background-position: inherit }");
+		propertyTests.put("body { background: url(\"banner.jpeg\") right top }", "body { background: url(\"banner.jpeg\") right top }");
+		propertyTests.put("body { background: url(\"banner.jpeg\") center }", "body { background: url(\"banner.jpeg\") center }");
+		propertyTests.put("P { background: url(\"chess.png\") gray 50% repeat fixed }", "P { background: url(\"chess.png\") gray 50% repeat fixed }");
 	}
 	
 	MIMEType cssMIMEType;
