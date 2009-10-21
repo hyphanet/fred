@@ -659,33 +659,33 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("table { empty-cells: show }", "table { empty-cells: show }");
 		
 		// User interface
-		CSS2_SELECTOR.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
-		CSS2_SELECTOR.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
+		propertyTests.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
 		
 		// UI colors
-		CSS2_SELECTOR.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
-		CSS2_SELECTOR.put("button { outline : thick solid}", "button { outline: thick solid}");
-		CSS2_SELECTOR.put(":focus  { outline: thick solid black }", ":focus { outline: thick solid black }");
-		CSS2_SELECTOR.put(":active { outline: thick solid red }", ":active { outline: thick solid red }");
+		propertyTests.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
+		propertyTests.put("button { outline : thick solid}", "button { outline: thick solid}");
+		propertyTests.put(":focus  { outline: thick solid black }", ":focus { outline: thick solid black }");
+		propertyTests.put(":active { outline: thick solid red }", ":active { outline: thick solid red }");
 		
 		// Aural style sheets
-		//CSS2_SELECTOR.put("@media speech {\n  body { voice-family: Paul }\n}", "@media speech {\n  body { voice-family: Paul }\n}");
-		//CSS2_SELECTOR.put("@media aural {\n  body { voice-family: Paul }\n}", "@media aural {\n  body { voice-family: Paul }\n}");
-//		CSS2_SELECTOR.put("@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft } }",
+		//propertyTests.put("@media speech {\n  body { voice-family: Paul }\n}", "@media speech {\n  body { voice-family: Paul }\n}");
+		//propertyTests.put("@media aural {\n  body { voice-family: Paul }\n}", "@media aural {\n  body { voice-family: Paul }\n}");
+//		propertyTests.put("@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft } }",
 //				"@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft } }");
-		CSS2_SELECTOR.put("@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit } }",
+		propertyTests.put("@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit } }",
 				"@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit }}");
-		CSS2_SELECTOR.put("@media aural { q { speak: spell-out }}", "@media aural { q { speak: spell-out }}");
-		CSS2_SELECTOR.put("@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}",
+		propertyTests.put("@media aural { q { speak: spell-out }}", "@media aural { q { speak: spell-out }}");
+		propertyTests.put("@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}",
 				"@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}");
-		CSS2_SELECTOR.put("@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}", "@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}");
-		CSS2_SELECTOR.put("@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") } }", "@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") }}");
-		CSS2_SELECTOR.put("@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}","@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}");
-		CSS2_SELECTOR.put("@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}", "@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}");
-		CSS2_SELECTOR.put("@media speech { h1 {cue: url(\"pop.au\") }}", "@media speech { h1 {cue: url(\"pop.au\") }}");
-		CSS2_SELECTOR.put("@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}");
-		CSS2_SELECTOR.put("@media aural { blockquote Q   { play-during: url(\"harp.wav\") mix }}","@media aural { blockquote Q { play-during: url(\"harp.wav\") mix }}");
-		CSS2_SELECTOR.put("@media speech { span.quiet     { play-during: none }}", "@media speech { span.quiet { play-during: none }}");
+		propertyTests.put("@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}", "@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}");
+		propertyTests.put("@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") } }", "@media speech { h1 { cue-before: none; cue-after: url(\"h1.au\") }}");
+		propertyTests.put("@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}","@media speech { a {cue-before: url(\"bell.aiff\"); cue-after: url(\"dong.wav\") }}");
+		propertyTests.put("@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}", "@media speech { h1 {cue-before: url(\"pop.au\"); cue-after: url(\"pop.au\") }}");
+		propertyTests.put("@media speech { h1 {cue: url(\"pop.au\") }}", "@media speech { h1 {cue: url(\"pop.au\") }}");
+		propertyTests.put("@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}", "@media aural { blockquote.sad { play-during: url(\"violins.aiff\") }}");
+		propertyTests.put("@media aural { blockquote Q   { play-during: url(\"harp.wav\") mix }}","@media aural { blockquote Q { play-during: url(\"harp.wav\") mix }}");
+		propertyTests.put("@media speech { span.quiet     { play-during: none }}", "@media speech { span.quiet { play-during: none }}");
 		
 	}
 	
