@@ -3547,6 +3547,7 @@ class CSSTokenizerFilter {
 				// CONFORMANCE: This is required by the spec, and quite useful in practice.
 				// Browsers in practice only support images here.
 				// However, as long as they respect the MIME type - and if they don't we are screwed anyway - this should be safe even if it allows including text, CSS and HTML.
+				// Note also that generated content cannot alter the parse tree, so what can be done is presumably severely limited.
 				return isValidURI((ParsedURL)value[0], cb);
 			}
 			
