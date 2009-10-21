@@ -117,6 +117,9 @@ public class CSSParserTest extends TestCase {
 		CSS2_SELECTOR.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
 		//CSS2_SELECTOR.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
 		
+		// UI colors
+		CSS2_SELECTOR.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
+		
 		// CONFORMANCE: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
 	}
 	

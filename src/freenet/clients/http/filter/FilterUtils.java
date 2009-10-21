@@ -289,6 +289,37 @@ public class FilterUtils {
 		CSScolorKeywords.add("white");
 		CSScolorKeywords.add("yellow");
 	}
+	private final static HashSet<String> CSSsystemColorKeywords=new HashSet<String>();
+	static {
+		CSScolorKeywords.add("ActiveBorder");
+		CSScolorKeywords.add("ActiveCaption");
+		CSScolorKeywords.add("AppWorkspace");
+		CSScolorKeywords.add("Background");
+		CSScolorKeywords.add("ButtonFace");
+		CSScolorKeywords.add("ButtonHighlight");
+		CSScolorKeywords.add("ButtonShadow");
+		CSScolorKeywords.add("ButtonText");
+		CSScolorKeywords.add("CaptionText");
+		CSScolorKeywords.add("GrayText");
+		CSScolorKeywords.add("Highlight");
+		CSScolorKeywords.add("HighlightText");
+		CSScolorKeywords.add("InactiveBorder");
+		CSScolorKeywords.add("InactiveCaption");
+		CSScolorKeywords.add("InactiveCaptionText");
+		CSScolorKeywords.add("InfoBackground");
+		CSScolorKeywords.add("InfoText");
+		CSScolorKeywords.add("Menu");
+		CSScolorKeywords.add("MenuText");
+		CSScolorKeywords.add("Scrollbar");
+		CSScolorKeywords.add("ThreeDDarkShadow");
+		CSScolorKeywords.add("ThreeDFace");
+		CSScolorKeywords.add("ThreeDHighlight");
+		CSScolorKeywords.add("ThreeDLightShadow");
+		CSScolorKeywords.add("ThreeDShadow");
+		CSScolorKeywords.add("Window");
+		CSScolorKeywords.add("WindowFrame");
+		CSScolorKeywords.add("WindowText");
+	}
 	public static boolean isValidCSSShape(String value)
 	{
 		if(value.indexOf("rect(")==0 && value.indexOf(")")==value.length()-1)
@@ -328,7 +359,7 @@ public class FilterUtils {
 		}
 		else
 		{
-			if(CSScolorKeywords.contains(value))
+			if(CSScolorKeywords.contains(value) || CSSsystemColorKeywords.contains(value))
 				return true;
 		}
 		if(value.indexOf('#')==0)
