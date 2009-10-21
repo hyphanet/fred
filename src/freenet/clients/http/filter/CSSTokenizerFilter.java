@@ -3252,6 +3252,8 @@ class CSSTokenizerFilter {
 						secondPart=expression.substring(endIndex+1,expression.length());
 					for(int j=1;j<=noOfa+1 && j<=words.length;j++)
 					{
+						if(secondPart.isEmpty())
+							j = Math.min(noOfa+1, words.length); // Optimise
 						if(logDEBUG) log("2Making recursiveDoubleBarVerifier to consume "+j+" words");
 						ParsedWord[] partToPassToDB = new ParsedWord[j];
 						System.arraycopy(words, 0, partToPassToDB, 0, j);
