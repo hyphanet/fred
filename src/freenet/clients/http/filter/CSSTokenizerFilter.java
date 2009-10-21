@@ -3751,18 +3751,18 @@ outer:		for(int i=0;i<value.length;i++) {
 					String decoded = (((ParsedString)word).getDecoded());
 					if(logDEBUG) log("decoded: \""+decoded+"\"");
 					// It's actually quoted, great.
-					if(ElementInfo.isSpecificFontFamily(decoded.toLowerCase())) {
+					if(isSpecificFamily(decoded.toLowerCase())) {
 						continue;
-					} if(ElementInfo.isGenericFontFamily(decoded.toLowerCase())) {
+					} if(isGenericFamily(decoded.toLowerCase())) {
 						continue;
 					} else
 						s = decoded;
 				} else if(word instanceof ParsedIdentifier) {
 					s = (((ParsedIdentifier)word).getDecoded());
-					if(ElementInfo.isGenericFontFamily(s)) {
+					if(isGenericFamily(s)) {
 						continue;
 					}
-					if(ElementInfo.isSpecificFontFamily(s)) {
+					if(isSpecificFamily(s)) {
 						continue;
 					}
 					if(word.postComma) {
@@ -3844,7 +3844,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				return ElementInfo.isWordPrefixOrMatchOfSpecificFontFamily(s);
 			} else {
 				for(String s : fontWords)
-					if(!ElementInfo.isSpecificFontFamily(s)) return false;
+					if(!isSpecificFamily(s)) return false;
 				return true;
 			}
 		}
@@ -3854,7 +3854,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				if(s == null) throw new NullPointerException(); 
 			}
 			if(fontWords.size() == 1) {
-				if(ElementInfo.isGenericFontFamily(fontWords.get(0).toLowerCase()))
+				if(isGenericFamily(fontWords.get(0).toLowerCase()))
 					return true;
 			}
 			StringBuffer sb = new StringBuffer();
@@ -3864,7 +3864,15 @@ outer:		for(int i=0;i<value.length;i++) {
 				first = false;
 				sb.append(s);
 			}
-			return ElementInfo.isSpecificFontFamily(sb.toString().toLowerCase());
+			return isSpecificFamily(sb.toString().toLowerCase());
+		}
+		
+		boolean isSpecificFamily(String s) {
+			return ElementInfo.isSpecificFontFamily(s);
+		}
+		
+		boolean isGenericFamily(String s) {
+			return ElementInfo.isGenericFontFamily(s);
 		}
 		
 	}
