@@ -3706,10 +3706,10 @@ class CSSTokenizerFilter {
 		
 	}
 
-	static class FontPropertyVerifier extends CSSPropertyVerifier {
+	static abstract class FamilyPropertyVerifier extends CSSPropertyVerifier {
 		
-		FontPropertyVerifier(boolean valueOnly) {
-			super(null, ElementInfo.VISUALMEDIA, null, null, valueOnly, true);
+		FamilyPropertyVerifier(boolean valueOnly, String[] mediaTypes) {
+			super(null, mediaTypes, null, null, valueOnly, true);
 		}
 		
 		// FIXME: We do not change the tokens.
@@ -3865,6 +3865,18 @@ outer:		for(int i=0;i<value.length;i++) {
 				sb.append(s);
 			}
 			return isSpecificFamily(sb.toString().toLowerCase());
+		}
+		
+		abstract boolean isSpecificFamily(String s);
+		
+		abstract boolean isGenericFamily(String s);
+		
+	}
+	
+	static class FontPropertyVerifier extends FamilyPropertyVerifier {
+		
+		FontPropertyVerifier(boolean valueOnly) {
+			super(valueOnly, ElementInfo.VISUALMEDIA);
 		}
 		
 		boolean isSpecificFamily(String s) {
