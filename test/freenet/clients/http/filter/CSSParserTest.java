@@ -651,7 +651,8 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("table { table-layout: fixed; margin-left: 2em;margin-right: 2em }", "table { table-layout: fixed; margin-left: 2em;margin-right: 2em }");
 		propertyTests.put("table { border-collapse: collapse; border-spacing: 12em 11cm; border-spacing: 10px; border-spacing: 0; border-spacing: inherit }", "table { border-collapse: collapse; border-spacing: 12em 11cm; border-spacing: 10px; border-spacing: 0; border-spacing: inherit }");
 		propertyTests.put("table      { border: outset 10pt; border-collapse: separate; border-spacing: 15pt } td { border: inset 5pt } td.special { border: inset 10pt }", "table { border: outset 10pt; border-collapse: separate; border-spacing: 15pt } td { border: inset 5pt } td.special { border: inset 10pt }");
-
+		// Checking properties against elements is invalid because of inheritance. empty-cells applies to td, th only, but if set on table it is inherited, this example taken from CSS2.1 spec.
+		propertyTests.put("table { empty-cells: show }", "table { empty-cells: show }");
 	}
 	
 	MIMEType cssMIMEType;
