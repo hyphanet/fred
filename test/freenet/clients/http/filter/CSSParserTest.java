@@ -112,6 +112,11 @@ public class CSSParserTest extends TestCase {
 				"table { border-collapse: collapse; border: 5px solid yellow; } *#col1 { border: 3px solid black; } td { border: 1px solid red; padding: 1em; } td.cell5 { border: 5px dashed blue; } td.cell6 { border: 5px solid green; }");
 		CSS2_SELECTOR.put("td { border-right: hidden; border-bottom: hidden }", "td { border-right: hidden; border-bottom: hidden }");
 		
+		
+		// User interface
+		CSS2_SELECTOR.put(":link,:visited { cursor: url(example.svg#linkcursor) url(hyper.cur) pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\") url(\"hyper.cur\") pointer }");
+		//CSS2_SELECTOR.put(":link,:visited { cursor: url(example.svg#linkcursor), url(hyper.cur), pointer }", ":link,:visited { cursor: url(\"example.svg#linkcursor\"), url(\"hyper.cur\"), pointer }");
+		
 		// CONFORMANCE: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
 	}
 	
