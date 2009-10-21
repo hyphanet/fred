@@ -3108,11 +3108,10 @@ class CSSTokenizerFilter {
 
 			if(isString && words[0] instanceof ParsedString)
 			{
-				// REDFLAG: STRING PARSING
-				// The string is valid or the tokeniser would not have created a ParsedString.
-				// Conforming UAs will not do anything dangerous with it.
-				// Wierd extensions could do dangerous things with it, but we can't really prevent that e.g. Skype will turn numbers into links!
-				return true;
+				if(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(((ParsedString)words[0]).getDecoded()))
+					return true;
+				else
+					return false;
 			}
 			
 			}
@@ -3506,8 +3505,12 @@ class CSSTokenizerFilter {
 				return true;
 
 			//String processing
-			if(value[0] instanceof ParsedString)
-				return true; // REDFLAG: STRING PARSING: The string is valid, and conforming UAs won't do anything bad with it, they will just display it as text. Of course, wierd extensions may do wierd things with it, but there's not much we can do about that e.g. Skype turns numbers looking like phone numbers into links.
+			if(value[0] instanceof ParsedString) {
+				if(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(((ParsedString)value[0]).getDecoded()))
+					return true;
+				else
+					return false;
+			}
 
 			if(value[0] instanceof ParsedCounter) {
 				ParsedCounter counter = (ParsedCounter)value[0];
@@ -3530,7 +3533,7 @@ class CSSTokenizerFilter {
 					listStyleType.add("none");
 					if(!listStyleType.contains(counter.listType.getDecoded())) return false;
 				}
-				if(counter.separatorString != null && !ElementInfo.isValidString(counter.separatorString.getDecoded()))
+				if(counter.separatorString != null && (ElementInfo.ALLOW_ALL_VALID_STRINGS || !ElementInfo.isValidStringDecoded(counter.separatorString.getDecoded())))
 					return false;
 				return true;
 			}

@@ -497,6 +497,14 @@ public class ElementInfo {
 				
 			return true;
 		}
+		
+		public static final boolean ALLOW_ALL_VALID_STRINGS = true;
+		
+		public static boolean isValidStringDecoded(String s) {
+			// REDFLAG: All strings which are parsed and decoded correctly (which has happened before this point) are valid.
+			// That is pretty much what the spec says, and there would seem to be no risk, except for with wierd extensions, which can act on plain text so there isn't much we can do.
+			return true;
+		}
 
 		public static boolean isValidStringWithQuotes(String string) {
 			if(string.length() < 2) return false;
