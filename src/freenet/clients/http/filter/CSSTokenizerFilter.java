@@ -903,13 +903,9 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("voice-family".equalsIgnoreCase(element))
-		{      
-			// FIXME implement properly, reuse the font code.
-			//generic-voice & //specific-voice
-			auxilaryVerifiers[52]=new CSSPropertyVerifier(new String[]{"male","female","child"},new String[]{"st"},null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},null,ElementInfo.AURALMEDIA,new String[]{"52<0,"+ElementInfo.UPPERLIMIT+"> 52"}));
+		{
+			elementVerifiers.put(element,new VoiceFamilyPropertyVerifier(false));
 			allelementVerifiers.remove(element);
-			//53 54 55 56 59
 		}
 		else if("volume".equalsIgnoreCase(element))
 		{      
@@ -3885,6 +3881,22 @@ outer:		for(int i=0;i<value.length;i++) {
 		
 		boolean isGenericFamily(String s) {
 			return ElementInfo.isGenericFontFamily(s);
+		}
+		
+	}
+
+	static class VoiceFamilyPropertyVerifier extends FamilyPropertyVerifier {
+		
+		VoiceFamilyPropertyVerifier(boolean valueOnly) {
+			super(valueOnly, ElementInfo.AURALMEDIA);
+		}
+		
+		boolean isSpecificFamily(String s) {
+			return ElementInfo.isSpecificVoiceFamily(s);
+		}
+		
+		boolean isGenericFamily(String s) {
+			return ElementInfo.isGenericVoiceFamily(s);
 		}
 		
 	}

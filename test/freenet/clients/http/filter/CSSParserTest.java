@@ -495,9 +495,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("em em { font-style: normal }", "em em { font-style: normal }");
 		
 		// voice-family
-		// FIXME implement properly, reuse the font code.
-//		CSS2_SELECTOR.put("p[character=romeo]\n     { voice-family: \"Laurence Olivier\", charles, male }", "p[character=romeo]\n     { voice-family: \"Laurence Olivier\", charles, male }");
-
+		propertyTests.put("@media aural { p[character=romeo]\n     { voice-family: \"Laurence Olivier\", charles, male }}", "@media aural { p[character=romeo] { voice-family: \"Laurence Olivier\", charles, male }}");
 		
 		// Short percentage value
 		propertyTests.put("body { bottom: 1%;}", "body { bottom: 1%;}");
@@ -669,11 +667,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put(":active { outline: thick solid red }", ":active { outline: thick solid red }");
 		
 		// Aural style sheets
-		//propertyTests.put("@media speech {\n  body { voice-family: Paul }\n}", "@media speech {\n  body { voice-family: Paul }\n}");
-		//propertyTests.put("@media aural {\n  body { voice-family: Paul }\n}", "@media aural {\n  body { voice-family: Paul }\n}");
-//		propertyTests.put("@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft } }",
-//				"@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft } }");
-		propertyTests.put("@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit } }",
+		propertyTests.put("@media speech {\n  body { voice-family: Paul }\n}", "@media speech {\n  body { voice-family: Paul }}");
+		propertyTests.put("@media aural {\n  body { voice-family: Paul }\n}", "@media aural {\n  body { voice-family: Paul }}");
+		propertyTests.put("@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft }}",
+				"@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft }}");
+		propertyTests.put("@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit }}",
 				"@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit }}");
 		propertyTests.put("@media aural { q { speak: spell-out }}", "@media aural { q { speak: spell-out }}");
 		propertyTests.put("@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}",
@@ -692,6 +690,7 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("@media speech { body { pitch-range: 50; stress: 20 } h1,h2,h3 { pitch-range: 10.0; stress: 5.0 } p { pitch-range: inherit; stress: inherit; richness: 20 }}", "@media speech { body { pitch-range: 50; stress: 20 } h1,h2,h3 { pitch-range: 10.0; stress: 5.0 } p { pitch-range: inherit; stress: inherit; richness: 20 }}");
 		propertyTests.put("@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}", "@media speech { .phone { speak-punctuation: code; speak-numeral: digits }}");
 		propertyTests.put("@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}", "@media speech { table { speak-header: always } table.quick { speak-header: once } table.sub { speak-header: inherit }}");
+		propertyTests.put("@media speech { h1 { voice-family: announcer, male } p.part.romeo  { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}", "@media speech { h1 { voice-family: announcer, male } p.part.romeo { voice-family: romeo, male } p.part.juliet { voice-family: juliet, female }}");
 	}
 	
 	MIMEType cssMIMEType;

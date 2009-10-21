@@ -200,6 +200,7 @@ public class ElementInfo {
 	
 	public final static String[] FONT_LIST=new String[]{"arial", "helvetica","arial black","gadget", "comic sans ms", "comic sans ms5","courier new", "courier6", "monospace georgia1", "georgia","impact", "impact5", "charcoal6","lucida console", "monaco5","lucida sans unicode", "lucida grande","palatino linotype", "book antiqua3", "palatino6","tahoma", "geneva","times new roman", "times","trebuchet ms1", "helvetica","verdana", "webdings", "webdings2", "wingdings", "zapf dingbats", "wingdings2", "zapf dingbats2","ms sans serif4", "ms serif4", "new york6"};
 	public final static String[] GENERIC_FONT_KEYWORDS = new String[] { "serif","sans-serif","cursive","fantasy","monospace" };
+	public final static String[] GENERIC_VOICE_KEYWORDS = new String[] { "male", "female", "child" };
 	public final static HashSet<String> PSEUDOCLASS=new HashSet<String>();
 	static {
 		PSEUDOCLASS.add("first-child");
@@ -234,6 +235,23 @@ public class ElementInfo {
 		return true;
 	}
 	
+	public static boolean isSpecificVoiceFamily(String font) {
+//		if(disallowUnknownSpecificFonts) {
+//			for(String s : FONT_LIST)
+//				if(s.equals(font)) return true;
+//			return false;
+		//} else 
+		if(disallowNonAlnumFonts) {
+			for(int i=0;i<font.length();i++) {
+				char c = font.charAt(i);
+				if(!(Character.isLetterOrDigit(c) || c == ' ' || c == '.' || c == '_' || c == '-' || c == ',' || c == '+' || c == '~')) return false;
+			}
+			return true;
+		}
+		// Allow anything. The caller will have enforced that unquoted font names must not contain non-identifier characters.
+		return true;
+	}
+	
 	private static String[] makeAllButNonReplacedInlineElements() {
 		// all elements but non-replaced inline elements, table rows, and row groups
 		HashSet<String> elements = new HashSet<String>(HTML_ELEMENTS);
@@ -247,6 +265,13 @@ public class ElementInfo {
 	/** font must be lower-case */
 	public static boolean isGenericFontFamily(String font) {
 		for(String s : GENERIC_FONT_KEYWORDS)
+			if(s.equals(font)) return true;
+		return false;
+	}
+	
+	/** font must be lower-case */
+	public static boolean isGenericVoiceFamily(String font) {
+		for(String s : GENERIC_VOICE_KEYWORDS)
 			if(s.equals(font)) return true;
 		return false;
 	}
