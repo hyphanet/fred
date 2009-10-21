@@ -276,7 +276,7 @@ class CSSTokenizerFilter {
 
 		}
 		else if("background-image".equalsIgnoreCase(element)){
-			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"no","inherit"},ElementInfo.VISUALMEDIA,new String[]{"ur"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(ElementInfo.HTMLELEMENTSARRAY,new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"ur"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("background-position".equalsIgnoreCase(element))
