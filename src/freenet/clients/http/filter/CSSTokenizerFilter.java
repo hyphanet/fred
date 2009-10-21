@@ -496,7 +496,7 @@ class CSSTokenizerFilter {
 		{      
 			auxilaryVerifiers[25]=new CSSPropertyVerifier(null,new String[]{"ur"},null,true);
 			auxilaryVerifiers[26]=new CSSPropertyVerifier(new String[]{"auto","crosshair","default","pointer","move","e-resize","ne-resize","nw-resize","n-resize","se-resize","sw-resize","s-resize","w-resize","text","wait","help","progress"},null,null,true);
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALINTERACTIVEMEDIA,null,new String[]{"25<0,"+ElementInfo.UPPERLIMIT+"> 26"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALINTERACTIVEMEDIA,null,new String[]{"25<0,"+ElementInfo.UPPERLIMIT+"> 26"},false,true));
 
 			allelementVerifiers.remove(element);
 		}
@@ -975,11 +975,10 @@ class CSSTokenizerFilter {
 	 * value: 10pt
 	 *
 	 */
-	private boolean verifyToken(String[] media,String[] elements,String token,ParsedWord[] words)
+	private boolean verifyToken(String[] media,String[] elements,CSSPropertyVerifier obj,ParsedWord[] words)
 	{
 		if(words == null) return false;
-		if(logDEBUG) log("verifyToken for "+CSSPropertyVerifier.toString(words)+" for "+token);
-		CSSPropertyVerifier obj=getVerifier(token);
+		if(logDEBUG) log("verifyToken for "+CSSPropertyVerifier.toString(words));
 		if(obj==null)
 		{
 			return false;
@@ -1421,7 +1420,7 @@ class CSSTokenizerFilter {
 					String postSpace = buffer.substring(i);
 					buffer.setLength(i);
 					String orig = buffer.toString().trim();
-					ParsedWord[] parts=split(orig);
+					ParsedWord[] parts=split(orig, false);
 					if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(parts));
 					buffer.setLength(0);
 					boolean valid = false;
@@ -1554,7 +1553,7 @@ class CSSTokenizerFilter {
 						if("".equals(strbuffer.substring(0,importIndex).trim()))
 						{
 							String str1=strbuffer.substring(importIndex+7,strbuffer.length());
-							ParsedWord[] strparts=split(str1);
+							ParsedWord[] strparts=split(str1, false);
 							boolean broke = true;
 							if(strparts != null && strparts.length > 0 && (strparts[0] instanceof ParsedURL || strparts[0] instanceof ParsedString)) {
 								broke = false;
@@ -1954,9 +1953,11 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("Property value: "+propertyValue);
 					buffer.setLength(0);
 
-					ParsedWord[] words = split(propertyValue);
+					CSSPropertyVerifier obj=getVerifier(propertyName);
+					if(obj != null) {
+					ParsedWord[] words = split(propertyValue, obj.allowCommaDelimiters);
 					if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(words));
-					if(words != null && !ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
+					if(words != null && !ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,obj,words))
 					{
 						if(changedAnything(words)) propertyValue = reconstruct(words);
 						filteredTokens.append(whitespaceBeforeProperty);
@@ -1966,6 +1967,9 @@ class CSSTokenizerFilter {
 						if(logDEBUG) log("filtered tokens now: \""+filteredTokens.toString()+"\"");
 					} else {
 						if(logDEBUG) log("filtered tokens now (ignored): \""+filteredTokens.toString()+"\" words="+CSSPropertyVerifier.toString(words)+" ignoreS1="+ignoreElementsS1+" ignoreS2="+ignoreElementsS2+" ignoreS3="+ignoreElementsS3);
+					}
+					} else {
+						if(logDEBUG) log("No such property name \""+propertyName+"\"");
 					}
 					ignoreElementsS3 = false;
 					propertyName="";
@@ -2014,16 +2018,21 @@ class CSSTokenizerFilter {
 						if(logDEBUG) log("Property value: "+propertyValue);
 						buffer.setLength(0);
 
+						obj=getVerifier(propertyName);
 						if(logDEBUG) log("Found PropertyName:"+propertyName+" propertyValue:"+propertyValue);
-						words = split(propertyValue);
-						if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(words));
-						if(!ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
-						{
-							if(changedAnything(words)) propertyValue = reconstruct(words);
-							filteredTokens.append(whitespaceBeforeProperty);
-							whitespaceBeforeProperty = "";
-							filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue);
-							if(logDEBUG) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
+						if(obj != null) {
+							ParsedWord[] words = split(propertyValue,obj.allowCommaDelimiters);
+							if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(words));
+							if(!ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,obj,words))
+							{
+								if(changedAnything(words)) propertyValue = reconstruct(words);
+								filteredTokens.append(whitespaceBeforeProperty);
+								whitespaceBeforeProperty = "";
+								filteredTokens.append(propertyName+":"+whitespaceAfterColon+propertyValue);
+								if(logDEBUG) log("STATE3 CASE }: appending "+ propertyName+":"+propertyValue);
+							}
+						} else {
+							if(logDEBUG) log("No such property name \""+propertyName+"\"");
 						}
 						propertyName="";
 					} else {
@@ -2192,7 +2201,11 @@ class CSSTokenizerFilter {
 	private String reconstruct(ParsedWord[] words) {
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
+		ParsedWord lastWord = null;
 		for(ParsedWord word : words) {
+			if(lastWord != null && lastWord.postComma)
+				sb.append(',');
+			lastWord = word;
 			if(!first) sb.append(" ");
 			if(!word.changed) {
 				sb.append(word.original);
@@ -2246,6 +2259,7 @@ class CSSTokenizerFilter {
 		final String original;
 		/** Has decoded changed? If not we can use the original. */
 		protected boolean changed;
+		public boolean postComma;
 		
 		public ParsedWord(String original, boolean changed) {
 			this.original = original;
@@ -2385,6 +2399,7 @@ class CSSTokenizerFilter {
 			super.innerEncode(unicode, out);
 			out.append(stringChar);
 		}
+		
 	}
 	
 	static class ParsedURL extends ParsedString {
@@ -2468,6 +2483,11 @@ class CSSTokenizerFilter {
 				listType.innerEncode(unicode, out);
 			}
 			out.append(')');
+			if(postComma) out.append(',');
+		}
+		
+		protected boolean addComma() {
+			return false;
 		}
 		
 	}
@@ -2477,9 +2497,10 @@ class CSSTokenizerFilter {
 	 * @param str1
 	 * @return
 	 */
-	private static ParsedWord[] split(String input) {
+	private static ParsedWord[] split(String input, boolean allowCommaDelimiters) {
 		if(logDEBUG) log("Splitting \""+input+"\"");
 		ArrayList<ParsedWord> words = new ArrayList<ParsedWord>();
+		ParsedWord lastWord = null;
 		char prevc = 0;
 		char c = 0;
 		// ", ' or 0 (not in string)
@@ -2496,6 +2517,7 @@ class CSSTokenizerFilter {
 		boolean dontLikeOrigToken = false;
 		StringBuffer escape = new StringBuffer(6);
 		boolean couldBeIdentifier = true;
+		boolean addComma = false;
 		// Brackets prevent tokenisation, see e.g. rgb().
 		int bracketCount = 0;
 		for(int i=0;i<input.length();i++) {
@@ -2509,17 +2531,42 @@ class CSSTokenizerFilter {
 					eatLF = false;
 				// Not in a string
 				if(!escaping) {
-					if(" \t\r\n\f".indexOf(c) != -1 && bracketCount == 0) {
+					if((" \t\r\n\f".indexOf(c) != -1 || (allowCommaDelimiters && c == ',')) && bracketCount == 0) {
+						if(c == ',') {
+							if(decodedToken.length() == 0) {
+								if(lastWord == null) {
+									if(logDEBUG) log("Extra comma before first element in \""+input+"\" i="+i);
+									return null;
+								} else if(lastWord.postComma) {
+									if(logDEBUG) log("Extra comma after element "+lastWord+" in \""+input+"\" i="+i);
+									// Allow it, delete it.
+									lastWord.changed = true;
+								} else
+									lastWord.postComma = true;
+							// Comma is not added to the buffer, so this works even for element , element
+							} else {
+								if(addComma) {
+									if(logDEBUG) log("Extra comma after a comma in \""+input+"\" i="+i);
+									return null;
+								}
+								addComma = true;
+							}
+						}
 						// Legal CSS whitespace
 						if(decodedToken.length() > 0) {
 							ParsedWord word = parseToken(origToken, decodedToken, dontLikeOrigToken, couldBeIdentifier);
 							if(logDEBUG) log("Token: orig: \""+origToken.toString()+"\" decoded: \""+decodedToken.toString()+"\" dontLike="+dontLikeOrigToken+" couldBeIdentifier="+couldBeIdentifier+" parsed "+word);
 							if(word == null) return null;
+							if(addComma) {
+								word.postComma = true;
+								addComma = false;
+							}
 							words.add(word);
 							origToken.setLength(0);
 							decodedToken.setLength(0);
 							dontLikeOrigToken = false;
 							couldBeIdentifier = true;
+							lastWord = word;
 						} // Else ignore.
 					} else if(c == '\"') {
 						stringchar = c;
@@ -2842,7 +2889,7 @@ class CSSTokenizerFilter {
 	}
 
 	private static ParsedIdentifier makeParsedIdentifier(String string) {
-		ParsedWord[] words = split(string);
+		ParsedWord[] words = split(string,false);
 		if(words == null) return null;
 		if(words.length != 1) return null;
 		if(!(words[0] instanceof ParsedIdentifier)) return null;
@@ -2850,7 +2897,7 @@ class CSSTokenizerFilter {
 	}
 
 	private static ParsedString makeParsedString(String string) {
-		ParsedWord[] words = split(string);
+		ParsedWord[] words = split(string,false);
 		if(words == null) return null;
 		if(words.length != 1) return null;
 		if(!(words[0] instanceof ParsedString)) return null;
@@ -2865,6 +2912,7 @@ class CSSTokenizerFilter {
 	 */
 	static class CSSPropertyVerifier
 	{
+		public final boolean allowCommaDelimiters;
 		public HashSet<String> allowedValues=null; //HashSet for all String constants that this CSS property can assume like "inherit"
 		public HashSet<String> allowedMedia=null; // HashSet for all valid Media for this CSS property.
 		/*
@@ -2887,8 +2935,10 @@ class CSSTokenizerFilter {
 		public boolean onlyValueVerifier=false;
 		public String[] cssPropertyList=null; 
 		public String[] parserExpressions=null;
-		CSSPropertyVerifier()
-		{}
+		CSSPropertyVerifier(boolean allowCommaDelimiters)
+		{
+			this.allowCommaDelimiters = allowCommaDelimiters;
+		}
 
 
 		CSSPropertyVerifier(String[] allowedValues,String[] allowedMedia)
@@ -2910,6 +2960,13 @@ class CSSTokenizerFilter {
 
 		CSSPropertyVerifier(String[] allowedValues,String[] allowedMedia,String[] possibleValues,String[] parseExpression)
 		{
+			this(allowedValues,allowedMedia,possibleValues,parseExpression,false,false);
+		}		
+		
+		CSSPropertyVerifier(String[] allowedValues,String[] allowedMedia,String[] possibleValues,String[] parseExpression,boolean onlyValueVerifier,boolean allowCommaDelimiters)
+		{
+			this.onlyValueVerifier = onlyValueVerifier;
+			this.allowCommaDelimiters = allowCommaDelimiters;
 			if(possibleValues!=null)
 			{
 				for(String possibleValue:possibleValues)
@@ -3605,6 +3662,10 @@ class CSSTokenizerFilter {
 
 	static class FontPartPropertyVerifier extends CSSPropertyVerifier
 	{
+		FontPartPropertyVerifier() {
+			super(false);
+		}
+		
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
 		{
@@ -3625,8 +3686,8 @@ class CSSTokenizerFilter {
 						String secondPart=orig.substring(slashIndex+1,orig.length());
 						if(logDEBUG) log("FontPartPropertyVerifier FirstPart="+firstPart+" secondPart="+secondPart);
 						CSSPropertyVerifier lineHeight=new CSSPropertyVerifier(new String[] {"normal","inherit"},new String[]{"le","pe","re","in"},null,true);
-						ParsedWord[] first = split(firstPart);
-						ParsedWord[] second = split(secondPart);
+						ParsedWord[] first = split(firstPart,false);
+						ParsedWord[] second = split(secondPart,false);
 						if(first.length == 1 && second.length == 1 &&
 								fontSize.checkValidity(first, cb) && lineHeight.checkValidity(second,cb))
 							continue;
@@ -3732,7 +3793,7 @@ outer:		for(int i=0;i<value.length;i++) {
 					
 					for(int j=0;j<split.length;j++) {
 						String subword = split[j];
-						ParsedWord[] parsed = split(subword);
+						ParsedWord[] parsed = split(subword,false);
 						if(parsed.length != 1) {
 							if(logDEBUG) log("subword "+subword+" from "+s+" cannot parse into one word");
 							return false;
@@ -3833,7 +3894,7 @@ outer:		for(int i=0;i<value.length;i++) {
 						
 						for(int k=0;k<split.length;k++) {
 							String subword = split[k];
-							ParsedWord[] parsed = split(subword);
+							ParsedWord[] parsed = split(subword,false);
 							if(parsed.length != 1) {
 								if(logDEBUG) log("subword "+subword+" from "+s1+" cannot parse into one word");
 								return false;
