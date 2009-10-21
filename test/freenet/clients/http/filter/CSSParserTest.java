@@ -586,8 +586,14 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("body { quotes: none }", "body { quotes: none }");
 		propertyTests.put("body { quotes: inherit }", "body { quotes: inherit }");
 		propertyTests.put("body { quotes: \"'\" \"'\" }", "body { quotes: \"'\" \"'\" }");
-		propertyTests.put("body { quotes: \"'\" \"'\" \"\\\"\" \"\\\"\" }", "body { quotes: \"'\" \"'\" \"\\\"\" \"\\\"\" }");
+		propertyTests.put("body:lang(en) { quotes: \"'\" \"'\" \"\\\"\" \"\\\"\" }", "body:lang(en) { quotes: \"'\" \"'\" \"\\\"\" \"\\\"\" }");
 		propertyTests.put("body { quotes: \"'\" \"'\" \"\\\"\" }", "body { }");
+		propertyTests.put("blockquote p:before     { content: open-quote } blockquote p:after      { content: no-close-quote } blockquote p.last:after { content: close-quote }", "blockquote p:before { content: open-quote } blockquote p:after { content: no-close-quote } blockquote p.last:after { content: close-quote }");
+		propertyTests.put("H1:before {\n    content: \"Chapter \" counter(chapter) \". \";\n    counter-increment: chapter;  /* Add 1 to chapter */\n}", "H1:before {\n    content: \"Chapter \" counter(chapter) \". \";\n    counter-increment: chapter;  \n}");
+		propertyTests.put("OL { counter-reset: item }\nLI { display: block }\nLI:before { content: counter(item) \". \"; counter-increment: item }", "OL { counter-reset: item }\nLI { display: block }\nLI:before { content: counter(item) \". \"; counter-increment: item }");
+		propertyTests.put("LI:before { content: counters(item, \".\") }", "LI:before { content: counters(item, \".\") }");
+		propertyTests.put("LI:before { content: counters(item, \".\") \" \" }", "LI:before { content: counters(item, \".\") \" \" }");
+		propertyTests.put("OL { counter-reset: item }\nLI { display: block }\nLI:before { content: counters(item, \".\") \" \"; counter-increment: item }", "OL { counter-reset: item }\nLI { display: block }\nLI:before { content: counters(item, \".\") \" \"; counter-increment: item }");
 	}
 	
 	MIMEType cssMIMEType;

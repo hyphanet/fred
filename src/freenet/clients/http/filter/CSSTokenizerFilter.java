@@ -977,6 +977,7 @@ class CSSTokenizerFilter {
 	 */
 	private boolean verifyToken(String[] media,String[] elements,String token,ParsedWord[] words)
 	{
+		if(words == null) return false;
 		if(logDEBUG) log("verifyToken for "+CSSPropertyVerifier.toString(words)+" for "+token);
 		CSSPropertyVerifier obj=getVerifier(token);
 		if(obj==null)
@@ -2187,7 +2188,7 @@ class CSSTokenizerFilter {
 					medias.add(((ParsedIdentifier)word).getDecoded());
 				} else if(word instanceof SimpleParsedWord) {
 					String data = ((SimpleParsedWord)word).original;
-					String[] split = FilterUtils.removeWhiteSpace(data.split(","));
+					String[] split = FilterUtils.removeWhiteSpace(data.split(","),false);
 					for(String s : split) medias.add(s);
 				} else return null;
 			}
@@ -2772,7 +2773,7 @@ class CSSTokenizerFilter {
 				
 				if(strippedOrig.length() == 0) return null;
 				
-				String[] split = FilterUtils.removeWhiteSpace(strippedOrig.split(","));
+				String[] split = FilterUtils.removeWhiteSpace(strippedOrig.split(","),false);
 				if(split.length == 0 || (plural && split.length > 3) || ((!plural) && split.length > 2) || (plural && split.length < 2))
 					return null;
 				
@@ -3535,7 +3536,7 @@ class CSSTokenizerFilter {
 					listStyleType.add("none");
 					if(!listStyleType.contains(counter.listType.getDecoded())) return false;
 				}
-				if(counter.separatorString != null && (ElementInfo.ALLOW_ALL_VALID_STRINGS || !ElementInfo.isValidStringDecoded(counter.separatorString.getDecoded())))
+				if(counter.separatorString != null && !(ElementInfo.ALLOW_ALL_VALID_STRINGS || ElementInfo.isValidStringDecoded(counter.separatorString.getDecoded())))
 					return false;
 				return true;
 			}

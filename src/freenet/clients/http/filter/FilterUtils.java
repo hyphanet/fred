@@ -430,14 +430,17 @@ public class FilterUtils {
 			return false;
 		return isNumber(intValue);
 	}
-	public static String[] removeWhiteSpace(String[] values)
+	public static String[] removeWhiteSpace(String[] values, boolean stripQuotes)
 	{
 		if(values==null) return null;
 		ArrayList<String> arrayToReturn=new ArrayList<String>();
 		for(String value:values)
 		{
+			value = value.trim();
+			if(stripQuotes)
+				value = CSSTokenizerFilter.removeOuterQuotes(value).trim();
 			if(value!=null && !("".equals(value.trim())))
-				arrayToReturn.add(CSSTokenizerFilter.removeOuterQuotes(value.trim()).trim());
+				arrayToReturn.add(value);
 		}
 		return arrayToReturn.toArray(new String[0]);
 	}
