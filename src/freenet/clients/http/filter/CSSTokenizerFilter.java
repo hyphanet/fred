@@ -3718,7 +3718,7 @@ class CSSTokenizerFilter {
 		{
 			if(logDEBUG) log("font verifier: "+toString(value));
 			if(value.length == 1) {
-				if(value[0] instanceof ParsedIdentifier && "inherit".equals(((ParsedIdentifier)value[0]).getDecoded())) {
+				if(value[0] instanceof ParsedIdentifier && "inherit".equalsIgnoreCase(((ParsedIdentifier)value[0]).getDecoded())) {
 				//CSS Property has one of the explicitly defined values
 					if(logDEBUG) log("font: inherit");
 					return true;
