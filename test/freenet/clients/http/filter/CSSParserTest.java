@@ -627,6 +627,31 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("body { background: url(\"banner.jpeg\") right top }", "body { background: url(\"banner.jpeg\") right top }");
 		propertyTests.put("body { background: url(\"banner.jpeg\") center }", "body { background: url(\"banner.jpeg\") center }");
 		propertyTests.put("P { background: url(\"chess.png\") gray 50% repeat fixed }", "P { background: url(\"chess.png\") gray 50% repeat fixed }");
+		
+		// Text
+		propertyTests.put("p { text-indent: 3em }", "p { text-indent: 3em }");
+		propertyTests.put("p { text-indent: 33% }", "p { text-indent: 33% }");
+		propertyTests.put("div.important { text-align: center }", "div.important { text-align: center }");
+		propertyTests.put("a:visited,a:link { text-decoration: underline }", "a:visited,a:link { text-decoration: underline }");
+		propertyTests.put("blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }","blockquote { text-decoration: underline overline line-through blink } h1 { text-decoration: none } h2 { text-decoration: inherit }");
+		propertyTests.put("blockquote { letter-spacing: 0.1em }", "blockquote { letter-spacing: 0.1em }");
+		propertyTests.put("blockquote { letter-spacing: normal }", "blockquote { letter-spacing: normal }");
+		propertyTests.put("h1 { word-spacing: 1em }", "h1 { word-spacing: 1em }");
+		propertyTests.put("h1 { text-transform: uppercase }", "h1 { text-transform: uppercase }");
+		propertyTests.put("pre        { white-space: pre } p          { white-space: normal } td[nowrap] { white-space: nowrap }", "pre { white-space: pre } p { white-space: normal } td[nowrap] { white-space: nowrap }");
+		propertyTests.put("pre[wrap]  { white-space: pre-wrap }", "pre[wrap] { white-space: pre-wrap }");
+		propertyTests.put("th { text-align: center; font-weight: bold }", "th { text-align: center; font-weight: bold }");
+		propertyTests.put("th { vertical-align: baseline } td { vertical-align: middle }", "th { vertical-align: baseline } td { vertical-align: middle }");
+		propertyTests.put("caption { caption-side: top }", "caption { caption-side: top }");
+		
+		// Tables
+		propertyTests.put("table    { display: table }\ntr       { display: table-row }\nthead    { display: table-header-group }\ntbody    { display: table-row-group }\ntfoot    { display: table-footer-group }\ncol      { display: table-column }\ncolgroup { display: table-column-group }\ntd, th   { display: table-cell }\ncaption  { display: table-caption }", 
+				"table { display: table }\ntr { display: table-row }\nthead { display: table-header-group }\ntbody { display: table-row-group }\ntfoot { display: table-footer-group }\ncol { display: table-column }\ncolgroup { display: table-column-group }\ntd, th { display: table-cell }\ncaption { display: table-caption }");
+		propertyTests.put("caption { caption-side: bottom; \n width: auto;\n text-align: left }", "caption { caption-side: bottom; \n width: auto;\n text-align: left }");
+		propertyTests.put("table { table-layout: fixed; margin-left: 2em;margin-right: 2em }", "table { table-layout: fixed; margin-left: 2em;margin-right: 2em }");
+		propertyTests.put("table { border-collapse: collapse; border-spacing: 12em 11cm; border-spacing: 10px; border-spacing: 0; border-spacing: inherit }", "table { border-collapse: collapse; border-spacing: 12em 11cm; border-spacing: 10px; border-spacing: 0; border-spacing: inherit }");
+		propertyTests.put("table      { border: outset 10pt; border-collapse: separate; border-spacing: 15pt } td { border: inset 5pt } td.special { border: inset 10pt }", "table { border: outset 10pt; border-collapse: separate; border-spacing: 15pt } td { border: inset 5pt } td.special { border: inset 10pt }");
+
 	}
 	
 	MIMEType cssMIMEType;
