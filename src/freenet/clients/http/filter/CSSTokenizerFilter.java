@@ -3185,6 +3185,10 @@ class CSSTokenizerFilter {
 						return true;
 				}
 
+				if(isTime) {
+					if(FilterUtils.isTime(word))
+						return true;
+				}
 			}
 			
 			if(words[0] instanceof ParsedIdentifier && isColor) {

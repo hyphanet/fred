@@ -119,7 +119,21 @@ public class CSSParserTest extends TestCase {
 		
 		// UI colors
 		CSS2_SELECTOR.put("p { color: WindowText; background-color: Window }", "p { color: WindowText; background-color: Window }");
+		CSS2_SELECTOR.put("button { outline : thick solid}", "button { outline: thick solid}");
+		CSS2_SELECTOR.put(":focus  { outline: thick solid black }", ":focus { outline: thick solid black }");
+		CSS2_SELECTOR.put(":active { outline: thick solid red }", ":active { outline: thick solid red }");
 		
+		// Aural style sheets
+		//CSS2_SELECTOR.put("@media speech {\n  body { voice-family: Paul }\n}", "@media speech {\n  body { voice-family: Paul }\n}");
+		//CSS2_SELECTOR.put("@media aural {\n  body { voice-family: Paul }\n}", "@media aural {\n  body { voice-family: Paul }\n}");
+//		CSS2_SELECTOR.put("@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft } }",
+//				"@media speech { h1, h2, h3, h4, h5, h6 { voice-family: Paul; stress: 20; richness: 90; cue-before: url(\"ping.au\") } p.heidi { azimuth: center-left } p.peter { azimuth: right } p.goat { volume: x-soft } }");
+		CSS2_SELECTOR.put("@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit } }",
+				"@media speech { body { volume: 10 } h1, h2 { volume: 50% } h3, h4 { volume: silent } p { volume: inherit }}");
+		CSS2_SELECTOR.put("@media aural { q { speak: spell-out }}", "@media aural { q { speak: spell-out }}");
+		CSS2_SELECTOR.put("@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}",
+				"@media aural { blockquote { pause-after: 1s } h1 { pause-before: 10% } p { pause-after: inherit }}");
+		CSS2_SELECTOR.put("@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}", "@media speech { h1 { pause: 10ms 10% } p { pause: inherit }}");
 		// CONFORMANCE: We combine pseudo-classes and pseudo-elements, so we allow pseudo-elements on earlier selectors. This is against the spec, CSS2 section 5.10.
 	}
 	

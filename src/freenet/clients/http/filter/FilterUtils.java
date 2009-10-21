@@ -343,7 +343,7 @@ public class FilterUtils {
 	}
 	private final static HashSet<String> cssMedia = new HashSet<String>();
 	static {
-		for(String s : new String[] {"all","braille","embossed","handheld","print","projection","screen","speech","tty","tv"})
+		for(String s : new String[] {"all","aural","braille","embossed","handheld","print","projection","screen","speech","tty","tv"})
 			cssMedia.add(s);
 	}
 	public static boolean isMedia(String media) {
