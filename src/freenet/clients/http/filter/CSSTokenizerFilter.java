@@ -297,7 +297,7 @@ class CSSTokenizerFilter {
 			//background-color
 			auxilaryVerifiers[7]=new CSSPropertyVerifier(new String[] {"transparent","inherit"},new String[]{"co"},null,true);
 			//background-image
-			auxilaryVerifiers[8]=new CSSPropertyVerifier(new String[] {"no","inherit"},new String[]{"ur"},null,true);
+			auxilaryVerifiers[8]=new CSSPropertyVerifier(new String[] {"none","inherit"},new String[]{"ur"},null,true);
 			//background-position
 			auxilaryVerifiers[9]=new CSSPropertyVerifier(new String[] {"inherit"},null,new String[]{"2 3?","4a5"},true);
 			//background-repeat
