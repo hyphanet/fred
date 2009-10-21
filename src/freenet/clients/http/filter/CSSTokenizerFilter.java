@@ -977,7 +977,7 @@ class CSSTokenizerFilter {
 	 */
 	private boolean verifyToken(String[] media,String[] elements,String token,ParsedWord[] words)
 	{
-
+		if(logDEBUG) log("verifyToken for "+CSSPropertyVerifier.toString(words)+" for "+token);
 		CSSPropertyVerifier obj=getVerifier(token);
 		if(obj==null)
 		{
@@ -1914,6 +1914,7 @@ class CSSTokenizerFilter {
 					buffer.setLength(0);
 
 					ParsedWord[] words = split(propertyValue);
+					if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(words));
 					if(words != null && !ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
 					{
 						if(changedAnything(words)) propertyValue = reconstruct(words);
@@ -1974,6 +1975,7 @@ class CSSTokenizerFilter {
 
 						if(logDEBUG) log("Found PropertyName:"+propertyName+" propertyValue:"+propertyValue);
 						words = split(propertyValue);
+						if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(words));
 						if(!ignoreElementsS2 && !ignoreElementsS3 && verifyToken(currentMedia,elements,propertyName,words))
 						{
 							if(changedAnything(words)) propertyValue = reconstruct(words);
@@ -2464,8 +2466,8 @@ class CSSTokenizerFilter {
 					if(" \t\r\n\f".indexOf(c) != -1 && bracketCount == 0) {
 						// Legal CSS whitespace
 						if(decodedToken.length() > 0) {
-							if(logDEBUG) log("Token: orig: \""+origToken.toString()+"\" decoded: \""+decodedToken.toString()+"\" dontLike="+dontLikeOrigToken+" couldBeIdentifier="+couldBeIdentifier);
 							ParsedWord word = parseToken(origToken, decodedToken, dontLikeOrigToken, couldBeIdentifier);
+							if(logDEBUG) log("Token: orig: \""+origToken.toString()+"\" decoded: \""+decodedToken.toString()+"\" dontLike="+dontLikeOrigToken+" couldBeIdentifier="+couldBeIdentifier+" parsed "+word);
 							if(word == null) return null;
 							words.add(word);
 							origToken.setLength(0);
@@ -2997,6 +2999,7 @@ class CSSTokenizerFilter {
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] words, FilterCallback cb)
 		{
 
+			if(logDEBUG) log("checkValidity for "+toString(words)+" for "+this);
 			if(!onlyValueVerifier)
 			{
 				if(allowedMedia!=null) {
