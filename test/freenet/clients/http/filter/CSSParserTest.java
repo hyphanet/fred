@@ -583,6 +583,11 @@ public class CSSParserTest extends TestCase {
 		propertyTests.put("body:after { content: \"The End\"; display: block; margin-top: 2em; text-align: center; }", "body:after { content: \"The End\"; display: block; margin-top: 2em; text-align: center; }");
 		propertyTests.put("h1:before { content: \"Chapter \" counter(test) \" \" open-quote attr(chaptername) close-quote }", "h1:before { content: \"Chapter \" counter(test) \" \" open-quote attr(chaptername) close-quote }");
 		propertyTests.put("em:before { content: url(\"emphasis.png\") }", "em:before { content: url(\"emphasis.png\") }");
+		propertyTests.put("body { quotes: none }", "body { quotes: none }");
+		propertyTests.put("body { quotes: inherit }", "body { quotes: inherit }");
+		propertyTests.put("body { quotes: \"'\" \"'\" }", "body { quotes: \"'\" \"'\" }");
+		propertyTests.put("body { quotes: \"'\" \"'\" \"\\\"\" \"\\\"\" }", "body { quotes: \"'\" \"'\" \"\\\"\" \"\\\"\" }");
+		propertyTests.put("body { quotes: \"'\" \"'\" \"\\\"\" }", "body { }");
 	}
 	
 	MIMEType cssMIMEType;
