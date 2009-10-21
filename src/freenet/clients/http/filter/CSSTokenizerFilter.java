@@ -581,7 +581,7 @@ class CSSTokenizerFilter {
 			auxilaryVerifiers[53]=new CSSPropertyVerifier(ElementInfo.FONT_LIST,null,null,true);
 			auxilaryVerifiers[54]=new CSSPropertyVerifier(new String[]{"inherit"},null,new String[]{"53 53<0,"+ElementInfo.UPPERLIMIT+">"},true);
 			 */
-			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"caption","icon","menu","message-box","small-caption","status-bar","inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"30<0,1>[1,3] 31<0,1>[1,3] 59"}));
+			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"caption","icon","menu","message-box","small-caption","status-bar","inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"30<0,1>[1,3] 31<0,1>[1,3] 59"},false,true));
 			//elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"caption","icon","menu","message-box","small-caption","status-bar","inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"31<1,1>[1,3]"}));
 			allelementVerifiers.remove(element);
 		}
@@ -2498,7 +2498,7 @@ class CSSTokenizerFilter {
 	 * @return
 	 */
 	private static ParsedWord[] split(String input, boolean allowCommaDelimiters) {
-		if(logDEBUG) log("Splitting \""+input+"\"");
+		if(logDEBUG) log("Splitting \""+input+"\" allowCommaDelimiters="+allowCommaDelimiters);
 		ArrayList<ParsedWord> words = new ArrayList<ParsedWord>();
 		ParsedWord lastWord = null;
 		char prevc = 0;
@@ -3705,7 +3705,7 @@ class CSSTokenizerFilter {
 	static class FontPropertyVerifier extends CSSPropertyVerifier {
 		
 		FontPropertyVerifier(boolean valueOnly) {
-			super(null, null, null, ElementInfo.VISUALMEDIA, valueOnly);
+			super(null, ElementInfo.VISUALMEDIA, null, null, valueOnly, true);
 		}
 		
 		// FIXME: We do not change the tokens.
@@ -3737,7 +3737,6 @@ class CSSTokenizerFilter {
 					return false;
 				}
 			}
-			boolean hadFont = false;
 			ArrayList<String> fontWords = new ArrayList<String>();
 			// FIXME delete fonts we don't know about but let through ones we do.
 			// Or allow unknown fonts given [a-z][A-Z][0-9] ???
@@ -3749,89 +3748,23 @@ outer:		for(int i=0;i<value.length;i++) {
 					if(logDEBUG) log("decoded: \""+decoded+"\"");
 					// It's actually quoted, great.
 					if(ElementInfo.isSpecificFontFamily(decoded.toLowerCase())) {
-						hadFont = true;
 						continue;
 					} if(ElementInfo.isGenericFontFamily(decoded.toLowerCase())) {
-						hadFont = true;
 						continue;
 					} else
 						s = decoded;
 				} else if(word instanceof ParsedIdentifier) {
 					s = (((ParsedIdentifier)word).getDecoded());
 					if(ElementInfo.isGenericFontFamily(s)) {
-						hadFont = true;
 						continue;
 					}
-				} else if(word instanceof SimpleParsedWord) {
-					s = ((SimpleParsedWord)word).original;
-					s = s.trim();
-					if(s.equals(",")) {
-						if(hadFont) continue; // OK, there was a previous font.
-						if(logDEBUG) log("out of context comma");
+					if(ElementInfo.isSpecificFontFamily(s)) {
+						continue;
+					}
+					if(word.postComma) {
+						if(logDEBUG) log("Word ends in comma, but is not a valid font on its own: "+word+" (index "+i+")");
 						return false;
 					}
-					if(s.startsWith(",")) {
-						if(!hadFont) {
-							// There was a previous font.
-							if(logDEBUG) log("out of context comma (2)");
-							return false;
-						}
-						s = s.substring(1);
-					}
-					boolean endComma = false;
-					if(s.endsWith(",")) {
-						endComma = true;
-						s = s.substring(0, s.length()-1);
-					}
-					String[] split;
-					if(s.contains(",")) {
-						split = s.split(",");
-					} else
-						split = new String[] { s };
-					
-					boolean moreWords = false;
-					
-					for(int j=0;j<split.length;j++) {
-						String subword = split[j];
-						ParsedWord[] parsed = split(subword,false);
-						if(parsed.length != 1) {
-							if(logDEBUG) log("subword "+subword+" from "+s+" cannot parse into one word");
-							return false;
-						}
-						String keyword;
-						// Decode it, strip quotes etc.
-						if(parsed[0] instanceof ParsedString) {
-							keyword = (((ParsedString)parsed[0]).getDecoded());
-						} else if(parsed[0] instanceof ParsedIdentifier) {
-							keyword = (((ParsedIdentifier)parsed[0]).getDecoded());
-						} else {
-							// Unquoted, so not safe to allow wierd characters.
-							if(logDEBUG) log("subword "+subword+" from "+s+" parses to unrecognised type "+parsed[0]);
-							return false;
-						}
-						keyword = keyword.toLowerCase();
-						if(j != split.length-1 || endComma) {
-							// This must be a complete font keyword.
-							// We start from a position of not being in a font, fontWords is empty (the main loop: the loop below continues until it finds a font).
-							if(ElementInfo.isGenericFontFamily(keyword)) {
-								hadFont = true;
-								continue;
-							} else if(ElementInfo.isSpecificFontFamily(keyword)) {
-								hadFont = true;
-								continue;
-							} else {
-								if(logDEBUG) log("not a valid token (separated by commas): "+keyword+" from "+subword+" from "+s+" in main loop");
-								return false;
-							}
-						} else {
-							// Last item, and endComma == false.
-							// This means there *might* be another font keyword afterwards.
-							s = keyword;
-							moreWords = true;
-						}
-					}
-					
-					if(!moreWords) continue; // Everything happily eaten.
 				} else
 					return false;
 				// Unquoted multi-word font, or unquoted single-word font.
@@ -3855,107 +3788,29 @@ outer:		for(int i=0;i<value.length;i++) {
 					w = null;
 					if (j == value.length-1) last = true;
 					String s1;
-					if(newWord instanceof SimpleParsedWord) {
-						s1 = ((SimpleParsedWord)newWord).original;
-						
-						if(s1.equals(",")) {
+					if(newWord instanceof ParsedIdentifier) {
+						s1 = ((ParsedIdentifier)newWord).getDecoded();
+						fontWords.add(s1);
+						if(logDEBUG) log("adding word: \""+s1+"\"");
+						if(last) {
+							if(newWord.postComma) {
+								if(logDEBUG) log("not valid: trailing comma at end");
+							}
+							if(validFontWords(fontWords)) {
+								// Valid. Good.
+								if(logDEBUG) log("font: reached last in inner loop, valid. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()])));
+								return true;
+							}
+						}
+						if(newWord.postComma) {
+							// Words must be a valid font when put together
 							if(validFontWords(fontWords)) {
 								fontWords.clear();
-								hadFont = true;
 								i = j;
 								continue outer;
 							} else {
 								if(logDEBUG) log("comma but can't parse font words: "+fontWords.toArray(new String[fontWords.size()]));
 								return false;
-							}
-						}
-						
-						if(s1.startsWith(",")) {
-							if(!validFontWords(fontWords)) {
-								if(logDEBUG) log("comma but can't parse font words (2): "+fontWords.toArray(new String[fontWords.size()]));
-								return false;
-							}
-							fontWords.clear();
-							s1 = s1.substring(1);
-						}
-						
-						boolean endComma = false;
-						
-						if(s1.endsWith(",")) {
-							endComma = true;
-							s1 = s1.substring(0, s1.length()-1);
-						}
-						
-						String[] split;
-						if(s1.contains(",")) {
-							split = s1.split(",");
-						} else
-							split = new String[] { s1 };
-						
-						for(int k=0;k<split.length;k++) {
-							String subword = split[k];
-							ParsedWord[] parsed = split(subword,false);
-							if(parsed.length != 1) {
-								if(logDEBUG) log("subword "+subword+" from "+s1+" cannot parse into one word");
-								return false;
-							}
-							String keyword;
-							// Decode it, strip quotes etc.
-							if(parsed[0] instanceof ParsedString) {
-								keyword = (((ParsedString)parsed[0]).getDecoded());
-							} else if(parsed[0] instanceof ParsedIdentifier) {
-								keyword = (((ParsedIdentifier)parsed[0]).getDecoded());
-							} else {
-								// Unquoted, so not safe to allow wierd characters.
-								if(logDEBUG) log("subword "+subword+" from "+s1+" parses to unrecognised type "+parsed[0]);
-								return false;
-							}
-							keyword = keyword.toLowerCase();
-							if(logDEBUG) log("keyword "+k+" of "+split.length+" is \""+keyword+"\"");
-							
-							if(k == 0 && (split.length > 0 || endComma)) {
-								fontWords.add(keyword);
-								if(!validFontWords(fontWords)) {
-									log("first item in "+s+" is "+subword+" gives font words "+getStringFromArray(fontWords.toArray(new String[fontWords.size()])));
-									return false;
-								}
-								fontWords.clear();
-							} else if(k == 0 && split.length == 1 && !endComma) {
-								fontWords.add(keyword);
-							} else if(k != split.length-1 || endComma) {
-								// This must be a complete font keyword.
-								// We start from a position of not being in a font, fontWords is empty (the main loop: the loop below continues until it finds a font).
-								if(ElementInfo.isGenericFontFamily(keyword)) {
-									hadFont = true;
-									continue;
-								} else if(ElementInfo.isSpecificFontFamily(keyword)) {
-									hadFont = true;
-									continue;
-								} else {
-									if(logDEBUG) log("not a valid token (separated by commas): "+keyword+" from "+subword+" from "+s1+" in second loop");
-									return false;
-								}
-							} else {
-								// Last item, and endComma == false.
-								// This means there *might* be another font keyword afterwards.
-								fontWords.add(keyword);
-							}
-						}
-						
-						if(fontWords.isEmpty()) {
-							if(logDEBUG) log("fontWords empty, continuing outer loop");
-							i = j;
-							continue outer; // Everything happily eaten.
-						} // Else looking for another keyword
-					} else if(newWord instanceof ParsedIdentifier) {
-						s1 = ((ParsedIdentifier)newWord).getDecoded();
-						fontWords.add(s1);
-						if(logDEBUG) log("adding word: \""+s1+"\"");
-						if(last) {
-							if(validFontWords(fontWords)) {
-								// Valid. Good.
-								if(logDEBUG) log("font: reached last in inner loop, valid. font words: "+getStringFromArray(fontWords.toArray(new String[fontWords.size()])));
-								return true;
 							}
 						}
 					} else {
