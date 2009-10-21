@@ -3744,7 +3744,7 @@ outer:		for(int i=0;i<value.length;i++) {
 				ParsedWord word = value[i];
 				String s = null;
 				if(word instanceof ParsedString) {
-					String decoded = (((ParsedString)word).original);
+					String decoded = (((ParsedString)word).getDecoded());
 					if(logDEBUG) log("decoded: \""+decoded+"\"");
 					// It's actually quoted, great.
 					if(isSpecificFamily(decoded.toLowerCase())) {
@@ -3754,7 +3754,7 @@ outer:		for(int i=0;i<value.length;i++) {
 					} else
 						s = decoded;
 				} else if(word instanceof ParsedIdentifier) {
-					s = (((ParsedIdentifier)word).original);
+					s = (((ParsedIdentifier)word).getDecoded());
 					if(isGenericFamily(s)) {
 						continue;
 					}
