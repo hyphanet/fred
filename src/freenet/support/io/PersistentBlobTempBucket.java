@@ -233,7 +233,12 @@ public class PersistentBlobTempBucket implements Bucket {
 						throw new NullPointerException("Activated but tag still null!");
 					}
 				} else {
-					throw new NullPointerException("Active but tag null!");
+					if(freed) {
+						Logger.error(this, "Storing freed bucket "+this);
+						return;
+					} else {
+						throw new NullPointerException("Active but tag null! shadow="+shadow+" freed="+freed+" persisted="+persisted+" index="+index);
+					}
 				}
 			}
 			p = persisted;
