@@ -1365,7 +1365,7 @@ class CSSTokenizerFilter {
 					if(prevc != '\\') {
 						isState1Present=true;
 						if(logDEBUG) log("STATE1 CASE @: "+c);
-					} // Else leave it in buffer, encoded.
+					}
 					buffer.append(c);
 					break;
 
