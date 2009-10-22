@@ -793,7 +793,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						String mimeType = result.getMimeType();
 						String requestedMimeType = request.getParam("type", null);
 						String forceString = request.getParam("force");
-						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/downloads/", key, "", "/downloads/", false, ctx, core, false);
+						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/downloads/", key, "", "/downloads/", false, ctx, core, false, null);
 						if(result.freeWhenDone)
 							data.free();
 						return;

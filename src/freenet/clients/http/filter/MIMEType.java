@@ -51,6 +51,10 @@ public class MIMEType {
 	public final String defaultCharset;
 	
 	public final CharsetExtractor charsetExtractor;
+	/** If true, if we cannot detect the charset from a definite declaration
+	 * or BOM, we will use the charset passed in from the referring document.
+	 * So far this is only used by CSS. */
+	public final boolean useMaybeCharset;
 	
 	MIMEType(String type, String ext, String[] extraTypes, String[] extraExts,
 			boolean safeToRead, boolean safeToWrite, ContentDataFilter readFilter,
@@ -58,7 +62,7 @@ public class MIMEType {
 			boolean dangerousScripting, boolean dangerousReadMetadata, 
 			boolean dangerousWriteMetadata, boolean dangerousToWriteEvenWithFilter, 
 			String readDescription, String writeDescription, boolean takesACharset, 
-			String defaultCharset, CharsetExtractor charsetExtractor) {
+			String defaultCharset, CharsetExtractor charsetExtractor, boolean useMaybeCharset) {
 		this.primaryMimeType = type;
 		this.primaryExtension = ext;
 		this.alternateMimeTypes = extraTypes;
@@ -78,6 +82,7 @@ public class MIMEType {
 		this.takesACharset = takesACharset;
 		this.defaultCharset = defaultCharset;
 		this.charsetExtractor = charsetExtractor;
+		this.useMaybeCharset = useMaybeCharset;
 	}
 
 	/**

@@ -6,8 +6,6 @@ package freenet.clients.http.filter;
 import java.io.Reader;
 import java.io.Writer;
 
-import freenet.support.Logger;
-
 /**
  * WARNING: this is not as thorough as the HTML filter - we do not
  * enumerate all possible attributes etc. New versions of the spec could
@@ -31,35 +29,11 @@ class CSSParser extends CSSTokenizerFilter {
 		Reader r,
 		Writer w,
 		boolean paranoidStringCheck,
-		FilterCallback cb) {
-		super(r, w, paranoidStringCheck);
+		FilterCallback cb,
+		String charset,
+		boolean stopAtDetectedCharset, boolean isInline) {
+		super(r, w, cb, charset, stopAtDetectedCharset, isInline);
 		this.cb = cb;
-		this.deleteErrors = super.deleteErrors;
 	}
 
-	@Override
-	void throwError(String s) throws DataFilterException {
-		HTMLFilter.throwFilterException(s);
-	}
-
-	@Override
-	String processImportURL(String s) throws CommentException {
-		return HTMLFilter.sanitizeURI(HTMLFilter.stripQuotes(s), "text/css", null, cb, true);
-	}
-
-	@Override
-	String processURL(String s) throws CommentException {
-		return HTMLFilter.sanitizeURI(HTMLFilter.stripQuotes(s), null, null, cb, true);
-	}
-
-	@Override
-	void log(String s) {
-		if (Logger.shouldLog(Logger.DEBUG, this))
-			Logger.debug(this, s);
-	}
-
-	@Override
-	void logError(String s) {
-		Logger.error(this, s);
-	}
 }

@@ -120,7 +120,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}		
 	}
 
-	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData) throws ToadletContextClosedException, IOException {
+	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core, boolean dontFreeData, String maybeCharset) throws ToadletContextClosedException, IOException {
 		ToadletContainer container = context.getContainer();
 		if(Logger.shouldLog(Logger.MINOR, FProxyToadlet.class))
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
@@ -146,7 +146,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null);
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null, maybeCharset);
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;
@@ -526,6 +526,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 		String requestedMimeType = httprequest.getParam("type", null);
 		String override = (requestedMimeType == null) ? "" : "?type="+URLEncoder.encode(requestedMimeType,true);
+		String maybeCharset = httprequest.isParameterSet("maybecharset") ? httprequest.getParam("maybecharset", null) : null;
+		if(override.equals("") && maybeCharset != null)
+			override = "?maybecharset="+URLEncoder.encode(maybeCharset, true);
 		// No point passing ?force= across a redirect, since the key will change.
 		// However, there is every point in passing ?forcedownload.
 		if(httprequest.isParameterSet("forcedownload")) {
@@ -702,7 +705,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			} else if(fe != null) throw fe;
 			
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx, core, fr != null);
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx, core, fr != null, maybeCharset);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();

@@ -70,17 +70,23 @@ public class ContentFilterTest extends TestCase {
 	private static final String XHTML_IMPROPERNESTING="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</b></i></html>";
 	private static final String XHTML_IMPROPERNESTINGC="<html xmlns=\"http://www.w3.org/1999/xhtml\"><b><i>helloworld</i></b></html>";
 	
-	//private static final String CSS_STRING_NEWLINES = "<style>* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }</style>";
-	//private static final String CSS_STRING_NEWLINESC = "<style>* {}\nbody {}\n</style>";
+	private static final String CSS_STRING_NEWLINES = "<style>* { content: \"this string does not terminate\n}\nbody {\nbackground: url(http://www.google.co.uk/intl/en_uk/images/logo.gif); }\n\" }</style>";
+	private static final String CSS_STRING_NEWLINESC = "<style>* {}\nbody { }\n</style>";
 
 	private static final String HTML_STYLESHEET_MAYBECHARSET = "<link rel=\"stylesheet\" href=\"test.css\">";
-	private static final String HTML_STYLESHEET_MAYBECHARSETC = "<link rel=\"stylesheet\" href=\"test.css?type=text/css&amp;maybecharset=ISO-8859-1\">";
+	private static final String HTML_STYLESHEET_MAYBECHARSETC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
 	
+	private static final String HTML_STYLESHEET_CHARSET = "<link rel=\"stylesheet\" charset=\"utf-8\" href=\"test.css\">";
+	private static final String HTML_STYLESHEET_CHARSETC = "<link charset=\"utf-8\" rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css%3b%20charset=utf-8\">";
+
 	private static final String HTML_STYLESHEET_CHARSET_BAD = "<link rel=\"stylesheet\" charset=\"utf-8&max-size=4194304\" href=\"test.css\">";
-	private static final String HTML_STYLESHEET_CHARSET_BADC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css\">";
+	private static final String HTML_STYLESHEET_CHARSET_BADC = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
 	
 	private static final String HTML_STYLESHEET_CHARSET_BAD1 = "<link rel=\"stylesheet\" type=\"text/css; charset=utf-8&max-size=4194304\" href=\"test.css\">";
-	private static final String HTML_STYLESHEET_CHARSET_BAD1C = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css\">";
+	private static final String HTML_STYLESHEET_CHARSET_BAD1C = "<link rel=\"stylesheet\" type=\"text/css\" href=\"test.css?type=text/css&amp;maybecharset=iso-8859-1\">";
+	
+	private static final String HTML_STYLESHEET_WITH_MEDIA = "<LINK REL=\"stylesheet\" TYPE=\"text/css\"\nMEDIA=\"print, handheld\" HREF=\"foo.css\">";
+	private static final String HTML_STYLESHEET_WITH_MEDIAC = "<LINK rel=\"stylesheet\" type=\"text/css\" href=\"foo.css?type=text/css&amp;maybecharset=iso-8859-1\" media=\"print, handheld\">";
 	
 	private static final String FRAME_SRC_CHARSET = "<frame src=\"test.html?type=text/html; charset=UTF-8\">";
 	private static final String FRAME_SRC_CHARSETC = "<frame src=\"test.html?type=text/html%3b%20charset=UTF-8\">";
@@ -90,6 +96,12 @@ public class ContentFilterTest extends TestCase {
 	
 	private static final String FRAME_SRC_CHARSET_BAD1 = "<frame src=\"test.html?type=text/html; charset=UTF-8%26max-size=4194304\">";
 	private static final String FRAME_SRC_CHARSET_BAD1C = "<frame src=\"test.html?type=text/html\">";
+	
+	private static final String SPAN_WITH_STYLE = "<span style=\"font-family: verdana, sans-serif; color: red;\">";
+	
+	// From CSS spec
+	
+	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
 	
 	private final BucketFactory bf = new ArrayBucketFactory();
 
@@ -127,23 +139,29 @@ public class ContentFilterTest extends TestCase {
 		// bug #2297
 		assertTrue(HTMLFilter(PREVENT_FPROXY_ACCESS).contains(GenericReadFilterCallback.magicHTTPEscapeString));
 		// bug #2921
-		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("CHECKED_HTTP"));
-		assertFalse(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("http"));
-		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("CHECKED_HTTP"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_SIMPLE).contains("div { }"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_ESCAPE).contains("div { }"));
+		assertTrue(HTMLFilter(PREVENT_EXTERNAL_ACCESS_CSS_CASE).contains("div { }"));
 		assertEquals(WHITELIST_STATIC_CONTENT, HTMLFilter(WHITELIST_STATIC_CONTENT));
 		assertEquals(XHTML_VOIDELEMENTC,HTMLFilter(XHTML_VOIDELEMENT));
 		assertEquals(XHTML_INCOMPLETEDOCUMENTC,HTMLFilter(XHTML_INCOMPLETEDOCUMENT));
 		assertEquals(XHTML_IMPROPERNESTINGC,HTMLFilter(XHTML_IMPROPERNESTING));
 		
-//		assertEquals(CSS_STRING_NEWLINESC,HTMLFilter(CSS_STRING_NEWLINES));
+		assertEquals(CSS_STRING_NEWLINESC,HTMLFilter(CSS_STRING_NEWLINES));
 		
-		//assertEquals(HTML_STYLESHEET_MAYBECHARSETC, HTMLFilter(HTML_STYLESHEET_MAYBECHARSET, true));
-		//assertEquals(HTML_STYLESHEET_CHARSETC, HTMLFilter(HTML_STYLESHEET_CHARSET, true));
+		assertEquals(HTML_STYLESHEET_MAYBECHARSETC, HTMLFilter(HTML_STYLESHEET_MAYBECHARSET, true));
+		assertEquals(HTML_STYLESHEET_CHARSETC, HTMLFilter(HTML_STYLESHEET_CHARSET, true));
 		assertEquals(HTML_STYLESHEET_CHARSET_BADC, HTMLFilter(HTML_STYLESHEET_CHARSET_BAD, true));
 		assertEquals(HTML_STYLESHEET_CHARSET_BAD1C, HTMLFilter(HTML_STYLESHEET_CHARSET_BAD1, true));
+		assertEquals(HTML_STYLESHEET_WITH_MEDIAC, HTMLFilter(HTML_STYLESHEET_WITH_MEDIA, true));
+		
 		assertEquals(FRAME_SRC_CHARSETC, HTMLFilter(FRAME_SRC_CHARSET, true));
 		assertEquals(FRAME_SRC_CHARSET_BADC, HTMLFilter(FRAME_SRC_CHARSET_BAD, true));
 		assertEquals(FRAME_SRC_CHARSET_BAD1C, HTMLFilter(FRAME_SRC_CHARSET_BAD1, true));
+		
+		assertEquals(CSS_SPEC_EXAMPLE1, HTMLFilter(CSS_SPEC_EXAMPLE1));
+		
+		assertEquals(SPAN_WITH_STYLE, HTMLFilter(SPAN_WITH_STYLE));
 	}
 		
 	private String HTMLFilter(String data) throws Exception {
@@ -155,6 +173,6 @@ public class ContentFilterTest extends TestCase {
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
 		
-		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null).data.toString();
+		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null, null).data.toString();
 	}
 }

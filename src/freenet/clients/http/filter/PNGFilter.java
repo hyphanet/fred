@@ -314,7 +314,7 @@ public class PNGFilter implements ContentDataFilter {
 		try {
 			Logger.setupStdoutLogging(Logger.MINOR, "");
 			ContentFilter.FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "image/png",
-			        new URI("http://127.0.0.1:8888/"), null);
+			        new URI("http://127.0.0.1:8888/"), null, null);
 			BucketTools.copy(output.data, out);
 		} catch (IOException e) {
 			System.out.println("Bucket error?: " + e.getMessage());

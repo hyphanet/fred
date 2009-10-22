@@ -161,13 +161,14 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		
 		String rpath = uri.getPath();
+		if(logMINOR) Logger.minor(this, "Path: \""+path+"\" rpath: \""+rpath+"\"");
 		
 		if(host == null) {
 		
 			boolean isAbsolute = false;
 			
 			if(rpath != null) {
-				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): \""+rpath+"\"");
 				
 				// Valid FreenetURI?
 				try {
@@ -176,7 +177,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 						isAbsolute = true;
 						p = p.substring(1);
 					}
-					FreenetURI furi = new FreenetURI(p);
+					FreenetURI furi = new FreenetURI(p, true);
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
 					return processURI(furi, uri, overrideType, noRelative || isAbsolute, inline);
 				} catch (MalformedURLException e) {
@@ -202,7 +203,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				try {
 					String p = rpath;
 					while(p.startsWith("/")) p = p.substring(1);
-					FreenetURI furi = new FreenetURI(p);
+					FreenetURI furi = new FreenetURI(p, true);
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
 					return processURI(furi, uri, overrideType, noRelative, inline);
 				} catch (MalformedURLException e) {
