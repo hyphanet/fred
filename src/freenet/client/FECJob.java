@@ -86,8 +86,15 @@ public class FECJob {
 		this.queue = queue;
 		this.priority = priority;
 		this.addedTime = System.currentTimeMillis();
-		this.dataBlocks = dataBlocks;
-		this.checkBlocks = checkBlocks;
+		
+		// Make sure it is a separate array, just in case it doesn't get copied transparently by db4o.
+		this.dataBlocks = new Bucket[dataBlocks.length];
+		this.checkBlocks = new Bucket[checkBlocks.length];
+		for(int i=0;i<dataBlocks.length;i++)
+			this.dataBlocks[i] = dataBlocks[i];
+		for(int i=0;i<checkBlocks.length;i++)
+			this.checkBlocks[i] = checkBlocks[i];
+		
 		this.dataBlockStatus = null;
 		this.checkBlockStatus = null;
 		this.blockLength = blockLength;
