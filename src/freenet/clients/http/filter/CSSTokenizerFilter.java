@@ -1420,6 +1420,7 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("Split: "+CSSPropertyVerifier.toString(parts));
 					buffer.setLength(0);
 					boolean valid = false;
+					if(parts != null) {
 					if(parts.length<1)
 					{
 						ignoreElementsS1=true;
@@ -1486,6 +1487,7 @@ class CSSTokenizerFilter {
 							filteredTokens.append("{");
 						}
 					}
+					} // else valid = false
 					if(!valid)
 					{
 						ignoreElementsS1=true;

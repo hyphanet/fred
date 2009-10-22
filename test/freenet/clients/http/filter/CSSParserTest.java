@@ -235,6 +235,9 @@ public class CSSParserTest extends TestCase {
 	private static final String BROKEN_BEFORE_IMPORT = "@import \"test\n@import \"test.css\";\n@import \"test2.css\";";
 	private static final String BROKEN_BEFORE_IMPORTC = "\n@import url(\"test2.css?type=text/css&maybecharset=UTF-8\");";
 	
+	private static final String BROKEN_BEFORE_MEDIA = "@import \"test\n@media all { * { color: red }} @media screen { h1 { color: blue }}";
+	private static final String BROKEN_BEFORE_MEDIAC = " @media screen { h1 { color: blue }}";
+	
 	// Invalid media type
 	
 	private static final String CSS_INVALID_MEDIA_CASCADE = "@media blah { h1, h2 { color: green;} }";
@@ -772,6 +775,7 @@ public class CSSParserTest extends TestCase {
 		assertTrue("key="+CSS_BOGUS_AT_RULE+" value=\""+filter(CSS_BOGUS_AT_RULE)+"\"", CSS_BOGUS_AT_RULEC.equals(filter(CSS_BOGUS_AT_RULE)));
 		assertTrue("key="+PRESERVE_CDO_CDC+" value=\""+filter(PRESERVE_CDO_CDC)+"\"", PRESERVE_CDO_CDCC.equals(filter(PRESERVE_CDO_CDC)));
 		assertTrue("key="+BROKEN_BEFORE_IMPORT+" value=\""+filter(BROKEN_BEFORE_IMPORT)+"\"", BROKEN_BEFORE_IMPORTC.equals(filter(BROKEN_BEFORE_IMPORT)));
+		assertTrue("key="+BROKEN_BEFORE_MEDIA+" value=\""+filter(BROKEN_BEFORE_MEDIA)+"\"", BROKEN_BEFORE_MEDIAC.equals(filter(BROKEN_BEFORE_MEDIA)));
 	}
 	
 	public void testEscape() throws IOException, URISyntaxException {
