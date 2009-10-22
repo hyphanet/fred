@@ -63,7 +63,6 @@ public class FilterUtils {
 	}
 	public static boolean isPercentage(String value)
 	{
-		System.out.println("isPercentage is called with:"+value);
 		if (value.length()>=2 && value.charAt(value.length()-1)=='%') //Valid percentage X%
 		{
 			// Percentages are <number>%
@@ -105,8 +104,6 @@ public class FilterUtils {
 		}
 		else
 			lengthValue=value.substring(0,value.length());
-		System.out.println("Last character: "+value.charAt(value.length()-1));
-		System.out.println("lengthValue: "+lengthValue);
 		try
 		{
 			int x = Integer.parseInt(lengthValue);
@@ -526,7 +523,6 @@ public class FilterUtils {
 	}
 	public static boolean isPointPair(String value)
 	{
-		System.out.println("isPointPair is calld with value="+value);
 		String[] pointPairs=splitOnCharArray(value," \n\t");
 		for(int i=0;i<pointPairs.length;i++)
 		{
