@@ -1,19 +1,29 @@
 package freenet.node.simulator;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.Map.Entry;
 
 import com.db4o.ObjectContainer;
 
@@ -72,11 +82,26 @@ public class LongTermPushPullTest {
 	private static final Calendar today = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
 	public static void main(String[] args) {
-		if (args.length != 1) {
+		if (args.length < 0 || args.length > 2) {
 			System.err.println("Usage: java freenet.node.simulator.LongTermPushPullTest <unique identifier>");
 			System.exit(1);
 		}
 		String uid = args[0];
+		
+		if(args.length == 2 && args[1].equalsIgnoreCase("--dump") || args[1].equalsIgnoreCase("-dump") || args[1].equalsIgnoreCase("dump")) {
+			try {
+				dumpStats(uid);
+			} catch (IOException e) {
+				System.err.println("IO ERROR: "+e);
+				e.printStackTrace();
+				System.exit(1);
+			} catch (ParseException e) {
+				System.err.println("PARSE ERROR: "+e);
+				e.printStackTrace();
+				System.exit(2);
+			}
+			System.exit(0);
+		}
 
 		List<String> csvLine = new ArrayList<String>(3 + 2 * MAX_N);
 		System.out.println("DATE:" + dateFormat.format(today.getTime()));
@@ -233,6 +258,160 @@ public class LongTermPushPullTest {
 			System.exit(exitCode);
 		}
 	}
+
+	private static void dumpStats(String uid) throws IOException, ParseException {
+		File file = new File(uid + ".csv");
+		FileInputStream fis = new FileInputStream(file);
+		BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+		String line = null;
+		Calendar prevDate = null;
+		TreeMap<GregorianCalendar,DumpElement> map = new TreeMap<GregorianCalendar,DumpElement>();
+		while((line = br.readLine()) != null) {
+			DumpElement element;
+			//System.out.println("LINE: "+line);
+			String[] split = line.split(",");
+			Date date = dateFormat.parse(split[0]);
+			GregorianCalendar calendar = new GregorianCalendar();
+			calendar.setTime(date);
+			System.out.println("Date: "+dateFormat.format(calendar.getTime()));
+			if(prevDate != null) {
+				long now = calendar.getTimeInMillis();
+				long prev = prevDate.getTimeInMillis();
+				long dist = (now - prev) / (24 * 60 * 60 * 1000);
+				if(dist != 1) System.out.println(""+dist+" days since last report");
+			}
+			prevDate = calendar;
+			int version = Integer.parseInt(split[1]);
+			if(split.length > 2) {
+				long seedTime = Long.parseLong(split[2]);
+				int[] pushTimes = new int[MAX_N+1];
+				String[] pushFailures = new String[MAX_N+1];
+				for(int i=0;i<=MAX_N;i++) {
+					String s = split[3+i];
+					try {
+						pushTimes[i] = Integer.parseInt(s);
+					} catch (NumberFormatException e) {
+						pushFailures[i] = s;
+					}
+				}
+				if(split.length > 3 + MAX_N+1) {
+					int[] pullTimes = new int[MAX_N+1];
+					String[] pullFailures = new String[MAX_N+1];
+					for(int i=0;i<=MAX_N;i++) {
+						String s = split[3+MAX_N+2+i];
+						try {
+							pullTimes[i] = Integer.parseInt(s);
+						} catch (NumberFormatException e) {
+							pullFailures[i] = s;
+						}
+					}
+					element = new DumpElement(calendar, version, pushTimes, pushFailures, pullTimes, pullFailures);
+				} else {
+					element = new DumpElement(calendar, version, pushTimes, pushFailures);
+				}
+			} else {
+				element = new DumpElement(calendar, version);
+			}
+			map.put(calendar, element);
+		}
+		fis.close();
+		for(int i=0;i<=MAX_N;i++) {
+			int delta = ((1<<i)-1);
+			System.out.println("Checking delta: "+delta+" days");
+			int failures = 0;
+			int successes = 0;
+			long successTime = 0;
+			int noMatch = 0;
+			int insertFailure = 0;
+			Map<String,Integer> failureModes = new HashMap<String,Integer>();
+			for(Entry<GregorianCalendar,DumpElement> entry : map.entrySet()) {
+				GregorianCalendar date = entry.getKey();
+				DumpElement element = entry.getValue();
+				if(element.pullTimes != null) {
+					date = (GregorianCalendar) date.clone();
+					date.add(Calendar.DAY_OF_MONTH, -delta);
+					System.out.println("Checking "+date.getTime()+" for "+element.date.getTime()+" delta "+delta);
+					DumpElement inserted = map.get(date);
+					if(inserted == null) {
+						System.out.println("No match");
+						noMatch++;
+						continue;
+					}
+					if(inserted.pushTimes == null || inserted.pushTimes[i] == 0) {
+						System.out.println("Insert failure");
+						if(element.pullTimes[i] != 0) {
+							System.err.println("Fetched it anyway??!?!?: time "+element.pullTimes[i]);
+						}
+						insertFailure++;
+					}
+					if(element.pullTimes[i] == 0) {
+						String failureMode = element.pullFailures[i];
+						Integer count = failureModes.get(failureMode);
+						if(count == null)
+							failureModes.put(failureMode, 1);
+						else
+							failureModes.put(failureMode, count+1);
+						failures++;
+					} else {
+						successes++;
+						successTime += element.pullTimes[i];
+					}
+				}
+			}
+			System.out.println("Successes: "+successes);
+			if(successes != 0) System.out.println("Average success time "+(successTime / successes));
+			System.out.println("Failures: "+failures);
+			for(Map.Entry<String,Integer> entry : failureModes.entrySet())
+				System.out.println(entry.getKey()+" : "+entry.getValue());
+			System.out.println("No match: "+noMatch);
+			System.out.println("Insert failure: "+insertFailure);
+			double psuccess = (successes*1.0 / (1.0*(successes + failures)));
+			System.out.println("Success rate for "+delta+" days: "+psuccess+" ("+(successes+failures)+" samples)");
+			if(delta != 0) {
+				double halfLifeEstimate = -1*Math.log(2)/(Math.log(psuccess)/delta);
+				System.out.println("Half-life estimate: "+halfLifeEstimate+" days");
+			}
+			System.out.println();
+		}
+	}
+	
+	static class DumpElement {
+		public DumpElement(GregorianCalendar date, int version) {
+			this.date = date;
+			this.version = version;
+			this.seedTime = -1;
+			this.pushTimes = null;
+			this.pushFailures = null;
+			this.pullTimes = null;
+			this.pullFailures = null;
+		}
+		public DumpElement(GregorianCalendar date, int version, int[] pushTimes, String[] pushFailures) {
+			this.date = date;
+			this.version = version;
+			this.seedTime = -1;
+			this.pushTimes = pushTimes;
+			this.pushFailures = pushFailures;
+			this.pullTimes = null;
+			this.pullFailures = null;
+		}
+		public DumpElement(GregorianCalendar date, int version, int[] pushTimes, String[] pushFailures, int[] pullTimes, String[] pullFailures) {
+			this.date = date;
+			this.version = version;
+			this.seedTime = -1;
+			this.pushTimes = pushTimes;
+			this.pushFailures = pushFailures;
+			this.pullTimes = pullTimes;
+			this.pullFailures = pullFailures;
+		}
+		final GregorianCalendar date;
+		final int version;
+		final long seedTime;
+		final int[] pushTimes; // 0 = failure, look up in pushFailures
+		final String[] pushFailures;
+		final int[] pullTimes;
+		final String[] pullFailures;
+	}
+	
 
 	private static Bucket randomData(Node node) throws IOException {
 		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);
