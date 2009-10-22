@@ -703,7 +703,7 @@ public class CSSParserTest extends TestCase {
 	
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
-    	Logger.setupStdoutLogging(Logger.MINOR, "freenet.clients.http.filter:DEBUG");
+    	//Logger.setupStdoutLogging(Logger.MINOR, "freenet.clients.http.filter:DEBUG");
     	ContentFilter.init();
     	cssMIMEType = ContentFilter.getMIMEType("text/css");
 	}
