@@ -1,10 +1,5 @@
 package freenet.clients.http.filter;
 import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Arrays;
-
-import freenet.support.Logger;
 public class ElementInfo {
 
 	static boolean disallowUnknownSpecificFonts = false;
