@@ -1356,10 +1356,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private HTMLNode createRecommendCell(PageMaker pageMaker, FreenetURI URI, ToadletContext ctx) {
 		HTMLNode recommendNode = new HTMLNode("td", "class", "request-delete");
-		HTMLNode shareForm = ctx.addFormChild(recommendNode, path(), "recommendForm");
-		shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
-		shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends") });
-
+		if(URI != null) {
+			HTMLNode shareForm = ctx.addFormChild(recommendNode, path(), "recommendForm");
+			shareForm.addChild("input", new String[] {"type", "name", "value"}, new String[] {"hidden", "URI", URI.toString() });
+			shareForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "recommend_request", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends") });
+		}
 		return recommendNode;
 	}
 
