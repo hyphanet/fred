@@ -814,8 +814,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String id) {
 		HTMLNode formNode =
-			parentNode.addChild("form", new String[] { "action", "method", "enctype", "id",  "accept-charset" }, 
-					new String[] { target, "post", "multipart/form-data", id, "utf-8"} ).addChild("div");
+			parentNode.addChild("div")
+			.addChild("form", new String[] { "action", "method", "enctype", "id",  "accept-charset" }, 
+					new String[] { target, "post", "multipart/form-data", id, "utf-8"} );
 		formNode.addChild("input", new String[] { "type", "name", "value" }, 
 				new String[] { "hidden", "formPassword", getFormPassword() });
 		
