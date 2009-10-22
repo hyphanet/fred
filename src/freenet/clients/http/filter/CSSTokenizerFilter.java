@@ -1540,6 +1540,7 @@ class CSSTokenizerFilter {
 						buffer.delete(0, i);
 					}
 					
+					// If ignoreElementsS1, then just delete everything up to the semicolon. After that, fresh start.
 					if(canImport && !ignoreElementsS1 && buffer.toString().contains("@import"))
 					{
 						if(logDEBUG) log("STATE1 CASE ;statement="+buffer.toString());
@@ -1593,7 +1594,7 @@ class CSSTokenizerFilter {
 								}
 							}
 						}
-					} else if(charsetPossible && buffer.toString().startsWith("@charset ")) {
+					} else if(charsetPossible && !ignoreElementsS1 && buffer.toString().startsWith("@charset ")) {
 						String s = buffer.delete(0, "@charset ".length()).toString();
 						s = removeOuterQuotes(s);
 						detectedCharset = s;
