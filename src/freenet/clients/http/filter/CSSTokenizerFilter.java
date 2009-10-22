@@ -1663,7 +1663,7 @@ class CSSTokenizerFilter {
 					// Otherwise same as \r ...
 				case '\f':
 				case '\r':
-					if(prevc == '\\') {
+					if(prevc != '\\') {
 						ignoreElementsS1 = true;
 						closeIgnoredS1 = true;
 						currentState = STATE1;
