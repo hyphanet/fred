@@ -1594,7 +1594,8 @@ class CSSTokenizerFilter {
 								}
 							}
 						}
-					} else if(charsetPossible && !ignoreElementsS1 && buffer.toString().startsWith("@charset ")) {
+					} else if(charsetPossible && buffer.toString().startsWith("@charset ")) {
+						// charsetPossible is incompatible with ignoreElementsS1
 						String s = buffer.delete(0, "@charset ".length()).toString();
 						s = removeOuterQuotes(s);
 						detectedCharset = s;
