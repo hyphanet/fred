@@ -1098,13 +1098,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						if(persistent) container.activate(blocks, 2);
 						blocks.remove(Integer.valueOf(blockNum));
 						if(persistent) container.store(blocks);
-						if(dataBlocks[blockNum] != null) {
+						if(encoded && dataBlocks[blockNum] != null) {
 							if(persistent) container.activate(dataBlocks[blockNum], 1);
 							dataBlocks[blockNum].free();
 							if(persistent) dataBlocks[blockNum].removeFrom(container);
 							dataBlocks[blockNum] = null;
 							if(logMINOR) Logger.minor(this, "Failed to insert data block "+blockNum+" on "+this);
-						} else {
+						} else if(dataBlocks[blockNum] == null) {
 							Logger.error(this, "Data block "+blockNum+" failed on "+this+" but bucket is already nulled out!");
 						}
 					}
