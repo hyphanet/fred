@@ -40,6 +40,8 @@ public class PersistentGet extends FCPMessage {
 			File targetFile, File tempFile, String clientToken, boolean global, boolean started, int maxRetries, boolean binaryBlob, long maxSize) {
 		this.identifier = identifier;
 		this.uri = uri;
+		// This has been seen in practice (bug #3606), lets try to get an earlier stack trace...
+		if(uri == null) throw new NullPointerException();
 		this.verbosity = verbosity;
 		this.priorityClass = priorityClass;
 		this.returnType = returnType;
