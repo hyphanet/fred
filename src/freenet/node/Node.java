@@ -50,6 +50,7 @@ import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
 import com.sleepycat.je.StatsConfig;
 
+import freenet.client.FECQueue;
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.SplitFileInserterSegment;
@@ -2818,12 +2819,22 @@ public class Node implements TimeSkewDetectorCallback {
 			boolean empty = seg.isEmpty(database);
 			boolean encoded = seg.isEncoded();
 			System.out.println("Segment "+seg+" finished="+finished+" cancelled="+cancelled+" empty="+empty+" encoded="+encoded+" size="+seg.countDataBlocks()+" data "+seg.countCheckBlocks()+" check");
+			
+			if(!finished && !encoded) {
+				System.out.println("Not finished and not encoded: "+seg);
+				// Basic checks...
+				seg.checkHasDataBlocks(true, database);
+				
+			}
+			
 			database.deactivate(seg, 1);
 			} catch (Throwable t) {
 				System.out.println("Caught "+t+" processing segment");
 				t.printStackTrace();
 			}
 		}
+		
+		FECQueue.dump(database, RequestStarter.NUMBER_OF_PRIORITY_CLASSES);
 		
 		// Some structures e.g. collections are sensitive to the activation depth.
 		// If they are activated to depth 1, they are broken, and activating them to

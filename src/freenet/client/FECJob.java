@@ -6,6 +6,7 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.keys.CHKBlock;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -240,5 +241,115 @@ public class FECJob {
 	 */
 	public boolean cancel(ObjectContainer container, ClientContext context) {
 		return queue.cancel(this, container, context);
+	}
+
+	/** Should already be activated to depth 1 by caller. */
+	public void dump(ObjectContainer container) {
+		System.err.println("FEC job: "+toString());
+		System.err.println("Algorithm: "+fecAlgo);
+		System.err.println("Bucket factory: "+bucketFactory);
+		System.err.println("Block length: "+blockLength);
+		System.err.println("Callback: "+callback);
+		System.err.println("Type: "+(isADecodingJob ? "DECODE" : "ENCODE"));
+		System.err.println("Added time: "+addedTime);
+		System.err.println("Priority: "+priority);
+		System.err.println("Persistent: "+persistent);
+		System.err.println("Queue: "+queue);
+		System.err.println("Hash code: "+hashCode);
+		System.err.println("Running: "+running);
+		if(dataBlocks != null) {
+			System.err.println("Has data blocks");
+			int dataCount = 0;
+			for(int i=0;i<dataBlocks.length;i++) {
+				Bucket data = dataBlocks[i];
+				if(data == null) {
+					System.err.println("Data block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of data block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == dataBlocks.length)
+				System.out.println("Has all data blocks");
+			else
+				System.out.println("Does not have all data blocks: "+dataCount+" of "+dataBlocks.length);
+		}
+		if(checkBlocks != null) {
+			System.err.println("Has check blocks");
+			int dataCount = 0;
+			for(int i=0;i<checkBlocks.length;i++) {
+				Bucket data = checkBlocks[i];
+				if(data == null) {
+					System.err.println("Check block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of check block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == checkBlocks.length)
+				System.out.println("Has all check blocks");
+			else
+				System.out.println("Does not have all check blocks: "+dataCount+" of "+checkBlocks.length);
+		}
+		if(dataBlockStatus != null) {
+			System.err.println("Has data block status");
+			int dataCount = 0;
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				SplitfileBlock status = dataBlockStatus[i];
+				Bucket data = status == null ? null : status.getData();
+				if(data == null) {
+					System.err.println("Data block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of data block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == dataBlockStatus.length)
+				System.out.println("Has all data block statuses");
+			else
+				System.out.println("Does not have all data block statuses: "+dataCount+" of "+dataBlockStatus.length);
+		}
+		if(checkBlockStatus != null) {
+			System.err.println("Has check block status");
+			int dataCount = 0;
+			for(int i=0;i<checkBlockStatus.length;i++) {
+				SplitfileBlock status = checkBlockStatus[i];
+				Bucket data = status == null ? null : status.getData();
+				if(data == null) {
+					System.err.println("Check block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of check block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == checkBlockStatus.length)
+				System.out.println("Has all data block statuses");
+			else
+				System.out.println("Does not have all data block statuses: "+dataCount+" of "+checkBlockStatus.length);
+		}
 	}
 }

@@ -88,7 +88,7 @@ public class LongTermPushPullTest {
 		}
 		String uid = args[0];
 		
-		if(args.length == 2 && args[1].equalsIgnoreCase("--dump") || args[1].equalsIgnoreCase("-dump") || args[1].equalsIgnoreCase("dump")) {
+		if(args.length == 2 && (args[1].equalsIgnoreCase("--dump") || args[1].equalsIgnoreCase("-dump") || args[1].equalsIgnoreCase("dump"))) {
 			try {
 				dumpStats(uid);
 			} catch (IOException e) {

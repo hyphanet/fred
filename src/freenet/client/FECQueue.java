@@ -479,4 +479,16 @@ public class FECQueue implements OOMHook {
 			container.delete(job);
 		return true;
 	}
+
+	public static void dump(ObjectContainer container, int priorities) {
+		ObjectSet<FECQueue> queues = container.query(FECQueue.class);
+		System.out.println("Queues: "+queues.size());
+		for(short prio=0;prio<priorities;prio++) {
+			Query query = container.query();
+			query.constrain(FECJob.class);
+			query.descend("priority").constrain(Short.valueOf(prio));
+			ObjectSet<FECJob> results = query.execute();
+			System.err.println("FEC jobs at priority "+prio+" : "+results.size());
+		}
+	}
 }
