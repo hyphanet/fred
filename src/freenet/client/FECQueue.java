@@ -331,7 +331,11 @@ public class FECQueue implements OOMHook {
 						for(int j=0;j<grab && results.hasNext();j++) {
 							FECJob job = results.next();
 							if(!job.activateForExecution(container)) {
-								Logger.error(this, "Ignoring job "+job);
+								if(job.callback != null) {
+									container.activate(job.callback, 1);
+									job.callback.onFailed(new NullPointerException("Not all data blocks present"), container, context);
+									container.delete(job);
+								}
 								continue;
 							}
 							if(job.isCancelled(container)) {
