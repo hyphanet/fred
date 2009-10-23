@@ -116,7 +116,7 @@ public class FECJob {
 		return codec;
 	}
 	
-	public void activateForExecution(ObjectContainer container) {
+	public boolean activateForExecution(ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Activating FECJob...");
 		if(dataBlockStatus != null && logMINOR) {
@@ -124,9 +124,14 @@ public class FECJob {
 				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
 		}
 		container.activate(this, 2);
+		int dataBlockStatusCount = 0;
+		int dataBlocksCount = 0;
 		if(dataBlockStatus != null) {
-			for(int i=0;i<dataBlockStatus.length;i++)
+			for(int i=0;i<dataBlockStatus.length;i++) {
 				container.activate(dataBlockStatus[i], 2);
+				if(dataBlockStatus[i] != null)
+					dataBlockStatusCount++;
+			}
 		}
 		if(dataBlockStatus != null && logMINOR) {
 			for(int i=0;i<dataBlockStatus.length;i++)
@@ -140,13 +145,21 @@ public class FECJob {
 			for(int i=0;i<dataBlocks.length;i++) {
 				container.activate(dataBlocks[i], 1);
 				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
+				if(dataBlocks[i] != null)
+					dataBlocksCount++;
 			}
 		}
 		if(checkBlocks != null) {
 			for(int i=0;i<checkBlocks.length;i++)
 				container.activate(checkBlocks[i], 1);
 		}
-		
+		if(!isADecodingJob) {
+			if(!(dataBlockStatus.length == dataBlockStatusCount || dataBlocksCount == dataBlocks.length)) {
+				Logger.error(this, "Invalid job? Encoding job but block status count is "+dataBlockStatusCount+" blocks count is "+dataBlocksCount);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public void deactivate(ObjectContainer container) {

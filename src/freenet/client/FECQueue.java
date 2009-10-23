@@ -330,7 +330,10 @@ public class FECQueue implements OOMHook {
 					if(results.hasNext()) {
 						for(int j=0;j<grab && results.hasNext();j++) {
 							FECJob job = results.next();
-							job.activateForExecution(container);
+							if(!job.activateForExecution(container)) {
+								Logger.error(this, "Ignoring job "+job);
+								continue;
+							}
 							if(job.isCancelled(container)) {
 								container.delete(job);
 								continue;
