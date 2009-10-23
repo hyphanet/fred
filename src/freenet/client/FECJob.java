@@ -154,8 +154,16 @@ public class FECJob {
 				container.activate(checkBlocks[i], 1);
 		}
 		if(!isADecodingJob) {
-			if(!(dataBlockStatus.length == dataBlockStatusCount || dataBlocksCount == dataBlocks.length)) {
-				Logger.error(this, "Invalid job? Encoding job but block status count is "+dataBlockStatusCount+" blocks count is "+dataBlocksCount);
+			// First find the target
+			int length = 0;
+			if(dataBlockStatus != null) length = dataBlockStatus.length;
+			if(dataBlocks != null) length = dataBlocks.length;
+			if(length == 0) {
+				Logger.error(this, "Length is 0 or both data block status and data blocks are null!");
+				return false;
+			}
+			if(!(length == dataBlockStatusCount || length == dataBlocks.length)) {
+				Logger.error(this, "Invalid job? Encoding job but block status count is "+dataBlockStatusCount+" blocks count is "+dataBlocksCount+" but one or the other should be "+length);
 				return false;
 			}
 		}
