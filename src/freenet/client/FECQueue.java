@@ -196,6 +196,7 @@ public class FECQueue implements OOMHook {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				while(true) {
+					try {
 					final FECJob job;
 					// Get a job
 					synchronized (FECQueue.this) {
@@ -274,6 +275,10 @@ public class FECQueue implements OOMHook {
 						}
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e, e);
+					}
+					} catch (Throwable t) {
+						Logger.error(this, "Caught: "+t, t);
+						// Try the next one, maybe it isn't broken.
 					}
 				}
 			} catch (Throwable t) {
