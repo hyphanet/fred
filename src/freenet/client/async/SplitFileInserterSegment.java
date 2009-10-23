@@ -1637,4 +1637,8 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 	}
 
+	public boolean isStarted() {
+		return started;
+	}
+
 }

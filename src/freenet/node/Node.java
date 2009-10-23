@@ -2818,7 +2818,8 @@ public class Node implements TimeSkewDetectorCallback {
 			boolean cancelled = seg.isCancelled(database);
 			boolean empty = seg.isEmpty(database);
 			boolean encoded = seg.isEncoded();
-			System.out.println("Segment "+seg+" finished="+finished+" cancelled="+cancelled+" empty="+empty+" encoded="+encoded+" size="+seg.countDataBlocks()+" data "+seg.countCheckBlocks()+" check");
+			boolean started = seg.isStarted();
+			System.out.println("Segment "+seg+" finished="+finished+" cancelled="+cancelled+" empty="+empty+" encoded="+encoded+" size="+seg.countDataBlocks()+" data "+seg.countCheckBlocks()+" check started="+started);
 			
 			if(!finished && !encoded) {
 				System.out.println("Not finished and not encoded: "+seg);
