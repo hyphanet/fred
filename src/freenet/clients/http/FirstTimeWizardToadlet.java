@@ -122,8 +122,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				input.addChild("b", l10nSec("networkThreatLevel.name."+level));
 				input.addChild("#", ": ");
 				NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-				HTMLNode inner = input.addChild("p").addChild("i");
-				NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "networkSecurityF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
@@ -149,8 +147,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				input.addChild("b", l10nSec("friendsThreatLevel.name."+level));
 				input.addChild("#", ": ");
 				NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.friendsThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-				HTMLNode inner = input.addChild("p").addChild("i");
-				NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.friendsThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "friendsSecurityF", NodeL10n.getBase().getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
@@ -176,12 +172,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				input.addChild("b", l10nSec("physicalThreatLevel.name."+level));
 				input.addChild("#", ": ");
 				NodeL10n.getBase().addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.choice."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-				HTMLNode inner = input.addChild("p").addChild("i");
-				NodeL10n.getBase().addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 				if(level == PHYSICAL_THREAT_LEVEL.HIGH) {
 					if(core.node.securityLevels.getPhysicalThreatLevel() != level) {
 						// Add password form
-						HTMLNode p = inner.addChild("p");
+						HTMLNode p = div.addChild("p");
 						p.addChild("label", "for", "passwordBox", l10nSec("setPasswordLabel")+":");
 						p.addChild("input", new String[] { "id", "type", "name" }, new String[] { "passwordBox", "text", "masterPassword" });
 					}
@@ -300,7 +294,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.MISC) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("stepMiscTitle"), true, ctx);
+			PageNode page = ctx.getPageMaker().getPageNode(l10n("stepMiscTitle"), false, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			
@@ -417,12 +411,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if((newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM || newThreatLevel == NETWORK_THREAT_LEVEL.HIGH)) {
 				if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
 					(!request.isPartSet("security-levels.networkThreatLevel.tryConfirm"))) {
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), false, ctx);
 					HTMLNode pageNode = page.outer;
 					HTMLNode content = page.content;
 					
 					HTMLNode infobox = content.addChild("div", "class", "infobox infobox-information");
-					infobox.addChild("div", "class", "infobox-header", l10nSec("networkThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
+					infobox.addChild("div", "class", "infobox-header", l10n("networkThreatLevelConfirmTitle."+newThreatLevel));
 					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 					HTMLNode formNode = ctx.addFormChild(infoboxContent, ".", "configFormSecLevels");
 					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.networkThreatLevel", networkThreatLevel });
@@ -465,7 +459,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if((newThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)) {
 				if((!request.isPartSet("security-levels.friendsThreatLevel.confirm")) &&
 					(!request.isPartSet("security-levels.friendsThreatLevel.tryConfirm"))) {
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), false, ctx);
 					HTMLNode pageNode = page.outer;
 					HTMLNode content = page.content;
 					
@@ -517,7 +511,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						// Do nothing, already set a password.
 					} catch (MasterKeysWrongPasswordException e) {
 						System.err.println("Wrong password!");
-						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), false, ctx);
 						HTMLNode pageNode = page.outer;
 						HTMLNode contentNode = page.content;
 						
@@ -540,7 +534,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				} else {
 					// Must set a password!
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordPageTitle"), false, ctx);
 					HTMLNode pageNode = page.outer;
 					HTMLNode contentNode = page.content;
 					
@@ -587,7 +581,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						}
 					} catch (MasterKeysWrongPasswordException e) {
 						System.err.println("Wrong password!");
-						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
+						PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), false, ctx);
 						HTMLNode pageNode = page.outer;
 						HTMLNode contentNode = page.content;
 						
@@ -612,7 +606,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					}
 				} else if(core.node.getMasterPasswordFile().exists()) {
 					// We need the old password
-					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), ctx);
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("passwordForDecryptTitle"), false, ctx);
 					HTMLNode pageNode = page.outer;
 					HTMLNode contentNode = page.content;
 					
