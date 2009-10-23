@@ -2812,15 +2812,16 @@ public class Node implements TimeSkewDetectorCallback {
 		ObjectSet<SplitFileInserterSegment> segments = database.query(SplitFileInserterSegment.class);
 		for(SplitFileInserterSegment seg : segments) {
 			try {
-			db.activate(seg, 1);
+			database.activate(seg, 1);
 			boolean finished = seg.isFinished();
-			boolean cancelled = seg.isCancelled(db);
-			boolean empty = seg.isEmpty(db);
+			boolean cancelled = seg.isCancelled(database);
+			boolean empty = seg.isEmpty(database);
 			boolean encoded = seg.isEncoded();
 			System.out.println("Segment "+seg+" finished="+finished+" cancelled="+cancelled+" empty="+empty+" encoded="+encoded+" size="+seg.countDataBlocks()+" data "+seg.countCheckBlocks()+" check");
-			db.deactivate(seg, 1);
+			database.deactivate(seg, 1);
 			} catch (Throwable t) {
 				System.out.println("Caught "+t+" processing segment");
+				t.printStackTrace();
 			}
 		}
 		
