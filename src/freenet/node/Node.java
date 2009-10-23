@@ -52,6 +52,7 @@ import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.SplitFileInserterSegment;
 import freenet.clients.http.ConfigToadlet;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -2806,6 +2807,23 @@ public class Node implements TimeSkewDetectorCallback {
 			System.err.println(entry.getKey()+" : "+entry.getValue());
 			total += entry.getValue();
 		}
+		
+		// Now dump the SplitFileInserterSegment's.
+		ObjectSet<SplitFileInserterSegment> segments = database.query(SplitFileInserterSegment.class);
+		for(SplitFileInserterSegment seg : segments) {
+			try {
+			db.activate(seg, 1);
+			boolean finished = seg.isFinished();
+			boolean cancelled = seg.isCancelled(db);
+			boolean empty = seg.isEmpty(db);
+			boolean encoded = seg.isEncoded();
+			System.out.println("Segment "+seg+" finished="+finished+" cancelled="+cancelled+" empty="+empty+" encoded="+encoded+" size="+seg.countDataBlocks()+" data "+seg.countCheckBlocks()+" check");
+			db.deactivate(seg, 1);
+			} catch (Throwable t) {
+				System.out.println("Caught "+t+" processing segment");
+			}
+		}
+		
 		// Some structures e.g. collections are sensitive to the activation depth.
 		// If they are activated to depth 1, they are broken, and activating them to
 		// depth 2 does NOT un-break them! Hence we need to deactivate (above) and
