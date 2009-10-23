@@ -1627,9 +1627,15 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				checkDone++;
 		}
 		System.out.println("Check count: "+checkCount+" keys: "+checkKeys+" done: "+checkDone);
-		if(encodeJob == null)
+		if(encodeJob == null) {
 			System.err.println("NO QUEUED FEC JOB!");
-		else {
+			container.activate(parent, 1);
+			System.err.println("Parent: "+parent);
+			if(parent != null) {
+				parent.dump(container);
+			}
+			container.deactivate(parent, 1);
+		} else {
 			container.activate(encodeJob, 1);
 			System.err.println("Queued FEC job: "+encodeJob);
 			encodeJob.dump(container);

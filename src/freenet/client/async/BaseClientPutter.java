@@ -16,4 +16,8 @@ public abstract class BaseClientPutter extends ClientRequester {
 
 	public abstract void onMajorProgress(ObjectContainer container);
 
+	public void dump(ObjectContainer container) {
+		// Do nothing
+	}
+
 }

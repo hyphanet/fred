@@ -450,4 +450,16 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 		super.removeFrom(container, context);
 	}
+	
+	public void dump(ObjectContainer container) {
+		container.activate(uri, 5);
+		System.out.println("URI: "+uri);
+		container.activate(client, 1);
+		System.out.println("Client: "+client);
+		System.out.println("Finished: "+finished);
+		container.activate(data, 5);
+		System.out.println("Data: "+data);
+	}
+
+
 }

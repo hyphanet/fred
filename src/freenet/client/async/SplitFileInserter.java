@@ -615,5 +615,18 @@ public class SplitFileInserter implements ClientPutState {
 			Logger.debug(this, "objectCanNew() on "+this, new Exception("debug"));
 		return true;
 	}
+
+	public void dump(ObjectContainer container) {
+		System.out.println("This: "+this);
+		System.out.println("Persistent: "+persistent);
+		System.out.println("Finished: "+finished);
+		System.out.println("Data length: "+dataLength);
+		System.out.println("Segment count: "+segments.length);
+		System.out.println("Fetchable: "+fetchable);
+		container.activate(parent,1);
+		System.out.println("Parent: "+parent);
+		parent.dump(container);
+		container.deactivate(parent, 1);
+	}
 	
 }
