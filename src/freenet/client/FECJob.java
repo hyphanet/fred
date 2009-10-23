@@ -138,7 +138,6 @@ public class FECJob {
 		}
 		if(dataBlocks != null) {
 			for(int i=0;i<dataBlocks.length;i++) {
-				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (before activation)");
 				container.activate(dataBlocks[i], 1);
 				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
 			}
