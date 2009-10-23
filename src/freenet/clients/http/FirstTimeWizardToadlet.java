@@ -76,7 +76,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		if(currentStep == WIZARD_STEP.BROWSER_WARNING) {
 			boolean incognito = request.isParameterSet("incognito");
-			// Bug 3376: Opening Chrome in incognito mode from command line **does not work** if there is already a window open!!
+			// Bug 3376: Opening Chrome in incognito mode from command line will open a new non-incognito window if the browser is already open.
+			// See http://code.google.com/p/chromium/issues/detail?id=9636
+			// When this is fixed, we should check the browser version and allow it for known good versions of Chrome.
 			incognito = false;
 			
 			PageNode page = ctx.getPageMaker().getPageNode(incognito ? l10n("browserWarningIncognitoPageTitle") : l10n("browserWarningPageTitle"), false, ctx);
