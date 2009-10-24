@@ -40,6 +40,13 @@ public class FCPConnectionOutputHandler implements Runnable {
 			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
+		} finally {
+			// Set the closed flag so that onClosed(), both on this thread and the input thread, doesn't wait forever.
+			// This happens in realRun() on a healthy exit, but we must do it here too to handle an exceptional exit.
+			// I.e. the other side closed the connection, and we threw an IOException.
+			synchronized(outQueue) {
+				closedOutputQueue = true;
+			}
 		}
 		handler.close();
 		handler.closedOutput();
