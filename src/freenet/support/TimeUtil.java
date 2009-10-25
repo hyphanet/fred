@@ -141,5 +141,13 @@ public class TimeUtil {
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.format(new Date(time));
 	}
+	
+// FIXME: For me it returns a parsed time with 2 hours difference, so it seems to parse localtime. WHY?
+	
+//	public static Date parseHTTPDate(String date) throws ParseException {
+//		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+//		sdf.setTimeZone(TZ_UTC);
+//		return sdf.parse(date);
+//	}
 
 }

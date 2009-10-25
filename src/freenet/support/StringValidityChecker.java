@@ -3,12 +3,12 @@ package freenet.support;
 import java.util.Arrays;
 import java.util.HashSet;
 
-public class StringValidityChecker {
+public final class StringValidityChecker {
 	
 	/**
 	 * Taken from http://kb.mozillazine.org/Network.IDN.blacklist_chars
 	 */
-	static final HashSet<Character> idnBlacklist = new HashSet<Character>(Arrays.asList(
+	private static final HashSet<Character> idnBlacklist = new HashSet<Character>(Arrays.asList(
 			new Character[] {
 					0x0020, /* SPACE */
 					0x00A0, /* NO-BREAK SPACE */
@@ -98,7 +98,7 @@ public class StringValidityChecker {
 					0xFFFD, /* REPLACEMENT CHARACTER */
 			}));
 	
-	static final HashSet<Character> windowsReservedFilenameCharacters = new HashSet<Character>(Arrays.asList(
+	private static final HashSet<Character> windowsReservedFilenameCharacters = new HashSet<Character>(Arrays.asList(
 			new Character[] { '/', '\\', '?', '%', '*', ':', '|', '\"', '<', '>'}));
 
 	
@@ -197,4 +197,16 @@ public class StringValidityChecker {
 
 		return (dirCount == 0 && !inAnnotatedText && !inAnnotation);
 	}
+	
+	public static boolean isLatinLettersAndNumbersOnly(String text) {
+		for(char c : text.toCharArray()) {
+			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c >= '0' && c <= '9')
+				continue;
+			else
+				return false;
+		}
+		
+		return true;
+	}
+	
 }

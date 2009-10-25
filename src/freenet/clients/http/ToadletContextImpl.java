@@ -12,12 +12,11 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Locale;
-import java.util.TimeZone;
 
+import freenet.clients.http.annotation.AllowData;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -32,7 +31,6 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
-import freenet.clients.http.annotation.AllowData;
 /**
  * ToadletContext implementation, including all the icky HTTP parsing etc.
  * An actual ToadletContext object represents a request, after we have parsed the 
@@ -52,6 +50,8 @@ public class ToadletContextImpl implements ToadletContext {
 	private static final String METHODS_RESTRICTED_MODE = "GET POST";
 	
 	private final MultiValueTable<String,String> headers;
+	private ArrayList<ReceivedCookie> cookies; // Null until the first time the user queries us for a ReceivedCookie.
+	private ArrayList<Cookie> replyCookies; // Null until the first time the user sets a Cookie.
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
 	private final BucketFactory bf;
@@ -68,6 +68,8 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
 		this.headers = headers;
+		this.cookies = null;
+		this.replyCookies = null;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
 		remoteAddr = sock.getInetAddress();
@@ -147,6 +149,14 @@ public class ToadletContextImpl implements ToadletContext {
 			throw new IllegalStateException("Already sent headers!");
 		}
 		sentReplyHeaders = true;
+		
+		if(replyCookies != null) {
+			mvt.put("cache-control:", "no-cache=\"set-cookie2\"");
+
+			for(Cookie cookie : replyCookies)
+				mvt.put("set-cookie2", cookie.encodeToHeaderValue());
+		}
+		
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
 	}
 	
@@ -156,6 +166,52 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public MultiValueTable<String,String> getHeaders() {
 		return headers;
+	}
+	
+	private void parseCookies() {
+		if(cookies != null)
+			return;
+		
+		String[] cookieHeaders = (String[])headers.getArray("cookie");
+		cookies = new ArrayList<ReceivedCookie>(cookieHeaders.length + 1);
+		
+		for(String cookieHeader : cookieHeaders) {
+			ArrayList<ReceivedCookie> parsedCookies = ReceivedCookie.parseHeader(cookieHeader);
+			cookies.addAll(parsedCookies);
+		}
+	}
+	
+	public ReceivedCookie getCookie(URI domain, URI path, String name) {
+		parseCookies();
+		
+		name = name.toLowerCase();
+		
+		String stringDomain = domain==null ? null : domain.toString().toLowerCase();
+		String stringPath = path.toString();
+		
+		// RFC2965: Two cookies are equal if name and domain are equal with case-insensitive comparison and path is equal with case-sensitive comparison.
+		//getName() / getDomain() returns lowercase and getPath() returns the original path.
+		
+		for(ReceivedCookie cookie : cookies) {
+			if(stringDomain != null) {
+				URI cookieDomain = cookie.getDomain();
+				
+				if(cookieDomain==null || !stringDomain.equals(cookieDomain.toString()))
+					continue;
+			}
+			
+			if(cookie.getPath().toString().equals(stringPath) && cookie.getName().equals(name))
+				return cookie;
+		}
+		
+		return null;
+	}
+	
+	public void setCookie(Cookie newCookie) {
+		if(replyCookies == null)
+			replyCookies = new ArrayList<Cookie>(4);
+		
+		replyCookies.add(newCookie);
 	}
 	
 	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
