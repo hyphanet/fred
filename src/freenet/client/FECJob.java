@@ -19,6 +19,12 @@ import freenet.support.api.BucketFactory;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FECJob {
 	
+	private transient static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerClass(FECJob.class);
+	}
+	
 	private transient FECCodec codec;
 	private final short fecAlgo;
 	final Bucket[] dataBlocks, checkBlocks;
@@ -122,11 +128,12 @@ public class FECJob {
 	}
 	
 	public boolean activateForExecution(ObjectContainer container) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Activating FECJob...");
 		if(dataBlockStatus != null && logMINOR) {
-			for(int i=0;i<dataBlockStatus.length;i++)
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				if(logMINOR)
 				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
+			}
 		}
 		container.activate(this, 2);
 		boolean hasDataBlocks = false;
@@ -142,8 +149,10 @@ public class FECJob {
 			}
 		}
 		if(dataBlockStatus != null && logMINOR) {
-			for(int i=0;i<dataBlockStatus.length;i++)
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				if(logMINOR)
 				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (after activation)");
+			}
 		}
 		if(checkBlockStatus != null) {
 			for(int i=0;i<checkBlockStatus.length;i++)
@@ -154,6 +163,7 @@ public class FECJob {
 			countDataBlocks = dataBlocks.length;
 			for(int i=0;i<dataBlocks.length;i++) {
 				container.activate(dataBlocks[i], 1);
+				if(logMINOR)
 				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
 				if(dataBlocks[i] == null)
 					countNullDataBlocks++;
@@ -182,7 +192,7 @@ public class FECJob {
 	}
 
 	public void deactivate(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating FECJob...");
+		if(logMINOR) Logger.minor(this, "Deactivating FECJob...");
 		if(dataBlockStatus != null) {
 			for(int i=0;i<dataBlockStatus.length;i++)
 				container.deactivate(dataBlockStatus[i], 2);
@@ -202,7 +212,6 @@ public class FECJob {
 	}
 
 	public void storeBlockStatuses(ObjectContainer container) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Storing block statuses");
 		if(dataBlockStatus != null) {
 			for(int i=0;i<dataBlockStatus.length;i++) {
