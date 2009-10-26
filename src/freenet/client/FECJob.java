@@ -124,13 +124,16 @@ public class FECJob {
 				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
 		}
 		container.activate(this, 2);
-		int dataBlockStatusCount = 0;
-		int dataBlocksCount = 0;
+		boolean hasDataBlocks = false;
+		int countDataBlocks = 0;
+		int countNullDataBlocks = 0;
 		if(dataBlockStatus != null) {
+			hasDataBlocks = true;
+			countDataBlocks = dataBlockStatus.length;
 			for(int i=0;i<dataBlockStatus.length;i++) {
 				container.activate(dataBlockStatus[i], 2);
-				if(dataBlockStatus[i] != null)
-					dataBlockStatusCount++;
+				if(dataBlockStatus[i] == null)
+					countNullDataBlocks++;
 			}
 		}
 		if(dataBlockStatus != null && logMINOR) {
@@ -142,11 +145,13 @@ public class FECJob {
 				container.activate(checkBlockStatus[i], 2);
 		}
 		if(dataBlocks != null) {
+			hasDataBlocks = true;
+			countDataBlocks = dataBlocks.length;
 			for(int i=0;i<dataBlocks.length;i++) {
 				container.activate(dataBlocks[i], 1);
 				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
-				if(dataBlocks[i] != null)
-					dataBlocksCount++;
+				if(dataBlocks[i] == null)
+					countNullDataBlocks++;
 			}
 		}
 		if(checkBlocks != null) {
@@ -155,15 +160,16 @@ public class FECJob {
 		}
 		if(!isADecodingJob) {
 			// First find the target
-			int length = 0;
-			if(dataBlockStatus != null) length = dataBlockStatus.length;
-			if(dataBlocks != null) length = dataBlocks.length;
-			if(length == 0) {
-				Logger.error(this, "Length is 0 or both data block status and data blocks are null!");
+			if(!hasDataBlocks) {
+				Logger.error(this, "Invalid job: Encoding: No data blocks or data block status");
 				return false;
 			}
-			if(!(length == dataBlockStatusCount || length == dataBlocks.length)) {
-				Logger.error(this, "Invalid job? Encoding job but block status count is "+dataBlockStatusCount+" blocks count is "+dataBlocksCount+" but one or the other should be "+length);
+			if(hasDataBlocks && countDataBlocks == 0) {
+				Logger.error(this, "Invalid job: Encoding: "+countDataBlocks+" blocks");
+				return false;
+			}
+			if(hasDataBlocks && countNullDataBlocks > 0) {
+				Logger.error(this, "Invalid job: Encoding: "+countDataBlocks+" blocks but "+countNullDataBlocks+" are null!");
 				return false;
 			}
 		}
