@@ -128,12 +128,11 @@ public class FECJob {
 	}
 	
 	public boolean activateForExecution(ObjectContainer container) {
-		if(logMINOR) Logger.minor(this, "Activating FECJob...");
+		if(logMINOR) { Logger.minor(this, "Activating FECJob...");
 		if(dataBlockStatus != null && logMINOR) {
-			for(int i=0;i<dataBlockStatus.length;i++) {
-				if(logMINOR)
+			for(int i=0;i<dataBlockStatus.length;i++)
 				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
-			}
+		}
 		}
 		container.activate(this, 2);
 		boolean hasDataBlocks = false;
@@ -150,7 +149,6 @@ public class FECJob {
 		}
 		if(dataBlockStatus != null && logMINOR) {
 			for(int i=0;i<dataBlockStatus.length;i++) {
-				if(logMINOR)
 				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (after activation)");
 			}
 		}
