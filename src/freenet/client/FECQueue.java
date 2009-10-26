@@ -333,7 +333,15 @@ public class FECQueue implements OOMHook {
 							if(!job.activateForExecution(container)) {
 								if(job.callback != null) {
 									container.activate(job.callback, 1);
-									job.callback.onFailed(new NullPointerException("Not all data blocks present"), container, context);
+									try {
+										job.callback.onFailed(new NullPointerException("Not all data blocks present"), container, context);
+									} catch (Throwable t) {
+										try {
+											Logger.error(this, "Caught "+t+" while calling failure callback on "+job, t);
+										} catch (Throwable t1) {
+											// Ignore
+										}
+									}
 									container.delete(job);
 								}
 								continue;
