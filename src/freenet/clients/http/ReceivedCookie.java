@@ -2,6 +2,7 @@ package freenet.clients.http;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
@@ -30,10 +31,13 @@ public final class ReceivedCookie extends Cookie {
 		notValidatedName = myName;
 		content = myContent;
 		
-		version = Integer.parseInt(content.get("$version"));
+		// We do NOT parse the version even though RFC2965 requires it because Firefox (3.0.14) does not give us a version.
 		
-		if(version != 1)
-			throw new IllegalArgumentException("Invalid version: " + version);
+		version = 1;
+		//version = Integer.parseInt(content.get("$version"));
+		
+		//if(version != 1)
+		//	throw new IllegalArgumentException("Invalid version: " + version);
 	}
 	
 	/**
@@ -42,9 +46,9 @@ public final class ReceivedCookie extends Cookie {
 	 * 
 	 * @param httpHeader The value of a "Cookie:" header (i.e. the prefix "Cookie:" must not be contained in this parameter!) 
 	 * @return A list of {@link ReceivedCookie} objects. The validity of their name/value pairs is not deeply checked, their getName() / getValue() might throw!
-	 * @throws RuntimeException If the general formatting of the cookie is wrong.
+	 * @throws ParseException If the general formatting of the cookie is wrong.
 	 */
-	protected static ArrayList<ReceivedCookie> parseHeader(String httpHeader) {
+	protected static ArrayList<ReceivedCookie> parseHeader(String httpHeader) throws ParseException {
 		
 		char[] header = httpHeader.toCharArray();
 		
@@ -56,7 +60,11 @@ public final class ReceivedCookie extends Cookie {
 		// We do manual parsing instead of using regular expressions for two reasons:
 		// 1. The value of cookies can be quoted, therefore it is a context-free language and not a regular language - we cannot express it with a regexp!
 		// 2. Its very fast :)
+		
+		// Set to true if a broken browser (Konqueror) specifies a cookie where the name is NOT the first attribute.
+		boolean singleCookie = false;
 
+		try {
 		for(int i = 0; i < header.length; ++i) {
 			// Skip leading whitespace of key, we must do a header.length check because there might be no more key, so we continue;
 			if(Character.isWhitespace(header[i]))
@@ -83,7 +91,7 @@ public final class ReceivedCookie extends Cookie {
 				key = new String(header, keyBeginIndex, keyEndIndex - keyBeginIndex).toLowerCase();
 				
 				if(key.length() == 0)
-					throw new IllegalArgumentException("Invalid cookie: Contains an empty key: " + httpHeader);
+					throw new ParseException("Invalid cookie: Contains an empty key: " + httpHeader, i);
 			}
 			
 			// Parse value (empty values are allowed).
@@ -113,9 +121,9 @@ public final class ReceivedCookie extends Cookie {
 				value = new String(header, valueBeginIndex, valueEndIndex - valueBeginIndex);
 				
 				if(valueEndChar == '\"') {
-					while(header[i] != ';') {
+					while(i < header.length && header[i] != ';') {
 						if(!Character.isWhitespace(header[i]))
-							throw new IllegalArgumentException("Invalid cookie: Missing terminating semicolon after value quotation: " + httpHeader);
+							throw new ParseException("Invalid cookie: Missing terminating semicolon after value quotation: " + httpHeader, i);
 						
 						++i;
 					}
@@ -129,15 +137,24 @@ public final class ReceivedCookie extends Cookie {
 			// prefixed with $.
 			
 			if(currentCookieName == null) { // We have not found the name yet, the first key/value pair must be the name and the value of the cookie.
-				if(key.charAt(0) == '$')
-					throw new IllegalArgumentException("Invalid cookie: Name is not the first attribute: " + httpHeader);
-				
-				currentCookieName = key;
-				currentCookieContent.put(currentCookieName, value);
+				if(key.charAt(0) == '$') {
+					// We cannot throw because Konqueror (4.2.2) is broken and specifies $version as the first attribute.
+					//throw new IllegalArgumentException("Invalid cookie: Name is not the first attribute: " + httpHeader);
+					
+					singleCookie = true;
+					currentCookieContent.put(key, value);
+				} else {
+					currentCookieName = key;
+					currentCookieContent.put(currentCookieName, value);
+				}
 			} else {
 				if(key.charAt(0) == '$')
 					currentCookieContent.put(key, value);
 				else {// We finished parsing of the current cookie, a new one starts here.
+					if(singleCookie)
+						throw new ParseException("Invalid cookie header: Multiple cookies specified but "
+								+ " the name of the first cookie was not the first attribute: " + httpHeader, i);
+					
 					cookies.add(new ReceivedCookie(currentCookieName, currentCookieContent)); // Store the previous cookie.
 					
 					currentCookieName = key;
@@ -145,6 +162,10 @@ public final class ReceivedCookie extends Cookie {
 					currentCookieContent.put(currentCookieName, value);
 				}
 			}
+		}
+		}
+		catch(ArrayIndexOutOfBoundsException e) {
+			throw new ParseException("Index out of bounds (" + e.getMessage() + ") for cookie " + httpHeader, 0);
 		}
 		
 		// Store the last cookie (the loop only stores the current cookie when a new one starts).
@@ -155,6 +176,9 @@ public final class ReceivedCookie extends Cookie {
 	}
 
 	
+	/**
+	 * @throws IllegalArgumentException If the validation of the name fails.
+	 */
 	public String getName() {
 		if(name == null) {
 			name = validateName(notValidatedName);
@@ -164,6 +188,9 @@ public final class ReceivedCookie extends Cookie {
 		return name;
 	}
 	
+	/**
+	 * @throws IllegalArgumentException If the validation of the domain fails.
+	 */
 	public URI getDomain() {
 		if(domain == null) {
 			try {
@@ -180,6 +207,9 @@ public final class ReceivedCookie extends Cookie {
 		return domain;
 	}
 
+	/**
+	 * @throws IllegalArgumentException If the validation of the path fails.
+	 */
 	public URI getPath() {
 		if(path == null) {
 			try {
@@ -192,6 +222,9 @@ public final class ReceivedCookie extends Cookie {
 		return path;
 	}
 
+	/**
+	 * @throws IllegalArgumentException If the validation of the name fails.
+	 */
 	public String getValue() {
 		if(value == null) 
 			value = validateValue(content.get(getName()));

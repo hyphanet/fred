@@ -12,6 +12,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -170,7 +171,7 @@ public class ToadletContextImpl implements ToadletContext {
 		return headers;
 	}
 	
-	private void parseCookies() {
+	private void parseCookies() throws ParseException {
 		if(cookies != null)
 			return;
 		
@@ -187,7 +188,7 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 	}
 	
-	public ReceivedCookie getCookie(URI domain, URI path, String name) {
+	public ReceivedCookie getCookie(URI domain, URI path, String name) throws ParseException {
 		parseCookies();
 		
 		if(cookies == null) // There are no cookies.
@@ -195,22 +196,32 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		name = name.toLowerCase();
 		
-		String stringDomain = domain==null ? null : domain.toString().toLowerCase();
-		String stringPath = path.toString();
+		//String stringDomain = domain==null ? null : domain.toString().toLowerCase();
+		//String stringPath = path.toString();
 		
 		// RFC2965: Two cookies are equal if name and domain are equal with case-insensitive comparison and path is equal with case-sensitive comparison.
 		//getName() / getDomain() returns lowercase and getPath() returns the original path.
 		
+		// UNFORTUNATELY firefox will ONLY give us the name and the value of the cookie, so we ignore everything else.
+		
 		for(ReceivedCookie cookie : cookies) {
-			if(stringDomain != null) {
-				URI cookieDomain = cookie.getDomain();
+			try {
+			//if(stringDomain != null) {
+			//	URI cookieDomain = cookie.getDomain();
+			//	
+			//	if(cookieDomain==null || !stringDomain.equals(cookieDomain.toString()))
+			//		continue;
+			//}
+			//
+			//if(cookie.getPath().toString().equals(stringPath) && cookie.getName().equals(name))
+			//	return cookie;
 				
-				if(cookieDomain==null || !stringDomain.equals(cookieDomain.toString()))
-					continue;
+				if(cookie.getName().equals(name))
+					return cookie;
 			}
-			
-			if(cookie.getPath().toString().equals(stringPath) && cookie.getName().equals(name))
-				return cookie;
+			catch(RuntimeException e) {
+				Logger.error(this, "Error in cookie", e);
+			}
 		}
 		
 		return null;
@@ -330,10 +341,10 @@ public class ToadletContextImpl implements ToadletContext {
 				String[] split = firstLine.split(" ");
 				
 				if(split.length != 3)
-					throw new ParseException("Could not parse request line (split.length="+split.length+"): "+firstLine);
+					throw new ParseException("Could not parse request line (split.length="+split.length+"): "+firstLine, -1);
 				
 				if(!split[2].startsWith("HTTP/1."))
-					throw new ParseException("Unrecognized protocol "+split[2]);
+					throw new ParseException("Unrecognized protocol "+split[2], -1);
 				
 				URI uri;
 				try {
@@ -358,7 +369,7 @@ public class ToadletContextImpl implements ToadletContext {
 					if(line.length() == 0) break;
 					int index = line.indexOf(':');
 					if (index < 0) {
-						throw new ParseException("Missing ':' in request header field");
+						throw new ParseException("Missing ':' in request header field", -1);
 					}
 					String before = line.substring(0, index).toLowerCase();
 					String after = line.substring(index+1);
@@ -573,15 +584,6 @@ public class ToadletContextImpl implements ToadletContext {
 		else
 			// HTTP 1.1
 			return false;
-	}
-	
-	static class ParseException extends Exception {
-		private static final long serialVersionUID = -1;
-		
-		ParseException(String string) {
-			super(string);
-		}
-		
 	}
 	
 	public void writeData(byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
