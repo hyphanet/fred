@@ -151,10 +151,12 @@ public class ToadletContextImpl implements ToadletContext {
 		sentReplyHeaders = true;
 		
 		if(replyCookies != null) {
-			mvt.put("cache-control:", "no-cache=\"set-cookie2\"");
+			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
 
+			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
+			
 			for(Cookie cookie : replyCookies)
-				mvt.put("set-cookie2", cookie.encodeToHeaderValue());
+				mvt.put("set-cookie", cookie.encodeToHeaderValue());
 		}
 		
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
@@ -172,14 +174,14 @@ public class ToadletContextImpl implements ToadletContext {
 		if(cookies != null)
 			return;
 		
-		String[] cookieHeaders = (String[])headers.getArray("cookie");
+		int cookieAmount = headers.countAll("cookie");
 		
-		if(cookieHeaders == null)
+		if(cookieAmount == 0)
 			return;
 		
-		cookies = new ArrayList<ReceivedCookie>(cookieHeaders.length + 1);
+		cookies = new ArrayList<ReceivedCookie>(cookieAmount + 1);
 		
-		for(String cookieHeader : cookieHeaders) {
+		for(String cookieHeader : headers.iterateAll("cookie")) {
 			ArrayList<ReceivedCookie> parsedCookies = ReceivedCookie.parseHeader(cookieHeader);
 			cookies.addAll(parsedCookies);
 		}
