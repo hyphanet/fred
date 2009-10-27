@@ -39,7 +39,7 @@ public final class SessionManager {
 	 * @param myCookiePath The path in which the cookies should be valid 
 	 * @param myLogInRedirectURI The URI to which a RedirectException should be thrown if the specified session ID is not valid anymore.
 	 */
-	protected SessionManager(URI myCookiePath, URI myLogInRedirectURI) {
+	public SessionManager(URI myCookiePath, URI myLogInRedirectURI) {
 		if(myCookiePath.isAbsolute())
 			throw new IllegalArgumentException("Illegal cookie path, must be relative: " + myCookiePath);
 		
