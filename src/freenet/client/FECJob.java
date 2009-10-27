@@ -128,11 +128,12 @@ public class FECJob {
 	}
 	
 	public boolean activateForExecution(ObjectContainer container) {
-		if(logMINOR) { Logger.minor(this, "Activating FECJob...");
-		if(dataBlockStatus != null) {
-			for(int i=0;i<dataBlockStatus.length;i++)
-				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
-		}
+		if(logMINOR) {
+			Logger.minor(this, "Activating FECJob...");
+			if(dataBlockStatus != null) {
+				for(int i=0;i<dataBlockStatus.length;i++)
+					Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
+			}
 		}
 		container.activate(this, 2);
 		boolean hasDataBlocks = false;
@@ -148,8 +149,8 @@ public class FECJob {
 			}
 		
 			if(logMINOR) {
-			for(int i=0;i<dataBlockStatus.length;i++)
-				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (after activation)");
+				for(int i=0;i<dataBlockStatus.length;i++)
+					Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (after activation)");
 			}
 		}
 		if(checkBlockStatus != null) {
@@ -162,7 +163,7 @@ public class FECJob {
 			for(int i=0;i<dataBlocks.length;i++) {
 				container.activate(dataBlocks[i], 1);
 				if(logMINOR)
-				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
+					Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
 				if(dataBlocks[i] == null)
 					countNullDataBlocks++;
 			}
