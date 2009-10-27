@@ -20,7 +20,7 @@ import freenet.support.Logger;
  * 
  * @author xor (xor@freenetproject.org)
  */
-final class SessionManager {
+public final class SessionManager {
 
 	/**
 	 * The amount of milliseconds after which a session is deleted due to expiration.
