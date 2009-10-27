@@ -173,6 +173,12 @@ public class ToadletContextImpl implements ToadletContext {
 			return;
 		
 		String[] cookieHeaders = (String[])headers.getArray("cookie");
+		
+		if(cookieHeaders == null) {
+			cookies = new ArrayList<ReceivedCookie>(1);
+			return;
+		}
+		
 		cookies = new ArrayList<ReceivedCookie>(cookieHeaders.length + 1);
 		
 		for(String cookieHeader : cookieHeaders) {
