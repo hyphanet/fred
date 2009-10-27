@@ -174,10 +174,8 @@ public class ToadletContextImpl implements ToadletContext {
 		
 		String[] cookieHeaders = (String[])headers.getArray("cookie");
 		
-		if(cookieHeaders == null) {
-			cookies = new ArrayList<ReceivedCookie>(1);
+		if(cookieHeaders == null)
 			return;
-		}
 		
 		cookies = new ArrayList<ReceivedCookie>(cookieHeaders.length + 1);
 		
@@ -189,6 +187,9 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public ReceivedCookie getCookie(URI domain, URI path, String name) {
 		parseCookies();
+		
+		if(cookies == null) // There are no cookies.
+			return null;
 		
 		name = name.toLowerCase();
 		
