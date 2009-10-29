@@ -59,7 +59,7 @@ public class LongTermMHKTest {
 	private static final int OPENNET_PORT2 = 5013;
 	
 	/** Delta - the number of days we wait before fetching. */
-	private static final int DELTA = 1;
+	private static final int DELTA = 7;
 
 	private static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd", Locale.US);
 	private static final GregorianCalendar today = (GregorianCalendar) Calendar.getInstance(TimeZone.getTimeZone("GMT"));
