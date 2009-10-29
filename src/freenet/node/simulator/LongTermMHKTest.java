@@ -282,23 +282,31 @@ public class LongTermMHKTest {
 					int token = 3 + 6 + 6;
 					int singleKeyFetchTime = -1;
 					boolean singleKeySuccess = false;
-					try {
-						singleKeyFetchTime = Integer.parseInt(split[token]);
-						singleKeySuccess = true;
-					} catch (NumberFormatException e) {
-						System.out.println("Failed fetch single key on "+date+" : "+split[token]);
-						singleKeyFetchTime = -1;
+					for(int i=0;i<3;i++) {
+						// Fetched 3 times
+						if(!singleKeySuccess) {
+							try {
+								singleKeyFetchTime = Integer.parseInt(split[token]);
+								singleKeySuccess = true;
+								System.out.println("Fetched single key on try "+i+" on "+date+" in "+singleKeyFetchTime+"ms");
+							} catch (NumberFormatException e) {
+								System.out.println("Failed fetch single key on "+date+" try "+i+" : "+split[token]);
+								singleKeyFetchTime = -1;
+							}
+						} // Else will be empty.
+						token++;
 					}
 					boolean mhkSuccess = false;
 					for(int i=0;i<3;i++) {
-						token++;
 						int mhkFetchTime = -1;
 						try {
 							mhkFetchTime = Integer.parseInt(split[token]);
 							mhkSuccess = true;
+							System.out.println("Fetched MHK #"+i+" on "+date+" in "+mhkFetchTime+"ms");
 						} catch (NumberFormatException e) {
 							System.out.println("Failed fetch MHK #"+i+" on "+date+" : "+split[token]);
 						}
+						token++;
 					}
 					total++;
 					if(singleKeySuccess)
@@ -317,19 +325,30 @@ public class LongTermMHKTest {
 			
 			// FETCH SINGLE URI
 			
-			try {
-				t1 = System.currentTimeMillis();
-				client.fetch(singleURI);
-				t2 = System.currentTimeMillis();
-
-				System.out.println("PULL-TIME FOR SINGLE URI:" + (t2 - t1));
-				csvLine.add(String.valueOf(t2 - t1));
-			} catch (FetchException e) {
-				if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-				        && e.getMode() != FetchException.DATA_NOT_FOUND)
-					e.printStackTrace();
-				csvLine.add(FetchException.getShortMessage(e.getMode()));
-				System.err.println("FAILED PULL FOR SINGLE URI: "+e);
+			// Fetch the first one 3 times, since the MHK is 3 fetches also.
+			// Technically this is 9 fetches because we multiply by 3 fetches per high-level fetch by default.
+			
+			boolean fetched = false;
+			for(int i=0;i<3;i++) {
+				if(fetched) {
+					csvLine.add("");
+					continue;
+				}
+				try {
+					t1 = System.currentTimeMillis();
+					client.fetch(singleURI);
+					t2 = System.currentTimeMillis();
+					
+					System.out.println("PULL-TIME FOR SINGLE URI:" + (t2 - t1));
+					csvLine.add(String.valueOf(t2 - t1));
+					fetched = true;
+				} catch (FetchException e) {
+					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
+							&& e.getMode() != FetchException.DATA_NOT_FOUND)
+						e.printStackTrace();
+					csvLine.add(FetchException.getShortMessage(e.getMode()));
+					System.err.println("FAILED PULL FOR SINGLE URI: "+e);
+				}
 			}
 			
 			for(int i=0;i<mhkURIs.length;i++) {
