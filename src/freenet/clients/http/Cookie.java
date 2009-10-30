@@ -132,7 +132,7 @@ public class Cookie {
 	public static String validateName(String name) {
 		name = name.trim().toLowerCase(); // RFC2965: Name is case insensitive
 
-		if(name.isEmpty())
+		if((name == ""))
 			throw new IllegalArgumentException("Name is empty.");
 
 		// FIXME: This is more restrictive than the official allowed content of a cookie name because I was too lazy for finding out the exact requirements.

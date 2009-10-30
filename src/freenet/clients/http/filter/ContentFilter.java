@@ -287,7 +287,7 @@ public class ContentFilter {
 		}
 		
 		// If no BOM, use the charset from the referring document.
-		if(handler.useMaybeCharset && maybeCharset != null && !maybeCharset.isEmpty())
+		if(handler.useMaybeCharset && maybeCharset != null && !(maybeCharset == ""))
 			return maybeCharset;
 		
 		// If it doesn't have a BOM, then it's *probably* safe to use as default.

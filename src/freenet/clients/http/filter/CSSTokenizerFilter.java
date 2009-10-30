@@ -3305,7 +3305,7 @@ class CSSTokenizerFilter {
 						secondPart=expression.substring(endIndex+1,expression.length());
 					for(int j=1;j<=noOfa+1 && j<=words.length;j++)
 					{
-						if(secondPart.isEmpty())
+						if((secondPart == ""))
 							j = Math.min(noOfa+1, words.length); // Optimise
 						if(logDEBUG) log("2Making recursiveDoubleBarVerifier to consume "+j+" words");
 						ParsedWord[] partToPassToDB = new ParsedWord[j];
@@ -3558,11 +3558,11 @@ class CSSTokenizerFilter {
 						{
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
-							String pattern = ignoredParts+((ignoredParts.isEmpty()||secondPart.isEmpty())?"":"a")+secondPart;
+							String pattern = ignoredParts+(((ignoredParts == "")||(secondPart == ""))?"":"a")+secondPart;
 							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
 							if(valueToPass.length == 0)
 								return true;
-							if(pattern.isEmpty()) return false;
+							if((pattern == "")) return false;
 							result=recursiveDoubleBarVerifier(pattern,valueToPass, cb);
 							if(result)
 							{
