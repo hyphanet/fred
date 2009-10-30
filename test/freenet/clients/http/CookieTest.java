@@ -14,7 +14,7 @@ public class CookieTest extends TestCase {
 	
 	static final String VALID_PATH = "/Freetalk";
 	static final String VALID_NAME = "SessionID";
-	static final String VALID_VALUE = "abcd12345";
+	static final String VALID_VALUE = "abCd12345";
 	
 	URI validPath;
 	Date validExpiresDate;

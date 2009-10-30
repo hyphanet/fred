@@ -68,10 +68,12 @@ public final class ReceivedCookie extends Cookie {
 		boolean singleCookie = false;
 
 		try {
-		for(int i = 0; i < header.length; ++i) {
+		for(int i = 0; i < header.length;) {
 			// Skip leading whitespace of key, we must do a header.length check because there might be no more key, so we continue;
-			if(Character.isWhitespace(header[i]))
+			if(Character.isWhitespace(header[i])) {
+				++i;
 				continue;
+			}
 			
 			String key;
 			String value = null;
@@ -80,12 +82,12 @@ public final class ReceivedCookie extends Cookie {
 			{
 				int keyBeginIndex = i;
 	
-				while(header[i] != '=' && header[i] != ';')
+				while(i < header.length && header[i] != '=' && header[i] != ';')
 					++i;
 				
-				int keyEndIndex = i++;
+				int keyEndIndex = i;
 				
-				if(header[keyEndIndex] == ';')
+				if(keyEndIndex >= header.length || header[keyEndIndex] == ';')
 					value = "";
 				
 				while(Character.isWhitespace(header[keyEndIndex-1])) // Remove trailing whitespace
@@ -95,6 +97,9 @@ public final class ReceivedCookie extends Cookie {
 				
 				if(key.length() == 0)
 					throw new ParseException("Invalid cookie: Contains an empty key: " + httpHeader, i);
+				
+				// We're done parsing the key, continue to the next character.
+				++i;
 			}
 			
 			// Parse value (empty values are allowed).
@@ -108,21 +113,30 @@ public final class ReceivedCookie extends Cookie {
 				if(header[i] == '\"') { // Value is quoted
 					valueEndChar = '\"';
 					valueBeginIndex = ++i;
+					
+					while(header[i] != valueEndChar)
+						++i;
+					
 				} else {
 					valueEndChar = ';';
 					valueBeginIndex = i;
+					
+					while(i < header.length && header[i] != valueEndChar)
+						++i;
 				}
 				
-				while(header[i] != valueEndChar)
-					++i;
-				
-				int valueEndIndex = i++;
+
+				int valueEndIndex = i;
 				
 				while(valueEndIndex > valueBeginIndex && Character.isWhitespace(header[valueEndIndex-1])) // Remove trailing whitespace
 					--valueEndIndex;
 
 				value = new String(header, valueBeginIndex, valueEndIndex - valueBeginIndex);
 				
+				// We're done parsing the value, continue to the next character
+				++i;
+				
+				// Skip whitespace between end of quotation and the semicolon following the quotation.
 				if(valueEndChar == '\"') {
 					while(i < header.length && header[i] != ';') {
 						if(!Character.isWhitespace(header[i]))
@@ -130,6 +144,9 @@ public final class ReceivedCookie extends Cookie {
 						
 						++i;
 					}
+					
+					// We found the semicolon, skip it
+					++i;
 				}
 					
 			}
@@ -168,7 +185,9 @@ public final class ReceivedCookie extends Cookie {
 		}
 		}
 		catch(ArrayIndexOutOfBoundsException e) {
-			throw new ParseException("Index out of bounds (" + e.getMessage() + ") for cookie " + httpHeader, 0);
+			ParseException p = new ParseException("Index out of bounds (" + e.getMessage() + ") for cookie " + httpHeader, 0);
+			p.setStackTrace(e.getStackTrace());
+			throw p;
 		}
 		
 		// Store the last cookie (the loop only stores the current cookie when a new one starts).

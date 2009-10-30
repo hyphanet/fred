@@ -3,11 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class ReceivedCookieTest extends CookieTest {
 	
-	static final String validEncodedCookie = " SessionID = \"abcd12345\" ;"
+	static final String validEncodedCookie = " SessionID = \"abCd12345\" ;"
 											+ " $Version = 1 ;"
 											+ " $Path = \"/Freetalk\";"
 											+ " $Discard; "
@@ -27,9 +29,34 @@ public class ReceivedCookieTest extends CookieTest {
 		// TODO: Implement.
 	}
 
-	public void testParseHeader() {
+	public void testParseHeader() throws ParseException {
 		// The tests for getPath(), getName() etc will be executed using the parsed mCookie and therefore also test parseHeader() for valid values,
 		// we only need to test special cases here.
+		
+		ArrayList<ReceivedCookie> cookies;
+		Cookie cookie;
+		
+		// Plain firefox cookie
+		
+		cookie = ReceivedCookie.parseHeader("SessionID=abCd12345").get(0);
+		assertEquals(VALID_NAME.toLowerCase(), cookie.getName()); assertEquals(VALID_VALUE, cookie.getValue());
+		
+		// Two plain firefox cookies
+		
+		cookies = ReceivedCookie.parseHeader("SessionID=abCd12345;key2=valUe2");
+		cookie = cookies.get(0); assertEquals(VALID_NAME.toLowerCase(), cookie.getName()); assertEquals(VALID_VALUE, cookie.getValue());
+		cookie = cookies.get(1); assertEquals("key2", cookie.getName()); assertEquals("valUe2", cookie.getValue());
+		
+		// Key without value at end:
+		
+		cookie = ReceivedCookie.parseHeader(" SessionID = \"abCd12345\" ;"
+										+   " $blah;").get(0);
+		assertEquals(VALID_NAME.toLowerCase(), cookie.getName()); assertEquals(VALID_VALUE, cookie.getValue());
+		
+		// Key without value and without semicolon at end
+		cookie = ReceivedCookie.parseHeader(" SessionID = \"abCd12345\" ;"
+										+   " $blah").get(0);
+		assertEquals(VALID_NAME.toLowerCase(), cookie.getName()); assertEquals(VALID_VALUE, cookie.getValue());
 	}
 
 	public void testEncodeToHeaderValue() {
