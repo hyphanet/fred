@@ -1094,16 +1094,18 @@ public class NodeStats implements Persistable {
 		}
 		fs.put("averagePingTime", getNodeAveragePingTime());
 		fs.put("bwlimitDelayTime", getBwlimitDelayTime());
+		
+		// Network Size
 		fs.put("opennetSizeEstimateSession", getOpennetSizeEstimate(-1));
-		int opennetSizeEstimate24hourRecent = getOpennetSizeEstimate(now - (24 * 60 * 60 * 1000)); // 24 hours
-		fs.put("opennetSizeEstimate24hourRecent", opennetSizeEstimate24hourRecent);
-		int opennetSizeEstimate48hourRecent = getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
-		fs.put("opennetSizeEstimate48hourRecent", opennetSizeEstimate48hourRecent);		
 		fs.put("networkSizeEstimateSession", getDarknetSizeEstimate(-1));
-		int networkSizeEstimate24hourRecent = getDarknetSizeEstimate(now - (24*60*60*1000));  // 24 hours
-		fs.put("networkSizeEstimate24hourRecent", networkSizeEstimate24hourRecent);
-		int networkSizeEstimate48hourRecent = getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
-		fs.put("networkSizeEstimate48hourRecent", networkSizeEstimate48hourRecent);
+		for (int t = 1 ; t < 7; t++) {
+			int hour = t * 24;
+			long limit = now - t * ((long) 24 * 60 * 60 * 1000);
+
+			fs.put("opennetSizeEstimate"+hour+"hourRecent", limit);
+			fs.put("networkSizeEstimate"+hour+"hourRecent", limit);
+		}
+		
 		fs.put("routingMissDistance", routingMissDistance.currentValue());
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
