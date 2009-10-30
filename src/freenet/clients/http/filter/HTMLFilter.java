@@ -711,7 +711,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			new TagVerifier(
 				"head",
 				new String[] { "id" },
-				new String[] { "profile" },
+				// Don't support profiles.
+				// We don't know what format they might be in, whether they will be parsed even though they have bogus MIME types (which seems likely), etc.
+				new String[] { /*"profile"*/ },
 				null));
 		allowedTagsVerifiers.put(
 			"title",
