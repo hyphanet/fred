@@ -1113,9 +1113,15 @@ public class NodeStats implements Persistable {
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
+		int numberOfSeedServers = 0;
+		int numberOfSeedClients = 0;
 		
-		int numberOfSeedServers = getCountSeedServers(peerNodeStatuses);
-		int numberOfSeedClients = getCountSeedClients(peerNodeStatuses);
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if (peerNodeStatus.isSeedServer())
+				numberOfSeedServers++;
+			if (peerNodeStatus.isSeedClient())
+				numberOfSeedClients++;
+		}
 		
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
@@ -1990,24 +1996,6 @@ public class NodeStats implements Persistable {
 		return result;
 	}
 	
-	private int getCountSeedServers(PeerNodeStatus[] peerNodeStatuses) {
-		int count = 0;
-		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if (peerNodeStatuses[peerIndex].isSeedServer())
-				count++;
-		}
-		return count;
-	}
-
-	private int getCountSeedClients(PeerNodeStatus[] peerNodeStatuses) {
-		int count = 0;
-		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if (peerNodeStatuses[peerIndex].isSeedClient())
-				count++;
-		}
-		return count;
-	}
-
 	public void reportCHKTime(long rtt, boolean successful) {
 		if(successful)
 			successfulLocalCHKFetchTimeAverage.report(rtt);
