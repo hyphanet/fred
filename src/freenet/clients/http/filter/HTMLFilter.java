@@ -1744,49 +1744,112 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				charset = null;
 			if(charset != null && !Charset.isSupported(charset))
 				charset = null;
-			if("link".equalsIgnoreCase(p.element)) {
-				String rel = getHashString(h, "rel");
-				if(rel.equals("alternate") || rel.equals("stylesheet")) {
-					if(charset == null) {
-						// Browser will use the referring document's charset if there
-						// is no BOM and we don't specify one in HTTP.
-						// So we need to pass this information to the filter.
-						// We cannot force the mime type with the charset, because if
-						// we do that, we might be wrong - if there is a BOM or @charset 
-						// we want to use that. E.g. chinese pages might have the
-						// page in GB18030 and the borrowed CSS in ISO-8859-1 or UTF-8.
-						maybecharset = pc.charset;
+			
+			// Is it a style sheet?
+			// Also, sanitise rel type
+			// If neither rel nor rev, return null
+			
+			String rel = getHashString(h, "rel");
+			
+			rel = rel.toLowerCase();
+			
+			boolean isStylesheet = false;
+
+			StringTokenizer tok = new StringTokenizer(rel, " ");
+			int i=0;
+			String prevToken = null;
+			StringBuffer sb = new StringBuffer(rel.length());
+			while (tok.hasMoreTokens()) {
+				String token = tok.nextToken();
+				if(token.equalsIgnoreCase("stylesheet")) {
+					if(token.equalsIgnoreCase("stylesheet")) {
+						isStylesheet = true;
+						if(sb.length() == 0)
+							sb.append(token);
+						else {
+							sb.append(' ');
+							sb.append(token);
+						}
+						if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
+							return null;
+						if(tok.hasMoreTokens())
+							return null; // Disallow extra tokens after "stylesheet"
 					}
-					String media = getHashString(h, "media");
-					if(media != null)
-						media = CSSReadFilter.filterMediaList(media);
-					if(media != null)
-						hn.put("media", media);
+				} else if(!isStandardLinkType(token)) continue;
+				i++;
+				if(sb.length() == 0)
+					sb.append(token);
+				else {
+					sb.append(' ');
+					sb.append(token);
 				}
+				prevToken = token;
+			}
+			
+			String parsedRel = sb.toString();
+			
+			String rev = getHashString(h, "rel");
+			rev = rev.toLowerCase();
+			
+			tok = new StringTokenizer(rev, " ");
+			i=0;
+			prevToken = null;
+			sb = new StringBuffer(rel.length());
+			
+			while (tok.hasMoreTokens()) {
+				String token = tok.nextToken();
+				if(!isStandardLinkType(token)) continue;
+				i++;
+				if(sb.length() == 0)
+					sb.append(token);
+				else {
+					sb.append(' ');
+					sb.append(token);
+				}
+				prevToken = token;
+			}
+			
+			String parsedRev = sb.toString();
+			
+			if(parsedRel.length() == 0 && parsedRev.length() == 0)
+				// No (valid) rel or rev
+				return null;
+			
+			if(parsedRel.length() != 0)
+				hn.put("rel", parsedRel);
+			if(parsedRev.length() != 0)
+				hn.put("rev", parsedRev);
+			
+			if(!(rel.equals("stylesheet") || rel.equals("alternate stylesheet"))) {
+				// Not a stylesheet.
+				if(type != null && type.startsWith("text/css"))
+					return null; // Not a stylesheet, so can't take a stylesheet type.
+			} else {
+				isStylesheet = true;
+			}
+			
+			if(isStylesheet) {
+				if(charset == null) {
+					// Browser will use the referring document's charset if there
+					// is no BOM and we don't specify one in HTTP.
+					// So we need to pass this information to the filter.
+					// We cannot force the mime type with the charset, because if
+					// we do that, we might be wrong - if there is a BOM or @charset 
+					// we want to use that. E.g. chinese pages might have the
+					// page in GB18030 and the borrowed CSS in ISO-8859-1 or UTF-8.
+					maybecharset = pc.charset;
+				}
+				String media = getHashString(h, "media");
+				if(media != null)
+					media = CSSReadFilter.filterMediaList(media);
+				if(media != null)
+					hn.put("media", media);
+				if(type != null && !type.startsWith("text/css"))
+					return null; // Different style language e.g. XSL, not supported.
+				type = "text/css";
 			}
 			String href = getHashString(h, "href");
 			if (href != null) {
-				final String[] rels = new String[] { "rel", "rev" };
-				for (int x = 0; x < rels.length; x++) {
-					String reltype = rels[x];
-					String rel = getHashString(h, reltype);
-					if (rel != null) {
-						StringTokenizer tok = new StringTokenizer(rel, " ");
-						while (tok.hasMoreTokens()) {
-							String t = tok.nextToken();
-							if (t.equalsIgnoreCase("alternate")
-								|| t.equalsIgnoreCase("stylesheet")) {
-								// FIXME: hardcoding text/css
-								type = "text/css";
-							} // FIXME: do we want to do anything with the
-							// other possible rel's?
-						}
-						hn.put(reltype, rel);
-					}
-				}
-				//				Core.logger.log(this, "Sanitizing URI: "+href+" with type "+
-				//					type+" and charset "+charset,
-				//					Logger.DEBUG);
 				href = HTMLDecoder.decode(href);
 				href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
 				if (href != null) {
@@ -1802,12 +1865,32 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			// FIXME: allow these if the charset and encoding are encoded into
 			// the URL
-			// FIXME: link types -
-			// http://www.w3.org/TR/html4/types.html#type-links - the
-			// stylesheet stuff, primarily - rel and rev properties - parse
-			// these, use same fix as above (browser may assume text/css for
-			// anything linked as a stylesheet)
 			return hn;
+		}
+
+		// Does not include stylesheet
+		private static final HashSet<String> standardRelTypes = new HashSet<String>();
+		static {
+			for(String s : new String[] {
+					"alternate",
+					"start",
+					"next",
+					"prev",
+					"contents",
+					"index",
+					"glossary",
+					"copyright",
+					"chapter",
+					"section",
+					"subsection",
+					"appendix",
+					"help",
+					"bookmark"
+			}) standardRelTypes.add(s);
+		}
+		
+		private boolean isStandardLinkType(String token) {
+			return standardRelTypes.contains(token.toLowerCase());
 		}
 	}
 
