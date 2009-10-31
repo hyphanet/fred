@@ -5752,15 +5752,23 @@ public class Node implements TimeSkewDetectorCallback {
     	double myLoc = getLocation();
     	double target = key.toNormalizedDouble();
     	double myDist = Location.distance(myLoc, target);
+    	if(logMINOR) Logger.minor(this, "Should store for "+key+" ?");
     	// Don't sink store if any of the nodes we routed to, or our predecessor, is both high-uptime and closer to the target than we are.
     	if(source != null && !source.isLowUptime()) {
-    		if(Location.distance(source, target) < myDist)
+    		if(Location.distance(source, target) < myDist) {
+    	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key);
     			return false;
+    		}
     	}
     	for(PeerNode pn : routedTo) {
-    		if(Location.distance(pn, target) < myDist && !pn.isLowUptime())
+    		if(Location.distance(pn, target) < myDist && !pn.isLowUptime()) {
+    	    	if(logMINOR) Logger.minor(this, "Not storing because peer "+pn+" is closer to target for "+key);
     			return false;
+    		} else {
+    			if(logMINOR) Logger.minor(this, "Should store maybe, peer "+pn+" loc = "+pn.getLocation()+" my loc is "+myLoc+" target is "+target);
+    		}
     	}
+    	if(logMINOR) Logger.minor(this, "Should store returning true for "+key+" target="+target+" myLoc="+myLoc+" peers: "+routedTo.length);
     	return true;
 	}
 }
