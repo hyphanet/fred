@@ -310,9 +310,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     	}
 		
 		CHKBlock block = verify();
-		if(block != null)
-			commit(block);
-        
+		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
+		
         if(logMINOR) Logger.minor(this, "Waiting for completion");
         // Wait for completion
         boolean sentCompletionWasSet;
@@ -347,6 +346,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			m = DMT.createFNPInsertTransfersCompleted(uid, false /* no timeouts */);
 		}		
 		
+		// Don't commit until after we have received all the downstream transfer completion notifications.
+		// We don't want an attacker to see a ULPR notice from the inserter before he sees it from the end of the chain (bug 3338).
+		if(block != null) {
+			commit(block);
+			block = null;
+		}
+        
         	try {
         		source.sendSync(m, this);
         		if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
