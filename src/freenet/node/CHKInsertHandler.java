@@ -309,7 +309,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			}
     	}
 		
-        maybeCommit();
+		CHKBlock block = verify();
+		if(block != null)
+			commit(block);
         
         if(logMINOR) Logger.minor(this, "Waiting for completion");
         // Wait for completion
@@ -377,17 +379,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     /**
      * Verify data, or send DataInsertRejected.
      */
-    private void maybeCommit() {
+    private CHKBlock verify() {
         Message toSend = null;
         
+        CHKBlock block = null;
+        
         synchronized(this) {
-        	if((prb == null) || prb.isAborted()) return;
+        	if((prb == null) || prb.isAborted()) return null;
             try {
-                if(!canCommit) return;
-                if(!prb.allReceived()) return;
-                CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
-                node.store(block, false, canWriteDatastore, false);
-                if(logMINOR) Logger.minor(this, "Committed");
+                if(!canCommit) return null;
+                if(!prb.allReceived()) return null;
+                block = new CHKBlock(prb.getBlock(), headers, key);
             } catch (CHKVerifyException e) {
             	Logger.error(this, "Verify failed in CHKInsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
@@ -404,7 +406,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             	if(logMINOR) Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
             }
         }
+        return block;
 	}
+    
+    private void commit(CHKBlock block) {
+        node.store(block, false, canWriteDatastore, false);
+        if(logMINOR) Logger.minor(this, "Committed");
+    }
 
 	/** Has the receive failed? If so, there's not much more that can be done... */
     private boolean receiveFailed;
