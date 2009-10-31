@@ -614,6 +614,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 		node.drawClientCacheBox(storeSizeInfobox);
 		node.drawSlashdotCacheBox(storeSizeInfobox);
+		node.drawStoreStats(storeSizeInfobox);
 	}
 
 	private void drawUnclaimedFIFOMessageCountsBox(HTMLNode unclaimedFIFOMessageCountsInfobox) {

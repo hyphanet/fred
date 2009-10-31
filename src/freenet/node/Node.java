@@ -5726,6 +5726,9 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
+	private long completeInsertsStored;
+	private long completeInsertsTotal;
+	
 	/** Should we commit the block to the store rather than the cache?
 	 * 
 	 * <p>We used to check whether we are a sink by checking whether any peer has
@@ -5757,18 +5760,33 @@ public class Node implements TimeSkewDetectorCallback {
     	if(source != null && !source.isLowUptime()) {
     		if(Location.distance(source, target) < myDist) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key);
+    	    	synchronized(this) {
+    	    		completeInsertsTotal++;
+    	    	}
     			return false;
     		}
     	}
     	for(PeerNode pn : routedTo) {
     		if(Location.distance(pn, target) < myDist && !pn.isLowUptime()) {
     	    	if(logMINOR) Logger.minor(this, "Not storing because peer "+pn+" is closer to target for "+key+" his loc "+pn.getLocation()+" my loc "+myLoc+" target is "+target);
+    	    	synchronized(this) {
+    	    		completeInsertsTotal++;
+    	    	}
     			return false;
     		} else {
     			if(logMINOR) Logger.minor(this, "Should store maybe, peer "+pn+" loc = "+pn.getLocation()+" my loc is "+myLoc+" target is "+target+" low uptime is "+pn.isLowUptime());
     		}
     	}
+    	synchronized(this) {
+    		completeInsertsStored++;
+    		completeInsertsTotal++;
+    	}
     	if(logMINOR) Logger.minor(this, "Should store returning true for "+key+" target="+target+" myLoc="+myLoc+" peers: "+routedTo.length);
     	return true;
+	}
+
+
+	public synchronized void drawStoreStats(HTMLNode infobox) {
+		infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+((completeInsertsStored*100.0)/completeInsertsTotal)+"%)");
 	}
 }
