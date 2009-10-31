@@ -1753,65 +1753,73 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			
 			String rel = getHashString(h, "rel");
 			
-			rel = rel.toLowerCase();
-			
+			String parsedRel = "", parsedRev = "";
 			boolean isStylesheet = false;
 
-			StringTokenizer tok = new StringTokenizer(rel, " ");
-			int i=0;
-			String prevToken = null;
-			StringBuffer sb = new StringBuffer(rel.length());
-			while (tok.hasMoreTokens()) {
-				String token = tok.nextToken();
-				if(token.equalsIgnoreCase("stylesheet")) {
+			if(rel != null) {
+				
+				rel = rel.toLowerCase();
+				
+				StringTokenizer tok = new StringTokenizer(rel, " ");
+				int i=0;
+				String prevToken = null;
+				StringBuffer sb = new StringBuffer(rel.length());
+				while (tok.hasMoreTokens()) {
+					String token = tok.nextToken();
 					if(token.equalsIgnoreCase("stylesheet")) {
-						isStylesheet = true;
-						if(sb.length() == 0)
-							sb.append(token);
-						else {
-							sb.append(' ');
-							sb.append(token);
+						if(token.equalsIgnoreCase("stylesheet")) {
+							isStylesheet = true;
+							if(sb.length() == 0)
+								sb.append(token);
+							else {
+								sb.append(' ');
+								sb.append(token);
+							}
+							if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
+								return null;
+							if(tok.hasMoreTokens())
+								return null; // Disallow extra tokens after "stylesheet"
 						}
-						if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
-							return null;
-						if(tok.hasMoreTokens())
-							return null; // Disallow extra tokens after "stylesheet"
+					} else if(!isStandardLinkType(token)) continue;
+					i++;
+					if(sb.length() == 0)
+						sb.append(token);
+					else {
+						sb.append(' ');
+						sb.append(token);
 					}
-				} else if(!isStandardLinkType(token)) continue;
-				i++;
-				if(sb.length() == 0)
-					sb.append(token);
-				else {
-					sb.append(' ');
-					sb.append(token);
+					prevToken = token;
 				}
-				prevToken = token;
+				
+				parsedRel = sb.toString();
 			}
-			
-			String parsedRel = sb.toString();
 			
 			String rev = getHashString(h, "rel");
-			rev = rev.toLowerCase();
-			
-			tok = new StringTokenizer(rev, " ");
-			i=0;
-			prevToken = null;
-			sb = new StringBuffer(rel.length());
-			
-			while (tok.hasMoreTokens()) {
-				String token = tok.nextToken();
-				if(!isStandardLinkType(token)) continue;
-				i++;
-				if(sb.length() == 0)
-					sb.append(token);
-				else {
-					sb.append(' ');
-					sb.append(token);
+			if(rev != null) {
+				
+				StringBuffer sb = new StringBuffer(rev.length());
+				rev = rev.toLowerCase();
+				
+				StringTokenizer tok = new StringTokenizer(rev, " ");
+				int i=0;
+				sb = new StringBuffer(rel.length());
+				
+				while (tok.hasMoreTokens()) {
+					String token = tok.nextToken();
+					if(!isStandardLinkType(token)) continue;
+					i++;
+					if(sb.length() == 0)
+						sb.append(token);
+					else {
+						sb.append(' ');
+						sb.append(token);
+					}
 				}
-				prevToken = token;
+				
+				
+				parsedRev = sb.toString();
+				
 			}
-			
-			String parsedRev = sb.toString();
 			
 			if(parsedRel.length() == 0 && parsedRev.length() == 0)
 				// No (valid) rel or rev
