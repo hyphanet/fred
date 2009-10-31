@@ -782,7 +782,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * to the datastore only if it's from an insert, and we are a sink, but when calculating whether
 	 * we are a sink we ignore nodes which have less uptime (percentage) than this parameter.
 	 */
-	private static final int MIN_UPTIME_STORE_KEY = 40;
+	static final int MIN_UPTIME_STORE_KEY = 40;
 	
 	private volatile boolean isPRNGReady = false;
 
@@ -4165,16 +4165,6 @@ public class Node implements TimeSkewDetectorCallback {
 				"\nSSK Datacache: "+sskDatacache.hits()+ '/' +(sskDatacache.hits()+sskDatacache.misses())+ '/' +sskDatacache.keyCount());
 	}
 
-	/**
-	 * Store a CHKBlock.
-	 * @param block
-	 *      the CHKBlock to be stored
-	 */
-	public void store(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
-		boolean deep = !peers.isCloserLocation(block.getKey().toNormalizedDouble(), MIN_UPTIME_STORE_KEY);
-		store(block, deep, canWriteClientCache, canWriteDatastore, forULPR);
-	}
-	
 	public void storeShallow(CHKBlock block, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
 		store(block, false, canWriteClientCache, canWriteDatastore, forULPR);
 	}
@@ -4227,8 +4217,8 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 	
 	/** Store the block if this is a sink. Call for inserts. */
-	public void storeInsert(SSKBlock block, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
-		store(block, block.getKey().toNormalizedDouble(), true, canWriteClientCache, canWriteDatastore);
+	public void storeInsert(SSKBlock block, boolean deep, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
+		store(block, deep, true, canWriteClientCache, canWriteDatastore);
 	}
 
 	/** Store only to the cache, and not the store. Called by requests,
@@ -4268,14 +4258,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(clientCore != null && clientCore.requestStarters != null)
 			clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
-	}
-	
-	/**
-	 * Store a datum for an insert.
-	 */
-	public void store(SSKBlock block, double loc, boolean overwrite, boolean canWriteClientCache, boolean canWriteDatastore) throws KeyCollisionException {
-		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
-		store(block, deep, overwrite, canWriteClientCache, canWriteDatastore, false); // Not a ULPR
 	}
 	
 	/**
@@ -4403,7 +4385,8 @@ public class Node implements TimeSkewDetectorCallback {
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
-		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY), canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
+		
+		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
@@ -5740,5 +5723,44 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public synchronized boolean autoChangeDatabaseEncryption() {
 		return autoChangeDatabaseEncryption;
+	}
+
+
+	/** Should we commit the block to the store rather than the cache?
+	 * 
+	 * <p>We used to check whether we are a sink by checking whether any peer has
+	 * a closer location than we do. Then we made low-uptime nodes exempt from
+	 * this calculation: if we route to a low uptime node with a closer location,
+	 * we want to store it anyway since he may go offline. The problem was that
+	 * if we routed to a low-uptime node, and there was another option that wasn't
+	 * low-uptime but was closer to the target than we were, then we would not
+	 * store in the store. Also, routing isn't always by the closest peer location:
+	 * FOAF and per-node failure tables change it. So now, we consider the nodes
+	 * we have actually routed to:</p>
+	 * 
+	 * <p>Store in datastore if our location is closer to the target than:</p><ol>
+	 * <li>the source location (if any, and ignoring if low-uptime)</li>
+	 * <li>the locations of the nodes we just routed to (ditto)</li>
+	 * </ol>
+	 * 
+	 * @param key
+	 * @param source
+	 * @param routedTo
+	 * @return
+	 */
+	public boolean shouldStoreDeep(Key key, PeerNode source, PeerNode[] routedTo) {
+    	double myLoc = getLocation();
+    	double target = key.toNormalizedDouble();
+    	double myDist = Location.distance(myLoc, target);
+    	// Don't sink store if any of the nodes we routed to, or our predecessor, is both high-uptime and closer to the target than we are.
+    	if(source != null && !source.isLowUptime()) {
+    		if(Location.distance(source, target) < myDist)
+    			return false;
+    	}
+    	for(PeerNode pn : routedTo) {
+    		if(Location.distance(pn, target) < myDist && !pn.isLowUptime())
+    			return false;
+    	}
+    	return true;
 	}
 }

@@ -16,6 +16,7 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.store.KeyCollisionException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -416,7 +417,11 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 	}
     
     private void commit(CHKBlock block) {
-        node.store(block, false, canWriteDatastore, false);
+        try {
+			node.store(block, node.shouldStoreDeep(key, source, sender == null ? new PeerNode[0] : sender.getRoutedTo()), false, canWriteDatastore, false);
+		} catch (KeyCollisionException e) {
+			// Impossible with CHKs.
+		}
         if(logMINOR) Logger.minor(this, "Committed");
     }
 

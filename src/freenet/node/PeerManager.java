@@ -719,64 +719,6 @@ public class PeerManager {
 		return getRandomPeer(null);
 	}
 
-	public double closestPeerLocation(double loc, double ignoreLoc, int minUptimePercent) {
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = connectedPeers;
-		}
-		double bestDiff = 1.0;
-		double bestLoc = Double.MAX_VALUE;
-		boolean foundOne = false;
-		for(int i = 0; i < peers.length; i++) {
-			PeerNode p = peers[i];
-			if(!p.isRoutable())
-				continue;
-			if(p.isRoutingBackedOff())
-				continue;
-			if(p.getUptime() < minUptimePercent)
-				continue;
-			double peerloc = p.getLocation();
-			if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE * 2)
-				continue;
-			double diff = Location.distance(peerloc, loc);
-			if(diff < bestDiff) {
-				foundOne = true;
-				bestDiff = diff;
-				bestLoc = peerloc;
-			}
-		}
-		if(!foundOne)
-			for(int i = 0; i < peers.length; i++) {
-				PeerNode p = peers[i];
-				if(!p.isRoutable())
-					continue;
-				if(p.getUptime() < minUptimePercent)
-					continue;
-				// Ignore backoff state
-				double peerloc = p.getLocation();
-				if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE * 2)
-					continue;
-				double diff = Location.distance(peerloc, loc);
-				if(diff < bestDiff) {
-					foundOne = true;
-					bestDiff = diff;
-					bestLoc = peerloc;
-				}
-			}
-		return bestLoc;
-	}
-
-	public boolean isCloserLocation(double loc, int minUptimePercent) {
-		double nodeLoc = node.lm.getLocation();
-		double nodeDist = Location.distance(nodeLoc, loc);
-		double closest = closestPeerLocation(loc, nodeLoc, minUptimePercent);
-		if(closest > 1.0)
-			// No peers found
-			return false;
-		double closestDist = Location.distance(closest, loc);
-		return closestDist < nodeDist;
-	}
-
 	public PeerNode closerPeer(PeerNode pn, Set<PeerNode> routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
 	        int minVersion, List<Double> addUnpickedLocsTo, Key key, short outgoingHTL) {
 		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key, outgoingHTL);

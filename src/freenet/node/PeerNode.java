@@ -4364,4 +4364,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public int countFailedRevocationTransfers() {
 		return countFailedRevocationTransfers;
 	}
+
+	public boolean isLowUptime() {
+		return getUptime() < Node.MIN_UPTIME_STORE_KEY;
+	}
 }

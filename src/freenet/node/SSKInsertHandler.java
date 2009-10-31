@@ -341,11 +341,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     	if(logMINOR) Logger.minor(this, "Finishing");
     	
     	if(canCommit) {
-    		try {
-				node.store(block, block.getKey().toNormalizedDouble(), collided, false, canWriteDatastore);
-			} catch (KeyCollisionException e) {
-				Logger.normal(this, "Collision on "+this);
-			}
+    		commit();
     	}
     	
         if(code != SSKInsertSender.TIMED_OUT && code != SSKInsertSender.GENERATED_REJECTED_OVERLOAD &&
@@ -368,7 +364,15 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 
     }
 
-    private final Object totalBytesSync = new Object();
+    private void commit() {
+		try {
+			node.store(block, node.shouldStoreDeep(key, source, sender == null ? new PeerNode[0] : sender.getRoutedTo()), collided, false, canWriteDatastore, false);
+		} catch (KeyCollisionException e) {
+			Logger.normal(this, "Collision on "+this);
+		}
+	}
+
+	private final Object totalBytesSync = new Object();
     private int totalBytesSent;
     private int totalBytesReceived;
     
