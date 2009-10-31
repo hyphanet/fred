@@ -1102,8 +1102,8 @@ public class NodeStats implements Persistable {
 			int hour = t * 24;
 			long limit = now - t * ((long) 24 * 60 * 60 * 1000);
 
-			fs.put("opennetSizeEstimate"+hour+"hourRecent", limit);
-			fs.put("networkSizeEstimate"+hour+"hourRecent", limit);
+			fs.put("opennetSizeEstimate"+hour+"hourRecent", getOpennetSizeEstimate(limit));
+			fs.put("networkSizeEstimate"+hour+"hourRecent", getDarknetSizeEstimate(limit));
 		}
 		
 		fs.put("routingMissDistance", routingMissDistance.currentValue());
