@@ -1820,10 +1820,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				parsedRev = sb.toString();
 				
 			}
-			
-			if(parsedRel.length() == 0 && parsedRev.length() == 0)
-				// No (valid) rel or rev
-				return null;
+
+			// Allow no rel or rev, even on <link>, as per HTML spec.
 			
 			if(parsedRel.length() != 0)
 				hn.put("rel", parsedRel);
