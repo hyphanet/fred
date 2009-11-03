@@ -62,7 +62,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		ClientCHK key = block.getClientKey();
 		
-		CHKBlock verify = store.fetch(key.getNodeCHK(), false);
+		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false);
 		String data = decodeBlock(verify, key);
 		assertEquals(test, data);
 	}
@@ -78,7 +78,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		ClientCHK key = block.getClientKey();
 		
-		CHKBlock verify = store.fetch(key.getNodeCHK(), false);
+		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false);
 		String data = decodeBlock(verify, key);
 		assertEquals(test, data);
 		
@@ -88,7 +88,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		ramStore.migrateTo(newStore, false);
 		
-		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false);
+		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false, false);
 		String newData = decodeBlock(newVerify, key);
 		assertEquals(test, newData);
 		saltStore.close();
@@ -105,7 +105,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		ClientCHK key = block.getClientKey();
 		
-		CHKBlock verify = store.fetch(key.getNodeCHK(), false);
+		CHKBlock verify = store.fetch(key.getNodeCHK(), false, false);
 		String data = decodeBlock(verify, key);
 		assertEquals(test, data);
 		
@@ -118,7 +118,7 @@ public class RAMSaltMigrationTest extends TestCase {
 		
 		ramStore.migrateTo(newStore, false);
 		
-		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false);
+		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false, false);
 		String newData = decodeBlock(newVerify, key);
 		assertEquals(test, newData);
 		saltStore.close();

@@ -3828,7 +3828,7 @@ public class Node implements TimeSkewDetectorCallback {
 			NodeSSK sskKey = (NodeSSK) key;
 			DSAPublicKey pubKey = sskKey.getPubKey();
 			if (pubKey == null) {
-				pubKey = getPubKey.getKey(sskKey.getPubKeyHash(), canReadClientCache, offersOnly);
+				pubKey = getPubKey.getKey(sskKey.getPubKeyHash(), canReadClientCache, offersOnly, false);
 				if (logMINOR)
 					Logger.minor(this, "Fetched pubkey: " + pubKey);
 				try {
@@ -3840,7 +3840,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (pubKey != null) {
 				if (logMINOR)
 					Logger.minor(this, "Got pubkey: " + pubKey);
-				kb = fetch(sskKey, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+				kb = fetch(sskKey, canReadClientCache, canWriteClientCache, canWriteDatastore, false, false);
 			} else {
 				if (logMINOR)
 					Logger.minor(this, "Not found because no pubkey: " + uid);
@@ -4022,18 +4022,31 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public KeyBlock fetch(Key key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+	/**
+	 * Fetch a block from the datastore.
+	 * @param key
+	 * @param canReadClientCache
+	 * @param canWriteClientCache
+	 * @param canWriteDatastore
+	 * @param forULPR
+	 * @param mustBeMarkedAsPostCachingChanges If true, the key must have the 
+	 * ENTRY_NEW_BLOCK flag (if saltedhash), indicating that it a) has been added 
+	 * since the caching changes in 1224 (since we didn't delete the stores), and b)
+	 * that it wasn't added due to low network security caching everything, unless we 
+	 * are currently in low network security mode. Only applies to main store.
+	 */
+	public KeyBlock fetch(Key key, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, boolean mustBeMarkedAsPostCachingChanges) {
 		if(key instanceof NodeSSK)
-			return fetch((NodeSSK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
+			return fetch((NodeSSK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR, mustBeMarkedAsPostCachingChanges);
 		else if(key instanceof NodeCHK)
-			return fetch((NodeCHK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR);
+			return fetch((NodeCHK)key, false, canReadClientCache, canWriteClientCache, canWriteDatastore, forULPR, mustBeMarkedAsPostCachingChanges);
 		else throw new IllegalArgumentException();
 	}
 	
-	public SSKBlock fetch(NodeSSK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+	public SSKBlock fetch(NodeSSK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, boolean mustBeMarkedAsPostCachingChanges) {
 		if(canReadClientCache) {
 			try {
-				SSKBlock block = sskClientcache.fetch(key, dontPromote || !canWriteClientCache, canReadClientCache, forULPR);
+				SSKBlock block = sskClientcache.fetch(key, dontPromote || !canWriteClientCache, canReadClientCache, forULPR, false);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from client cache: "+e, e);
@@ -4041,7 +4054,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(forULPR || useSlashdotCache || canReadClientCache) {
 			try {
-				SSKBlock block = sskSlashdotcache.fetch(key, dontPromote, canReadClientCache, forULPR);
+				SSKBlock block = sskSlashdotcache.fetch(key, dontPromote, canReadClientCache, forULPR, false);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from slashdot/ULPR cache: "+e, e);
@@ -4052,11 +4065,11 @@ public class Node implements TimeSkewDetectorCallback {
 			double loc=key.toNormalizedDouble();
 			double dist=Location.distance(lm.getLocation(), loc);
 			nodeStats.avgRequestLocation.report(loc);
-			SSKBlock block = sskDatastore.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+			SSKBlock block = sskDatastore.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, mustBeMarkedAsPostCachingChanges);
 			if(block == null) {
 				SSKStore store = oldSSK;
 				if(store != null)
-					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, mustBeMarkedAsPostCachingChanges);
 			}
 			if(block != null) {
 				nodeStats.avgStoreSuccess.report(loc);
@@ -4064,11 +4077,11 @@ public class Node implements TimeSkewDetectorCallback {
 					nodeStats.furthestStoreSuccess=dist;
 				return block;
 			}
-			block=sskDatacache.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+			block=sskDatacache.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, mustBeMarkedAsPostCachingChanges);
 			if(block == null) {
 				SSKStore store = oldSSKCache;
 				if(store != null)
-					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR);
+					block = store.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, mustBeMarkedAsPostCachingChanges);
 			}
 			if (block != null) {
 				nodeStats.avgCacheSuccess.report(loc);
@@ -4082,10 +4095,10 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	public CHKBlock fetch(NodeCHK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR) {
+	public CHKBlock fetch(NodeCHK key, boolean dontPromote, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore, boolean forULPR, boolean mustBeMarkedAsPostCachingChanges) {
 		if(canReadClientCache) {
 			try {
-				CHKBlock block = chkClientcache.fetch(key, dontPromote || !canWriteClientCache);
+				CHKBlock block = chkClientcache.fetch(key, dontPromote || !canWriteClientCache, false);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from client cache: "+e, e);
@@ -4093,7 +4106,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(forULPR || useSlashdotCache || canReadClientCache) {
 			try {
-				CHKBlock block = chkSlashdotcache.fetch(key, dontPromote);
+				CHKBlock block = chkSlashdotcache.fetch(key, dontPromote, false);
 				if(block != null) return block;
 			} catch (IOException e) {
 				Logger.error(this, "Could not read from slashdot/ULPR cache: "+e, e);
@@ -4104,11 +4117,11 @@ public class Node implements TimeSkewDetectorCallback {
 			double loc=key.toNormalizedDouble();
 			double dist=Location.distance(lm.getLocation(), loc);
 			nodeStats.avgRequestLocation.report(loc);
-			CHKBlock block = chkDatastore.fetch(key, dontPromote || !canWriteDatastore);
+			CHKBlock block = chkDatastore.fetch(key, dontPromote || !canWriteDatastore, mustBeMarkedAsPostCachingChanges);
 			if(block == null) {
 				CHKStore store = oldCHK;
 				if(store != null)
-					block = store.fetch(key, dontPromote || !canWriteDatastore);
+					block = store.fetch(key, dontPromote || !canWriteDatastore, mustBeMarkedAsPostCachingChanges);
 			}
 			if (block != null) {
 				nodeStats.avgStoreSuccess.report(loc);
@@ -4116,11 +4129,11 @@ public class Node implements TimeSkewDetectorCallback {
 					nodeStats.furthestStoreSuccess=dist;
 				return block;
 			}
-			block=chkDatacache.fetch(key, dontPromote || !canWriteDatastore);
+			block=chkDatacache.fetch(key, dontPromote || !canWriteDatastore, mustBeMarkedAsPostCachingChanges);
 			if(block == null) {
 				CHKStore store = oldCHKCache;
 				if(store != null)
-					block = store.fetch(key, dontPromote || !canWriteDatastore);
+					block = store.fetch(key, dontPromote || !canWriteDatastore, mustBeMarkedAsPostCachingChanges);
 			}
 			if (block != null) {
 				nodeStats.avgCacheSuccess.report(loc);
@@ -4737,11 +4750,11 @@ public class Node implements TimeSkewDetectorCallback {
 	public ClientKeyBlock fetch(ClientSSK clientSSK, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws SSKVerifyException {
 		DSAPublicKey key = clientSSK.getPubKey();
 		if(key == null) {
-			key = getPubKey.getKey(clientSSK.pubKeyHash, canReadClientCache, false);
+			key = getPubKey.getKey(clientSSK.pubKeyHash, canReadClientCache, false, false);
 		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
-		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false, false);
 		if(block == null) {
 			if(logMINOR)
 				Logger.minor(this, "Could not find key for "+clientSSK);
@@ -4754,7 +4767,7 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean canReadClientCache, boolean canWriteClientCache, boolean canWriteDatastore) throws CHKVerifyException {
-		CHKBlock block = fetch(clientCHK.getNodeCHK(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false);
+		CHKBlock block = fetch(clientCHK.getNodeCHK(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false, false);
 		if(block == null) return null;
 		return new ClientCHKBlock(block, clientCHK);
 	}

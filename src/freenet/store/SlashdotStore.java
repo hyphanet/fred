@@ -87,7 +87,10 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		ticker.queueTimedJob(purgeOldData, maxLifetime + purgePeriod);
 	}
 	
-	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+	/**
+	 * @param mustBeMarkedAsPostCachingChanges IGNORED!
+	 */
+	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean mustBeMarkedAsPostCachingChanges) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		DiskBlock block;
 		long timeAccessed;
@@ -110,7 +113,7 @@ public class SlashdotStore<T extends StorableBlock> implements FreenetStore<T> {
 		in.close();
 		try {
 			T ret =
-				callback.construct(data, header, routingKey, fk, canReadClientCache, canReadSlashdotCache, null);
+				callback.construct(data, header, routingKey, fk, canReadClientCache, canReadSlashdotCache, false, null);
 			synchronized(this) {
 				hits++;
 				if(!dontPromote) {

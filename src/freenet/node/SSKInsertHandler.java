@@ -64,7 +64,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         this.canWriteDatastore = canWriteDatastore;
         if(htl <= 0) htl = 1;
         byte[] pubKeyHash = key.getPubKeyHash();
-        pubKey = node.getPubKey.getKey(pubKeyHash, false, false);
+        pubKey = node.getPubKey.getKey(pubKeyHash, false, false, false);
         canCommit = false;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
@@ -183,7 +183,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			return;
 		}
 		
-		SSKBlock storedBlock = node.fetch(key, false, false, false, canWriteDatastore, false);
+		SSKBlock storedBlock = node.fetch(key, false, false, false, canWriteDatastore, false, false);
 		
 		if((storedBlock != null) && !storedBlock.equals(block)) {
 			try {

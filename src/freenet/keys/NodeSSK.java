@@ -214,9 +214,9 @@ public class NodeSSK extends Key {
 		return new NodeSSK(pubkeyHash, encryptedHashedDocname, null, cryptoAlgorithm);
 	}
 
-	public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache, boolean forULPR) {
+	public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache, boolean forULPR, boolean mustBeMarkedAsPostCachingChanges) {
 		if(pubKey != null) return false;
-		pubKey = pubkeyCache.getKey(pubKeyHash, canReadClientCache, forULPR);
+		pubKey = pubkeyCache.getKey(pubKeyHash, canReadClientCache, forULPR, mustBeMarkedAsPostCachingChanges);
 		return pubKey != null;
 	}
 

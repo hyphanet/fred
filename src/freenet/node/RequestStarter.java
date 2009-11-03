@@ -152,7 +152,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				} while(now < sleepUntil);
 				String reason;
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY) {
-					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null)) != null) {
+					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false)) != null) {
 						if(logMINOR)
 							Logger.minor(this, "Not sending local request: "+reason);
 						// Wait one throttle-delay before trying again

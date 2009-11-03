@@ -12,7 +12,7 @@ public class NullFreenetStore implements FreenetStore {
 
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey,
 			boolean dontPromote, boolean canReadClientCache,
-			boolean canReadSlashdotCache) throws IOException {
+			boolean canReadSlashdotCache, boolean mustBeMarkedAsPostCachingChanges) throws IOException {
 		return null;
 	}
 

@@ -262,13 +262,13 @@ public class LongTermManySingleBlocksTest {
 					csvLine.add(String.valueOf(times[i]));
 					csvLine.add(uris[i].toASCIIString());
 					System.out.println("Pushed block "+i+" : "+uris[i]+" in "+times[i]);
+					successes++;
 				} else {
 					csvLine.add(FetchException.getShortMessage(errors[i].getMode()));
 					csvLine.add("N/A");
 					System.out.println("Failed to push block "+i+" : "+errors[i]);
 				}
 			}
-			
 			
 			System.err.println("Succeeded inserts: "+successes+" of "+INSERTED_BLOCKS);
 			

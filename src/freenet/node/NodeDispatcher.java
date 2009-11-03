@@ -16,6 +16,7 @@ import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -278,7 +279,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		String reject = 
-			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source);
+			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source, false);
 		if(reject != null) {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
 			Message rejected = DMT.createFNPRejectedOverload(uid, true);
@@ -380,7 +381,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
 		}
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source);
+		
+		// Check the datastore. This may have some influence on the 
+		KeyBlock block = node.fetch(key, false, false, false, false, true);
+		
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null);
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);
@@ -399,7 +404,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag);
+		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag, block);
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 		return true;
 	}
@@ -428,7 +433,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		// SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, true, isSSK, false, false, source, false);
 		if(rejectReason != null) {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);

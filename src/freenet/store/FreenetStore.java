@@ -19,13 +19,16 @@ public interface FreenetStore<T extends StorableBlock> {
 	 * @return A StorableBlock, or null if the key cannot be found.
 	 * @param canReadClientCache Whether we can read the client-cache, for purposes of finding
 	 * the pubkey for an SSK.
+	 * @param mustBeMarkedAsPostCachingChanges If true, the key must have the flag set
+	 * to indicate that it was added after the 1224 caching changes and was not added
+	 * due to low security level causing it to cache everything.
 	 * @param canWriteClientCache Whether we can write the client-cache, for purposes of finding
 	 * the pubkey for an SSK.
 	 * @param canWriteDatastore Whether we can write the datastore, for purposes of finding the
 	 * pubkey for an SSK.
 	 * @throws IOException If a disk I/O error occurs.
 	 */
-	T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException;
+	T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean mustBeMarkedAsPostCachingChanges) throws IOException;
 	
 	/**
 	 * Store a block.

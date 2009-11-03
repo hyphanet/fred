@@ -1029,7 +1029,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
 						keyFromData = true;
 						try {
-							StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, null);
+							StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, false, null);
 							routingkey = block.getRoutingKey();
 						} catch (KeyVerifyException e) {
 							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
@@ -1063,7 +1063,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 									storeRAF.readFully(data);
 									dataRead = true;
 								}
-								StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, null);
+								StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, false, null);
 								routingkey = block.getRoutingKey();
 								if(Arrays.equals(oldRoutingkey, routingkey)) {
 									dupes++;
@@ -1164,7 +1164,8 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	 * {@inheritDoc}
 	 */
 	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote,
-			boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+			boolean canReadClientCache, boolean canReadSlashdotCache, boolean mustBeMarkedAsPostCachingChanges) throws IOException {
+		if(mustBeMarkedAsPostCachingChanges) return null; // Not supported, not safe to try
 		return fetch(routingkey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, null);
 	}
 	
@@ -1231,7 +1232,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					return null;
 				}
 				
-				block = callback.construct(data, header, routingkey, fullKey, canReadClientCache, canReadSlashdotCache, knownPublicKey);
+				block = callback.construct(data, header, routingkey, fullKey, canReadClientCache, canReadSlashdotCache, false, knownPublicKey);
 				
 				// Write the key.
 				byte[] newFullKey = block.getFullKey();

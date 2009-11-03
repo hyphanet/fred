@@ -61,13 +61,24 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private long responseDeadline;
 	private BlockTransmitter bt;
 	private final RequestTag tag;
+	KeyBlock passedInKeyBlock;
 
 	@Override
 	public String toString() {
 		return super.toString() + " for " + uid;
 	}
 
-	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag) {
+	/**
+	 * @param m
+	 * @param source
+	 * @param id
+	 * @param n
+	 * @param htl
+	 * @param key
+	 * @param tag
+	 * @param passedInKeyBlock We ALWAYS look up in the datastore before starting a request.
+	 */
+	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag, KeyBlock passedInKeyBlock) {
 		req = m;
 		node = n;
 		uid = id;
@@ -77,6 +88,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(htl <= 0)
 			htl = 1;
 		this.key = key;
+		this.passedInKeyBlock = passedInKeyBlock;
 		if(key instanceof NodeSSK)
 			needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		receivedBytes(m.receivedByteCount());
@@ -152,13 +164,15 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		Message accepted = DMT.createFNPAccepted(uid);
 		source.sendAsync(accepted, null, this);
 
-		Object o = node.makeRequestSender(key, htl, uid, source, false, false, false, false, false);
-		if(o instanceof KeyBlock) {
+		Object o;
+		if(passedInKeyBlock != null) {
 			tag.setServedFromDatastore();
-			returnLocalData((KeyBlock) o);
+			returnLocalData(passedInKeyBlock);
 			node.nodeStats.remoteRequest(key instanceof NodeSSK, true, true, htl, key.toNormalizedDouble());
+			passedInKeyBlock = null; // For GC
 			return;
-		}
+		} else
+			o = node.makeRequestSender(key, htl, uid, source, false, true, false, false, false);
 
 		if(o == null) { // ran out of htl?
 			Message dnf = DMT.createFNPDataNotFound(uid);

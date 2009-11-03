@@ -488,7 +488,7 @@ public class NodeStats implements Persistable {
 	static final double MIN_OVERHEAD = 0.01;
 	
 	/* return reject reason as string if should reject, otherwise return null */
-	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source) {
+	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore) {
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
@@ -609,6 +609,15 @@ public class NodeStats implements Persistable {
 		if(logMINOR)
 			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		
+		long limit = 90;
+		
+		// Allow a bit more if the data is in the store and can therefore be served immediately.
+		// This should improve performance.
+		if(hasInStore) {
+			limit += 10;
+			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
+		}
+		
 		double bandwidthLiabilityOutput;
 		if(ignoreLocalVsRemoteBandwidthLiability) {
 			bandwidthLiabilityOutput = 
@@ -644,7 +653,7 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
 		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
 		
-		double bandwidthAvailableOutput = outputAvailablePerSecond * 90;
+		double bandwidthAvailableOutput = outputAvailablePerSecond * limit;
 		// 90 seconds at full power; we have to leave some time for the search as well
 		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutput+" expected output liability: "+bandwidthLiabilityOutput);
 		
@@ -677,7 +686,7 @@ public class NodeStats implements Persistable {
 			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
 		}
 		double bandwidthAvailableInput =
-			node.getInputBandwidthLimit() * 90L; // 90 seconds at full power; avoid integer overflow
+			node.getInputBandwidthLimit() * limit; // 90 seconds at full power; avoid integer overflow
 		if(bandwidthAvailableInput < 0){
 			Logger.error(this, "Negative available bandwidth: "+bandwidthAvailableInput+" node.ibwlimit="+node.getInputBandwidthLimit()+" node.obwlimit="+node.getOutputBandwidthLimit()+" node.inputLimitDefault="+node.inputLimitDefault);
 		}
