@@ -1828,7 +1828,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(parsedRev.length() != 0)
 				hn.put("rev", parsedRev);
 			
-			if(!(rel.equals("stylesheet") || rel.equals("alternate stylesheet"))) {
+			if(rel != null && !(rel.equals("stylesheet") || rel.equals("alternate stylesheet"))) {
 				// Not a stylesheet.
 				if(type != null && type.startsWith("text/css"))
 					return null; // Not a stylesheet, so can't take a stylesheet type.
