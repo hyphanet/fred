@@ -5727,6 +5727,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	private long completeInsertsStored;
+	private long completeInsertsOldStore;
 	private long completeInsertsTotal;
 	
 	/** Should we commit the block to the store rather than the cache?
@@ -5755,6 +5756,11 @@ public class Node implements TimeSkewDetectorCallback {
     	double myLoc = getLocation();
     	double target = key.toNormalizedDouble();
     	double myDist = Location.distance(myLoc, target);
+		
+		// First, calculate whether we would have stored it using the old formula.
+		if(!peers.isCloserLocation(target, MIN_UPTIME_STORE_KEY))
+			completeInsertsOldStore++;
+		
     	if(logMINOR) Logger.minor(this, "Should store for "+key+" ?");
     	// Don't sink store if any of the nodes we routed to, or our predecessor, is both high-uptime and closer to the target than we are.
     	if(source != null && !source.isLowUptime()) {
@@ -5788,5 +5794,6 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public synchronized void drawStoreStats(HTMLNode infobox) {
 		infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+((completeInsertsStored*100.0)/completeInsertsTotal)+"%)");
+		infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+((completeInsertsOldStore*100.0)/completeInsertsTotal)+"%)");
 	}
 }
