@@ -1769,12 +1769,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					if(token.equalsIgnoreCase("stylesheet")) {
 						if(token.equalsIgnoreCase("stylesheet")) {
 							isStylesheet = true;
-							if(sb.length() == 0)
-								sb.append(token);
-							else {
-								sb.append(' ');
-								sb.append(token);
-							}
 							if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
 								return null;
 							if(tok.hasMoreTokens())
