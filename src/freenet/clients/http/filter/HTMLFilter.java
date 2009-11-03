@@ -1802,7 +1802,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				
 				StringTokenizer tok = new StringTokenizer(rev, " ");
 				int i=0;
-				sb = new StringBuffer(rel.length());
+				sb = new StringBuffer(rev.length());
 				
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
