@@ -1775,6 +1775,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								return null; // Disallow extra tokens after "stylesheet"
 						}
 					} else if(!isStandardLinkType(token)) continue;
+					
 					i++;
 					if(sb.length() == 0)
 						sb.append(token);
@@ -1788,7 +1789,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				parsedRel = sb.toString();
 			}
 			
-			String rev = getHashString(h, "rel");
+			String rev = getHashString(h, "rev");
 			if(rev != null) {
 				
 				StringBuffer sb = new StringBuffer(rev.length());
