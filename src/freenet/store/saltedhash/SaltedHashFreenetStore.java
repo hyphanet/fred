@@ -222,8 +222,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if(prevStoreSize < storeSize && prevStoreSize > 0)
 			smallerSize = prevStoreSize;
 		
-		if((smallerSize * (headerBlockLength + dataBlockLength + hdPadding) < curStoreFileSize) ||
-				(smallerSize * Entry.METADATA_LENGTH < curMetaFileSize)) {
+		if((smallerSize * (headerBlockLength + dataBlockLength + hdPadding) > curStoreFileSize) ||
+				(smallerSize * Entry.METADATA_LENGTH > curMetaFileSize)) {
 			// Pad it up to the minimum size before proceeding.
 			if(longStart)
 				setStoreFileSize(storeSize, true);
