@@ -531,7 +531,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		/** Flag for block added after we stopped caching local (and high htl) requests */
 		private final static long ENTRY_NEW_BLOCK = 0x00000004L;
 		/** Flag set if the block was stored in the wrong datastore i.e. store instead of cache */
-		private final static long ENTRY_WRONG_STORE = 0x00000004L;
+		private final static long ENTRY_WRONG_STORE = 0x00000008L;
 
 		/** Control block length */
 		private static final int METADATA_LENGTH = 0x80;
