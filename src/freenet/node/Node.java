@@ -5788,7 +5788,10 @@ public class Node implements TimeSkewDetectorCallback {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key);
     	    	synchronized(this) {
     	    		completeInsertsTotal++;
-    	    		if(wouldHaveStored) completeInsertsNotStoredWouldHaveStored++;
+    	    		if(wouldHaveStored) {
+    	    			Logger.error(this, "Would have stored but haven't stored");
+    	    			completeInsertsNotStoredWouldHaveStored++;
+    	    		}
     	    	}
     			return false;
     		}
@@ -5798,7 +5801,10 @@ public class Node implements TimeSkewDetectorCallback {
     	    	if(logMINOR) Logger.minor(this, "Not storing because peer "+pn+" is closer to target for "+key+" his loc "+pn.getLocation()+" my loc "+myLoc+" target is "+target);
     	    	synchronized(this) {
     	    		completeInsertsTotal++;
-    	    		if(wouldHaveStored) completeInsertsNotStoredWouldHaveStored++;
+    	    		if(wouldHaveStored) {
+    	    			Logger.error(this, "Would have stored but haven't stored");
+    	    			completeInsertsNotStoredWouldHaveStored++;
+    	    		}
     	    	}
     			return false;
     		} else {
