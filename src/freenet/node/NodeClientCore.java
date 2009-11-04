@@ -1318,7 +1318,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			long startTime = System.currentTimeMillis();
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
-			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false, false, false);
+			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false, false, null);
 			if(altBlock != null && !altBlock.equals(block))
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			is = node.makeInsertSender(block,

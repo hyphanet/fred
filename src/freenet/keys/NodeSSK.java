@@ -15,6 +15,7 @@ import com.db4o.ObjectContainer;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.node.GetPubkey;
+import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -214,9 +215,9 @@ public class NodeSSK extends Key {
 		return new NodeSSK(pubkeyHash, encryptedHashedDocname, null, cryptoAlgorithm);
 	}
 
-	public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache, boolean forULPR, boolean mustBeMarkedAsPostCachingChanges) {
+	public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache, boolean forULPR, BlockMetadata meta) {
 		if(pubKey != null) return false;
-		pubKey = pubkeyCache.getKey(pubKeyHash, canReadClientCache, forULPR, mustBeMarkedAsPostCachingChanges);
+		pubKey = pubkeyCache.getKey(pubKeyHash, canReadClientCache, forULPR, meta);
 		return pubKey != null;
 	}
 

@@ -418,7 +418,7 @@ public class FailureTable implements OOMHook {
 	 */
 	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag) throws NotConnectedException {
 		if(isSSK) {
-			SSKBlock block = node.fetch((NodeSSK)key, false, false, false, false, true, false);
+			SSKBlock block = node.fetch((NodeSSK)key, false, false, false, false, true, null);
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
@@ -462,7 +462,7 @@ public class FailureTable implements OOMHook {
 				source.sendAsync(pk, null, senderCounter);
 			}
 		} else {
-			CHKBlock block = node.fetch((NodeCHK)key, false, false, false, false, true, false);
+			CHKBlock block = node.fetch((NodeCHK)key, false, false, false, false, true, null);
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);

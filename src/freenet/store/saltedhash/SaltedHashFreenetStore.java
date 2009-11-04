@@ -46,6 +46,7 @@ import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
+import freenet.store.BlockMetadata;
 import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -228,7 +229,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return false;
 	}
 
-	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, boolean mustBeMarkedAsPostCachingChanges) throws IOException {
+	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
@@ -257,15 +258,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return null;
 				}
 
-				if(mustBeMarkedAsPostCachingChanges && !((entry.flag & Entry.ENTRY_NEW_BLOCK) == Entry.ENTRY_NEW_BLOCK)) {
-					if(logMINOR) Logger.minor(this, "Not returning block because asked for a new block and this isn't");
-					return null;
-				} else if(mustBeMarkedAsPostCachingChanges) {
-					if(logMINOR) Logger.minor(this, "Probably returning new block as asked to");
-				}
-
+				if(meta != null && ((entry.flag & Entry.ENTRY_NEW_BLOCK) == Entry.ENTRY_NEW_BLOCK))
+					meta.setOldBlock();
+				
 				try {
-					StorableBlock block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, mustBeMarkedAsPostCachingChanges, null);
+					StorableBlock block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
 					if (block == null) {
 						misses.incrementAndGet();
 						return null;
@@ -368,7 +365,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if (!collisionPossible)
 							return;
 						oldEntry.setHD(readHD(oldOffset)); // read from disk
-						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, false, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
+						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, null, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
 						if (block.equals(oldBlock)) {
 							return; // already in store
 						} else if (!overwrite) {
@@ -597,13 +594,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return out;
 		}
 
-		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, boolean mustBeMarkedAsPostCachingChanges, DSAPublicKey knownKey) throws KeyVerifyException {
+		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta, DSAPublicKey knownKey) throws KeyVerifyException {
 			if (isFree() || header == null || data == null)
 				return null; // this is a free block
 			if (!cipherManager.decrypt(this, routingKey))
 				return null;
 
-			StorableBlock block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, mustBeMarkedAsPostCachingChanges, knownKey);
+			StorableBlock block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, knownKey);
 			byte[] blockRoutingKey = block.getRoutingKey();
 
 			if (!Arrays.equals(blockRoutingKey, routingKey)) {
@@ -1828,7 +1825,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				try {
-					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, false, false, null);
+					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, false, null, null);
 					put(b, data, header, true, true);
 				} catch (KeyVerifyException e) {
 					System.out.println("kve at block " + l);

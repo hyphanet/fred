@@ -18,6 +18,7 @@ import freenet.io.comm.Peer;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
+import freenet.store.BlockMetadata;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -382,10 +383,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logMINOR) Logger.minor(this, "Locked "+id);
 		}
 		
-		// Check the datastore. This may have some influence on the 
-		KeyBlock block = node.fetch(key, false, false, false, false, true);
+		BlockMetadata meta = new BlockMetadata();
+		KeyBlock block = node.fetch(key, false, false, false, false, meta);
 		
-		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null);
+		String rejectReason = nodeStats.shouldRejectRequest(!isSSK, false, isSSK, false, false, source, block != null && !meta.isOldBlock());
 		if(rejectReason != null) {
 			// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
 			Logger.normal(this, "Rejecting "+(isSSK ? "SSK" : "CHK")+" request from "+source.getPeer()+" preemptively because "+rejectReason);

@@ -1029,7 +1029,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
 						keyFromData = true;
 						try {
-							StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, false, null);
+							StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, null, null);
 							routingkey = block.getRoutingKey();
 						} catch (KeyVerifyException e) {
 							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
@@ -1063,7 +1063,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 									storeRAF.readFully(data);
 									dataRead = true;
 								}
-								StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, false, null);
+								StorableBlock block = callback.construct(data, header, null, keyBuf, false, false, null, null);
 								routingkey = block.getRoutingKey();
 								if(Arrays.equals(oldRoutingkey, routingkey)) {
 									dupes++;
@@ -1164,9 +1164,10 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	 * {@inheritDoc}
 	 */
 	public T fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote,
-			boolean canReadClientCache, boolean canReadSlashdotCache, boolean mustBeMarkedAsPostCachingChanges) throws IOException {
-		if(mustBeMarkedAsPostCachingChanges) return null; // Not supported, not safe to try
-		return fetch(routingkey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, null);
+			boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+		T retval = fetch(routingkey, fullKey, dontPromote, canReadClientCache, canReadSlashdotCache, (DSAPublicKey)null);
+		if(meta != null) meta.noMetadata = true;
+		return retval;
 	}
 	
 	/**
@@ -1232,7 +1233,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					return null;
 				}
 				
-				block = callback.construct(data, header, routingkey, fullKey, canReadClientCache, canReadSlashdotCache, false, knownPublicKey);
+				block = callback.construct(data, header, routingkey, fullKey, canReadClientCache, canReadSlashdotCache, null, knownPublicKey);
 				
 				// Write the key.
 				byte[] newFullKey = block.getFullKey();
