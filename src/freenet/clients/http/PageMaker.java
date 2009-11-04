@@ -174,6 +174,16 @@ public final class PageMaker {
 		menuList.add(menu);
 	}
 	
+	/**
+	 * Add a navigation category to the menu at a given offset.
+	 * @param menuOffset The position of the link in FProxy's menu. 0 = left.
+	 */
+	public void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin, int menuOffset) {
+		SubMenu menu = new SubMenu(link, name, title, plugin);
+		subMenus.put(name, menu);
+		menuList.add(menuOffset, menu);
+	}
+	
 
 	public void removeNavigationCategory(String name) {
 		SubMenu menu = subMenus.remove(name);
