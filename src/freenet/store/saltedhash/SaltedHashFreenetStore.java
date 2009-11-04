@@ -215,6 +215,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		long prevFileSize = prevStoreSize * (headerBlockLength + dataBlockLength + hdPadding);
 		long curFileSize = storeSize * (headerBlockLength + dataBlockLength + hdPadding);
 		
+		// FIXME check the length of the metadata file too.
+		
 		if(curStoreFileSize < curFileSize) {
 			if(!longStart) {
 				if(curStoreFileSize < prevFileSize || prevFileSize <= 0)
@@ -225,6 +227,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				long storeFileSize = Math.max(storeSize, prevStoreSize);
 				setStoreFileSize(storeFileSize, true);
 			}
+		} else {
+			// Must set storeFileOffsetReady and RAF lengths, even if the data file is the right size.
+			setStoreFileSize(storeSize, true);
 		}
 		
 		if(ticker == null) {
@@ -864,7 +869,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			final long newMetaLen = Entry.METADATA_LENGTH * storeMaxEntries;
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
-			if (preallocate) {
+			if (preallocate && (oldMetaLen < newMetaLen || currentHdLen < newHdLen)) {
 				/*
 				 * Fill the store file with random data. This won't be compressed, unlike filling it with zeros.
 				 * So the disk space usage of the node will not change (apart from temp files).
