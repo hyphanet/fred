@@ -386,6 +386,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// There are at least 2 threads that call this function.
 		// DO NOT reuse the meta object, unless on a per-thread basis.
 		// Object allocation is pretty cheap in modern Java anyway...
+		// If we do reuse it, call reset().
 		BlockMetadata meta = new BlockMetadata();
 		KeyBlock block = node.fetch(key, false, false, false, false, meta);
 		
