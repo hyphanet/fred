@@ -153,6 +153,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			// If not already resizing, start resizing to the new store size.
 			prevStoreSize = storeSize;
 			storeSize = maxKeys;
+			writeConfigFile();
 		}
 
 		newStore |= openStoreFiles(baseDir, name);
