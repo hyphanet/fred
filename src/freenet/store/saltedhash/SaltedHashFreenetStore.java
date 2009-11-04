@@ -395,7 +395,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					// Overwrite old offset with same key
-					Entry entry = new Entry(routingKey, header, data, !isOldBlock);
+					Entry entry = new Entry(routingKey, header, data, !isOldBlock, wrongStore);
 					writeEntry(entry, oldOffset);
 					writes.incrementAndGet();
 					if (oldEntry.generation != generation)
@@ -403,7 +403,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return true;
 				}
 
-				Entry entry = new Entry(routingKey, header, data, !isOldBlock);
+				Entry entry = new Entry(routingKey, header, data, !isOldBlock, wrongStore);
 				long[] offset = entry.getOffset();
 
 				int firstWrongStoreIndex = -1;
@@ -411,7 +411,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				for (int i = 0; i < offset.length; i++) {
 					if(offset[i] < storeFileOffsetReady) {
 						long flag = getFlag(offset[i]);
-						if(!((flag & Entry.ENTRY_FLAG_OCCUPIED) == Entry.ENTRY_FLAG_OCCUPIED)) {
+						if((flag & Entry.ENTRY_FLAG_OCCUPIED) == 0) {
 							// write to free block
 							if (logDEBUG)
 								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
@@ -592,12 +592,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @param header
 		 * @param data
 		 */
-		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data, boolean newBlock) {
+		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data, boolean newBlock, boolean wrongStore) {
 			this.plainRoutingKey = plainRoutingKey;
 
 			flag = ENTRY_FLAG_OCCUPIED;
 			if(newBlock)
 				flag |= ENTRY_NEW_BLOCK;
+			if(wrongStore)
+				flag |= ENTRY_WRONG_STORE;
 			this.storeSize = SaltedHashFreenetStore.this.storeSize;
 			this.generation = SaltedHashFreenetStore.this.generation;
 
