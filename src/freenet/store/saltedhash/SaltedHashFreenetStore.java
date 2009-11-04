@@ -344,9 +344,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				Logger.debug(this, "probing for i=" + i + ", offset=" + offset[i]);
 
 			try {
-				entry = readEntry(offset[i], routingKey, withData);
-				if (entry != null)
-					return entry;
+				if(storeFileOffsetReady == -1 || offset[i] < this.storeFileOffsetReady) {
+					entry = readEntry(offset[i], routingKey, withData);
+					if (entry != null)
+						return entry;
+				}
 			} catch (EOFException e) {
 				if (prevStoreSize == 0) // may occur on store shrinking
 					Logger.error(this, "EOFException on probeEntry", e);
@@ -746,7 +748,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		do {
 			int status = metaFC.read(mbf, Entry.METADATA_LENGTH * offset + mbf.position());
 			if (status == -1) {
-				Logger.error(this, "Failed to access offset "+offset);
+				Logger.error(this, "Failed to access offset "+offset, new Exception("error"));
 				throw new EOFException();
 			}
 		} while (mbf.hasRemaining());
