@@ -215,11 +215,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		long prevFileSize = prevStoreSize * (headerBlockLength + dataBlockLength + hdPadding);
 		long curFileSize = storeSize * (headerBlockLength + dataBlockLength + hdPadding);
 		
-		// FIXME check the length of the metadata file too.
+		long curMetaFileSize = metaRAF.length();
 		
-		if(curStoreFileSize < curFileSize) {
+		long prevMetaSize = prevStoreSize * Entry.METADATA_LENGTH;
+		long curMetaSize = storeSize * Entry.METADATA_LENGTH;
+		
+		if(curStoreFileSize < curFileSize || curMetaFileSize < curMetaSize) {
 			if(!longStart) {
 				if(curStoreFileSize < prevFileSize || prevFileSize <= 0)
+					return true;
+				if(curMetaFileSize < prevMetaSize || prevMetaSize <= 0)
 					return true;
 			} else {
 				System.err.println("Preallocating space for "+name);
