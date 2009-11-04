@@ -5743,6 +5743,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private long completeInsertsStored;
 	private long completeInsertsOldStore;
 	private long completeInsertsTotal;
+	private long completeInsertsNotStoredWouldHaveStored;
 	
 	/** Should we commit the block to the store rather than the cache?
 	 * 
@@ -5771,8 +5772,10 @@ public class Node implements TimeSkewDetectorCallback {
     	double target = key.toNormalizedDouble();
     	double myDist = Location.distance(myLoc, target);
 		
-		// First, calculate whether we would have stored it using the old formula.
-		if(!peers.isCloserLocation(target, MIN_UPTIME_STORE_KEY))
+    	boolean wouldHaveStored = !peers.isCloserLocation(target, MIN_UPTIME_STORE_KEY);
+    	
+    	// First, calculate whether we would have stored it using the old formula.
+		if(wouldHaveStored)
 			completeInsertsOldStore++;
 		
     	if(logMINOR) Logger.minor(this, "Should store for "+key+" ?");
@@ -5782,6 +5785,7 @@ public class Node implements TimeSkewDetectorCallback {
     	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key);
     	    	synchronized(this) {
     	    		completeInsertsTotal++;
+    	    		if(wouldHaveStored) completeInsertsNotStoredWouldHaveStored++;
     	    	}
     			return false;
     		}
@@ -5791,6 +5795,7 @@ public class Node implements TimeSkewDetectorCallback {
     	    	if(logMINOR) Logger.minor(this, "Not storing because peer "+pn+" is closer to target for "+key+" his loc "+pn.getLocation()+" my loc "+myLoc+" target is "+target);
     	    	synchronized(this) {
     	    		completeInsertsTotal++;
+    	    		if(wouldHaveStored) completeInsertsNotStoredWouldHaveStored++;
     	    	}
     			return false;
     		} else {
@@ -5809,5 +5814,6 @@ public class Node implements TimeSkewDetectorCallback {
 	public synchronized void drawStoreStats(HTMLNode infobox) {
 		infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+((completeInsertsStored*100.0)/completeInsertsTotal)+"%)");
 		infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+((completeInsertsOldStore*100.0)/completeInsertsTotal)+"%)");
+		infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+((completeInsertsNotStoredWouldHaveStored*100.0)/completeInsertsTotal)+"%)");
 	}
 }
