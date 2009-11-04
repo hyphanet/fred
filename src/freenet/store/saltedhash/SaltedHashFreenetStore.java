@@ -212,30 +212,29 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		
 		long curStoreFileSize = hdRAF.length();
 		
-		long prevFileSize = prevStoreSize * (headerBlockLength + dataBlockLength + hdPadding);
-		long curFileSize = storeSize * (headerBlockLength + dataBlockLength + hdPadding);
-		
 		long curMetaFileSize = metaRAF.length();
 		
-		long prevMetaSize = prevStoreSize * Entry.METADATA_LENGTH;
-		long curMetaSize = storeSize * Entry.METADATA_LENGTH;
+		// If prevStoreSize is nonzero, that means that we are either shrinking or
+		// growing. Either way, the file size should be between the old size and the
+		// new size. If it is not, we should pad it until it is.
 		
-		if(curStoreFileSize < curFileSize || curMetaFileSize < curMetaSize) {
-			if(!longStart) {
-				if(curStoreFileSize < prevFileSize || prevFileSize <= 0)
-					return true;
-				if(curMetaFileSize < prevMetaSize || prevMetaSize <= 0)
-					return true;
-			} else {
-				System.err.println("Preallocating space for "+name);
-				WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
-				long storeFileSize = Math.max(storeSize, prevStoreSize);
-				setStoreFileSize(storeFileSize, true);
-			}
-		} else {
-			// Must set storeFileOffsetReady and RAF lengths, even if the data file is the right size.
-			setStoreFileSize(storeSize, true);
+		long smallerSize = storeSize;
+		if(prevStoreSize < storeSize && prevStoreSize > 0)
+			smallerSize = prevStoreSize;
+		
+		if((smallerSize * (headerBlockLength + dataBlockLength + hdPadding) < curStoreFileSize) ||
+				(smallerSize * Entry.METADATA_LENGTH < curMetaFileSize)) {
+			// Pad it up to the minimum size before proceeding.
+			if(longStart)
+				setStoreFileSize(storeSize, true);
+			else
+				return true;
 		}
+		
+		// Otherwise the resize will be completed by the Cleaner thread.
+		// However, we do still need to set storeFileOffsetReady
+		
+		storeFileOffsetReady = Math.min(curStoreFileSize / (headerBlockLength + dataBlockLength + hdPadding), curMetaFileSize / Entry.METADATA_LENGTH);
 		
 		if(ticker == null) {
 			cleanerThread.start();
