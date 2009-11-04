@@ -97,6 +97,20 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private int flags;
 	
 	private boolean preallocate = true;
+	
+	/** If we have no space in this store, try writing it to the alternate store,
+	 * with the wrong store flag set. Note that we do not *read from* it, the caller
+	 * must do that. IMPORTANT LOCKING NOTE: This must only happen in one direction!
+	 * If two stores have altStore set to each other, deadlock is likely! (Infinite 
+	 * recursion is also possible). However, fortunately we don't need to do it 
+	 * bidirectionally - the cache needs more space from the store, but the store 
+	 * grows so slowly it will hardly ever need more space from the cache. */
+	private SaltedHashFreenetStore altStore;
+	
+	public void setAltStore(SaltedHashFreenetStore store) {
+		if(store.altStore != null) throw new IllegalStateException("Target must not have an altStore - deadlock can result");
+		altStore = store;
+	}
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
 	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec, byte[] masterKey)
@@ -328,6 +342,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
+		put(block, data, header, overwrite, isOldBlock, false);
+	}
+	
+	public boolean put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock, boolean wrongStore) throws IOException, KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		
@@ -338,7 +356,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			int retry = 0;
 			while (!configLock.readLock().tryLock(2, TimeUnit.SECONDS)) {
 				if (shutdown)
-					return;
+					return true;
 				if (retry++ > 10)
 					throw new IOException("lock timeout (20s)");
 			}
@@ -350,7 +368,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (lockMap == null) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
-				return;
+				return false;
 			}
 			try {
 				/*
@@ -363,11 +381,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					long oldOffset = oldEntry.curOffset;
 					try {
 						if (!collisionPossible)
-							return;
+							return true;
 						oldEntry.setHD(readHD(oldOffset)); // read from disk
 						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, null, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
 						if (block.equals(oldBlock)) {
-							return; // already in store
+							return false; // already in store
 						} else if (!overwrite) {
 							throw new KeyCollisionException();
 						}
@@ -381,26 +399,61 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					writes.incrementAndGet();
 					if (oldEntry.generation != generation)
 						keyCount.incrementAndGet();
-					return;
+					return true;
 				}
 
 				Entry entry = new Entry(routingKey, header, data, !isOldBlock);
 				long[] offset = entry.getOffset();
 
+				int firstWrongStoreIndex = -1;
+				
 				for (int i = 0; i < offset.length; i++) {
-					if (offset[i] < storeFileOffsetReady && isFree(offset[i])) {
-						// write to free block
-						if (logDEBUG)
-							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
-						bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
-						writeEntry(entry, offset[i]);
-						writes.incrementAndGet();
-						keyCount.incrementAndGet();
-
-						return;
+					if(offset[i] < storeFileOffsetReady) {
+						long flag = getFlag(offset[i]);
+						if(!((flag & Entry.ENTRY_FLAG_OCCUPIED) == Entry.ENTRY_FLAG_OCCUPIED)) {
+							// write to free block
+							if (logDEBUG)
+								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+							bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
+							writeEntry(entry, offset[i]);
+							writes.incrementAndGet();
+							keyCount.incrementAndGet();
+							return true;
+						} else if(((flag & Entry.ENTRY_WRONG_STORE) == Entry.ENTRY_WRONG_STORE)) {
+							firstWrongStoreIndex = i;
+						}
 					}
 				}
+				
+				if((!wrongStore) && altStore != null) {
+					if(altStore.put(block, data, header, overwrite, isOldBlock, true)) {
+						if(logMINOR) Logger.minor(this, "Successfully wrote block to wrong store "+altStore+" on "+this);
+						return true;
+					} else {
+						if(logMINOR) Logger.minor(this, "Writing to wrong store "+altStore+" on "+this+" failed");
+					}
+				}
+				
+				// No free slot
+				if(firstWrongStoreIndex != -1) {
+					// Use the first wrong-store slot.
+					// This is acceptable if we are writing wrong-store and is certainly acceptable if we are not.
+					// write to free block
+					int i = firstWrongStoreIndex;
+					if (logDEBUG)
+						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+					bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
+					writeEntry(entry, offset[i]);
+					writes.incrementAndGet();
+					keyCount.incrementAndGet();
+					return true;
+				}
 
+				if(wrongStore) {
+					// We will not overwrite non-wrong-store slots with wrong-store ones.
+					return false;
+				}
+				
 				// no free blocks, overwrite the first one
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
@@ -412,6 +465,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					bloomFilter.removeKey(oldEntry.getDigestedRoutingKey());
 				else
 					keyCount.incrementAndGet();
+				return true;
 			} finally {
 				unlockPlainKey(routingKey, false, lockMap);
 			}
@@ -465,6 +519,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private final static long ENTRY_FLAG_PLAINKEY = 0x00000002L;
 		/** Flag for block added after we stopped caching local (and high htl) requests */
 		private final static long ENTRY_NEW_BLOCK = 0x00000004L;
+		/** Flag set if the block was stored in the wrong datastore i.e. store instead of cache */
+		private final static long ENTRY_WRONG_STORE = 0x00000004L;
 
 		/** Control block length */
 		private static final int METADATA_LENGTH = 0x80;
@@ -716,6 +772,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		buf.flip();
 		
 		return buf;
+	}
+	
+	private long getFlag(long offset) throws IOException {
+		Entry entry = readEntry(offset, null, false);
+		return entry.flag;
 	}
 	
 	private boolean isFree(long offset) throws IOException {
@@ -1856,5 +1917,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		hdFile.delete();
 		configFile.delete();
 		bloomFile.delete();
+	}
+	
+	public String toString() {
+		return super.toString()+":"+name;
 	}
 }
