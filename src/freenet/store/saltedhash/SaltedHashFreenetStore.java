@@ -149,6 +149,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configFile = new File(this.baseDir, name + ".config");
 		boolean newStore = loadConfigFile(masterKey);
+		if(storeSize != 0 && storeSize != maxKeys && prevStoreSize == 0) {
+			// If not already resizing, start resizing to the new store size.
+			prevStoreSize = storeSize;
+			storeSize = maxKeys;
+		}
 
 		newStore |= openStoreFiles(baseDir, name);
 
