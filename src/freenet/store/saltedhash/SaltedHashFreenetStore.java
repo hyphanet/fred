@@ -385,6 +385,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						oldEntry.setHD(readHD(oldOffset)); // read from disk
 						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, null, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
 						if (block.equals(oldBlock)) {
+							if(logDEBUG) Logger.debug(this, "Block already stored");
 							return false; // already in store
 						} else if (!overwrite) {
 							throw new KeyCollisionException();
@@ -450,6 +451,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				if(wrongStore) {
+					if(logDEBUG) Logger.debug(this, "Won't overwrite non-wrong-store slots with wrong-store slots");
 					// We will not overwrite non-wrong-store slots with wrong-store ones.
 					return false;
 				}
