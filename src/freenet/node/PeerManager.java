@@ -731,8 +731,10 @@ public class PeerManager {
 			PeerNode p = peers[i];
 			if(!p.isRoutable())
 				continue;
-			if(p.isRoutingBackedOff())
+			if(p.isRoutingBackedOff()) {
+				if(logMINOR) Logger.minor(this, "Skipping (backoff): "+p+" loc "+p.getLocation());
 				continue;
+			}
 			if(p.getUptime() < minUptimePercent)
 				continue;
 			double peerloc = p.getLocation();
@@ -747,6 +749,8 @@ public class PeerManager {
 			}
 		}
 		if(!foundOne)
+			if(logMINOR)
+				Logger.minor(this, "closerPeerLocation() not found, trying backed off nodes...");
 			for(int i = 0; i < peers.length; i++) {
 				PeerNode p = peers[i];
 				if(!p.isRoutable())

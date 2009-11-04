@@ -5785,7 +5785,7 @@ public class Node implements TimeSkewDetectorCallback {
     	// Don't sink store if any of the nodes we routed to, or our predecessor, is both high-uptime and closer to the target than we are.
     	if(source != null && !source.isLowUptime()) {
     		if(Location.distance(source, target) < myDist) {
-    	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key);
+    	    	if(logMINOR) Logger.minor(this, "Not storing because source is closer to target for "+key+" : "+source);
     	    	synchronized(this) {
     	    		completeInsertsTotal++;
     	    		if(wouldHaveStored) {
