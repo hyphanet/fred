@@ -1,6 +1,7 @@
 /* Freenet 0.7 node. */
 package freenet.node;
 
+import java.text.DecimalFormat;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
@@ -5820,9 +5821,13 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
+	private final DecimalFormat fix3p3pct = new DecimalFormat("##0.000%");
+
 	public synchronized void drawStoreStats(HTMLNode infobox) {
-		infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+((completeInsertsStored*100.0)/completeInsertsTotal)+"%)");
-		infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+((completeInsertsOldStore*100.0)/completeInsertsTotal)+"%)");
-		infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+((completeInsertsNotStoredWouldHaveStored*100.0)/completeInsertsTotal)+"%)");
+		if (completeInsertsTotal != 0) {
+			infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+((completeInsertsStored*100.0)/completeInsertsTotal)+"%)");
+			infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsOldStore*100.0)/completeInsertsTotal)+"%)");
+			infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsNotStoredWouldHaveStored*100.0)/completeInsertsTotal)+"%)");
+		}
 	}
 }
