@@ -424,6 +424,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				long[] offset = entry.getOffset();
 
 				int firstWrongStoreIndex = -1;
+				int wrongStoreCount = 0;
 				
 				for (int i = 0; i < offset.length; i++) {
 					if(offset[i] < storeFileOffsetReady) {
@@ -439,6 +440,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							return true;
 						} else if(((flag & Entry.ENTRY_WRONG_STORE) == Entry.ENTRY_WRONG_STORE)) {
 							firstWrongStoreIndex = i;
+							wrongStoreCount++;
 						}
 					}
 				}
@@ -451,9 +453,22 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if(logMINOR) Logger.minor(this, "Writing to wrong store "+altStore+" on "+this+" failed");
 					}
 				}
+
+				boolean clobberWrongStore = true;
+				if(firstWrongStoreIndex == -1)
+					clobberWrongStore = false;
+				else {
+					if(wrongStore) {
+						// Distribute cache slot clobbering evenly between the two.
+						int a = OPTION_MAX_PROBE;
+						int b = wrongStoreCount;
+						if(this.random.nextInt(a+b) > a)
+							clobberWrongStore = true;
+					}
+				}
 				
 				// No free slot
-				if(firstWrongStoreIndex != -1) {
+				if(clobberWrongStore) {
 					// Use the first wrong-store slot.
 					// This is acceptable if we are writing wrong-store and is certainly acceptable if we are not.
 					// write to free block
