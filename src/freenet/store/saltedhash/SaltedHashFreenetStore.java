@@ -462,8 +462,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						// Distribute cache slot clobbering evenly between the two.
 						int a = OPTION_MAX_PROBE;
 						int b = wrongStoreCount;
-						if(this.random.nextInt(a+b) > a)
-							clobberWrongStore = true;
+						clobberWrongStore = random.nextInt(a+b) > a;
 					}
 				}
 				
