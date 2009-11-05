@@ -20,7 +20,7 @@ import freenet.support.Logger;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  * 
  * FIXME: Rewrite to parse properly. This works but is rather spaghettified.
- * JFlex on its own obviously won't work, but JFlex plus a proper grammr 
+ * JFlex on its own obviously won't work, but JFlex plus a proper grammar 
  * should work fine.
  * 
  * According to the CSS2.1 spec, in some cases spaces between tokens are
