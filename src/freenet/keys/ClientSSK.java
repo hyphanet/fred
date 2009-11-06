@@ -155,7 +155,7 @@ public class ClientSSK extends ClientKey {
 				throw new NullPointerException();
 			if (cachedNodeKey == null || cachedNodeKey.getKeyBytes() == null || cachedNodeKey.getRoutingKey() == null)
 				cachedNodeKey = new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
-			return cachedNodeKey.cloneKey();
+			return cachedNodeKey;
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
 			Logger.error(this, "Have already verified and yet it fails!: "+e);
