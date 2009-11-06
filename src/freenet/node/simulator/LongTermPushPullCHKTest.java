@@ -211,7 +211,7 @@ public class LongTermPushPullCHKTest {
 				FileOutputStream fos = new FileOutputStream(file, true);
 				PrintStream ps = new PrintStream(fos);
 
-				ps.println(Fields.commaList(csvLine.toArray()));
+				ps.println(Fields.commaList(csvLine.toArray(),'!'));
 
 				ps.close();
 				fos.close();
@@ -234,7 +234,7 @@ public class LongTermPushPullCHKTest {
 			String line = null;
 			String dateString = dateFormat.format(targetDate.getTime());
 			while((line = br.readLine()) != null) {
-				String[] split = line.split(",");
+				String[] split = line.split("!");
 				if(split.length == 0) continue;
 				if(!dateString.equals(split[0])) continue;
 				int fieldnum = 3 + i * 2;

@@ -738,8 +738,10 @@ public class PeerManager {
 			PeerNode p = peers[i];
 			if(!p.isRoutable())
 				continue;
-			if(p.isRoutingBackedOff())
+			if(p.isRoutingBackedOff()) {
+				if(logMINOR) Logger.minor(this, "Skipping (backoff): "+p+" loc "+p.getLocation());
 				continue;
+			}
 			if(p.getUptime() < minUptimePercent)
 				continue;
 			double peerloc = p.getLocation();
@@ -749,10 +751,13 @@ public class PeerManager {
 			if(diff < bestDiff) {
 				foundOne = true;
 				bestDiff = diff;
+				if(logMINOR) Logger.minor(this, "Found best loc "+peerloc+" from "+p+" diff = "+diff);
 				bestLoc = peerloc;
 			}
 		}
 		if(!foundOne)
+			if(logMINOR)
+				Logger.minor(this, "closerPeerLocation() not found, trying backed off nodes...");
 			for(int i = 0; i < peers.length; i++) {
 				PeerNode p = peers[i];
 				if(!p.isRoutable())
@@ -767,6 +772,7 @@ public class PeerManager {
 				if(diff < bestDiff) {
 					foundOne = true;
 					bestDiff = diff;
+					if(logMINOR) Logger.minor(this, "Found best loc "+peerloc+" from "+p+" (second round) diff="+diff);
 					bestLoc = peerloc;
 				}
 			}
@@ -776,6 +782,7 @@ public class PeerManager {
 	public boolean isCloserLocation(double loc, int minUptimePercent) {
 		double nodeLoc = node.lm.getLocation();
 		double nodeDist = Location.distance(nodeLoc, loc);
+		if(logMINOR) Logger.minor(this, "My loc is "+nodeLoc+" my dist is "+nodeDist+" target is "+loc);
 		double closest = closestPeerLocation(loc, nodeLoc, minUptimePercent);
 		if(closest > 1.0)
 			// No peers found

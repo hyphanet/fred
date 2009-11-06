@@ -12,7 +12,8 @@ public class NullFreenetStore implements FreenetStore {
 
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey,
 			boolean dontPromote, boolean canReadClientCache,
-			boolean canReadSlashdotCache) throws IOException {
+			boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+		// No block returned so don't set meta.
 		return null;
 	}
 

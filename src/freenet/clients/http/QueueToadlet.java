@@ -202,8 +202,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", NodeL10n.getBase().getString("Toadlet.yes") });
 				deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.no") });
-
-                this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
+				
+				this.writeHTMLReply(ctx, 200, "OK", page.outer.generate());
 			} else if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Removing "+identifier);
@@ -251,7 +251,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				sendPanicingPage(ctx);
 				core.node.finishPanic();
 				return;
-			}else if(request.isPartSet("download")) {
+			} else if(request.isPartSet("download")) {
 				// Queue a download
 				if(!request.isPartSet("key")) {
 					writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoKey"), NodeL10n.getBase().getString("QueueToadlet.errorNoKeyToD"), ctx);
@@ -281,7 +281,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
-			}else if(request.isPartSet("bulkDownloads")) {
+			} else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsString("bulkDownloads", Integer.MAX_VALUE);
 				String[] keys = bulkDownloadsAsString.split("\n");
 				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
@@ -631,21 +631,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				return;
 			} else if (request.isPartSet("recommend_request")) {
 				PageNode page = ctx.getPageMaker().getPageNode(NodeL10n.getBase().getString("QueueToadlet.recommendAFileToFriends"), ctx);
-                HTMLNode pageNode = page.outer;
-                HTMLNode contentNode = page.content;
-                HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", NodeL10n.getBase().getString("QueueToadlet.recommendAFileToFriends"), contentNode, "recommend-file", true);
-                HTMLNode form = ctx.addFormChild(infoboxContent, path(), "recommendForm2");
-                String key = request.getPartAsString("URI", MAX_KEY_LENGTH);
-                form.addChild("#", NodeL10n.getBase().getString("QueueToadlet.key") + ":");
-                form.addChild("br");
-                form.addChild("#", key);
-                form.addChild("br");
+				HTMLNode pageNode = page.outer;
+				HTMLNode contentNode = page.content;
+				HTMLNode infoboxContent = ctx.getPageMaker().getInfobox("#", NodeL10n.getBase().getString("QueueToadlet.recommendAFileToFriends"), contentNode, "recommend-file", true);
+				HTMLNode form = ctx.addFormChild(infoboxContent, path(), "recommendForm2");
+				String key = request.getPartAsString("URI", MAX_KEY_LENGTH);
+				form.addChild("#", NodeL10n.getBase().getString("QueueToadlet.key") + ":");
+				form.addChild("br");
+				form.addChild("#", key);
+				form.addChild("br");
 				form.addChild("label", "for", "descB", (NodeL10n.getBase().getString("QueueToadlet.recommendDescription") + ' '));
 				form.addChild("br");
 				form.addChild("textarea", new String[]{"id", "name", "row", "cols"}, new String[]{"descB", "description", "3", "70"});
 				form.addChild("br");
-                form.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "URI", key});
-                form.addChild("br");
+				form.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "URI", key});
+				form.addChild("br");
 
 				HTMLNode peerTable = form.addChild("table", "class", "darknet_connections");
 				peerTable.addChild("th", "colspan", "2", NodeL10n.getBase().getString("QueueToadlet.recommendToFriends"));
@@ -657,8 +657,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 				form.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "recommend_uri", NodeL10n.getBase().getString("QueueToadlet.recommend")});
 
-                this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-                return;
+				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				return;
 			} else if(request.isPartSet("recommend_uri") && request.isPartSet("URI")) {
 				FreenetURI furi = null;
 				String description = request.getPartAsString("description", 1024);
@@ -682,7 +682,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	}
 	
 	private void sendPanicingPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        writeHTMLReply(ctx, 200, "OK", WelcomeToadlet.sendRestartingPageInner(ctx).generate());
+		writeHTMLReply(ctx, 200, "OK", WelcomeToadlet.sendRestartingPageInner(ctx).generate());
 	}
 
 	private void sendConfirmPanicPage(ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -794,7 +794,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						String mimeType = result.getMimeType();
 						String requestedMimeType = request.getParam("type", null);
 						String forceString = request.getParam("force");
-						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/downloads/", key, "", "/downloads/", false, ctx, core, false);
+						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/downloads/", key, "", "/downloads/", false, ctx, core, false, null);
 						if(result.freeWhenDone)
 							data.free();
 						return;
@@ -826,9 +826,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					try {
 						if(count) {
 							long queued = core.requestStarters.chkFetchScheduler.countPersistentWaitingKeys(container);
-							System.err.println("Total waiting CHKs: "+queued);
+							Logger.minor(this, "Total waiting CHKs: "+queued);
 							long reallyQueued = core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container);
-							System.err.println("Total queued CHK requests: "+reallyQueued);
+							Logger.minor(this, "Total queued CHK requests: "+reallyQueued);
 							PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 							pageNode = page.outer;
 							HTMLNode contentNode = page.content;
@@ -985,8 +985,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					totalQueuedUploadSize += size;
 			}
 		}
-		System.err.println("Total queued downloads: "+SizeUtil.formatSize(totalQueuedDownloadSize));
-		System.err.println("Total queued uploads: "+SizeUtil.formatSize(totalQueuedUploadSize));
+		Logger.minor(this, "Total queued downloads: "+SizeUtil.formatSize(totalQueuedDownloadSize));
+		Logger.minor(this, "Total queued uploads: "+SizeUtil.formatSize(totalQueuedUploadSize));
 		
 		Comparator<ClientRequest> jobComparator = new Comparator<ClientRequest>() {
 			public int compare(ClientRequest firstRequest, ClientRequest secondRequest) {

@@ -113,13 +113,14 @@ public class ClientSSK extends ClientKey {
 			throw new MalformedURLException();
 	}
 	
-	public void setPublicKey(DSAPublicKey pubKey) {
+	public synchronized void setPublicKey(DSAPublicKey pubKey) {
 		if((this.pubKey != null) && (this.pubKey != pubKey) && !this.pubKey.equals(pubKey))
 			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
 		byte[] newKeyHash = pubKey.asBytesHash();
 		if(!Arrays.equals(newKeyHash, pubKeyHash))
 			throw new IllegalArgumentException("New pubKey hash does not match pubKeyHash: "+HexUtil.bytesToHex(newKeyHash)+" ( "+HexUtil.bytesToHex(pubKey.asBytesHash())+" != "+HexUtil.bytesToHex(pubKeyHash)+" for "+pubKey);
 		this.pubKey = pubKey;
+		this.cachedNodeKey = null;
 	}
 	
 	@Override
@@ -143,14 +144,18 @@ public class ClientSSK extends ClientKey {
 		return extra;
 	}
 
+	private transient Key cachedNodeKey;
+	
 	@Override
-	public Key getNodeKey() {
+	public synchronized Key getNodeKey() {
 		try {
 			if(ehDocname == null)
 				throw new NullPointerException();
 			if(pubKeyHash == null)
 				throw new NullPointerException();
-			return new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
+			if (cachedNodeKey == null || cachedNodeKey.getKeyBytes() == null || cachedNodeKey.getRoutingKey() == null)
+				cachedNodeKey = new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
+			return cachedNodeKey.cloneKey();
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
 			Logger.error(this, "Have already verified and yet it fails!: "+e);

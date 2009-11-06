@@ -1098,13 +1098,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						if(persistent) container.activate(blocks, 2);
 						blocks.remove(Integer.valueOf(blockNum));
 						if(persistent) container.store(blocks);
-						if(dataBlocks[blockNum] != null) {
+						if(encoded && dataBlocks[blockNum] != null) {
 							if(persistent) container.activate(dataBlocks[blockNum], 1);
 							dataBlocks[blockNum].free();
 							if(persistent) dataBlocks[blockNum].removeFrom(container);
 							dataBlocks[blockNum] = null;
 							if(logMINOR) Logger.minor(this, "Failed to insert data block "+blockNum+" on "+this);
-						} else {
+						} else if(dataBlocks[blockNum] == null) {
 							Logger.error(this, "Data block "+blockNum+" failed on "+this+" but bucket is already nulled out!");
 						}
 					}
@@ -1578,5 +1578,73 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		return false;
 	}
 
+	public void checkHasDataBlocks(boolean log, ObjectContainer container) {
+		int dataCount = 0;
+		int dataKeys = 0;
+		int dataDone = 0;
+		for(int i=0;i<dataBlocks.length;i++) {
+			Bucket data = dataBlocks[i];
+			if(data == null) {
+				if(log)
+					System.err.println("Data block "+i+" is null!");
+			} else {
+				container.activate(data, 5);
+				if(data.size() != CHKBlock.DATA_LENGTH) {
+					System.err.println("Size of data block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+				} else {
+					dataCount++;
+				}
+				if(log) System.err.println(data.toString()+" : "+data.size());
+				container.deactivate(data, 5);
+			}
+			if(dataURIs[i] != null)
+				dataKeys++;
+			if(dataFinished[i])
+				dataDone++;
+		}
+		if(dataCount == dataBlocks.length)
+			System.out.println("Has all data blocks");
+		else
+			System.out.println("Does not have all data blocks: "+dataCount+" of "+dataBlocks.length);
+		System.out.println("Data blocks have URIs: "+dataKeys+" finished: "+dataDone);
+		int checkCount = 0;
+		int checkKeys = 0;
+		int checkDone = 0;
+		for(int i=0;i<checkBlocks.length;i++) {
+			Bucket data = checkBlocks[i];
+			if(data == null) {
+				// Not here
+			} else {
+				if(data.size() != CHKBlock.DATA_LENGTH) {
+					System.err.println("Size of check block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+				} else {
+					checkCount++;
+				}
+			}
+			if(checkURIs[i] != null)
+				checkKeys++;
+			if(checkFinished[i])
+				checkDone++;
+		}
+		System.out.println("Check count: "+checkCount+" keys: "+checkKeys+" done: "+checkDone);
+		if(encodeJob == null) {
+			System.err.println("NO QUEUED FEC JOB!");
+			container.activate(parent, 1);
+			System.err.println("Parent: "+parent);
+			if(parent != null) {
+				parent.dump(container);
+			}
+			container.deactivate(parent, 1);
+		} else {
+			container.activate(encodeJob, 1);
+			System.err.println("Queued FEC job: "+encodeJob);
+			encodeJob.dump(container);
+			container.deactivate(encodeJob, 1);
+		}
+	}
+
+	public boolean isStarted() {
+		return started;
+	}
 
 }

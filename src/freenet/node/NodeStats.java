@@ -2,12 +2,7 @@ package freenet.node;
 
 import java.io.File;
 import java.text.DecimalFormat;
-import java.text.FieldPosition;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.TimeZone;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -31,7 +26,6 @@ import freenet.support.io.NativeThread;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
-import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.TrivialRunningAverage;
 
 /** Node (as opposed to NodeClientCore) level statistics. Includes shouldRejectRequest(), but not limited
@@ -157,11 +151,6 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage blockTransferFailTurtled;
 	final TrivialRunningAverage blockTransferFailTimeout;
 
-	int chkHourlyLocalFetchCount;
-	int chkHourlyLocalFetchSuccessCount;
-	int sskHourlyLocalFetchCount;
-	int sskHourlyLocalFetchSuccessCount;
-	
 	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
 	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
 	final TrivialRunningAverage localCHKFetchTimeAverage;
@@ -408,11 +397,6 @@ public class NodeStats implements Persistable {
 		blockTransferFailTurtled = new TrivialRunningAverage();
 		blockTransferFailTimeout = new TrivialRunningAverage();
 
-		chkHourlyLocalFetchCount = 0;
-		chkHourlyLocalFetchSuccessCount = 0;
-		sskHourlyLocalFetchCount = 0;
-		sskHourlyLocalFetchSuccessCount = 0;
-		
 		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
 		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
 		localCHKFetchTimeAverage = new TrivialRunningAverage();
@@ -434,22 +418,7 @@ public class NodeStats implements Persistable {
 		this.avgStoreSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSuccessLocation"));
 		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
 		
-		remoteCHKRequestsByHTL = new long[node.maxHTL()+1];
-		remoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];
-		remoteSSKRequestsByHTL = new long[node.maxHTL()+1];
-		remoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];
-		remoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
-		remoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
-
-		hourlyRemoteCHKRequestsByHTL = new long[node.maxHTL()+1];
-		hourlyRemoteCHKRequestsSuccessByHTL = new long[node.maxHTL()+1];
-		hourlyRemoteSSKRequestsByHTL = new long[node.maxHTL()+1];
-		hourlyRemoteSSKRequestsSuccessByHTL = new long[node.maxHTL()+1];
-		hourlyRemoteCHKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
-		hourlyRemoteSSKRequestsLocalSuccessByHTL = new long[node.maxHTL()+1];
-
-		lastHourlyTime = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		currentTime = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		hourlyStats = new HourlyStats(node);
 	}
 	
 	protected String l10n(String key) {
@@ -519,7 +488,7 @@ public class NodeStats implements Persistable {
 	static final double MIN_OVERHEAD = 0.01;
 	
 	/* return reject reason as string if should reject, otherwise return null */
-	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source) {
+	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source, boolean hasInStore) {
 		if(logMINOR) dumpByteCostAverages();
 		
 		int threadCount = getActiveThreadCount();
@@ -640,6 +609,15 @@ public class NodeStats implements Persistable {
 		if(logMINOR)
 			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		
+		long limit = 90;
+		
+		// Allow a bit more if the data is in the store and can therefore be served immediately.
+		// This should improve performance.
+		if(hasInStore) {
+			limit += 10;
+			if(logMINOR) Logger.minor(this, "Maybe accepting extra request due to it being in datastore (limit now "+limit+"s)...");
+		}
+		
 		double bandwidthLiabilityOutput;
 		if(ignoreLocalVsRemoteBandwidthLiability) {
 			bandwidthLiabilityOutput = 
@@ -675,7 +653,7 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Overhead per second: "+sentOverheadPerSecond+" bwlimit: "+node.getOutputBandwidthLimit()+" => output available per second: "+outputAvailablePerSecond+" but minimum of "+node.getOutputBandwidthLimit() / 5.0);
 		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5.0);
 		
-		double bandwidthAvailableOutput = outputAvailablePerSecond * 90;
+		double bandwidthAvailableOutput = outputAvailablePerSecond * limit;
 		// 90 seconds at full power; we have to leave some time for the search as well
 		if(logMINOR) Logger.minor(this, "90 second limit: "+bandwidthAvailableOutput+" expected output liability: "+bandwidthLiabilityOutput);
 		
@@ -708,7 +686,7 @@ public class NodeStats implements Persistable {
 			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
 		}
 		double bandwidthAvailableInput =
-			node.getInputBandwidthLimit() * 90L; // 90 seconds at full power; avoid integer overflow
+			node.getInputBandwidthLimit() * limit; // 90 seconds at full power; avoid integer overflow
 		if(bandwidthAvailableInput < 0){
 			Logger.error(this, "Negative available bandwidth: "+bandwidthAvailableInput+" node.ibwlimit="+node.getInputBandwidthLimit()+" node.obwlimit="+node.getOutputBandwidthLimit()+" node.inputLimitDefault="+node.inputLimitDefault);
 		}
@@ -1125,16 +1103,18 @@ public class NodeStats implements Persistable {
 		}
 		fs.put("averagePingTime", getNodeAveragePingTime());
 		fs.put("bwlimitDelayTime", getBwlimitDelayTime());
+		
+		// Network Size
 		fs.put("opennetSizeEstimateSession", getOpennetSizeEstimate(-1));
-		int opennetSizeEstimate24hourRecent = getOpennetSizeEstimate(now - (24 * 60 * 60 * 1000)); // 24 hours
-		fs.put("opennetSizeEstimate24hourRecent", opennetSizeEstimate24hourRecent);
-		int opennetSizeEstimate48hourRecent = getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
-		fs.put("opennetSizeEstimate48hourRecent", opennetSizeEstimate48hourRecent);		
 		fs.put("networkSizeEstimateSession", getDarknetSizeEstimate(-1));
-		int networkSizeEstimate24hourRecent = getDarknetSizeEstimate(now - (24*60*60*1000));  // 24 hours
-		fs.put("networkSizeEstimate24hourRecent", networkSizeEstimate24hourRecent);
-		int networkSizeEstimate48hourRecent = getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
-		fs.put("networkSizeEstimate48hourRecent", networkSizeEstimate48hourRecent);
+		for (int t = 1 ; t < 7; t++) {
+			int hour = t * 24;
+			long limit = now - t * ((long) 24 * 60 * 60 * 1000);
+
+			fs.put("opennetSizeEstimate"+hour+"hourRecent", getOpennetSizeEstimate(limit));
+			fs.put("networkSizeEstimate"+hour+"hourRecent", getDarknetSizeEstimate(limit));
+		}
+		
 		fs.put("routingMissDistance", routingMissDistance.currentValue());
 		fs.put("backedOffPercent", backedOffPercent.currentValue());
 		fs.put("pInstantReject", pRejectIncomingInstantly());
@@ -1142,9 +1122,15 @@ public class NodeStats implements Persistable {
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
+		int numberOfSeedServers = 0;
+		int numberOfSeedClients = 0;
 		
-		int numberOfSeedServers = getCountSeedServers(peerNodeStatuses);
-		int numberOfSeedClients = getCountSeedClients(peerNodeStatuses);
+		for (PeerNodeStatus peerNodeStatus: peerNodeStatuses) {
+			if (peerNodeStatus.isSeedServer())
+				numberOfSeedServers++;
+			if (peerNodeStatus.isSeedClient())
+				numberOfSeedClients++;
+		}
 		
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
@@ -1361,16 +1347,12 @@ public class NodeStats implements Persistable {
 				sskRemoteFetchPSuccess.report(succeeded ? 1.0 : 0.0);
 			} else {
 				sskLocalFetchPSuccess.report(succeeded ? 1.0 : 0.0);
-				sskHourlyLocalFetchCount++;
-				if (succeeded) sskHourlyLocalFetchSuccessCount++;
 			}
 		} else {
 			if (isRemote) {
 				chkRemoteFetchPSuccess.report(succeeded ? 1.0 : 0.0);
 			} else {
 				chkLocalFetchPSuccess.report(succeeded ? 1.0 : 0.0);
-				chkHourlyLocalFetchCount++;
-				if (succeeded) chkHourlyLocalFetchSuccessCount++;
 			}
 		}
 	}
@@ -2023,24 +2005,6 @@ public class NodeStats implements Persistable {
 		return result;
 	}
 	
-	private int getCountSeedServers(PeerNodeStatus[] peerNodeStatuses) {
-		int count = 0;
-		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if (peerNodeStatuses[peerIndex].isSeedServer())
-				count++;
-		}
-		return count;
-	}
-
-	private int getCountSeedClients(PeerNodeStatus[] peerNodeStatuses) {
-		int count = 0;
-		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
-			if (peerNodeStatuses[peerIndex].isSeedClient())
-				count++;
-		}
-		return count;
-	}
-
 	public void reportCHKTime(long rtt, boolean successful) {
 		if(successful)
 			successfulLocalCHKFetchTimeAverage.report(rtt);
@@ -2073,149 +2037,15 @@ public class NodeStats implements Persistable {
 	synchronized void turtleFailed() {
 		turtleTransfersCompleted++;
 	}
-	
-	private long[] remoteCHKRequestsByHTL;
-	private long[] remoteCHKRequestsSuccessByHTL;
-	private long[] remoteCHKRequestsLocalSuccessByHTL;
-	private long[] remoteSSKRequestsByHTL;
-	private long[] remoteSSKRequestsSuccessByHTL;
-	private long[] remoteSSKRequestsLocalSuccessByHTL;
 
-	private long[] hourlyRemoteCHKRequestsByHTL;
-	private long[] hourlyRemoteCHKRequestsSuccessByHTL;
-	private long[] hourlyRemoteCHKRequestsLocalSuccessByHTL;
-	private long[] hourlyRemoteSSKRequestsByHTL;
-	private long[] hourlyRemoteSSKRequestsSuccessByHTL;
-	private long[] hourlyRemoteSSKRequestsLocalSuccessByHTL;
+	private HourlyStats hourlyStats;
 
-	private Calendar lastHourlyTime;
-	private Calendar currentTime;
-	private static SimpleDateFormat utcDateTime;
-	static {
-		utcDateTime = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS");
-		utcDateTime.setTimeZone(TimeZone.getTimeZone("UTC"));
+	void remoteRequest(boolean ssk, boolean success, boolean local, short htl, double location) {
+		hourlyStats.remoteRequest(ssk, success, local, htl, location);
 	}
-	
-	void remoteRequest(boolean ssk, boolean success, boolean local, short htl) {
-		if(htl > node.maxHTL()) htl = node.maxHTL();
-		StringBuilder logEntry = null;
-		synchronized(this) {
-			Date now = new Date();
-			currentTime.setTime(now);
-			if (lastHourlyTime.get(Calendar.HOUR_OF_DAY) != currentTime.get(Calendar.HOUR_OF_DAY)) {
-				//it's a new hour, log the hourly stats and reset them
 
-				lastHourlyTime.setTime(now);
-				logEntry = new StringBuilder("Hourly stats reporting:\n");
-
-				logEntry.append("HourlyStats: Report for hour before UTC ");
-				logEntry.append(utcDateTime.format(now, new StringBuffer(), new FieldPosition(0))).append("\n");
-				logEntry.append("HourlyStats: Node uptime (ms):\t").append(node.getUptime()).append("\n");
-				logEntry.append("HourlyStats: chkHourlyLocalFetchSuccessCount:\t").append(chkHourlyLocalFetchSuccessCount).append("\n");
-				logEntry.append("HourlyStats: chkHourlyLocalFetchCount:\t").append(chkHourlyLocalFetchCount).append("\n");
-				logEntry.append("HourlyStats: sskHourlyLocalFetchSuccessCount:\t").append(sskHourlyLocalFetchSuccessCount).append("\n");
-				logEntry.append("HourlyStats: sskHourlyLocalFetchCount:\t").append(sskHourlyLocalFetchCount).append("\n");
-
-				logEntry.append("HourlyStats: chk datacache keys:\t").append(node.getChkDatacache().keyCount()).append("\n");
-				logEntry.append("HourlyStats: chk datastore keys:\t").append(node.getChkDatastore().keyCount()).append("\n");
-				logEntry.append("HourlyStats: ssk datacache keys:\t").append(node.getSskDatacache().keyCount()).append("\n");
-				logEntry.append("HourlyStats: ssk datastore keys:\t").append(node.getSskDatastore().keyCount()).append("\n");
-				logEntry.append("HourlyStats: build:\t").append(Version.buildNumber()).append("\n");
-
-				chkHourlyLocalFetchSuccessCount = 0;
-				chkHourlyLocalFetchCount = 0;
-				sskHourlyLocalFetchSuccessCount = 0;
-				sskHourlyLocalFetchCount = 0;
-
-				for (int i = hourlyRemoteCHKRequestsByHTL.length - 1; i >= 0; i--) {
-					logEntry.append("HourlyStats: HTL\t").append(i).append("\t");
-					logEntry.append(hourlyRemoteCHKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteCHKRequestsSuccessByHTL[i] - hourlyRemoteCHKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteCHKRequestsByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteSSKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteSSKRequestsSuccessByHTL[i] - hourlyRemoteSSKRequestsLocalSuccessByHTL[i]).append("\t");
-					logEntry.append(hourlyRemoteSSKRequestsByHTL[i]).append("\n");
-
-					hourlyRemoteCHKRequestsByHTL[i] = 0;
-					hourlyRemoteCHKRequestsSuccessByHTL[i] = 0;
-					hourlyRemoteCHKRequestsLocalSuccessByHTL[i] = 0;
-					hourlyRemoteSSKRequestsByHTL[i] = 0;
-					hourlyRemoteSSKRequestsSuccessByHTL[i] = 0;
-					hourlyRemoteSSKRequestsLocalSuccessByHTL[i] = 0;
-				}
-			}
-			if(ssk) {
-				remoteSSKRequestsByHTL[htl]++;
-				hourlyRemoteSSKRequestsByHTL[htl]++;
-			} else {
-				remoteCHKRequestsByHTL[htl]++;
-				hourlyRemoteCHKRequestsByHTL[htl]++;
-			}
-			if(success) {
-				if(ssk) {
-					remoteSSKRequestsSuccessByHTL[htl]++;
-					hourlyRemoteSSKRequestsSuccessByHTL[htl]++;
-					if(local) {
-						remoteSSKRequestsLocalSuccessByHTL[htl]++;
-						hourlyRemoteSSKRequestsLocalSuccessByHTL[htl]++;
-					}
-				} else {
-					remoteCHKRequestsSuccessByHTL[htl]++;
-					hourlyRemoteCHKRequestsSuccessByHTL[htl]++;
-					if(local) {
-						remoteCHKRequestsLocalSuccessByHTL[htl]++;
-						hourlyRemoteCHKRequestsLocalSuccessByHTL[htl]++;
-					}
-				}
-			}
-		}
-
-		if (logEntry != null) {
-			Logger.normal(this, logEntry.toString());
-		}
-	}
-	
 	public void fillRemoteRequestHTLsBox(HTMLNode html) {
-		HTMLNode table = html.addChild("table");
-		HTMLNode row = table.addChild("tr");
-		row.addChild("th", "HTL");
-		row.addChild("th", "CHKs");
-		row.addChild("th", "SSKs");
-		row = table.addChild("tr");
-		char nbsp = (char)160;
-		int totalCHKLocalSuccess = 0;
-		int totalCHKSuccess = 0;
-		int totalCHKIncoming = 0;
-		int totalSSKLocalSuccess = 0;
-		int totalSSKSuccess = 0;
-		int totalSSKIncoming = 0;
-		synchronized(this) {
-			for(int htl = remoteCHKRequestsByHTL.length-1;htl>=0;htl--) {
-				row = table.addChild("tr");
-				row.addChild("td", Integer.toString(htl));
-				double CHKRate = 0.;
-				double SSKRate = 0.;
-				if (remoteCHKRequestsByHTL[htl] > 0) CHKRate = remoteCHKRequestsSuccessByHTL[htl]*1.0 / remoteCHKRequestsByHTL[htl];
-				if (remoteSSKRequestsByHTL[htl] > 0) SSKRate = remoteSSKRequestsSuccessByHTL[htl]*1.0 / remoteSSKRequestsByHTL[htl];
-				row.addChild("td", fix3p3pct.format(CHKRate) + nbsp + "("+remoteCHKRequestsLocalSuccessByHTL[htl] + "," + (remoteCHKRequestsSuccessByHTL[htl] - remoteCHKRequestsLocalSuccessByHTL[htl]) + "," + remoteCHKRequestsByHTL[htl] + ")");
-				row.addChild("td", fix3p3pct.format(SSKRate) + nbsp + "("+remoteSSKRequestsLocalSuccessByHTL[htl] + "," + (remoteSSKRequestsSuccessByHTL[htl] - remoteSSKRequestsLocalSuccessByHTL[htl]) + "," + remoteSSKRequestsByHTL[htl] + ")");
-
-				totalCHKLocalSuccess += remoteCHKRequestsLocalSuccessByHTL[htl];
-				totalCHKSuccess += remoteCHKRequestsSuccessByHTL[htl];
-				totalCHKIncoming += remoteCHKRequestsByHTL[htl];
-				totalSSKLocalSuccess += remoteSSKRequestsLocalSuccessByHTL[htl];
-				totalSSKSuccess += remoteSSKRequestsSuccessByHTL[htl];
-				totalSSKIncoming += remoteSSKRequestsByHTL[htl];
-			}
-			double totalCHKRate = 0.0;
-			double totalSSKRate = 0.0;
-			if (totalCHKIncoming > 0) totalCHKRate = totalCHKSuccess * 1.0 / totalCHKIncoming;
-			if (totalSSKIncoming > 0) totalSSKRate = totalSSKSuccess * 1.0 / totalSSKIncoming;
-
-			row = table.addChild("tr");
-			row.addChild("td", "Total");
-			row.addChild("td", fix3p3pct.format(totalCHKRate) + nbsp + "("+ totalCHKLocalSuccess + "," + (totalCHKSuccess - totalCHKLocalSuccess) + "," + totalCHKIncoming + ")");
-			row.addChild("td", fix3p3pct.format(totalSSKRate) + nbsp + "("+ totalSSKLocalSuccess + "," + (totalSSKSuccess - totalSSKLocalSuccess) + "," + totalSSKIncoming + ")");
-		}
+		hourlyStats.fillRemoteRequestHTLsBox(html);
 	}
+
 }

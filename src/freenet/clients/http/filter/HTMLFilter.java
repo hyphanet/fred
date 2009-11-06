@@ -16,6 +16,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,8 @@ import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
@@ -784,7 +787,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			new TagVerifier(
 				"head",
 				new String[] { "id" },
-				new String[] { "profile" },
+				// Don't support profiles.
+				// We don't know what format they might be in, whether they will be parsed even though they have bogus MIME types (which seems likely), etc.
+				new String[] { /*"profile"*/ },
 				null));
 		allowedTagsVerifiers.put(
 			"title",
@@ -1438,7 +1443,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, pc.cb, pc, false);
+						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, false);
 						if (uri != null) {
 							uri = HTMLEncoder.encode(uri);
 							hn.put(x, uri);
@@ -1453,7 +1458,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, pc.cb, pc, true);
+						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, true);
 						if (uri != null) {
 							uri = HTMLEncoder.encode(uri);
 							hn.put(x, uri);
@@ -1599,7 +1604,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		void processStyle(HTMLParseContext pc) {
 			try {
 				pc.currentStyleScriptChunk =
-					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb, pc);
+					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb, pc, false);
 			} catch (DataFilterException e) {
 				Logger.error(this, "Error parsing style: "+e, e);
 				pc.currentStyleScriptChunk = "";
@@ -1679,7 +1684,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			String style = getHashString(h, "style");
 			if (style != null) {
-				style = sanitizeStyle(style, pc.cb, pc);
+				style = sanitizeStyle(style, pc.cb, pc, true);
 				if (style != null)
 					style = escapeQuotes(style);
 				if (style != null)
@@ -1788,6 +1793,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String hreflang = getHashString(h, "hreflang");
 			String charset = null;
+			String maybecharset = null;
 			String type = getHashString(h, "type");
 			if (type != null) {
 				String[] typesplit = splitType(type);
@@ -1805,31 +1811,127 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String c = getHashString(h, "charset");
 			if (c != null)
 				charset = c;
-			String href = getHashString(h, "href");
-			if (href != null) {
-				final String[] rels = new String[] { "rel", "rev" };
-				for (int x = 0; x < rels.length; x++) {
-					String reltype = rels[x];
-					String rel = getHashString(h, reltype);
-					if (rel != null) {
-						StringTokenizer tok = new StringTokenizer(rel, " ");
-						while (tok.hasMoreTokens()) {
-							String t = tok.nextToken();
-							if (t.equalsIgnoreCase("alternate")
-								|| t.equalsIgnoreCase("stylesheet")) {
-								// FIXME: hardcoding text/css
-								type = "text/css";
-							} // FIXME: do we want to do anything with the
-							// other possible rel's?
+			if(charset != null) {
+				try {
+					charset = URLDecoder.decode(charset, false);
+				} catch (URLEncodedFormatException e) {
+					charset = null;
+				}
+			}
+			if(charset != null && charset.indexOf('&') != -1)
+				charset = null;
+			if(charset != null && !Charset.isSupported(charset))
+				charset = null;
+			
+			// Is it a style sheet?
+			// Also, sanitise rel type
+			// If neither rel nor rev, return null
+			
+			String rel = getHashString(h, "rel");
+			
+			String parsedRel = "", parsedRev = "";
+			boolean isStylesheet = false;
+
+			if(rel != null) {
+				
+				rel = rel.toLowerCase();
+				
+				StringTokenizer tok = new StringTokenizer(rel, " ");
+				int i=0;
+				String prevToken = null;
+				StringBuffer sb = new StringBuffer(rel.length());
+				while (tok.hasMoreTokens()) {
+					String token = tok.nextToken();
+					if(token.equalsIgnoreCase("stylesheet")) {
+						if(token.equalsIgnoreCase("stylesheet")) {
+							isStylesheet = true;
+							if(!((i == 0 || i == 1 && prevToken != null && prevToken.equalsIgnoreCase("alternate"))))
+								return null;
+							if(tok.hasMoreTokens())
+								return null; // Disallow extra tokens after "stylesheet"
 						}
-						hn.put(reltype, rel);
+					} else if(!isStandardLinkType(token)) continue;
+					
+					i++;
+					if(sb.length() == 0)
+						sb.append(token);
+					else {
+						sb.append(' ');
+						sb.append(token);
+					}
+					prevToken = token;
+				}
+				
+				parsedRel = sb.toString();
+			}
+			
+			String rev = getHashString(h, "rev");
+			if(rev != null) {
+				
+				StringBuffer sb = new StringBuffer(rev.length());
+				rev = rev.toLowerCase();
+				
+				StringTokenizer tok = new StringTokenizer(rev, " ");
+				int i=0;
+				sb = new StringBuffer(rev.length());
+				
+				while (tok.hasMoreTokens()) {
+					String token = tok.nextToken();
+					if(!isStandardLinkType(token)) continue;
+					i++;
+					if(sb.length() == 0)
+						sb.append(token);
+					else {
+						sb.append(' ');
+						sb.append(token);
 					}
 				}
-				//				Core.logger.log(this, "Sanitizing URI: "+href+" with type "+
-				//					type+" and charset "+charset,
-				//					Logger.DEBUG);
+				
+				
+				parsedRev = sb.toString();
+				
+			}
+
+			// Allow no rel or rev, even on <link>, as per HTML spec.
+			
+			if(parsedRel.length() != 0)
+				hn.put("rel", parsedRel);
+			if(parsedRev.length() != 0)
+				hn.put("rev", parsedRev);
+			
+			if(rel != null) {
+				if(rel.equals("stylesheet") || rel.equals("alternate stylesheet"))
+					isStylesheet = true;
+			} else {
+				// Not a stylesheet.
+				if(type != null && type.startsWith("text/css"))
+					return null; // Not a stylesheet, so can't take a stylesheet type.
+			}
+			
+			if(isStylesheet) {
+				if(charset == null) {
+					// Browser will use the referring document's charset if there
+					// is no BOM and we don't specify one in HTTP.
+					// So we need to pass this information to the filter.
+					// We cannot force the mime type with the charset, because if
+					// we do that, we might be wrong - if there is a BOM or @charset 
+					// we want to use that. E.g. chinese pages might have the
+					// page in GB18030 and the borrowed CSS in ISO-8859-1 or UTF-8.
+					maybecharset = pc.charset;
+				}
+				String media = getHashString(h, "media");
+				if(media != null)
+					media = CSSReadFilter.filterMediaList(media);
+				if(media != null)
+					hn.put("media", media);
+				if(type != null && !type.startsWith("text/css"))
+					return null; // Different style language e.g. XSL, not supported.
+				type = "text/css";
+			}
+			String href = getHashString(h, "href");
+			if (href != null) {
 				href = HTMLDecoder.decode(href);
-				href = htmlSanitizeURI(href, type, charset, pc.cb, pc, false);
+				href = htmlSanitizeURI(href, type, charset, maybecharset, pc.cb, pc, false);
 				if (href != null) {
 					href = HTMLEncoder.encode(href);
 					hn.put("href", href);
@@ -1843,12 +1945,32 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			// FIXME: allow these if the charset and encoding are encoded into
 			// the URL
-			// FIXME: link types -
-			// http://www.w3.org/TR/html4/types.html#type-links - the
-			// stylesheet stuff, primarily - rel and rev properties - parse
-			// these, use same fix as above (browser may assume text/css for
-			// anything linked as a stylesheet)
 			return hn;
+		}
+
+		// Does not include stylesheet
+		private static final HashSet<String> standardRelTypes = new HashSet<String>();
+		static {
+			for(String s : new String[] {
+					"alternate",
+					"start",
+					"next",
+					"prev",
+					"contents",
+					"index",
+					"glossary",
+					"copyright",
+					"chapter",
+					"section",
+					"subsection",
+					"appendix",
+					"help",
+					"bookmark"
+			}) standardRelTypes.add(s);
+		}
+		
+		private boolean isStandardLinkType(String token) {
+			return standardRelTypes.contains(token.toLowerCase());
 		}
 	}
 
@@ -2036,6 +2158,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"-//W3C//DTD XHTML 1.0 Frameset//EN",
 				"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd");
 			DTDs.put(
+				"-//W3C//DTD XHTML 1.1//EN",
+				"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd");
+			DTDs.put(
 				"-//W3C//DTD HTML 4.01//EN",
 				"http://www.w3.org/TR/html4/strict.dtd");
 			DTDs.put(
@@ -2075,18 +2200,34 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		@Override
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
-			if (t.unparsedAttrs.length != 2)
+			if (t.unparsedAttrs.length != 2 && t.unparsedAttrs.length != 3) {
+				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid length");
 				return null;
-			if (!t.unparsedAttrs[0].equals("version=\"1.0\""))
+			}
+			if (t.unparsedAttrs.length == 3 && !t.unparsedAttrs[2].equals("?")) {
+				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid ending (length 2)");
 				return null;
-			if (!t.unparsedAttrs[1].startsWith("encoding=\"")
-				&& !t.unparsedAttrs[1].endsWith("\"?"))
+			}
+			if (t.unparsedAttrs.length == 2 && !t.unparsedAttrs[1].endsWith("?")) {
+				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid ending (length 3)");
 				return null;
-			if (!t
-				.unparsedAttrs[1]
-				.substring(10, t.unparsedAttrs[1].length() - 2)
-				.equalsIgnoreCase(pc.charset))
+			}
+			if (!t.unparsedAttrs[0].equals("version=\"1.0\"")) {
+				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid version");
 				return null;
+			}
+			if (!(t.unparsedAttrs[1].startsWith("encoding=\"")
+				&& (t.unparsedAttrs[1].endsWith("\"?") || t.unparsedAttrs[1].endsWith("\"")))) {
+				if (logMINOR) Logger.minor(this, "Deleting xml declaration, invalid encoding");
+				return null;
+			}
+			if (!t.unparsedAttrs[1]
+				.substring(10, t.unparsedAttrs[1].length() - 1)
+				.equalsIgnoreCase(pc.charset)) {
+				if (logMINOR) Logger.minor(this, "Deleting xml declaration (invalid charset "
+						+ t.unparsedAttrs[1].substring(10, t.unparsedAttrs[1].length() - 1) + ")");
+				return null;
+			}
 			return t;
 		}
 	}
@@ -2133,14 +2274,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	}
 	
-	static String sanitizeStyle(String style, FilterCallback cb, HTMLParseContext hpc) throws DataFilterException {
+	static String sanitizeStyle(String style, FilterCallback cb, HTMLParseContext hpc, boolean isInline) throws DataFilterException {
 		if(style == null) return null;
 		if(hpc.noOutput) return null;
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
 		style = style.trim();
 		if(logMINOR) Logger.minor(HTMLFilter.class, "Sanitizing style: " + style);
-		CSSParser pc = new CSSParser(r, w, false, cb);
+		CSSParser pc = new CSSParser(r, w, false, cb, hpc.charset, false, isInline);
 		try {
 			pc.parse();
 		} catch (IOException e) {
@@ -2185,7 +2326,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static String sanitizeURI(String uri, FilterCallback cb, boolean inline) throws CommentException {
-		return sanitizeURI(uri, null, null, cb, inline);
+		return sanitizeURI(uri, null, null, null, cb, inline);
 	}
 
 	/*
@@ -2193,7 +2334,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * lot more flexible than that. (avian) TEXT/PLAIN; format=flowed;
 	 * charset=US-ASCII IMAGE/JPEG; name=test.jpeg; x-unix-mode=0644
 	 */
-	static String[] splitType(String type) {
+	public static String[] splitType(String type) {
 		StringFieldParser sfp;
 		String charset = null, param, name, value;
 		int x;
@@ -2253,11 +2394,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String suri,
 			String overrideType,
 			String overrideCharset,
+			String maybeCharset,
 			FilterCallback cb,
 			HTMLParseContext pc,
 			boolean inline) {
 		try {
-			return sanitizeURI(suri, overrideType, overrideCharset, cb, inline);
+			return sanitizeURI(suri, overrideType, overrideCharset, maybeCharset, cb, inline);
 		} catch (CommentException e) {
             pc.writeAfterTag.append("<!-- ").append(HTMLEncoder.encode(e.toString())).append(" -->");
 			return null;
@@ -2268,12 +2410,23 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String suri,
 		String overrideType,
 		String overrideCharset,
+		String maybeCharset,
 		FilterCallback cb, boolean inline) throws CommentException {
 		if(logMINOR)
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" ) inline="+inline, new Exception("debug"));
+		boolean addMaybe = false;
 		if((overrideCharset != null) && (overrideCharset.length() > 0))
 			overrideType += "; charset="+overrideCharset;
-		return cb.processURI(suri, overrideType, false, inline);
+		else if(maybeCharset != null)
+			addMaybe = true;
+		String retval = cb.processURI(suri, overrideType, false, inline);
+		if(addMaybe) {
+			if(retval.indexOf('?') != -1)
+				retval += "&maybecharset="+maybeCharset;
+			else
+				retval += "?maybecharset="+maybeCharset;
+		}
+		return retval;
 	}
 
 	static String getHashString(Map<String, Object> h, String key) {
@@ -2292,6 +2445,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
+	}
+
+	public BOMDetection getCharsetByBOM(Bucket data) throws DataFilterException {
+		// No enhanced BOMs.
+		// FIXME XML BOMs???
+		return null;
 	}
 	
 

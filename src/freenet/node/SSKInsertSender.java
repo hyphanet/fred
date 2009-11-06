@@ -61,6 +61,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private static boolean logMINOR;
     private final boolean canWriteClientCache;
     private final boolean canWriteDatastore;
+    private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
     
     private int status = -1;
     /** Still running */
@@ -128,8 +129,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	}
 
     private void realRun() {
-        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
-        
         PeerNode next = null;
         while(true) {
             /*
@@ -589,5 +588,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	@Override
 	public String toString() {
 		return "SSKInsertSender:" + myKey;
+	}
+
+	public PeerNode[] getRoutedTo() {
+		return this.nodesRoutedTo.toArray(new PeerNode[nodesRoutedTo.size()]);
 	}
 }

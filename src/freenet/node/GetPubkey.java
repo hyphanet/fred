@@ -10,6 +10,7 @@ import java.util.Arrays;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.store.PubkeyStore;
+import freenet.store.BlockMetadata;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
@@ -52,7 +53,7 @@ public class GetPubkey {
 	 * @param canWriteDatastore If this is a request with high HTL, we can't promote it.
 	 * @return A public key, or null.
 	 */
-	public DSAPublicKey getKey(byte[] hash, boolean canReadClientCache, boolean forULPR) {
+	public DSAPublicKey getKey(byte[] hash, boolean canReadClientCache, boolean forULPR, BlockMetadata meta) {
 		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		if (logMINOR)
 			Logger.minor(this, "Getting pubkey: " + HexUtil.bytesToHex(hash));
@@ -71,26 +72,26 @@ public class GetPubkey {
 		try {
 			DSAPublicKey key = null;
 			if(pubKeyClientcache != null && canReadClientCache)
-				key = pubKeyClientcache.fetch(hash, false);
+				key = pubKeyClientcache.fetch(hash, false, meta);
 			if(node.oldPKClientCache != null && canReadClientCache && key == null) {
 				PubkeyStore pks = node.oldPKClientCache;
-				if(pks != null) key = pks.fetch(hash, false);
+				if(pks != null) key = pks.fetch(hash, false, meta);
 			}
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
 			if(key == null)
-				key = pubKeyDatastore.fetch(hash, false);
+				key = pubKeyDatastore.fetch(hash, false, meta);
 			if(key == null) {
 				PubkeyStore pks = node.oldPK;
-				if(pks != null) key = pks.fetch(hash, false);
+				if(pks != null) key = pks.fetch(hash, false, meta);
 			}
 			if (key == null)
-				key = pubKeyDatacache.fetch(hash, false);
+				key = pubKeyDatacache.fetch(hash, false, meta);
 			if(key == null) {
 				PubkeyStore pks = node.oldPKCache;
-				if(pks != null) key = pks.fetch(hash, false);
+				if(pks != null) key = pks.fetch(hash, false, meta);
 			}
 			if(key == null && pubKeySlashdotcache != null && forULPR)
-				key = pubKeySlashdotcache.fetch(hash, false);
+				key = pubKeySlashdotcache.fetch(hash, false, meta);
 			if (key != null) {
 				// Just put into the in-memory cache
 				cacheKey(hash, key, false, false, false, false, false);

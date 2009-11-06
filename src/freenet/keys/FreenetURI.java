@@ -280,17 +280,22 @@ public class FreenetURI implements Cloneable {
 	// Strip http:// and freenet: prefix
 	protected final static Pattern URI_PREFIX = Pattern.compile("^(http://[^/]+/+)?(freenet:)?");
 
+	public FreenetURI(String URI) throws MalformedURLException {
+		this(URI, false);
+	}
+	
 	/**
 	 * Create a FreenetURI from its string form. May or may not have a
 	 * freenet: prefix.
 	 * @throws MalformedURLException If the string could not be parsed.
 	 */
-	public FreenetURI(String URI) throws MalformedURLException {
+	public FreenetURI(String URI, boolean noTrim) throws MalformedURLException {
 //		this.uniqueHashCode = super.hashCode();
 		if(URI == null)
 			throw new MalformedURLException("No URI specified");
 
-		URI = URI.trim();
+		if(!noTrim)
+			URI = URI.trim();
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0)
 			// Encoded URL?
 			try {

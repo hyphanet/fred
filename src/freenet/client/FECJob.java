@@ -6,6 +6,7 @@ package freenet.client;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.keys.CHKBlock;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -17,6 +18,12 @@ import freenet.support.api.BucketFactory;
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FECJob {
+	
+	private transient static volatile boolean logMINOR;
+	
+	static {
+		Logger.registerClass(FECJob.class);
+	}
 	
 	private transient FECCodec codec;
 	private final short fecAlgo;
@@ -86,8 +93,20 @@ public class FECJob {
 		this.queue = queue;
 		this.priority = priority;
 		this.addedTime = System.currentTimeMillis();
-		this.dataBlocks = dataBlocks;
-		this.checkBlocks = checkBlocks;
+		
+		// Make sure it is a separate array, just in case it doesn't get copied transparently by db4o.
+		this.dataBlocks = new Bucket[dataBlocks.length];
+		this.checkBlocks = new Bucket[checkBlocks.length];
+		for(int i=0;i<dataBlocks.length;i++) {
+			this.dataBlocks[i] = dataBlocks[i];
+			if(!isADecodingJob) {
+				if(dataBlocks[i] == null)
+					throw new NullPointerException("Data block "+i+" is null for encode in FECJob constructor!");
+			}
+		}
+		for(int i=0;i<checkBlocks.length;i++)
+			this.checkBlocks[i] = checkBlocks[i];
+		
 		this.dataBlockStatus = null;
 		this.checkBlockStatus = null;
 		this.blockLength = blockLength;
@@ -108,42 +127,71 @@ public class FECJob {
 		return codec;
 	}
 	
-	public void activateForExecution(ObjectContainer container) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Activating FECJob...");
-		if(dataBlockStatus != null && logMINOR) {
-			for(int i=0;i<dataBlockStatus.length;i++)
-				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
+	public boolean activateForExecution(ObjectContainer container) {
+		if(logMINOR) {
+			Logger.minor(this, "Activating FECJob...");
+			if(dataBlockStatus != null) {
+				for(int i=0;i<dataBlockStatus.length;i++)
+					Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
+			}
 		}
 		container.activate(this, 2);
+		boolean hasDataBlocks = false;
+		int countDataBlocks = 0;
+		int countNullDataBlocks = 0;
 		if(dataBlockStatus != null) {
-			for(int i=0;i<dataBlockStatus.length;i++)
+			hasDataBlocks = true;
+			countDataBlocks = dataBlockStatus.length;
+			for(int i=0;i<dataBlockStatus.length;i++) {
 				container.activate(dataBlockStatus[i], 2);
-		}
-		if(dataBlockStatus != null && logMINOR) {
-			for(int i=0;i<dataBlockStatus.length;i++)
-				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (after activation)");
+				if(dataBlockStatus[i] == null)
+					countNullDataBlocks++;
+			}
+		
+			if(logMINOR) {
+				for(int i=0;i<dataBlockStatus.length;i++)
+					Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (after activation)");
+			}
 		}
 		if(checkBlockStatus != null) {
 			for(int i=0;i<checkBlockStatus.length;i++)
 				container.activate(checkBlockStatus[i], 2);
 		}
 		if(dataBlocks != null) {
+			hasDataBlocks = true;
+			countDataBlocks = dataBlocks.length;
 			for(int i=0;i<dataBlocks.length;i++) {
-				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (before activation)");
 				container.activate(dataBlocks[i], 1);
-				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
+				if(logMINOR)
+					Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
+				if(dataBlocks[i] == null)
+					countNullDataBlocks++;
 			}
 		}
 		if(checkBlocks != null) {
 			for(int i=0;i<checkBlocks.length;i++)
 				container.activate(checkBlocks[i], 1);
 		}
-		
+		if(!isADecodingJob) {
+			// First find the target
+			if(!hasDataBlocks) {
+				Logger.error(this, "Invalid job: Encoding: No data blocks or data block status");
+				return false;
+			}
+			if(hasDataBlocks && countDataBlocks == 0) {
+				Logger.error(this, "Invalid job: Encoding: "+countDataBlocks+" blocks");
+				return false;
+			}
+			if(hasDataBlocks && countNullDataBlocks > 0) {
+				Logger.error(this, "Invalid job: Encoding: "+countDataBlocks+" blocks but "+countNullDataBlocks+" are null!");
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public void deactivate(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating FECJob...");
+		if(logMINOR) Logger.minor(this, "Deactivating FECJob...");
 		if(dataBlockStatus != null) {
 			for(int i=0;i<dataBlockStatus.length;i++)
 				container.deactivate(dataBlockStatus[i], 2);
@@ -163,7 +211,6 @@ public class FECJob {
 	}
 
 	public void storeBlockStatuses(ObjectContainer container) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Storing block statuses");
 		if(dataBlockStatus != null) {
 			for(int i=0;i<dataBlockStatus.length;i++) {
@@ -233,5 +280,115 @@ public class FECJob {
 	 */
 	public boolean cancel(ObjectContainer container, ClientContext context) {
 		return queue.cancel(this, container, context);
+	}
+
+	/** Should already be activated to depth 1 by caller. */
+	public void dump(ObjectContainer container) {
+		System.err.println("FEC job: "+toString());
+		System.err.println("Algorithm: "+fecAlgo);
+		System.err.println("Bucket factory: "+bucketFactory);
+		System.err.println("Block length: "+blockLength);
+		System.err.println("Callback: "+callback);
+		System.err.println("Type: "+(isADecodingJob ? "DECODE" : "ENCODE"));
+		System.err.println("Added time: "+addedTime);
+		System.err.println("Priority: "+priority);
+		System.err.println("Persistent: "+persistent);
+		System.err.println("Queue: "+queue);
+		System.err.println("Hash code: "+hashCode);
+		System.err.println("Running: "+running);
+		if(dataBlocks != null) {
+			System.err.println("Has data blocks");
+			int dataCount = 0;
+			for(int i=0;i<dataBlocks.length;i++) {
+				Bucket data = dataBlocks[i];
+				if(data == null) {
+					System.err.println("Data block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of data block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == dataBlocks.length)
+				System.out.println("Has all data blocks");
+			else
+				System.out.println("Does not have all data blocks: "+dataCount+" of "+dataBlocks.length);
+		}
+		if(checkBlocks != null) {
+			System.err.println("Has check blocks");
+			int dataCount = 0;
+			for(int i=0;i<checkBlocks.length;i++) {
+				Bucket data = checkBlocks[i];
+				if(data == null) {
+					System.err.println("Check block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of check block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == checkBlocks.length)
+				System.out.println("Has all check blocks");
+			else
+				System.out.println("Does not have all check blocks: "+dataCount+" of "+checkBlocks.length);
+		}
+		if(dataBlockStatus != null) {
+			System.err.println("Has data block status");
+			int dataCount = 0;
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				SplitfileBlock status = dataBlockStatus[i];
+				Bucket data = status == null ? null : status.getData();
+				if(data == null) {
+					System.err.println("Data block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of data block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == dataBlockStatus.length)
+				System.out.println("Has all data block statuses");
+			else
+				System.out.println("Does not have all data block statuses: "+dataCount+" of "+dataBlockStatus.length);
+		}
+		if(checkBlockStatus != null) {
+			System.err.println("Has check block status");
+			int dataCount = 0;
+			for(int i=0;i<checkBlockStatus.length;i++) {
+				SplitfileBlock status = checkBlockStatus[i];
+				Bucket data = status == null ? null : status.getData();
+				if(data == null) {
+					System.err.println("Check block "+i+" is null!");
+				} else {
+					container.activate(data, 5);
+					if(data.size() != CHKBlock.DATA_LENGTH) {
+						System.err.println("Size of check block "+i+" is "+data.size()+" should be "+CHKBlock.DATA_LENGTH);
+					} else {
+						dataCount++;
+					}
+					System.err.println(data.toString()+" : "+data.size());
+					container.deactivate(data, 5);
+				}
+			}
+			if(dataCount == checkBlockStatus.length)
+				System.out.println("Has all data block statuses");
+			else
+				System.out.println("Does not have all data block statuses: "+dataCount+" of "+checkBlockStatus.length);
+		}
 	}
 }

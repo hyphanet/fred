@@ -20,6 +20,7 @@ import freenet.crypt.SHA256;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
@@ -981,7 +982,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 		 * nodes with little RAM it would be bad...
 		 */
 		final int MAX_KEYS = 20;
-		Object ret = queue.removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS);
+		Object ret;
+		ClientRequestScheduler otherScheduler = 
+			((!isSSKScheduler) ? this.clientContext.getSskFetchScheduler() : this.clientContext.getChkFetchScheduler());
+		if(queue instanceof PersistentCooldownQueue) {
+			ret = ((PersistentCooldownQueue)queue).removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS, (PersistentCooldownQueue)otherScheduler.persistentCooldownQueue);
+		} else
+			ret = queue.removeKeyBefore(now, WAIT_AFTER_NOTHING_TO_START, container, MAX_KEYS);
 		if(ret == null) return Long.MAX_VALUE;
 		if(ret instanceof Long) {
 			return (Long) ret;
@@ -992,29 +999,36 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			SendableGet[] reqs = container == null ? null : (schedCore == null ? null : schedCore.requestsForKey(key, container, clientContext));
-			SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
-			if(reqs == null && transientReqs == null) {
-				// Not an error as this can happen due to race conditions etc.
-				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
-			}
-			if(reqs != null) {
-				for(int i=0;i<reqs.length;i++) {
-					// Requests may or may not be returned activated from requestsForKey(), so don't check
-					// But do deactivate them once we're done with them.
-					container.activate(reqs[i], 1);
-					reqs[i].requeueAfterCooldown(key, now, container, clientContext);
-					container.deactivate(reqs[i], 1);
-				}
-			}
-			if(transientReqs != null) {
-				for(int i=0;i<transientReqs.length;i++)
-					transientReqs[i].requeueAfterCooldown(key, now, container, clientContext);
-			}
+			if(key instanceof NodeSSK == isSSKScheduler)
+				restoreKey(key, container, now);
+			else
+				otherScheduler.restoreKey(key, container, now); 
 			if(persistent)
 				container.deactivate(key, 5);
 		}
 		return Long.MAX_VALUE;
+	}
+
+	private void restoreKey(Key key, ObjectContainer container, long now) {
+		SendableGet[] reqs = container == null ? null : (schedCore == null ? null : schedCore.requestsForKey(key, container, clientContext));
+		SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
+		if(reqs == null && transientReqs == null) {
+			// Not an error as this can happen due to race conditions etc.
+			if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
+		}
+		if(reqs != null) {
+			for(int i=0;i<reqs.length;i++) {
+				// Requests may or may not be returned activated from requestsForKey(), so don't check
+				// But do deactivate them once we're done with them.
+				container.activate(reqs[i], 1);
+				reqs[i].requeueAfterCooldown(key, now, container, clientContext);
+				container.deactivate(reqs[i], 1);
+			}
+		}
+		if(transientReqs != null) {
+			for(int i=0;i<transientReqs.length;i++)
+				transientReqs[i].requeueAfterCooldown(key, now, container, clientContext);
+		}
 	}
 
 	public long countTransientQueuedRequests() {

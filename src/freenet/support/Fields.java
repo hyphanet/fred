@@ -439,16 +439,20 @@ public abstract class Fields {
 		return h;
 	}
 
+	public static String commaList(Object[] addr) {
+		return commaList(addr, ',');
+	}
+	
 	/**
 	 * @param addr
 	 * @return
 	 */
-	public static String commaList(Object[] addr) {
+	public static String commaList(Object[] addr, char comma) {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < addr.length; i++) {
 			sb.append(addr[i]);
 			if(i != addr.length - 1)
-				sb.append(',');
+				sb.append(comma);
 		}
 		return sb.toString();
 	}

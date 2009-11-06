@@ -18,13 +18,13 @@ public class CHKStore extends StoreCallback<CHKBlock> {
 
 	@Override
 	public CHKBlock construct(byte[] data, byte[] headers,
-			byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, DSAPublicKey ignored) throws KeyVerifyException {
+			byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta, DSAPublicKey ignored) throws KeyVerifyException {
 		if(data == null || headers == null) throw new CHKVerifyException("Need either data and headers");
 		return CHKBlock.construct(data, headers);
 	}
 
-	public CHKBlock fetch(NodeCHK chk, boolean dontPromote) throws IOException {
-		return store.fetch(chk.getRoutingKey(), null, dontPromote, false, false);
+	public CHKBlock fetch(NodeCHK chk, boolean dontPromote, BlockMetadata meta) throws IOException {
+		return store.fetch(chk.getRoutingKey(), null, dontPromote, false, false, meta);
 	}
 	
 	public void put(CHKBlock b, boolean isOldBlock) throws IOException {

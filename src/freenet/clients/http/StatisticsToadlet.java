@@ -759,6 +759,9 @@ public class StatisticsToadlet extends Toadlet {
 				row.addChild("td", l10n("distanceStats"));
 				row.addChild("td", fix3p1pct.format(storePercent));
 				row.addChild("td", fix3p1pct.format(cachePercent));
+				node.drawClientCacheBox(this);
+				node.drawSlashdotCacheBox(this);
+				node.drawStoreStats(this);
 			}
 		});
 		

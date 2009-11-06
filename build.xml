@@ -26,12 +26,7 @@
 	<property name="GWT.lib.user" value="${GWT.lib}/gwt-user.jar"/>
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.build" value="freenet/node/Version.class" />
-	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
-	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
-	<condition property="executable" value="jflex.bat" else="jflex">
-		<os family="windows"/>
-	</condition>
 
 	<path id="lib.path">
 		<pathelement location="${freenet-ext.location}"/>
@@ -68,7 +63,6 @@
 
 	<target name="env" depends="mkdir"   description="Learn about the environment">
 		<available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
-		<available file="${CSSTokenizerFilter.java}" property="CSSTokenizerFilter.present"/>
 		<available file="${junit.location}" property="junit.present"/>
 		<available file="${GWT.generatedjs}" type="dir" property="generatedjs.present"/>
 		<echo level="verbose">Javascript generation present:${generatedjs.present}</echo>
@@ -105,15 +99,6 @@
 		<ant antfile="build.xml" dir="generator/js"/>
 	</target>
 
-	<target name="generate-CSSTokenizerFilter" depends="env" unless="CSSTokenizerFilter.present">
-		<echo message="Generating CSSTokenizerFilter.java"/>
-		<exec dir="${src}" executable="${executable}" failonerror="true" resolveexecutable="true">
-			<arg value="-q"/>
-			<arg value="--nobak"/>
-			<arg value="${CSSTokenizerFilter.relative.jflex}"/>
-		</exec>
-	</target>
-
 	<target name="get-extjar" depends="env" unless="freenet-ext.present"
 		description="Download some external libraries which Freenet relies on">
 		<mkdir dir="${lib}"/>
@@ -126,7 +111,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="compile" depends="get-extjar, generate-CSSTokenizerFilter, generate-js">
+	<target name="compile" depends="get-extjar, generate-js">
 		<!-- Create the time stamp -->
 		<tstamp/>
 
@@ -249,7 +234,6 @@
 		<delete dir="${build-test}"/>
 	</target>
 	<target name="distclean" description="Delete class files, lib dir and docs dir.">
-		<delete file="${CSSTokenizerFilter.java}"/>
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${lib}"/>

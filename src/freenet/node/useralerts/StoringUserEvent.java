@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import freenet.node.fcp.FCPMessage;
-import freenet.node.fcp.ReceivedStatusFeedMessage;
+import freenet.node.fcp.FeedMessage;
 import freenet.support.HTMLNode;
 
 public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends AbstractUserEvent {
@@ -41,7 +41,7 @@ public abstract class StoringUserEvent<T extends StoringUserEvent<T>> extends Ab
 
 	@Override
 	public FCPMessage getFCPMessage() {
-		return new ReceivedStatusFeedMessage(getEventText(), getEventText(), getEventText(), getPriorityClass(), getUpdatedTime());
+		return new FeedMessage(getEventText(), getEventText(), getEventText(), getPriorityClass(), getUpdatedTime());
 	}
 
 	@Override

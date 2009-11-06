@@ -2,6 +2,7 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
+import java.text.ParseException;
 import java.util.Date;
 
 import freenet.support.HTMLNode;
@@ -65,6 +66,16 @@ public interface ToadletContext {
 	BucketFactory getBucketFactory();
 	
 	MultiValueTable<String, String> getHeaders();
+	
+	/**
+	 * Get an existing {@link Cookie} (sent by the client) from the headers.
+	 */
+	ReceivedCookie getCookie(URI domain, URI path, String name) throws ParseException;
+	
+	/**
+	 * Set a {@link Cookie}, it will be sent with the reply headers to the client.
+	 */
+	void setCookie(Cookie newCookie);
 
 	/**
 	 * Add a form node to an HTMLNode under construction. This will have the correct enctype and 

@@ -196,6 +196,7 @@ public class FECQueue implements OOMHook {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
 				while(true) {
+					try {
 					final FECJob job;
 					// Get a job
 					synchronized (FECQueue.this) {
@@ -275,6 +276,10 @@ public class FECQueue implements OOMHook {
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e, e);
 					}
+					} catch (Throwable t) {
+						Logger.error(this, "Caught: "+t, t);
+						// Try the next one, maybe it isn't broken.
+					}
 				}
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in "+this, t);
@@ -325,7 +330,22 @@ public class FECQueue implements OOMHook {
 					if(results.hasNext()) {
 						for(int j=0;j<grab && results.hasNext();j++) {
 							FECJob job = results.next();
-							job.activateForExecution(container);
+							if(!job.activateForExecution(container)) {
+								if(job.callback != null) {
+									container.activate(job.callback, 1);
+									try {
+										job.callback.onFailed(new NullPointerException("Not all data blocks present"), container, context);
+									} catch (Throwable t) {
+										try {
+											Logger.error(this, "Caught "+t+" while calling failure callback on "+job, t);
+										} catch (Throwable t1) {
+											// Ignore
+										}
+									}
+									container.delete(job);
+								}
+								continue;
+							}
 							if(job.isCancelled(container)) {
 								container.delete(job);
 								continue;
@@ -478,5 +498,17 @@ public class FECQueue implements OOMHook {
 		if(job.persistent)
 			container.delete(job);
 		return true;
+	}
+
+	public static void dump(ObjectContainer container, int priorities) {
+		ObjectSet<FECQueue> queues = container.query(FECQueue.class);
+		System.out.println("Queues: "+queues.size());
+		for(short prio=0;prio<priorities;prio++) {
+			Query query = container.query();
+			query.constrain(FECJob.class);
+			query.descend("priority").constrain(Short.valueOf(prio));
+			ObjectSet<FECJob> results = query.execute();
+			System.err.println("FEC jobs at priority "+prio+" : "+results.size());
+		}
 	}
 }

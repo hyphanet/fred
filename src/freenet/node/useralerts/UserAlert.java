@@ -72,7 +72,7 @@ public interface UserAlert {
 
 	/**
 	 * @return True if this is an event notification. Event notifications can be bulk deleted.
-	 * Eventually they will be handled diffferently - logged to a separate event log, and only
+	 * Eventually they will be handled differently - logged to a separate event log, and only
 	 * the last few displayed on the homepage.
 	 */
 	public boolean isEventNotification();

@@ -46,6 +46,7 @@ import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
+import freenet.store.BlockMetadata;
 import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -96,6 +97,20 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private int flags;
 	
 	private boolean preallocate = true;
+	
+	/** If we have no space in this store, try writing it to the alternate store,
+	 * with the wrong store flag set. Note that we do not *read from* it, the caller
+	 * must do that. IMPORTANT LOCKING NOTE: This must only happen in one direction!
+	 * If two stores have altStore set to each other, deadlock is likely! (Infinite 
+	 * recursion is also possible). However, fortunately we don't need to do it 
+	 * bidirectionally - the cache needs more space from the store, but the store 
+	 * grows so slowly it will hardly ever need more space from the cache. */
+	private SaltedHashFreenetStore altStore;
+	
+	public void setAltStore(SaltedHashFreenetStore store) {
+		if(store.altStore != null) throw new IllegalStateException("Target must not have an altStore - deadlock can result");
+		altStore = store;
+	}
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
 	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec, byte[] masterKey)
@@ -134,6 +149,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configFile = new File(this.baseDir, name + ".config");
 		boolean newStore = loadConfigFile(masterKey);
+		if(storeSize != 0 && storeSize != maxKeys && prevStoreSize == 0) {
+			// If not already resizing, start resizing to the new store size.
+			prevStoreSize = storeSize;
+			storeSize = maxKeys;
+			writeConfigFile();
+		}
 
 		newStore |= openStoreFiles(baseDir, name);
 
@@ -197,20 +218,29 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		
 		long curStoreFileSize = hdRAF.length();
 		
-		long prevFileSize = prevStoreSize * (headerBlockLength + dataBlockLength + hdPadding);
-		long curFileSize = storeSize * (headerBlockLength + dataBlockLength + hdPadding);
+		long curMetaFileSize = metaRAF.length();
 		
-		if(curStoreFileSize < curFileSize) {
-			if(!longStart) {
-				if(curStoreFileSize < prevFileSize || prevFileSize <= 0)
-					return true;
-			} else {
-				System.err.println("Preallocating space for "+name);
-				WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
-				long storeFileSize = Math.max(storeSize, prevStoreSize);
-				setStoreFileSize(storeFileSize, true);
-			}
+		// If prevStoreSize is nonzero, that means that we are either shrinking or
+		// growing. Either way, the file size should be between the old size and the
+		// new size. If it is not, we should pad it until it is.
+		
+		long smallerSize = storeSize;
+		if(prevStoreSize < storeSize && prevStoreSize > 0)
+			smallerSize = prevStoreSize;
+		
+		if((smallerSize * (headerBlockLength + dataBlockLength + hdPadding) > curStoreFileSize) ||
+				(smallerSize * Entry.METADATA_LENGTH > curMetaFileSize)) {
+			// Pad it up to the minimum size before proceeding.
+			if(longStart)
+				setStoreFileSize(storeSize, true);
+			else
+				return true;
 		}
+		
+		// Otherwise the resize will be completed by the Cleaner thread.
+		// However, we do still need to set storeFileOffsetReady
+		
+		storeFileOffsetReady = Math.min(curStoreFileSize / (headerBlockLength + dataBlockLength + hdPadding), curMetaFileSize / Entry.METADATA_LENGTH);
 		
 		if(ticker == null) {
 			cleanerThread.start();
@@ -228,7 +258,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return false;
 	}
 
-	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
@@ -252,14 +282,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 			try {
 				Entry entry = probeEntry(routingKey, true);
-
 				if (entry == null) {
 					misses.incrementAndGet();
 					return null;
 				}
 
+				if(meta != null && ((entry.flag & Entry.ENTRY_NEW_BLOCK) == Entry.ENTRY_NEW_BLOCK))
+					meta.setOldBlock();
+				
 				try {
-					StorableBlock block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, null);
+					StorableBlock block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
 					if (block == null) {
 						misses.incrementAndGet();
 						return null;
@@ -312,9 +344,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				Logger.debug(this, "probing for i=" + i + ", offset=" + offset[i]);
 
 			try {
-				entry = readEntry(offset[i], routingKey, withData);
-				if (entry != null)
-					return entry;
+				if(storeFileOffsetReady == -1 || offset[i] < this.storeFileOffsetReady) {
+					entry = readEntry(offset[i], routingKey, withData);
+					if (entry != null)
+						return entry;
+				}
 			} catch (EOFException e) {
 				if (prevStoreSize == 0) // may occur on store shrinking
 					Logger.error(this, "EOFException on probeEntry", e);
@@ -325,6 +359,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
+		put(block, data, header, overwrite, isOldBlock, false);
+	}
+	
+	public boolean put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock, boolean wrongStore) throws IOException, KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
 		
@@ -335,7 +373,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			int retry = 0;
 			while (!configLock.readLock().tryLock(2, TimeUnit.SECONDS)) {
 				if (shutdown)
-					return;
+					return true;
 				if (retry++ > 10)
 					throw new IOException("lock timeout (20s)");
 			}
@@ -347,7 +385,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (lockMap == null) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
-				return;
+				return false;
 			}
 			try {
 				/*
@@ -360,11 +398,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					long oldOffset = oldEntry.curOffset;
 					try {
 						if (!collisionPossible)
-							return;
+							return true;
 						oldEntry.setHD(readHD(oldOffset)); // read from disk
-						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
+						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, null, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
 						if (block.equals(oldBlock)) {
-							return; // already in store
+							if(logDEBUG) Logger.debug(this, "Block already stored");
+							return false; // already in store
 						} else if (!overwrite) {
 							throw new KeyCollisionException();
 						}
@@ -373,31 +412,81 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					// Overwrite old offset with same key
-					Entry entry = new Entry(routingKey, header, data, !isOldBlock);
+					Entry entry = new Entry(routingKey, header, data, !isOldBlock, wrongStore);
 					writeEntry(entry, oldOffset);
 					writes.incrementAndGet();
 					if (oldEntry.generation != generation)
 						keyCount.incrementAndGet();
-					return;
+					return true;
 				}
 
-				Entry entry = new Entry(routingKey, header, data, !isOldBlock);
+				Entry entry = new Entry(routingKey, header, data, !isOldBlock, wrongStore);
 				long[] offset = entry.getOffset();
 
+				int firstWrongStoreIndex = -1;
+				int wrongStoreCount = 0;
+				
 				for (int i = 0; i < offset.length; i++) {
-					if (offset[i] < storeFileOffsetReady && isFree(offset[i])) {
-						// write to free block
-						if (logDEBUG)
-							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
-						bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
-						writeEntry(entry, offset[i]);
-						writes.incrementAndGet();
-						keyCount.incrementAndGet();
-
-						return;
+					if(offset[i] < storeFileOffsetReady) {
+						long flag = getFlag(offset[i]);
+						if((flag & Entry.ENTRY_FLAG_OCCUPIED) == 0) {
+							// write to free block
+							if (logDEBUG)
+								Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+							bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
+							writeEntry(entry, offset[i]);
+							writes.incrementAndGet();
+							keyCount.incrementAndGet();
+							return true;
+						} else if(((flag & Entry.ENTRY_WRONG_STORE) == Entry.ENTRY_WRONG_STORE)) {
+							firstWrongStoreIndex = i;
+							wrongStoreCount++;
+						}
+					}
+				}
+				
+				if((!wrongStore) && altStore != null) {
+					if(altStore.put(block, data, header, overwrite, isOldBlock, true)) {
+						if(logMINOR) Logger.minor(this, "Successfully wrote block to wrong store "+altStore+" on "+this);
+						return true;
+					} else {
+						if(logMINOR) Logger.minor(this, "Writing to wrong store "+altStore+" on "+this+" failed");
 					}
 				}
 
+				boolean clobberWrongStore = true;
+				if(firstWrongStoreIndex == -1)
+					clobberWrongStore = false;
+				else {
+					if(wrongStore) {
+						// Distribute cache slot clobbering evenly between the two.
+						int a = OPTION_MAX_PROBE;
+						int b = wrongStoreCount;
+						clobberWrongStore = random.nextInt(a+b) > a;
+					}
+				}
+				
+				// No free slot
+				if(clobberWrongStore) {
+					// Use the first wrong-store slot.
+					// This is acceptable if we are writing wrong-store and is certainly acceptable if we are not.
+					// write to free block
+					int i = firstWrongStoreIndex;
+					if (logDEBUG)
+						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+					bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
+					writeEntry(entry, offset[i]);
+					writes.incrementAndGet();
+					keyCount.incrementAndGet();
+					return true;
+				}
+
+				if(wrongStore) {
+					if(logDEBUG) Logger.debug(this, "Won't overwrite non-wrong-store slots with wrong-store slots");
+					// We will not overwrite non-wrong-store slots with wrong-store ones.
+					return false;
+				}
+				
 				// no free blocks, overwrite the first one
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
@@ -409,6 +498,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					bloomFilter.removeKey(oldEntry.getDigestedRoutingKey());
 				else
 					keyCount.incrementAndGet();
+				return true;
 			} finally {
 				unlockPlainKey(routingKey, false, lockMap);
 			}
@@ -462,6 +552,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private final static long ENTRY_FLAG_PLAINKEY = 0x00000002L;
 		/** Flag for block added after we stopped caching local (and high htl) requests */
 		private final static long ENTRY_NEW_BLOCK = 0x00000004L;
+		/** Flag set if the block was stored in the wrong datastore i.e. store instead of cache */
+		private final static long ENTRY_WRONG_STORE = 0x00000008L;
 
 		/** Control block length */
 		private static final int METADATA_LENGTH = 0x80;
@@ -531,12 +623,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @param header
 		 * @param data
 		 */
-		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data, boolean newBlock) {
+		private Entry(byte[] plainRoutingKey, byte[] header, byte[] data, boolean newBlock, boolean wrongStore) {
 			this.plainRoutingKey = plainRoutingKey;
 
 			flag = ENTRY_FLAG_OCCUPIED;
 			if(newBlock)
 				flag |= ENTRY_NEW_BLOCK;
+			if(wrongStore)
+				flag |= ENTRY_WRONG_STORE;
 			this.storeSize = SaltedHashFreenetStore.this.storeSize;
 			this.generation = SaltedHashFreenetStore.this.generation;
 
@@ -591,13 +685,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return out;
 		}
 
-		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, DSAPublicKey knownKey) throws KeyVerifyException {
+		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta, DSAPublicKey knownKey) throws KeyVerifyException {
 			if (isFree() || header == null || data == null)
 				return null; // this is a free block
 			if (!cipherManager.decrypt(this, routingKey))
 				return null;
 
-			StorableBlock block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, knownKey);
+			StorableBlock block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, knownKey);
 			byte[] blockRoutingKey = block.getRoutingKey();
 
 			if (!Arrays.equals(blockRoutingKey, routingKey)) {
@@ -668,7 +762,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		do {
 			int status = metaFC.read(mbf, Entry.METADATA_LENGTH * offset + mbf.position());
 			if (status == -1) {
-				Logger.error(this, "Failed to access offset "+offset);
+				Logger.error(this, "Failed to access offset "+offset, new Exception("error"));
 				throw new EOFException();
 			}
 		} while (mbf.hasRemaining());
@@ -713,6 +807,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		buf.flip();
 		
 		return buf;
+	}
+	
+	private long getFlag(long offset) throws IOException {
+		Entry entry = readEntry(offset, null, false);
+		return entry.flag;
 	}
 	
 	private boolean isFree(long offset) throws IOException {
@@ -796,7 +895,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			final long newMetaLen = Entry.METADATA_LENGTH * storeMaxEntries;
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeMaxEntries;
 
-			if (preallocate) {
+			if (preallocate && (oldMetaLen < newMetaLen || currentHdLen < newHdLen)) {
 				/*
 				 * Fill the store file with random data. This won't be compressed, unlike filling it with zeros.
 				 * So the disk space usage of the node will not change (apart from temp files).
@@ -1822,7 +1921,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				try {
-					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, false, null);
+					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, false, null, null);
 					put(b, data, header, true, true);
 				} catch (KeyVerifyException e) {
 					System.out.println("kve at block " + l);
@@ -1853,5 +1952,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		hdFile.delete();
 		configFile.delete();
 		bloomFile.delete();
+	}
+	
+	public String toString() {
+		return super.toString()+":"+name;
 	}
 }

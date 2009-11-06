@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 
 import freenet.clients.http.HTTPRequestImpl;
@@ -18,6 +19,8 @@ import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
@@ -162,13 +165,14 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		}
 		
 		String rpath = uri.getPath();
+		if(logMINOR) Logger.minor(this, "Path: \""+path+"\" rpath: \""+rpath+"\"");
 		
 		if(host == null) {
 		
 			boolean isAbsolute = false;
 			
 			if(rpath != null) {
-				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): \""+rpath+"\"");
 				
 				// Valid FreenetURI?
 				try {
@@ -177,9 +181,9 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 						isAbsolute = true;
 						p = p.substring(1);
 					}
-					FreenetURI furi = new FreenetURI(p);
+					FreenetURI furi = new FreenetURI(p, true);
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-					return processURI(furi, uri, overrideType, noRelative, inline);
+					return processURI(furi, uri, overrideType, noRelative || isAbsolute, inline);
 				} catch (MalformedURLException e) {
 					// Not a FreenetURI
 					if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
@@ -203,7 +207,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 				try {
 					String p = rpath;
 					while(p.startsWith("/")) p = p.substring(1);
-					FreenetURI furi = new FreenetURI(p);
+					FreenetURI furi = new FreenetURI(p, true);
 					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
 					return processURI(furi, uri, overrideType, noRelative, inline);
 				} catch (MalformedURLException e) {
@@ -247,6 +251,29 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 		String typeOverride = req.getParam("type", null);
 		if(overrideType != null)
 			typeOverride = overrideType;
+
+		if(typeOverride != null) {
+			String[] split = HTMLFilter.splitType(typeOverride);
+			if(split[1] != null) {
+				String charset = split[1];
+				if(charset != null) {
+					try {
+						charset = URLDecoder.decode(charset, false);
+					} catch (URLEncodedFormatException e) {
+						charset = null;
+					}
+				}
+				if(charset != null && charset.indexOf('&') != -1)
+					charset = null;
+				if(charset != null && !Charset.isSupported(charset))
+					charset = null;
+				if(charset != null)
+					typeOverride = split[0]+"; charset="+charset;
+				else
+					typeOverride = split[0];
+			}
+		}
+		
 		// REDFLAG any other options we should support? 
 		// Obviously we don't want to support ?force= !!
 		// At the moment, ?type= and ?force= are the only options supported by FProxy anyway.
@@ -263,10 +290,16 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			// re-encode, but at least it works...
 			
 			StringBuilder sb = new StringBuilder();
+			if(strippedBaseURI.getScheme() != null && !noRelative) {
+				sb.append(strippedBaseURI.getScheme());
+				sb.append("://");
+				sb.append(strippedBaseURI.getAuthority());
+				assert(path.startsWith("/"));
+			}
 			sb.append(path);
 			if(typeOverride != null) {
 				sb.append("?type=");
-				sb.append(typeOverride);
+				sb.append(freenet.support.URLEncoder.encode(typeOverride, "", false, "="));
 			}
 			if(u.getFragment() != null) {
 				sb.append('#');
@@ -278,7 +311,7 @@ public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 			if(!noRelative)
 				uri = strippedBaseURI.relativize(uri);
 			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI);
+				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI+" stripped base uri="+strippedBaseURI.toString());
 			return uri.toASCIIString();
 		} catch (URISyntaxException e) {
 			Logger.error(this, "Could not parse own URI: path="+path+", typeOverride="+typeOverride+", frag="+u.getFragment()+" : "+e, e);

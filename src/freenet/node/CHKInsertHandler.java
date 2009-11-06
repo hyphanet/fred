@@ -16,6 +16,7 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.store.KeyCollisionException;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -309,8 +310,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			}
     	}
 		
-        maybeCommit();
-        
+		CHKBlock block = verify();
+		// If we wanted to reduce latency at the cost of security (bug 3338), we'd commit here, or even on the receiver thread.
+		
         if(logMINOR) Logger.minor(this, "Waiting for completion");
         // Wait for completion
         boolean sentCompletionWasSet;
@@ -345,6 +347,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 			m = DMT.createFNPInsertTransfersCompleted(uid, false /* no timeouts */);
 		}		
 		
+		// Don't commit until after we have received all the downstream transfer completion notifications.
+		// We don't want an attacker to see a ULPR notice from the inserter before he sees it from the end of the chain (bug 3338).
+		if(block != null) {
+			commit(block);
+			block = null;
+		}
+        
         	try {
         		source.sendSync(m, this);
         		if(logMINOR) Logger.minor(this, "Sent completion: "+m+" for "+this);
@@ -377,17 +386,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     /**
      * Verify data, or send DataInsertRejected.
      */
-    private void maybeCommit() {
+    private CHKBlock verify() {
         Message toSend = null;
         
+        CHKBlock block = null;
+        
         synchronized(this) {
-        	if((prb == null) || prb.isAborted()) return;
+        	if((prb == null) || prb.isAborted()) return null;
             try {
-                if(!canCommit) return;
-                if(!prb.allReceived()) return;
-                CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
-                node.store(block, false, canWriteDatastore, false);
-                if(logMINOR) Logger.minor(this, "Committed");
+                if(!canCommit) return null;
+                if(!prb.allReceived()) return null;
+                block = new CHKBlock(prb.getBlock(), headers, key);
             } catch (CHKVerifyException e) {
             	Logger.error(this, "Verify failed in CHKInsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
@@ -404,7 +413,17 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             	if(logMINOR) Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
             }
         }
+        return block;
 	}
+    
+    private void commit(CHKBlock block) {
+        try {
+			node.store(block, node.shouldStoreDeep(key, source, sender == null ? new PeerNode[0] : sender.getRoutedTo()), false, canWriteDatastore, false);
+		} catch (KeyCollisionException e) {
+			// Impossible with CHKs.
+		}
+        if(logMINOR) Logger.minor(this, "Committed");
+    }
 
 	/** Has the receive failed? If so, there's not much more that can be done... */
     private boolean receiveFailed;

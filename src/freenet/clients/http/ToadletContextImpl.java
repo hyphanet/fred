@@ -12,13 +12,16 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Random;
 import java.util.TimeZone;
 
+import freenet.clients.http.annotation.AllowData;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -33,7 +36,6 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
-import freenet.clients.http.annotation.AllowData;
 /**
  * ToadletContext implementation, including all the icky HTTP parsing etc.
  * An actual ToadletContext object represents a request, after we have parsed the 
@@ -53,6 +55,8 @@ public class ToadletContextImpl implements ToadletContext {
 	private static final String METHODS_RESTRICTED_MODE = "GET POST";
 	
 	private final MultiValueTable<String,String> headers;
+	private ArrayList<ReceivedCookie> cookies; // Null until the first time the user queries us for a ReceivedCookie.
+	private ArrayList<Cookie> replyCookies; // Null until the first time the user sets a Cookie.
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
 	private final BucketFactory bf;
@@ -74,6 +78,8 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container,URI uri) throws IOException {
 		this.headers = headers;
+		this.cookies = null;
+		this.replyCookies = null;
 		this.closed = false;
 		this.uri=uri;
 		sockOutputStream = sock.getOutputStream();
@@ -156,6 +162,16 @@ public class ToadletContextImpl implements ToadletContext {
 			throw new IllegalStateException("Already sent headers!");
 		}
 		sentReplyHeaders = true;
+		
+		if(replyCookies != null) {
+			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
+
+			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
+			
+			for(Cookie cookie : replyCookies)
+				mvt.put("set-cookie", cookie.encodeToHeaderValue());
+		}
+		
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
 	}
 	
@@ -165,6 +181,69 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public MultiValueTable<String,String> getHeaders() {
 		return headers;
+	}
+	
+	private void parseCookies() throws ParseException {
+		if(cookies != null)
+			return;
+		
+		int cookieAmount = headers.countAll("cookie");
+		
+		if(cookieAmount == 0)
+			return;
+		
+		cookies = new ArrayList<ReceivedCookie>(cookieAmount + 1);
+		
+		for(String cookieHeader : headers.iterateAll("cookie")) {
+			ArrayList<ReceivedCookie> parsedCookies = ReceivedCookie.parseHeader(cookieHeader);
+			cookies.addAll(parsedCookies);
+		}
+	}
+	
+	public ReceivedCookie getCookie(URI domain, URI path, String name) throws ParseException {
+		parseCookies();
+		
+		if(cookies == null) // There are no cookies.
+			return null;
+		
+		name = name.toLowerCase();
+		
+		//String stringDomain = domain==null ? null : domain.toString().toLowerCase();
+		//String stringPath = path.toString();
+		
+		// RFC2965: Two cookies are equal if name and domain are equal with case-insensitive comparison and path is equal with case-sensitive comparison.
+		//getName() / getDomain() returns lowercase and getPath() returns the original path.
+		
+		// UNFORTUNATELY firefox will ONLY give us the name and the value of the cookie, so we ignore everything else.
+		
+		for(ReceivedCookie cookie : cookies) {
+			try {
+			//if(stringDomain != null) {
+			//	URI cookieDomain = cookie.getDomain();
+			//	
+			//	if(cookieDomain==null || !stringDomain.equals(cookieDomain.toString()))
+			//		continue;
+			//}
+			//
+			//if(cookie.getPath().toString().equals(stringPath) && cookie.getName().equals(name))
+			//	return cookie;
+				
+				if(cookie.getName().equals(name))
+					return cookie;
+			}
+			catch(RuntimeException e) {
+				Logger.error(this, "Error in cookie", e);
+			}
+		}
+		
+		return null;
+	}
+	
+	public void setCookie(Cookie newCookie) {
+		if(replyCookies == null)
+			replyCookies = new ArrayList<Cookie>(4);
+		
+		replyCookies.add(newCookie);
 	}
 	
 	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
@@ -282,10 +361,10 @@ public class ToadletContextImpl implements ToadletContext {
 				String[] split = firstLine.split(" ");
 				
 				if(split.length != 3)
-					throw new ParseException("Could not parse request line (split.length="+split.length+"): "+firstLine);
+					throw new ParseException("Could not parse request line (split.length="+split.length+"): "+firstLine, -1);
 				
 				if(!split[2].startsWith("HTTP/1."))
-					throw new ParseException("Unrecognized protocol "+split[2]);
+					throw new ParseException("Unrecognized protocol "+split[2], -1);
 				
 				URI uri;
 				try {
@@ -309,7 +388,7 @@ public class ToadletContextImpl implements ToadletContext {
 					if(line.length() == 0) break;
 					int index = line.indexOf(':');
 					if (index < 0) {
-						throw new ParseException("Missing ':' in request header field");
+						throw new ParseException("Missing ':' in request header field", -1);
 					}
 					String before = line.substring(0, index).toLowerCase();
 					String after = line.substring(index+1);
@@ -480,8 +559,16 @@ public class ToadletContextImpl implements ToadletContext {
 		} catch (Throwable t) {
 			Logger.error(ToadletContextImpl.class, "Caught error: "+t+" handling socket", t);
 			try {
-				Logger.error(t,"", t);
-				sendError(sock.getOutputStream(), 500, "Internal Error", t.toString(), true, null);
+				String msg = "<html><head><title>"+NodeL10n.getBase().getString("Toadlet.internalErrorTitle")+
+						"</title></head><body><h1>"+NodeL10n.getBase().getString("Toadlet.internalErrorPleaseReport")+"</h1><pre>";
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				t.printStackTrace(pw);
+				pw.flush();
+				msg = msg + sw.toString() + "</pre></body></html>";
+				byte[] messageBytes = msg.getBytes("UTF-8");
+				sendReplyHeaders(sock.getOutputStream(), 500, "Internal failure", null, "text/html; charset=UTF-8", messageBytes.length, null, true);
+				sock.getOutputStream().write(messageBytes);
 			} catch (IOException e1) {
 				// ignore and return
 			}
@@ -516,15 +603,6 @@ public class ToadletContextImpl implements ToadletContext {
 		else
 			// HTTP 1.1
 			return false;
-	}
-	
-	static class ParseException extends Exception {
-		private static final long serialVersionUID = -1;
-		
-		ParseException(String string) {
-			super(string);
-		}
-		
 	}
 	
 	public void writeData(byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {

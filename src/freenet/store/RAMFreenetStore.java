@@ -43,7 +43,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 	}
 	
 	public synchronized T fetch(byte[] routingKey, byte[] fullKey,
-			boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache) throws IOException {
+			boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		Block block = blocksByRoutingKey.get(key);
 		if(block == null) {
@@ -52,10 +52,11 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 		}
 		try {
 			T ret =
-				callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, canReadSlashdotCache, null);
+				callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
 			hits++;
 			if(!dontPromote)
 				blocksByRoutingKey.push(key, block);
+			if(meta != null && block.oldBlock) meta.oldBlock = true;
 			return ret;
 		} catch (KeyVerifyException e) {
 			blocksByRoutingKey.removeKey(key);
@@ -155,7 +156,7 @@ public class RAMFreenetStore<T extends StorableBlock> implements FreenetStore<T>
 			
 			T ret;
 			try {
-				ret = callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, false, null);
+				ret = callback.construct(block.data, block.header, routingKey, block.fullKey, canReadClientCache, false, null, null);
 			} catch (KeyVerifyException e) {
 				Logger.error(this, "Caught while migrating: "+e, e);
 				continue;

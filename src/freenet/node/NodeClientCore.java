@@ -1198,7 +1198,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		}
 		try {
 			long startTime = System.currentTimeMillis();
-			node.store(block, canWriteClientCache, false, false);
 			is = node.makeInsertSender(block.getKey(),
 				node.maxHTL(), uid, null, headers, prb, false, canWriteClientCache);
 			boolean hasReceivedRejectedOverload = false;
@@ -1267,6 +1266,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					nodeStats.successfulChkInsertBytesSentAverage.report(sent);
 			}
 
+			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
+			try {
+				node.store(block, deep, canWriteClientCache, false, false);
+			} catch (KeyCollisionException e) {
+				// CHKs don't collide
+			}
+			
 			if(status == CHKInsertSender.SUCCESS) {
 				Logger.normal(this, "Succeeded inserting " + block);
 				return;
@@ -1312,7 +1318,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			long startTime = System.currentTimeMillis();
 			// Be consistent: use the client cache to check for collisions as this is a local insert.
-			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false, false);
+			SSKBlock altBlock = node.fetch(block.getKey(), false, true, canWriteClientCache, false, false, null);
 			if(altBlock != null && !altBlock.equals(block))
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			is = node.makeInsertSender(block,
@@ -1377,11 +1383,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					nodeStats.successfulSskInsertBytesSentAverage.report(sent);
 			}
 
+			boolean deep = node.shouldStoreDeep(block.getKey(), null, is == null ? new PeerNode[0] : is.getRoutedTo());
+			
 			if(is.hasCollided()) {
 				// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 				try {
 					// Has collided *on the network*, not locally.
-					node.storeInsert(is.getBlock(), true, canWriteClientCache, false);
+					node.storeInsert(is.getBlock(), deep, true, canWriteClientCache, false);
 				} catch(KeyCollisionException e) {
 					// collision race?
 					// should be impossible.
@@ -1390,7 +1398,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			} else
 				try {
-					node.storeInsert(block, false, canWriteClientCache, false);
+					node.storeInsert(block, deep, false, canWriteClientCache, false);
 				} catch(KeyCollisionException e) {
 					throw new LowLevelPutException(LowLevelPutException.COLLISION);
 				}

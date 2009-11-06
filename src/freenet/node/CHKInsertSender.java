@@ -212,6 +212,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private boolean sentRequest;
     private final boolean canWriteClientCache;
     private final boolean canWriteDatastore;
+    private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
+
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
@@ -273,7 +275,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     }
     
     private void realRun() {
-        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
         
         PeerNode next = null;
         while(true) {
@@ -656,7 +657,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         		allTransfersCompleted = true;
         		notifyAll();
         	}
-        
+        	
         if(status == SUCCESS && next != null)
         	next.onSuccess(true, false);
         
@@ -877,5 +878,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
+	}
+
+	public PeerNode[] getRoutedTo() {
+		return this.nodesRoutedTo.toArray(new PeerNode[nodesRoutedTo.size()]);
 	}
 }

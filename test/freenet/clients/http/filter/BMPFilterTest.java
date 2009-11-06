@@ -34,6 +34,10 @@ public class BMPFilterTest extends TestCase {
 	};
 	ArrayBucket ab;
 
+	public void setUp() {
+		new NodeL10n();
+	}
+	
 	public void testReadFilter()  {
 		new NodeL10n();
 		BMPFilter objBMPFilter=new BMPFilter();

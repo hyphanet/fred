@@ -335,7 +335,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	@Override
 	public String toString() {
-		return super.toString()+ ':' +bucket.toString();
+		return super.toString()+ ':' +bucket;
 	}
 	
 	public synchronized long size() {

@@ -23,8 +23,10 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	 */
 	RealArchiveStoreItem(ArchiveStoreContext ctx, FreenetURI key2, String realName, Bucket bucket) {
 		super(new ArchiveKey(key2, realName), ctx);
+		if(bucket == null) throw new NullPointerException();
 		mb = new MultiReaderBucket(bucket);
 		this.bucket = mb.getReaderBucket();
+		if(this.bucket == null) throw new NullPointerException();
 		bucket.setReadOnly();
 		spaceUsed = bucket.size();
 	}
