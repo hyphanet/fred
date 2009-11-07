@@ -105,6 +105,23 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
+		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, null, server, container);
+		wasDiskPut = false;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.manifestElements = elements;
+		this.defaultName = defaultName;
+		makePutter();
+		if(putter != null) {
+			numberOfFiles = putter.countFiles();
+			totalSize = putter.totalSize();
+		} else {
+			numberOfFiles = -1;
+			totalSize = -1;
+		}
+		if(logMINOR) Logger.minor(this, "Putting data from custom buckets "+identifier+" : "+priorityClass);
+	}
+
 	@Override
 	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
 		if(persistenceType != PERSIST_CONNECTION)
