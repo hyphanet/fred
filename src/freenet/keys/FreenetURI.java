@@ -421,7 +421,7 @@ public class FreenetURI implements Cloneable {
 		} catch(IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
-		if (logDEBUG) Logger.minor(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
+		if (logDEBUG) Logger.debug(this, "Created from parse: "+toString()+" from "+URI, new Exception("debug"));
 	}
 
 	/** USK constructor from components. */
