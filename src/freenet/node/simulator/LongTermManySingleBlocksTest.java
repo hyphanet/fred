@@ -353,11 +353,14 @@ public class LongTermManySingleBlocksTest {
 						System.out.println("Found row for target date "+((1<<i)-1)+" days ago.");
 						System.out.println("Version: "+split[1]);
 						csvLine.add(Integer.toString(i));
+						int pulled = 0;
+						int inserted = 0;
 						for(int j=0;j<INSERTED_BLOCKS;j++) {
 							if(insertedURIs[j] == null) {
 								csvLine.add("");
 								continue;
 							}
+							inserted++;
 							try {
 								t1 = System.currentTimeMillis();
 								FetchWaiter fw = new FetchWaiter();
@@ -367,6 +370,7 @@ public class LongTermManySingleBlocksTest {
 								
 								System.out.println("PULL-TIME FOR BLOCK "+j+": " + (t2 - t1));
 								csvLine.add(String.valueOf(t2 - t1));
+								pulled++;
 							} catch (FetchException e) {
 								if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
 										&& e.getMode() != FetchException.DATA_NOT_FOUND)
@@ -375,7 +379,7 @@ public class LongTermManySingleBlocksTest {
 								System.err.println("FAILED PULL FOR BLOCK "+j+": "+e);
 							}
 						}
-						
+						System.out.println("Pulled "+pulled+" blocks of "+inserted+" from "+((1<<i)-1)+" days ago.");
 					}
 				}
 				
