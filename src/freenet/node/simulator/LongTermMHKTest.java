@@ -207,6 +207,8 @@ public class LongTermMHKTest {
 			
 			// PARSE FILE AND FETCH OLD STUFF IF APPROPRIATE
 			
+			boolean match = false;
+			
 			FreenetURI singleURI = null;
 			FreenetURI[] mhkURIs = new FreenetURI[3];
 			fis = new FileInputStream(file);
@@ -275,8 +277,9 @@ public class LongTermMHKTest {
 					continue;
 				}
 				if(target.getTimeInMillis() == calendar.getTimeInMillis()) {
-					System.out.println("Found row for target date");
+					System.out.println("Found row for target date "+dateFormat.format(target)+" : "+dateFormat.format(calendar));
 					System.out.println("Version: "+split[1]);
+					match = true;
 					break;
 				} else if(split.length > 3+6+6) {
 					int token = 3 + 6 + 6;
@@ -323,48 +326,52 @@ public class LongTermMHKTest {
 			
 			// FETCH STUFF
 			
-			// FETCH SINGLE URI
 			
-			// Fetch the first one 3 times, since the MHK is 3 fetches also.
-			// Technically this is 9 fetches because we multiply by 3 fetches per high-level fetch by default.
-			
-			boolean fetched = false;
-			for(int i=0;i<3;i++) {
-				if(fetched) {
-					csvLine.add("");
-					continue;
+			if(match) {
+				
+				// FETCH SINGLE URI
+				
+				// Fetch the first one 3 times, since the MHK is 3 fetches also.
+				// Technically this is 9 fetches because we multiply by 3 fetches per high-level fetch by default.
+				
+				boolean fetched = false;
+				for(int i=0;i<3;i++) {
+					if(fetched) {
+						csvLine.add("");
+						continue;
+					}
+					try {
+						t1 = System.currentTimeMillis();
+						client.fetch(singleURI);
+						t2 = System.currentTimeMillis();
+						
+						System.out.println("PULL-TIME FOR SINGLE URI:" + (t2 - t1));
+						csvLine.add(String.valueOf(t2 - t1));
+						fetched = true;
+					} catch (FetchException e) {
+						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
+								&& e.getMode() != FetchException.DATA_NOT_FOUND)
+							e.printStackTrace();
+						csvLine.add(FetchException.getShortMessage(e.getMode()));
+						System.err.println("FAILED PULL FOR SINGLE URI: "+e);
+					}
 				}
-				try {
-					t1 = System.currentTimeMillis();
-					client.fetch(singleURI);
-					t2 = System.currentTimeMillis();
-					
-					System.out.println("PULL-TIME FOR SINGLE URI:" + (t2 - t1));
-					csvLine.add(String.valueOf(t2 - t1));
-					fetched = true;
-				} catch (FetchException e) {
-					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-							&& e.getMode() != FetchException.DATA_NOT_FOUND)
-						e.printStackTrace();
-					csvLine.add(FetchException.getShortMessage(e.getMode()));
-					System.err.println("FAILED PULL FOR SINGLE URI: "+e);
-				}
-			}
-			
-			for(int i=0;i<mhkURIs.length;i++) {
-				try {
-					t1 = System.currentTimeMillis();
-					client.fetch(mhkURIs[i]);
-					t2 = System.currentTimeMillis();
-
-					System.out.println("PULL-TIME FOR MHK #"+i+":" + (t2 - t1));
-					csvLine.add(String.valueOf(t2 - t1));
-				} catch (FetchException e) {
-					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-					        && e.getMode() != FetchException.DATA_NOT_FOUND)
-						e.printStackTrace();
-					csvLine.add(FetchException.getShortMessage(e.getMode()));
-					System.err.println("FAILED PULL FOR MHK #"+i+": "+e);
+				
+				for(int i=0;i<mhkURIs.length;i++) {
+					try {
+						t1 = System.currentTimeMillis();
+						client.fetch(mhkURIs[i]);
+						t2 = System.currentTimeMillis();
+						
+						System.out.println("PULL-TIME FOR MHK #"+i+":" + (t2 - t1));
+						csvLine.add(String.valueOf(t2 - t1));
+					} catch (FetchException e) {
+						if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
+								&& e.getMode() != FetchException.DATA_NOT_FOUND)
+							e.printStackTrace();
+						csvLine.add(FetchException.getShortMessage(e.getMode()));
+						System.err.println("FAILED PULL FOR MHK #"+i+": "+e);
+					}
 				}
 			}
 			
