@@ -36,6 +36,7 @@ public class LZMACompressor implements Compressor {
 		cos = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
+        // Dictionary size 1MB, this is equivalent to lzma -4, it uses 16MB to compress and 2MB to decompress.
         encoder.SetDictionarySize( 1 << 20 );
         // enc.WriteCoderProperties( out );
         // 5d 00 00 10 00
