@@ -285,4 +285,10 @@ public abstract class Key implements WritableToDataOutputStream, Comparable<Key>
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
+
+	/** Get a copy of the key with any unnecessary information stripped, for long-term
+	 * in-memory storage. E.g. for SSKs, strips the DSAPublicKey. Copies it whether or 
+	 * not we need to copy it because the original might pick up a pubkey after this
+	 * call. And the returned key will not accidentally pick up extra data. */
+	public abstract Key archivalCopy();
 }
