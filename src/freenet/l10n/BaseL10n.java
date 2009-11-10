@@ -44,8 +44,8 @@ public class BaseL10n {
 		NORWEGIAN("no", "Norsk", "nor"),
 		POLISH("pl", "Polski", "pol"),
 		SWEDISH("se", "Svenska", "svk"),
-		CHINESE("zh-cn", "中文(简体)", "chn"), // simplified chinese, used on mainland
-		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw"), // traditional chinese, used in Taiwan, Hong Kong, Singapore and Macau
+		CHINESE("zh-cn", "中文(简体)", "chn"), // simplified chinese, used on mainland, Singapore and Malaysia
+		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw"), // traditional chinese, used in Taiwan, Hong Kong and Macau
 		UNLISTED("unlisted", "unlisted", "unlisted");
 		/** The identifier we use internally : MUST BE UNIQUE! */
 		public final String shortCode;
