@@ -5747,7 +5747,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private long completeInsertsStored;
 	private long completeInsertsOldStore;
 	private long completeInsertsTotal;
-	private long completeInsertsNotStoredWouldHaveStored;	// for DEBUGGING, should be ZERO
+	private long completeInsertsNotStoredWouldHaveStored;	// DEBUGGING: should be 0 but can be nonzero if e.g. a request originates from a backed off node; should be very low in any case; FIXME remove eventually
 	
 	/** Should we commit the block to the store rather than the cache?
 	 * 
