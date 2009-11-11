@@ -1004,7 +1004,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
 						long rtt = System.currentTimeMillis() - startTime;
 						if(!rejectedOverload)
-							requestStarters.requestCompleted(false, false, key.getNodeKey());
+							requestStarters.requestCompleted(false, false, key.getNodeKey(true));
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.chkRequestThrottle.successfulCompletion(rtt);
 						node.nodeStats.reportCHKTime(rtt, status == RequestSender.SUCCESS);
@@ -1065,7 +1065,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-			Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
+			Object o = node.makeRequestSender(key.getNodeKey(true), node.maxHTL(), uid, null, localOnly, ignoreStore, false, true, canWriteClientCache);
 			if(o instanceof SSKBlock)
 				try {
 					tag.setServedFromDatastore();
@@ -1122,7 +1122,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 						long rtt = System.currentTimeMillis() - startTime;
 
 						if(!rejectedOverload)
-							requestStarters.requestCompleted(true, false, key.getNodeKey());
+							requestStarters.requestCompleted(true, false, key.getNodeKey(true));
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.sskRequestThrottle.successfulCompletion(rtt);
 					}

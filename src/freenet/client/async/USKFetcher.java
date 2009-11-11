@@ -759,7 +759,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		int offset = (int) (firstCheck - firstKeyWatching);
 		final Key[] checkStore = new Key[checkCount];
 		for(int i=0;i<checkStore.length;i++) {
-			checkStore[i] = keysWatching.get(i+offset).getNodeKey();
+			checkStore[i] = keysWatching.get(i+offset).getNodeKey(true);
 		}
 		assert(offset + checkStore.length == keysWatching.size());
 		assert(keysWatching.get(keysWatching.size()-1).getURI().uskForSSK().getSuggestedEdition() == lastCheck);
@@ -938,7 +938,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	public synchronized short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
 		for(ClientSSK ssk : keysWatching)
-			if(ssk.getNodeKey().equals(key)) return progressPollPriority;
+			if(ssk.getNodeKey(false).equals(key)) return progressPollPriority;
 		return -1;
 	}
 
@@ -961,7 +961,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		synchronized(this) {
 			for(int i=0;i<keysWatching.size();i++) {
 				ClientSSK ssk = keysWatching.get(i);
-				if(ssk.getNodeKey().equals(key)) {
+				if(ssk.getNodeKey(false).equals(key)) {
 					realKey = ssk;
 					edition = firstKeyWatching + i;
 					break;
@@ -993,7 +993,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	public synchronized boolean probablyWantKey(Key key, byte[] saltedKey) {
 		for(ClientSSK ssk : keysWatching)
-			if(ssk.getNodeKey().equals(key)) return true;
+			if(ssk.getNodeKey(false).equals(key)) return true;
 		return false;
 	}
 

@@ -147,7 +147,7 @@ public class ClientSSK extends ClientKey {
 	private transient Key cachedNodeKey;
 	
 	@Override
-	public Key getNodeKey() {
+	public Key getNodeKey(boolean cloneKey) {
 		try {
 			Key nodeKey;
 			synchronized(this) {
@@ -159,9 +159,7 @@ public class ClientSSK extends ClientKey {
 					cachedNodeKey = new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
 				nodeKey = cachedNodeKey;
 			}
-			// Have to clone here because it might end up being used persistently, and that would result in chaos when one request deactivates it.
-			// FIXME: Add a parameter for whether to clone, don't clone if being used transiently.
-			return nodeKey.cloneKey();
+			return cloneKey ? nodeKey.cloneKey() : nodeKey;
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
 			Logger.error(this, "Have already verified and yet it fails!: "+e);

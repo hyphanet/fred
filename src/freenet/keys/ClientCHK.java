@@ -152,11 +152,11 @@ public class ClientCHK extends ClientKey {
     }
 
 	@Override
-	public Key getNodeKey() {
-		return getNodeCHK();
+	public Key getNodeKey(boolean cloneKey) {
+		return cloneKey ? getNodeCHK().cloneKey() : getNodeCHK();
 	}
 
-	public NodeCHK getNodeCHK() {
+	public synchronized NodeCHK getNodeCHK() {
 		// This costs us more or less nothing: we have to keep the routingKey anyway.
 		// Therefore, keeping a NodeCHK as well is a net saving, since it's frequently
 		// asked for. (A SoftReference would cost more).

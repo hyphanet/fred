@@ -839,7 +839,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				continue;
 			}
 			key = key.cloneKey();
-			Key k = key.getNodeKey();
+			Key k = key.getNodeKey(true);
 			PersistentChosenBlock block = new PersistentChosenBlock(false, request, new MySendableRequestItem(blockNumber), k, key, sched);
 			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
 			blocks.add(block);

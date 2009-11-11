@@ -1234,7 +1234,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = dataKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(k.getNodeKey().equals(key)) {
+			if(k.getNodeKey(false).equals(key)) {
 				if(dataCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(dataCooldownTimes[i]-time)+"ms");
@@ -1259,7 +1259,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = checkKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(k.getNodeKey().equals(key)) {
+			if(k.getNodeKey(false).equals(key)) {
 				if(checkCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for check block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(checkCooldownTimes[i]-time)+"ms");
@@ -1315,7 +1315,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = dataKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(k.getNodeKey().equals(key)) {
+			if(k.getNodeKey(false).equals(key)) {
 				return dataCooldownTimes[i];
 			} else {
 				if(persistent)
@@ -1327,7 +1327,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = checkKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(checkKeys[i].getNodeKey().equals(key)) {
+			if(checkKeys[i].getNodeKey(false).equals(key)) {
 				return checkCooldownTimes[i];
 			} else {
 				if(persistent)
@@ -1345,7 +1345,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.activate(k, 5);
 			if(k.getRoutingKey() == null)
 				throw new NullPointerException("Routing key is null yet key exists for data block "+i+" of "+this+(persistent?(" stored="+container.ext().isStored(k)+" active="+container.ext().isActive(k)) : ""));
-			if(k.getNodeKey().equals(key)) return i;
+			if(k.getNodeKey(false).equals(key)) return i;
 			else {
 				if(persistent)
 					container.deactivate(k, 5);
@@ -1358,7 +1358,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.activate(k, 5);
 			if(k.getRoutingKey() == null)
 				throw new NullPointerException("Routing key is null yet key exists for check block "+i+" of "+this);
-			if(k.getNodeKey().equals(key)) return dataKeys.length+i;
+			if(k.getNodeKey(false).equals(key)) return dataKeys.length+i;
 			else {
 				if(persistent)
 					container.deactivate(k, 5);
@@ -1458,14 +1458,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(dataKeys[i] != null) {
 					if(persistent)
 						container.activate(dataKeys[i], 5);
-					v.add(dataKeys[i].getNodeKey());
+					v.add(dataKeys[i].getNodeKey(true));
 				}
 			}
 			for(int i=0;i<checkKeys.length;i++) {
 				if(checkKeys[i] != null) {
 					if(persistent)
 						container.activate(checkKeys[i], 5);
-					v.add(checkKeys[i].getNodeKey());
+					v.add(checkKeys[i].getNodeKey(true));
 				}
 			}
 		}

@@ -4759,7 +4759,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
-		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false, null);
+		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(true), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false, null);
 		if(block == null) {
 			if(logMINOR)
 				Logger.minor(this, "Could not find key for "+clientSSK);

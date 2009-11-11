@@ -169,7 +169,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         	insertKey = fetchKey = block.getClientKey();
         	testKey = insertKey.getURI();
         }
-        final Key nodeKey = fetchKey.getNodeKey();
+        final Key nodeKey = fetchKey.getNodeKey(false);
         
         System.err.println();
         System.err.println("Created random test key "+testKey+" = "+nodeKey);
@@ -250,7 +250,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 			Thread.sleep(1000);
 			int count = 0;
 			for(int i=0;i<nodes.length;i++) {
-				if(nodes[i].hasKey(fetchKey.getNodeKey(), true, true))
+				if(nodes[i].hasKey(fetchKey.getNodeKey(false), true, true))
 					count++;
 			}
 			System.err.println("T="+x+" : "+count+'/'+nodes.length+" have the data on test "+successfulTests+".");
@@ -273,7 +273,7 @@ public class RealNodeULPRTest extends RealNodeTest {
 			if(x % nodes.length == 0) {
 				System.err.print("Nodes that don't have the data: ");
 				for(int i=0;i<nodes.length;i++)
-					if(nodes[i].hasKey(fetchKey.getNodeKey(), true, true)) {
+					if(nodes[i].hasKey(fetchKey.getNodeKey(false), true, true)) {
 						System.err.print(i+" ");
 					}
 				System.err.println();

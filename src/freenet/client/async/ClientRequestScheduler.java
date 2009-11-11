@@ -945,9 +945,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container) {
 		if(getter.persistent())
-			return persistentCooldownQueue.add(key.getNodeKey(), getter, container);
+			return persistentCooldownQueue.add(key.getNodeKey(true), getter, container);
 		else
-			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
+			return transientCooldownQueue.add(key.getNodeKey(true), getter, null);
 	}
 
 	/**

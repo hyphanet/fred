@@ -32,7 +32,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	private short compressionAlgorithm = -1;
 	
 	public ClientSSKBlock(byte[] data, byte[] headers, ClientSSK key, boolean dontVerify) throws SSKVerifyException {
-		super(data, headers, (NodeSSK) key.getNodeKey(), dontVerify);
+		super(data, headers, (NodeSSK) key.getNodeKey(true), dontVerify);
 		this.key = key;
 	}
 	

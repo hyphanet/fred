@@ -30,7 +30,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	public Key getNodeKey(SendableRequestItem token, ObjectContainer container) {
 		ClientKey key = getKey(token, container);
 		if(key == null) return null;
-		return key.getNodeKey();
+		return key.getNodeKey(true);
 	}
 	
 	/**

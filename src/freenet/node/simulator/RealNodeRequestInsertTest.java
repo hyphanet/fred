@@ -149,7 +149,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 }
                 
                 System.err.println();
-                System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey());
+                System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey(false));
                 System.err.println();
                 
                 byte[] data = dataString.getBytes("UTF-8");
