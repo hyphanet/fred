@@ -236,6 +236,8 @@ public class LongTermManySingleBlocksTest {
 
 			int successes = 0;
 			
+			long startInsertsTime = System.currentTimeMillis();
+			
 			InsertBatch batch = new InsertBatch(client);
 			
 			// Inserts are sloooooow so do them in parallel.
@@ -270,7 +272,9 @@ public class LongTermManySingleBlocksTest {
 				}
 			}
 			
-			System.err.println("Succeeded inserts: "+successes+" of "+INSERTED_BLOCKS);
+			long endInsertsTime = System.currentTimeMillis();
+			
+			System.err.println("Succeeded inserts: "+successes+" of "+INSERTED_BLOCKS+" in "+(endInsertsTime-startInsertsTime)+"ms");
 			
 			FetchContext fctx = client.getFetchContext();
 			fctx.maxNonSplitfileRetries = 0;
