@@ -277,7 +277,7 @@ public class LongTermMHKTest {
 					continue;
 				}
 				if(target.getTimeInMillis() == calendar.getTimeInMillis()) {
-					System.out.println("Found row for target date "+dateFormat.format(target)+" : "+dateFormat.format(calendar));
+					System.out.println("Found row for target date "+dateFormat.format(target.getTime())+" : "+dateFormat.format(calendar.getTime()));
 					System.out.println("Version: "+split[1]);
 					match = true;
 					break;
