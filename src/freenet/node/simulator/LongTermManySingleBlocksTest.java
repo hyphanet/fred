@@ -385,7 +385,7 @@ public class LongTermManySingleBlocksTest {
 				
 				while(split.length > token + INSERTED_BLOCKS) {
 					int delta = Integer.parseInt(split[token]);
-					System.out.println("Delta: "+delta+" days");
+					System.out.println("Delta: "+((1<<delta)-1)+" days");
 					token++;
 					int totalFetchTime = 0;
 					int totalSuccesses = 0;
