@@ -226,6 +226,10 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		}
 	}
 
+	public FredPlugin getPlugin() {
+		return this.plug;
+	}
+
 	public int compareTo(PluginInfoWrapper pi) {
 		return className.compareTo(pi.className);
 	}
