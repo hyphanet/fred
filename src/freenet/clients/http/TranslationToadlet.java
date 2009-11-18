@@ -168,7 +168,7 @@ public class TranslationToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 
-		final HTMLNode translatingForBox = ctx.getPageMaker().getInfobox(null, "Translation", contentNode); // TODO L10n this
+		final HTMLNode translatingForBox = ctx.getPageMaker().getInfobox(null, l10n("selectTranslation"), contentNode);
 		Vector<String> elementsToTranslate = new Vector<String>();
 		elementsToTranslate.add("Node");
 		for(PluginInfoWrapper pluginInfo : this.core.node.pluginManager.getPlugins()) {
@@ -179,7 +179,7 @@ public class TranslationToadlet extends Toadlet {
 			elementsToTranslate.add(pluginInfo.getPluginClassName());
 		}
 
-		final HTMLNode translatingForForm = ctx.addFormChild(translatingForBox, TOADLET_URL, "ChooseWhatToTranslate").addChild("p", "Show the translation of : ");
+		final HTMLNode translatingForForm = ctx.addFormChild(translatingForBox, TOADLET_URL, "ChooseWhatToTranslate").addChild("p", l10n("showTranslationOf"));
 		final HTMLNode translatingForOption = translatingForForm.addChild("select", "name", "translating_for");
 		for(String element : elementsToTranslate) {
 			final HTMLNode option =	translatingForOption.addChild("option", "name", element, element);
