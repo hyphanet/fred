@@ -78,7 +78,7 @@ public class PluginHandler {
 					System.err.println("Caught Throwable while running plugin: "+t);
 					t.printStackTrace();
 				}
-				pi.unregister(pm); // If not already unregistered
+				pi.unregister(pm, false); // If not already unregistered
 				pm.removePlugin(pi);
 		}
 		

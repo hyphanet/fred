@@ -861,7 +861,7 @@ public class PluginManager {
 		throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
 	}
 
-	public void killPlugin(String name, int maxWaitTime) {
+	public void killPlugin(String name, int maxWaitTime, boolean reloading) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -874,10 +874,10 @@ public class PluginManager {
 			}
 		}
 		if(found)
-			pi.stopPlugin(this, maxWaitTime);
+			pi.stopPlugin(this, maxWaitTime, reloading);
 	}
 
-	public void killPluginByFilename(String name, int maxWaitTime) {
+	public void killPluginByFilename(String name, int maxWaitTime, boolean reloading) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -890,7 +890,7 @@ public class PluginManager {
 			}
 		}
 		if(found)
-			pi.stopPlugin(this, maxWaitTime);
+			pi.stopPlugin(this, maxWaitTime, reloading);
 	}
 
 	public void killPluginByClass(String name, int maxWaitTime) {
@@ -906,7 +906,7 @@ public class PluginManager {
 			}
 		}
 		if(found)
-			pi.stopPlugin(this, maxWaitTime);
+			pi.stopPlugin(this, maxWaitTime, false);
 	}
 
 	public void killPlugin(FredPlugin plugin, int maxWaitTime) {
@@ -920,7 +920,7 @@ public class PluginManager {
 			}
 		}
 		if(found)
-			pi.stopPlugin(this, maxWaitTime);
+			pi.stopPlugin(this, maxWaitTime, false);
 	}
 
 	public static class OfficialPluginDescription {
@@ -1539,7 +1539,7 @@ public class PluginManager {
 		return alwaysLoadOfficialPluginsFromCentralServer;
 	}
 
-	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug) {
+	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug, boolean reloading) {
 		unregisterPluginToadlet(wrapper);
 		if(wrapper.isIPDetectorPlugin())
 			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
@@ -1547,5 +1547,7 @@ public class PluginManager {
 			node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
 		if(wrapper.isBandwidthIndicator())
 			node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+		if(!reloading)
+			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
 	}
 }

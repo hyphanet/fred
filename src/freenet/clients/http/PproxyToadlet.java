@@ -157,7 +157,7 @@ public class PproxyToadlet extends Toadlet {
 			if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				String pluginThreadName = request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				String pluginSpecification = getPluginSpecification(pm, pluginThreadName);
-				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
+				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME, false);
 				if (request.isPartSet("purge")) {
 					pm.removeCachedCopy(pluginSpecification);
 				}
@@ -219,7 +219,7 @@ public class PproxyToadlet extends Toadlet {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundUpdatingTitle"), 
 							l10n("pluginNotFoundUpdating", "name", pluginFilename));
 				} else {
-					pm.killPluginByFilename(pluginFilename, MAX_THREADED_UNLOAD_WAIT_TIME);
+					pm.killPluginByFilename(pluginFilename, MAX_THREADED_UNLOAD_WAIT_TIME, true);
 					try {
 						node.nodeUpdater.deployPlugin(pluginFilename);
 					} catch (IOException e) {
@@ -249,7 +249,7 @@ public class PproxyToadlet extends Toadlet {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
 							l10n("pluginNotFoundReload"));
 				} else {
-					pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
+					pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME, true);
 					if (purge) {
 						pm.removeCachedCopy(fn);
 					}

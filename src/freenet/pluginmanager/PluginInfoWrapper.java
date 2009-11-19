@@ -113,8 +113,8 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	 * terminate. Set to -1 if you don't want to wait at all, 0 to wait forever
 	 * or else a value in milliseconds.
 	 **/
-	public void stopPlugin(PluginManager manager, int maxWaitTime) {
-		unregister(manager);
+	public void stopPlugin(PluginManager manager, int maxWaitTime, boolean reloading) {
+		unregister(manager, reloading);
 		plug.terminate();
 		synchronized(this) {
 			stopping = true;
@@ -152,12 +152,12 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	 * registered with. Call this before manager.removePlugin(): the plugin becomes
 	 * unvisitable immediately, but it may take time for it to shut down completely.
 	 */
-	void unregister(PluginManager manager) {
+	void unregister(PluginManager manager, boolean reloading) {
 		synchronized(this) {
 			if(unregistered) return;
 			unregistered = true;
 		}
-		manager.unregisterPlugin(this, plug);
+		manager.unregisterPlugin(this, plug, reloading);
 	}
 
 	public boolean isPproxyPlugin() {

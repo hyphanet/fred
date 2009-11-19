@@ -153,4 +153,15 @@ public class PluginJarUpdater extends NodeUpdater {
 			node.clientCore.alerts.unregister(a);
 	}
 
+	void kill() {
+		super.kill();
+		UserAlert a;
+		synchronized(this) {
+			a = alert;
+			alert = null;
+		}
+		if(a != null)
+			node.clientCore.alerts.unregister(a);
+	}
+	
 }

@@ -492,6 +492,17 @@ public class NodeUpdateManager {
 		System.out.println("Started plugin update fetcher for "+name);
 	}
 	
+	public void stopPluginUpdater(String plugName) {
+		OfficialPluginDescription plugin = PluginManager.officialPlugins.get(plugName);
+		if(plugin == null) return; // Not an official plugin
+		PluginJarUpdater updater = null;
+		synchronized(this) {
+			updater = pluginUpdaters.get(plugName);
+		}
+		if(updater != null)
+			updater.kill();
+	}
+	
 	private void stopPluginUpdaters(Map<String, PluginJarUpdater> oldPluginUpdaters) {
 		for(PluginJarUpdater u : oldPluginUpdaters.values()) {
 			u.kill();
