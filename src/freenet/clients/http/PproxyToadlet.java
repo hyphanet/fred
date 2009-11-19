@@ -251,7 +251,7 @@ public class PproxyToadlet extends Toadlet {
 
 				if (fn == null) {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
-							NodeL10n.getBase().getString("PluginToadlet.pluginNotFoundReload"));
+							l10n("pluginNotFoundReload"));
 				} else {
 					pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
 					if (purge) {
