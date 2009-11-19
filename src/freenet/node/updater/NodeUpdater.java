@@ -244,8 +244,8 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		int requiredExt = -1;
-		int recommendedExt = -1;
+		requiredExt = -1;
+		recommendedExt = -1;
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -285,51 +285,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			if(!extUpdate) {
-				InputStream is = null;
-				try {
-					is = result.asBucket().getInputStream();
-					ZipInputStream zis = new ZipInputStream(is);
-					ZipEntry ze;
-					while(true) {
-						ze = zis.getNextEntry();
-						if(ze == null) break;
-						if(ze.isDirectory()) continue;
-						String name = ze.getName();
-						
-						if(name.equals("META-INF/MANIFEST.MF")) {
-							if(logMINOR) Logger.minor(this, "Found manifest");
-							long size = ze.getSize();
-							if(logMINOR) Logger.minor(this, "Manifest size: "+size);
-							if(size > MAX_MANIFEST_SIZE) {
-								Logger.error(this, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
-								break;
-							}
-							byte[] buf = new byte[(int) size];
-							DataInputStream dis = new DataInputStream(zis);
-							dis.readFully(buf);
-							ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-							InputStreamReader isr = new InputStreamReader(bais, "UTF-8");
-							BufferedReader br = new BufferedReader(isr);
-							String line;
-							while((line = br.readLine()) != null) {
-								if(line.startsWith(REQUIRED_EXT_PREFIX)) {
-									requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
-								} else if(line.startsWith(RECOMMENDED_EXT_PREFIX)) {
-									recommendedExt = Integer.parseInt(line.substring(RECOMMENDED_EXT_PREFIX.length()));
-								}
-							}
-						} else {
-							zis.closeEntry();
-						}
-					}
-				} catch (IOException e) {
-					Logger.error(this, "IOException trying to read manifest on update");
-				} catch (Throwable t) {
-					Logger.error(this, "Failed to parse update manifest: "+t, t);
-					requiredExt = recommendedExt = -1;
-				} finally {
-					Closer.close(is);
-				}
+				parseManifest();
 				if(requiredExt != -1) {
 					System.err.println("Required ext version: "+requiredExt);
 					Logger.normal(this, "Required ext version: "+requiredExt);
@@ -348,6 +304,56 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 		manager.onDownloadedNewJar(extUpdate, requiredExt, recommendedExt);
 	}
 	
+	private int requiredExt;
+	private int recommendedExt;
+	
+	private void parseManifest() {
+		InputStream is = null;
+		try {
+			is = result.asBucket().getInputStream();
+			ZipInputStream zis = new ZipInputStream(is);
+			ZipEntry ze;
+			while(true) {
+				ze = zis.getNextEntry();
+				if(ze == null) break;
+				if(ze.isDirectory()) continue;
+				String name = ze.getName();
+				
+				if(name.equals("META-INF/MANIFEST.MF")) {
+					if(logMINOR) Logger.minor(this, "Found manifest");
+					long size = ze.getSize();
+					if(logMINOR) Logger.minor(this, "Manifest size: "+size);
+					if(size > MAX_MANIFEST_SIZE) {
+						Logger.error(this, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
+						break;
+					}
+					byte[] buf = new byte[(int) size];
+					DataInputStream dis = new DataInputStream(zis);
+					dis.readFully(buf);
+					ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+					InputStreamReader isr = new InputStreamReader(bais, "UTF-8");
+					BufferedReader br = new BufferedReader(isr);
+					String line;
+					while((line = br.readLine()) != null) {
+						if(line.startsWith(REQUIRED_EXT_PREFIX)) {
+							requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
+						} else if(line.startsWith(RECOMMENDED_EXT_PREFIX)) {
+							recommendedExt = Integer.parseInt(line.substring(RECOMMENDED_EXT_PREFIX.length()));
+						}
+					}
+				} else {
+					zis.closeEntry();
+				}
+			}
+		} catch (IOException e) {
+			Logger.error(this, "IOException trying to read manifest on update");
+		} catch (Throwable t) {
+			Logger.error(this, "Failed to parse update manifest: "+t, t);
+			requiredExt = recommendedExt = -1;
+		} finally {
+			Closer.close(is);
+		}
+	}
 	private static final String REQUIRED_EXT_PREFIX = "Required-Ext-Version: ";
 	private static final String RECOMMENDED_EXT_PREFIX = "Recommended-Ext-Version: ";
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
