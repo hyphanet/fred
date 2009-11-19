@@ -18,6 +18,10 @@ public abstract class ClientKey extends BaseClientKey {
 	 * routingKey and lose everything else.
 	 */
 	public abstract Key getNodeKey(boolean cloneKey);
+	
+	public Key getNodeKey() {
+		return getNodeKey(true);
+	}
 
 	public abstract ClientKey cloneKey();
 
