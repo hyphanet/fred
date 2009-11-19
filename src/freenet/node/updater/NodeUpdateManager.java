@@ -424,8 +424,8 @@ public class NodeUpdateManager {
 					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
 				}
 				// Start it
-				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), -1, Integer.MAX_VALUE, "main-jar-");
-				extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, NodeStarter.REQUIRED_EXT_BUILD_NUMBER, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
+				mainUpdater = new MainJarUpdater(this, updateURI, Version.buildNumber(), -1, Integer.MAX_VALUE, "main-jar-");
+				extUpdater = new ExtJarUpdater(this, extURI, NodeStarter.extBuildNumber, NodeStarter.REQUIRED_EXT_BUILD_NUMBER, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
 			}
 		}
 		if(!enable) {

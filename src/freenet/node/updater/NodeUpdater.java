@@ -36,7 +36,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
-public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
+public abstract class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
 
 	static private boolean logMINOR;
 	private FetchContext ctx;
@@ -57,15 +57,12 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 	private int minDeployVersion;
 	private boolean isRunning;
 	private boolean isFetching;
-	public final boolean extUpdate;
 	private final String blobFilenamePrefix;
 	private File tempBlobFile;
 	
-	public String jarName() {
-		return extUpdate ? "freenet-ext.jar" : "freenet.jar";
-	}
+	public abstract String jarName();
 
-	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, int min, int max, String blobFilenamePrefix) {
+	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, int current, int min, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
@@ -77,7 +74,6 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 		this.isRunning = true;
 		this.cg = null;
 		this.isFetching = false;
-		this.extUpdate = extUpdate;
 		this.blobFilenamePrefix = blobFilenamePrefix;
 		this.maxDeployVersion = max;
 		this.minDeployVersion = min;
@@ -137,9 +133,11 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			System.err.println("Cancelling fetch for "+found+": not newer than current version "+currentVersion);
 			return;
 		}
-		manager.onStartFetching(extUpdate);
+		onStartFetching();
 		Logger.minor(this, "Fetching " + jarName() + " update edition " + found);
 	}
+
+	protected abstract void onStartFetching();
 
 	public void maybeUpdate() {
 		ClientGetter toStart = null;
@@ -244,8 +242,6 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		requiredExt = -1;
-		recommendedExt = -1;
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -284,30 +280,22 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			System.out.println("Found " + jarName() + " version " + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
-			if(!extUpdate) {
-				parseManifest();
-				if(requiredExt != -1) {
-					System.err.println("Required ext version: "+requiredExt);
-					Logger.normal(this, "Required ext version: "+requiredExt);
-				}
-				if(recommendedExt != -1) {
-					System.err.println("Recommended ext version: "+recommendedExt);
-					Logger.normal(this, "Recommended ext version: "+recommendedExt);
-				}
-				
-			}
+			maybeParseManifest();
 			this.cg = null;
 			if(this.result != null)
 				this.result.asBucket().free();
 			this.result = result;
 		}
-		manager.onDownloadedNewJar(extUpdate, requiredExt, recommendedExt);
+		processSuccess();
 	}
 	
-	private int requiredExt;
-	private int recommendedExt;
-	
-	private void parseManifest() {
+	/** We have fetched the jar! Do something after onSuccess(). Called unlocked. */
+	protected abstract void processSuccess();
+
+	/** Called with locks held */
+	protected abstract void maybeParseManifest();
+
+	protected void parseManifest() {
 		InputStream is = null;
 		try {
 			is = result.asBucket().getInputStream();
@@ -345,22 +333,15 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			Logger.error(this, "IOException trying to read manifest on update");
 		} catch (Throwable t) {
 			Logger.error(this, "Failed to parse update manifest: "+t, t);
-			requiredExt = recommendedExt = -1;
 		} finally {
 			Closer.close(is);
 		}
 	}
-	
-	private void parseManifestLine(String line) {
-		if(line.startsWith(REQUIRED_EXT_PREFIX)) {
-			requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
-		} else if(line.startsWith(RECOMMENDED_EXT_PREFIX)) {
-			recommendedExt = Integer.parseInt(line.substring(RECOMMENDED_EXT_PREFIX.length()));
-		}
+
+	protected void parseManifestLine(String line) {
+		// Do nothing by default, only some NodeUpdater's will use this, those that don't won't call parseManifest().
 	}
 	
-	private static final String REQUIRED_EXT_PREFIX = "Required-Ext-Version: ";
-	private static final String RECOMMENDED_EXT_PREFIX = "Recommended-Ext-Version: ";
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
