@@ -479,14 +479,23 @@ public class NodeUpdateManager {
 		// But it might already be past that ...
 		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
 		if(info == null) {
-			if(!(node.pluginManager.isPluginLoadedOrLoadingOrWantLoad(name))) return;
+			if(!(node.pluginManager.isPluginLoadedOrLoadingOrWantLoad(name))) {
+				if(logMINOR) Logger.minor(this, "Plugin not loaded");
+				return;
+			}
 		}
 		minVer = Math.max(minVer, info.getPluginLongVersion());
 		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
 		PluginJarUpdater updater = new PluginJarUpdater(this, uri, (int) minVer, -1, Integer.MAX_VALUE, name+"-", name, node.pluginManager, autoDeployPluginsOnRestart);
 		synchronized(this) {
-			if(pluginUpdaters == null) return; // Not enabled
-			if(pluginUpdaters.containsKey(name)) return; // Already started
+			if(pluginUpdaters == null) {
+				if(logMINOR) Logger.minor(this, "Updating not enabled");
+				return; // Not enabled
+			}
+			if(pluginUpdaters.containsKey(name)) {
+				if(logMINOR) Logger.minor(this, "Already in updaters list");
+				return; // Already started
+			}
 			pluginUpdaters.put(name, updater);
 		}
 		updater.start();
@@ -498,7 +507,7 @@ public class NodeUpdateManager {
 		if(plugin == null) return; // Not an official plugin
 		PluginJarUpdater updater = null;
 		synchronized(this) {
-			updater = pluginUpdaters.get(plugName);
+			updater = pluginUpdaters.remove(plugName);
 		}
 		if(updater != null)
 			updater.kill();
