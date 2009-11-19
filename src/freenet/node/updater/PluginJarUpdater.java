@@ -19,7 +19,6 @@ public class PluginJarUpdater extends NodeUpdater {
 
 	final String pluginName;
 	final PluginManager pluginManager;
-	private boolean autoDeployOnRestart;
 	private UserAlert alert;
 	private boolean deployOnNoRevocation;
 	private boolean deployOnNextNoRevocation;
@@ -74,7 +73,6 @@ public class PluginJarUpdater extends NodeUpdater {
 		super(manager, URI, current, min, max, blobFilenamePrefix);
 		this.pluginName = pluginName;
 		this.pluginManager = pm;
-		this.autoDeployOnRestart = autoDeployOnRestart;
 	}
 
 	@Override
@@ -133,18 +131,6 @@ public class PluginJarUpdater extends NodeUpdater {
 			tempBlobFile.delete();
 			return;
 		}
-		if(autoDeployOnRestart) {
-			try {
-				writeJar();
-			} catch (IOException e) {
-				System.err.println("Unable to write new plugin jar for "+pluginName+": "+e);
-				e.printStackTrace();
-				Logger.error(this, "Unable to write new plugin jar for "+pluginName+": "+e, e);
-				tempBlobFile.delete();
-				return;
-			}
-		}
-		
 		// Create a useralert to ask the user to deploy the new version.
 		
 		UserAlert toRegister = null;
@@ -168,12 +154,8 @@ public class PluginJarUpdater extends NodeUpdater {
 					
 						if(deployOnNoRevocation || deployOnNextNoRevocation) {
 							div.addChild("#", l10n("willDeployAfterRevocationCheck", "name", pluginName));
-							if(autoDeployOnRestart)
-								div.addChild("#", " " + l10n("willAutoDeployOnRestart"));
 						} else {
 							div.addChild("#", l10n("pluginUpdatedText", new String[] { "name", "newVersion" }, new String[] { pluginName, Long.toString(fetchedVersion) }));
-							if(autoDeployOnRestart)
-								div.addChild("#", " " + l10n("willAutoDeployOnRestart"));
 							
 							// Form to deploy the updated version.
 							// This is not the same as reloading because we haven't written it yet.
