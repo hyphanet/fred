@@ -1274,6 +1274,10 @@ public class NodeUpdateManager {
 	public void deployPlugin(String fn) throws IOException {
 		PluginJarUpdater updater;
 		synchronized(this) {
+			if(hasBeenBlown) {
+				Logger.error(this, "Not deploying update for "+fn+" because revocation key has been blown!");
+				return;
+			}
 			updater = pluginUpdaters.get(fn);
 		}
 		updater.writeJar();
