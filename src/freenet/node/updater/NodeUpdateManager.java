@@ -547,6 +547,7 @@ public class NodeUpdateManager {
 	public void setURI(boolean isExt, FreenetURI uri) {
 		// FIXME plugins!!
 		NodeUpdater updater;
+		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
 		synchronized(this) {
 			if(isExt) {
 				if(extURI.equals(uri)) return;
@@ -556,10 +557,14 @@ public class NodeUpdateManager {
 				if(updateURI.equals(uri)) return;
 				updateURI = uri;
 				updater = mainUpdater;
+				oldPluginUpdaters = pluginUpdaters;
+				pluginUpdaters = new HashMap<String, PluginJarUpdater>();
 			}
 			if(updater == null) return;
 		}
 		updater.onChangeURI(uri);
+		stopPluginUpdaters(oldPluginUpdaters);
+		startPluginUpdaters();
 	}
 
 	/** @return The revocation URI. */
