@@ -157,13 +157,7 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			if(unregistered) return;
 			unregistered = true;
 		}
-		manager.unregisterPluginToadlet(this);
-		if(isIPDetectorPlugin)
-			manager.node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
-		if(isPortForwardPlugin)
-			manager.node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
-		if(isBandwidthIndicator)
-			manager.node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+		manager.unregisterPlugin(this, plug);
 	}
 
 	public boolean isPproxyPlugin() {

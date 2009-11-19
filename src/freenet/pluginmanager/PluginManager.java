@@ -1538,4 +1538,14 @@ public class PluginManager {
 	public boolean loadOfficialPluginsFromWeb() {
 		return alwaysLoadOfficialPluginsFromCentralServer;
 	}
+
+	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug) {
+		unregisterPluginToadlet(wrapper);
+		if(wrapper.isIPDetectorPlugin())
+			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
+		if(wrapper.isPortForwardPlugin())
+			node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
+		if(wrapper.isBandwidthIndicator())
+			node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+	}
 }
