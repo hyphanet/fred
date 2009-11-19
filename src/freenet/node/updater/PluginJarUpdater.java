@@ -104,7 +104,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			
 			HTMLNode div = new HTMLNode("div");
 			// Text saying the plugin has been updated...
-			div.addChild("#", l10n("pluginUpdatedText", "name", pluginName));
+			div.addChild("#", l10n("pluginUpdatedText", new String[] { "name", "newVersion" }, new String[] { pluginName, Long.toString(fetchedVersion) }));
 			if(autoDeployOnRestart)
 				div.addChild("#", " " + l10n("willAutoDeployOnRestart"));
 			
@@ -135,6 +135,10 @@ public class PluginJarUpdater extends NodeUpdater {
 
 	private String l10n(String key, String name, String value) {
 		return NodeL10n.getBase().getString("PluginJarUpdater."+key, name, value);
+	}
+
+	private String l10n(String key, String[] names, String[] values) {
+		return NodeL10n.getBase().getString("PluginJarUpdater."+key, names, values);
 	}
 
 	void writeJar() throws IOException {
