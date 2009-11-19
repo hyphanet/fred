@@ -464,6 +464,7 @@ public class NodeUpdateManager {
 	/** @param plugName The filename for loading/config purposes for an official plugin. 
 	 * E.g. "Library" (no .jar) */
 	public void startPluginUpdater(String plugName) {
+		if(logMINOR) Logger.minor(this, "Starting plugin updater for "+plugName);
 		OfficialPluginDescription plugin = PluginManager.officialPlugins.get(plugName);
 		if(plugin != null)
 			startPluginUpdater(plugin);
