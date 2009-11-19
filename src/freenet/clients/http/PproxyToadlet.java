@@ -217,8 +217,8 @@ public class PproxyToadlet extends Toadlet {
 				final String pluginFilename = request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH);
 
 				if (!pm.isPluginLoaded(pluginFilename)) {
-					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
-							NodeL10n.getBase().getString("PluginToadlet.pluginNotFoundReload"));
+					sendErrorPage(ctx, 404, l10n("pluginNotFoundUpdatingTitle"), 
+							l10n("pluginNotFoundUpdating", "name", pluginFilename));
 				} else {
 					pm.killPluginByFilename(pluginFilename, MAX_THREADED_UNLOAD_WAIT_TIME);
 					if (purge) {
