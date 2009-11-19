@@ -468,7 +468,8 @@ public class NodeUpdateManager {
 		if(plugin != null)
 			startPluginUpdater(plugin);
 		else
-			Logger.error(this, "No such plugin "+plugName+" in startPluginUpdater()");
+			// Most likely not an official plugin
+			if(logMINOR) Logger.minor(this, "No such plugin "+plugName+" in startPluginUpdater()");
 	}
 	
 	void startPluginUpdater(OfficialPluginDescription plugin) {
