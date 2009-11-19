@@ -430,7 +430,9 @@ public class OpennetManager {
 			toDrop = peerToDrop(false, false);
 			if(toDrop == null) toDrop = peerToDrop(false, true);
 			if(toDrop == null) return;
-			peersLRU.remove(toDrop);
+			synchronized(this) {
+				peersLRU.remove(toDrop);
+			}
 			if(logMINOR)
 				Logger.minor(this, "Dropping "+toDrop);
 			node.peers.disconnect(toDrop, true, true, true);
