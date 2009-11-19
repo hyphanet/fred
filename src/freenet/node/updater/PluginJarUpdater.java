@@ -2,6 +2,7 @@ package freenet.node.updater;
 
 import java.io.IOException;
 
+import freenet.client.FetchResult;
 import freenet.clients.http.PproxyToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n;
@@ -38,9 +39,9 @@ public class PluginJarUpdater extends NodeUpdater {
 	private static final String REQUIRED_NODE_VERSION_PREFIX = "Required-Node-Version: ";
 	
 	@Override
-	protected void maybeParseManifest() {
+	protected void maybeParseManifest(FetchResult result) {
 		requiredNodeVersion = -1;
-		parseManifest();
+		parseManifest(result);
 		if(requiredNodeVersion != -1) {
 			System.err.println("Required node version for plugin "+pluginName+": "+requiredNodeVersion);
 			Logger.normal(this, "Required node version for plugin "+pluginName+": "+requiredNodeVersion);

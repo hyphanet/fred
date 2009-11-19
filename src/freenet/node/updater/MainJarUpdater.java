@@ -1,5 +1,6 @@
 package freenet.node.updater;
 
+import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
@@ -29,10 +30,10 @@ public class MainJarUpdater extends NodeUpdater {
 	}
 	
 	/** Called with locks held */
-	protected void maybeParseManifest() {
+	protected void maybeParseManifest(FetchResult result) {
 		requiredExt = -1;
 		recommendedExt = -1;
-		parseManifest();
+		parseManifest(result);
 		if(requiredExt != -1) {
 			System.err.println("Required ext version: "+requiredExt);
 			Logger.normal(this, "Required ext version: "+requiredExt);

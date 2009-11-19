@@ -1,5 +1,6 @@
 package freenet.node.updater;
 
+import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 
 public class ExtJarUpdater extends NodeUpdater {
@@ -23,7 +24,7 @@ public class ExtJarUpdater extends NodeUpdater {
 	}
 
 	@Override
-	protected void maybeParseManifest() {
+	protected void maybeParseManifest(FetchResult result) {
 		// Do nothing.
 	}
 

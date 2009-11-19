@@ -280,7 +280,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 			System.out.println("Found " + jarName() + " version " + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
-			maybeParseManifest();
+			maybeParseManifest(result);
 			this.cg = null;
 			if(this.result != null)
 				this.result.asBucket().free();
@@ -292,10 +292,11 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	/** We have fetched the jar! Do something after onSuccess(). Called unlocked. */
 	protected abstract void processSuccess();
 
-	/** Called with locks held */
-	protected abstract void maybeParseManifest();
+	/** Called with locks held 
+	 * @param result */
+	protected abstract void maybeParseManifest(FetchResult result);
 
-	protected void parseManifest() {
+	protected void parseManifest(FetchResult result) {
 		InputStream is = null;
 		try {
 			is = result.asBucket().getInputStream();
