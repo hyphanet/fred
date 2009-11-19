@@ -213,7 +213,6 @@ public class PproxyToadlet extends Toadlet {
 				return;
 			} else if (request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				// Deploy the plugin update
-				boolean purge = request.isPartSet("purge");
 				final String pluginFilename = request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH);
 
 				if (!pm.isPluginLoaded(pluginFilename)) {
@@ -221,9 +220,6 @@ public class PproxyToadlet extends Toadlet {
 							l10n("pluginNotFoundUpdating", "name", pluginFilename));
 				} else {
 					pm.killPluginByFilename(pluginFilename, MAX_THREADED_UNLOAD_WAIT_TIME);
-					if (purge) {
-						pm.removeCachedCopy(pluginFilename);
-					}
 					try {
 						node.nodeUpdater.deployPlugin(pluginFilename);
 					} catch (IOException e) {
