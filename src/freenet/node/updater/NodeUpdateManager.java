@@ -999,6 +999,7 @@ public class NodeUpdateManager {
 	/** Called when the RevocationChecker has got 3 DNFs on the revocation key */
 	public void noRevocationFound() {
 		deployUpdate(); // May have been waiting for the revocation.
+		deployPluginUpdates();
 		// If we're still here, we didn't update.
 		broadcastUOMAnnounces();
 		node.ps.queueTimedJob(new Runnable() {
@@ -1008,6 +1009,23 @@ public class NodeUpdateManager {
 		}, node.random.nextInt(24*60*60*1000)); 
 	}
 	
+	private void deployPluginUpdates() {
+		PluginJarUpdater[] updaters = null;
+		synchronized(this) {
+			if(this.pluginUpdaters != null)
+				updaters = pluginUpdaters.values().toArray(new PluginJarUpdater[pluginUpdaters.size()]);
+		}
+		boolean restartRevocationFetcher = false;
+		if(updaters != null) {
+			for(PluginJarUpdater u : updaters) {
+				if(u.onNoRevocation())
+					restartRevocationFetcher = true;
+			}
+		}
+		if(restartRevocationFetcher)
+			revocationChecker.start(true, true);
+	}
+
 	public void arm() {
 		armed = true;
 		deployOffThread(0);
@@ -1281,6 +1299,19 @@ public class NodeUpdateManager {
 			updater = pluginUpdaters.get(fn);
 		}
 		updater.writeJar();
+	}
+
+	public void deployPluginWhenReady(String fn) throws IOException {
+		PluginJarUpdater updater;
+		synchronized(this) {
+			if(hasBeenBlown) {
+				Logger.error(this, "Not deploying update for "+fn+" because revocation key has been blown!");
+				return;
+			}
+			updater = pluginUpdaters.get(fn);
+		}
+		boolean wasRunning = revocationChecker.start(true, true);
+		updater.arm(wasRunning);
 	}
 
 }

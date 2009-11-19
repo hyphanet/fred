@@ -219,21 +219,7 @@ public class PproxyToadlet extends Toadlet {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundUpdatingTitle"), 
 							l10n("pluginNotFoundUpdating", "name", pluginFilename));
 				} else {
-					pm.killPluginByFilename(pluginFilename, MAX_THREADED_UNLOAD_WAIT_TIME, true);
-					try {
-						node.nodeUpdater.deployPlugin(pluginFilename);
-					} catch (IOException e) {
-						sendErrorPage(ctx, 500, l10n("pluginDeployFailed", "error", e.toString()), l10n("pluginDeployFailed", "error", e.toString()));
-						return;
-					}
-					node.executor.execute(new Runnable() {
-
-						public void run() {
-							// FIXME
-							pm.startPluginAuto(pluginFilename, true);
-						}
-						
-					});
+					node.nodeUpdater.deployPluginWhenReady(pluginFilename);
 
 					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);

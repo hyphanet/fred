@@ -69,13 +69,15 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 	/** Start a fetch.
 	 * @param aggressive If set to true, then we have just fetched an update, and therefore can increase the priority of the
 	 * fetch to maximum.
+	 * @return True if the checker was already running and the counter was not reset.
 	 * */
-	public void start(boolean aggressive, boolean reset) {
+	public boolean start(boolean aggressive, boolean reset) {
 		
 		if(manager.isBlown()) {
 			Logger.error(this, "Not starting revocation checker: key already blown!");
-			return;
+			return false;
 		}
+		boolean wasRunning = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			ClientGetter cg = null;
@@ -86,12 +88,14 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 					toCancel = revocationGetter;
 					if(logMINOR) Logger.minor(this, "Ignoring old request, because was low priority");
 					revocationGetter = null;
+					if(toCancel != null) wasRunning = true;
 				}
 				wasAggressive = aggressive;
 				if(revocationGetter != null && 
 						!(revocationGetter.isCancelled() || revocationGetter.isFinished()))  {
 					if(logMINOR) Logger.minor(this, "Not queueing another revocation fetcher yet, old one still running");
 					reset = false;
+					wasRunning = false;
 				} else {
 					if(reset) {
 						if(logMINOR) Logger.minor(this, "Resetting DNF count from "+revocationDNFCounter, new Exception("debug"));
@@ -119,11 +123,14 @@ public class RevocationChecker implements ClientGetCallback, RequestClient {
 				core.clientContext.start(cg);
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
 			}
+			return wasRunning;
 		} catch (FetchException e) {
 			Logger.error(this, "Not able to start the revocation fetcher.");
 			manager.blow("Cannot start fetch for the auto-update revocation key", true);
+			return false;
 		} catch (DatabaseDisabledException e) {
 			// Impossible
+			return false;
 		}
 	}
 
