@@ -335,11 +335,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 					BufferedReader br = new BufferedReader(isr);
 					String line;
 					while((line = br.readLine()) != null) {
-						if(line.startsWith(REQUIRED_EXT_PREFIX)) {
-							requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
-						} else if(line.startsWith(RECOMMENDED_EXT_PREFIX)) {
-							recommendedExt = Integer.parseInt(line.substring(RECOMMENDED_EXT_PREFIX.length()));
-						}
+						parseManifestLine(line);
 					}
 				} else {
 					zis.closeEntry();
@@ -354,6 +350,15 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			Closer.close(is);
 		}
 	}
+	
+	private void parseManifestLine(String line) {
+		if(line.startsWith(REQUIRED_EXT_PREFIX)) {
+			requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
+		} else if(line.startsWith(RECOMMENDED_EXT_PREFIX)) {
+			recommendedExt = Integer.parseInt(line.substring(RECOMMENDED_EXT_PREFIX.length()));
+		}
+	}
+	
 	private static final String REQUIRED_EXT_PREFIX = "Required-Ext-Version: ";
 	private static final String RECOMMENDED_EXT_PREFIX = "Recommended-Ext-Version: ";
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
