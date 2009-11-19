@@ -60,6 +60,10 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 	public final boolean extUpdate;
 	private final String blobFilenamePrefix;
 	private File tempBlobFile;
+	
+	public String jarName() {
+		return extUpdate ? "freenet-ext.jar" : "freenet.jar";
+	}
 
 	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, int min, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -109,13 +113,13 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 
 			realAvailableVersion = found;
 			if(found > maxDeployVersion) {
-				System.err.println("Ignoring "+(extUpdate ? "freenet-ext.jar " : "") + "update edition "+l+": version too new");
+				System.err.println("Ignoring "+jarName() + "update edition "+l+": version too new");
 				found = maxDeployVersion;
 			}
 			
 			if(found <= availableVersion)
 				return;
-			System.err.println("Found " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + found);
+			System.err.println("Found " + jarName() + " update edition " + found);
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
 		}
@@ -134,7 +138,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			return;
 		}
 		manager.onStartFetching(extUpdate);
-		Logger.minor(this, "Fetching " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + found);
+		Logger.minor(this, "Fetching " + jarName() + " update edition " + found);
 	}
 
 	public void maybeUpdate() {
@@ -172,7 +176,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 					if(logMINOR)
 						Logger.minor(this, "Scheduling request for " + URI.setSuggestedEdition(availableVersion));
 					if(availableVersion > currentVersion)
-						System.err.println("Starting " + (extUpdate ? "freenet-ext.jar " : "") + "fetch for " + availableVersion);
+						System.err.println("Starting " + jarName() + " fetch for " + availableVersion);
 					tempBlobFile =
 						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
@@ -182,7 +186,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				} else {
-					System.err.println("Already fetching "+(extUpdate ? "freenet-ext.jar " : "") + "fetch for " + fetchingVersion + " want "+availableVersion);
+					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);
 				}
 				isFetching = true;
 			} catch(Exception e) {
@@ -231,7 +235,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 		synchronized(this) {
 			writtenVersion = fetched;
 		}
-		System.err.println("Written " + (extUpdate ? "ext" : "main") + " jar to " + fNew);
+		System.err.println("Written " + jarName() + " to " + fNew);
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
@@ -277,7 +281,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 						Logger.error(this, "Not able to rename binary blob for node updater: " + tempBlobFile + " -> " + blobFile + " - may not be able to tell other peers about this build");
 			}
 			this.fetchedVersion = fetchedVersion;
-			System.out.println("Found " + (extUpdate ? "ext " : "") + fetchedVersion);
+			System.out.println("Found " + jarName() + " version " + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			if(!extUpdate) {
