@@ -211,6 +211,39 @@ public class PproxyToadlet extends Toadlet {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
+			} else if (request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+				// Deploy the plugin update
+				boolean purge = request.isPartSet("purge");
+				final String pluginFilename = request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH);
+
+				if (!pm.isPluginLoaded(pluginFilename)) {
+					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
+							NodeL10n.getBase().getString("PluginToadlet.pluginNotFoundReload"));
+				} else {
+					pm.killPluginByFilename(pluginFilename, MAX_THREADED_UNLOAD_WAIT_TIME);
+					if (purge) {
+						pm.removeCachedCopy(pluginFilename);
+					}
+					try {
+						node.nodeUpdater.deployPlugin(pluginFilename);
+					} catch (IOException e) {
+						sendErrorPage(ctx, 500, l10n("pluginDeployFailed", "error", e.toString()), l10n("pluginDeployFailed", "error", e.toString()));
+						return;
+					}
+					node.executor.execute(new Runnable() {
+
+						public void run() {
+							// FIXME
+							pm.startPluginAuto(pluginFilename, true);
+						}
+						
+					});
+
+					headers.put("Location", ".");
+					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				}
+				return;
+				
 			}else if (request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				boolean purge = request.isPartSet("purge");
 				String pluginThreadName = request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
@@ -415,6 +448,7 @@ public class PproxyToadlet extends Toadlet {
 		} else {
 			HTMLNode pluginTable = infoboxContent.addChild("table", "class", "plugins");
 			HTMLNode headerRow = pluginTable.addChild("tr");
+			headerRow.addChild("th", l10n("pluginFilename"));
 			headerRow.addChild("th", l10n("classNameTitle"));
 			headerRow.addChild("th", l10n("versionTitle"));
 			headerRow.addChild("th", l10n("internalIDTitle"));
@@ -426,6 +460,7 @@ public class PproxyToadlet extends Toadlet {
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
+				pluginRow.addChild("td", pi.getFilename());
 				pluginRow.addChild("td", pi.getPluginClassName());
 				long ver = pi.getPluginLongVersion();
 				if(ver != -1)
@@ -536,7 +571,9 @@ public class PproxyToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/plugins/";
+		return PATH;
 	}
+	
+	public static String PATH = "/plugins/";
 
 }

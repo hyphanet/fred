@@ -45,20 +45,20 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 	private FreenetURI URI;
 	private final Ticker ticker;
 	public final NodeClientCore core;
-	private final Node node;
+	protected final Node node;
 	public final NodeUpdateManager manager;
 	private final int currentVersion;
 	private int realAvailableVersion;
 	private int availableVersion;
 	private int fetchingVersion;
-	private int fetchedVersion;
+	protected int fetchedVersion;
 	private int writtenVersion;
 	private int maxDeployVersion;
 	private int minDeployVersion;
 	private boolean isRunning;
 	private boolean isFetching;
 	private final String blobFilenamePrefix;
-	private File tempBlobFile;
+	protected File tempBlobFile;
 	
 	public abstract String jarName();
 

@@ -411,6 +411,8 @@ public class PluginManager {
 			if (store)
 				core.storeConfig();
 		}
+		if(pi != null)
+			node.nodeUpdater.startPluginUpdater(filename);
 		return pi;
 	}
 
@@ -745,7 +747,7 @@ public class PluginManager {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.getPluginClassName().equals(plugname))
+				if(pi.getPluginClassName().equals(plugname) || pi.getFilename().equals(plugname))
 					return pi;
 			}
 		}
@@ -801,6 +803,25 @@ public class PluginManager {
 		return false;
 	}
 
+	/**
+	 * @param plugname The plugin filename e.g. "Library" for an official plugin.
+	 * @return the true if not found
+	 */
+	public boolean isPluginLoadedOrLoadingOrWantLoad(String plugname) {
+		synchronized(pluginWrappers) {
+			for(int i = 0; i < pluginWrappers.size(); i++) {
+				PluginInfoWrapper pi = pluginWrappers.get(i);
+				if(pi.getFilename().equals(plugname))
+					return true;
+				
+			}
+		}
+		if(pluginsFailedLoad.containsKey(plugname)) return true;
+		for(PluginProgress prog : startingPlugins)
+			if(prog.name.equals(plugname)) return true;
+		return false;
+	}
+
 	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized(toadletList) {
@@ -847,6 +868,22 @@ public class PluginManager {
 			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
 				pi = pluginWrappers.get(i);
 				if(pi.getThreadName().equals(name)) {
+					found = true;
+					break;
+				}
+			}
+		}
+		if(found)
+			pi.stopPlugin(this, maxWaitTime);
+	}
+
+	public void killPluginByFilename(String name, int maxWaitTime) {
+		PluginInfoWrapper pi = null;
+		boolean found = false;
+		synchronized(pluginWrappers) {
+			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
+				pi = pluginWrappers.get(i);
+				if(pi.getFilename().equals(name)) {
 					found = true;
 					break;
 				}
@@ -910,7 +947,7 @@ public class PluginManager {
 		}
 	}
 
-	static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
+	public static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
 
 	static {
 		try {
@@ -978,6 +1015,13 @@ public class PluginManager {
 	 * must not be taken in any other circumstance. */
 	private final Object pluginLoadSyncObject = new Object();
 
+	public File getPluginFilename(String pluginName) {
+		File pluginDirectory = new File(node.getNodeDir(), "plugins");
+		if((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs()))
+			return null;
+		return new File(pluginDirectory, pluginName + ".jar");
+	}
+	
 	/**
 	 * Tries to load a plugin from the given name. If the name only contains the
 	 * name of a plugin it is loaded from the plugin directory, if found,
