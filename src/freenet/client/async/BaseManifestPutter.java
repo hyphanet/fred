@@ -1566,13 +1566,6 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
 		ArrayList<Metadata> metas = null;
-		if(metas != null) {
-			for(Metadata meta : metas) {
-				if(meta == baseMetadata) continue;
-				container.activate(meta, 1);
-				meta.removeFrom(container);
-			}
-		}
 		if(baseMetadata != null) {
 			container.activate(baseMetadata, 1);
 			baseMetadata.removeFrom(container);
