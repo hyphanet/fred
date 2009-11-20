@@ -110,8 +110,8 @@ public abstract class ClientRequest {
 				client.init(container);
 			}
 			this.client = client;
-			if(client != null)
-				assert(client.persistenceType == persistenceType);
+			assert client != null;
+			assert(client.persistenceType == persistenceType);
 			lowLevelClient = client.lowLevelClient;
 		}
 		this.startupTime = System.currentTimeMillis();
