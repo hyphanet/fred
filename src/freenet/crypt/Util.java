@@ -53,32 +53,6 @@ public class Util {
 		}
 	}
 
-	public static void fillIntArrayFromBytes(byte[] bytes, int[] ints) {
-		int ic = 0;
-		for (int i = 0; i < (ints.length << 2); i += 4) {
-			ints[ic++] =
-				bytes[i]
-					+ (bytes[i + 1] << 8)
-					+ (bytes[i + 2] << 16)
-					+ (bytes[i + 3] << 24);
-		}
-	}
-
-	public static void fillLongArrayFromBytes(byte[] bytes, long[] longs) {
-		int ic = 0;
-		for (int i = 0; i < (longs.length << 3); i += 8) {
-			longs[ic++] =
-				bytes[i]
-					+ ((long) bytes[i + 1] << 8)
-					+ ((long) bytes[i + 2] << 16)
-					+ ((long) bytes[i + 3] << 24)
-					+ ((long) bytes[i + 4] << 32)
-					+ ((long) bytes[i + 5] << 40)
-					+ ((long) bytes[i + 6] << 48)
-					+ ((long) bytes[i + 7] << 56);
-		}
-	}
-
 	// Crypto utility methods:
 	public static final NativeBigInteger TWO = new NativeBigInteger(BigInteger.valueOf(2));
 
