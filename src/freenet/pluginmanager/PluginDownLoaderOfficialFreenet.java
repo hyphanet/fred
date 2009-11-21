@@ -16,7 +16,11 @@ public class PluginDownLoaderOfficialFreenet extends PluginDownLoaderFreenet {
 		OfficialPluginDescription desc = 
 			PluginManager.officialPlugins.get(source);
 		if(desc == null) throw new PluginNotFoundException("Not in the official plugins list: "+source);
-		return desc.uri;
+		if(desc.uri != null)
+			return desc.uri;
+		else {
+			return node.nodeUpdater.getURI(false).setDocName(source).setSuggestedEdition(desc.minimumVersion);
+		}
 	}
 	
 	@Override
