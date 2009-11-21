@@ -33,35 +33,42 @@ public class BaseL10n {
 	/** @see "http://www.omniglot.com/language/names.htm" */
 	public enum LANGUAGE {
 
-		ENGLISH("en", "English", "eng"),
-		SPANISH("es", "Español", "spa"),
-		DANISH("da", "Dansk", "dan"),
-		DUTCH("nl", "Nederlands", "nld"),
-		GERMAN("de", "Deutsch", "deu"),
-		FINNISH("fi", "Suomi", "fin"),
-		FRENCH("fr", "Français", "fra"),
-		ITALIAN("it", "Italiano", "ita"),
-		NORWEGIAN("no", "Norsk", "nor"),
-		POLISH("pl", "Polski", "pol"),
-		SWEDISH("se", "Svenska", "svk"),
-		CHINESE("zh-cn", "中文(简体)", "chn"), // simplified chinese, used on mainland, Singapore and Malaysia
-		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw"), // traditional chinese, used in Taiwan, Hong Kong and Macau
-		UNLISTED("unlisted", "unlisted", "unlisted");
+		// Windows language codes must be preceded with WINDOWS and be in upper case hex, 4 digits.
+		// See http://www.autohotkey.com/docs/misc/Languages.htm
+		
+		ENGLISH("en", "English", "eng", new String[] { "WINDOWS0409", "WINDOWS0809", "WINDOWS0C09", "WINDOWS1009", "WINDOWS1409", "WINDOWS1809", "WINDOWS1C09", "WINDOWS2009", "WINDOWS2409", "WINDOWS2809", "WINDOWS2C09", "WINDOWS3009", "WINDOWS3409"}),
+		SPANISH("es", "Español", "spa", new String[] { "WINDOWS040A", "WINDOWS080A", "WINDOWS0C0A", "WINDOWS100A", "WINDOWS140A", "WINDOWS180A", "WINDOWS1C0A", "WINDOWS200A", "WINDOWS240A", "WINDOWS280A", "WINDOWS2C0A", "WINDOWS300A", "WINDOWS340A", "WINDOWS380A", "WINDOWS3C0A", "WINDOWS400A", "WINDOWS440A", "WINDOWS480A", "WINDOWS4C0A", "WINDOWS500A"}),
+		DANISH("da", "Dansk", "dan", new String[] { "WINDOWS0406" }),
+		DUTCH("nl", "Nederlands", "nld", new String[] { "WINDOWS0413", "WINDOWS0813"}),
+		GERMAN("de", "Deutsch", "deu", new String[] { "WINDOWS0407", "WINDOWS0807", "WINDOWS0C07", "WINDOWS1007", "WINDOWS1407"}),
+		FINNISH("fi", "Suomi", "fin", new String[] { "WINDOWS040B"}),
+		FRENCH("fr", "Français", "fra", new String[] { "WINDOWS040C", "WINDOWS080C", "WINDOWS0C0C", "WINDOWS100C", "WINDOWS140C", "WINDOWS180C"}),
+		ITALIAN("it", "Italiano", "ita", new String[] { "WINDOWS0410", "WINDOWS0810"}),
+		NORWEGIAN("no", "Norsk", "nor", new String[] { "WINDOWS0414", "WINDOWS0814"}),
+		POLISH("pl", "Polski", "pol", new String[] { "WINDOWS0415"}),
+		SWEDISH("se", "Svenska", "svk", new String[] { "WINDOWS041D", "WINDOWS081D"}),
+		CHINESE("zh-cn", "中文(简体)", "chn", new String[] { "WINDOWS0804", "WINDOWS1004" }),
+		// simplified chinese, used on mainland, Singapore and Malaysia
+		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw", new String[] { "WINDOWS0404", "WINDOWS0C04", "WINDOWS1404" }), 
+		// traditional chinese, used in Taiwan, Hong Kong and Macau
+		UNLISTED("unlisted", "unlisted", "unlisted", new String[] {});
 		/** The identifier we use internally : MUST BE UNIQUE! */
 		public final String shortCode;
 		/** The identifier shown to the user */
 		public final String fullName;
 		/** The mapping with the installer's l10n (@see bug #2424); MUST BE UNIQUE! */
 		public final String isoCode;
+		public final String[] aliases;
 
-		private LANGUAGE(String shortCode, String fullName, String isoCode) {
+		private LANGUAGE(String shortCode, String fullName, String isoCode, String[] aliases) {
 			this.shortCode = shortCode;
 			this.fullName = fullName;
 			this.isoCode = isoCode;
+			this.aliases = aliases;
 		}
 
 		LANGUAGE(LANGUAGE l) {
-			this(l.shortCode, l.fullName, l.isoCode);
+			this(l.shortCode, l.fullName, l.isoCode, l.aliases);
 		}
 
 		/**
@@ -77,6 +84,10 @@ public class BaseL10n {
 						currentLanguage.isoCode.equalsIgnoreCase(whatever) ||
 						currentLanguage.toString().equalsIgnoreCase(whatever)) {
 					return currentLanguage;
+				}
+				if(currentLanguage.aliases != null) {
+					for(String s : currentLanguage.aliases)
+						if(whatever.equalsIgnoreCase(s)) return currentLanguage;
 				}
 			}
 			return null;
