@@ -1537,7 +1537,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		if (lastActivity == 0) {
 			lastActivityCell.addChild("i", NodeL10n.getBase().getString("QueueToadlet.lastActivity.unknown"));
 		} else {
-			lastActivityCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.lastActivity.ago", "time", TimeUtil.formatTime(lastActivity - now)));
+			lastActivityCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.lastActivity.ago", "time", TimeUtil.formatTime(now - lastActivity)));
 		}
 		return lastActivityCell;
 	}
