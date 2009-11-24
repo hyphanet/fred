@@ -61,6 +61,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.MutableBoolean;
 import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
@@ -85,6 +86,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private static final int LIST_PROGRESS = 11;
 	private static final int LIST_REASON = 12;
 	private static final int LIST_RECOMMEND = 13;
+	private static final int LIST_LAST_ACTIVITY = 14;
 
 	private static final int MAX_IDENTIFIER_LENGTH = 1024*1024;
 	private static final int MAX_FILENAME_LENGTH = 1024*1024;
@@ -1518,9 +1520,31 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		return downloadBox;
 	}
-	
+
+	/**
+	 * Creates a table cell that contains the time of the last activity, as per
+	 * {@link TimeUtil#formatTime(long)}.
+	 *
+	 * @param now
+	 *            The current time (for a unified point of reference for the
+	 *            whole page)
+	 * @param lastActivity
+	 *            The last activity of the request
+	 * @return The created table cell HTML node
+	 */
+	private HTMLNode createLastActivityCell(long now, long lastActivity) {
+		HTMLNode lastActivityCell = new HTMLNode("td", "class", "request-last-activity");
+		if (lastActivity == 0) {
+			lastActivityCell.addChild("i", NodeL10n.getBase().getString("QueueToadlet.lastActivity.unknown"));
+		} else {
+			lastActivityCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.lastActivity.ago", "time", TimeUtil.formatTime(lastActivity - now)));
+		}
+		return lastActivityCell;
+	}
+
 	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<ClientRequest> requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, ObjectContainer container) {
 		boolean hasFriends = core.node.getDarknetConnections().length > 0;
+		long now = System.currentTimeMillis();
 		HTMLNode table = new HTMLNode("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
 		headerRow.addChild("th");
@@ -1553,6 +1577,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.reason"));
 			} else if (column == LIST_RECOMMEND && hasFriends) {
 				headerRow.addChild("th");
+			} else if (column == LIST_LAST_ACTIVITY) {
+				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.lastActivity"));
 			}
 		}
 		for (ClientRequest clientRequest : requests) {
@@ -1620,6 +1646,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					} else {
 						requestRow.addChild(createRecommendCell(pageMaker, ((ClientPut) clientRequest).getFinalURI(container), ctx));
 					}
+				} else if (column == LIST_LAST_ACTIVITY) {
+					requestRow.addChild(createLastActivityCell(now, clientRequest.getLastActivity()));
 				}
 			}
 		}
