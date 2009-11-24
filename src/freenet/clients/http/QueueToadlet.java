@@ -1003,6 +1003,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						result = (firstRequest.getTotalBlocks(container) - secondRequest.getTotalBlocks(container)) < 0 ? -1 : 1;
 					}else if(sortBy.equals("progress")){
 						result = (firstRequest.getFetchedBlocks(container) / firstRequest.getMinBlocks(container) - secondRequest.getFetchedBlocks(container) / secondRequest.getMinBlocks(container)) < 0 ? -1 : 1;
+					} else if (sortBy.equals("lastActivity")) {
+						result = (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, firstRequest.getLastActivity() - secondRequest.getLastActivity()));
 					}else
 						isSet=false;
 				}else
@@ -1578,7 +1580,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			} else if (column == LIST_RECOMMEND && hasFriends) {
 				headerRow.addChild("th");
 			} else if (column == LIST_LAST_ACTIVITY) {
-				headerRow.addChild("th", NodeL10n.getBase().getString("QueueToadlet.lastActivity"));
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=lastActivity" : "?sortBy=lastActivity&reversed"),  NodeL10n.getBase().getString("QueueToadlet.lastActivity"));
 			}
 		}
 		for (ClientRequest clientRequest : requests) {
