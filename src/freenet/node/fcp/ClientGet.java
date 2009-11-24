@@ -662,6 +662,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(ce instanceof SplitfileProgressEvent) {
 			if(!((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS))
 				return;
+			lastActivity = System.currentTimeMillis();
 			progress =
 				new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
 		} else if(ce instanceof SendingToNetworkEvent) {
@@ -738,6 +739,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fs.put("StartupTime", startupTime);
 		if(finished)
 			fs.put("CompletionTime", completionTime);
+		fs.put("LastActivity", lastActivity);
 
 		return fs;
 	}

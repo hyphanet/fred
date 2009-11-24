@@ -53,6 +53,10 @@ public abstract class ClientRequest {
 	protected final long startupTime;
 	/** Timestamp : completion time */
 	protected long completionTime;
+
+	/** Timestamp: last activity. */
+	protected long lastActivity;
+
 	protected final RequestClient lowLevelClient;
 	private final int hashCode; // for debugging it is good to have a persistent id
 	
@@ -191,6 +195,7 @@ public abstract class ClientRequest {
 		final String stime = fs.get("StartupTime");
 		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
 		completionTime = fs.getLong("CompletionTime", 0);
+		lastActivity = fs.getLong("LastActivity", 0);
 		if (finished)
 			started=true;
 		assert(client.persistenceType == persistenceType);
@@ -404,6 +409,16 @@ public abstract class ClientRequest {
 	}
 
 	public abstract boolean hasSucceeded();
+
+	/**
+	 * Returns the time of the request’s last activity, or {@code 0} if there is
+	 * no known last activity.
+	 *
+	 * @return The time of the request’s last activity, or {@code 0}
+	 */
+	public long getLastActivity() {
+		return lastActivity;
+	}
 
 	public abstract boolean canRestart();
 
