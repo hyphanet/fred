@@ -410,6 +410,16 @@ public abstract class ClientRequest {
 
 	public abstract boolean hasSucceeded();
 
+	/**
+	 * Returns the time of the request’s last activity, or {@code 0} if there is
+	 * no known last activity.
+	 *
+	 * @return The time of the request’s last activity, or {@code 0}
+	 */
+	public long getLastActivity() {
+		return lastActivity;
+	}
+
 	public abstract boolean canRestart();
 
 	public abstract boolean restart(ObjectContainer container, ClientContext context) throws DatabaseDisabledException;
