@@ -271,6 +271,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 
 					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
+				lastActivity = System.currentTimeMillis();
 				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, container, context);
 			}
 		} else if(ce instanceof StartedCompressionEvent) {
@@ -462,7 +463,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		fs.put("StartupTime", startupTime);
 		if(finished)
 			fs.put("CompletionTime", completionTime);
-		
+		fs.put("LastActivity", lastActivity);
+
 		return fs;
 	}
 
