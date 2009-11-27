@@ -347,7 +347,7 @@ public class OpennetManager {
 			// Old opennet peers should only replace free slots / disconnected droppable nodes.
 			// We can make offers regardless of timeLastOffered provided they are disconnected droppable peers.
 			// And we only allow a connection to be dropped every 10 successful fetches.
-			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS);
+			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS) || now - timeLastDropped < DROP_CONNECTED_TIME;
 		}
 		if(notMany) {
 			if(nodeToAddNow != null)
@@ -496,17 +496,6 @@ public class OpennetManager {
 					pn.setWasDropped();
 					return pn;
 				}
-			}
-			long delta = System.currentTimeMillis() - timeLastDropped;
-			if(delta < DROP_CONNECTED_TIME) {
-				if(addingNode) {
-					if(logMINOR) Logger.minor(this, "Dropped a peer too recently: "+delta+"ms");
-					if(map != null && logMINOR)
-						for(Map.Entry<NOT_DROP_REASON, Integer> entry : map.entrySet()) {
-							Logger.minor(this, ""+entry.getKey()+" : "+entry.getValue());
-						}
-				}
-				return null;
 			}
 			if(noDisconnect) {
 				if(addingNode && logMINOR) {
