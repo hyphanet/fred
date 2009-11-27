@@ -318,6 +318,7 @@ public class OpennetManager {
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
+		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+")");
 		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
@@ -399,8 +400,10 @@ public class OpennetManager {
 						peersLRU.push(nodeToAddNow);
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items - now have "+peersLRU.size()+" opennet peers");
 					oldPeers.remove(nodeToAddNow);
-					if(!dropList.isEmpty())
+					if(!dropList.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "Dropped opennet peer: "+dropList.get(0));
 						timeLastDropped = now;
+					}
 					if(oldOpennetPeer)
 						timeLastAddedOldOpennetPeer = now;
 				} else {
