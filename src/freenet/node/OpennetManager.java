@@ -407,8 +407,7 @@ public class OpennetManager {
 						// Cancel
 						canAdd = false;
 					} else {
-						if(!dropList.isEmpty())
-							timeLastDropped = now;
+						// Do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
 						if(!justChecking) {
 							timeLastOffered = now;
 							if(logMINOR)
