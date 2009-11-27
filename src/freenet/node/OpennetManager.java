@@ -346,7 +346,7 @@ public class OpennetManager {
 			// Old opennet peers should only replace free slots / disconnected droppable nodes.
 			// We can make offers regardless of timeLastOffered provided they are disconnected droppable peers.
 			// And we only allow a connection to be dropped every 10 successful fetches.
-			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS;
+			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS);
 		}
 		if(notMany) {
 			if(nodeToAddNow != null)
