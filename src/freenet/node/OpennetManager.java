@@ -475,14 +475,14 @@ public class OpennetManager {
 				}
 				if(pn == null) continue;
 				NOT_DROP_REASON reason = pn.isDroppableWithReason(false);
+				if(map != null) {
+					Integer x = map.get(reason);
+					if(x == null)
+						map.put(reason, 1);
+					else
+						map.put(reason, x+1);
+				}
 				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
-					if(map != null) {
-						Integer x = map.get(reason);
-						if(x == null)
-							map.put(reason, 1);
-						else
-							map.put(reason, x+1);
-					}
 					continue;
 				}
 				// LOCKING: Always take the OpennetManager lock first
@@ -523,14 +523,14 @@ public class OpennetManager {
 					continue;
 				}
 				NOT_DROP_REASON reason = pn.isDroppableWithReason(false);
+				if(map != null) {
+					Integer x = map.get(reason);
+					if(x == null)
+						map.put(reason, 1);
+					else
+						map.put(reason, x+1);
+				}
 				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
-					if(map != null) {
-						Integer x = map.get(reason);
-						if(x == null)
-							map.put(reason, 1);
-						else
-							map.put(reason, x+1);
-					}
 					continue;
 				}
 				if(Logger.shouldLog(Logger.MINOR, this))
