@@ -81,8 +81,8 @@ public class OpennetManager {
 	public static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it.
 	 * This should be long enough to cover a typical reboot, but not so long as to result in a lot
-	 * of disconnected nodes in the Strangers list. */
-	public static final int DROP_DISCONNECT_DELAY = 10*60*1000;
+	 * of disconnected nodes in the Strangers list. Also it should probably not be longer than DROP_MIN_AGE! */
+	public static final int DROP_DISCONNECT_DELAY = 5*60*1000;
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
 	public static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected */
