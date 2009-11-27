@@ -470,7 +470,7 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
-					// Doesn't count anyway.
+					// Doesn't count towards the opennet peers limit, so no point dropping it.
 					continue;
 				}
 				if(pn == null) continue;
