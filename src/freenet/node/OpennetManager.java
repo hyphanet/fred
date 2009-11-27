@@ -336,7 +336,7 @@ public class OpennetManager {
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
-				if(nodeToAddNow != null || !justChecking)
+				if(nodeToAddNow != null && !justChecking)
 					timeLastOffered = System.currentTimeMillis();
 				notMany = true;
 				// Don't check timeLastAddedOldOpennetPeer, since we want it anyway. But do update it.
