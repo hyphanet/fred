@@ -365,7 +365,7 @@ public class OpennetManager {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
-				PeerNode toDrop = peerToDrop(false, false, nodeToAddNow != null);
+				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
