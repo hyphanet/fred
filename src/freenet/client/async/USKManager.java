@@ -30,6 +30,8 @@ import freenet.support.io.NullBucket;
  * Also does auto-updates.
  * 
  * Note that this is a transient class. It is not stored in the database. All fetchers and subscriptions are likewise transient.
+ * 
+ * Plugin authors: Don't construct it yourself, get it from ClientContext from NodeClientCore.
  */
 public class USKManager implements RequestClient {
 
