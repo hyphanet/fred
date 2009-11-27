@@ -406,14 +406,7 @@ public class OpennetManager {
 							Logger.minor(this, "Cannot make offer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
 						// Cancel
 						canAdd = false;
-					} else {
-						// Do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
-						if(!justChecking) {
-							timeLastOffered = now;
-							if(logMINOR)
-								Logger.minor(this, "Sending offer");
-						}
-					}
+					} // Else do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
 				}
 			}
 		}
