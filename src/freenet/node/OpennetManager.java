@@ -360,11 +360,12 @@ public class OpennetManager {
 				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
 					canAdd = false;
 			}
-			if(getSize() == maxPeers && nodeToAddNow == null && canAdd) {
+			int size;
+			if((size = getSize()) == maxPeers && nodeToAddNow == null && canAdd) {
 				PeerNode toDrop = peerToDrop(true, false, nodeToAddNow != null);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
-			} else while(canAdd && getSize() > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
+			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
 				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null, false, nodeToAddNow != null);
@@ -374,12 +375,14 @@ public class OpennetManager {
 					canAdd = false;
 					break;
 				}
-				if(logMINOR)
-					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
-				if(!toDrop.isConnected())
-					hasDisconnected = true;
-				peersLRU.remove(toDrop);
-				dropList.add(toDrop);
+				if(nodeToAddNow != null || size > maxPeers) {
+					if(logMINOR)
+						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
+					if(!toDrop.isConnected())
+						hasDisconnected = true;
+					peersLRU.remove(toDrop);
+					dropList.add(toDrop);
+				}
 			}
 			if(canAdd && !justChecking) {
 				if(nodeToAddNow != null) {
