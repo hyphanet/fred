@@ -317,6 +317,7 @@ public class OpennetManager {
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer) {
 		boolean notMany = false;
 		boolean noDisconnect;
+		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
@@ -343,7 +344,9 @@ public class OpennetManager {
 					timeLastAddedOldOpennetPeer = System.currentTimeMillis();
 			}
 			// Old opennet peers should only replace free slots / disconnected droppable nodes.
-			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer;
+			// We can make offers regardless of timeLastOffered provided they are disconnected droppable peers.
+			// And we only allow a connection to be dropped every 10 successful fetches.
+			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS;
 		}
 		if(notMany) {
 			if(nodeToAddNow != null)
@@ -356,7 +359,6 @@ public class OpennetManager {
 			int maxPeers = getNumberOfConnectedPeersToAim();
 			// If we have dropped a disconnected peer, then the inter-peer offer cooldown doesn't apply: we can accept immediately.
 			boolean hasDisconnected = false;
-			long now = System.currentTimeMillis();
 			if(oldOpennetPeer) {
 				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
 					canAdd = false;
@@ -401,14 +403,6 @@ public class OpennetManager {
 						timeLastDropped = now;
 					if(oldOpennetPeer)
 						timeLastAddedOldOpennetPeer = now;
-				} else {
-					if(now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS && !hasDisconnected) {
-						if(logMINOR)
-							Logger.minor(this, "Cannot make offer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
-						// Cancel
-						canAdd = false;
-					} // Else do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null): 
-					// What we want to limit is dropping a connected node to make way for a new node, which did not happen in this case.
 				}
 			}
 		}
