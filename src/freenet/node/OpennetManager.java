@@ -403,6 +403,13 @@ public class OpennetManager {
 						timeLastDropped = now;
 					if(oldOpennetPeer)
 						timeLastAddedOldOpennetPeer = now;
+				} else {
+					// Do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
+					if(!justChecking) {
+						timeLastOffered = now;
+						if(logMINOR)
+							Logger.minor(this, "Sending offer");
+					}
 				}
 			}
 		}
