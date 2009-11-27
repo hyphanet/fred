@@ -406,7 +406,8 @@ public class OpennetManager {
 							Logger.minor(this, "Cannot make offer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
 						// Cancel
 						canAdd = false;
-					} // Else do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
+					} // Else do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null): 
+					// What we want to limit is dropping a connected node to make way for a new node, which did not happen in this case.
 				}
 			}
 		}
