@@ -342,7 +342,8 @@ public class OpennetManager {
 				if(oldOpennetPeer)
 					timeLastAddedOldOpennetPeer = System.currentTimeMillis();
 			}
-			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
+			// Old opennet peers should only replace free slots / disconnected droppable nodes.
+			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer;
 		}
 		if(notMany) {
 			if(nodeToAddNow != null)
