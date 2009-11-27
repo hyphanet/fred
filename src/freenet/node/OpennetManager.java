@@ -362,13 +362,16 @@ public class OpennetManager {
 			}
 			int size;
 			if((size = getSize()) == maxPeers && nodeToAddNow == null && canAdd) {
-				PeerNode toDrop = peerToDrop(true, false, nodeToAddNow != null);
+				// Allow an offer to be predicated on throwing out a connected node,
+				// provided that we meet the other criteria e.g. time since last added,
+				// node isn't too new.
+				PeerNode toDrop = peerToDrop(false, false, nodeToAddNow != null);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null, false, nodeToAddNow != null);
+				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
