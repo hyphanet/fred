@@ -497,7 +497,7 @@ public final class PageMaker {
 	}
 	
 	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */
-	protected int parseMode(HTTPRequest req, ToadletContainer container) {
+	public int parseMode(HTTPRequest req, ToadletContainer container) {
 		int mode = container.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
 		
 		if(req.isParameterSet("mode")) {
