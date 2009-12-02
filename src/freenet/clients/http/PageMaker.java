@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.l10n.NodeL10n;
+import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
@@ -295,19 +296,48 @@ public final class PageMaker {
 			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 
 			final int connectedPeers = node.peers.countConnectedPeers();
-			final HTMLNode peers = statusBarDiv.addChild("div", "id", "statusbar-peers", connectedPeers + " Peers");
-
-			if (connectedPeers == 0) {
-				peers.addAttribute("class", "no-peers");
-			} else if (connectedPeers < 4) {
-				peers.addAttribute("class", "very-few-peers");
-			} else if (connectedPeers < 7) {
-				peers.addAttribute("class", "few-peers");
-			} else if (connectedPeers < 10) {
-				peers.addAttribute("class", "avg-peers");
-			} else {
-				peers.addAttribute("class", "lots-of-peers");
+			int darknetTotal = 0;
+			for(DarknetPeerNode n : node.peers.getDarknetPeers()) {
+				if(n == null) continue;
+				if(n.isDisabled()) continue;
+				darknetTotal++;
 			}
+			final int connectedDarknetPeers = node.peers.countConnectedDarknetPeers();
+			final int totalPeers = (node.getOpennet() == null) ? (darknetTotal > 0 ? darknetTotal : Integer.MAX_VALUE) : node.getOpennet().getNumberOfConnectedPeersToAimIncludingDarknet();
+			final double connectedRatio = ((double)connectedPeers) / (double)totalPeers;
+			final String additionnalClass;
+
+			// If we use Opennet, we color the bar by the ratio of connected nodes
+			if(connectedPeers > connectedDarknetPeers) {
+				if (connectedRatio < 0.3D || connectedPeers < 3) {
+					additionnalClass = "very-few-peers";
+				} else if (connectedRatio < 0.5D) {
+					additionnalClass = "few-peers";
+				} else if (connectedRatio < 0.75D) {
+					additionnalClass = "avg-peers";
+				} else {
+					additionnalClass = "full-peers";
+				}
+			} else {
+				// If we are darknet only, we color by absolute connected peers
+				if (connectedDarknetPeers < 3) {
+					additionnalClass = "very-few-peers";
+				} else if (connectedDarknetPeers < 5) {
+					additionnalClass = "few-peers";
+				} else if (connectedDarknetPeers < 10) {
+					additionnalClass = "avg-peers";
+				} else {
+					additionnalClass = "full-peers";
+				}
+			}
+
+			HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
+			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionnalClass, "width: " +
+					Math.floor(100*connectedRatio) + "%;" });
+
+			progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
+					new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },
+					Integer.toString(connectedPeers) + ((totalPeers != Integer.MAX_VALUE) ? " / " + Integer.toString(totalPeers) : ""));
 		}
 
 		topBarDiv.addChild("h1", title);
