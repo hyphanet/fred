@@ -67,7 +67,7 @@ import freenet.support.io.Closer;
  * simply specify -Djbigi.impl=win-athlon and this component would pick up that 
  * library.</p>
  *
- * <p>Another way is to create a seperate jbigi.jar file for each platform containing
+ * <p>Another way is to create a separate jbigi.jar file for each platform containing
  * one file - "native", where that file is the OS / architecture specific library 
  * implementation, as above.  This way the user would download the correct jbigi.jar
  * (and not all of the libraries for platforms/OSes they don't need) and would specify
@@ -248,7 +248,7 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	/**Creates a new NativeBigInteger with the same value
-	 *  as the supplied BigInteger. Warning!, not very efficent
+	 *  as the supplied BigInteger. Warning!, not very efficient
          *
          * @param integer
          */
@@ -299,7 +299,7 @@ public class NativeBigInteger extends BigInteger {
 
 	/**
 	 * 
-	 * @return True iff native methods will be used by this class
+	 * @return True if native methods will be used by this class
 	 */
 	public static boolean isNative() {
 		return _nativeOk;
@@ -354,7 +354,7 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	/** 
-	 * <p>Try loading it from an explictly build jbigi.dll / libjbigi.so first, before 
+	 * <p>Try loading it from an explicitly build jbigi.dll / libjbigi.so first, before 
 	 * looking into a jbigi.jar for any other libraries.</p>
 	 *
 	 * @return true if it was loaded successfully, else false
