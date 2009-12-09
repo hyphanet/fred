@@ -1,9 +1,9 @@
 package net.i2p.util;
 /*
  * free (adj.): unencumbered; not under the control of others
- * Written by jrandom in 2003 and released into the public domain 
- * with no warranty of any kind, either expressed or implied.  
- * It probably won't make your computer catch on fire, or eat 
+ * Written by jrandom in 2003 and released into the public domain
+ * with no warranty of any kind, either expressed or implied.
+ * It probably won't make your computer catch on fire, or eat
  * your children, but it might.  Use at your own risk.
  *
  */
@@ -28,12 +28,12 @@ import freenet.support.io.Closer;
 
 /**
  * <p>BigInteger that takes advantage of the jbigi library for the modPow operation,
- * which accounts for a massive segment of the processing cost of asymmetric 
+ * which accounts for a massive segment of the processing cost of asymmetric
  * crypto. It also takes advantage of the jbigi library for converting a BigInteger
  * value to a double. Sun's implementation of the 'doubleValue()' method is _very_ lousy.
- * 
- * The jbigi library itself is basically just a JNI wrapper around the 
- * GMP library - a collection of insanely efficient routines for dealing with 
+ *
+ * The jbigi library itself is basically just a JNI wrapper around the
+ * GMP library - a collection of insanely efficient routines for dealing with
  * big numbers.</p>
  *
  * There are three environmental properties for configuring this component: <ul>
@@ -43,46 +43,46 @@ import freenet.support.io.Closer;
  *                       name to override jbigi.impl (defaults to "jbigi.cfg")</li>
  * </ul>
  *
- * <p>If jbigi.enable is set to false, this class won't even attempt to use the 
- * native library, but if it is set to true (or is not specified), it will first 
- * check the platform specific library path for the "jbigi" library, as defined by 
- * {@link Runtime#loadLibrary} - e.g. C:\windows\jbigi.dll or /lib/libjbigi.so.  
+ * <p>If jbigi.enable is set to false, this class won't even attempt to use the
+ * native library, but if it is set to true (or is not specified), it will first
+ * check the platform specific library path for the "jbigi" library, as defined by
+ * {@link Runtime#loadLibrary} - e.g. C:\windows\jbigi.dll or /lib/libjbigi.so.
  * If that fails, it reviews the jbigi.impl environment property - if that is set,
  * it checks all of the components in the CLASSPATH for the file specified and
  * attempts to load it as the native library.  If jbigi.impl is not set, if there
  * is no matching resource, or if that resource is not a valid OS/architecture
- * specific library, the NativeBigInteger will revert to using the pure java 
+ * specific library, the NativeBigInteger will revert to using the pure java
  * implementation.</p>
- * 
- * <p>That means <b>NativeBigInteger will not attempt to guess the correct 
- * platform/OS/whatever</b> - applications using this class should define that 
+ *
+ * <p>That means <b>NativeBigInteger will not attempt to guess the correct
+ * platform/OS/whatever</b> - applications using this class should define that
  * property prior to <i>referencing</i> the NativeBigInteger (or before loading
  * the JVM, of course).  Alternately, people with custom built jbigi implementations
  * in their OS's standard search path (LD_LIBRARY_PATH, etc) needn't bother.</p>
  *
- * <p>One way to deploy the native library is to create a jbigi.jar file containing 
+ * <p>One way to deploy the native library is to create a jbigi.jar file containing
  * all of the native implementations with filenames such as "win-athlon", "linux-p2",
  * "freebsd-sparcv4", where those files are the OS specific libraries (the contents of
  * the DLL or .so file built for those OSes / architectures).  The user would then
- * simply specify -Djbigi.impl=win-athlon and this component would pick up that 
+ * simply specify -Djbigi.impl=win-athlon and this component would pick up that
  * library.</p>
  *
  * <p>Another way is to create a separate jbigi.jar file for each platform containing
- * one file - "native", where that file is the OS / architecture specific library 
+ * one file - "native", where that file is the OS / architecture specific library
  * implementation, as above.  This way the user would download the correct jbigi.jar
  * (and not all of the libraries for platforms/OSes they don't need) and would specify
  * -Djbigi.impl=native.</p>
  *
  * <p>Running this class by itself does a basic unit test and benchmarks the
  * NativeBigInteger.modPow/doubleValue vs. the BigInteger.modPow/doubleValue by running a 2Kbit op 100
- * times.  At the end of each test, if the native implementation is loaded this will output 
+ * times.  At the end of each test, if the native implementation is loaded this will output
  * something like:</p>
  * <pre>
  *  native run time:        6090ms (60ms each)
  *  java run time:          68067ms (673ms each)
  *  native = 8.947066860593239% of pure java time
  * </pre>
- * 
+ *
  * <p>If the native implementation is not loaded, it will start by saying:</p>
  * <pre>
  *  WARN: Native BigInteger library jbigi not loaded - using pure java
@@ -98,8 +98,8 @@ public class NativeBigInteger extends BigInteger {
 
 	/** did we load the native lib correctly? */
 	private static boolean _nativeOk = false;
-	/** 
-	 * do we want to dump some basic success/failure info to stderr during 
+	/**
+	 * do we want to dump some basic success/failure info to stderr during
 	 * initialization?  this would otherwise use the Log component, but this makes
 	 * it easier for other systems to reuse this class
 	 */
@@ -171,7 +171,7 @@ public class NativeBigInteger extends BigInteger {
 
 	/**
 	 * calculate (base ^ exponent) % modulus.
-	 * 
+	 *
 	 * @param base
 	 *            big endian twos complement representation of the base (but it must be positive)
 	 * @param exponent
@@ -298,7 +298,7 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return True if native methods will be used by this class
 	 */
 	public static boolean isNative() {
@@ -353,8 +353,8 @@ public class NativeBigInteger extends BigInteger {
 		}
 	}
 
-	/** 
-	 * <p>Try loading it from an explicitly build jbigi.dll / libjbigi.so first, before 
+	/**
+	 * <p>Try loading it from an explicitly build jbigi.dll / libjbigi.so first, before
 	 * looking into a jbigi.jar for any other libraries.</p>
 	 *
 	 * @return true if it was loaded successfully, else false
@@ -405,7 +405,7 @@ public class NativeBigInteger extends BigInteger {
 			return true;
 		} catch(IOException e) {
 		} catch(UnsatisfiedLinkError ule) {
-			// likely to be "noexec" 
+			// likely to be "noexec"
 			if(ule.toString().toLowerCase().indexOf("not permitted") == -1)
 				throw ule;
 		} finally {
@@ -417,16 +417,16 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	/**
-	 * <p>Check all of the jars in the classpath for the file specified by the 
-	 * environmental property "jbigi.impl" and load it as the native library 
+	 * <p>Check all of the jars in the classpath for the file specified by the
+	 * environmental property "jbigi.impl" and load it as the native library
 	 * implementation.  For instance, a windows user on a p4 would define
-	 * -Djbigi.impl=win-686 if there is a jbigi.jar in the classpath containing the 
-	 * files "win-686", "win-athlon", "freebsd-p4", "linux-p3", where each 
+	 * -Djbigi.impl=win-686 if there is a jbigi.jar in the classpath containing the
+	 * files "win-686", "win-athlon", "freebsd-p4", "linux-p3", where each
 	 * of those files contain the correct binary file for a native library (e.g.
 	 * windows DLL, or a *nix .so).  </p>
-	 * 
+	 *
 	 * <p>This is a pretty ugly hack, using the general technique illustrated by the
-	 * onion FEC libraries.  It works by pulling the resource, writing out the 
+	 * onion FEC libraries.  It works by pulling the resource, writing out the
 	 * byte stream to a temporary file, loading the native library from that file,
 	 * then deleting the file.</p>
 	 *
