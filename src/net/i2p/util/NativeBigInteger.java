@@ -190,7 +190,11 @@ public class NativeBigInteger extends BigInteger {
 	public native static double nativeDoubleValue(byte ba[]);
 	private byte[] cachedBa = null;
 
-	public NativeBigInteger(byte val[]) {
+        /**
+         *
+         * @param val
+         */
+        public NativeBigInteger(byte val[]) {
 		super(val);
 	// Takes up too much RAM
 //        int targetLength = bitLength() / 8 + 1;
@@ -198,29 +202,56 @@ public class NativeBigInteger extends BigInteger {
 //            cachedBa = val;
 	}
 
-	public NativeBigInteger(int signum, byte magnitude[]) {
+        /**
+         *
+         * @param signum
+         * @param magnitude
+         */
+        public NativeBigInteger(int signum, byte magnitude[]) {
 		super(signum, magnitude);
 	}
 
-	public NativeBigInteger(int bitlen, int certainty, Random rnd) {
+        /**
+         *
+         * @param bitlen
+         * @param certainty
+         * @param rnd
+         */
+        public NativeBigInteger(int bitlen, int certainty, Random rnd) {
 		super(bitlen, certainty, rnd);
 	}
 
-	public NativeBigInteger(int numbits, Random rnd) {
+        /**
+         *
+         * @param numbits
+         * @param rnd
+         */
+        public NativeBigInteger(int numbits, Random rnd) {
 		super(numbits, rnd);
 	}
 
-	public NativeBigInteger(String val) {
+        /**
+         *
+         * @param val
+         */
+        public NativeBigInteger(String val) {
 		super(val);
 	}
 
-	public NativeBigInteger(String val, int radix) {
+        /**
+         *
+         * @param val
+         * @param radix
+         */
+        public NativeBigInteger(String val, int radix) {
 		super(val, radix);
 	}
 
 	/**Creates a new NativeBigInteger with the same value
 	 *  as the supplied BigInteger. Warning!, not very efficent
-	 */
+         *
+         * @param integer
+         */
 	public NativeBigInteger(BigInteger integer) {
 		//Now, why doesn't sun provide a constructor
 		//like this one in BigInteger?
@@ -249,7 +280,11 @@ public class NativeBigInteger extends BigInteger {
 		return super.toString(radix);
 	}
 
-	public String toHexString() {
+        /**
+         *
+         * @return
+         */
+        public String toHexString() {
 		byte[] buf = toByteArray();
 		return HexUtil.bytesToHex(buf);
 	}

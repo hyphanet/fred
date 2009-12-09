@@ -9,7 +9,13 @@ public class IPUtil {
 
 	static final boolean strict = true;
 
-	public static boolean isValidAddress(InetAddress i, boolean includeLocalAddressesInNoderefs) {
+        /**
+         *
+         * @param i
+         * @param includeLocalAddressesInNoderefs
+         * @return
+         */
+        public static boolean isValidAddress(InetAddress i, boolean includeLocalAddressesInNoderefs) {
 		if(i.isAnyLocalAddress()) {
 			// Wildcard address, 0.0.0.0, ignore.
 			return false;

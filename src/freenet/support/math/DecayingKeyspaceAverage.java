@@ -20,11 +20,21 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 	 */
 	BootstrappingDecayingRunningAverage avg;
 
-	public DecayingKeyspaceAverage(double defaultValue, int maxReports, SimpleFieldSet fs) {
+        /**
+         *
+         * @param defaultValue
+         * @param maxReports
+         * @param fs
+         */
+        public DecayingKeyspaceAverage(double defaultValue, int maxReports, SimpleFieldSet fs) {
 		avg = new BootstrappingDecayingRunningAverage(defaultValue, -2.0, 2.0, maxReports, fs);
 	}
 
-	public DecayingKeyspaceAverage(BootstrappingDecayingRunningAverage a) {
+        /**
+         *
+         * @param a
+         */
+        public DecayingKeyspaceAverage(BootstrappingDecayingRunningAverage a) {
 		//check the max/min values? ignore them?
 		avg = (BootstrappingDecayingRunningAverage) a.clone();
 	}
@@ -34,11 +44,19 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		return new DecayingKeyspaceAverage(avg);
 	}
 
-	public synchronized double currentValue() {
+        /**
+         *
+         * @return
+         */
+        public synchronized double currentValue() {
 		return avg.currentValue();
 	}
 
-	public synchronized void report(double d) {
+        /**
+         *
+         * @param d
+         */
+        public synchronized void report(double d) {
 		if((d < 0.0) || (d > 1.0))
 			//Just because we use non-normalized locations doesn't mean we can accept them.
 			throw new IllegalArgumentException("Not a valid normalized key: " + d);
@@ -74,20 +92,37 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		return avg.countReports();
 	}
 
-	public void report(long d) {
+        /**
+         *
+         * @param d
+         */
+        public void report(long d) {
 		throw new IllegalArgumentException("KeyspaceAverage does not like longs");
 	}
 
-	public synchronized void changeMaxReports(int maxReports) {
+        /**
+         *
+         * @param maxReports
+         */
+        public synchronized void changeMaxReports(int maxReports) {
 		avg.changeMaxReports(maxReports);
 	}
 
-	public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
+        /**
+         *
+         * @param shortLived
+         * @return
+         */
+        public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
 		return avg.exportFieldSet(shortLived);
 	}
 
 	///@todo: make this a junit test
-	public static void main(String[] args) {
+        /**
+         * 
+         * @param args
+         */
+        public static void main(String[] args) {
 		DecayingKeyspaceAverage a = new DecayingKeyspaceAverage(0.9, 10, null);
 		a.report(0.9);
 		for(int i = 10; i != 0; i--) {

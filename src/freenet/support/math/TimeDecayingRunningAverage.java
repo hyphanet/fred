@@ -56,6 +56,14 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 		}
     }
     
+    /**
+     *
+     * @param defaultValue
+     * @param halfLife
+     * @param min
+     * @param max
+     * @param callback
+     */
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
             double min, double max, TimeSkewDetectorCallback callback) {
     	curValue = defaultValue;
@@ -73,6 +81,15 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.timeSkewCallback = callback;
     }
     
+    /**
+     *
+     * @param defaultValue
+     * @param halfLife
+     * @param min
+     * @param max
+     * @param fs
+     * @param callback
+     */
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
             double min, double max, SimpleFieldSet fs, TimeSkewDetectorCallback callback) {
     	curValue = defaultValue;
@@ -106,6 +123,16 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.timeSkewCallback = callback;
     }
     
+    /**
+     *
+     * @param defaultValue
+     * @param halfLife
+     * @param min
+     * @param max
+     * @param dis
+     * @param callback
+     * @throws IOException
+     */
     public TimeDecayingRunningAverage(double defaultValue, double halfLife, double min, double max, DataInputStream dis, TimeSkewDetectorCallback callback) throws IOException {
         int m = dis.readInt();
         if(m != MAGIC) throw new IOException("Invalid magic "+m);
@@ -129,6 +156,10 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.timeSkewCallback = callback;
     }
 
+    /**
+     *
+     * @param a
+     */
     public TimeDecayingRunningAverage(TimeDecayingRunningAverage a) {
         this.createdTime = a.createdTime;
         this.defaultValue = a.defaultValue;
@@ -142,11 +173,19 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         this.timeSkewCallback = a.timeSkewCallback;
     }
 
+    /**
+     *
+     * @return
+     */
     public synchronized double currentValue() {
     	return curValue;
     }
 
-	public void report(double d) {
+    /**
+     *
+     * @param d
+     */
+    public void report(double d) {
 		synchronized(this) {
 			// Must synchronize first to achieve serialization.
 			long now = System.currentTimeMillis();
@@ -217,7 +256,11 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 		}
 	}
 
-    public void report(long d) {
+        /**
+         *
+         * @param d
+         */
+        public void report(long d) {
         report((double)d);
     }
 
@@ -225,7 +268,12 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         throw new UnsupportedOperationException();
     }
 
-	public void writeDataTo(DataOutputStream out) throws IOException {
+    /**
+     *
+     * @param out
+     * @throws IOException
+     */
+    public void writeDataTo(DataOutputStream out) throws IOException {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			out.writeInt(MAGIC);
@@ -237,6 +285,10 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 		}
 	}
 
+    /**
+     *
+     * @return
+     */
     public int getDataLength() {
         return 4 + 4 + 8 + 8 + 1 + 8 + 8;
     }
@@ -245,11 +297,20 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         return totalReports;
     }
 
-	public synchronized long lastReportTime() {
+    /**
+     *
+     * @return
+     */
+    public synchronized long lastReportTime() {
 		return lastReportTime;
 	}
 
-	public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
+    /**
+     *
+     * @param shortLived
+     * @return
+     */
+    public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
 		SimpleFieldSet fs = new SimpleFieldSet(shortLived);
 		fs.putSingle("Type", "TimeDecayingRunningAverage");
 		fs.put("CurrentValue", curValue);

@@ -6,12 +6,19 @@ public class TrivialRunningAverage implements RunningAverage {
 	private long reports;
 	private double total;
 	
-	public TrivialRunningAverage(TrivialRunningAverage average) {
+        /**
+         *
+         * @param average
+         */
+        public TrivialRunningAverage(TrivialRunningAverage average) {
 		this.reports = average.reports;
 		this.total = average.total;
 	}
 
-	public TrivialRunningAverage() {
+        /**
+         *
+         */
+        public TrivialRunningAverage() {
 		reports = 0;
 		total = 0.0;
 	}
@@ -20,17 +27,29 @@ public class TrivialRunningAverage implements RunningAverage {
 		return reports;
 	}
 
-	public synchronized double currentValue() {
+        /**
+         *
+         * @return
+         */
+        public synchronized double currentValue() {
 		return total / reports;
 	}
 
-	public synchronized void report(double d) {
+        /**
+         *
+         * @param d
+         */
+        public synchronized void report(double d) {
 		total += d;
 		reports++;
 		// TODO Auto-generated method stub
 	}
 
-	public void report(long d) {
+        /**
+         *
+         * @param d
+         */
+        public void report(long d) {
 		report((double)d);
 	}
 

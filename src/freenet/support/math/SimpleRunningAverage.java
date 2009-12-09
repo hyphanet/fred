@@ -37,12 +37,21 @@ public class SimpleRunningAverage implements RunningAverage {
         for(int i=0;i<refs.length;i++) refs[i] = 0.0;
     }
     
+    /**
+     *
+     * @param length
+     * @param initValue
+     */
     public SimpleRunningAverage(int length, double initValue) {
         refs = new double[length];
         this.initValue = initValue;
         totalReports = 0;
     }
     
+    /**
+     *
+     * @param a
+     */
     public SimpleRunningAverage(SimpleRunningAverage a) {
         this.curLen = a.curLen;
         this.initValue = a.initValue;
@@ -52,6 +61,10 @@ public class SimpleRunningAverage implements RunningAverage {
         this.totalReports = a.totalReports;
     }
 
+    /**
+     *
+     * @return
+     */
     public synchronized double currentValue() {
         if(curLen == 0) return initValue;
         return total/curLen;
@@ -66,6 +79,10 @@ public class SimpleRunningAverage implements RunningAverage {
         }
     }
 
+    /**
+     *
+     * @param d
+     */
     public synchronized void report(double d) {
         totalReports++;
 		if (logDEBUG)
@@ -78,13 +95,21 @@ public class SimpleRunningAverage implements RunningAverage {
 		total += d;
 	}
 
+    /**
+     *
+     * @param value
+     */
     protected synchronized void pushValue(double value){
 		refs[nextSlotPtr] = value;
 		nextSlotPtr++;
 		if(nextSlotPtr >= refs.length) nextSlotPtr = 0;
     }
 
-	protected synchronized double popValue(){
+    /**
+     *
+     * @return
+     */
+    protected synchronized double popValue(){
 		return refs[nextSlotPtr];
 	}
 
@@ -94,10 +119,18 @@ public class SimpleRunningAverage implements RunningAverage {
         	total+", average="+total/curLen;
     }
     
+    /**
+     *
+     * @param d
+     */
     public void report(long d) {
         report((double)d);
     }
 
+    /**
+     * 
+     * @param out
+     */
     public void writeDataTo(DataOutputStream out) {
         throw new UnsupportedOperationException();
     }
@@ -106,6 +139,11 @@ public class SimpleRunningAverage implements RunningAverage {
         return totalReports;
     }
 
+    /**
+     *
+     * @param targetValue
+     * @return
+     */
     public synchronized double minReportForValue(double targetValue) {
         if(curLen < refs.length) {
             /** Don't need to remove any values before reporting,
