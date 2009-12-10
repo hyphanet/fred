@@ -129,42 +129,51 @@ public class NativeBigInteger extends BigInteger {
 	 */
 	private static String resolveCPUType() {
 		try {
-			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)"))
+			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) {
 				return JBIGI_OPTIMIZATION_X86_64;
-			else if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")) {
+			} else if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")) {
 				System.out.println("Detected PowerPC!");
 				return JBIGI_OPTIMIZATION_PPC;
 			} else {
 				CPUInfo c = CPUID.getInfo();
 				if(c instanceof AMDCPUInfo) {
 					AMDCPUInfo amdcpu = (AMDCPUInfo) c;
-					if(amdcpu.IsAthlon64Compatible())
+					if(amdcpu.IsAthlon64Compatible()) {
 						return JBIGI_OPTIMIZATION_X86_64_32;
-					if(amdcpu.IsAthlonCompatible())
-						return JBIGI_OPTIMIZATION_ATHLON;
-					if(amdcpu.IsK6_3_Compatible())
-						return JBIGI_OPTIMIZATION_K6_3;
-					if(amdcpu.IsK6_2_Compatible())
-						return JBIGI_OPTIMIZATION_K6_2;
-					if(amdcpu.IsK6Compatible())
-						return JBIGI_OPTIMIZATION_K6;
-				} else
-					if(c instanceof IntelCPUInfo) {
-						IntelCPUInfo intelcpu = (IntelCPUInfo) c;
-						if(intelcpu.IsPentium4Compatible())
-							return JBIGI_OPTIMIZATION_PENTIUM4;
-						if(intelcpu.IsPentium3Compatible())
-							return JBIGI_OPTIMIZATION_PENTIUM3;
-						if(intelcpu.IsPentium2Compatible())
-							return JBIGI_OPTIMIZATION_PENTIUM2;
-						if(intelcpu.IsPentiumMMXCompatible())
-							return JBIGI_OPTIMIZATION_PENTIUMMMX;
-						if(intelcpu.IsPentiumCompatible())
-							return JBIGI_OPTIMIZATION_PENTIUM;
 					}
+					if(amdcpu.IsAthlonCompatible()) {
+						return JBIGI_OPTIMIZATION_ATHLON;
+					}
+					if(amdcpu.IsK6_3_Compatible()) {
+						return JBIGI_OPTIMIZATION_K6_3;
+					}
+					if(amdcpu.IsK6_2_Compatible()) {
+						return JBIGI_OPTIMIZATION_K6_2;
+					}
+					if(amdcpu.IsK6Compatible()) {
+						return JBIGI_OPTIMIZATION_K6;
+					}
+				} else if(c instanceof IntelCPUInfo) {
+					IntelCPUInfo intelcpu = (IntelCPUInfo) c;
+					if(intelcpu.IsPentium4Compatible()) {
+						return JBIGI_OPTIMIZATION_PENTIUM4;
+					}
+					if(intelcpu.IsPentium3Compatible()) {
+						return JBIGI_OPTIMIZATION_PENTIUM3;
+					}
+					if(intelcpu.IsPentium2Compatible()) {
+						return JBIGI_OPTIMIZATION_PENTIUM2;
+					}
+					if(intelcpu.IsPentiumMMXCompatible()) {
+						return JBIGI_OPTIMIZATION_PENTIUMMMX;
+					}
+					if(intelcpu.IsPentiumCompatible()) {
+						return JBIGI_OPTIMIZATION_PENTIUM;
+					}
+				}
 			}
 			return null;
-		} catch(UnknownCPUException e) {
+		} catch (UnknownCPUException e) {
 			return null; //TODO: Log something here maybe..
 		}
 	}
@@ -188,70 +197,71 @@ public class NativeBigInteger extends BigInteger {
 	 * @return The plain double-value represented by 'ba'
 	 */
 	public native static double nativeDoubleValue(byte ba[]);
+
 	private byte[] cachedBa = null;
 
-        /**
-         *
-         * @param val
-         */
-        public NativeBigInteger(byte val[]) {
+	/**
+	 *
+	 * @param val
+	 */
+	public NativeBigInteger(byte val[]) {
 		super(val);
-	// Takes up too much RAM
+		// Takes up too much RAM
 //        int targetLength = bitLength() / 8 + 1;
 //        if(val.length == targetLength)
 //            cachedBa = val;
 	}
 
-        /**
-         *
-         * @param signum
-         * @param magnitude
-         */
-        public NativeBigInteger(int signum, byte magnitude[]) {
+	/**
+	 *
+	 * @param signum
+	 * @param magnitude
+	 */
+	public NativeBigInteger(int signum, byte magnitude[]) {
 		super(signum, magnitude);
 	}
 
-        /**
-         *
-         * @param bitlen
-         * @param certainty
-         * @param rnd
-         */
-        public NativeBigInteger(int bitlen, int certainty, Random rnd) {
+	/**
+	 *
+	 * @param bitlen
+	 * @param certainty
+	 * @param rnd
+	 */
+	public NativeBigInteger(int bitlen, int certainty, Random rnd) {
 		super(bitlen, certainty, rnd);
 	}
 
-        /**
-         *
-         * @param numbits
-         * @param rnd
-         */
-        public NativeBigInteger(int numbits, Random rnd) {
+	/**
+	 *
+	 * @param numbits
+	 * @param rnd
+	 */
+	public NativeBigInteger(int numbits, Random rnd) {
 		super(numbits, rnd);
 	}
 
-        /**
-         *
-         * @param val
-         */
-        public NativeBigInteger(String val) {
+	/**
+	 *
+	 * @param val
+	 */
+	public NativeBigInteger(String val) {
 		super(val);
 	}
 
-        /**
-         *
-         * @param val
-         * @param radix
-         */
-        public NativeBigInteger(String val, int radix) {
+	/**
+	 *
+	 * @param val
+	 * @param radix
+	 */
+	public NativeBigInteger(String val, int radix) {
 		super(val, radix);
 	}
 
 	/**Creates a new NativeBigInteger with the same value
 	 *  as the supplied BigInteger. Warning!, not very efficient
-         *
-         * @param integer
-         */
+	 *
+	 * @param integer
+	 */
 	public NativeBigInteger(BigInteger integer) {
 		//Now, why doesn't sun provide a constructor
 		//like this one in BigInteger?
@@ -260,41 +270,46 @@ public class NativeBigInteger extends BigInteger {
 
 	@Override
 	public BigInteger modPow(BigInteger exponent, BigInteger m) {
-		if(_nativeOk)
+		if(_nativeOk) {
 			return new NativeBigInteger(nativeModPow(toByteArray(), exponent.toByteArray(), m.toByteArray()));
-		else
+		} else {
 			return new NativeBigInteger(super.modPow(exponent, m));
+		}
 	}
 
 	@Override
 	public byte[] toByteArray() {
 		if(cachedBa == null) //Since we are immutable it is safe to never update the cached ba after it has initially been generated
+		{
 			cachedBa = super.toByteArray();
+		}
 		return cachedBa;
 	}
 
 	@Override
 	public String toString(int radix) {
-		if(radix == 16)
+		if(radix == 16) {
 			return toHexString();
+		}
 		return super.toString(radix);
 	}
 
-        /**
-         *
-         * @return
-         */
-        public String toHexString() {
+	/**
+	 *
+	 * @return
+	 */
+	public String toHexString() {
 		byte[] buf = toByteArray();
 		return HexUtil.bytesToHex(buf);
 	}
 
 	@Override
 	public double doubleValue() {
-		if(_nativeOk)
+		if(_nativeOk) {
 			return nativeDoubleValue(toByteArray());
-		else
+		} else {
 			return super.doubleValue();
+		}
 	}
 
 	/**
@@ -304,6 +319,7 @@ public class NativeBigInteger extends BigInteger {
 	public static boolean isNative() {
 		return _nativeOk;
 	}
+
 	/**
 	 * <p>Do whatever we can to load up the native library backing this BigInteger's native methods.
 	 * If it can find a custom built jbigi.dll / libjbigi.so, it'll use that.  Otherwise
@@ -319,37 +335,44 @@ public class NativeBigInteger extends BigInteger {
 				boolean loaded = loadFromResource(true);
 				if(loaded) {
 					_nativeOk = true;
-					if(_doLog)
+					if(_doLog) {
 						System.err.println("INFO: Optimized native BigInteger library '" + getResourceName(true) + "' loaded from resource");
+					}
 				} else {
 					loaded = loadGeneric(true);
 					if(loaded) {
 						_nativeOk = true;
-						if(_doLog)
+						if(_doLog) {
 							System.err.println("INFO: Optimized native BigInteger library '" + getMiddleName(true) + "' loaded from somewhere in the path");
+						}
 					} else {
 						loaded = loadFromResource(false);
 						if(loaded) {
 							_nativeOk = true;
-							if(_doLog)
+							if(_doLog) {
 								System.err.println("INFO: Non-optimized native BigInteger library '" + getResourceName(false) + "' loaded from resource");
+							}
 						} else {
 							loaded = loadGeneric(false);
 							if(loaded) {
 								_nativeOk = true;
-								if(_doLog)
+								if(_doLog) {
 									System.err.println("INFO: Non-optimized native BigInteger library '" + getMiddleName(false) + "' loaded from somewhere in the path");
-							} else
+								}
+							} else {
 								_nativeOk = false;
+							}
 						}
 					}
 				}
 			}
-			if(_doLog && !_nativeOk)
+			if(_doLog && !_nativeOk) {
 				System.err.println("INFO: Native BigInteger library jbigi not loaded - using pure java");
-		} catch(Throwable e) {
-			if(_doLog)
+			}
+		} catch (Throwable e) {
+			if(_doLog) {
 				System.err.println("INFO: Native BigInteger library jbigi not loaded, reason: '" + e.getMessage() + "' - using pure java");
+			}
 		}
 	}
 
@@ -363,11 +386,12 @@ public class NativeBigInteger extends BigInteger {
 	private static final boolean loadGeneric(boolean optimized) {
 		try {
 			String name = getMiddleName(optimized);
-			if(name == null)
+			if(name == null) {
 				return false;
+			}
 			System.loadLibrary(name);
 			return true;
-		} catch(UnsatisfiedLinkError ule) {
+		} catch (UnsatisfiedLinkError ule) {
 			return false;
 		}
 	}
@@ -381,11 +405,11 @@ public class NativeBigInteger extends BigInteger {
 	 * @throws UnsatisfiedLinkError If and only if the library is incompatible with this system
 	 */
 	private static final boolean tryLoadResource(File f, URL resource)
-		throws FileNotFoundException, UnsatisfiedLinkError {
+			throws FileNotFoundException, UnsatisfiedLinkError {
 		InputStream is;
 		try {
 			is = resource.openStream();
-		} catch(IOException e) {
+		} catch (IOException e) {
 			f.delete();
 			throw new FileNotFoundException();
 		}
@@ -396,18 +420,19 @@ public class NativeBigInteger extends BigInteger {
 			fos = new FileOutputStream(f);
 			byte[] buf = new byte[4096 * 1024];
 			int read;
-			while((read = is.read(buf)) > 0) {
+			while ((read = is.read(buf)) > 0) {
 				fos.write(buf, 0, read);
 			}
 			fos.close();
 			fos = null;
 			System.load(f.getAbsolutePath());
 			return true;
-		} catch(IOException e) {
-		} catch(UnsatisfiedLinkError ule) {
+		} catch (IOException e) {
+		} catch (UnsatisfiedLinkError ule) {
 			// likely to be "noexec"
-			if(ule.toString().toLowerCase().indexOf("not permitted") == -1)
+			if(ule.toString().toLowerCase().indexOf("not permitted") == -1) {
 				throw ule;
+			}
 		} finally {
 			Closer.close(fos);
 			f.delete();
@@ -435,37 +460,45 @@ public class NativeBigInteger extends BigInteger {
 	 */
 	private static final boolean loadFromResource(boolean optimized) {
 		String resourceName = getResourceName(optimized);
-		if(resourceName == null)
+		if(resourceName == null) {
 			return false;
+		}
 		URL resource = NativeBigInteger.class.getClassLoader().getResource(resourceName);
 		if(resource == null) {
-			if(_doLog)
+			if(_doLog) {
 				System.err.println("NOTICE: Resource name [" + getResourceName(true) + "] was not found");
+			}
 			return false;
 		}
 		File temp = null;
 		try {
 			try {
 				temp = File.createTempFile("jbigi", "lib.tmp");
-				if(tryLoadResource(temp, resource))
+				if(tryLoadResource(temp, resource)) {
 					return true;
-			} catch(IOException e) {
+				}
+			} catch (IOException e) {
 			} finally {
-				if(temp != null) temp.delete();
+				if(temp != null) {
+					temp.delete();
+				}
 			}
 			Logger.error(NativeBigInteger.class, "Can't load from " + System.getProperty("java.io.tmpdir"));
 			System.err.println("Can't load from " + System.getProperty("java.io.tmpdir"));
 			temp = new File("jbigi-lib.tmp");
-			if(tryLoadResource(temp, resource))
+			if(tryLoadResource(temp, resource)) {
 				return true;
-		} catch(Exception fnf) {
+			}
+		} catch (Exception fnf) {
 			Logger.error(NativeBigInteger.class, "Error reading jbigi resource", fnf);
 			System.err.println("Error reading jbigi resource");
-		} catch(UnsatisfiedLinkError ule) {
+		} catch (UnsatisfiedLinkError ule) {
 			Logger.error(NativeBigInteger.class, "Library " + resourceName + " is not appropriate for this system.");
 			System.err.println("Library " + resourceName + " is not appropriate for this system.");
 		} finally {
-			if(temp != null) temp.delete();
+			if(temp != null) {
+				temp.delete();
+			}
 		}
 
 		return false;
@@ -476,53 +509,63 @@ public class NativeBigInteger extends BigInteger {
 		String pref = getLibraryPrefix();
 		String middle = getMiddleName(optimized);
 		String suff = getLibrarySuffix();
-		if((pref == null) || (middle == null) || (suff == null))
+		if((pref == null) || (middle == null) || (suff == null)) {
 			return null;
+		}
 		return pname + '/' + pref + middle + '.' + suff;
 	}
 
 	private static final String getMiddleName(boolean optimized) {
 
 		String sAppend;
-		if(optimized)
-			if(sCPUType == null)
+		if(optimized) {
+			if(sCPUType == null) {
 				return null;
-			else
+			} else {
 				sAppend = '-' + sCPUType;
-		else
+			}
+		} else {
 			sAppend = "-none";
+		}
 
 		boolean isWindows = (System.getProperty("os.name").toLowerCase().indexOf("windows") != -1);
 		boolean isLinux = (System.getProperty("os.name").toLowerCase().indexOf("linux") != -1);
 		boolean isFreebsd = (System.getProperty("os.name").toLowerCase().indexOf("freebsd") != -1);
 		boolean isMacOS = (System.getProperty("os.name").toLowerCase().indexOf("mac os x") != -1);
-		if(isWindows)
+		if(isWindows) {
 			return "jbigi-windows" + sAppend; // The convention on Windows
-		if(isLinux)
+		}
+		if(isLinux) {
 			return "jbigi-linux" + sAppend; // The convention on linux...
-		if(isFreebsd)
+		}
+		if(isFreebsd) {
 			return "jbigi-freebsd" + sAppend; // The convention on freebsd...
-		if(isMacOS)
+		}
+		if(isMacOS) {
 			return "jbigi-osx" + sAppend; // The convention on Mac OS X...
+		}
 		throw new RuntimeException("Dont know jbigi library name for os type '" + System.getProperty("os.name") + '\'');
 	}
 
 	private static final String getLibrarySuffix() {
 		boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("windows") != -1;
 		boolean isMacOS = (System.getProperty("os.name").toLowerCase().indexOf("mac os x") != -1);
-		if(isWindows)
+		if(isWindows) {
 			return "dll";
-		else if(isMacOS)
+		} else if(isMacOS) {
 			return "jnilib";
-		else
+		} else {
 			return "so";
+		}
 	}
 
 	private static final String getLibraryPrefix() {
 		boolean isWindows = System.getProperty("os.name").toLowerCase().indexOf("windows") != -1;
-		if(isWindows)
+		if(isWindows) {
 			return "";
-		else
+		} else {
 			return "lib";
+		}
 	}
+
 }
