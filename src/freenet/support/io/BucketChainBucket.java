@@ -15,7 +15,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
 public class BucketChainBucket implements Bucket {
-	
+
 	private final Vector<Bucket> buckets;
 	public final long bucketSize;
 	private long size;
@@ -53,11 +53,11 @@ public class BucketChainBucket implements Bucket {
 			freed = true;
 			buckets.clear();
 		}
-		for(int i=0;i<list.length;i++) {
+		for(int i = 0; i < list.length; i++) {
 			list[i].free();
 		}
 	}
-	
+
 	/** Equivalent to free(), but don't free the underlying buckets. */
 	void clear() {
 		synchronized(this) {
@@ -72,122 +72,135 @@ public class BucketChainBucket implements Bucket {
 
 	public InputStream getInputStream() throws IOException {
 		synchronized(this) {
-			if(freed) throw new IOException("Freed");
-			if(buckets.size() == 0) return new NullInputStream();
-		return new InputStream() {
+			if(freed) {
+				throw new IOException("Freed");
+			}
+			if(buckets.size() == 0) {
+				return new NullInputStream();
+			}
+			return new InputStream() {
 
-			private int bucketNo = 0;
-			private InputStream curBucketStream = getBucketInputStream(0);
-			private long readBytes;
-			
-			@Override
-			public int read() throws IOException {
-				synchronized(BucketChainBucket.this) {
-					if(freed) {
-						curBucketStream.close();
-						curBucketStream = null;
-						throw new IOException("Freed");
-					}
-				}
-				while(true) {
-					if(curBucketStream == null) {
-						curBucketStream = getBucketInputStream(0);
-						if(curBucketStream == null) {
-							return -1;
-						}
-					}
-					try {
-						int x = curBucketStream.read();
-						if(x >= 0) {
-							readBytes++;
-							return x;
-						}
-					} catch (EOFException e) {
-						// Handle the same
-					}
+				private int bucketNo = 0;
+				private InputStream curBucketStream = getBucketInputStream(0);
+				private long readBytes;
+
+				@Override
+				public int read() throws IOException {
 					synchronized(BucketChainBucket.this) {
-						// No more data to read at the moment.
-						if(readBytes >= size) return -1;
+						if(freed) {
+							curBucketStream.close();
+							curBucketStream = null;
+							throw new IOException("Freed");
+						}
 					}
-					bucketNo++;
-					curBucketStream.close();
-					curBucketStream = getBucketInputStream(bucketNo++);
-				}
-			}
-			
-			@Override
-			public int read(byte[] buf) throws IOException {
-				synchronized(BucketChainBucket.this) {
-					if(freed) {
-						curBucketStream.close();
-						curBucketStream = null;
-						throw new IOException("Freed");
-					}
-				}
-				return read(buf, 0, buf.length);
-			}
-			
-			@Override
-			public int read(byte[] buf, int offset, int length) throws IOException {
-				synchronized(BucketChainBucket.this) {
-					if(freed) {
-						curBucketStream.close();
-						curBucketStream = null;
-						throw new IOException("Freed");
-					}
-				}
-				if(length == 0) return 0;
-				while(true) {
-					if(curBucketStream == null) {
-						curBucketStream = getBucketInputStream(0);
+					while (true) {
 						if(curBucketStream == null) {
-							return -1;
+							curBucketStream = getBucketInputStream(0);
+							if(curBucketStream == null) {
+								return -1;
+							}
 						}
-					}
-					try {
-						int x = curBucketStream.read(buf, offset, length);
-						if(x > 0) {
-							readBytes += x;
-							return x;
+						try {
+							int x = curBucketStream.read();
+							if(x >= 0) {
+								readBytes++;
+								return x;
+							}
+						} catch (EOFException e) {
+							// Handle the same
 						}
-					} catch (EOFException e) {
-						// Handle the same
-					}
-					synchronized(BucketChainBucket.this) {
-						// No more data to read at the moment.
-						if(readBytes >= size) return -1;
-					}
-					bucketNo++;
-					curBucketStream.close();
-					curBucketStream = getBucketInputStream(bucketNo++);
-				}
-			}
-			
-			@Override
-			public int available() throws IOException {
-				synchronized(BucketChainBucket.this) {
-					if(freed) {
+						synchronized(BucketChainBucket.this) {
+							// No more data to read at the moment.
+							if(readBytes >= size) {
+								return -1;
+							}
+						}
+						bucketNo++;
 						curBucketStream.close();
-						curBucketStream = null;
-						throw new IOException("Freed");
+						curBucketStream = getBucketInputStream(bucketNo++);
 					}
 				}
-				return (int) Math.min(Integer.MAX_VALUE, size() - readBytes);
-			}
-			
-			@Override
-			public void close() throws IOException {
-				if(curBucketStream != null)
-					curBucketStream.close();
-			}
-			
-		};
+
+				@Override
+				public int read(byte[] buf) throws IOException {
+					synchronized(BucketChainBucket.this) {
+						if(freed) {
+							curBucketStream.close();
+							curBucketStream = null;
+							throw new IOException("Freed");
+						}
+					}
+					return read(buf, 0, buf.length);
+				}
+
+				@Override
+				public int read(byte[] buf, int offset, int length) throws IOException {
+					synchronized(BucketChainBucket.this) {
+						if(freed) {
+							curBucketStream.close();
+							curBucketStream = null;
+							throw new IOException("Freed");
+						}
+					}
+					if(length == 0) {
+						return 0;
+					}
+					while (true) {
+						if(curBucketStream == null) {
+							curBucketStream = getBucketInputStream(0);
+							if(curBucketStream == null) {
+								return -1;
+							}
+						}
+						try {
+							int x = curBucketStream.read(buf, offset, length);
+							if(x > 0) {
+								readBytes += x;
+								return x;
+							}
+						} catch (EOFException e) {
+							// Handle the same
+						}
+						synchronized(BucketChainBucket.this) {
+							// No more data to read at the moment.
+							if(readBytes >= size) {
+								return -1;
+							}
+						}
+						bucketNo++;
+						curBucketStream.close();
+						curBucketStream = getBucketInputStream(bucketNo++);
+					}
+				}
+
+				@Override
+				public int available() throws IOException {
+					synchronized(BucketChainBucket.this) {
+						if(freed) {
+							curBucketStream.close();
+							curBucketStream = null;
+							throw new IOException("Freed");
+						}
+					}
+					return (int) Math.min(Integer.MAX_VALUE, size() - readBytes);
+				}
+
+				@Override
+				public void close() throws IOException {
+					if(curBucketStream != null) {
+						curBucketStream.close();
+					}
+				}
+
+			};
 		}
 	}
 
 	protected synchronized InputStream getBucketInputStream(int i) throws IOException {
 		Bucket bucket = buckets.get(i);
-		if(bucket == null) return null;
+		if(bucket == null) {
+			return null;
+		}
 		return bucket.getInputStream();
 	}
 
@@ -198,13 +211,17 @@ public class BucketChainBucket implements Bucket {
 	public OutputStream getOutputStream() throws IOException {
 		Bucket[] list;
 		synchronized(this) {
-			if(readOnly) throw new IOException("Read-only");
-			if(freed) throw new IOException("Freed");
+			if(readOnly) {
+				throw new IOException("Read-only");
+			}
+			if(freed) {
+				throw new IOException("Freed");
+			}
 			size = 0;
 			list = getBuckets();
 			buckets.clear();
 		}
-		for(int i=0;i<list.length;i++) {
+		for(int i = 0; i < list.length; i++) {
 			list[i].free();
 		}
 		return new OutputStream() {
@@ -212,7 +229,7 @@ public class BucketChainBucket implements Bucket {
 			private int bucketNo = 0;
 			private OutputStream curBucketStream = makeBucketOutputStream(0);
 			private long bucketLength = 0;
-			
+
 			@Override
 			public void write(int c) throws IOException {
 				synchronized(BucketChainBucket.this) {
@@ -238,12 +255,12 @@ public class BucketChainBucket implements Bucket {
 					size++;
 				}
 			}
-			
+
 			@Override
 			public void write(byte[] buf) throws IOException {
 				write(buf, 0, buf.length);
 			}
-			
+
 			@Override
 			public void write(byte[] buf, int offset, int length) throws IOException {
 				synchronized(BucketChainBucket.this) {
@@ -258,7 +275,9 @@ public class BucketChainBucket implements Bucket {
 						throw new IOException("Read-only");
 					}
 				}
-				if(length <= 0) return;
+				if(length <= 0) {
+					return;
+				}
 				if(bucketLength == bucketSize) {
 					curBucketStream.close();
 					curBucketStream = makeBucketOutputStream(++bucketNo);
@@ -276,13 +295,14 @@ public class BucketChainBucket implements Bucket {
 					size += length;
 				}
 			}
-			
+
 			@Override
 			public void close() throws IOException {
-				if(curBucketStream != null)
+				if(curBucketStream != null) {
 					curBucketStream.close();
+				}
 			}
-			
+
 		};
 	}
 
@@ -291,14 +311,16 @@ public class BucketChainBucket implements Bucket {
 		synchronized(this) {
 			bucket = bf.makeBucket(bucketSize);
 			buckets.add(bucket);
-			if (buckets.size() != i + 1)
+			if(buckets.size() != i + 1) {
 				throw new IllegalStateException("Added bucket, size should be " + (i + 1) + " but is " + buckets.size());
-			if (buckets.get(i) != bucket)
+			}
+			if(buckets.get(i) != bucket) {
 				throw new IllegalStateException("Bucket got replaced. Race condition?");
+			}
 		}
 		return bucket.getOutputStream();
 	}
-	
+
 	public boolean isReadOnly() {
 		return readOnly;
 	}
@@ -321,12 +343,13 @@ public class BucketChainBucket implements Bucket {
 
 	public Bucket createShadow() throws IOException {
 		Vector<Bucket> newBuckets = new Vector<Bucket>();
-		for(int i=0;i<buckets.size();i++) {
+		for(int i = 0; i < buckets.size(); i++) {
 			Bucket data = buckets.get(i);
 			Bucket shadow = data.createShadow();
 			if(shadow == null) {
-				for(Bucket bucket : newBuckets)
+				for(Bucket bucket : newBuckets) {
 					bucket.free();
+				}
 				return null;
 			}
 			newBuckets.add(shadow);

@@ -19,19 +19,21 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
-    private static volatile boolean logMINOR;
-    private static volatile boolean logDEBUG;
 
-    static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
-            @Override
-            public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-            }
-        });
-    }
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+
+		});
+	}
 
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
@@ -43,51 +45,58 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 * are open to this file. So we can be sure they are all closed when we free it. 
 	 * Can be null. */
 	private transient Vector<Object> streams;
-
 	protected static String tempDir = null;
 
 	public BaseFileBucket(File file, boolean deleteOnExit) {
-		if(file == null) throw new NullPointerException();
+		if(file == null) {
+			throw new NullPointerException();
+		}
 		this.length = file.length();
-		if(deleteOnExit)
+		if(deleteOnExit) {
 			setDeleteOnExit(file);
+		}
 	}
-	
+
 	protected void setDeleteOnExit(File file) {
 		try {
 			file.deleteOnExit();
 		} catch (NullPointerException e) {
 			if(WrapperManager.hasShutdownHookBeenTriggered()) {
-				Logger.normal(this, "NullPointerException setting deleteOnExit while shutting down - buggy JVM code: "+e, e);
+				Logger.normal(this, "NullPointerException setting deleteOnExit while shutting down - buggy JVM code: " + e, e);
 			} else {
-				Logger.error(this, "Caught "+e+" doing deleteOnExit() for "+file+" - JVM bug ????");
+				Logger.error(this, "Caught " + e + " doing deleteOnExit() for " + file + " - JVM bug ????");
 			}
 		}
 	}
 
 	public OutputStream getOutputStream() throws IOException {
-		synchronized (this) {
+		synchronized(this) {
 			File file = getFile();
-			if(freed)
-				throw new IOException("File already freed: "+this);
-			if(isReadOnly())
-				throw new IOException("Bucket is read-only: "+this);
-			
-			if(createFileOnly() && file.exists())
+			if(freed) {
+				throw new IOException("File already freed: " + this);
+			}
+			if(isReadOnly()) {
+				throw new IOException("Bucket is read-only: " + this);
+			}
+
+			if(createFileOnly() && file.exists()) {
 				throw new FileExistsException(file);
-			
-			if(streams != null && !streams.isEmpty())
-				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams, new Exception("debug"));
-			
+			}
+
+			if(streams != null && !streams.isEmpty()) {
+				Logger.error(this, "Streams open on " + this + " while opening an output stream!: " + streams, new Exception("debug"));
+			}
+
 			File tempfile = createFileOnly() ? getTempfile() : file;
 			long streamNumber = ++fileRestartCounter;
-			
-			FileBucketOutputStream os = 
-				new FileBucketOutputStream(tempfile, streamNumber);
-			
-			if(logDEBUG)
-				Logger.debug(this, "Creating "+os, new Exception("debug"));
-			
+
+			FileBucketOutputStream os =
+					new FileBucketOutputStream(tempfile, streamNumber);
+
+			if(logDEBUG) {
+				Logger.debug(this, "Creating " + os, new Exception("debug"));
+			}
+
 			addStream(os);
 			return os;
 		}
@@ -96,24 +105,29 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	private synchronized void addStream(Object stream) {
 		// BaseFileBucket is a very common object, and often very long lived,
 		// so we need to minimize memory usage even at the cost of frequent allocations.
-		if(streams == null)
+		if(streams == null) {
 			streams = new Vector<Object>(1, 1);
+		}
 		streams.add(stream);
 	}
-	
+
 	private synchronized void removeStream(Object stream) {
 		// Race condition is possible
-		if(streams == null) return;
+		if(streams == null) {
+			return;
+		}
 		streams.remove(stream);
-		if(streams.isEmpty()) streams = null;
+		if(streams.isEmpty()) {
+			streams = null;
+		}
 	}
 
 	protected abstract boolean createFileOnly();
-	
+
 	protected abstract boolean deleteOnExit();
-	
+
 	protected abstract boolean deleteOnFinalize();
-	
+
 	protected abstract boolean deleteOnFree();
 
 	/**
@@ -122,10 +136,12 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	protected File getTempfile() throws IOException {
 		File file = getFile();
 		File f = File.createTempFile(file.getName(), ".freenet-tmp", file.getParentFile());
-		if(deleteOnExit()) f.deleteOnExit();
+		if(deleteOnExit()) {
+			f.deleteOnExit();
+		}
 		return f;
 	}
-	
+
 	protected synchronized void resetLength() {
 		length = 0;
 	}
@@ -143,34 +159,38 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		private long restartCount;
 		private File tempfile;
 		private boolean closed;
-		
+
 		protected FileBucketOutputStream(
-			File tempfile, long restartCount)
-			throws FileNotFoundException {
+				File tempfile, long restartCount)
+				throws FileNotFoundException {
 			super(tempfile, false);
-			if(logMINOR)
-				Logger.minor(this, "Writing to "+tempfile+" for "+getFile()+" : "+this);
+			if(logMINOR) {
+				Logger.minor(this, "Writing to " + tempfile + " for " + getFile() + " : " + this);
+			}
 			this.tempfile = tempfile;
 			resetLength();
 			this.restartCount = restartCount;
 			closed = false;
 		}
-		
+
 		protected void confirmWriteSynchronized() throws IOException {
 			synchronized(BaseFileBucket.this) {
-				if (fileRestartCounter > restartCount)
+				if(fileRestartCounter > restartCount) {
 					throw new IllegalStateException("writing to file after restart");
-				if(freed)
+				}
+				if(freed) {
 					throw new IOException("writing to file after it has been freed");
+				}
 			}
-			if(isReadOnly())
+			if(isReadOnly()) {
 				throw new IOException("File is read-only");
-				
+			}
+
 		}
-		
+
 		@Override
 		public void write(byte[] b) throws IOException {
-			synchronized (BaseFileBucket.this) {
+			synchronized(BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b);
 				length += b.length;
@@ -179,7 +199,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
-			synchronized (BaseFileBucket.this) {
+			synchronized(BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b, off, len);
 				length += len;
@@ -188,93 +208,113 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 		@Override
 		public void write(int b) throws IOException {
-			synchronized (BaseFileBucket.this) {
+			synchronized(BaseFileBucket.this) {
 				confirmWriteSynchronized();
 				super.write(b);
 				length++;
 			}
 		}
-		
+
 		@Override
 		public void close() throws IOException {
 			File file;
 			synchronized(this) {
-				if(closed) return;
+				if(closed) {
+					return;
+				}
 				closed = true;
 				file = getFile();
 			}
 			removeStream(this);
-			if(logMINOR)
-				Logger.minor(this, "Closing "+BaseFileBucket.this);
+			if(logMINOR) {
+				Logger.minor(this, "Closing " + BaseFileBucket.this);
+			}
 			try {
 				super.close();
 			} catch (IOException e) {
-				if(logMINOR)
-					Logger.minor(this, "Failed closing "+BaseFileBucket.this+" : "+e, e);
-				if(createFileOnly()) tempfile.delete();
+				if(logMINOR) {
+					Logger.minor(this, "Failed closing " + BaseFileBucket.this + " : " + e, e);
+				}
+				if(createFileOnly()) {
+					tempfile.delete();
+				}
 				throw e;
 			}
 			if(createFileOnly()) {
 				if(file.exists()) {
-					if(logMINOR)
-						Logger.minor(this, "File exists creating file for "+this);
+					if(logMINOR) {
+						Logger.minor(this, "File exists creating file for " + this);
+					}
 					tempfile.delete();
 					throw new FileExistsException(file);
 				}
 				if(!tempfile.renameTo(file)) {
-					if(logMINOR)
-						Logger.minor(this, "Cannot rename file for "+this);
-					if(file.exists()) throw new FileExistsException(file);
+					if(logMINOR) {
+						Logger.minor(this, "Cannot rename file for " + this);
+					}
+					if(file.exists()) {
+						throw new FileExistsException(file);
+					}
 					tempfile.delete();
-					if(logMINOR)
-						Logger.minor(this, "Deleted, cannot rename file for "+this);
+					if(logMINOR) {
+						Logger.minor(this, "Deleted, cannot rename file for " + this);
+					}
 					throw new IOException("Cannot rename file");
 				}
 			}
 		}
-		
+
 		@Override
 		public String toString() {
-			return super.toString()+":"+BaseFileBucket.this.toString();
+			return super.toString() + ":" + BaseFileBucket.this.toString();
 		}
+
 	}
 
+
 	class FileBucketInputStream extends FileInputStream {
+
 		boolean closed;
 
 		public FileBucketInputStream(File f) throws IOException {
 			super(f);
 		}
-		
+
 		@Override
 		public void close() throws IOException {
 			synchronized(this) {
-				if(closed) return;
+				if(closed) {
+					return;
+				}
 				closed = true;
 			}
 			removeStream(this);
 			super.close();
 		}
-		
+
 		@Override
 		public String toString() {
-			return super.toString()+":"+BaseFileBucket.this.toString();
+			return super.toString() + ":" + BaseFileBucket.this.toString();
 		}
+
 	}
 
+
 	public synchronized InputStream getInputStream() throws IOException {
-		if(freed)
-			throw new IOException("File already freed: "+this);
+		if(freed) {
+			throw new IOException("File already freed: " + this);
+		}
 		File file = getFile();
 		if(!file.exists()) {
-			Logger.normal(this, "File does not exist: "+file+" for "+this);
+			Logger.normal(this, "File does not exist: " + file + " for " + this);
 			return new NullInputStream();
 		} else {
 			FileBucketInputStream is =
-				new FileBucketInputStream(file);
+					new FileBucketInputStream(file);
 			addStream(is);
-			if(logDEBUG)
-				Logger.debug(this, "Creating "+is, new Exception("debug"));
+			if(logDEBUG) {
+				Logger.debug(this, "Creating " + is, new Exception("debug"));
+			}
 			return is;
 		}
 	}
@@ -295,15 +335,17 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 * called twice. But length must still be valid when calling it.
 	 */
 	protected synchronized void deleteFile() {
-		if(logMINOR)
-			Logger.minor(this, "Deleting "+getFile()+" for "+this, new Exception("debug"));
+		if(logMINOR) {
+			Logger.minor(this, "Deleting " + getFile() + " for " + this, new Exception("debug"));
+		}
 		getFile().delete();
 	}
 
 	@Override
 	protected void finalize() {
-		if(deleteOnFinalize())
+		if(deleteOnFinalize()) {
 			free(true);
+		}
 	}
 
 	/**
@@ -320,15 +362,14 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 */
 	public final synchronized static void setTempDir(String dirName) {
 		File dir = new File(dirName);
-		if (!(dir.exists() && dir.isDirectory() && dir.canWrite())) {
+		if(!(dir.exists() && dir.isDirectory() && dir.canWrite())) {
 			throw new IllegalArgumentException(
-				"Bad Temp Directory: " + dir.getAbsolutePath());
+					"Bad Temp Directory: " + dir.getAbsolutePath());
 		}
 		tempDir = dirName;  // **FIXME**/TODO: locking on tempDir needs to be checked by a Java guru for consistency
 	}
 
 	// determine the temp directory in one of several ways
-
 	static {
 		// Try the Java property (1.2 and above)
 		tempDir = System.getProperty("java.io.tmpdir");
@@ -346,29 +387,25 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 		// make some semi-educated guesses based on OS.
 
-		if (tempDir == null) {
+		if(tempDir == null) {
 			String os = System.getProperty("os.name");
-			if (os != null) {
+			if(os != null) {
 
 				String[] candidates = null;
 
 				// XXX: Add more possible OSes here.
-				if (os.equalsIgnoreCase("Linux")
-					|| os.equalsIgnoreCase("FreeBSD")) {
+				if(os.equalsIgnoreCase("Linux") || os.equalsIgnoreCase("FreeBSD")) {
 					String[] linuxCandidates = { "/tmp", "/var/tmp" };
 					candidates = linuxCandidates;
-				} else if (os.equalsIgnoreCase("Windows")) {
-					String[] windowsCandidates =
-						{ "C:\\TEMP", "C:\\WINDOWS\\TEMP" };
+				} else if(os.equalsIgnoreCase("Windows")) {
+					String[] windowsCandidates = { "C:\\TEMP", "C:\\WINDOWS\\TEMP" };
 					candidates = windowsCandidates;
 				}
 
-				if (candidates != null) {
-					for (int i = 0; i < candidates.length; i++) {
+				if(candidates != null) {
+					for(int i = 0; i < candidates.length; i++) {
 						File path = new File(candidates[i]);
-						if (path.exists()
-							&& path.isDirectory()
-							&& path.canWrite()) {
+						if(path.exists() && path.isDirectory() && path.canWrite()) {
 							tempDir = candidates[i];
 							break;
 						}
@@ -379,7 +416,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 		// last resort -- use current working directory
 
-		if (tempDir == null) {
+		if(tempDir == null) {
 			// This can be null -- but that's OK, null => cwd for File
 			// constructor, anyways.
 			tempDir = System.getProperty("user.dir");
@@ -387,13 +424,16 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	public synchronized Bucket[] split(int splitSize) {
-		if(length > ((long)Integer.MAX_VALUE) * splitSize)
-			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
+		if(length > ((long) Integer.MAX_VALUE) * splitSize) {
+			throw new IllegalArgumentException("Way too big!: " + length + " for " + splitSize);
+		}
 		int bucketCount = (int) (length / splitSize);
-		if(length % splitSize > 0) bucketCount++;
+		if(length % splitSize > 0) {
+			bucketCount++;
+		}
 		Bucket[] buckets = new Bucket[bucketCount];
 		File file = getFile();
-		for(int i=0;i<buckets.length;i++) {
+		for(int i = 0; i < buckets.length; i++) {
 			long startAt = 1L * i * splitSize;
 			long endAt = Math.min(startAt + splitSize * 1L, length);
 			long len = endAt - startAt;
@@ -405,21 +445,24 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	public void free() {
 		free(false);
 	}
-	
+
 	public void free(boolean forceFree) {
 		Object[] toClose;
-		if(logMINOR)
-			Logger.minor(this, "Freeing "+this, new Exception("debug"));
+		if(logMINOR) {
+			Logger.minor(this, "Freeing " + this, new Exception("debug"));
+		}
 		synchronized(this) {
-			if(freed) return;
+			if(freed) {
+				return;
+			}
 			freed = true;
 			toClose = streams == null ? null : streams.toArray();
 			streams = null;
 		}
-		
+
 		if(toClose != null) {
-			Logger.error(this, "Streams open free()ing "+this+" : "+Arrays.toString(toClose), new Exception("debug"));
-			for(int i=0;i<toClose.length;i++) {
+			Logger.error(this, "Streams open free()ing " + this + " : " + Arrays.toString(toClose), new Exception("debug"));
+			for(int i = 0; i < toClose.length; i++) {
 				try {
 					if(toClose[i] instanceof FileBucketOutputStream) {
 						((FileBucketOutputStream) toClose[i]).close();
@@ -427,24 +470,25 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 						((FileBucketInputStream) toClose[i]).close();
 					}
 				} catch (IOException e) {
-					Logger.error(this, "Caught closing stream in free(): "+e, e);
+					Logger.error(this, "Caught closing stream in free(): " + e, e);
 				} catch (Throwable t) {
-					Logger.error(this, "Caught closing stream in free(): "+t, t);
+					Logger.error(this, "Caught closing stream in free(): " + t, t);
 				}
 			}
 		}
-		
+
 		File file = getFile();
-		if ((deleteOnFree() || forceFree) && file.exists()) {
+		if((deleteOnFree() || forceFree) && file.exists()) {
 			Logger.debug(this,
-				"Deleting bucket " + file.getName(), new Exception("debug"));
+					"Deleting bucket " + file.getName(), new Exception("debug"));
 			deleteFile();
-			if (file.exists())
+			if(file.exists()) {
 				Logger.error(this,
-					"Delete failed on bucket " + file.getName());
+						"Delete failed on bucket " + file.getName());
+			}
 		}
 	}
-	
+
 	@Override
 	public synchronized String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -460,9 +504,11 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 * Returns the file object this buckets data is kept in.
 	 */
 	public abstract File getFile();
-	
+
 	public synchronized SimpleFieldSet toFieldSet() {
-		if(deleteOnFinalize()) return null;
+		if(deleteOnFinalize()) {
+			return null;
+		}
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "FileBucket");
 		fs.putSingle("Filename", getFile().toString());
@@ -472,23 +518,30 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	public static Bucket create(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("Filename");
-		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
+		if(tmp == null) {
+			throw new CannotCreateFromFieldSetException("No filename");
+		}
 		File file = FileUtil.getCanonicalFile(new File(tmp));
 		if(f.matches(file)) {
 			return PersistentTempFileBucket.create(fs, f);
 		}
 		tmp = fs.get("Length");
-		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
+		if(tmp == null) {
+			throw new CannotCreateFromFieldSetException("No length");
+		}
 		try {
 			long length = Fields.parseLong(tmp, -1);
-			if(length !=  file.length())
-				throw new CannotCreateFromFieldSetException("Invalid length: should be "+length+" actually "+file.length()+" on "+file);
+			if(length != file.length()) {
+				throw new CannotCreateFromFieldSetException("Invalid length: should be " + length + " actually " + file.length() + " on " + file);
+			}
 		} catch (NumberFormatException e) {
-			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
+			throw new CannotCreateFromFieldSetException("Corrupt length " + tmp, e);
 		}
 		FileBucket bucket = new FileBucket(file, false, true, false, false, false);
 		if(file.exists()) // no point otherwise!
+		{
 			f.register(file);
+		}
 		return bucket;
 	}
 

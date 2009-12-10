@@ -2,13 +2,21 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
+
 import java.io.*;
 
 public class NullOutputStream extends OutputStream {
-    public NullOutputStream() {}
-    @Override
-	public void write(int b) {}
-    @Override
-	public void write(byte[] buf, int off, int len) {}
+
+	public NullOutputStream() {
+	}
+
+	@Override
+	public void write(int b) {
+	}
+
+	@Override
+	public void write(byte[] buf, int off, int len) {
+	}
+
 }
 

@@ -13,11 +13,11 @@ import java.io.IOException;
 public interface RandomAccessThing extends Closeable {
 
 	public long size() throws IOException;
-	
+
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
-	
+
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length) throws IOException;
 
 	public void close();
-	
+
 }

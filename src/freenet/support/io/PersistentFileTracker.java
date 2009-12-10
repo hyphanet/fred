@@ -28,5 +28,5 @@ public interface PersistentFileTracker {
 	public FilenameGenerator getGenerator();
 
 	public long getID(File file);
-	
+
 }

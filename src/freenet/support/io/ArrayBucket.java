@@ -18,6 +18,7 @@ import freenet.support.api.Bucket;
  * @author oskar
  */
 public class ArrayBucket implements Bucket {
+
 	private volatile byte[] data;
 	private String name;
 	private boolean readOnly;
@@ -37,7 +38,9 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public OutputStream getOutputStream() throws IOException {
-		if(readOnly) throw new IOException("Read only");
+		if(readOnly) {
+			throw new IOException("Read only");
+		}
 		return new ArrayBucketOutputStream();
 	}
 
@@ -59,21 +62,28 @@ public class ArrayBucket implements Bucket {
 	}
 
 	private class ArrayBucketOutputStream extends ByteArrayOutputStream {
+
 		private boolean hasBeenClosed = false;
-		
+
 		public ArrayBucketOutputStream() {
 			super();
 		}
 
 		@Override
 		public synchronized void close() throws IOException {
-			if(hasBeenClosed) return;
+			if(hasBeenClosed) {
+				return;
+			}
 			data = super.toByteArray();
-			if(readOnly) throw new IOException("Read only");
+			if(readOnly) {
+				throw new IOException("Read only");
+			}
 			// FIXME maybe we should throw on write instead? :)
 			hasBeenClosed = true;
 		}
+
 	}
+
 
 	public boolean isReadOnly() {
 		return readOnly;
@@ -90,7 +100,7 @@ public class ArrayBucket implements Bucket {
 
 	public byte[] toByteArray() {
 		long sz = size();
-		int size = (int)sz;
+		int size = (int) sz;
 		byte[] buf = new byte[size];
 		System.arraycopy(data, 0, buf, 0, size);
 		return buf;
@@ -109,4 +119,5 @@ public class ArrayBucket implements Bucket {
 	public Bucket createShadow() throws IOException {
 		return null;
 	}
+
 }

@@ -23,13 +23,13 @@ import freenet.support.Logger;
 import freenet.support.SizeUtil;
 
 final public class FileUtil {
-	
+
 	private static final int BUFFER_SIZE = 4096;
 
 	/** Round up a value to the next multiple of a power of 2 */
-	private static final long roundup_2n (long val, int blocksize) {
-		int mask=blocksize-1;
-		return (val+mask)&~mask;
+	private static final long roundup_2n(long val, int blocksize) {
+		int mask = blocksize - 1;
+		return (val + mask) & ~mask;
 	}
 
 	/**
@@ -59,21 +59,33 @@ final public class FileUtil {
 		File canon = FileUtil.getCanonicalFile(poss);
 		File canonFile = FileUtil.getCanonicalFile(filename);
 
-		if(isParentInner(poss, filename)) return true;
-		if(isParentInner(poss, canonFile)) return true;
-		if(isParentInner(canon, filename)) return true;
-		if(isParentInner(canon, canonFile)) return true;
+		if(isParentInner(poss, filename)) {
+			return true;
+		}
+		if(isParentInner(poss, canonFile)) {
+			return true;
+		}
+		if(isParentInner(canon, filename)) {
+			return true;
+		}
+		if(isParentInner(canon, canonFile)) {
+			return true;
+		}
 		return false;
 	}
 
 	private static boolean isParentInner(File possParent, File filename) {
-		while(true) {
-			if(filename.equals(possParent)) return true;
+		while (true) {
+			if(filename.equals(possParent)) {
+				return true;
+			}
 			filename = filename.getParentFile();
-			if(filename == null) return false;
+			if(filename == null) {
+				return false;
+			}
 		}
 	}
-	
+
 	public static File getCanonicalFile(File file) {
 		// Having some problems storing File's in db4o ...
 		// It would start up, and canonicalise a file with path "/var/lib/freenet-experimental/persistent-temp-24374"
@@ -90,17 +102,17 @@ final public class FileUtil {
 		}
 		return result;
 	}
-	
-        public static String readUTF(File file) throws FileNotFoundException, IOException {
-            return readUTF(file, 0);
-        }
-        
+
+	public static String readUTF(File file) throws FileNotFoundException, IOException {
+		return readUTF(file, 0);
+	}
+
 	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuilder result = new StringBuilder();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
 		InputStreamReader isr = null;
-		
+
 		try {
 			fis = new FileInputStream(file);
 			skipFully(fis, offset);
@@ -110,7 +122,7 @@ final public class FileUtil {
 			char[] buf = new char[4096];
 			int length = 0;
 
-			while((length = isr.read(buf)) > 0) {
+			while ((length = isr.read(buf)) > 0) {
 				result.append(buf, 0, length);
 			}
 
@@ -127,9 +139,11 @@ final public class FileUtil {
 	 */
 	public static void skipFully(InputStream is, long skip) throws IOException {
 		long skipped = 0;
-		while(skipped < skip) {
+		while (skipped < skip) {
 			long x = is.skip(skip - skipped);
-			if(x <= 0) throw new IOException("Unable to skip "+(skip - skipped)+" bytes");
+			if(x <= 0) {
+				throw new IOException("Unable to skip " + (skip - skipped) + " bytes");
+			}
 			skipped += x;
 		}
 	}
@@ -138,9 +152,10 @@ final public class FileUtil {
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
-		if(Logger.shouldLog(Logger.MINOR, FileUtil.class))
-			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
-		
+		if(Logger.shouldLog(Logger.MINOR, FileUtil.class)) {
+			Logger.minor(FileUtil.class, "Writing to " + file + " to be renamed to " + target);
+		}
+
 		try {
 			dis = new DataInputStream(input);
 			fos = new FileOutputStream(file);
@@ -153,120 +168,135 @@ final public class FileUtil {
 		} catch (IOException e) {
 			throw e;
 		} finally {
-			if(dis != null) dis.close();
-			if(fos != null) fos.close();
+			if(dis != null) {
+				dis.close();
+			}
+			if(fos != null) {
+				fos.close();
+			}
 		}
-		
-		if(FileUtil.renameTo(file, target))
+
+		if(FileUtil.renameTo(file, target)) {
 			return true;
-		else {
+		} else {
 			file.delete();
 			return false;
 		}
 	}
-        
-        public static boolean renameTo(File orig, File dest) {
-            // Try an atomic rename
-            // Shall we prevent symlink-race-conditions here ?
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if (!orig.renameTo(dest)) {
-                // Not supported on some systems (Windows)
-                if (!dest.delete()) {
-                    if (dest.exists()) {
-                        Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
-                    }
-                }
-                if (!orig.renameTo(dest)) {
-                    Logger.error("FileUtil", "Could not rename " + orig + " to " + dest +
-                            (dest.exists() ? " (target exists)" : "") +
-                            (orig.exists() ? " (source exists)" : "") +
-                            " - check permissions");
-                    return false;
-                }
-            }
-            return true;
-        }
 
-        /**
-         * Like renameTo(), but can move across filesystems, by copying the data.
-         * @param f
-         * @param file
-         */
-    	public static boolean moveTo(File orig, File dest, boolean overwrite) {
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if(dest.exists()) {
-            	if(overwrite)
-            		dest.delete();
-            	else {
-            		System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
-            		return false;
-            	}
-            }
-    		if(!orig.renameTo(dest)) {
-    			// Copy the data
-    			InputStream is = null;
-    			OutputStream os = null;
-    			try {
-    				is = new FileInputStream(orig);
-    				os = new FileOutputStream(dest);
-    				copy(is, os, orig.length());
-    				is.close();
-    				is = null;
-    				os.close();
-    				os = null;
-    				orig.delete();
-    				return true;
-    			} catch (IOException e) {
-    				dest.delete();
-    				Logger.error(FileUtil.class, "Move failed from "+orig+" to "+dest+" : "+e, e);
-    				System.err.println("Move failed from "+orig+" to "+dest+" : "+e);
-    				e.printStackTrace();
-    				return false;
-    			} finally {
-    				Closer.close(is);
-    				Closer.close(os);
-    			}
-    		} else return true;
-    	}
+	public static boolean renameTo(File orig, File dest) {
+		// Try an atomic rename
+		// Shall we prevent symlink-race-conditions here ?
+		if(orig.equals(dest)) {
+			throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
+		}
+		if(!orig.exists()) {
+			throw new IllegalArgumentException("Original doesn't exist!");
+		}
+		if(!orig.renameTo(dest)) {
+			// Not supported on some systems (Windows)
+			if(!dest.delete()) {
+				if(dest.exists()) {
+					Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
+				}
+			}
+			if(!orig.renameTo(dest)) {
+				Logger.error("FileUtil", "Could not rename " + orig + " to " + dest +
+						(dest.exists() ? " (target exists)" : "") +
+						(orig.exists() ? " (source exists)" : "") +
+						" - check permissions");
+				return false;
+			}
+		}
+		return true;
+	}
 
+	/**
+	 * Like renameTo(), but can move across filesystems, by copying the data.
+	 * @param f
+	 * @param file
+	 */
+	public static boolean moveTo(File orig, File dest, boolean overwrite) {
+		if(orig.equals(dest)) {
+			throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
+		}
+		if(!orig.exists()) {
+			throw new IllegalArgumentException("Original doesn't exist!");
+		}
+		if(dest.exists()) {
+			if(overwrite) {
+				dest.delete();
+			} else {
+				System.err.println("Not overwriting " + dest + " - already exists moving " + orig);
+				return false;
+			}
+		}
+		if(!orig.renameTo(dest)) {
+			// Copy the data
+			InputStream is = null;
+			OutputStream os = null;
+			try {
+				is = new FileInputStream(orig);
+				os = new FileOutputStream(dest);
+				copy(is, os, orig.length());
+				is.close();
+				is = null;
+				os.close();
+				os = null;
+				orig.delete();
+				return true;
+			} catch (IOException e) {
+				dest.delete();
+				Logger.error(FileUtil.class, "Move failed from " + orig + " to " + dest + " : " + e, e);
+				System.err.println("Move failed from " + orig + " to " + dest + " : " + e);
+				e.printStackTrace();
+				return false;
+			} finally {
+				Closer.close(is);
+				Closer.close(os);
+			}
+		} else {
+			return true;
+		}
+	}
 
-        
 	public static String sanitize(String s) {
 		StringBuilder sb = new StringBuilder(s.length());
-		for(int i=0;i<s.length();i++) {
+		for(int i = 0; i < s.length(); i++) {
 			char c = s.charAt(i);
-			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"') || (c == '|'))
+			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"') || (c == '|')) {
 				continue;
-			if(Character.isDigit(c))
+			}
+			if(Character.isDigit(c)) {
 				sb.append(c);
-			else if(Character.isLetter(c))
+			} else if(Character.isLetter(c)) {
 				sb.append(c);
-			else if(Character.isWhitespace(c))
+			} else if(Character.isWhitespace(c)) {
 				sb.append(' ');
-			else if((c == '-') || (c == '_') || (c == '.'))
+			} else if((c == '-') || (c == '_') || (c == '.')) {
 				sb.append(c);
+			}
 		}
 		return sb.toString();
 	}
 
 	public static String sanitize(String filename, String mimeType) {
 		filename = sanitize(filename);
-		if(mimeType == null) return filename;
+		if(mimeType == null) {
+			return filename;
+		}
 		if(filename.indexOf('.') >= 0) {
 			String oldExt = filename.substring(filename.lastIndexOf('.'));
-			if(DefaultMIMETypes.isValidExt(mimeType, oldExt)) return filename;
+			if(DefaultMIMETypes.isValidExt(mimeType, oldExt)) {
+				return filename;
+			}
 		}
 		String defaultExt = DefaultMIMETypes.getExtension(filename);
-		if(defaultExt == null) return filename;
-		else return filename + '.' + defaultExt;
+		if(defaultExt == null) {
+			return filename;
+		} else {
+			return filename + '.' + defaultExt;
+		}
 	}
 
 	/**
@@ -286,7 +316,7 @@ final public class FileUtil {
 		int read = 0;
 		while (read > -1) {
 			read = source.read(buffer);
-			if (read != -1) {
+			if(read != -1) {
 				length += read;
 			}
 		}
@@ -315,8 +345,8 @@ final public class FileUtil {
 		int read = 0;
 		while ((remaining == -1) || (remaining > 0)) {
 			read = source.read(buffer, 0, ((remaining > BUFFER_SIZE) || (remaining == -1)) ? BUFFER_SIZE : (int) remaining);
-			if (read == -1) {
-				if (length == -1) {
+			if(read == -1) {
+				if(length == -1) {
 					return;
 				}
 				throw new EOFException("stream reached eof");
@@ -330,18 +360,20 @@ final public class FileUtil {
 	 * important data below it! */
 	public static boolean removeAll(File wd) {
 		if(!wd.isDirectory()) {
-			System.err.println("DELETING FILE "+wd);
+			System.err.println("DELETING FILE " + wd);
 			if(!wd.delete() && wd.exists()) {
-				Logger.error(FileUtil.class, "Could not delete file: "+wd);
+				Logger.error(FileUtil.class, "Could not delete file: " + wd);
 				return false;
 			}
 		} else {
 			File[] subfiles = wd.listFiles();
-			for(int i=0;i<subfiles.length;i++) {
-				if(!removeAll(subfiles[i])) return false;
+			for(int i = 0; i < subfiles.length; i++) {
+				if(!removeAll(subfiles[i])) {
+					return false;
+				}
 			}
 			if(!wd.delete()) {
-				Logger.error(FileUtil.class, "Could not delete directory: "+wd);
+				Logger.error(FileUtil.class, "Could not delete directory: " + wd);
 			}
 		}
 		return true;
@@ -349,7 +381,9 @@ final public class FileUtil {
 
 	public static void secureDelete(File file, Random random) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
-		if(!file.exists()) return;
+		if(!file.exists()) {
+			return;
+		}
 		long size = file.length();
 		if(size > 0) {
 			RandomAccessFile raf = null;
@@ -360,18 +394,19 @@ final public class FileUtil {
 				byte[] buf = new byte[4096];
 				// First zero it out
 				count = 0;
-				while(count < size) {
+				while (count < size) {
 					int written = (int) Math.min(buf.length, size - count);
 					raf.write(buf, 0, written);
 					count += written;
 				}
 				raf.getFD().sync();
 				// Then ffffff it out
-				for(int i=0;i<buf.length;i++)
-					buf[i] = (byte)0xFF;
+				for(int i = 0; i < buf.length; i++) {
+					buf[i] = (byte) 0xFF;
+				}
 				raf.seek(0);
 				count = 0;
-				while(count < size) {
+				while (count < size) {
 					int written = (int) Math.min(buf.length, size - count);
 					raf.write(buf, 0, written);
 					count += written;
@@ -381,7 +416,7 @@ final public class FileUtil {
 				random.nextBytes(buf);
 				raf.seek(0);
 				count = 0;
-				while(count < size) {
+				while (count < size) {
 					int written = (int) Math.min(buf.length, size - count);
 					raf.write(buf, 0, written);
 					count += written;
@@ -389,10 +424,11 @@ final public class FileUtil {
 				raf.getFD().sync();
 				raf.seek(0);
 				// Then 0's again
-				for(int i=0;i<buf.length;i++)
+				for(int i = 0; i < buf.length; i++) {
 					buf[i] = 0;
+				}
 				count = 0;
-				while(count < size) {
+				while (count < size) {
 					int written = (int) Math.min(buf.length, size - count);
 					raf.write(buf, 0, written);
 					count += written;
@@ -402,8 +438,9 @@ final public class FileUtil {
 				Closer.close(raf);
 			}
 		}
-		if((!file.delete()) && file.exists())
+		if((!file.delete()) && file.exists()) {
 			throw new IOException("Unable to delete file");
+		}
 	}
 
 	public static final long getFreeSpace(File dir) {
@@ -419,14 +456,14 @@ final public class FileUtil {
 					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
 				}
 			}
-		} catch(NoSuchMethodException e) {
+		} catch (NoSuchMethodException e) {
 			// Ignore
 			freeSpace = -1;
-		} catch(Throwable t) {
+		} catch (Throwable t) {
 			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
 			freeSpace = -1;
 		}
 		return freeSpace;
 	}
-	
+
 }

@@ -40,32 +40,24 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * However at the moment we do not support garbage collection for non-blob persistent temp files. 
 	 * When we implement it it will probably not use this structure... FIXME! */
 	private HashSet<File> originalFiles;
-	
 	/** Filename generator. Tracks the directory and the prefix for temp files, can move them if these 
 	 * change, generates filenames. */
 	public final FilenameGenerator fg;
-	
 	/** Cryptographically strong random number generator */
 	private transient RandomSource strongPRNG;
 	/** Weak but fast random number generator. */
 	private transient Random weakPRNG;
-	
 	/** Buckets to free. When buckets are freed, we write them to this list, and delete the files *after*
 	 * the transaction recording the buckets being deleted hits the disk. */
 	private final ArrayList<DelayedFreeBucket> bucketsToFree;
-	
 	/** The node database handle. Used to find everything for a specific node in the database. */
 	private final long nodeDBHandle;
-
 	/** Should we encrypt temporary files? */
 	private volatile boolean encrypt;
-
 	/** Any temporary file of exactly 32KB - and there are a lot of such temporary files! - will be allocated
 	 * out of a single large blob file, whose contents are tracked in the database. */
 	private final PersistentBlobTempBucketFactory blobFactory;
-	
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
-	
 	/** Don't store the bucketsToFree unless it's been modified since we last stored it. */
 	private transient boolean modifiedBucketsToFree;
 
@@ -91,52 +83,59 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		if(!dir.exists()) {
 			dir.mkdir();
 			if(!dir.exists()) {
-				throw new IOException("Directory does not exist and cannot be created: "+dir);
+				throw new IOException("Directory does not exist and cannot be created: " + dir);
 			}
 		}
-		if(!dir.isDirectory())
-			throw new IOException("Directory is not a directory: "+dir);
+		if(!dir.isDirectory()) {
+			throw new IOException("Directory is not a directory: " + dir);
+		}
 		originalFiles = new HashSet<File>();
 		File[] files = dir.listFiles(new FileFilter() {
 
 			public boolean accept(File pathname) {
-				if(!pathname.exists() || pathname.isDirectory())
+				if(!pathname.exists() || pathname.isDirectory()) {
 					return false;
+				}
 				String name = pathname.getName();
-				if(name.startsWith(prefix))
+				if(name.startsWith(prefix)) {
 					return true;
+				}
 				return false;
 			}
+
 		});
 		for(File f : files) {
 			f = FileUtil.getCanonicalFile(f);
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Found " + f);
+			}
 			originalFiles.add(f);
 		}
-		
+
 		bucketsToFree = new ArrayList<DelayedFreeBucket>();
 	}
-	
+
 	/** Re-initialise the bucket factory after restarting and pulling it from the database */
 	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
 		fg.init(dir, prefix, weakPRNG);
 	}
-	
+
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
 	 * currently used. @see #completedInit() */
 	public void register(File file) {
 		synchronized(this) {
-			if(originalFiles == null)
+			if(originalFiles == null) {
 				throw new IllegalStateException("completed Init has already been called!");
+			}
 			file = FileUtil.getCanonicalFile(file);
-			if(!originalFiles.remove(file))
-				Logger.error(this, "Preserving "+file+" but it wasn't found!", new Exception("error"));
+			if(!originalFiles.remove(file)) {
+				Logger.error(this, "Preserving " + file + " but it wasn't found!", new Exception("error"));
+			}
 		}
 	}
-	
+
 	/**
 	 * Called when boot-up is complete.
 	 * Deletes any old temp files still unclaimed.
@@ -145,7 +144,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		// Persisting requests in the database means we don't register() files...
 		// So keep all the temp files for now.
 		// FIXME: tidy up unwanted temp files.
-		
+
 //		Iterator<File> i = originalFiles.iterator();
 //		while(i.hasNext()) {
 //			File f = (File) (i.next());
@@ -171,12 +170,15 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				throw new IOException("Database disabled, persistent buckets not available");
 			}
 		}
-		if(rawBucket == null)
+		if(rawBucket == null) {
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
-		if(encrypt)
+		}
+		if(encrypt) {
 			rawBucket = new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG);
-		if(mustWrap)
+		}
+		if(mustWrap) {
 			rawBucket = new DelayedFreeBucket(this, rawBucket);
+		}
 		return rawBucket;
 	}
 
@@ -193,14 +195,16 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/** Get and clear the list of buckets to free after the transaction commits. */
 	private DelayedFreeBucket[] grabBucketsToFree() {
 		synchronized(this) {
-			if(bucketsToFree.isEmpty()) return null;
+			if(bucketsToFree.isEmpty()) {
+				return null;
+			}
 			DelayedFreeBucket[] buckets = bucketsToFree.toArray(new DelayedFreeBucket[bucketsToFree.size()]);
 			bucketsToFree.clear();
 			modifiedBucketsToFree = true;
 			return buckets;
 		}
 	}
-	
+
 	/** Get the directory we are creating temporary files in */
 	public File getDir() {
 		return fg.getDir();
@@ -221,7 +225,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public long getID(File file) {
 		return fg.getID(file);
 	}
-	
+
 	/** Are we encrypting temporary files? */
 	public boolean isEncrypting() {
 		return encrypt;
@@ -245,14 +249,18 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * @throws IOException If we cannot access the proposed directory, or some other I/O error prevents us
 	 * using it.
 	 */
-	@SuppressWarnings("serial")
+	@SuppressWarnings( "serial" )
 	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt, DBJobRunner jobRunner, Ticker ticker) throws IOException {
 		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
+
 			@Override
 			public boolean match(PersistentTempBucketFactory factory) {
-				if(factory.nodeDBHandle == nodeDBHandle) return true;
+				if(factory.nodeDBHandle == nodeDBHandle) {
+					return true;
+				}
 				return false;
 			}
+
 		});
 		if(results.hasNext()) {
 			PersistentTempBucketFactory factory = results.next();
@@ -263,7 +271,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			return factory;
 		} else {
 			PersistentTempBucketFactory factory =
-				new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
+					new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
 			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE, ticker);
 			return factory;
 		}
@@ -284,7 +292,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 */
 	public void preCommit(ObjectContainer db) {
 		synchronized(this) {
-			if(!modifiedBucketsToFree) return;
+			if(!modifiedBucketsToFree) {
+				return;
+			}
 			modifiedBucketsToFree = false;
 			for(DelayedFreeBucket bucket : bucketsToFree) {
 				db.activate(bucket, 1);
@@ -293,7 +303,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			db.store(bucketsToFree);
 		}
 	}
-	
+
 	/**
 	 * Call this just after committing a transaction. Deletes buckets pending deletion, and if there are lots
 	 * of them, commits the transaction again.
@@ -302,16 +312,20 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public void postCommit(ObjectContainer db) {
 		blobFactory.postCommit();
 		DelayedFreeBucket[] toFree = grabBucketsToFree();
-		if(toFree == null || toFree.length == 0) return;
+		if(toFree == null || toFree.length == 0) {
+			return;
+		}
 		int x = 0;
 		for(DelayedFreeBucket bucket : toFree) {
 			try {
-				if(bucket.toFree())
+				if(bucket.toFree()) {
 					bucket.realFree();
-				if(bucket.toRemove())
+				}
+				if(bucket.toRemove()) {
 					bucket.realRemoveFrom(db);
+				}
 			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
+				Logger.error(this, "Caught " + t + " freeing bucket " + bucket + " after transaction commit", t);
 			}
 			x++;
 		}
@@ -336,4 +350,5 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public void removeBlobFreeCallback(DBJob job) {
 		blobFactory.removeBlobFreeCallback(job);
 	}
+
 }

@@ -11,11 +11,11 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 
 	// FIXME maybe we should avoid opening these until we are ready to use them
 	final RandomAccessFile raf;
-	
+
 	public RandomAccessFileWrapper(RandomAccessFile raf) {
 		this.raf = raf;
 	}
-	
+
 	public RandomAccessFileWrapper(File filename, String mode) throws FileNotFoundException {
 		raf = new RandomAccessFile(filename, mode);
 	}
@@ -44,7 +44,7 @@ public class RandomAccessFileWrapper implements RandomAccessThing {
 		try {
 			raf.close();
 		} catch (IOException e) {
-			Logger.error(this, "Could not close "+raf+" : "+e+" for "+this, e);
+			Logger.error(this, "Could not close " + raf + " : " + e + " for " + this, e);
 		}
 	}
 

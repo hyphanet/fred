@@ -20,19 +20,20 @@ import freenet.support.api.Bucket;
  * @author     giannij
  */
 public class TempFileBucket extends BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
+
 	long filenameID;
 	final FilenameGenerator generator;
 	private static boolean logDebug = true;
 	private boolean readOnly;
 	private final boolean deleteOnFree;
-	
+
 	public TempFileBucket(long id, FilenameGenerator generator) {
 		// deleteOnExit -> files get stuck in a big HashSet, whether or not
 		// they are deleted. This grows without bound, it's a major memory
 		// leak.
 		this(id, generator, false, true);
 	}
-	
+
 	/**
 	 * Constructor for the TempFileBucket object
 	 * Subclasses can call this constructor.
@@ -42,8 +43,8 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	 * @param deleteOnFree True for a normal temp bucket, false for a shadow.
 	 */
 	protected TempFileBucket(
-		long id,
-		FilenameGenerator generator, boolean deleteOnExit, boolean deleteOnFree) {
+			long id,
+			FilenameGenerator generator, boolean deleteOnExit, boolean deleteOnFree) {
 		super(generator.getFilename(id), deleteOnExit);
 		this.filenameID = id;
 		this.generator = generator;
@@ -55,10 +56,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		//System.err.println("FProxyServlet.TempFileBucket -- created: " +
 		//         f.getAbsolutePath());
 		synchronized(this) {
-			if (logDebug)
+			if(logDebug) {
 				Logger.debug(
-					this,
-					"Initializing TempFileBucket(" + getFile()+" deleteOnExit="+deleteOnExit);
+						this,
+						"Initializing TempFileBucket(" + getFile() + " deleteOnExit=" + deleteOnExit);
+			}
 		}
 	}
 
@@ -68,12 +70,12 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		// if it is not explictly freed.
 		return deleteOnFree; // not if shadow
 	}
-	
+
 	@Override
 	public SimpleFieldSet toFieldSet() {
-		if(deleteOnFinalize())
+		if(deleteOnFinalize()) {
 			return null; // Not persistent
-		// For subclasses i.e. PersistentTempFileBucket
+		}		// For subclasses i.e. PersistentTempFileBucket
 		return super.toFieldSet();
 	}
 
@@ -111,8 +113,9 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Removing from database: "+this);
+		if(Logger.shouldLog(Logger.MINOR, this)) {
+			Logger.minor(this, "Removing from database: " + this);
+		}
 		// filenameGenerator is a global, we don't need to worry about it.
 		container.delete(this);
 	}
@@ -120,7 +123,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	public Bucket createShadow() throws IOException {
 		TempFileBucket ret = new TempFileBucket(filenameID, generator, true, false);
 		ret.setReadOnly();
-		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
+		if(!getFile().exists()) {
+			Logger.error(this, "File does not exist when creating shadow: " + getFile());
+		}
 		return ret;
 	}
+
 }

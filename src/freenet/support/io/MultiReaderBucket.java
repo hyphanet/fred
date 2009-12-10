@@ -19,14 +19,12 @@ import freenet.support.api.Bucket;
  * @author toad
  */
 public class MultiReaderBucket {
-	
+
 	private final Bucket bucket;
-	
 	// Assume there will be relatively few readers
 	private ArrayList<Bucket> readers;
-	
 	private boolean closed;
-	
+
 	public MultiReaderBucket(Bucket underlying) {
 		bucket = underlying;
 	}
@@ -34,31 +32,42 @@ public class MultiReaderBucket {
 	/** Get a reader bucket */
 	public Bucket getReaderBucket() {
 		synchronized(this) {
-			if(closed) return null;
+			if(closed) {
+				return null;
+			}
 			Bucket d = new ReaderBucket();
-			if (readers == null)
+			if(readers == null) {
 				readers = new ArrayList<Bucket>(1);
+			}
 			readers.add(d);
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "getReaderBucket() returning "+d+" for "+this+" for "+bucket);
+			if(Logger.shouldLog(Logger.MINOR, this)) {
+				Logger.minor(this, "getReaderBucket() returning " + d + " for " + this + " for " + bucket);
+			}
 			return d;
 		}
 	}
 
 	class ReaderBucket implements Bucket {
-		
+
 		private boolean freed;
 
 		public void free() {
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "ReaderBucket "+this+" for "+MultiReaderBucket.this+" free()ing for "+bucket);
+			if(Logger.shouldLog(Logger.MINOR, this)) {
+				Logger.minor(this, "ReaderBucket " + this + " for " + MultiReaderBucket.this + " free()ing for " + bucket);
+			}
 			synchronized(MultiReaderBucket.this) {
-				if(freed) return;
+				if(freed) {
+					return;
+				}
 				freed = true;
 				readers.remove(this);
-				if(!readers.isEmpty()) return;
+				if(!readers.isEmpty()) {
+					return;
+				}
 				readers = null;
-				if(closed) return;
+				if(closed) {
+					return;
+				}
 				closed = true;
 			}
 			bucket.free();
@@ -72,46 +81,53 @@ public class MultiReaderBucket {
 			}
 			return new ReaderBucketInputStream();
 		}
-		
+
 		private class ReaderBucketInputStream extends InputStream {
-			
+
 			InputStream is;
-			
+
 			ReaderBucketInputStream() throws IOException {
 				is = bucket.getInputStream();
 			}
-			
+
 			@Override
 			public final int read() throws IOException {
 				synchronized(MultiReaderBucket.this) {
-					if(freed || closed) throw new IOException("Already closed");
+					if(freed || closed) {
+						throw new IOException("Already closed");
+					}
 				}
 				return is.read();
 			}
-			
+
 			@Override
 			public final int read(byte[] data, int offset, int length) throws IOException {
 				synchronized(MultiReaderBucket.this) {
-					if(freed || closed) throw new IOException("Already closed");
+					if(freed || closed) {
+						throw new IOException("Already closed");
+					}
 				}
 				return is.read(data, offset, length);
 			}
-			
+
 			@Override
 			public final int read(byte[] data) throws IOException {
 				synchronized(MultiReaderBucket.this) {
-					if(freed || closed) throw new IOException("Already closed");
+					if(freed || closed) {
+						throw new IOException("Already closed");
+					}
 				}
 				return is.read(data);
 			}
-			
+
 			@Override
 			public final void close() throws IOException {
 				is.close();
 			}
-			
+
 		}
-		
+
+
 		public String getName() {
 			return bucket.getName();
 		}
@@ -131,7 +147,7 @@ public class MultiReaderBucket {
 		public long size() {
 			return bucket.size();
 		}
-		
+
 		@Override
 		protected void finalize() {
 			free();
@@ -144,7 +160,9 @@ public class MultiReaderBucket {
 		public void removeFrom(ObjectContainer container) {
 			container.delete(this);
 			synchronized(MultiReaderBucket.this) {
-				if(!closed) return;
+				if(!closed) {
+					return;
+				}
 			}
 			bucket.removeFrom(container);
 			container.delete(readers);
@@ -154,7 +172,8 @@ public class MultiReaderBucket {
 		public Bucket createShadow() throws IOException {
 			return null;
 		}
-		
+
 	}
-	
+
+
 }

@@ -44,12 +44,15 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	 */
 	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
 		super(file, deleteOnExit);
-		if(file == null) throw new NullPointerException();
+		if(file == null) {
+			throw new NullPointerException();
+		}
 		File origFile = file;
 		file = file.getAbsoluteFile();
 		// Copy it so we can safely delete it.
-		if(origFile == file)
+		if(origFile == file) {
 			file = new File(file.getPath());
+		}
 		this.readOnly = readOnly;
 		this.createFileOnly = createFileOnly;
 		this.file = file;
@@ -113,16 +116,16 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		Logger.minor(this, "Removing "+this);
+		Logger.minor(this, "Removing " + this);
 		container.activate(file, 5);
 		container.delete(file);
 		container.delete(this);
 	}
-	
+
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(file, 5);
 	}
-	
+
 	// Debugging stuff. If reactivate, add the logging infrastructure and use if(logDEBUG).
 //	public void objectOnNew(ObjectContainer container) {
 //		Logger.minor(this, "Storing "+this, new Exception("debug"));
@@ -141,4 +144,5 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		File newFile = new File(fnam);
 		return new FileBucket(newFile, true, false, false, false, false);
 	}
+
 }

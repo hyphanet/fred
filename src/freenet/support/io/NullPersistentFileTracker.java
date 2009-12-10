@@ -6,15 +6,17 @@ package freenet.support.io;
 import java.io.File;
 
 public class NullPersistentFileTracker implements PersistentFileTracker {
+
 	private static NullPersistentFileTracker instance;
-	
+
 	public static synchronized NullPersistentFileTracker getInstance() {
-		if (instance == null)
+		if(instance == null) {
 			instance = new NullPersistentFileTracker();
+		}
 		return instance;
 	}
-	
-	private NullPersistentFileTracker() {		
+
+	private NullPersistentFileTracker() {
 	}
 
 	public void register(File file) {
@@ -41,4 +43,5 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 	public long getID(File file) {
 		return 0;
 	}
+
 }

@@ -7,7 +7,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
 public class BucketChainBucketFactory implements BucketFactory {
-	
+
 	final BucketFactory factory;
 	final int blockSize;
 	final DBJobRunner runner;
@@ -29,10 +29,11 @@ public class BucketChainBucketFactory implements BucketFactory {
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
-		if(runner == null)
+		if(runner == null) {
 			return new BucketChainBucket(blockSize, factory);
-		else
+		} else {
 			return new SegmentedBucketChainBucket(blockSize, factory, runner, segmentSize);
+		}
 	}
 
 }

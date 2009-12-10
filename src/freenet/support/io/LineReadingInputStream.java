@@ -25,22 +25,25 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	 * @param utf If true, read as UTF-8, if false, read as ISO-8859-1.
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
-		if(maxLength < 1)
+		if(maxLength < 1) {
 			return null;
-		if(maxLength <= bufferSize)
+		}
+		if(maxLength <= bufferSize) {
 			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
-
-		if(!markSupported())
+		}
+		if(!markSupported()) {
 			return readLineWithoutMarking(maxLength, bufferSize, utf);
-		
+		}
+
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
 		mark(maxLength + 2); // in case we have both a \r and a \n
-		while(true) {
+		while (true) {
 			int x = read(buf, ctr, buf.length - ctr);
 			if(x == -1) {
-				if(ctr == 0)
+				if(ctr == 0) {
 					return null;
+				}
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
 			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones. 
@@ -56,8 +59,9 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					skip(ctr + 1);
 					return toReturn;
 				}
-				if(ctr >= maxLength)
-					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+				if(ctr >= maxLength) {
+					throw new TooLongException("We reached maxLength=" + maxLength + " parsing\n " + HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+				}
 			}
 			if((buf.length < maxLength) && (buf.length - ctr < bufferSize)) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
@@ -68,27 +72,32 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	}
 
 	public String readLineWithoutMarking(int maxLength, int bufferSize, boolean utf) throws IOException {
-		if(maxLength < bufferSize)
+		if(maxLength < bufferSize) {
 			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
+		}
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
-		while(true) {
+		while (true) {
 			int x = read();
 			if(x == -1) {
-				if(ctr == 0)
+				if(ctr == 0) {
 					return null;
+				}
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
 			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones. 
 			if(x == '\n') {
-				if(ctr == 0)
+				if(ctr == 0) {
 					return "";
-				if(buf[ctr - 1] == '\r')
+				}
+				if(buf[ctr - 1] == '\r') {
 					ctr--;
+				}
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
-			if(ctr >= maxLength)
-					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+			if(ctr >= maxLength) {
+				throw new TooLongException("We reached maxLength=" + maxLength + " parsing\n " + HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
+			}
 			if(ctr >= buf.length) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
 				System.arraycopy(buf, 0, newBuf, 0, buf.length);
@@ -97,4 +106,5 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 			buf[ctr++] = (byte) x;
 		}
 	}
+
 }

@@ -8,18 +8,17 @@ import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
 
 public class SegmentedBucketChainBucketKillJob implements DBJob {
-	
-	final SegmentedBucketChainBucket bcb;
 
+	final SegmentedBucketChainBucket bcb;
 	private final short RESTART_PRIO = NativeThread.HIGH_PRIORITY;
-	
+
 	public SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket bucket) {
 		bcb = bucket;
 	}
 
 	public boolean run(ObjectContainer container, ClientContext context) {
 		container.activate(bcb, 2);
-		Logger.normal(this, "Freeing unfinished unstored bucket "+this);
+		Logger.normal(this, "Freeing unfinished unstored bucket " + this);
 		// Restart jobs runner will remove us from the queue.
 		// This may take more than one transaction ...
 		if(bcb.removeContents(container)) {
@@ -49,9 +48,9 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 		}
 		return true;
 	}
-	
+
 	public void scheduleRestart(ObjectContainer container, ClientContext context) throws DatabaseDisabledException {
 		context.jobRunner.queueRestartJob(this, RESTART_PRIO, container, true);
 	}
-	
+
 }

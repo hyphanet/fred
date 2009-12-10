@@ -15,7 +15,6 @@
  * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
  * Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-
 package freenet.support.io;
 
 import java.io.Closeable;
@@ -35,6 +34,7 @@ import freenet.support.api.Bucket;
  * @version $Id$
  */
 public class Closer {
+
 	/**
 	 * Closes the given stream.
 	 * 
@@ -42,7 +42,7 @@ public class Closer {
 	 *            The output stream to close
 	 */
 	public static void close(Closeable closable) {
-		if (closable != null) {
+		if(closable != null) {
 			try {
 				closable.close();
 			} catch (IOException e) {
@@ -50,16 +50,16 @@ public class Closer {
 			}
 		}
 	}
-	
+
 	/**
 	 * Frees the given bucket. Notice that you have to do removeFrom() for persistent buckets yourself.
 	 * @param bucket The Bucket to close.
 	 */
 	public static void close(Bucket bucket) {
-		if (bucket != null) {
-			try { 
+		if(bucket != null) {
+			try {
 				bucket.free();
-			} catch(RuntimeException e) {
+			} catch (RuntimeException e) {
 				Logger.error(Closer.class, "Error during free().", e);
 			}
 		}
@@ -72,7 +72,7 @@ public class Closer {
 	 *            The zip file to close
 	 */
 	public static void close(ZipFile zipFile) {
-		if (zipFile != null) {
+		if(zipFile != null) {
 			try {
 				zipFile.close();
 			} catch (IOException e) {

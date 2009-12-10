@@ -32,23 +32,26 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 
 	public ReadOnlyFileSliceBucket(SimpleFieldSet fs) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("Filename");
-		if(tmp == null)
+		if(tmp == null) {
 			throw new CannotCreateFromFieldSetException("No filename");
+		}
 		this.file = new File(tmp);
 		tmp = fs.get("Length");
-		if(tmp == null)
+		if(tmp == null) {
 			throw new CannotCreateFromFieldSetException("No length");
+		}
 		try {
 			length = Long.parseLong(tmp);
-		} catch(NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			throw new CannotCreateFromFieldSetException("Corrupt length " + tmp, e);
 		}
 		tmp = fs.get("Offset");
-		if(tmp == null)
+		if(tmp == null) {
 			throw new CannotCreateFromFieldSetException("No offset");
+		}
 		try {
 			startAt = Long.parseLong(tmp);
-		} catch(NumberFormatException e) {
+		} catch (NumberFormatException e) {
 			throw new CannotCreateFromFieldSetException("Corrupt offset " + tmp, e);
 		}
 	}
@@ -74,7 +77,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	public void setReadOnly() {
-	// Do nothing
+		// Do nothing
 	}
 
 	private class MyInputStream extends InputStream {
@@ -86,28 +89,32 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 			try {
 				this.f = new RandomAccessFile(file, "r");
 				f.seek(startAt);
-				if(f.length() < (startAt + length))
+				if(f.length() < (startAt + length)) {
 					throw new ReadOnlyFileSliceBucketException("File truncated? Length " + f.length() + " but start at " + startAt + " for " + length + " bytes");
+				}
 				ptr = 0;
-			} catch(FileNotFoundException e) {
+			} catch (FileNotFoundException e) {
 				throw new ReadOnlyFileSliceBucketException(e);
 			}
 		}
 
 		@Override
 		public int read() throws IOException {
-			if(ptr >= length)
+			if(ptr >= length) {
 				return -1;
+			}
 			int x = f.read();
-			if(x != -1)
+			if(x != -1) {
 				ptr++;
+			}
 			return x;
 		}
 
 		@Override
 		public int read(byte[] buf, int offset, int len) throws IOException {
-			if(ptr >= length)
+			if(ptr >= length) {
 				return -1;
+			}
 			len = (int) Math.min(len, length - ptr);
 			int x = f.read(buf, offset, len);
 			ptr += x;
@@ -123,7 +130,9 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		public void close() throws IOException {
 			f.close();
 		}
+
 	}
+
 
 	public static class ReadOnlyFileSliceBucketException extends IOException {
 
@@ -137,7 +146,9 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		public ReadOnlyFileSliceBucketException(String string) {
 			super(string);
 		}
+
 	}
+
 
 	public void free() {
 	}
@@ -159,7 +170,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		container.delete(file);
 		container.delete(this);
 	}
-	
+
 	public void objectOnActivate(ObjectContainer container) {
 		// Cascading activation of dependancies
 		container.activate(file, 5);
