@@ -5,20 +5,20 @@ public class TrivialRunningAverage implements RunningAverage {
 	private static final long serialVersionUID = 1L;
 	private long reports;
 	private double total;
-	
-        /**
-         *
-         * @param average
-         */
-        public TrivialRunningAverage(TrivialRunningAverage average) {
+
+	/**
+	 *
+	 * @param average
+	 */
+	public TrivialRunningAverage(TrivialRunningAverage average) {
 		this.reports = average.reports;
 		this.total = average.total;
 	}
 
-        /**
-         *
-         */
-        public TrivialRunningAverage() {
+	/**
+	 *
+	 */
+	public TrivialRunningAverage() {
 		reports = 0;
 		total = 0.0;
 	}
@@ -27,30 +27,30 @@ public class TrivialRunningAverage implements RunningAverage {
 		return reports;
 	}
 
-        /**
-         *
-         * @return
-         */
-        public synchronized double currentValue() {
+	/**
+	 *
+	 * @return
+	 */
+	public synchronized double currentValue() {
 		return total / reports;
 	}
 
-        /**
-         *
-         * @param d
-         */
-        public synchronized void report(double d) {
+	/**
+	 *
+	 * @param d
+	 */
+	public synchronized void report(double d) {
 		total += d;
 		reports++;
 		// TODO Auto-generated method stub
 	}
 
-        /**
-         *
-         * @param d
-         */
-        public void report(long d) {
-		report((double)d);
+	/**
+	 *
+	 * @param d
+	 */
+	public void report(long d) {
+		report((double) d);
 	}
 
 	public synchronized double valueIfReported(double r) {
@@ -59,8 +59,9 @@ public class TrivialRunningAverage implements RunningAverage {
 
 	@Override
 	public Object clone() {
-		synchronized (this) {
+		synchronized(this) {
 			return new TrivialRunningAverage(this);
 		}
 	}
+
 }

@@ -7,29 +7,29 @@ import java.io.Serializable;
 
 public interface RunningAverage extends Serializable {
 
-    /**
-     *
-     * @return
-     */
-    public Object clone();
+	/**
+	 *
+	 * @return
+	 */
+	public Object clone();
 
-        /**
-         *
-         * @return
-         */
-        public double currentValue();
+	/**
+	 *
+	 * @return
+	 */
+	public double currentValue();
 
-        /**
-         *
-         * @param d
-         */
-        public void report(double d);
+	/**
+	 *
+	 * @param d
+	 */
+	public void report(double d);
 
-        /**
-         *
-         * @param d
-         */
-        public void report(long d);
+	/**
+	 *
+	 * @param d
+	 */
+	public void report(long d);
 
 	/**
 	 * Get what currentValue() would be if we reported some given value
@@ -43,4 +43,5 @@ public interface RunningAverage extends Serializable {
 	 * Used for weighted averages, confidence/newbieness estimation etc.
 	 */
 	public long countReports();
+
 }
