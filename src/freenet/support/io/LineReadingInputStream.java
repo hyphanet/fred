@@ -13,6 +13,10 @@ import java.io.InputStream;
  */
 public class LineReadingInputStream extends FilterInputStream implements LineReader {
 
+	/**
+	 *
+	 * @param in
+	 */
 	public LineReadingInputStream(InputStream in) {
 		super(in);
 	}
@@ -23,6 +27,8 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	 * than keeping on reading it forever.
 	 * @param bufferSize The initial size of the read buffer.
 	 * @param utf If true, read as UTF-8, if false, read as ISO-8859-1.
+	 * @return
+	 * @throws IOException
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
 		if(maxLength < 1) {
@@ -71,6 +77,14 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		}
 	}
 
+	/**
+	 *
+	 * @param maxLength
+	 * @param bufferSize
+	 * @param utf
+	 * @return
+	 * @throws IOException
+	 */
 	public String readLineWithoutMarking(int maxLength, int bufferSize, boolean utf) throws IOException {
 		if(maxLength < bufferSize) {
 			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)

@@ -5,8 +5,15 @@ package freenet.support.io;
 
 import java.io.*;
 
+/**
+ *
+ * @author unknown
+ */
 public class NullOutputStream extends OutputStream {
 
+	/**
+	 *
+	 */
 	public NullOutputStream() {
 	}
 

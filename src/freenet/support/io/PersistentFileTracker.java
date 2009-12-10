@@ -5,8 +5,16 @@ package freenet.support.io;
 
 import java.io.File;
 
+/**
+ *
+ * @author unknown
+ */
 public interface PersistentFileTracker {
 
+	/**
+	 *
+	 * @param file
+	 */
 	public void register(File file);
 
 	/** Notify that we have finished with a bucket and it should be freed after the
@@ -17,16 +25,30 @@ public interface PersistentFileTracker {
 
 	/**
 	 * Get the persistent temp files directory.
+	 *
+	 * @return
 	 */
 	public File getDir();
 
 	/**
 	 * Is the file in question one of our persistent temp files?
+	 *
+	 * @param file
+	 * @return
 	 */
 	public boolean matches(File file);
 
+	/**
+	 *
+	 * @return
+	 */
 	public FilenameGenerator getGenerator();
 
+	/**
+	 *
+	 * @param file
+	 * @return
+	 */
 	public long getID(File file);
 
 }

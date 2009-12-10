@@ -13,8 +13,15 @@ public class FileExistsException extends IOException {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	/**
+	 *
+	 */
 	public final File file;
 
+	/**
+	 *
+	 * @param f
+	 */
 	public FileExistsException(File f) {
 		super("File exists: " + f);
 		this.file = f;

@@ -6,6 +6,10 @@ import freenet.client.async.DBJobRunner;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
+/**
+ *
+ * @author unknown
+ */
 public class BucketChainBucketFactory implements BucketFactory {
 
 	final BucketFactory factory;
@@ -20,6 +24,7 @@ public class BucketChainBucketFactory implements BucketFactory {
 	 * @param bucketFactory
 	 * @param block_size
 	 * @param runner
+	 * @param segmentSize
 	 */
 	public BucketChainBucketFactory(BucketFactory bucketFactory, int block_size, DBJobRunner runner, int segmentSize) {
 		this.factory = bucketFactory;

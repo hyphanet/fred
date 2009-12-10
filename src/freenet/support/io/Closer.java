@@ -38,8 +38,7 @@ public class Closer {
 	/**
 	 * Closes the given stream.
 	 * 
-	 * @param outputStream
-	 *            The output stream to close
+	 * @param closable
 	 */
 	public static void close(Closeable closable) {
 		if(closable != null) {

@@ -4,10 +4,18 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ *
+ * @author unknown
+ */
 public class CountedOutputStream extends FilterOutputStream {
 
 	private long written;
 
+	/**
+	 *
+	 * @param arg0
+	 */
 	public CountedOutputStream(OutputStream arg0) {
 		super(arg0);
 	}
@@ -29,6 +37,10 @@ public class CountedOutputStream extends FilterOutputStream {
 		written += length;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public long written() {
 		return written;
 	}

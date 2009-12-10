@@ -27,6 +27,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	private boolean readOnly;
 	private final boolean deleteOnFree;
 
+	/**
+	 *
+	 * @param id
+	 * @param generator
+	 */
 	public TempFileBucket(long id, FilenameGenerator generator) {
 		// deleteOnExit -> files get stuck in a big HashSet, whether or not
 		// they are deleted. This grows without bound, it's a major memory
@@ -37,7 +42,9 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	/**
 	 * Constructor for the TempFileBucket object
 	 * Subclasses can call this constructor.
-	 * @param deleteOnExit Set if you want the bucket deleted on shutdown. Passed to 
+	 * @param id
+	 * @param generator
+	 * @param deleteOnExit Set if you want the bucket deleted on shutdown. Passed to
 	 * the parent BaseFileBucket. You must also override deleteOnExit() and 
 	 * implement your own createShadow()!
 	 * @param deleteOnFree True for a normal temp bucket, false for a shadow.
@@ -64,6 +71,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnFinalize() {
 		// Make sure finalize wacks temp file 
@@ -71,6 +82,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		return deleteOnFree; // not if shadow
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	public SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize()) {
@@ -79,11 +94,19 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		return super.toFieldSet();
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean createFileOnly() {
 		return false;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnFree() {
 		return deleteOnFree;
@@ -102,6 +125,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		readOnly = true;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnExit() {
 		return true;

@@ -5,10 +5,20 @@ package freenet.support.io;
 
 import java.io.IOException;
 
+/**
+ *
+ * @author unknown
+ */
 public interface LineReader {
 
 	/**
 	 * Read a \n or \r\n terminated line of UTF-8 or ISO-8859-1.
+	 *
+	 * @param maxLength
+	 * @param utf
+	 * @param bufferSize
+	 * @return
+	 * @throws IOException
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException;
 

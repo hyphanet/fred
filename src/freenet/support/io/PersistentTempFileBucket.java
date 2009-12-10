@@ -7,28 +7,58 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ *
+ * @author unknown
+ */
 public class PersistentTempFileBucket extends TempFileBucket {
 
+	/**
+	 *
+	 * @param id
+	 * @param generator
+	 */
 	public PersistentTempFileBucket(long id, FilenameGenerator generator) {
 		this(id, generator, true);
 	}
 
+	/**
+	 *
+	 * @param id
+	 * @param generator
+	 * @param deleteOnFree
+	 */
 	protected PersistentTempFileBucket(long id, FilenameGenerator generator, boolean deleteOnFree) {
 		super(id, generator, false, deleteOnFree);
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnFinalize() {
 		// Do not delete on finalize
 		return false;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnExit() {
 		// DO NOT DELETE ON EXIT !!!!
 		return false;
 	}
 
+	/**
+	 *
+	 * @param fs
+	 * @param f
+	 * @return
+	 * @throws CannotCreateFromFieldSetException
+	 */
 	public static Bucket create(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("Filename");
 		if(tmp == null) {
@@ -60,6 +90,10 @@ public class PersistentTempFileBucket extends TempFileBucket {
 		return bucket;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	public SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize()) {
@@ -73,6 +107,9 @@ public class PersistentTempFileBucket extends TempFileBucket {
 
 	/** Must override createShadow() so it creates a persistent bucket, which will have
 	 * deleteOnExit() = deleteOnFinalize() = false.
+	 *
+	 * @return
+	 * @throws IOException
 	 */
 	@Override
 	public Bucket createShadow() throws IOException {

@@ -6,8 +6,16 @@ package freenet.support.io;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ *
+ * @author unknown
+ */
 public interface SerializableToFieldSetBucket extends Bucket {
 
+	/**
+	 *
+	 * @return
+	 */
 	public SimpleFieldSet toFieldSet();
 
 }

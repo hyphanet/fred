@@ -14,9 +14,16 @@ import com.db4o.ObjectContainer;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
+/**
+ *
+ * @author unknown
+ */
 public class BucketChainBucket implements Bucket {
 
 	private final Vector<Bucket> buckets;
+	/**
+	 *
+	 */
 	public final long bucketSize;
 	private long size;
 	private boolean freed;
@@ -26,8 +33,6 @@ public class BucketChainBucket implements Bucket {
 	/**
 	 * @param bucketSize
 	 * @param bf
-	 * @param dbJobRunner If not null, use this to store buckets to disk progressively
-	 * to avoid a big transaction at the end. Caller then MUST call storeTo() at some point.
 	 */
 	public BucketChainBucket(long bucketSize, BucketFactory bf) {
 		this.bucketSize = bucketSize;
@@ -66,6 +71,10 @@ public class BucketChainBucket implements Bucket {
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public synchronized Bucket[] getBuckets() {
 		return buckets.toArray(new Bucket[buckets.size()]);
 	}
@@ -196,6 +205,12 @@ public class BucketChainBucket implements Bucket {
 		}
 	}
 
+	/**
+	 *
+	 * @param i
+	 * @return
+	 * @throws IOException
+	 */
 	protected synchronized InputStream getBucketInputStream(int i) throws IOException {
 		Bucket bucket = buckets.get(i);
 		if(bucket == null) {
@@ -306,6 +321,12 @@ public class BucketChainBucket implements Bucket {
 		};
 	}
 
+	/**
+	 *
+	 * @param i
+	 * @return
+	 * @throws IOException
+	 */
 	protected OutputStream makeBucketOutputStream(int i) throws IOException {
 		Bucket bucket;
 		synchronized(this) {

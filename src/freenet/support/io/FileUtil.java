@@ -22,6 +22,10 @@ import freenet.client.DefaultMIMETypes;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
 
+/**
+ *
+ * @author unknown
+ */
 final public class FileUtil {
 
 	private static final int BUFFER_SIZE = 4096;
@@ -34,6 +38,10 @@ final public class FileUtil {
 
 	/**
 	 * Guesstimate real disk usage for a file with a given filename, of a given length.
+	 *
+	 * @param file
+	 * @param flen
+	 * @return
 	 */
 	public static long estimateUsage(File file, long flen) {
 		/**
@@ -54,7 +62,11 @@ final public class FileUtil {
 	/**
 	 *  Is possParent a parent of filename?
 	 * Why doesn't java provide this? :(
-	 * */
+	 *
+	 * @param poss
+	 * @param filename
+	 * @return
+	 */
 	public static boolean isParent(File poss, File filename) {
 		File canon = FileUtil.getCanonicalFile(poss);
 		File canonFile = FileUtil.getCanonicalFile(filename);
@@ -86,6 +98,11 @@ final public class FileUtil {
 		}
 	}
 
+	/**
+	 *
+	 * @param file
+	 * @return
+	 */
 	public static File getCanonicalFile(File file) {
 		// Having some problems storing File's in db4o ...
 		// It would start up, and canonicalise a file with path "/var/lib/freenet-experimental/persistent-temp-24374"
@@ -103,10 +120,25 @@ final public class FileUtil {
 		return result;
 	}
 
+	/**
+	 *
+	 * @param file
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static String readUTF(File file) throws FileNotFoundException, IOException {
 		return readUTF(file, 0);
 	}
 
+	/**
+	 *
+	 * @param file
+	 * @param offset
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuilder result = new StringBuilder();
 		FileInputStream fis = null;
@@ -136,6 +168,10 @@ final public class FileUtil {
 
 	/**
 	 * Reliably skip a number of bytes or throw.
+	 *
+	 * @param is
+	 * @param skip
+	 * @throws IOException
 	 */
 	public static void skipFully(InputStream is, long skip) throws IOException {
 		long skipped = 0;
@@ -148,6 +184,14 @@ final public class FileUtil {
 		}
 	}
 
+	/**
+	 *
+	 * @param input
+	 * @param target
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
@@ -184,6 +228,12 @@ final public class FileUtil {
 		}
 	}
 
+	/**
+	 *
+	 * @param orig
+	 * @param dest
+	 * @return
+	 */
 	public static boolean renameTo(File orig, File dest) {
 		// Try an atomic rename
 		// Shall we prevent symlink-race-conditions here ?
@@ -213,8 +263,10 @@ final public class FileUtil {
 
 	/**
 	 * Like renameTo(), but can move across filesystems, by copying the data.
-	 * @param f
-	 * @param file
+	 * @param orig
+	 * @param dest
+	 * @param overwrite
+	 * @return
 	 */
 	public static boolean moveTo(File orig, File dest, boolean overwrite) {
 		if(orig.equals(dest)) {
@@ -260,6 +312,11 @@ final public class FileUtil {
 		}
 	}
 
+	/**
+	 *
+	 * @param s
+	 * @return
+	 */
 	public static String sanitize(String s) {
 		StringBuilder sb = new StringBuilder(s.length());
 		for(int i = 0; i < s.length(); i++) {
@@ -280,6 +337,12 @@ final public class FileUtil {
 		return sb.toString();
 	}
 
+	/**
+	 *
+	 * @param filename
+	 * @param mimeType
+	 * @return
+	 */
 	public static String sanitize(String filename, String mimeType) {
 		filename = sanitize(filename);
 		if(mimeType == null) {
@@ -357,7 +420,10 @@ final public class FileUtil {
 	}
 
 	/** Delete everything in a directory. Only use this when we are *very sure* there is no
-	 * important data below it! */
+	 * important data below it!
+	 * @param wd
+	 * @return
+	 */
 	public static boolean removeAll(File wd) {
 		if(!wd.isDirectory()) {
 			System.err.println("DELETING FILE " + wd);
@@ -379,6 +445,12 @@ final public class FileUtil {
 		return true;
 	}
 
+	/**
+	 *
+	 * @param file
+	 * @param random
+	 * @throws IOException
+	 */
 	public static void secureDelete(File file, Random random) throws IOException {
 		// FIXME somebody who understands these things should have a look at this...
 		if(!file.exists()) {
@@ -443,6 +515,11 @@ final public class FileUtil {
 		}
 	}
 
+	/**
+	 *
+	 * @param dir
+	 * @return
+	 */
 	public static final long getFreeSpace(File dir) {
 		// Use JNI to find out the free space on this partition.
 		long freeSpace = -1;

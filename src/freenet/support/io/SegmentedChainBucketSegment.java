@@ -9,16 +9,27 @@ import com.db4o.ObjectContainer;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
+/**
+ *
+ * @author unknown
+ */
 public class SegmentedChainBucketSegment {
 
 	private final ArrayList<Bucket> buckets;
 	private final SegmentedBucketChainBucket bcb;
 
+	/**
+	 *
+	 * @param bucket
+	 */
 	public SegmentedChainBucketSegment(SegmentedBucketChainBucket bucket) {
 		this.bcb = bucket;
 		this.buckets = new ArrayList<Bucket>();
 	}
 
+	/**
+	 *
+	 */
 	public void free() {
 		for(Bucket bucket : buckets) {
 			if(bucket == null) {
@@ -29,6 +40,10 @@ public class SegmentedChainBucketSegment {
 		}
 	}
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void storeTo(ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "Storing segment " + this);
@@ -40,6 +55,10 @@ public class SegmentedChainBucketSegment {
 		container.ext().store(this, 1);
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public synchronized Bucket[] shallowCopyBuckets() {
 		int sz = buckets.size();
 		Bucket[] out = new Bucket[sz];
@@ -49,6 +68,11 @@ public class SegmentedChainBucketSegment {
 		return out;
 	}
 
+	/**
+	 *
+	 * @param out
+	 * @param index
+	 */
 	public synchronized void shallowCopyBuckets(Bucket[] out, int index) {
 		int sz = buckets.size();
 		for(int i = 0; i < sz; i++) {
@@ -56,6 +80,12 @@ public class SegmentedChainBucketSegment {
 		}
 	}
 
+	/**
+	 *
+	 * @param bucketNo
+	 * @return
+	 * @throws IOException
+	 */
 	public OutputStream makeBucketStream(int bucketNo) throws IOException {
 		if(bucketNo >= bcb.segmentSize) {
 			throw new IllegalArgumentException("Too many buckets in segment");
@@ -70,6 +100,10 @@ public class SegmentedChainBucketSegment {
 		return b.getOutputStream();
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public int size() {
 		return buckets.size();
 	}
@@ -81,12 +115,20 @@ public class SegmentedChainBucketSegment {
 		}
 	}
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void clear(ObjectContainer container) {
 		buckets.clear();
 		container.delete(buckets);
 		container.delete(this);
 	}
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void removeFrom(ObjectContainer container) {
 		for(Bucket bucket : buckets) {
 			if(bucket == null) {

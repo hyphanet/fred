@@ -7,11 +7,19 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
 
+/**
+ *
+ * @author unknown
+ */
 public class SegmentedBucketChainBucketKillJob implements DBJob {
 
 	final SegmentedBucketChainBucket bcb;
 	private final short RESTART_PRIO = NativeThread.HIGH_PRIORITY;
 
+	/**
+	 *
+	 * @param bucket
+	 */
 	public SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket bucket) {
 		bcb = bucket;
 	}
@@ -49,6 +57,12 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 		return true;
 	}
 
+	/**
+	 *
+	 * @param container
+	 * @param context
+	 * @throws DatabaseDisabledException
+	 */
 	public void scheduleRestart(ObjectContainer container, ClientContext context) throws DatabaseDisabledException {
 		context.jobRunner.queueRestartJob(this, RESTART_PRIO, container, true);
 	}

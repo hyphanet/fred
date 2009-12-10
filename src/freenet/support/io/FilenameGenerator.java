@@ -11,6 +11,10 @@ import freenet.support.TimeUtil;
 import java.util.Random;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+/**
+ *
+ * @author unknown
+ */
 public class FilenameGenerator {
 
 	private transient Random random;
@@ -68,6 +72,10 @@ public class FilenameGenerator {
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public long makeRandomFilename() {
 		long randomFilename; // should be plenty
 		while (true) {
@@ -86,10 +94,20 @@ public class FilenameGenerator {
 		}
 	}
 
+	/**
+	 *
+	 * @param id
+	 * @return
+	 */
 	public File getFilename(long id) {
 		return new File(tmpDir, prefix + Long.toHexString(id));
 	}
 
+	/**
+	 *
+	 * @return
+	 * @throws IOException
+	 */
 	public File makeRandomFile() throws IOException {
 		while (true) {
 			File file = getFilename(makeRandomFilename());
@@ -99,10 +117,20 @@ public class FilenameGenerator {
 		}
 	}
 
+	/**
+	 *
+	 * @param file
+	 * @return
+	 */
 	public boolean matches(File file) {
 		return getID(file) != -1;
 	}
 
+	/**
+	 *
+	 * @param file
+	 * @return
+	 */
 	public long getID(File file) {
 		if(!(FileUtil.getCanonicalFile(file.getParentFile()).equals(tmpDir))) {
 			Logger.error(this, "Not the same dir: parent=" + FileUtil.getCanonicalFile(file.getParentFile()) + " but tmpDir=" + tmpDir);
@@ -121,6 +149,10 @@ public class FilenameGenerator {
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public File getDir() {
 		return tmpDir;
 	}
@@ -130,6 +162,8 @@ public class FilenameGenerator {
 	 * at least not on Windows.
 	 * @param dir
 	 * @param prefix
+	 * @param random
+	 * @throws IOException
 	 */
 	public void init(File dir, String prefix, Random random) throws IOException {
 		this.random = random;

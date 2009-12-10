@@ -23,15 +23,26 @@ public class ArrayBucket implements Bucket {
 	private String name;
 	private boolean readOnly;
 
+	/**
+	 *
+	 */
 	public ArrayBucket() {
 		this("ArrayBucket");
 	}
 
+	/**
+	 *
+	 * @param initdata
+	 */
 	public ArrayBucket(byte[] initdata) {
 		this("ArrayBucket");
 		data = initdata;
 	}
 
+	/**
+	 *
+	 * @param name
+	 */
 	public ArrayBucket(String name) {
 		data = new byte[0];
 		this.name = name;
@@ -98,6 +109,10 @@ public class ArrayBucket implements Bucket {
 		// Not much else we can do.
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public byte[] toByteArray() {
 		long sz = size();
 		int size = (int) sz;

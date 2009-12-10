@@ -18,6 +18,10 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ *
+ * @author unknown
+ */
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
 
 	private static volatile boolean logMINOR;
@@ -37,7 +41,13 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
+	/**
+	 *
+	 */
 	protected long length;
+	/**
+	 *
+	 */
 	protected long fileRestartCounter;
 	/** Has the bucket been freed? If so, no further operations may be done */
 	private boolean freed;
@@ -45,8 +55,16 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 * are open to this file. So we can be sure they are all closed when we free it. 
 	 * Can be null. */
 	private transient Vector<Object> streams;
+	/**
+	 * 
+	 */
 	protected static String tempDir = null;
 
+	/**
+	 *
+	 * @param file
+	 * @param deleteOnExit
+	 */
 	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) {
 			throw new NullPointerException();
@@ -57,6 +75,10 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		}
 	}
 
+	/**
+	 *
+	 * @param file
+	 */
 	protected void setDeleteOnExit(File file) {
 		try {
 			file.deleteOnExit();
@@ -122,16 +144,35 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	protected abstract boolean createFileOnly();
 
+	/**
+	 *
+	 * @return
+	 */
 	protected abstract boolean deleteOnExit();
 
+	/**
+	 *
+	 * @return
+	 */
 	protected abstract boolean deleteOnFinalize();
 
+	/**
+	 *
+	 * @return
+	 */
 	protected abstract boolean deleteOnFree();
 
 	/**
 	 * Create a temporary file in the same directory as this file.
+	 *
+	 * @return
+	 * @throws IOException
 	 */
 	protected File getTempfile() throws IOException {
 		File file = getFile();
@@ -142,6 +183,9 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		return f;
 	}
 
+	/**
+	 *
+	 */
 	protected synchronized void resetLength() {
 		length = 0;
 	}
@@ -350,6 +394,8 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	/**
 	 * Return directory used for temp files.
+	 *
+	 * @return
 	 */
 	public final synchronized static String getTempDir() {
 		return tempDir;  // **FIXME**/TODO: locking on tempDir needs to be checked by a Java guru for consistency
@@ -359,6 +405,8 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	 * Set temp file directory.
 	 * <p>
 	 * The directory must exist.
+	 *
+	 * @param dirName
 	 */
 	public final synchronized static void setTempDir(String dirName) {
 		File dir = new File(dirName);
@@ -423,6 +471,11 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		}
 	}
 
+	/**
+	 *
+	 * @param splitSize
+	 * @return
+	 */
 	public synchronized Bucket[] split(int splitSize) {
 		if(length > ((long) Integer.MAX_VALUE) * splitSize) {
 			throw new IllegalArgumentException("Way too big!: " + length + " for " + splitSize);
@@ -446,6 +499,10 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		free(false);
 	}
 
+	/**
+	 *
+	 * @param forceFree
+	 */
 	public void free(boolean forceFree) {
 		Object[] toClose;
 		if(logMINOR) {
@@ -502,9 +559,15 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	/**
 	 * Returns the file object this buckets data is kept in.
+	 *
+	 * @return
 	 */
 	public abstract File getFile();
 
+	/**
+	 *
+	 * @return
+	 */
 	public synchronized SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize()) {
 			return null;
@@ -516,6 +579,13 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		return fs;
 	}
 
+	/**
+	 *
+	 * @param fs
+	 * @param f
+	 * @return
+	 * @throws CannotCreateFromFieldSetException
+	 */
 	public static Bucket create(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("Filename");
 		if(tmp == null) {

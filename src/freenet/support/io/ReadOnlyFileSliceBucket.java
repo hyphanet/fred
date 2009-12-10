@@ -24,12 +24,23 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	private final long startAt;
 	private final long length;
 
+	/**
+	 *
+	 * @param f
+	 * @param startAt
+	 * @param length
+	 */
 	public ReadOnlyFileSliceBucket(File f, long startAt, long length) {
 		this.file = new File(f.getPath()); // copy so we can delete it
 		this.startAt = startAt;
 		this.length = length;
 	}
 
+	/**
+	 *
+	 * @param fs
+	 * @throws CannotCreateFromFieldSetException
+	 */
 	public ReadOnlyFileSliceBucket(SimpleFieldSet fs) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("Filename");
 		if(tmp == null) {
@@ -134,15 +145,26 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 
+	/**
+	 *
+	 */
 	public static class ReadOnlyFileSliceBucketException extends IOException {
 
 		private static final long serialVersionUID = -1;
 
+		/**
+		 *
+		 * @param e
+		 */
 		public ReadOnlyFileSliceBucketException(FileNotFoundException e) {
 			super("File not found: " + e.getMessage());
 			initCause(e);
 		}
 
+		/**
+		 *
+		 * @param string
+		 */
 		public ReadOnlyFileSliceBucketException(String string) {
 			super(string);
 		}
@@ -153,6 +175,10 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	public void free() {
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "ReadOnlyFileSliceBucket");
@@ -171,6 +197,10 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		container.delete(this);
 	}
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void objectOnActivate(ObjectContainer container) {
 		// Cascading activation of dependancies
 		container.activate(file, 5);

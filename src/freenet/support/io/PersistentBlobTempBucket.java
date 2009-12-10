@@ -18,8 +18,14 @@ import freenet.support.api.Bucket;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentBlobTempBucket implements Bucket {
 
+	/**
+	 *
+	 */
 	public final long blockSize;
 	long size;
+	/**
+	 *
+	 */
 	public final PersistentBlobTempBucketFactory factory;
 	/** The index into the blob file of this specific bucket */
 	private volatile long index;
@@ -37,6 +43,14 @@ public class PersistentBlobTempBucket implements Bucket {
 		return hashCode;
 	}
 
+	/**
+	 *
+	 * @param factory2
+	 * @param blockSize2
+	 * @param slot
+	 * @param tag
+	 * @param shadow
+	 */
 	public PersistentBlobTempBucket(PersistentBlobTempBucketFactory factory2, long blockSize2, long slot, PersistentBlobTempBucketTag tag, boolean shadow) {
 		factory = factory2;
 		blockSize = blockSize2;
@@ -64,6 +78,10 @@ public class PersistentBlobTempBucket implements Bucket {
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public boolean freed() {
 		return freed;
 	}
@@ -292,6 +310,11 @@ public class PersistentBlobTempBucket implements Bucket {
 		}
 	}
 
+	/**
+	 *
+	 * @param container
+	 * @return
+	 */
 	public boolean objectCanNew(ObjectContainer container) {
 		if(shadow) {
 			throw new UnsupportedOperationException("Can't store a shadow");
@@ -306,6 +329,11 @@ public class PersistentBlobTempBucket implements Bucket {
 
 	}
 
+	/**
+	 *
+	 * @param container
+	 * @return
+	 */
 	public boolean objectCanDeactivate(ObjectContainer container) {
 		if(inputStreams > 0) {
 			Logger.error(this, "Deactivating when have active input streams!", new Exception("error"));
@@ -332,7 +360,9 @@ public class PersistentBlobTempBucket implements Bucket {
 		persisted = false;
 	}
 
-	/** Always called on the database thread to avoid race conditions */
+	/** Always called on the database thread to avoid race conditions
+	 * @return
+	 */
 	public synchronized long getIndex() {
 		return index;
 	}
@@ -347,6 +377,10 @@ public class PersistentBlobTempBucket implements Bucket {
 		this.tag = newTag;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public synchronized PersistentBlobTempBucketTag getTag() {
 		return tag;
 	}

@@ -16,6 +16,10 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ *
+ * @author unknown
+ */
 public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 
 	private final PersistentFileTracker factory;
@@ -24,14 +28,27 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	boolean removed;
 	boolean reallyRemoved;
 
+	/**
+	 *
+	 * @return
+	 */
 	public boolean toFree() {
 		return freed;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public boolean toRemove() {
 		return removed;
 	}
 
+	/**
+	 *
+	 * @param factory
+	 * @param bucket
+	 */
 	public DelayedFreeBucket(PersistentTempBucketFactory factory, Bucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
@@ -40,6 +57,13 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 	}
 
+	/**
+	 *
+	 * @param fs
+	 * @param random
+	 * @param f
+	 * @throws CannotCreateFromFieldSetException
+	 */
 	public DelayedFreeBucket(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		factory = f;
 		freed = false;
@@ -76,6 +100,10 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		bucket.setReadOnly();
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public Bucket getUnderlying() {
 		if(freed) {
 			return null;
@@ -96,6 +124,10 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public SimpleFieldSet toFieldSet() {
 		if(freed) {
 			Logger.error(this, "Cannot serialize because already freed: " + this);
@@ -140,6 +172,10 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 
 	private transient int _activationCount = 0;
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void objectOnActivate(ObjectContainer container) {
 //		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
 //		if(elements != null && elements.length > 100) {
@@ -160,10 +196,17 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		return bucket.createShadow();
 	}
 
+	/**
+	 *
+	 */
 	public void realFree() {
 		bucket.free();
 	}
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void realRemoveFrom(ObjectContainer container) {
 		synchronized(this) {
 			if(reallyRemoved) {
@@ -175,6 +218,11 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		container.delete(this);
 	}
 
+	/**
+	 *
+	 * @param container
+	 * @return
+	 */
 	public boolean objectCanNew(ObjectContainer container) {
 		if(reallyRemoved) {
 			Logger.error(this, "objectCanNew() on " + this + " but really removed = " + reallyRemoved + " already freed=" + freed + " removed=" + removed, new Exception("debug"));
@@ -184,6 +232,11 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		return true;
 	}
 
+	/**
+	 *
+	 * @param container
+	 * @return
+	 */
 	public boolean objectCanUpdate(ObjectContainer container) {
 		if(reallyRemoved) {
 			Logger.error(this, "objectCanUpdate() on " + this + " but really removed = " + reallyRemoved + " already freed=" + freed + " removed=" + removed, new Exception("debug"));

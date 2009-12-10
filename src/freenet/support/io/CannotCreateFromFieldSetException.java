@@ -3,14 +3,27 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+/**
+ *
+ * @author unknown
+ */
 public class CannotCreateFromFieldSetException extends Exception {
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 *
+	 * @param msg
+	 */
 	public CannotCreateFromFieldSetException(String msg) {
 		super(msg);
 	}
 
+	/**
+	 *
+	 * @param msg
+	 * @param e
+	 */
 	public CannotCreateFromFieldSetException(String msg, Exception e) {
 		super(msg + " : " + e, e);
 	}

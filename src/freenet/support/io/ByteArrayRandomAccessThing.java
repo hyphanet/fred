@@ -2,11 +2,19 @@ package freenet.support.io;
 
 import java.io.IOException;
 
+/**
+ *
+ * @author unknown
+ */
 public class ByteArrayRandomAccessThing implements RandomAccessThing {
 
 	private final byte[] data;
 	private boolean readOnly;
 
+	/**
+	 *
+	 * @param padded
+	 */
 	public ByteArrayRandomAccessThing(byte[] padded) {
 		this.data = padded;
 	}
@@ -15,6 +23,14 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 		// Do nothing
 	}
 
+	/**
+	 *
+	 * @param fileOffset
+	 * @param buf
+	 * @param bufOffset
+	 * @param length
+	 * @throws IOException
+	 */
 	public void pread(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		if(fileOffset < 0) {
@@ -26,6 +42,14 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 		System.arraycopy(data, (int) fileOffset, buf, bufOffset, length);
 	}
 
+	/**
+	 *
+	 * @param fileOffset
+	 * @param buf
+	 * @param bufOffset
+	 * @param length
+	 * @throws IOException
+	 */
 	public void pwrite(long fileOffset, byte[] buf, int bufOffset, int length)
 			throws IOException {
 		if(fileOffset < 0) {
@@ -40,10 +64,18 @@ public class ByteArrayRandomAccessThing implements RandomAccessThing {
 		System.arraycopy(buf, bufOffset, data, (int) fileOffset, length);
 	}
 
+	/**
+	 *
+	 * @return
+	 * @throws IOException
+	 */
 	public long size() throws IOException {
 		return data.length;
 	}
 
+	/**
+	 *
+	 */
 	public void setReadOnly() {
 		readOnly = true;
 	}

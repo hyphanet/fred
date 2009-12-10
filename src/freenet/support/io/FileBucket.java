@@ -18,11 +18,29 @@ import freenet.support.api.Bucket;
  */
 public class FileBucket extends BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
 
+	/**
+	 *
+	 */
 	protected final File file;
+	/**
+	 *
+	 */
 	protected boolean readOnly;
+	/**
+	 *
+	 */
 	protected boolean deleteOnFinalize;
+	/**
+	 *
+	 */
 	protected boolean deleteOnFree;
+	/**
+	 *
+	 */
 	protected final boolean deleteOnExit;
+	/**
+	 *
+	 */
 	protected final boolean createFileOnly;
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
@@ -41,6 +59,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	 * Can be set later. Irreversible. @see isReadOnly(), setReadOnly()
 	 * @param deleteOnFinalize If true, delete the file on finalization. Reversible.
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
+	 * @param deleteOnFree
 	 */
 	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
 		super(file, deleteOnExit);
@@ -68,6 +87,8 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 
 	/**
 	 * Returns the file object this buckets data is kept in.
+	 *
+	 * @return
 	 */
 	@Override
 	public synchronized File getFile() {
@@ -91,21 +112,37 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		deleteOnFinalize = false;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean createFileOnly() {
 		return createFileOnly;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnExit() {
 		return deleteOnExit;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnFinalize() {
 		return deleteOnFinalize;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	@Override
 	protected boolean deleteOnFree() {
 		return deleteOnFree;
@@ -122,6 +159,10 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		container.delete(this);
 	}
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(file, 5);
 	}

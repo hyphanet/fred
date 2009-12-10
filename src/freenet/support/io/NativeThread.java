@@ -15,22 +15,58 @@ import freenet.support.Logger;
  */
 public class NativeThread extends Thread {
 
+	/**
+	 *
+	 */
 	public static final boolean _loadNative;
 	private static boolean _disabled;
+	/**
+	 *
+	 */
 	public static final int JAVA_PRIORITY_RANGE = Thread.MAX_PRIORITY - Thread.MIN_PRIORITY;
 	private final static int NATIVE_PRIORITY_BASE;
+	/**
+	 *
+	 */
 	public final static int NATIVE_PRIORITY_RANGE;
 	private int currentPriority = Thread.MAX_PRIORITY;
 	private boolean dontCheckRenice = false;
+	/**
+	 *
+	 */
 	public final static boolean HAS_THREE_NICE_LEVELS;
+	/**
+	 *
+	 */
 	public final static boolean HAS_ENOUGH_NICE_LEVELS;
+	/**
+	 *
+	 */
 	public final static boolean HAS_PLENTY_NICE_LEVELS;
 	// 5 is enough generally for our purposes.
+	/**
+	 *
+	 */
 	public static final int ENOUGH_NICE_LEVELS = 5;
+	/**
+	 *
+	 */
 	public static final int MIN_PRIORITY = 1;
+	/**
+	 *
+	 */
 	public static final int LOW_PRIORITY = 3;
+	/**
+	 *
+	 */
 	public static final int NORM_PRIORITY = 5;
+	/**
+	 *
+	 */
 	public static final int HIGH_PRIORITY = 7;
+	/**
+	 *
+	 */
 	public static final int MAX_PRIORITY = 10;
 
 	static {
@@ -62,18 +98,39 @@ public class NativeThread extends Thread {
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = " + _loadNative);
 	}
 
+	/**
+	 *
+	 * @param name
+	 * @param priority
+	 * @param dontCheckRenice
+	 */
 	public NativeThread(String name, int priority, boolean dontCheckRenice) {
 		super(name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 
+	/**
+	 *
+	 * @param r
+	 * @param name
+	 * @param priority
+	 * @param dontCheckRenice
+	 */
 	public NativeThread(Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(r, name);
 		this.currentPriority = priority;
 		this.dontCheckRenice = dontCheckRenice;
 	}
 
+	/**
+	 *
+	 * @param g
+	 * @param r
+	 * @param name
+	 * @param priority
+	 * @param dontCheckRenice
+	 */
 	public NativeThread(ThreadGroup g, Runnable r, String name, int priority, boolean dontCheckRenice) {
 		super(g, r, name);
 		this.currentPriority = priority;
@@ -101,6 +158,9 @@ public class NativeThread extends Thread {
 		realRun();
 	}
 
+	/**
+	 *
+	 */
 	public void realRun() {
 		// Override this for convenience when doing new NativeThread() { ... }
 	}
@@ -146,10 +206,18 @@ public class NativeThread extends Thread {
 		return setLinuxPriority(linuxPriority);
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public int getNativePriority() {
 		return currentPriority;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public static boolean usingNativeCode() {
 		return _loadNative && !_disabled;
 	}

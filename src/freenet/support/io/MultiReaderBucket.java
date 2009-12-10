@@ -25,11 +25,17 @@ public class MultiReaderBucket {
 	private ArrayList<Bucket> readers;
 	private boolean closed;
 
+	/**
+	 *
+	 * @param underlying
+	 */
 	public MultiReaderBucket(Bucket underlying) {
 		bucket = underlying;
 	}
 
-	/** Get a reader bucket */
+	/** Get a reader bucket
+	 * @return
+	 */
 	public Bucket getReaderBucket() {
 		synchronized(this) {
 			if(closed) {

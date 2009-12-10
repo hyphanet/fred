@@ -12,23 +12,45 @@ import com.db4o.ObjectContainer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ *
+ * @author unknown
+ */
 public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 
+	/**
+	 *
+	 */
 	public final OutputStream nullOut = new NullOutputStream();
+	/**
+	 *
+	 */
 	public final InputStream nullIn = new NullInputStream();
+	/**
+	 *
+	 */
 	public final long length;
 
+	/**
+	 *
+	 */
 	public NullBucket() {
 		this(0);
 	}
 
+	/**
+	 *
+	 * @param length
+	 */
 	public NullBucket(long length) {
 		this.length = length;
 	}
 
 	/**
 	 * Returns an OutputStream that is used to put data in this Bucket.
-	 **/
+	 *
+	 * @return
+	 */
 	public OutputStream getOutputStream() {
 		return nullOut;
 	}
@@ -36,19 +58,25 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 	/**
 	 * Returns an InputStream that reads data from this Bucket. If there is
 	 * no data in this bucket, null is returned.
-	 **/
+	 *
+	 * @return
+	 */
 	public InputStream getInputStream() {
 		return nullIn;
 	}
 
 	/**
 	 * Returns the amount of data currently in this bucket.
-	 **/
+	 *
+	 * @return
+	 */
 	public long size() {
 		return length;
 	}
 
-	/** Returns the name of this NullBucket. */
+	/** Returns the name of this NullBucket.
+	 * @return
+	 */
 	public String getName() {
 		return "President George W. NullBucket";
 	}
@@ -65,6 +93,10 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 		// Do nothing
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "NullBucket");

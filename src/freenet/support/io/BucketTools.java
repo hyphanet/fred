@@ -56,6 +56,12 @@ public class BucketTools {
 		readChannel.close();
 	}
 
+	/**
+	 *
+	 * @param b
+	 * @param size
+	 * @throws IOException
+	 */
 	public final static void zeroPad(Bucket b, long size) throws IOException {
 		OutputStream out = b.getOutputStream();
 
@@ -75,6 +81,14 @@ public class BucketTools {
 		out.close();
 	}
 
+	/**
+	 *
+	 * @param from
+	 * @param to
+	 * @param nBytes
+	 * @param blockSize
+	 * @throws IOException
+	 */
 	public final static void paddedCopy(Bucket from, Bucket to, long nBytes,
 			int blockSize) throws IOException {
 
@@ -136,6 +150,14 @@ public class BucketTools {
 		}
 	}
 
+	/**
+	 *
+	 * @param bf
+	 * @param count
+	 * @param size
+	 * @return
+	 * @throws IOException
+	 */
 	public static Bucket[] makeBuckets(BucketFactory bf, int count, int size)
 			throws IOException {
 		Bucket[] ret = new Bucket[count];
@@ -145,6 +167,11 @@ public class BucketTools {
 		return ret;
 	}
 
+	/**
+	 *
+	 * @param array
+	 * @return
+	 */
 	public final static int[] nullIndices(Bucket[] array) {
 		List<Integer> list = new ArrayList<Integer>();
 		for(int i = 0; i < array.length; i++) {
@@ -160,6 +187,11 @@ public class BucketTools {
 		return ret;
 	}
 
+	/**
+	 *
+	 * @param array
+	 * @return
+	 */
 	public final static int[] nonNullIndices(Bucket[] array) {
 		List<Integer> list = new ArrayList<Integer>();
 		for(int i = 0; i < array.length; i++) {
@@ -175,6 +207,11 @@ public class BucketTools {
 		return ret;
 	}
 
+	/**
+	 *
+	 * @param array
+	 * @return
+	 */
 	public final static Bucket[] nonNullBuckets(Bucket[] array) {
 		List<Bucket> list = new ArrayList<Bucket>(array.length);
 		for(int i = 0; i < array.length; i++) {
@@ -191,9 +228,9 @@ public class BucketTools {
 	 * Read the entire bucket in as a byte array.
 	 * Not a good idea unless it is very small!
 	 * Don't call if concurrent writes may be happening.
+	 * @param bucket
+	 * @return
 	 * @throws IOException If there was an error reading from the bucket.
-	 * @throws OutOfMemoryError If it was not possible to allocate enough 
-	 * memory to contain the entire bucket.
 	 */
 	public final static byte[] toByteArray(Bucket bucket) throws IOException {
 		long size = bucket.size();
@@ -213,6 +250,13 @@ public class BucketTools {
 		return data;
 	}
 
+	/**
+	 *
+	 * @param bucket
+	 * @param output
+	 * @return
+	 * @throws IOException
+	 */
 	public static int toByteArray(Bucket bucket, byte[] output) throws IOException {
 		long size = bucket.size();
 		if(size > output.length) {
@@ -239,10 +283,25 @@ public class BucketTools {
 		}
 	}
 
+	/**
+	 *
+	 * @param bucketFactory
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 */
 	public static Bucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data) throws IOException {
 		return makeImmutableBucket(bucketFactory, data, data.length);
 	}
 
+	/**
+	 *
+	 * @param bucketFactory
+	 * @param data
+	 * @param length
+	 * @return
+	 * @throws IOException
+	 */
 	public static Bucket makeImmutableBucket(BucketFactory bucketFactory, byte[] data, int length) throws IOException {
 		Bucket bucket = bucketFactory.makeBucket(length);
 		OutputStream os = bucket.getOutputStream();
@@ -252,6 +311,12 @@ public class BucketTools {
 		return bucket;
 	}
 
+	/**
+	 *
+	 * @param data
+	 * @return
+	 * @throws IOException
+	 */
 	public static byte[] hash(Bucket data) throws IOException {
 		InputStream is = data.getInputStream();
 		try {
@@ -289,6 +354,10 @@ public class BucketTools {
 	}
 
 	/** Copy the given quantity of data from the given bucket to the given OutputStream. 
+	 * @param decodedData 
+	 * @param os
+	 * @param truncateLength
+	 * @return
 	 * @throws IOException If there was an error reading from the bucket or writing to the stream. */
 	public static long copyTo(Bucket decodedData, OutputStream os, long truncateLength) throws IOException {
 		if(truncateLength == 0) {
@@ -326,7 +395,12 @@ public class BucketTools {
 		}
 	}
 
-	/** Copy data from an InputStream into a Bucket. */
+	/** Copy data from an InputStream into a Bucket.
+	 * @param bucket
+	 * @param is
+	 * @param truncateLength
+	 * @throws IOException
+	 */
 	public static void copyFrom(Bucket bucket, InputStream is, long truncateLength) throws IOException {
 		OutputStream os = bucket.getOutputStream();
 		byte[] buf = new byte[4096];
@@ -368,11 +442,13 @@ public class BucketTools {
 	 * and the data written to them.
 	 * 
 	 * Note that this method will allocate a buffer of size splitSize.
-	 * @param freeData 
+	 * @param bf
+	 * @param freeData
 	 * @param persistent If true, the data is persistent. This method is responsible for ensuring that the returned
 	 * buckets HAVE ALREADY BEEN STORED TO THE DATABASE, using the provided handle. The point? SegmentedBCB's buckets
 	 * have already been stored!!
 	 * @param container Database handle, only needed if persistent = true. 
+	 * @return
 	 * @throws IOException If there is an error creating buckets, reading from
 	 * the provided bucket, or writing to created buckets.
 	 */
@@ -477,10 +553,11 @@ public class BucketTools {
 	 * 
 	 * @param oldBucket
 	 * @param blockLength
-	 * @param BucketFactory
+	 * @param bf
 	 * @param length
 	 * 
 	 * @return the paded bucket
+	 * @throws IOException
 	 */
 	public static Bucket pad(Bucket oldBucket, int blockLength, BucketFactory bf, int length) throws IOException {
 		byte[] hash = BucketTools.hash(oldBucket);

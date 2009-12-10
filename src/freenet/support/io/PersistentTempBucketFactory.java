@@ -115,7 +115,13 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		bucketsToFree = new ArrayList<DelayedFreeBucket>();
 	}
 
-	/** Re-initialise the bucket factory after restarting and pulling it from the database */
+	/** Re-initialise the bucket factory after restarting and pulling it from the database
+	 * @param dir
+	 * @param prefix
+	 * @param strongPRNG
+	 * @param weakPRNG
+	 * @throws IOException
+	 */
 	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
@@ -123,7 +129,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	/** Notify the bucket factory that a file is a temporary file, and not to be deleted. FIXME this is not
-	 * currently used. @see #completedInit() */
+	 * currently used. @see #completedInit()
+	 * @param file
+	 */
 	public void register(File file) {
 		synchronized(this) {
 			if(originalFiles == null) {
@@ -184,6 +192,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	/**
 	 * Free an allocated bucket, but only after the change has been written to disk.
+	 *
+	 * @param b
 	 */
 	public void delayedFreeBucket(DelayedFreeBucket b) {
 		synchronized(this) {
@@ -205,28 +215,40 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
-	/** Get the directory we are creating temporary files in */
+	/** Get the directory we are creating temporary files in
+	 * @return
+	 */
 	public File getDir() {
 		return fg.getDir();
 	}
 
-	/** Get the FilenameGenerator */
+	/** Get the FilenameGenerator
+	 * @return
+	 */
 	public FilenameGenerator getGenerator() {
 		return fg;
 	}
 
 	/** Is the file potentially one of ours? That is, is it in the right directory and does it have the
-	 * right prefix? */
+	 * right prefix?
+	 * @param file
+	 * @return
+	 */
 	public boolean matches(File file) {
 		return fg.matches(file);
 	}
 
-	/** Get the filename ID from the filename for a file that matches() */
+	/** Get the filename ID from the filename for a file that matches()
+	 * @param file
+	 * @return
+	 */
 	public long getID(File file) {
 		return fg.getID(file);
 	}
 
-	/** Are we encrypting temporary files? */
+	/** Are we encrypting temporary files?
+	 * @return
+	 */
 	public boolean isEncrypting() {
 		return encrypt;
 	}
@@ -280,6 +302,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/**
 	 * Set whether to encrypt new persistent temp buckets. Note that we do not encrypt/decrypt old ones when
 	 * this changes.
+	 *
+	 * @param encrypt
 	 */
 	public void setEncryption(boolean encrypt) {
 		this.encrypt = encrypt;
@@ -339,6 +363,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/**
 	 * Add a callback job to be called when we are low on space in the blob temp bucket factory.
 	 * For example a defragger, but there are other possibilities. 
+	 *
+	 * @param job
 	 */
 	public void addBlobFreeCallback(DBJob job) {
 		blobFactory.addBlobFreeCallback(job);
@@ -346,6 +372,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	/**
 	 * Remove a blob temp bucket factory callback job.
+	 *
+	 * @param job
 	 */
 	public void removeBlobFreeCallback(DBJob job) {
 		blobFactory.removeBlobFreeCallback(job);

@@ -6,6 +6,10 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.Writer;
 
+/**
+ *
+ * @author unknown
+ */
 public class NullWriter extends Writer {
 
 	@Override

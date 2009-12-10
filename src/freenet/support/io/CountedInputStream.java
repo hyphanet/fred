@@ -2,10 +2,21 @@ package freenet.support.io;
 
 import java.io.*;
 
+/**
+ *
+ * @author unknown
+ */
 public class CountedInputStream extends FilterInputStream {
 
+	/**
+	 *
+	 */
 	protected long count = 0;
 
+	/**
+	 *
+	 * @param in
+	 */
 	public CountedInputStream(InputStream in) {
 		super(in);
 		if(in == null) {
@@ -13,6 +24,10 @@ public class CountedInputStream extends FilterInputStream {
 		}
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public final long count() {
 		return count;
 	}

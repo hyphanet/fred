@@ -44,7 +44,13 @@ import freenet.support.api.BucketFactory;
  */
 public class TempBucketFactory implements BucketFactory {
 
+	/**
+	 *
+	 */
 	public final static long defaultIncrement = 4096;
+	/**
+	 *
+	 */
 	public final static float DEFAULT_FACTOR = 1.25F;
 	private final FilenameGenerator filenameGenerator;
 	private long bytesInUse = 0;
@@ -63,6 +69,9 @@ public class TempBucketFactory implements BucketFactory {
 	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	final static boolean TRACE_BUCKET_LEAKS = false;
 
+	/**
+	 *
+	 */
 	public class TempBucket implements Bucket {
 
 		/** The underlying bucket itself */
@@ -82,6 +91,11 @@ public class TempBucketFactory implements BucketFactory {
 		private boolean hasBeenFreed = false;
 		private final Throwable tracer;
 
+		/**
+		 *
+		 * @param now
+		 * @param cur
+		 */
 		public TempBucket(long now, Bucket cur) {
 			if(cur == null) {
 				throw new NullPointerException();
@@ -165,6 +179,10 @@ public class TempBucketFactory implements BucketFactory {
 			_hasFreed(toMigrate.size());
 		}
 
+		/**
+		 *
+		 * @return
+		 */
 		public synchronized final boolean isRAMBucket() {
 			return (currentBucket instanceof ArrayBucket);
 		}
@@ -418,6 +436,10 @@ public class TempBucketFactory implements BucketFactory {
 
 		private WeakReference<TempBucket> weakRef = new WeakReference<TempBucket>(this);
 
+		/**
+		 *
+		 * @return
+		 */
 		public WeakReference<TempBucket> getReference() {
 			return weakRef;
 		}
@@ -436,6 +458,16 @@ public class TempBucketFactory implements BucketFactory {
 
 	// Storage accounting disabled by default.
 
+	/**
+	 *
+	 * @param executor
+	 * @param filenameGenerator
+	 * @param maxBucketSizeKeptInRam
+	 * @param maxRamUsed
+	 * @param strongPRNG
+	 * @param weakPRNG
+	 * @param reallyEncrypt
+	 */
 	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
 		this.filenameGenerator = filenameGenerator;
 		this.maxRamUsed = maxRamUsed;
@@ -451,6 +483,13 @@ public class TempBucketFactory implements BucketFactory {
 		return makeBucket(size, DEFAULT_FACTOR, defaultIncrement);
 	}
 
+	/**
+	 *
+	 * @param size
+	 * @param factor
+	 * @return
+	 * @throws IOException
+	 */
 	public Bucket makeBucket(long size, float factor) throws IOException {
 		return makeBucket(size, factor, defaultIncrement);
 	}
@@ -463,35 +502,63 @@ public class TempBucketFactory implements BucketFactory {
 		bytesInUse -= size;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public synchronized long getRamUsed() {
 		return bytesInUse;
 	}
 
+	/**
+	 *
+	 * @param size
+	 */
 	public synchronized void setMaxRamUsed(long size) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		maxRamUsed = size;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public synchronized long getMaxRamUsed() {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		return maxRamUsed;
 	}
 
+	/**
+	 *
+	 * @param size
+	 */
 	public synchronized void setMaxRAMBucketSize(long size) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		maxRAMBucketSize = size;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public synchronized long getMaxRAMBucketSize() {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		return maxRAMBucketSize;
 	}
 
+	/**
+	 *
+	 * @param value
+	 */
 	public void setEncryption(boolean value) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		reallyEncrypt = value;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public boolean isEncrypting() {
 		return reallyEncrypt;
 	}
@@ -503,6 +570,7 @@ public class TempBucketFactory implements BucketFactory {
 	 *            Default size
 	 * @param factor
 	 *            Factor to increase size by when need more space
+	 * @param increment
 	 * @return A temporary Bucket
 	 * @exception IOException
 	 *                If it is not possible to create a temp bucket due to an

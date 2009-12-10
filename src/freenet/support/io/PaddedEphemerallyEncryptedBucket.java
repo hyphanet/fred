@@ -40,13 +40,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	/**
 	 * Create a padded encrypted proxy bucket.
 	 * @param bucket The bucket which we are proxying to. Must be empty.
-	 * @param pcfb The encryption mode with which to encipher/decipher the data.
 	 * @param minSize The minimum padded size of the file (after it has been closed).
 	 * @param strongPRNG a strong prng we will key from.
 	 * @param weakPRNG a week prng we will padd from.
 	 * Serialization: Note that it is not our responsibility to free the random number generators,
 	 * but we WILL free the underlying bucket.
-	 * @throws UnsupportedCipherException 
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource strongPRNG, Random weakPRNG) {
 		this.bucket = bucket;
@@ -92,6 +90,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		lastOutputStream = 0;
 	}
 
+	/**
+	 *
+	 * @param fs
+	 * @param origRandom
+	 * @param f
+	 * @throws CannotCreateFromFieldSetException
+	 */
 	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("DataLength");
 		if(tmp == null) {
@@ -132,6 +137,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		origRandom.nextBytes(randomSeed);
 	}
 
+	/**
+	 *
+	 * @param orig
+	 * @param newBucket
+	 */
 	public PaddedEphemerallyEncryptedBucket(PaddedEphemerallyEncryptedBucket orig, Bucket newBucket) {
 		this.dataLength = orig.dataLength;
 		this.key = new byte[orig.key.length];
@@ -336,6 +346,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	/**
 	 * Return the length of the data in the proxied bucket, after padding.
+	 *
+	 * @return
 	 */
 	public synchronized long paddedLength() {
 		long size = dataLength;
@@ -410,11 +422,17 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	/**
 	 * Get the decryption key.
+	 *
+	 * @return
 	 */
 	public byte[] getKey() {
 		return key;
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.putSingle("Type", "PaddedEphemerallyEncryptedBucket");
@@ -450,6 +468,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		container.delete(this);
 	}
 
+	/**
+	 *
+	 * @param container
+	 */
 	public void objectOnActivate(ObjectContainer container) {
 		Logger.minor(this, "Activating " + super.toString() + " bucket == null = " + (bucket == null));
 		// Cascading activation of dependancies

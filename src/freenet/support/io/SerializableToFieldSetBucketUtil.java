@@ -8,9 +8,21 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
+/**
+ *
+ * @author unknown
+ */
 public class SerializableToFieldSetBucketUtil {
 
 	// FIXME use something other than ResumeException???
+	/**
+	 * 
+	 * @param fs
+	 * @param random
+	 * @param f
+	 * @return
+	 * @throws CannotCreateFromFieldSetException
+	 */
 	public static Bucket create(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		if(fs == null) {
 			if(Logger.shouldLog(Logger.MINOR, SerializableToFieldSetBucketUtil.class)) {

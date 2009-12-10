@@ -53,6 +53,9 @@ public class PersistentBlobTempBucketFactory {
 		});
 	}
 
+	/**
+	 *
+	 */
 	public final long blockSize;
 	private File storageFile;
 	private transient RandomAccessFile raf;
@@ -74,6 +77,12 @@ public class PersistentBlobTempBucketFactory {
 	private transient Ticker ticker;
 	private final long nodeDBHandle;
 
+	/**
+	 *
+	 * @param blockSize2
+	 * @param nodeDBHandle2
+	 * @param storageFile2
+	 */
 	public PersistentBlobTempBucketFactory(long blockSize2, long nodeDBHandle2, File storageFile2) {
 		blockSize = blockSize2;
 		nodeDBHandle = nodeDBHandle2;
@@ -185,6 +194,10 @@ public class PersistentBlobTempBucketFactory {
 		System.err.println("Persistent blobs: Blocks: " + blocks + " used " + used);
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public String getName() {
 		return storageFile.getPath();
 	}
@@ -462,6 +475,11 @@ public class PersistentBlobTempBucketFactory {
 		return null;
 	}
 
+	/**
+	 *
+	 * @param index
+	 * @param bucket
+	 */
 	public synchronized void freeBucket(long index, PersistentBlobTempBucket bucket) {
 		if(logMINOR) {
 			Logger.minor(this, "Freeing index " + index + " for " + bucket, new Exception("debug"));
@@ -480,6 +498,11 @@ public class PersistentBlobTempBucketFactory {
 
 	private long lastCheckedEnd = -1;
 
+	/**
+	 *
+	 * @param bucket
+	 * @param container
+	 */
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR) {
 			Logger.minor(this, "Removing bucket " + bucket + " for slot " + bucket.getIndex() + " from database", new Exception("debug"));
@@ -876,6 +899,11 @@ public class PersistentBlobTempBucketFactory {
 		}, 61 * 1000);
 	}
 
+	/**
+	 *
+	 * @param bucket
+	 * @param container
+	 */
 	public void store(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(logMINOR) {
 			Logger.minor(this, "Storing bucket " + bucket + " for slot " + bucket.getIndex() + " to database");
@@ -896,6 +924,9 @@ public class PersistentBlobTempBucketFactory {
 		}
 	}
 
+	/**
+	 *
+	 */
 	public synchronized void postCommit() {
 		int freeNow = freeSlots.size();
 		int sz = freeNow + almostFreeSlots.size();
@@ -911,6 +942,11 @@ public class PersistentBlobTempBucketFactory {
 		almostFreeSlots.clear();
 	}
 
+	/**
+	 *
+	 * @param bucket
+	 * @return
+	 */
 	public Bucket createShadow(PersistentBlobTempBucket bucket) {
 		long index = bucket.getIndex();
 		Long i = index;
@@ -925,6 +961,11 @@ public class PersistentBlobTempBucketFactory {
 		}
 	}
 
+	/**
+	 *
+	 * @param index
+	 * @param bucket
+	 */
 	public synchronized void freeShadow(long index, PersistentBlobTempBucket bucket) {
 		PersistentBlobTempBucket temp = shadows.remove(index);
 		if(temp != bucket) {
@@ -933,12 +974,20 @@ public class PersistentBlobTempBucketFactory {
 		}
 	}
 
+	/**
+	 *
+	 * @param job
+	 */
 	public void addBlobFreeCallback(DBJob job) {
 		synchronized(this) {
 			freeJobs.add(job);
 		}
 	}
 
+	/**
+	 *
+	 * @param job
+	 */
 	public void removeBlobFreeCallback(DBJob job) {
 		synchronized(this) {
 			freeJobs.remove(job);

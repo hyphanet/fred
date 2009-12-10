@@ -5,10 +5,18 @@ package freenet.support.io;
 
 import java.io.File;
 
+/**
+ *
+ * @author unknown
+ */
 public class NullPersistentFileTracker implements PersistentFileTracker {
 
 	private static NullPersistentFileTracker instance;
 
+	/**
+	 *
+	 * @return
+	 */
 	public static synchronized NullPersistentFileTracker getInstance() {
 		if(instance == null) {
 			instance = new NullPersistentFileTracker();
@@ -19,6 +27,10 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 	private NullPersistentFileTracker() {
 	}
 
+	/**
+	 *
+	 * @param file
+	 */
 	public void register(File file) {
 		// Do nothing
 	}
@@ -36,10 +48,19 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 		return false;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public FilenameGenerator getGenerator() {
 		return null;
 	}
 
+	/**
+	 *
+	 * @param file
+	 * @return
+	 */
 	public long getID(File file) {
 		return 0;
 	}

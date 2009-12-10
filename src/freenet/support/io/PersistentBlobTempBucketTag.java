@@ -1,6 +1,10 @@
 package freenet.support.io;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
+/**
+ *
+ * @author Toad
+ */
 public class PersistentBlobTempBucketTag {
 
 	final PersistentBlobTempBucketFactory factory;

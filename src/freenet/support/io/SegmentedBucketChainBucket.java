@@ -40,13 +40,26 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 
 	private final ArrayList<SegmentedChainBucketSegment> segments;
 	private boolean readOnly;
+	/**
+	 *
+	 */
 	public final long bucketSize;
+	/**
+	 *
+	 */
 	public final int segmentSize;
 	private long size;
 	private boolean freed;
 	final BucketFactory bf;
 	private transient DBJobRunner dbJobRunner;
 
+	/**
+	 *
+	 * @param blockSize
+	 * @param factory
+	 * @param runner
+	 * @param segmentSize2
+	 */
 	public SegmentedBucketChainBucket(int blockSize, BucketFactory factory,
 			DBJobRunner runner, int segmentSize2) {
 		bucketSize = blockSize;
@@ -231,10 +244,21 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		};
 	}
 
+	/**
+	 *
+	 * @param i
+	 * @return
+	 */
 	protected synchronized SegmentedChainBucketSegment getSegment(int i) {
 		return segments.get(i);
 	}
 
+	/**
+	 *
+	 * @param seg
+	 * @return
+	 * @throws DatabaseDisabledException
+	 */
 	protected Bucket[] getBuckets(final SegmentedChainBucketSegment seg) throws DatabaseDisabledException {
 		final BucketArrayWrapper baw = new BucketArrayWrapper();
 		dbJobRunner.runBlocking(new DBJob() {
@@ -403,6 +427,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	private transient SegmentedBucketChainBucketKillJob killMe;
 	private transient boolean runningSegStore;
 
+	/**
+	 *
+	 * @param index
+	 * @param oldSeg
+	 * @return
+	 */
 	protected SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
 		if(Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "Make a segment for " + this + " index " + index + "old " + oldSeg);
@@ -486,11 +516,17 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 	 * 
 	 * FIXME: Enforce the rule that you must close any OutputStream's before 
 	 * calling storeTo().
+	 *
+	 * @param container
 	 */
 	public void storeTo(ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 *
+	 * @return
+	 */
 	public Bucket[] getBuckets() {
 		final BucketArrayWrapper baw = new BucketArrayWrapper();
 		try {
@@ -509,6 +545,11 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		return baw.buckets;
 	}
 
+	/**
+	 *
+	 * @param container
+	 * @return
+	 */
 	protected synchronized Bucket[] getBuckets(ObjectContainer container) {
 		int segs = segments.size();
 		if(segs == 0) {
@@ -535,6 +576,9 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 
 	private boolean clearing;
 
+	/**
+	 *
+	 */
 	public synchronized void clear() {
 		// Due to memory issues, we cannot complete this before we return
 		synchronized(this) {
