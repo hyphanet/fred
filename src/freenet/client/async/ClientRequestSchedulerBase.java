@@ -5,9 +5,7 @@ package freenet.client.async;
 
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -74,14 +72,14 @@ abstract class ClientRequestSchedulerBase {
 	protected final SortedVectorByNumber[] priorities;
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
-	protected transient Set<KeyListener> keyListeners;
+	protected transient ArrayList<KeyListener> keyListeners;
 
 	abstract boolean persistent();
 	
 	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, RandomSource random) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		keyListeners = new HashSet<KeyListener>();
+		keyListeners = new ArrayList<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		globalSalt = new byte[32];
 		random.nextBytes(globalSalt);
@@ -431,7 +429,7 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	public void onStarted() {
-		keyListeners = new HashSet<KeyListener>();
+		keyListeners = new ArrayList<KeyListener>();
 	}
 	
 	@Override
