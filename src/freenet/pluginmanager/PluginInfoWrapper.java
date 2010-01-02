@@ -115,7 +115,12 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	 **/
 	public void stopPlugin(PluginManager manager, int maxWaitTime, boolean reloading) {
 		unregister(manager, reloading);
-		plug.terminate();
+		// TODO add a timeout for plug.terminate() too
+		try {
+			plug.terminate();
+		} catch (Throwable t) {
+			Logger.error(this, "Error while terminating plugin.", t);
+		}
 		synchronized(this) {
 			stopping = true;
 		}
