@@ -12,8 +12,6 @@ import java.util.Map;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -169,7 +167,7 @@ public final class PageMaker {
 		}
 	}
 
-	public void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin) {
+	public synchronized void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin) {
 		SubMenu menu = new SubMenu(link, name, title, plugin);
 		subMenus.put(name, menu);
 		menuList.add(menu);
@@ -179,14 +177,14 @@ public final class PageMaker {
 	 * Add a navigation category to the menu at a given offset.
 	 * @param menuOffset The position of the link in FProxy's menu. 0 = left.
 	 */
-	public void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin, int menuOffset) {
+	public synchronized void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin, int menuOffset) {
 		SubMenu menu = new SubMenu(link, name, title, plugin);
 		subMenus.put(name, menu);
 		menuList.add(menuOffset, menu);
 	}
 	
 
-	public void removeNavigationCategory(String name) {
+	public synchronized void removeNavigationCategory(String name) {
 		SubMenu menu = subMenus.remove(name);
 		if (menu == null) {
 			Logger.error(this, "can't remove navigation category, name="+name);
@@ -195,20 +193,20 @@ public final class PageMaker {
 		menuList.remove(menu);
 	}
 	
-	public void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+	public synchronized void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		SubMenu menu = subMenus.get(menutext);
 		menu.addNavigationLink(path, name, title, fullOnly, cb);
 	}
 	
 	/* FIXME: Implement a proper way for chosing what the menu looks like upon handleHTTPGet/Post */
 	@Deprecated
-	public void removeNavigationLink(String menutext, String name) {
+	public synchronized void removeNavigationLink(String menutext, String name) {
 		SubMenu menu = subMenus.get(menutext);
 		menu.removeNavigationLink(name);
 	}
 	
 	@Deprecated
-	public void removeAllNavigationLinks() {
+	public synchronized void removeAllNavigationLinks() {
 		for(SubMenu menu : subMenus.values())
 			menu.removeAllNavigationLinks();
 	}
@@ -345,6 +343,7 @@ public final class PageMaker {
 			SubMenu selected = null;
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
+			synchronized (this) {
 			for (SubMenu menu : menuList) {
 				HTMLNode subnavlist = new HTMLNode("ul");
 				boolean isSelected = false;
@@ -422,7 +421,7 @@ public final class PageMaker {
 					listItem.addChild(subnavlist);
 					navbarUl.addChild(listItem);
 				}
-
+			}
 			}
 			if(selected != null) {
 				HTMLNode div = new HTMLNode("div", "id", "selected-subnavbar");
