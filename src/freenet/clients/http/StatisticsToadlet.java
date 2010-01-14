@@ -1164,7 +1164,7 @@ public class StatisticsToadlet extends Toadlet {
 			nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
 			nodeHistogramGraphCell = nodeHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
 			nodeHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p1.format(((double) i) / HISTOGRAM_LENGTH ));
-			histogramPercent = ((double) histogram[ i ] ) / nodeCount;
+			histogramPercent = nodeCount==0 ? 0 : ((double)histogram[ i ] / nodeCount);
 			
 			// Don't use HTMLNode here to speed things up
 			nodeHistogramGraphCell.addChild("%", "<div class=\"histogramConnected\" style=\"height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;\">\u00a0</div>");
