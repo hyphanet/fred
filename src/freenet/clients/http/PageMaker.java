@@ -363,8 +363,22 @@ public final class PageMaker {
 						sublistItem = subnavlist.addChild("li");
 					}
 					if(menu.plugin != null) {
-						if(navigationTitle != null) navigationTitle = menu.plugin.getString(navigationTitle);
-						if(navigationLink != null) navigationLink = menu.plugin.getString(navigationLink);
+						if(navigationTitle != null) {
+							String newNavigationTitle = menu.plugin.getString(navigationTitle);
+							if(newNavigationTitle == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+							} else {
+								navigationTitle = newNavigationTitle;
+							}
+						}
+						if(navigationLink != null) {
+							String newNavigationLink = menu.plugin.getString(navigationLink);
+							if(newNavigationLink == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+							} else {
+								navigationLink = newNavigationLink;
+							}
+						}
 					} else {
 						if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
 						if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
@@ -390,15 +404,25 @@ public final class PageMaker {
 						menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
 						text = NodeL10n.getBase().getString(text);
 					} else {
-						menuItemTitle = menu.plugin.getString(menuItemTitle);
-						text = menu.plugin.getString(text);
+						String newTitle = menu.plugin.getString(menuItemTitle);
+						if(newTitle == null) {
+							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+						} else {
+							menuItemTitle = newTitle;
+						}
+						String newText = menu.plugin.getString(text);
+						if(newText == null) {
+							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+						} else {
+							text = newText;
+						}
 					}
-					
+
 					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
 					listItem.addChild(subnavlist);
 					navbarUl.addChild(listItem);
 				}
-					
+
 			}
 			if(selected != null) {
 				HTMLNode div = new HTMLNode("div", "id", "selected-subnavbar");
