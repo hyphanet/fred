@@ -501,18 +501,22 @@ public class NodeUpdateManager {
 		updater.start();
 		System.out.println("Started plugin update fetcher for "+name);
 	}
-	
+
 	public void stopPluginUpdater(String plugName) {
 		OfficialPluginDescription plugin = PluginManager.officialPlugins.get(plugName);
 		if(plugin == null) return; // Not an official plugin
 		PluginJarUpdater updater = null;
 		synchronized(this) {
+			if(pluginUpdaters == null) {
+				if(logMINOR) Logger.minor(this, "Updating not enabled");
+				return; // Not enabled
+			}
 			updater = pluginUpdaters.remove(plugName);
 		}
 		if(updater != null)
 			updater.kill();
 	}
-	
+
 	private void stopPluginUpdaters(Map<String, PluginJarUpdater> oldPluginUpdaters) {
 		for(PluginJarUpdater u : oldPluginUpdaters.values()) {
 			u.kill();
