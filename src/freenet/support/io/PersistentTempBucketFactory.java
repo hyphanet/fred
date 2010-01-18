@@ -316,6 +316,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			x++;
 		}
 		if(x > 1024) {
+			// FIXME: Why doesn't this do synchronized(this) ? grabBucketsToFree() synchronizes for accessing bucketsToFree
 			db.store(bucketsToFree);
 			// Lots of buckets freed, commit now to reduce memory footprint.
 			db.commit();
