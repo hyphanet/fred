@@ -859,7 +859,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				
-			}, NativeThread.HIGH_PRIORITY, false);
+			}, NativeThread.MAX_PRIORITY, false);
 		} catch (DatabaseDisabledException e1) {
 			sendPersistenceDisabledError(ctx);
 			return;
