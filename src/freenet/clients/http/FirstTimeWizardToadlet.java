@@ -697,9 +697,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				if(enableJSTUN) {
 					core.node.executor.execute(new Runnable() {
 						public void run() {
-					// We can probably get connected without it, so don't force HTTPS.
-					// We'd have to ask the user anyway...
-					core.node.pluginManager.startPluginOfficial("JSTUN", true, false, false);
+							// We can probably get connected without it, so don't force HTTPS.
+							// We'd have to ask the user anyway...
+							core.node.pluginManager.startPluginOfficial("JSTUN", true, false, false);
 						}
 					});
 				}
