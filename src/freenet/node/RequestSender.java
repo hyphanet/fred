@@ -1055,7 +1055,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     public synchronized short waitUntilStatusChange(short mask) {
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
     	while(true) {
-    	long deadline = System.currentTimeMillis() + 300*1000;
+    	long now = System.currentTimeMillis();
+    	long deadline = now + 300 * 1000;
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
         	
@@ -1071,12 +1072,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	if(current != mask) return current;
 			
             try {
-            	long now = System.currentTimeMillis();
             	if(now >= deadline) {
-            		Logger.error(this, "Waited more than 5 minutes for status change on "+this+" current = "+current);
+            		Logger.error(this, "Waited more than 5 minutes for status change on " + this + " current = " + current + " and there was no change.");
             		break;
             	}
+            	
                 wait(deadline - now);
+                now = System.currentTimeMillis(); // Is used in the next iteration so needed even without the logging
+                
+                if(now >= deadline) {
+                    Logger.error(this, "Waited more than 5 minutes for status change on " + this + " current = " + current + ", maybe nobody called notify()");
+                    // Normally we would break; here, but we give the function a change to succeed
+                    // in the next iteration and break in the above if(now >= deadline) if it
+                    // did not succeed. This makes the function work if notify() is not called.
+                }
             } catch (InterruptedException e) {
                 // Ignore
             }
