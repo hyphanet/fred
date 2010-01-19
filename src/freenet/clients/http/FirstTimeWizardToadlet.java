@@ -676,35 +676,38 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (ConfigException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
-			boolean enableUPnP = request.isPartSet("upnp");
-			boolean enableJSTUN = request.isPartSet("jstun");
+			final boolean enableUPnP = request.isPartSet("upnp");
+			final boolean enableJSTUN = request.isPartSet("jstun");
 			if(enableUPnP != core.node.pluginManager.isPluginLoaded("plugins.UPnP.UPnP")) {
-				if(enableUPnP)
 					// We can probably get connected without it, so don't force HTTPS.
 					// We'd have to ask the user anyway...
 					core.node.executor.execute(new Runnable() {
-
+						
+						private final boolean enable = enableUPnP;
+						
 						public void run() {
-							core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
+							if(enable)
+								core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
+							else
+								core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
 						}
 						
 					});
-					
-				else
-					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
 			}
 			if(enableJSTUN != core.node.pluginManager.isPluginLoaded("plugins.JSTUN.JSTUN")) {
-				if(enableJSTUN) {
 					core.node.executor.execute(new Runnable() {
+						
+						private final boolean enable = enableJSTUN;
+						
 						public void run() {
 							// We can probably get connected without it, so don't force HTTPS.
 							// We'd have to ask the user anyway...
+							if(enable)
 							core.node.pluginManager.startPluginOfficial("JSTUN", true, false, false);
+							else
+								core.node.pluginManager.killPluginByClass("plugins.JSTUN.JSTUN", 5000);
 						}
 					});
-				}
-				else
-					core.node.pluginManager.killPluginByClass("plugins.JSTUN.JSTUN", 5000);
 			}
 			super.writeTemporaryRedirect(ctx, "step7", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
 			return;
