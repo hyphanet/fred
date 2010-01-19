@@ -694,10 +694,15 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
 			}
 			if(enableJSTUN != core.node.pluginManager.isPluginLoaded("plugins.JSTUN.JSTUN")) {
-				if(enableJSTUN)
+				if(enableJSTUN) {
+					core.node.executor.execute(new Runnable() {
+						public void run() {
 					// We can probably get connected without it, so don't force HTTPS.
 					// We'd have to ask the user anyway...
 					core.node.pluginManager.startPluginOfficial("JSTUN", true, false, false);
+						}
+					});
+				}
 				else
 					core.node.pluginManager.killPluginByClass("plugins.JSTUN.JSTUN", 5000);
 			}
