@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.ext.Db4oException;
 import com.db4o.query.Query;
 
 /** A collection of bug workarounds for everyone's favourite object database! */
@@ -15,7 +16,15 @@ public class Db4oBugs {
 //			container.query(HasKeyListener.class);
 		Query query = container.query();
 		query.constrain(clazz);
-		return query.execute();
+		try {
+			return query.execute();
+		} catch (NullPointerException e) {
+			// Yes this does happen.
+			// Databases run on end user systems corrupt themselves randomly due to hardware issues, software issues, and the phase of the moon.
+			// But it seems to be our only realistic option. Hopefully we'll have backups soon.
+			// A Db4oException will be caught and the database will be killed.
+			throw new Db4oException(e);
+		}
 	}
 
 	/* http://tracker.db4o.com/browse/COR-1436
