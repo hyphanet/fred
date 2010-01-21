@@ -71,6 +71,8 @@ public class LongTermMHKTest {
 		}
 		String uid = args[0];
 		
+		boolean dumpOnly = args.length == 2 && "--dump".equalsIgnoreCase(args[1]);
+		
 		List<String> csvLine = new ArrayList<String>();
 		System.out.println("DATE:" + dateFormat.format(today.getTime()));
 		csvLine.add(dateFormat.format(today.getTime()));
@@ -84,12 +86,15 @@ public class LongTermMHKTest {
 		FileInputStream fis = null;
 		File file = new File("mhk-test-"+uid + ".csv");
 		long t1, t2;
+
+		HighLevelSimpleClient client = null;
 		
 		try {
 			
 			// INSERT STUFF
 			
 			final File dir = new File("longterm-mhk-test-" + uid);
+			if(!dumpOnly) {
 			FileUtil.removeAll(dir);
 			RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "", false);
 			File seednodes = new File("seednodes.fref");
@@ -129,7 +134,7 @@ public class LongTermMHKTest {
 			
 			for(int i=0;i<mhks.length;i++) mhks[i] = randomData(node);
 			
-			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
+			client = node.clientCore.makeClient((short) 0);
 
 			System.err.println("Inserting single block 3 times");
 			
@@ -204,6 +209,7 @@ public class LongTermMHKTest {
 				System.err.println("NO INSERTS SUCCEEDED FOR MHK: "+successes);
 			
 			uri = null;
+			}
 			
 			// PARSE FILE AND FETCH OLD STUFF IF APPROPRIATE
 			
@@ -214,7 +220,9 @@ public class LongTermMHKTest {
 			fis = new FileInputStream(file);
 			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
 			String line = null;
+			int linesTooShort = 0, linesBroken = 0, linesNoNumber = 0, linesNoURL = 0, linesNoFetch = 0;
 			int total = 0, singleKeysSucceeded = 0, mhkSucceeded = 0;
+			int totalSingleKeyFetches = 0, totalSingleKeySuccesses = 0;
 			while((line = br.readLine()) != null) {
 				
 				singleURI = null;
@@ -238,7 +246,10 @@ public class LongTermMHKTest {
 				calendar.getTime();
 				target.getTime();
 				try {
-					if(split.length < 3) continue;
+					if(split.length < 3) {
+						linesTooShort++;
+						continue;
+					}
 					int seedTime = Integer.parseInt(split[2]);
 					System.out.println("Seed time: "+seedTime);
 					
@@ -254,6 +265,7 @@ public class LongTermMHKTest {
 						else {
 							if(!singleURI.equals(thisURI)) {
 								System.err.println("URI is not the same for all 3 inserts: was "+singleURI+" but "+i+" is "+thisURI);
+								linesBroken++;
 								continue;
 							}
 						}
@@ -271,9 +283,11 @@ public class LongTermMHKTest {
 					
 				} catch (NumberFormatException e) {
 					System.err.println("Failed to parse row: "+e);
+					linesNoNumber++;
 					continue;
 				} catch (MalformedURLException e) {
 					System.err.println("Failed to parse row: "+e);
+					linesNoURL++;
 					continue;
 				}
 				if(target.getTimeInMillis() == calendar.getTimeInMillis()) {
@@ -301,10 +315,12 @@ public class LongTermMHKTest {
 					}
 					boolean mhkSuccess = false;
 					for(int i=0;i<3;i++) {
+						totalSingleKeyFetches++;
 						int mhkFetchTime = -1;
 						try {
 							mhkFetchTime = Integer.parseInt(split[token]);
 							mhkSuccess = true;
+							totalSingleKeySuccesses++;
 							System.out.println("Fetched MHK #"+i+" on "+date+" in "+mhkFetchTime+"ms");
 						} catch (NumberFormatException e) {
 							System.out.println("Failed fetch MHK #"+i+" on "+date+" : "+split[token]);
@@ -316,18 +332,24 @@ public class LongTermMHKTest {
 						singleKeysSucceeded++;
 					if(mhkSuccess)
 						mhkSucceeded++;
-				}
+				} else linesNoFetch++;
 			}
-			System.out.println("Total attempts: "+total);
+			System.out.println("Lines where insert failed or no fetch: too short: "+linesTooShort+" broken: "+linesBroken+" no number: "+linesNoNumber+" no url: "+linesNoURL+" no fetch "+linesNoFetch);
+			System.out.println("Total attempts where insert succeeded and fetch executed: "+total);
 			System.out.println("Single keys succeeded: "+singleKeysSucceeded);
 			System.out.println("MHKs succeeded: "+mhkSucceeded);
+			System.out.println("Single key individual fetches: "+totalSingleKeyFetches);
+			System.out.println("Single key individual fetches succeeded: "+totalSingleKeySuccesses);
+			System.out.println("Success rate for individual keys (from MHK inserts): "+((double)totalSingleKeySuccesses)/((double)totalSingleKeyFetches));
+			System.out.println("Success rate for the single key triple inserted: "+((double)singleKeysSucceeded)/((double)total));
+			System.out.println("Success rate for the MHK (success = any of the 3 different keys worked): "+((double)mhkSucceeded)/((double)total));
 			fis.close();
 			fis = null;
 			
 			// FETCH STUFF
 			
 			
-			if(match) {
+			if((!dumpOnly) && match) {
 				
 				// FETCH SINGLE URI
 				
@@ -391,19 +413,20 @@ public class LongTermMHKTest {
 			}
 			Closer.close(fis);
 
-			try {
-				FileOutputStream fos = new FileOutputStream(file, true);
-				PrintStream ps = new PrintStream(fos);
-
-				ps.println(Fields.commaList(csvLine.toArray(), '!'));
-
-				ps.close();
-				fos.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-				exitCode = EXIT_THREW_SOMETHING;
+			if(!dumpOnly) {
+				try {
+					FileOutputStream fos = new FileOutputStream(file, true);
+					PrintStream ps = new PrintStream(fos);
+					
+					ps.println(Fields.commaList(csvLine.toArray(), '!'));
+					
+					ps.close();
+					fos.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+					exitCode = EXIT_THREW_SOMETHING;
+				}
 			}
-			
 			System.exit(exitCode);
 		}
 	}	
