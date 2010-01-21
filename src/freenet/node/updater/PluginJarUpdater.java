@@ -49,7 +49,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			return false;
 		}
 		System.out.println("Deploying new version of "+pluginName+" : unloading old version...");
-		pluginManager.killPluginByFilename(pluginName, Integer.MAX_VALUE, true);
+		// Write the new version of the plugin before shutting down, so if there is a deadlock in terminate, we will still get the new version after a restart.
 		try {
 			writeJar();
 		} catch (IOException e) {
@@ -59,6 +59,7 @@ public class PluginJarUpdater extends NodeUpdater {
 			return false; // Not much we can do ...
 			// FIXME post a useralert
 		}
+		pluginManager.killPluginByFilename(pluginName, Integer.MAX_VALUE, true);
 		pluginManager.startPluginAuto(pluginName, true);
 		UserAlert a;
 		synchronized(this) {
