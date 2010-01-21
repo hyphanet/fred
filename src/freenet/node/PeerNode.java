@@ -440,7 +440,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		if(fs.getBoolean("opennet", false) != isOpennet)
-			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet");
+			throw new FSParseException("Trying to parse a darknet peer as opennet or an opennet peer as darknet isOpennet="+isOpennet+" boolean = "+fs.getBoolean("opennet", false)+" string = \""+fs.get("opennet")+"\"");
 
 		/* Read the DSA key material for the peer */
 		try {
