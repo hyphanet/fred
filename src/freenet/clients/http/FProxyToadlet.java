@@ -601,8 +601,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 							new String[] { "fetched", "required", "total", "failed", "fatallyfailed" },
 							new String[] { Integer.toString(fr.fetchedBlocks), Integer.toString(fr.requiredBlocks), Integer.toString(fr.totalBlocks), Integer.toString(fr.failedBlocks), Integer.toString(fr.fatallyFailedBlocks) }));
 				}
-				infoboxContent.addChild("br", l10n("timeElapsedLabel")+" "+TimeUtil.formatTime(System.currentTimeMillis() - fr.timeStarted));
-				long eta = fr.eta;
+				long elapsed = System.currentTimeMillis() - fr.timeStarted;
+				infoboxContent.addChild("br", l10n("timeElapsedLabel")+" "+TimeUtil.formatTime(elapsed));
+				long eta = fr.eta - elapsed;
 				if(eta > 0)
 					infoboxContent.addChild("br", "ETA: "+TimeUtil.formatTime(eta));
 				if(fr.goneToNetwork)
