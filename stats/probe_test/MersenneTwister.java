@@ -1,6 +1,9 @@
 import java.io.*;
 
 /** 
+ *
+ * FIXME: This is the version from the java-based Evolutionary Computation Research System (ECJ 19), with slight changes. Really we should use the same twister we use in Contrib, and maybe update that! - toad 
+ *
  * <h3>MersenneTwister and MersenneTwisterFast</h3>
  * <p><b>Version 13</b>, based on version MT199937(99/10/29)
  * of the Mersenne Twister algorithm found at 
