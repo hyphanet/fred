@@ -413,7 +413,7 @@ public class LongTermManySingleBlocksTest {
 					totalFetchesByDelta[delta] += totalFetches;
 					totalSuccessfulFetchesByDelta[delta] += totalSuccesses;
 					totalFetchTimeByDelta[delta] += totalFetchTime;
-					System.err.println("Succeeded: "+totalSuccesses+" of "+totalFetches+" average "+(totalFetchTime/totalSuccesses)+"ms for delta "+delta+" on "+dateFormat.format(date));
+					System.err.println("Succeeded: "+totalSuccesses+" of "+totalFetches+" average "+((double)totalFetchTime)/((double)totalSuccesses)+"ms for delta "+delta+" on "+dateFormat.format(date));
 				}
 			}
 			
