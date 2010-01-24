@@ -86,7 +86,7 @@ public interface HighLevelSimpleClient {
 	
 	/**
 	 * Blocking insert of multiple files as a manifest (or zip manifest, etc).
-	 * The map can contain either string -> bucket, or string -> map, the latter
+	 * The map can contain either string -> bucket, string -> manifestitem or string -> map, the latter
 	 * indicating subdirs.
 	 */
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException;
