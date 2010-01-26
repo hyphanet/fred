@@ -150,6 +150,29 @@ public class ContentFilter {
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
 	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb, String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(data, bf, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb));
+	}
+
+	/**
+	 * Filter some data.
+	 * 
+	 * @param data
+	 *            Input data
+	 * @param bf
+	 *            The bucket factory used to create the bucket to return the filtered data in.
+	 * @param typeName
+	 *            MIME type for input data
+	 * @param maybeCharset 
+	 * 			  MIME type of the referring document, as a hint, some types,
+	 * 			  such as CSS, will inherit it if no other data is available.
+	 * @throws IOException
+	 *             If an internal error involving buckets occurred.
+	 * @throws UnsafeContentTypeException
+	 *             If the MIME type is declared unsafe (e.g. pdf files)
+	 * @throws IllegalStateException
+	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
+	 */
+	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName);
 		String type = typeName;
@@ -198,7 +221,7 @@ public class ContentFilter {
 					charset = detectCharset(data, handler, maybeCharset);
 				}
 				
-				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb));
+				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, filterCallback);
 				if(charset != null)
 					type = type + "; charset="+charset;
 				return new FilterOutput(outputData, type);
