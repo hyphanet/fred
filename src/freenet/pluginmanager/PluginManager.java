@@ -1328,7 +1328,7 @@ public class PluginManager {
 		File[] cachedFiles = pluginDirectory.listFiles(new FileFilter() {
 
 			public boolean accept(File pathname) {
-				return pathname.isFile() && pathname.getName().startsWith(filename + "-");
+				return pathname.isFile() && pathname.getName().startsWith(filename);
 			}
 		});
 		Arrays.sort(cachedFiles, new Comparator<File>() {
@@ -1338,8 +1338,12 @@ public class PluginManager {
 			}
 
 			private long extractTimestamp(String filename) {
+				int lastIndexOfDash = filename.lastIndexOf(".jar-");
+				if (lastIndexOfDash == -1) {
+					return 0;
+				}
 				try {
-					return Long.valueOf(filename.substring(filename.lastIndexOf('-') + 1));
+					return Long.valueOf(filename.substring(lastIndexOfDash + 5));
 				} catch (NumberFormatException nfe1) {
 					return 0;
 				}
