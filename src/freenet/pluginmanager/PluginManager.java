@@ -5,6 +5,7 @@ package freenet.pluginmanager;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,6 +14,8 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1050,10 +1053,20 @@ public class PluginManager {
 
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
-		File pluginFile = new File(pluginDirectory, filename);
+		boolean pluginIsLocal = pdl instanceof PluginDownLoaderFile;
+		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
 
-		if(pdl instanceof PluginDownLoaderFile) {
-			pluginFile.delete();
+		/* check for previous instances and delete them. */
+		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
+		boolean first = true;
+		for (File cachedFile : filesInPluginDirectory) {
+			if (first && !pluginIsLocal) {
+				first = false;
+				pluginFile = new File(pluginDirectory, cachedFile.getName());
+				continue;
+			}
+			first = false;
+			cachedFile.delete();
 		}
 
 		boolean downloaded = false;
@@ -1298,6 +1311,41 @@ public class PluginManager {
 		}
 		}
 		return null;
+	}
+
+	/**
+	 * This returns all existing instances of cached JAR files that start with
+	 * the given filename followed by a dash (“-”), sorted numerically by the
+	 * appendix, largest (i.e. newest) first.
+	 *
+	 * @param pluginDirectory
+	 *            The plugin cache directory
+	 * @param filename
+	 *            The name of the JAR file
+	 * @return All cached instances
+	 */
+	private File[] getPreviousInstances(File pluginDirectory, final String filename) {
+		File[] cachedFiles = pluginDirectory.listFiles(new FileFilter() {
+
+			public boolean accept(File pathname) {
+				return pathname.isFile() && pathname.getName().startsWith(filename + "-");
+			}
+		});
+		Arrays.sort(cachedFiles, new Comparator<File>() {
+
+			public int compare(File file1, File file2) {
+				return (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, extractTimestamp(file2.getName()) - extractTimestamp(file1.getName())));
+			}
+
+			private long extractTimestamp(String filename) {
+				try {
+					return Long.valueOf(filename.substring(filename.lastIndexOf('-') + 1));
+				} catch (NumberFormatException nfe1) {
+					return 0;
+				}
+			}
+		});
+		return cachedFiles;
 	}
 
 	private String getFileDigest(File file, String digest) throws PluginNotFoundException {
