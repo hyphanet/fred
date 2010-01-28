@@ -651,20 +651,22 @@ public class PluginManager {
 	 */
 	public void removeCachedCopy(String pluginSpecification) {
 		int lastSlash = pluginSpecification.lastIndexOf('/');
-		File pluginFile;
+		String pluginFilename;
 		if(lastSlash == -1)
 			/* Windows, maybe? */
 			lastSlash = pluginSpecification.lastIndexOf('\\');
 		File pluginDirectory = new File(node.getNodeDir(), "plugins");
 		if(lastSlash == -1)
 			/* it's an official plugin! */
-			pluginFile = new File(pluginDirectory, pluginSpecification + ".jar");
+			pluginFilename = pluginSpecification + ".jar";
 		else
-			pluginFile = new File(pluginDirectory, pluginSpecification.substring(lastSlash + 1));
+			pluginFilename = pluginSpecification.substring(lastSlash + 1);
 		if(logDEBUG)
-			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + "filename: " + pluginFile.getAbsolutePath(), new Exception("debug"));
-		if(pluginFile.exists())
-			pluginFile.delete();
+			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + "filename: " + pluginFilename, new Exception("debug"));
+		File[] cachedFiles = getPreviousInstances(pluginDirectory, pluginFilename);
+		for (File cachedFile : cachedFiles) {
+			cachedFile.delete();
+		}
 	}
 
 	public void unregisterPluginToadlet(PluginInfoWrapper pi) {
