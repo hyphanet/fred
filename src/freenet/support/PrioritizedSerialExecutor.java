@@ -209,7 +209,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	public void execute(Runnable job, int prio, String jobName) {
 		synchronized(jobs) {
 			if(logMINOR)
-				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
+				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
@@ -220,13 +220,15 @@ public class PrioritizedSerialExecutor implements Executor {
 
 	public void executeNoDupes(Runnable job, int prio, String jobName) {
 		synchronized(jobs) {
-			if(logMINOR)
-				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
 			if(jobs[prio].contains(job)) {
 				if(logMINOR)
-					Logger.minor(this, "Not adding duplicate job "+job);
+					Logger.minor(this, "Not queueing job: Job already queued: "+job);
 				return;
 			}
+			
+			if(logMINOR)
+				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
+			
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
