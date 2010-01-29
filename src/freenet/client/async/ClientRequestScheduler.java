@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -16,7 +15,6 @@ import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
-import freenet.crypt.SHA256;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -721,7 +719,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		} finally {
+			synchronized(this) {
 			fillingRequestStarterQueue = false;
+			}
 		}
 	}
 	
