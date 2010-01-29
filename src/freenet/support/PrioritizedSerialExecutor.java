@@ -227,7 +227,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			}
 			
 			if(logMINOR)
-				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
+				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+", executor state: running="+running+" waiting="+waiting);
 			
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
