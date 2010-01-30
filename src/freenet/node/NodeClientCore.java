@@ -15,7 +15,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
-import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
@@ -24,6 +23,7 @@ import freenet.client.async.DatabaseDisabledException;
 import freenet.client.async.DatastoreChecker;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.InsertCompressor;
+import freenet.client.async.PersistentStatsPutter;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.SimpleEventProducer;
@@ -50,7 +50,6 @@ import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
-import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -232,7 +231,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				public void run() {
 					try {
 						queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, true);
-						getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
+						getTicker().queueTimedJob(this, "BandwidthStatsPutter", PersistentStatsPutter.OFFSET, false, true);
 					} catch (DatabaseDisabledException e) {
 						// Should be safe to ignore.
 					}
@@ -679,7 +678,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			public void run() {
 				try {
 					queue(bandwidthStatsPutter, NativeThread.LOW_PRIORITY, false);
-					getTicker().queueTimedJob(this, PersistentStatsPutter.OFFSET);
+					getTicker().queueTimedJob(this, "BandwidthStatsPutter", PersistentStatsPutter.OFFSET, false, true);
 				} catch (DatabaseDisabledException e) {
 					// Should be safe to ignore.
 				}
