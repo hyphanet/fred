@@ -22,9 +22,12 @@ public abstract class PluginReplySender {
 	}
 	
 	public void send(SimpleFieldSet params, byte[] data) throws PluginNotFoundException {
-		send(params, new ArrayBucket(data));
+		if (data == null)
+			send(params, (Bucket)null);
+		else
+			send(params, new ArrayBucket(data));
 	}
 	
 	public abstract void send(SimpleFieldSet params, Bucket bucket) throws PluginNotFoundException;
-	
+
 }
