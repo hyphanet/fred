@@ -111,4 +111,24 @@ public abstract class AbstractFCPHandler {
 		replysender.send(sfs, data);
 	}
 
+	public static void sendNOP(PluginReplySender replysender, String identifier) throws PluginNotFoundException {
+		sendError(replysender, -1, identifier, "Not implemented", null);
+	}
+
+	public static void sendSuccess(PluginReplySender replysender, String identifier, String description) throws PluginNotFoundException {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putOverwrite("Status", "Success");
+		sfs.put("Code", 0);
+		sfs.putSingle("Identifier", identifier);
+		sfs.putSingle("Description", description);
+		replysender.send(sfs);
+	}
+
+	public static void sendProgress(PluginReplySender replysender,  String identifier, String description) throws PluginNotFoundException {
+		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		sfs.putSingle("Status", "Progress");
+		sfs.putSingle("Identifier", identifier);
+		sfs.putSingle("Description", description);
+		replysender.send(sfs);
+	}
 }
