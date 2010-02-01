@@ -875,17 +875,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 				seg.kill(container, context, true, true);
 		}
 	}
-	
 	/** A request has failed non-fatally, so the block may be retried 
 	 * @param container */
 	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
+		onNonFatalFailure(e, blockNo, seg, container, context, true);
+	}
+	
+	private void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, boolean callStore) {
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
 		seg.removeBlockNum(blockNo, container, false);
-		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries);
+		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries, callStore);
 		if(sub != null) {
 			sub.reschedule(container, context);
 			if(persistent && sub != seg) container.deactivate(sub, 1);
@@ -900,14 +903,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 		RequestScheduler sched = context.getFetchScheduler(false);
 		HashSet<SplitFileFetcherSubSegment> toSchedule = null;
 		seg.removeBlockNums(blockNos, container);
+		synchronized(this) {
 		for(int i=0;i<failures.length;i++) {
 			SplitFileFetcherSubSegment sub = 
-				onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries);
+				onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries, false);
 			if(sub != null) {
 				if(toSchedule == null)
 					toSchedule = new HashSet<SplitFileFetcherSubSegment>();
 				toSchedule.add(sub);
 			}
+		}
+		container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
 		}
 		if(toSchedule != null && !toSchedule.isEmpty()) {
 			for(SplitFileFetcherSubSegment sub : toSchedule) {
@@ -926,7 +932,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	/**
 	 * Caller must set(this) iff returns true.
 	 */
-	private SplitFileFetcherSubSegment onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries) {
+	private SplitFileFetcherSubSegment onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries, boolean callStore) {
 		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this+" from "+seg);
 		int tries;
 		boolean failed = false;
@@ -993,7 +999,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 		}
 		if(persistent) {
-			container.store(this);
+			if(callStore) container.store(this);
 			container.deactivate(key, 5);
 		}
 		if(mustSchedule) 
