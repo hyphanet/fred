@@ -80,14 +80,13 @@ public class PersistentChosenRequest {
 			if(!reqActive) container.deactivate(req, 1);
 			throw new NoValidBlocksException();
 		}
-		
-		// FIXME: We still use an ArrayList for blocksNotStarted because grabNotStarted() wants to grab a random item for starting a request:
-		// HashSets DO return random items if you just pop the first BUT the order of the items can be predictable and I don't know whether this would
-		// make any attacks possible. Does it? If not, use a HashSet. Another option would be: Override PersistentChosenBlock.hashCode() to use a hashcode
-		// from the node's PRNG. However this would have to be done very carefully because hashCode() might be called from anywhere and db4o might have a problem
-		// if we return transient hashCodes, i.e. if the hashCode changes after loading the object from the database. We cannot store the hashCodes in the db
-		// because then we would have to activate the object upon hashCode() call :| Maybe someone figures out a solution for this...
+
+		// These three structures will contain up to 256 blocks.
+		// At this size the difference between hashtables and arrays is IMHO marginal: 
+		// Caching effects could easily make arrays faster.
+		// We need to be able to select one randomly from blocksNotStarted, so we use an array.
 		blocksNotStarted = new ArrayList<PersistentChosenBlock>(candidates.size() + 1);
+		// Whereas these two we only need to be able to add and remove from quickly, so we use a HashSet.
 		blocksStarted = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
 		blocksFinished = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
 		
