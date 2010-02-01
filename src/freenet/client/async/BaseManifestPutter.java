@@ -88,14 +88,14 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				for (PutHandler ph : phv) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(ph);
 					perContainerPutHandlersWaitingForMetadata.get(ph.parentPutHandler).remove(ph);
-					container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
+					if(persistent) container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
 					if (ph.targetInArchive == null)
 						throw new NullPointerException();
 					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI().setMetaString(new String[] { ph.targetInArchive }), cm);
 					hm.put(ph.itemName, m);
-					container.ext().store(hm, 2);
+					if(persistent) container.ext().store(hm, 2);
 					putHandlersTransformMap.remove(ph);
-					container.ext().store(putHandlersTransformMap, 2);
+					if(persistent) container.ext().store(putHandlersTransformMap, 2);
 					try {
 						tryStartParentContainer(ph.parentPutHandler, container, context);
 					} catch (InsertException e) {
@@ -104,7 +104,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 					}
 				}
 				putHandlersArchiveTransformMap.remove(this);
-				container.ext().store(putHandlersArchiveTransformMap, 2);
+				if(persistent) container.ext().store(putHandlersArchiveTransformMap, 2);
 			}
 			if(persistent) {
 				container.deactivate(BaseManifestPutter.this, 1);
