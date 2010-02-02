@@ -913,7 +913,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				toSchedule.add(sub);
 			}
 		}
-		container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
+		if(persistent) container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
 		}
 		if(toSchedule != null && !toSchedule.isEmpty()) {
 			for(SplitFileFetcherSubSegment sub : toSchedule) {
