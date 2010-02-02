@@ -85,7 +85,7 @@ public class PersistentChosenRequest {
 		// At this size the difference between hashtables and arrays is IMHO marginal: 
 		// Caching effects could easily make arrays faster.
 		// We need to be able to select one randomly from blocksNotStarted, so we use an array.
-		blocksNotStarted = new ArrayList<PersistentChosenBlock>(candidates.size() + 1);
+		blocksNotStarted = new ArrayList<PersistentChosenBlock>(candidates.size());
 		// Whereas these two we only need to be able to add and remove from quickly, so we use a HashSet.
 		blocksStarted = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
 		blocksFinished = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
