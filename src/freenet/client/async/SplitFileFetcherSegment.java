@@ -903,7 +903,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		RequestScheduler sched = context.getFetchScheduler(false);
 		HashSet<SplitFileFetcherSubSegment> toSchedule = null;
 		seg.removeBlockNums(blockNos, container);
-		synchronized(this) {
 		for(int i=0;i<failures.length;i++) {
 			SplitFileFetcherSubSegment sub = 
 				onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries, false);
@@ -914,7 +913,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		}
 		if(persistent) container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
-		}
 		if(toSchedule != null && !toSchedule.isEmpty()) {
 			for(SplitFileFetcherSubSegment sub : toSchedule) {
 				if(persistent)
