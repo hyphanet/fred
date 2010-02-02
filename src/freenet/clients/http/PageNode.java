@@ -11,4 +11,14 @@ public class PageNode extends InfoboxNode {
 		this.headNode = head;
 	}
 	
+	/**
+	 * Adds a custom style sheet to the header of the page.
+	 *
+	 * @param customStyleSheet
+	 *            The URL of the custom style sheet
+	 */
+	public void addCustomStyleSheet(String customStyleSheet) {
+		headNode.addChild("link", new String[] { "rel", "href", "type", "media" }, new String[] { "stylesheet", customStyleSheet, "text/css", "screen" });
+	}
+
 }
