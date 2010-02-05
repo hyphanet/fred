@@ -219,6 +219,7 @@ public class Announcer {
 				continue;
 			}
 		}
+		if(logMINOR) Logger.minor(this, "connectSomeNodesInner() returning "+count);
 		return count;
 	}
 
