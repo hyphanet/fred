@@ -387,7 +387,7 @@ public class Announcer {
 		if(!node.isOpennetEnabled()) return;
 		if(enoughPeers()) {
 			// Check again in 60 seconds.
-			node.getTicker().queueTimedJob(checker, FINAL_DELAY);
+			node.getTicker().queueTimedJob(checker, "Announcement checker", FINAL_DELAY, false, true);
 			return;
 		}
 		if((!ignoreIPUndetected) && (!node.ipDetector.hasValidIP())) {
@@ -415,7 +415,7 @@ public class Announcer {
 			// Double check after taking the lock.
 			if(enoughPeers()) {
 				// Check again in 60 seconds.
-				node.getTicker().queueTimedJob(checker, FINAL_DELAY);
+				node.getTicker().queueTimedJob(checker, "Announcement checker", FINAL_DELAY, false, true);
 				return;
 			}
 			// Second, do we have many announcements running?
