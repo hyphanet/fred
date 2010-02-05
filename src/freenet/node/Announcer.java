@@ -141,6 +141,8 @@ public class Announcer {
 				Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
 						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
 			if(count == 0 && runningAnnouncements == 0) {
+				// No more peers to connect to, and no announcements running.
+				// Are there any peers which we are still trying to connect to?
 				if(connectedToIdentities.size() > announcedToIdentities.size()) {
 					// Some seednodes we haven't been able to connect to yet.
 					// Give it another minute, then clear all and try again.
@@ -160,6 +162,7 @@ public class Announcer {
 						}
 					}, NOT_ALL_CONNECTED_DELAY);
 				} else if(connectedToIdentities.size() == announcedToIdentities.size()) {
+					// Every node we have tried to connect to, we have connected to and announced to.
 					// Clear it now
 					announcedToIdentities.clear();
 					announcedToIPs.clear();
