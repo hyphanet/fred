@@ -133,26 +133,27 @@ public class Announcer {
 		// Once they are connected they will report back and we can attempt an announcement.
 
 		int count = connectSomeNodesInner(seeds);
-		// How many identities have we actually sent announcements to since the last reset?
-		int connectedSeeds = 0; 
-		// How many identities are we either trying to connect to or haven't sent an announcement to yet (timing/race conditions) or failed to send one to?
-		int connectingSeeds = 0; 
+		boolean stillConnecting = false;
 		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
 		synchronized(this) {
 			for(SeedServerPeerNode seed : tryingSeeds) {
-				if(announcedToIdentities.contains(new ByteArrayWrapper(seed.identity)))
-					connectedSeeds++;
-				else
-					connectingSeeds++;
+				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.identity))) {
+					// Either:
+					// a) we are still trying to connect to this node,
+					// b) there is a race condition and we haven't sent the announcement yet despite connecting, or
+					// c) something is severely broken and we didn't send an announcement.
+					// In any of these cases, we want to delay for 1 minute before resetting the connection process and connecting to everyone.
+					stillConnecting = true;
+					break;
+				}
 			}
 			if(logMINOR)
 				Logger.minor(this, "count = "+count+
-						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements+" connected seeds "+connectedSeeds+" connecting seeds "+connectingSeeds);
+						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements+" still connecting "+stillConnecting);
 			if(count == 0 && runningAnnouncements == 0) {
 				// No more peers to connect to, and no announcements running.
 				// Are there any peers which we are still trying to connect to?
-				if(connectingSeeds > 0) {
-					// Some seednodes we are still trying to connect to.
+				if(stillConnecting) {
 					// Give them another minute.
 					if(logMINOR)
 						Logger.minor(this, "Will clear announced-to in 1 minute...");
