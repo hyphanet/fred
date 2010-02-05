@@ -62,8 +62,6 @@ public class Announcer {
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
 	public static final String SEEDNODES_FILENAME = "seednodes.fref";
-	/** Identities of nodes we have tried to connect to */
-	private final HashSet<ByteArrayWrapper> connectedToIdentities;
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
@@ -74,7 +72,6 @@ public class Announcer {
 		this.node = om.node;
 		announcedToIdentities = new HashSet<ByteArrayWrapper>();
 		announcedToIPs = new HashSet<InetAddress>();
-		connectedToIdentities = new HashSet<ByteArrayWrapper>();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -147,7 +144,7 @@ public class Announcer {
 		}
 		synchronized(this) {
 			if(logMINOR)
-				Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
+				Logger.minor(this, "count = "+count+
 						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements+" connected seeds "+connectedSeeds+" connecting seeds "+connectingSeeds);
 			if(count == 0 && runningAnnouncements == 0) {
 				// No more peers to connect to, and no announcements running.
@@ -165,7 +162,6 @@ public class Announcer {
 								if(runningAnnouncements != 0) return;
 								announcedToIdentities.clear();
 								announcedToIPs.clear();
-								connectedToIdentities.clear();
 							}
 							maybeSendAnnouncement();
 						}
@@ -175,7 +171,6 @@ public class Announcer {
 					// No point waiting!
 					announcedToIdentities.clear();
 					announcedToIPs.clear();
-					connectedToIdentities.clear();
 					announceNow = true;
 				}
 			}
@@ -213,7 +208,6 @@ public class Announcer {
 					Logger.minor(this, "Trying to connect to seednode "+seed);
 				if(node.peers.addPeer(seed)) {
 					count++;
-					connectedToIdentities.add(new ByteArrayWrapper(seed.identity));
 					if(logMINOR)
 						Logger.minor(this, "Connecting to seednode "+seed);
 				} else {
