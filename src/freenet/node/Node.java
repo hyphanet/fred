@@ -5825,7 +5825,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public synchronized void drawStoreStats(HTMLNode infobox) {
 		if (completeInsertsTotal != 0) {
-			infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsStored*1.0)/completeInsertsTotal)+"%)");
+			infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsStored*1.0)/completeInsertsTotal)+")");
 			infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsOldStore*1.0)/completeInsertsTotal)+")");
 			infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsNotStoredWouldHaveStored*1.0)/completeInsertsTotal)+")");
 		}
