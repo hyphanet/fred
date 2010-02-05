@@ -136,21 +136,19 @@ public class Announcer {
 		int connectedSeeds = 0;
 		int connectingSeeds = 0;
 		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
-		for(SeedServerPeerNode seed : tryingSeeds) {
-			// Only count it as connected if we have started an announcement.
-			// This avoids a race condition, and ensures that each node has a chance.
-			if(seed.isConnected()) {
-				// FIXME is it safe to call isConnected() inside synchronized(this) on Announcer?
-				synchronized(this) {
+		synchronized(this) {
+			// Synchronizing is safe here just as it is safe to sync(this) { enoughPeers() }
+			for(SeedServerPeerNode seed : tryingSeeds) {
+				// Only count it as connected if we have started an announcement.
+				// This avoids a race condition, and ensures that each node has a chance.
+				if(seed.isConnected()) {
 					if(announcedToIdentities.contains(new ByteArrayWrapper(seed.identity))) {
 						connectedSeeds++;
 						continue;
 					}
 				}
+				connectingSeeds++;
 			}
-			connectingSeeds++;
-		}
-		synchronized(this) {
 			if(logMINOR)
 				Logger.minor(this, "count = "+count+
 						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements+" connected seeds "+connectedSeeds+" connecting seeds "+connectingSeeds);
