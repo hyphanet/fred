@@ -1205,6 +1205,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 			}, CLEAR_MESSAGE_QUEUE_AFTER);
 		}
+		// Tell opennet manager even if this is darknet, because we may need more opennet peers now.
+		OpennetManager om = node.getOpennet();
+		if(om != null)
+			om.onDisconnect(this);
 		return ret;
 	}
 	

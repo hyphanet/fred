@@ -856,4 +856,10 @@ public class OpennetManager {
 	public int getAnnouncementThreshold() {
 		return announcer.getAnnouncementThreshold();
 	}
+
+	/** Notification that a peer was disconnected. Query the Announcer,
+	 * it may need to rerun. */
+	public void onDisconnect(PeerNode node2) {
+		announcer.maybeSendAnnouncementOffThread();
+	}
 }

@@ -365,6 +365,17 @@ public class Announcer {
 		
 	};
 	
+	public void maybeSendAnnouncementOffThread() {
+		if(enoughPeers()) return;
+		node.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				maybeSendAnnouncement();
+			}
+			
+		}, 0);
+	}
+	
 	protected void maybeSendAnnouncement() {
 		synchronized(this) {
 			if(!started) return;
