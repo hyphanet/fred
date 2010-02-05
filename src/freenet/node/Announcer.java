@@ -136,16 +136,25 @@ public class Announcer {
 		// Once they are connected they will report back and we can attempt an announcement.
 
 		int count = connectSomeNodesInner(seeds);
+		int connectedSeeds = 0;
+		int connectingSeeds = 0;
+		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
+		for(SeedServerPeerNode seed : tryingSeeds) {
+			if(seed.isConnected())
+				connectedSeeds++;
+			else
+				connectingSeeds++;
+		}
 		synchronized(this) {
 			if(logMINOR)
 				Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
-						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
+						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements+" connected seeds "+connectedSeeds+" connecting seeds "+connectingSeeds);
 			if(count == 0 && runningAnnouncements == 0) {
 				// No more peers to connect to, and no announcements running.
 				// Are there any peers which we are still trying to connect to?
-				if(connectedToIdentities.size() > announcedToIdentities.size()) {
-					// Some seednodes we haven't been able to connect to yet.
-					// Give it another minute, then clear all and try again.
+				if(connectingSeeds > 0) {
+					// Some seednodes we are still trying to connect to.
+					// Give them another minute.
 					if(logMINOR)
 						Logger.minor(this, "Will clear announced-to in 1 minute...");
 					node.getTicker().queueTimedJob(new Runnable() {
@@ -161,9 +170,9 @@ public class Announcer {
 							maybeSendAnnouncement();
 						}
 					}, NOT_ALL_CONNECTED_DELAY);
-				} else if(connectedToIdentities.size() == announcedToIdentities.size()) {
-					// Every node we have tried to connect to, we have connected to and announced to.
-					// Clear it now
+				} else {
+					// We connected to all the seeds.
+					// No point waiting!
 					announcedToIdentities.clear();
 					announcedToIPs.clear();
 					connectedToIdentities.clear();
