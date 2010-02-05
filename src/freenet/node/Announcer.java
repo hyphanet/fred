@@ -133,21 +133,17 @@ public class Announcer {
 		// Once they are connected they will report back and we can attempt an announcement.
 
 		int count = connectSomeNodesInner(seeds);
-		int connectedSeeds = 0;
-		int connectingSeeds = 0;
+		// How many identities have we actually sent announcements to since the last reset?
+		int connectedSeeds = 0; 
+		// How many identities are we either trying to connect to or haven't sent an announcement to yet (timing/race conditions) or failed to send one to?
+		int connectingSeeds = 0; 
 		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
 		synchronized(this) {
-			// Synchronizing is safe here just as it is safe to sync(this) { enoughPeers() }
 			for(SeedServerPeerNode seed : tryingSeeds) {
-				// Only count it as connected if we have started an announcement.
-				// This avoids a race condition, and ensures that each node has a chance.
-				if(seed.isConnected()) {
-					if(announcedToIdentities.contains(new ByteArrayWrapper(seed.identity))) {
-						connectedSeeds++;
-						continue;
-					}
-				}
-				connectingSeeds++;
+				if(announcedToIdentities.contains(new ByteArrayWrapper(seed.identity)))
+					connectedSeeds++;
+				else
+					connectingSeeds++;
 			}
 			if(logMINOR)
 				Logger.minor(this, "count = "+count+
