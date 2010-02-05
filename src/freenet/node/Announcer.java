@@ -360,6 +360,7 @@ public class Announcer {
 		long now = System.currentTimeMillis();
 		if(!node.isOpennetEnabled()) return;
 		if(enoughPeers()) {
+			// Check again in 60 seconds.
 			node.getTicker().queueTimedJob(checker, FINAL_DELAY);
 			return;
 		}
@@ -386,7 +387,11 @@ public class Announcer {
 		synchronized(this) {
 			dontKnowOurIPAddress = false;
 			// Double check after taking the lock.
-			if(enoughPeers()) return;
+			if(enoughPeers()) {
+				// Check again in 60 seconds.
+				node.getTicker().queueTimedJob(checker, FINAL_DELAY);
+				return;
+			}
 			// Second, do we have many announcements running?
 			if(runningAnnouncements > WANT_ANNOUNCEMENTS) {
 				if(logMINOR)
