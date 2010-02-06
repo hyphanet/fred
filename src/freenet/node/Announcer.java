@@ -446,10 +446,11 @@ public class Announcer {
 					continue;
 				}
 				addAnnouncedIPs(addrs);
+				// If it throws, we do not want to increment, so call it first.
+				sendAnnouncement(seed);
 				sentAnnouncements++;
 				runningAnnouncements++;
 				announcedToIdentities.add(new ByteArrayWrapper(seed.getIdentity()));
-				sendAnnouncement(seed);
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {
 				if(logMINOR)
