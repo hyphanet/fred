@@ -60,8 +60,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private boolean hasRecentlyCollided;
     private SSKBlock block;
     private static boolean logMINOR;
-    private final boolean canWriteClientCache;
-    private boolean canWriteDatastore;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
     private final boolean forkOnCacheable;
     private InsertTag forkedRequestTag;
@@ -102,8 +100,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	pubKeyHash = SHA256.digest(pubKeyAsBytes);
     	this.block = block;
     	startTime = System.currentTimeMillis();
-    	this.canWriteClientCache = canWriteClientCache;
-    	this.canWriteDatastore = node.canWriteDatastoreInsert(htl);
     	this.forkOnCacheable = forkOnCacheable;
     }
 
@@ -160,9 +156,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	// FIXME can canWriteDatastore ever be true for a reason other than HTL?
-            	// FIXME it should probably be calculated rather than passed in ...
-            	canWriteDatastore = true;
             	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE);
             	uid = node.random.nextLong();
             	System.err.println("FORKING CHK INSERT "+origUID+" to "+uid);

@@ -184,8 +184,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.fromStore = fromStore;
         this.startTime = System.currentTimeMillis();
         this.backgroundTransfers = new Vector<BackgroundTransfer>();
-        this.canWriteClientCache = canWriteClientCache;
-        this.canWriteDatastore = node.canWriteDatastoreInsert(htl);
         this.forkOnCacheable = forkOnCacheable;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
@@ -216,8 +214,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private boolean receiveFailed;
     final long startTime;
     private boolean sentRequest;
-    private final boolean canWriteClientCache;
-    private boolean canWriteDatastore;
     private final boolean forkOnCacheable;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
 
@@ -315,9 +311,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	
             	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
             	
-            	// FIXME can canWriteDatastore ever be true for a reason other than HTL?
-            	// FIXME it should probably be calculated rather than passed in ...
-            	canWriteDatastore = true;
             	forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE);
             	uid = node.random.nextLong();
             	System.err.println("FORKING CHK INSERT "+origUID+" to "+uid);
