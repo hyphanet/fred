@@ -184,7 +184,8 @@ public class ContainerInserter implements ClientPutState {
 			dc = (archiveType == ARCHIVE_TYPE.ZIP);
 		}
 		
-		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, dc, getCHKOnly, reportMetadataOnly, token, archiveType, true, null, earlyEncode);
+		// Treat it as a splitfile for purposes of determining reinsert count.
+		SingleFileInserter sfi = new SingleFileInserter(parent, cb, block, false, ctx, dc, getCHKOnly, reportMetadataOnly, token, archiveType, true, null, earlyEncode, true);
 		if(logMINOR)
 			Logger.minor(this, "Inserting container: "+sfi+" for "+this);
 		cb.onTransition(this, sfi, container);
