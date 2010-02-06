@@ -155,6 +155,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
+            starting = false;
             htl = node.decrementHTL(sentRequest ? next : source, htl);
             if(htl == 0) {
                 // Send an InsertReply back

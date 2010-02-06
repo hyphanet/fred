@@ -308,6 +308,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
+            starting = false;
             htl = node.decrementHTL(sentRequest ? next : source, htl);
             synchronized (this) {
             	if(htl == 0) {
