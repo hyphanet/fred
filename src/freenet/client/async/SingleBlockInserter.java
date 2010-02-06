@@ -80,6 +80,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	private int consecutiveRNFs;
 	private boolean isSSK;
 	private boolean freeData;
+	private int completedInserts;
+	final int extraInserts;
 	
 	/**
 	 * Create a SingleBlockInserter.
@@ -101,7 +103,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	 * @param persistent
 	 * @param freeData
 	 */
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData, int extraInserts) {
 		super(persistent);
 		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
@@ -128,6 +130,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
 		}
+		this.extraInserts = extraInserts;
 	}
 
 	protected ClientKeyBlock innerEncode(RandomSource random, ObjectContainer container) throws InsertException {
@@ -397,6 +400,13 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return;
 		}
 		synchronized(this) {
+			if(extraInserts > 0) {
+				if(++completedInserts <= extraInserts) {
+					if(logMINOR) Logger.minor(this, "Completed inserts "+completedInserts+" of extra inserts "+extraInserts+" on "+this);
+					if(persistent) container.store(this);
+					return; // Let it repeat until we've done enough inserts. It hasn't been unregistered yet.
+				}
+			}
 			if(finished) {
 				// Normal with persistence.
 				Logger.normal(this, "Block already completed: "+this);

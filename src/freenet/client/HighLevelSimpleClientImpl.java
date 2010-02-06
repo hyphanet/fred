@@ -82,7 +82,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
 	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
-	
+	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 0;
+	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
 	
 	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;
@@ -272,7 +273,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return new InsertContext(
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
+				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, EXTRA_INSERTS_SPLITFILE_HEADER);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

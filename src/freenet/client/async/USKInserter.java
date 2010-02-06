@@ -54,6 +54,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	private static final long MAX_TRIED_SLOTS = 10;
 	private boolean freeData;
 	final int hashCode;
+	private final int extraInserts;
 	
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Caller calls schedule()
@@ -152,7 +153,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, persistent, false);
+					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, persistent, false, extraInserts);
 		}
 		try {
 			sbi.schedule(container, context);
@@ -252,7 +253,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
-			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData, boolean persistent) throws MalformedURLException {
+			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData, boolean persistent, int extraInserts) throws MalformedURLException {
 		this.hashCode = super.hashCode();
 		this.tokenObject = tokenObject;
 		this.persistent = persistent;
@@ -274,6 +275,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		pubUSK = privUSK.getUSK();
 		edition = pubUSK.suggestedEdition;
 		this.freeData = freeData;
+		this.extraInserts = extraInserts;
 	}
 
 	public BaseClientPutter getParent() {

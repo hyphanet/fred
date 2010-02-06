@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
+import freenet.client.HighLevelSimpleClientImpl;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -49,6 +50,8 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	final boolean canWriteClientCache;
 	final String compressorDescriptor;
 	public boolean forkOnCacheable;
+	final int extraInsertsSingleBlock;
+	final int extraInsertsSplitfileHeaderBlock;
 	
 	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -138,6 +141,8 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			forkOnCacheable = fs.getBoolean("ForkOnCacheable", false);
 		else
 			forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
+		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
+		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
 	}
 
 	@Override

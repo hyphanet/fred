@@ -284,7 +284,8 @@ class SingleFileInserter implements ClientPutState {
 				data = fixNotPersistent(data, context);
 			}
 			if(reportMetadataOnly) {
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, shouldFreeData);
+				if(persistent) container.activate(ctx, 1);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, shouldFreeData, ctx.extraInsertsSingleBlock);
 				if(logMINOR)
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context));
@@ -295,7 +296,8 @@ class SingleFileInserter implements ClientPutState {
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token, persistent);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData);
+				if(persistent) container.activate(ctx, 1);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, persistent ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, shouldFreeData, ctx.extraInsertsSingleBlock);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context));
@@ -456,6 +458,10 @@ class SingleFileInserter implements ClientPutState {
 		return meta;
 	}
 
+	/**
+	 * Create an inserter, either for a USK or a single block. This method
+	 * assumes that the insert is a top-block above a splitfile for purposes
+	 * of deciding how many times to insert it. */
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
 			boolean addToParent, ObjectContainer container, ClientContext context, boolean freeData) throws InsertException {
@@ -463,17 +469,18 @@ class SingleFileInserter implements ClientPutState {
 		FreenetURI uri = block.desiredURI;
 		uri.checkInsertURI(); // will throw an exception if needed
 		
+		if(persistent) container.activate(ctx, 1);
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-					getCHKOnly, addToParent, this.token, container, context, freeData, persistent);
+					getCHKOnly, addToParent, this.token, container, context, freeData, persistent, ctx.extraInsertsSplitfileHeaderBlock);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			}
 		} else {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
+						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData, ctx.extraInsertsSplitfileHeaderBlock);
 			// pass uri to SBI
 			block.nullURI();
 			if(persistent) container.store(block);
