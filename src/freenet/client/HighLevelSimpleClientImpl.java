@@ -23,6 +23,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
@@ -271,7 +272,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return new InsertContext(
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
+				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, Compressor.DEFAULT_COMPRESSORDESCRIPTOR);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

@@ -87,7 +87,7 @@ public class SimpleSendableInsert extends SendableInsert {
 				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {
 					if(logMINOR) Logger.minor(this, "Starting request: "+this);
-					core.realPut(block, req.canWriteClientCache);
+					core.realPut(block, req.canWriteClientCache, Node.FORK_ON_CACHEABLE_DEFAULT);
 				} catch (LowLevelPutException e) {
 					onFailure(e, req.token, null, context);
 					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
@@ -174,5 +174,10 @@ public class SimpleSendableInsert extends SendableInsert {
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		// Transient-only
 		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean forkOnCacheable(ObjectContainer container) {
+		return Node.FORK_ON_CACHEABLE_DEFAULT;
 	}
 }

@@ -43,6 +43,7 @@ public class PersistentChosenRequest {
 	public transient final boolean localRequestOnly;
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
+	public transient final boolean forkOnCacheable;
 	public transient final ArrayList<PersistentChosenBlock> blocksNotStarted;
 	public transient final HashSet<PersistentChosenBlock> blocksStarted;
 	public transient final HashSet<PersistentChosenBlock> blocksFinished;
@@ -63,11 +64,13 @@ public class PersistentChosenRequest {
 			localRequestOnly = ctx.localRequestOnly;
 			ignoreStore = ctx.ignoreStore;
 			canWriteClientCache = ctx.canWriteClientCache;
+			forkOnCacheable = false; // Doesn't exist for requests
 		} else if(req instanceof SendableInsert) {
 			SendableInsert sg = (SendableInsert) req;
 			localRequestOnly = false;
 			canWriteClientCache = sg.canWriteClientCache(container);
 			ignoreStore = false;
+			forkOnCacheable = sg.forkOnCacheable(container);
 		} else throw new IllegalStateException("Creating a PersistentChosenRequest for "+req);
 
 		this.scheduler = sched;

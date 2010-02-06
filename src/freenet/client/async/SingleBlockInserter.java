@@ -522,7 +522,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					}, "Got URI");
 					
 				}
-				core.realPut(b, req.canWriteClientCache);
+				core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
 			} catch (LowLevelPutException e) {
 				if(e.code == LowLevelPutException.COLLISION) {
 					// Collision
@@ -765,6 +765,20 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.activate(ctx, 1);
 		}
 		boolean retval = ctx.canWriteClientCache;
+		if(deactivate)
+			container.deactivate(ctx, 1);
+		return retval;
+	}
+	
+	@Override
+	public boolean forkOnCacheable(ObjectContainer container) {
+		boolean deactivate = false;
+		if(persistent) {
+			deactivate = !container.ext().isActive(ctx);
+			if(deactivate)
+				container.activate(ctx, 1);
+		}
+		boolean retval = ctx.forkOnCacheable;
 		if(deactivate)
 			container.deactivate(ctx, 1);
 		return retval;

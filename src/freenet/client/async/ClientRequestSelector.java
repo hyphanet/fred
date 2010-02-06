@@ -12,6 +12,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
@@ -172,22 +173,26 @@ class ClientRequestSelector implements KeysFetchingLocally {
 			boolean localRequestOnly;
 			boolean ignoreStore;
 			boolean canWriteClientCache;
+			boolean forkOnCacheable;
 			if(req instanceof SendableGet) {
 				SendableGet sg = (SendableGet) req;
 				FetchContext ctx = sg.getContext();
 				localRequestOnly = ctx.localRequestOnly;
 				ignoreStore = ctx.ignoreStore;
 				canWriteClientCache = ctx.canWriteClientCache;
+				forkOnCacheable = false;
 			} else {
 				localRequestOnly = false;
 				if(req instanceof SendableInsert) {
 					canWriteClientCache = ((SendableInsert)req).canWriteClientCache(null);
+					forkOnCacheable = ((SendableInsert)req).forkOnCacheable(null);
 				} else {
 					canWriteClientCache = false;
+					forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
 				}
 				ignoreStore = false;
 			}
-			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, sched);
+			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, ignoreStore, canWriteClientCache, forkOnCacheable, sched);
 			return ret;
 		}
 	}

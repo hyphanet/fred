@@ -18,6 +18,7 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -52,7 +53,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	// Probably saving it would conflict with later changes (full persistence at
 	// ClientPutter level).
 	protected FCPMessage progressMessage;
-
+	
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
 
@@ -63,7 +64,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -72,13 +73,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.maxInsertRetries = maxRetries;
 		ctx.canWriteClientCache = canWriteClientCache;
 		ctx.compressorDescriptor = compressorDescriptor;
+		ctx.forkOnCacheable = forkOnCacheable;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
 			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -87,6 +89,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.maxInsertRetries = maxRetries;
 		ctx.canWriteClientCache = canWriteClientCache;
 		ctx.compressorDescriptor = compressorDescriptor;
+		ctx.forkOnCacheable = forkOnCacheable;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
@@ -117,6 +120,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
 		}
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
+		if(fs.get("ForkOnCacheable") != null)
+			ctx.forkOnCacheable = fs.getBoolean("ForkOnCacheable", false);
+		else
+			ctx.forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
 	}
 
 	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
