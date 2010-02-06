@@ -114,7 +114,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
         short origHTL = htl;
-        node.addInsertSender(myKey, htl, this);
         try {
         	realRun();
 		} catch (OutOfMemoryError e) {
@@ -129,7 +128,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         	if(logMINOR) Logger.minor(this, "Finishing "+this);
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
-        	node.removeInsertSender(myKey, origHTL, this);
         	if(forkedRequestTag != null)
             	node.unlockUID(uid, true, true, false, false, false, forkedRequestTag);
         }

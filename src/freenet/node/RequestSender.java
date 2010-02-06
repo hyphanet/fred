@@ -180,7 +180,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         this.canWriteClientCache = canWriteClientCache;
         this.canWriteDatastore = canWriteDatastore;
         target = key.toNormalizedDouble();
-        node.addRequestSender(key, htl, this);
     }
 
     public void start() {
@@ -196,7 +195,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             finish(INTERNAL_ERROR, null, false);
         } finally {
         	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
-            node.removeRequestSender(key, origHTL, this);
         }
     }
 

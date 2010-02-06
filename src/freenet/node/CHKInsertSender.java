@@ -262,7 +262,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             origHTL = htl;
 		}
 
-        node.addInsertSender(myKey, origHTL, this);
         try {
         	realRun();
 		} catch (OutOfMemoryError e) {
@@ -277,7 +276,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			}
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
-        	node.removeInsertSender(myKey, origHTL, this);
         	if(forkedRequestTag != null)
             	node.unlockUID(uid, false, true, false, false, false, forkedRequestTag);
         }
