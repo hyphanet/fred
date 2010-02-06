@@ -447,10 +447,11 @@ public class Announcer {
 				}
 				addAnnouncedIPs(addrs);
 				// If it throws, we do not want to increment, so call it first.
-				sendAnnouncement(seed);
-				sentAnnouncements++;
-				runningAnnouncements++;
-				announcedToIdentities.add(new ByteArrayWrapper(seed.getIdentity()));
+				if(sendAnnouncement(seed)) {
+					sentAnnouncements++;
+					runningAnnouncements++;
+					announcedToIdentities.add(new ByteArrayWrapper(seed.getIdentity()));
+				}
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {
 				if(logMINOR)
@@ -501,11 +502,11 @@ public class Announcer {
 		return !hasNonLocalAddresses;
 	}
 
-	protected void sendAnnouncement(final SeedServerPeerNode seed) {
+	protected boolean sendAnnouncement(final SeedServerPeerNode seed) {
 		if(!node.isOpennetEnabled()) {
 			if(logMINOR)
 				Logger.minor(this, "Not announcing to "+seed+" because opennet is disabled");
-			return;
+			return false;
 		}
 		System.out.println("Announcement to "+seed.userToString()+" starting...");
 		if(logMINOR)
@@ -574,6 +575,7 @@ public class Announcer {
 			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);
+		return true;
 	}
 
 	class AnnouncementUserEvent extends AbstractUserEvent {
