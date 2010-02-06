@@ -172,7 +172,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             }
             
             // Route it
-            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+            next = node.peers.closerPeer(forkedRequestTag == null ? source : null, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
 			        null, htl);
             
             if(next == null) {
