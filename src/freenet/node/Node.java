@@ -715,6 +715,8 @@ public class Node implements TimeSkewDetectorCallback {
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
+	/** Should inserts fork when the HTL reaches cacheability? */
+	public static final boolean FORK_ON_CACHEABLE_DEFAULT = false;
 	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
@@ -4368,7 +4370,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		CHKInsertSender is = null;
@@ -4379,7 +4381,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if(logMINOR) Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
+		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl), forkOnCacheable);
 		is.start();
 		if(logMINOR) Logger.minor(this, is.toString()+" for "+kh.toString());
 		// CHKInsertSender adds itself to insertSenders
@@ -4398,7 +4400,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore) {
+			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
@@ -4415,7 +4417,7 @@ public class Node implements TimeSkewDetectorCallback {
 			Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
+		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl), forkOnCacheable);
 		is.start();
 		Logger.minor(this, is.toString()+" for "+kh.toString());
 		// SSKInsertSender adds itself to insertSenders

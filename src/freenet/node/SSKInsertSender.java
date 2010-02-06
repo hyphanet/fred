@@ -40,7 +40,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     // Basics
     final NodeSSK myKey;
     final double target;
-    final long uid;
+    final long origUID;
+    long uid;
     short htl;
     final PeerNode source;
     final Node node;
@@ -60,8 +61,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     private SSKBlock block;
     private static boolean logMINOR;
     private final boolean canWriteClientCache;
-    private final boolean canWriteDatastore;
+    private boolean canWriteDatastore;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
+    private final boolean forkOnCacheable;
+    private InsertTag forkedRequestTag;
     
     private int status = -1;
     /** Still running */
@@ -79,12 +82,13 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore) {
+    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
     	this.source = source;
     	this.htl = htl;
+    	this.origUID = uid;
     	this.uid = uid;
     	myKey = block.getKey();
     	data = block.getRawData();
@@ -100,6 +104,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	startTime = System.currentTimeMillis();
     	this.canWriteClientCache = canWriteClientCache;
     	this.canWriteDatastore = canWriteDatastore;
+    	this.forkOnCacheable = forkOnCacheable;
     }
 
     void start() {
@@ -125,6 +130,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(status == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	node.removeInsertSender(myKey, origHTL, this);
+        	if(forkedRequestTag != null)
+            	node.unlockUID(uid, true, true, false, false, false, forkedRequestTag);
         }
 	}
 
@@ -140,11 +147,28 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
              * 2) The node which just failed can be seen as the requestor for our purposes.
              */
             // Decrement at this point so we can DNF immediately on reaching HTL 0.
+            short prevHTL = htl;
             htl = node.decrementHTL(sentRequest ? next : source, htl);
             if(htl == 0) {
                 // Send an InsertReply back
                 finish(SUCCESS, null);
                 return;
+            }
+            
+            if( node.canWriteDatastoreInsert(htl) && !node.canWriteDatastoreInsert(prevHTL)) {
+            	// FORK! We are now cacheable, and it is quite possible that we have already gone over the ideal sink nodes,
+            	// in which case if we don't fork we will miss them, and greatly reduce the insert's reachability.
+            	// So we fork: Create a new UID so we can go over the previous hops again if they happen to be good places to store the data.
+            	
+            	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
+            	
+            	// FIXME can canWriteDatastore ever be true for a reason other than HTL?
+            	// FIXME it should probably be calculated rather than passed in ...
+            	canWriteDatastore = true;
+            	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE);
+            	uid = node.random.nextLong();
+            	nodesRoutedTo.clear();
+            	node.lockUID(uid, true, true, false, false, forkedRequestTag);
             }
             
             // Route it
@@ -160,6 +184,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             nodesRoutedTo.add(next);
             
             Message request = DMT.createFNPSSKInsertRequestNew(uid, htl, myKey);
+            if(forkOnCacheable != Node.FORK_ON_CACHEABLE_DEFAULT) {
+            	request.addSubMessage(DMT.createFNPSubInsertForkControl(forkOnCacheable));
+            }
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             

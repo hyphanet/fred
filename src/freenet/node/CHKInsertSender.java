@@ -27,6 +27,7 @@ import freenet.support.io.NativeThread;
 public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, ByteCounter {
 	
 	private class BackgroundTransfer implements PrioRunnable, AsyncMessageFilterCallback {
+		private final long uid;
 		/** Node we are waiting for response from */
 		final PeerNode pn;
 		/** We may be sending data to that node */
@@ -46,6 +47,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		
 		BackgroundTransfer(PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
+			this.uid = CHKInsertSender.this.uid;
 			bt = new BlockTransmitter(node.usm, pn, uid, prb, CHKInsertSender.this);
 		}
 		
@@ -169,9 +171,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
-            boolean canWriteClientCache, boolean canWriteDatastore) {
+            boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
+        this.origUID = uid;
         this.uid = uid;
         this.headers = headers;
         this.htl = htl;
@@ -183,6 +186,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.backgroundTransfers = new Vector<BackgroundTransfer>();
         this.canWriteClientCache = canWriteClientCache;
         this.canWriteDatastore = canWriteDatastore;
+        this.forkOnCacheable = forkOnCacheable;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
@@ -200,7 +204,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     // Basics
     final NodeCHK myKey;
     final double target;
-    final long uid;
+    final long origUID;
+    long uid;
+    private InsertTag forkedRequestTag;
     short htl;
     final PeerNode source;
     final Node node;
@@ -211,7 +217,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     final long startTime;
     private boolean sentRequest;
     private final boolean canWriteClientCache;
-    private final boolean canWriteDatastore;
+    private boolean canWriteDatastore;
+    private final boolean forkOnCacheable;
     private HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
 
     
@@ -271,6 +278,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         	node.removeInsertSender(myKey, origHTL, this);
+        	if(forkedRequestTag != null)
+            	node.unlockUID(uid, false, true, false, false, false, forkedRequestTag);
         }
     }
     
@@ -291,6 +300,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
              * 2) The node which just failed can be seen as the requestor for our purposes.
              */
             // Decrement at this point so we can DNF immediately on reaching HTL 0.
+            short prevHTL = htl;
             htl = node.decrementHTL(sentRequest ? next : source, htl);
             synchronized (this) {
             	if(htl == 0) {
@@ -299,6 +309,23 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             		return;
             	}
             }
+            
+            if( node.canWriteDatastoreInsert(htl) && !node.canWriteDatastoreInsert(prevHTL)) {
+            	// FORK! We are now cacheable, and it is quite possible that we have already gone over the ideal sink nodes,
+            	// in which case if we don't fork we will miss them, and greatly reduce the insert's reachability.
+            	// So we fork: Create a new UID so we can go over the previous hops again if they happen to be good places to store the data.
+            	
+            	// Existing transfers will keep their existing UIDs, since they copied the UID in the constructor.
+            	
+            	// FIXME can canWriteDatastore ever be true for a reason other than HTL?
+            	// FIXME it should probably be calculated rather than passed in ...
+            	canWriteDatastore = true;
+            	forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE);
+            	uid = node.random.nextLong();
+            	nodesRoutedTo.clear();
+            	node.lockUID(uid, false, true, false, false, forkedRequestTag);
+            }
+            
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
@@ -316,6 +343,9 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             Message req;
             
             req = DMT.createFNPInsertRequest(uid, htl, myKey);
+            if(forkOnCacheable != Node.FORK_ON_CACHEABLE_DEFAULT) {
+            	req.addSubMessage(DMT.createFNPSubInsertForkControl(forkOnCacheable));
+            }
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             

@@ -58,8 +58,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     PartiallyReceivedBlock prb;
     final InsertTag tag;
     private boolean canWriteDatastore;
+	private final boolean forkOnCacheable;
     
-    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
+    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag, boolean forkOnCacheable) {
         this.req = req;
         this.node = node;
         this.uid = id;
@@ -71,6 +72,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         if(htl <= 0) htl = 1;
         canWriteDatastore = node.canWriteDatastoreInsert(htl);
         receivedBytes(req.receivedByteCount());
+        this.forkOnCacheable = forkOnCacheable;
     }
     
     @Override
@@ -153,7 +155,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
-            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, false);
+            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, false, forkOnCacheable);
         br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
         
         // Receive the data, off thread

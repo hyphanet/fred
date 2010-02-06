@@ -130,6 +130,7 @@ public class DMT {
 	public static final String SECRET = "secret";
 	public static final String NODE_IDENTITY = "nodeIdentity";
 	public static final String UPTIME_PERCENT_48H = "uptimePercent48H";
+	public static final String ENABLE_INSERT_FORK_WHEN_CACHEABLE = "enableInsertForkWhenCacheable";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=0;
@@ -1540,6 +1541,16 @@ public class DMT {
 		Message msg = new Message(FNPRoutingStatus);
 		msg.set(ROUTING_ENABLED, routeRequests);
 		
+		return msg;
+	}
+	
+	public static final MessageType FNPSubInsertForkControl = new MessageType("FNPSubInsertForkControl", PRIORITY_HIGH) {{
+		addField(ENABLE_INSERT_FORK_WHEN_CACHEABLE, Boolean.class);
+	}};
+	
+	public static final Message createFNPSubInsertForkControl(boolean enableInsertForkWhenCacheable) {
+		Message msg = new Message(FNPSubInsertForkControl);
+		msg.set(ENABLE_INSERT_FORK_WHEN_CACHEABLE, enableInsertForkWhenCacheable);
 		return msg;
 	}
 }
