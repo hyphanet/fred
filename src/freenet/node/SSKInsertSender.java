@@ -167,6 +167,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	canWriteDatastore = true;
             	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE);
             	uid = node.random.nextLong();
+            	System.err.println("FORKING CHK INSERT "+origUID+" to "+uid);
+            	Logger.error(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, true, true, false, false, forkedRequestTag);
             }
