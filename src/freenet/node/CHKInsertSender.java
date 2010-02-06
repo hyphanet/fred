@@ -277,9 +277,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         }
     }
     
+	static final int MAX_HIGH_HTL_FAILURES = 5;
+	
     private void realRun() {
         
         PeerNode next = null;
+        // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
+        int highHTLFailureCount = 0;
+        boolean starting = true;
         while(true) {
             if(receiveFailed) {
             	return; // don't need to set status as killed by CHKInsertHandler
@@ -294,7 +299,15 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
              * 2) The node which just failed can be seen as the requestor for our purposes.
              */
             // Decrement at this point so we can DNF immediately on reaching HTL 0.
-            short prevHTL = htl;
+            boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
+            if(canWriteStorePrev && (!starting) && (highHTLFailureCount++ < MAX_HIGH_HTL_FAILURES)) {
+            	// While we are in no-cache mode, we do not want to decrement HTL just because we hit a RejectedOverload.
+            	// If we did that, we would end up caching the data on nodes far too close to the originator.
+            	// So we allow 5 failures, and then we RNF, rather than using up all available HTL.
+            	// This isn't as bad as it sounds given that nodes go into backoff after RejectedOverload's and so we choose a different one next time ...
+                finish(ROUTE_NOT_FOUND, null);
+                return;
+            }
             htl = node.decrementHTL(sentRequest ? next : source, htl);
             synchronized (this) {
             	if(htl == 0) {
@@ -304,7 +317,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	}
             }
             
-            if( node.canWriteDatastoreInsert(htl) && !node.canWriteDatastoreInsert(prevHTL)) {
+            if( node.canWriteDatastoreInsert(htl) && !canWriteStorePrev) {
             	// FORK! We are now cacheable, and it is quite possible that we have already gone over the ideal sink nodes,
             	// in which case if we don't fork we will miss them, and greatly reduce the insert's reachability.
             	// So we fork: Create a new UID so we can go over the previous hops again if they happen to be good places to store the data.
