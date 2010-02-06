@@ -461,10 +461,9 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	/**
-	 * Create an inserter, either for a USK or a single block. This method
-	 * assumes that the insert is a top-block above a splitfile for purposes
-	 * of deciding how many times to insert it. 
-	 * @param forSplitfile */
+	 * Create an inserter, either for a USK or a single block.
+	 * @param forSplitfile Whether this insert is above a splitfile. This
+	 * affects whether we do multiple inserts of the same block. */
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
 			boolean addToParent, ObjectContainer container, ClientContext context, boolean freeData, boolean forSplitfile) throws InsertException {
