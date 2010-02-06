@@ -307,9 +307,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	// This isn't as bad as it sounds given that nodes go into backoff after RejectedOverload's and so we choose a different one next time ...
                 finish(ROUTE_NOT_FOUND, null);
                 return;
+            } else {
+                htl = node.decrementHTL(sentRequest ? next : source, htl);
             }
             starting = false;
-            htl = node.decrementHTL(sentRequest ? next : source, htl);
             synchronized (this) {
             	if(htl == 0) {
             		// Send an InsertReply back

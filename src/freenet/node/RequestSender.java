@@ -439,18 +439,19 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	// This isn't as bad as it sounds given that nodes go into backoff after RejectedOverload's and so we choose a different one next time ...
                 finish(ROUTE_NOT_FOUND, null, false);
                 return;
+            } else {
+            	/*
+            	 * If we haven't routed to any node yet, decrement according to the source.
+            	 * If we have, decrement according to the node which just failed.
+            	 * Because:
+            	 * 1) If we always decrement according to source then we can be at max or min HTL
+            	 * for a long time while we visit *every* peer node. This is BAD!
+            	 * 2) The node which just failed can be seen as the requestor for our purposes.
+            	 */
+            	// Decrement at this point so we can DNF immediately on reaching HTL 0.
+            	htl = node.decrementHTL((hasForwarded ? next : source), htl);
             }
             starting = false;
-            /*
-             * If we haven't routed to any node yet, decrement according to the source.
-             * If we have, decrement according to the node which just failed.
-             * Because:
-             * 1) If we always decrement according to source then we can be at max or min HTL
-             * for a long time while we visit *every* peer node. This is BAD!
-             * 2) The node which just failed can be seen as the requestor for our purposes.
-             */
-            // Decrement at this point so we can DNF immediately on reaching HTL 0.
-            htl = node.decrementHTL((hasForwarded ? next : source), htl);
 
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
