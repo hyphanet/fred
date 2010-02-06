@@ -147,7 +147,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
              */
             // Decrement at this point so we can DNF immediately on reaching HTL 0.
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
-            if(canWriteStorePrev && (!starting) && (highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES)) {
+            if((!canWriteStorePrev) && (!starting) && (highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES)) {
             	// While we are in no-cache mode, we do not want to decrement HTL just because we hit a RejectedOverload.
             	// If we did that, we would end up caching the data on nodes far too close to the originator.
             	// So we allow 5 failures, and then we RNF, rather than using up all available HTL.
