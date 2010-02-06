@@ -82,7 +82,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
+    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	this.fromStore = fromStore;
     	this.node = node;
@@ -103,7 +103,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     	this.block = block;
     	startTime = System.currentTimeMillis();
     	this.canWriteClientCache = canWriteClientCache;
-    	this.canWriteDatastore = canWriteDatastore;
+    	this.canWriteDatastore = node.canWriteDatastoreInsert(htl);
     	this.forkOnCacheable = forkOnCacheable;
     }
 

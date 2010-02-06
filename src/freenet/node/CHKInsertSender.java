@@ -171,7 +171,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore,
-            boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
+            boolean canWriteClientCache, boolean forkOnCacheable) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.origUID = uid;
@@ -185,7 +185,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.startTime = System.currentTimeMillis();
         this.backgroundTransfers = new Vector<BackgroundTransfer>();
         this.canWriteClientCache = canWriteClientCache;
-        this.canWriteDatastore = canWriteDatastore;
+        this.canWriteDatastore = node.canWriteDatastoreInsert(htl);
         this.forkOnCacheable = forkOnCacheable;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
