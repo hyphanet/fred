@@ -198,6 +198,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
     }
 
+	static final int MAX_HIGH_HTL_FAILURES = 5;
+	
     private void realRun() {
 	    freenet.support.Logger.OSThread.logPID(this);
         if((key instanceof NodeSSK) && (pubKey == null)) {
@@ -425,7 +427,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		int rejectOverloads=0;
         HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
         PeerNode next = null;
+        // While in no-cache mode, we don't decrement HTL on a RejectedLoop or similar, but we only allow a limited number of such failures before RNFing.
+        int highHTLFailureCount = 0;
+        boolean starting = true;
         while(true) {
+            boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
+            if(canWriteStorePrev && (!starting) && (highHTLFailureCount++ < MAX_HIGH_HTL_FAILURES)) {
+            	// While we are in no-cache mode, we do not want to decrement HTL just because we hit a RejectedOverload.
+            	// If we did that, we would end up caching the data on nodes far too close to the originator.
+            	// So we allow 5 failures, and then we RNF, rather than using up all available HTL.
+            	// This isn't as bad as it sounds given that nodes go into backoff after RejectedOverload's and so we choose a different one next time ...
+                finish(ROUTE_NOT_FOUND, null, false);
+                return;
+            }
+            starting = false;
             /*
              * If we haven't routed to any node yet, decrement according to the source.
              * If we have, decrement according to the node which just failed.
