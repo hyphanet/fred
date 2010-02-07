@@ -3,12 +3,10 @@ package freenet.clients.http.filter;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 
-import freenet.client.FetchException;
 import freenet.clients.http.FProxyFetchTracker;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.updateableelements.ImageElement;
-import freenet.clients.http.updateableelements.XmlAlertElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
@@ -89,7 +87,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 				}
 			} else if (pt.element.toLowerCase().compareTo("body") == 0 && pt.startSlash==true) {
 				// After the <body>, we need to insert the requestId and the l10n script
-				return "".concat(new XmlAlertElement(ctx).generate().concat("<input id=\"requestId\" type=\"hidden\" value=\"" + ctx.getUniqueId() + "\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>")).concat("</body>");
+				return "".concat(/*new XmlAlertElement(ctx).generate()*/"".concat("<input id=\"requestId\" type=\"hidden\" value=\"" + ctx.getUniqueId() + "\" name=\"requestId\"/>")).concat("<script type=\"text/javascript\" language=\"javascript\">".concat(getClientSideLocalizationScript()).concat("</script>")).concat("</body>");
 			} else if (pt.element.toLowerCase().compareTo("head") == 0) {
 				// After the <head>, we need to add GWT support
 				return "<head><script type=\"text/javascript\" language=\"javascript\" src=\"/static/freenetjs/freenetjs.nocache.js\"></script><noscript><style> .jsonly {display:none;}</style></noscript><link href=\"/static/reset.css\" rel=\"stylesheet\" type=\"text/css\" />";

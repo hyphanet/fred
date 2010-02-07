@@ -4,6 +4,8 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
@@ -41,9 +43,10 @@ public class PersistentChosenRequest {
 	public transient final boolean localRequestOnly;
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
+	public transient final boolean forkOnCacheable;
 	public transient final ArrayList<PersistentChosenBlock> blocksNotStarted;
-	public transient final ArrayList<PersistentChosenBlock> blocksStarted;
-	public transient final ArrayList<PersistentChosenBlock> blocksFinished;
+	public transient final HashSet<PersistentChosenBlock> blocksStarted;
+	public transient final HashSet<PersistentChosenBlock> blocksFinished;
 	public final RequestScheduler scheduler;
 	public final SendableRequestSender sender;
 	private boolean logMINOR;
@@ -61,15 +64,15 @@ public class PersistentChosenRequest {
 			localRequestOnly = ctx.localRequestOnly;
 			ignoreStore = ctx.ignoreStore;
 			canWriteClientCache = ctx.canWriteClientCache;
+			forkOnCacheable = false; // Doesn't exist for requests
 		} else if(req instanceof SendableInsert) {
 			SendableInsert sg = (SendableInsert) req;
 			localRequestOnly = false;
 			canWriteClientCache = sg.canWriteClientCache(container);
 			ignoreStore = false;
+			forkOnCacheable = sg.forkOnCacheable(container);
 		} else throw new IllegalStateException("Creating a PersistentChosenRequest for "+req);
-		blocksNotStarted = new ArrayList<PersistentChosenBlock>();
-		blocksStarted = new ArrayList<PersistentChosenBlock>();
-		blocksFinished = new ArrayList<PersistentChosenBlock>();
+
 		this.scheduler = sched;
 		// Fill up blocksNotStarted
 		boolean reqActive = container.ext().isActive(req);
@@ -80,6 +83,16 @@ public class PersistentChosenRequest {
 			if(!reqActive) container.deactivate(req, 1);
 			throw new NoValidBlocksException();
 		}
+
+		// These three structures will contain up to 256 blocks.
+		// At this size the difference between hashtables and arrays is IMHO marginal: 
+		// Caching effects could easily make arrays faster.
+		// We need to be able to select one randomly from blocksNotStarted, so we use an array.
+		blocksNotStarted = new ArrayList<PersistentChosenBlock>(candidates.size());
+		// Whereas these two we only need to be able to add and remove from quickly, so we use a HashSet.
+		blocksStarted = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
+		blocksFinished = new HashSet<PersistentChosenBlock>(candidates.size() * 2);
+		
 		for(PersistentChosenBlock block : candidates) {
 			Key key = block.key;
 			if(key != null && sched.hasFetchingKey(key)) {
@@ -100,21 +113,14 @@ public class PersistentChosenRequest {
 			Logger.minor(this, "onFinished() on "+this+" for "+block, new Exception("debug"));
 		synchronized(this) {
 			// Remove by pointer
-			for(int i=0;i<blocksNotStarted.size();i++) {
-				if(blocksNotStarted.get(i) == block) {
-					blocksNotStarted.remove(i);
-					Logger.error(this, "Block finished but was in blocksNotStarted: "+block+" for "+this, new Exception("error"));
-					i--;
-				}
+			
+			while(blocksNotStarted.remove(block)) { // It's an ArrayList so we must loop.
+				Logger.error(this, "Block finished but was in blocksNotStarted: "+block+" for "+this, new Exception("error"));
 			}
-			for(int i=0;i<blocksStarted.size();i++) {
-				if(blocksStarted.get(i) == block) {
-					blocksStarted.remove(i);
-					i--;
-				}
-			}
-			for(PersistentChosenBlock cmp : blocksFinished)
-				if(cmp == block) {
+
+			blocksStarted.remove(block);
+			
+			if(blocksFinished.contains(block)) {
 					Logger.error(this, "Block already in blocksFinished: "+block+" for "+this);
 					return;
 				}
@@ -288,14 +294,13 @@ public class PersistentChosenRequest {
 	}
 
 	public synchronized void pruneDuplicates(ClientRequestScheduler sched) {
-		for(int i=0;i<blocksNotStarted.size();i++) {
-			PersistentChosenBlock block = blocksNotStarted.get(i);
+		for(Iterator<PersistentChosenBlock> iter = blocksNotStarted.iterator(); iter.hasNext();) {
+			PersistentChosenBlock block = iter.next();
 			Key key = block.key;
 			if(key == null) continue;
 			if(sched.hasFetchingKey(key)) {
-				blocksNotStarted.remove(i);
+				iter.remove();
 				if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
-				i--;
 			}
 		}
 	}

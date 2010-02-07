@@ -75,8 +75,8 @@ public class FailureTable implements OOMHook {
 	static final int OFFER_EXPIRY_TIME = 10*60*1000;
 	/** HMAC key for the offer authenticator */
 	final byte[] offerAuthenticatorKey;
-	/** Clean up old data every 30 minutes to save memory and improve privacy */
-	static final int CLEANUP_PERIOD = 30*60*1000;
+	/** Clean up old data every 10 minutes to save memory and improve privacy */
+	static final int CLEANUP_PERIOD = 10*60*1000;
 	
 	FailureTable(Node node) {
 		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();

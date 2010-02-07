@@ -298,12 +298,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks, 
 					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true);
 			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
-				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey());
-				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(), 0, context);
+				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
+				tempListener.addKey(newSplitfileDataBlocks[i].getNodeKey(true), 0, context);
 			}
 			for(int i=0;i<newSplitfileCheckBlocks.length;i++) {
-				if(logMINOR) Logger.minor(this, "Added check block "+i+" : "+newSplitfileCheckBlocks[i].getNodeKey());
-				tempListener.addKey(newSplitfileCheckBlocks[i].getNodeKey(), 0, context);
+				if(logMINOR) Logger.minor(this, "Added check block "+i+" : "+newSplitfileCheckBlocks[i].getNodeKey(false));
+				tempListener.addKey(newSplitfileCheckBlocks[i].getNodeKey(true), 0, context);
 			}
 			if(persistent) {
 				container.store(segments[0]);
@@ -326,9 +326,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, 
 						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1);
 				for(int j=0;j<dataBlocks.length;j++)
-					tempListener.addKey(dataBlocks[j].getNodeKey(), i, context);
+					tempListener.addKey(dataBlocks[j].getNodeKey(true), i, context);
 				for(int j=0;j<checkBlocks.length;j++)
-					tempListener.addKey(checkBlocks[j].getNodeKey(), i, context);
+					tempListener.addKey(checkBlocks[j].getNodeKey(true), i, context);
 				if(persistent) {
 					container.store(segments[i]);
 					segments[i].deactivateKeys(container);

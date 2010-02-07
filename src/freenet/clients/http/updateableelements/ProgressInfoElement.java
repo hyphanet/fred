@@ -43,15 +43,17 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		if (fr == null) {
 			addChild("div", "No fetcher found");
 		}
-		addChild("#", FProxyToadlet.l10n("filenameLabel") + " ");
-		addChild("a", "href", "/" + key.toString(false, false), key.getPreferredFilename());
-		if (fr.mimeType != null) addChild("br", FProxyToadlet.l10n("contentTypeLabel") + " " + fr.mimeType);
-		if (fr.size > 0) addChild("br", "Size: " + SizeUtil.formatSize(fr.size));
-		if (isAdvancedMode) {
-			addChild("br", FProxyToadlet.l10n("blocksDetail", new String[] { "fetched", "required", "total", "failed", "fatallyfailed" }, new String[] {
-					Integer.toString(fr.fetchedBlocks), Integer.toString(fr.requiredBlocks), Integer.toString(fr.totalBlocks), Integer.toString(fr.failedBlocks),
-					Integer.toString(fr.fatallyFailedBlocks) }));
+		
+		addChild("#", FProxyToadlet.l10n("filenameLabel")+ " ");
+		addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
+		if(fr.mimeType != null) addChild("br", FProxyToadlet.l10n("contentTypeLabel")+" "+fr.mimeType);
+		if(fr.size > 0) addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
+		if(isAdvancedMode) {
+			addChild("br", FProxyToadlet.l10n("blocksDetail", 
+					new String[] { "fetched", "required", "total", "failed", "fatallyfailed" },
+					new String[] { Integer.toString(fr.fetchedBlocks), Integer.toString(fr.requiredBlocks), Integer.toString(fr.totalBlocks), Integer.toString(fr.failedBlocks), Integer.toString(fr.fatallyFailedBlocks) }));
 		}
+		long elapsed = System.currentTimeMillis() - fr.timeStarted;
 		addChild("br");
 		addChild(new SecondCounterNode(System.currentTimeMillis() - fr.timeStarted, true, FProxyToadlet.l10n("timeElapsedLabel") + " "));
 		long eta = fr.eta;
@@ -65,9 +67,12 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			lastRefreshNode.addChild(new SecondCounterNode(0, true, FProxyToadlet.l10n("lastRefresh")));
 			addChild(lastRefreshNode);
 		}
-		if (fr.goneToNetwork) addChild("p", FProxyToadlet.l10n("progressDownloading"));
-		else addChild("p", FProxyToadlet.l10n("progressCheckingStore"));
-		if (!fr.finalizedBlocks) addChild("p", FProxyToadlet.l10n("progressNotFinalized"));
+		if(fr.goneToNetwork)
+			addChild("p", FProxyToadlet.l10n("progressDownloading"));
+		else
+			addChild("p", FProxyToadlet.l10n("progressCheckingStore"));
+		if(!fr.finalizedBlocks)
+			addChild("p", FProxyToadlet.l10n("progressNotFinalized"));
 
 		if (waiter != null) {
 			tracker.getFetchInProgress(key, maxSize).close(waiter);

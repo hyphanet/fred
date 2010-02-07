@@ -875,17 +875,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 				seg.kill(container, context, true, true);
 		}
 	}
-	
 	/** A request has failed non-fatally, so the block may be retried 
 	 * @param container */
 	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
+		onNonFatalFailure(e, blockNo, seg, container, context, true);
+	}
+	
+	private void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, boolean callStore) {
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
 		seg.removeBlockNum(blockNo, container, false);
-		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries);
+		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries, callStore);
 		if(sub != null) {
 			sub.reschedule(container, context);
 			if(persistent && sub != seg) container.deactivate(sub, 1);
@@ -902,13 +905,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		seg.removeBlockNums(blockNos, container);
 		for(int i=0;i<failures.length;i++) {
 			SplitFileFetcherSubSegment sub = 
-				onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries);
+				onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries, false);
 			if(sub != null) {
 				if(toSchedule == null)
 					toSchedule = new HashSet<SplitFileFetcherSubSegment>();
 				toSchedule.add(sub);
 			}
 		}
+		if(persistent) container.store(this); // We don't call container.store(this) in each onNonFatalFailure because it takes much CPU time.
 		if(toSchedule != null && !toSchedule.isEmpty()) {
 			for(SplitFileFetcherSubSegment sub : toSchedule) {
 				if(persistent)
@@ -926,7 +930,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	/**
 	 * Caller must set(this) iff returns true.
 	 */
-	private SplitFileFetcherSubSegment onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries) {
+	private SplitFileFetcherSubSegment onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries, boolean callStore) {
 		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this+" from "+seg);
 		int tries;
 		boolean failed = false;
@@ -993,7 +997,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 		}
 		if(persistent) {
-			container.store(this);
+			if(callStore) container.store(this);
 			container.deactivate(key, 5);
 		}
 		if(mustSchedule) 
@@ -1234,7 +1238,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = dataKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(k.getNodeKey().equals(key)) {
+			if(k.getNodeKey(false).equals(key)) {
 				if(dataCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(dataCooldownTimes[i]-time)+"ms");
@@ -1259,7 +1263,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = checkKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(k.getNodeKey().equals(key)) {
+			if(k.getNodeKey(false).equals(key)) {
 				if(checkCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for check block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(checkCooldownTimes[i]-time)+"ms");
@@ -1315,7 +1319,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = dataKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(k.getNodeKey().equals(key)) {
+			if(k.getNodeKey(false).equals(key)) {
 				return dataCooldownTimes[i];
 			} else {
 				if(persistent)
@@ -1327,7 +1331,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			ClientKey k = checkKeys[i];
 			if(persistent)
 				container.activate(k, 5);
-			if(checkKeys[i].getNodeKey().equals(key)) {
+			if(checkKeys[i].getNodeKey(false).equals(key)) {
 				return checkCooldownTimes[i];
 			} else {
 				if(persistent)
@@ -1345,7 +1349,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.activate(k, 5);
 			if(k.getRoutingKey() == null)
 				throw new NullPointerException("Routing key is null yet key exists for data block "+i+" of "+this+(persistent?(" stored="+container.ext().isStored(k)+" active="+container.ext().isActive(k)) : ""));
-			if(k.getNodeKey().equals(key)) return i;
+			if(k.getNodeKey(false).equals(key)) return i;
 			else {
 				if(persistent)
 					container.deactivate(k, 5);
@@ -1358,7 +1362,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.activate(k, 5);
 			if(k.getRoutingKey() == null)
 				throw new NullPointerException("Routing key is null yet key exists for check block "+i+" of "+this);
-			if(k.getNodeKey().equals(key)) return dataKeys.length+i;
+			if(k.getNodeKey(false).equals(key)) return dataKeys.length+i;
 			else {
 				if(persistent)
 					container.deactivate(k, 5);
@@ -1458,14 +1462,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(dataKeys[i] != null) {
 					if(persistent)
 						container.activate(dataKeys[i], 5);
-					v.add(dataKeys[i].getNodeKey());
+					v.add(dataKeys[i].getNodeKey(true));
 				}
 			}
 			for(int i=0;i<checkKeys.length;i++) {
 				if(checkKeys[i] != null) {
 					if(persistent)
 						container.activate(checkKeys[i], 5);
-					v.add(checkKeys[i].getNodeKey());
+					v.add(checkKeys[i].getNodeKey(true));
 				}
 			}
 		}

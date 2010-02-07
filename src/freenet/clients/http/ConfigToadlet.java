@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.config.BooleanOption;
 import freenet.config.Config;
 import freenet.config.ConfigCallback;
@@ -237,7 +235,7 @@ public class ConfigToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(new LongAlertElement(ctx,true));
+		contentNode.addChild(core.alerts.createSummary());
 		
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", l10n("title"));

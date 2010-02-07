@@ -140,4 +140,9 @@ public class NodeCHK extends Key {
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
 	}
+
+	@Override
+	public Key archivalCopy() {
+		return new NodeCHK(this);
+	}
 }

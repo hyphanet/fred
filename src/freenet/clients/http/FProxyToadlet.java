@@ -604,6 +604,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
 				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, maxSize, core.isAdvancedModeEnabled(), ctx));
+
 				
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
 				HTMLNode progressCell = table.addChild("tr").addChild("td", "class", "request-progress");
@@ -809,15 +810,21 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				HTMLNode optionList = infoboxContent.addChild("ul");
 
-				PluginInfoWrapper keyExplorer;
-				if((e.mode == FetchException.NOT_IN_ARCHIVE || e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) && ((keyExplorer = core.node.pluginManager.getPluginInfo("plugins.KeyExplorer.KeyExplorer")) != null)) {
-					option = optionList.addChild("li");
-					if (keyExplorer.getPluginLongVersion() > 4999)
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/KeyExplorer/?automf=true&key=" + key.toString() + "\">", "</a>" });
-					else
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
+				PluginInfoWrapper keyUtil;
+				if((e.mode == FetchException.NOT_IN_ARCHIVE || e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS)) { 
+					// first look for the newest version
+					if ((keyUtil = core.node.pluginManager.getPluginInfo("plugins.KeyUtils.KeyUtilsPlugin")) != null) {
+						option = optionList.addChild("li");
+						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/KeyUtils/?automf=true&key=" + key.toString() + "\">", "</a>" });
+					} else if ((keyUtil = core.node.pluginManager.getPluginInfo("plugins.KeyExplorer.KeyExplorer")) != null) {
+						option = optionList.addChild("li");
+						if (keyUtil.getPluginLongVersion() > 4999)
+							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/KeyExplorer/?automf=true&key=" + key.toString() + "\">", "</a>" });
+						else
+							NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
+					}
 				}
-				
+
 				if(!e.isFatal() && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
 					PHYSICAL_THREAT_LEVEL threatLevel = core.node.securityLevels.getPhysicalThreatLevel();
 					
@@ -1056,7 +1063,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			server.register(configtoadlet, "FProxyToadlet.categoryConfig", "/config/"+prefix, true, "ConfigToadlet."+prefix, "ConfigToadlet.title."+prefix, true, configtoadlet);
 		}
 		
-		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks, fetchTracker);
+		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, null, "/welcome/", true, false);
 		
 		

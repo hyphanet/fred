@@ -34,7 +34,7 @@ public class SimpleBlockSet implements BlockSet {
 	}
 
 	public ClientKeyBlock get(ClientKey key) {
-		KeyBlock block = get(key.getNodeKey());
+		KeyBlock block = get(key.getNodeKey(false));
 		if(block == null) return null;
 		try {
 			return Key.createKeyBlock(key, block);

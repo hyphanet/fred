@@ -1162,8 +1162,6 @@ public class NodeStats implements Persistable {
 		fs.put("numberOfSimpleConnected", numberOfSimpleConnected);
 		fs.put("numberOfNotConnected", numberOfNotConnected);
 
-		fs.put("numberOfInsertSenders", node.getNumInsertSenders());
-		fs.put("numberOfRequestSenders", node.getNumRequestSenders());
 		fs.put("numberOfTransferringRequestSenders", node.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 

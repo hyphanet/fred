@@ -322,7 +322,8 @@ final public class FileUtil {
 				throw new EOFException("stream reached eof");
 			}
 			destination.write(buffer, 0, read);
-			remaining -= read;
+			if (remaining > 0)
+				remaining -= read;
 		}
 	}
 

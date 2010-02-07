@@ -50,6 +50,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
     static final boolean ENABLE_SWAP_QUEUEING = false;
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
+    static final boolean FORK_ON_CACHEABLE = false;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -130,7 +131,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
             // Insert it.
 			try {
-				randomNode.clientCore.realPut(block, false);
+				randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE);
 				Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 				Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
 			} catch (freenet.node.LowLevelPutException putEx) {

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -38,6 +40,9 @@ import freenet.node.useralerts.RevocationKeyFoundUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.pluginmanager.PluginInfoWrapper;
+import freenet.pluginmanager.PluginManager;
+import freenet.pluginmanager.PluginManager.OfficialPluginDescription;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
@@ -69,6 +74,9 @@ public class NodeUpdateManager {
 	NodeUpdater mainUpdater;
 	NodeUpdater extUpdater;
 	
+	Map<String, PluginJarUpdater> pluginUpdaters;
+	
+	private boolean autoDeployPluginsOnRestart;
 	boolean wasEnabledOnStartup;
 	/** Is auto-update enabled? */
 	volatile boolean isAutoUpdateAllowed;
@@ -406,6 +414,7 @@ public class NodeUpdateManager {
 			return;
 		}
 		NodeUpdater main = null, ext = null;
+		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
 		synchronized(this) {
 			boolean enabled = (mainUpdater != null);
 			if(enabled == enable) return;
@@ -418,28 +427,102 @@ public class NodeUpdateManager {
 					extUpdater.preKill();
 				ext = extUpdater;
 				extUpdater = null;
+				oldPluginUpdaters = pluginUpdaters;
+				pluginUpdaters = null;
 			} else {
 				if((!WrapperManager.isControlledByNativeWrapper()) || (NodeStarter.extBuildNumber == -1)) {
 					Logger.error(this, "Cannot update because not running under wrapper");
 					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
 				}
 				// Start it
-				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), -1, Integer.MAX_VALUE, "main-jar-");
-				extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, NodeStarter.REQUIRED_EXT_BUILD_NUMBER, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
+				mainUpdater = new MainJarUpdater(this, updateURI, Version.buildNumber(), -1, Integer.MAX_VALUE, "main-jar-");
+				extUpdater = new ExtJarUpdater(this, extURI, NodeStarter.extBuildNumber, NodeStarter.REQUIRED_EXT_BUILD_NUMBER, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
+				pluginUpdaters = new HashMap<String, PluginJarUpdater>();
 			}
 		}
 		if(!enable) {
 			if(main != null) main.kill();
 			if(ext != null) ext.kill();
 			revocationChecker.kill();
+			stopPluginUpdaters(oldPluginUpdaters);
 		} else {
 			mainUpdater.start();
 			if(extUpdater != null)
 				extUpdater.start();
 			revocationChecker.start(false);
+			startPluginUpdaters();
 		}
 	}
 	
+	private void startPluginUpdaters() {
+		Map<String, OfficialPluginDescription> officialPlugins = PluginManager.officialPlugins;
+		for(OfficialPluginDescription plugin : officialPlugins.values()) {
+			startPluginUpdater(plugin);
+		}
+	}
+
+	/** @param plugName The filename for loading/config purposes for an official plugin. 
+	 * E.g. "Library" (no .jar) */
+	public void startPluginUpdater(String plugName) {
+		if(logMINOR) Logger.minor(this, "Starting plugin updater for "+plugName);
+		OfficialPluginDescription plugin = PluginManager.officialPlugins.get(plugName);
+		if(plugin != null)
+			startPluginUpdater(plugin);
+		else
+			// Most likely not an official plugin
+			if(logMINOR) Logger.minor(this, "No such plugin "+plugName+" in startPluginUpdater()");
+	}
+	
+	void startPluginUpdater(OfficialPluginDescription plugin) {
+		String name = plugin.name;
+		long minVer = plugin.minimumVersion;
+		// But it might already be past that ...
+		PluginInfoWrapper info = node.pluginManager.getPluginInfo(name);
+		if(info == null) {
+			if(!(node.pluginManager.isPluginLoadedOrLoadingOrWantLoad(name))) {
+				if(logMINOR) Logger.minor(this, "Plugin not loaded");
+				return;
+			}
+		}
+		minVer = Math.max(minVer, info.getPluginLongVersion());
+		FreenetURI uri = updateURI.setDocName(name).setSuggestedEdition(minVer);
+		PluginJarUpdater updater = new PluginJarUpdater(this, uri, (int) minVer, -1, Integer.MAX_VALUE, name+"-", name, node.pluginManager, autoDeployPluginsOnRestart);
+		synchronized(this) {
+			if(pluginUpdaters == null) {
+				if(logMINOR) Logger.minor(this, "Updating not enabled");
+				return; // Not enabled
+			}
+			if(pluginUpdaters.containsKey(name)) {
+				if(logMINOR) Logger.minor(this, "Already in updaters list");
+				return; // Already started
+			}
+			pluginUpdaters.put(name, updater);
+		}
+		updater.start();
+		System.out.println("Started plugin update fetcher for "+name);
+	}
+
+	public void stopPluginUpdater(String plugName) {
+		OfficialPluginDescription plugin = PluginManager.officialPlugins.get(plugName);
+		if(plugin == null) return; // Not an official plugin
+		PluginJarUpdater updater = null;
+		synchronized(this) {
+			if(pluginUpdaters == null) {
+				if(logMINOR) Logger.minor(this, "Updating not enabled");
+				return; // Not enabled
+			}
+			updater = pluginUpdaters.remove(plugName);
+		}
+		if(updater != null)
+			updater.kill();
+	}
+
+	private void stopPluginUpdaters(Map<String, PluginJarUpdater> oldPluginUpdaters) {
+		for(PluginJarUpdater u : oldPluginUpdaters.values()) {
+			u.kill();
+		}
+	}
+
 	/**
 	 * Create a NodeUpdateManager. Called by node constructor.
 	 * @param node The node object.
@@ -466,7 +549,9 @@ public class NodeUpdateManager {
 	 * @param uri The URI to set.
 	 */
 	public void setURI(boolean isExt, FreenetURI uri) {
+		// FIXME plugins!!
 		NodeUpdater updater;
+		Map<String, PluginJarUpdater> oldPluginUpdaters = null;
 		synchronized(this) {
 			if(isExt) {
 				if(extURI.equals(uri)) return;
@@ -476,10 +561,14 @@ public class NodeUpdateManager {
 				if(updateURI.equals(uri)) return;
 				updateURI = uri;
 				updater = mainUpdater;
+				oldPluginUpdaters = pluginUpdaters;
+				pluginUpdaters = new HashMap<String, PluginJarUpdater>();
 			}
 			if(updater == null) return;
 		}
 		updater.onChangeURI(uri);
+		stopPluginUpdaters(oldPluginUpdaters);
+		startPluginUpdaters();
 	}
 
 	/** @return The revocation URI. */
@@ -919,6 +1008,7 @@ public class NodeUpdateManager {
 	/** Called when the RevocationChecker has got 3 DNFs on the revocation key */
 	public void noRevocationFound() {
 		deployUpdate(); // May have been waiting for the revocation.
+		deployPluginUpdates();
 		// If we're still here, we didn't update.
 		broadcastUOMAnnounces();
 		node.ps.queueTimedJob(new Runnable() {
@@ -928,6 +1018,23 @@ public class NodeUpdateManager {
 		}, node.random.nextInt(24*60*60*1000)); 
 	}
 	
+	private void deployPluginUpdates() {
+		PluginJarUpdater[] updaters = null;
+		synchronized(this) {
+			if(this.pluginUpdaters != null)
+				updaters = pluginUpdaters.values().toArray(new PluginJarUpdater[pluginUpdaters.size()]);
+		}
+		boolean restartRevocationFetcher = false;
+		if(updaters != null) {
+			for(PluginJarUpdater u : updaters) {
+				if(u.onNoRevocation())
+					restartRevocationFetcher = true;
+			}
+		}
+		if(restartRevocationFetcher)
+			revocationChecker.start(true, true);
+	}
+
 	public void arm() {
 		armed = true;
 		deployOffThread(0);
@@ -1189,6 +1296,31 @@ public class NodeUpdateManager {
 
 	public void disconnected(PeerNode pn) {
 		uom.disconnected(pn);
+	}
+
+	public void deployPlugin(String fn) throws IOException {
+		PluginJarUpdater updater;
+		synchronized(this) {
+			if(hasBeenBlown) {
+				Logger.error(this, "Not deploying update for "+fn+" because revocation key has been blown!");
+				return;
+			}
+			updater = pluginUpdaters.get(fn);
+		}
+		updater.writeJar();
+	}
+
+	public void deployPluginWhenReady(String fn) throws IOException {
+		PluginJarUpdater updater;
+		synchronized(this) {
+			if(hasBeenBlown) {
+				Logger.error(this, "Not deploying update for "+fn+" because revocation key has been blown!");
+				return;
+			}
+			updater = pluginUpdaters.get(fn);
+		}
+		boolean wasRunning = revocationChecker.start(true, true);
+		updater.arm(wasRunning);
 	}
 
 }

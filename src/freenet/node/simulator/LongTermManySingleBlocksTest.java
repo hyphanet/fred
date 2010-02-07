@@ -236,6 +236,8 @@ public class LongTermManySingleBlocksTest {
 
 			int successes = 0;
 			
+			long startInsertsTime = System.currentTimeMillis();
+			
 			InsertBatch batch = new InsertBatch(client);
 			
 			// Inserts are sloooooow so do them in parallel.
@@ -270,7 +272,9 @@ public class LongTermManySingleBlocksTest {
 				}
 			}
 			
-			System.err.println("Succeeded inserts: "+successes+" of "+INSERTED_BLOCKS);
+			long endInsertsTime = System.currentTimeMillis();
+			
+			System.err.println("Succeeded inserts: "+successes+" of "+INSERTED_BLOCKS+" in "+(endInsertsTime-startInsertsTime)+"ms");
 			
 			FetchContext fctx = client.getFetchContext();
 			fctx.maxNonSplitfileRetries = 0;
@@ -353,11 +357,14 @@ public class LongTermManySingleBlocksTest {
 						System.out.println("Found row for target date "+((1<<i)-1)+" days ago.");
 						System.out.println("Version: "+split[1]);
 						csvLine.add(Integer.toString(i));
+						int pulled = 0;
+						int inserted = 0;
 						for(int j=0;j<INSERTED_BLOCKS;j++) {
 							if(insertedURIs[j] == null) {
 								csvLine.add("");
 								continue;
 							}
+							inserted++;
 							try {
 								t1 = System.currentTimeMillis();
 								FetchWaiter fw = new FetchWaiter();
@@ -367,6 +374,7 @@ public class LongTermManySingleBlocksTest {
 								
 								System.out.println("PULL-TIME FOR BLOCK "+j+": " + (t2 - t1));
 								csvLine.add(String.valueOf(t2 - t1));
+								pulled++;
 							} catch (FetchException e) {
 								if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
 										&& e.getMode() != FetchException.DATA_NOT_FOUND)
@@ -375,13 +383,13 @@ public class LongTermManySingleBlocksTest {
 								System.err.println("FAILED PULL FOR BLOCK "+j+": "+e);
 							}
 						}
-						
+						System.out.println("Pulled "+pulled+" blocks of "+inserted+" from "+((1<<i)-1)+" days ago.");
 					}
 				}
 				
 				while(split.length > token + INSERTED_BLOCKS) {
 					int delta = Integer.parseInt(split[token]);
-					System.out.println("Delta: "+delta+" days");
+					System.out.println("Delta: "+((1<<delta)-1)+" days");
 					token++;
 					int totalFetchTime = 0;
 					int totalSuccesses = 0;
@@ -405,7 +413,7 @@ public class LongTermManySingleBlocksTest {
 					totalFetchesByDelta[delta] += totalFetches;
 					totalSuccessfulFetchesByDelta[delta] += totalSuccesses;
 					totalFetchTimeByDelta[delta] += totalFetchTime;
-					System.err.println("Succeeded: "+totalSuccesses+" of "+totalFetches+" average "+(totalFetchTime/totalSuccesses)+"ms for delta "+delta+" on "+dateFormat.format(date));
+					System.err.println("Succeeded: "+totalSuccesses+" of "+totalFetches+" average "+((double)totalFetchTime)/((double)totalSuccesses)+"ms for delta "+delta+" on "+dateFormat.format(date));
 				}
 			}
 			

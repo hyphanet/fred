@@ -63,7 +63,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode, false);
 			metadata = null;
 			containerHandle = null;
 		}
@@ -876,8 +876,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
 		SingleFileInserter metadataInserter;
 		try {
+			// Treat it as a splitfile for purposes of determining reinserts.
 			metadataInserter = 
-				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -1019,7 +1020,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				
 				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 				SingleFileInserter metadataInserter = 
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode);
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode, false);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
@@ -1515,7 +1516,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		while(i.hasNext()) {
 			String name = i.next();
 			Object o = bucketsByName.get(name);
-			if(o instanceof Bucket) {
+			if(o instanceof ManifestElement) {
+				manifestEntries.put(name, o);
+			} else if(o instanceof Bucket) {
 				Bucket data = (Bucket) bucketsByName.get(name);
 				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
 			} else if(o instanceof HashMap) {

@@ -63,7 +63,9 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
     
 	/**
 	 * {@inheritDoc}
-	 */
+         *
+         * @return
+         */
 	public synchronized double currentValue() {
 		return currentValue;
 	}
@@ -74,7 +76,9 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	 * Used by {@link DecayingKeyspaceAverage} to normalize the stored averages. Calling this function
 	 * may (purposefully) destroy the utility of the average being kept.
 	 * 
-	 * @see DecayingKeyspaceAverage
+         * @param d
+         * @return
+         * @see DecayingKeyspaceAverage
 	 */
 	protected synchronized double setCurrentValue(double d) {
 		double old=currentValue;
@@ -84,7 +88,9 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 
 	/**
 	 * {@inheritDoc}
-	 */
+         *
+         * @param d
+         */
 	public synchronized void report(double d) {
 		if(d < min) {
 			if(Logger.shouldLog(Logger.DEBUG, this))
@@ -103,14 +109,18 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 
 	/**
 	 * {@inheritDoc}
-	 */
+         *
+         * @param d
+         */
 	public void report(long d) {
 		report((double)d);
 	}
 
 	/**
 	 * {@inheritDoc}
-	 */
+         *
+         * @param d
+         */
 	public synchronized double valueIfReported(double d) {
 		if(d < min) {
 			Logger.error(this, "Too low: "+d, new Exception("debug"));
@@ -157,7 +167,8 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
 	 * Export this object as {@link SimpleFieldSet}.
 	 * 
 	 * @param shortLived
-	 * 		See {@link SimpleFieldSet#SimpleFieldSet(boolean)}.
+         * 		See {@link SimpleFieldSet#SimpleFieldSet(boolean)}.
+         * @return
 	 */
 	public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
 		SimpleFieldSet fs = new SimpleFieldSet(shortLived);

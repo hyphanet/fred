@@ -62,8 +62,6 @@ public class Announcer {
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
 	public static final String SEEDNODES_FILENAME = "seednodes.fref";
-	/** Identities of nodes we have tried to connect to */
-	private final HashSet<ByteArrayWrapper> connectedToIdentities;
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
@@ -74,7 +72,6 @@ public class Announcer {
 		this.node = om.node;
 		announcedToIdentities = new HashSet<ByteArrayWrapper>();
 		announcedToIPs = new HashSet<InetAddress>();
-		connectedToIdentities = new HashSet<ByteArrayWrapper>();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -136,14 +133,28 @@ public class Announcer {
 		// Once they are connected they will report back and we can attempt an announcement.
 
 		int count = connectSomeNodesInner(seeds);
+		boolean stillConnecting = false;
+		List<SeedServerPeerNode> tryingSeeds = node.peers.getSeedServerPeersVector();
 		synchronized(this) {
+			for(SeedServerPeerNode seed : tryingSeeds) {
+				if(!announcedToIdentities.contains(new ByteArrayWrapper(seed.identity))) {
+					// Either:
+					// a) we are still trying to connect to this node,
+					// b) there is a race condition and we haven't sent the announcement yet despite connecting, or
+					// c) something is severely broken and we didn't send an announcement.
+					// In any of these cases, we want to delay for 1 minute before resetting the connection process and connecting to everyone.
+					stillConnecting = true;
+					break;
+				}
+			}
 			if(logMINOR)
-				Logger.minor(this, "count = "+count+" connected = "+connectedToIdentities.size()+
-						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements);
+				Logger.minor(this, "count = "+count+
+						" announced = "+announcedToIdentities.size()+" running = "+runningAnnouncements+" still connecting "+stillConnecting);
 			if(count == 0 && runningAnnouncements == 0) {
-				if(connectedToIdentities.size() > announcedToIdentities.size()) {
-					// Some seednodes we haven't been able to connect to yet.
-					// Give it another minute, then clear all and try again.
+				// No more peers to connect to, and no announcements running.
+				// Are there any peers which we are still trying to connect to?
+				if(stillConnecting) {
+					// Give them another minute.
 					if(logMINOR)
 						Logger.minor(this, "Will clear announced-to in 1 minute...");
 					node.getTicker().queueTimedJob(new Runnable() {
@@ -154,16 +165,15 @@ public class Announcer {
 								if(runningAnnouncements != 0) return;
 								announcedToIdentities.clear();
 								announcedToIPs.clear();
-								connectedToIdentities.clear();
 							}
 							maybeSendAnnouncement();
 						}
 					}, NOT_ALL_CONNECTED_DELAY);
-				} else if(connectedToIdentities.size() == announcedToIdentities.size()) {
-					// Clear it now
+				} else {
+					// We connected to all the seeds.
+					// No point waiting!
 					announcedToIdentities.clear();
 					announcedToIPs.clear();
-					connectedToIdentities.clear();
 					announceNow = true;
 				}
 			}
@@ -201,7 +211,6 @@ public class Announcer {
 					Logger.minor(this, "Trying to connect to seednode "+seed);
 				if(node.peers.addPeer(seed)) {
 					count++;
-					connectedToIdentities.add(new ByteArrayWrapper(seed.identity));
 					if(logMINOR)
 						Logger.minor(this, "Connecting to seednode "+seed);
 				} else {
@@ -219,6 +228,7 @@ public class Announcer {
 				continue;
 			}
 		}
+		if(logMINOR) Logger.minor(this, "connectSomeNodesInner() returning "+count);
 		return count;
 	}
 
@@ -350,6 +360,17 @@ public class Announcer {
 		
 	};
 	
+	public void maybeSendAnnouncementOffThread() {
+		if(enoughPeers()) return;
+		node.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				maybeSendAnnouncement();
+			}
+			
+		}, 0);
+	}
+	
 	protected void maybeSendAnnouncement() {
 		synchronized(this) {
 			if(!started) return;
@@ -360,7 +381,8 @@ public class Announcer {
 		long now = System.currentTimeMillis();
 		if(!node.isOpennetEnabled()) return;
 		if(enoughPeers()) {
-			node.getTicker().queueTimedJob(checker, FINAL_DELAY);
+			// Check again in 60 seconds.
+			node.getTicker().queueTimedJob(checker, "Announcement checker", FINAL_DELAY, false, true);
 			return;
 		}
 		if((!ignoreIPUndetected) && (!node.ipDetector.hasValidIP())) {
@@ -386,7 +408,11 @@ public class Announcer {
 		synchronized(this) {
 			dontKnowOurIPAddress = false;
 			// Double check after taking the lock.
-			if(enoughPeers()) return;
+			if(enoughPeers()) {
+				// Check again in 60 seconds.
+				node.getTicker().queueTimedJob(checker, "Announcement checker", FINAL_DELAY, false, true);
+				return;
+			}
 			// Second, do we have many announcements running?
 			if(runningAnnouncements > WANT_ANNOUNCEMENTS) {
 				if(logMINOR)
@@ -420,10 +446,12 @@ public class Announcer {
 					continue;
 				}
 				addAnnouncedIPs(addrs);
-				sentAnnouncements++;
-				runningAnnouncements++;
-				announcedToIdentities.add(new ByteArrayWrapper(seed.getIdentity()));
-				sendAnnouncement(seed);
+				// If it throws, we do not want to increment, so call it first.
+				if(sendAnnouncement(seed)) {
+					sentAnnouncements++;
+					runningAnnouncements++;
+					announcedToIdentities.add(new ByteArrayWrapper(seed.getIdentity()));
+				}
 			}
 			if(runningAnnouncements >= WANT_ANNOUNCEMENTS) {
 				if(logMINOR)
@@ -474,11 +502,11 @@ public class Announcer {
 		return !hasNonLocalAddresses;
 	}
 
-	protected void sendAnnouncement(final SeedServerPeerNode seed) {
+	protected boolean sendAnnouncement(final SeedServerPeerNode seed) {
 		if(!node.isOpennetEnabled()) {
 			if(logMINOR)
 				Logger.minor(this, "Not announcing to "+seed+" because opennet is disabled");
-			return;
+			return false;
 		}
 		System.out.println("Announcement to "+seed.userToString()+" starting...");
 		if(logMINOR)
@@ -547,6 +575,7 @@ public class Announcer {
 			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);
+		return true;
 	}
 
 	class AnnouncementUserEvent extends AbstractUserEvent {

@@ -67,7 +67,7 @@ class FailureTableEntry implements TimedOutNodesList {
         public static final WeakReference<PeerNode>[] EMPTY_WEAK_REFERENCE = new WeakReference[0];
         
 	FailureTableEntry(Key key) {
-		this.key = key;
+		this.key = key.archivalCopy();
 		if(key == null) throw new NullPointerException();
 		long now = System.currentTimeMillis();
 		creationTime = now;

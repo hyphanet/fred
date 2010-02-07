@@ -147,15 +147,19 @@ public class ClientSSK extends ClientKey {
 	private transient Key cachedNodeKey;
 	
 	@Override
-	public synchronized Key getNodeKey() {
+	public Key getNodeKey(boolean cloneKey) {
 		try {
-			if(ehDocname == null)
-				throw new NullPointerException();
-			if(pubKeyHash == null)
-				throw new NullPointerException();
-			if (cachedNodeKey == null || cachedNodeKey.getKeyBytes() == null || cachedNodeKey.getRoutingKey() == null)
-				cachedNodeKey = new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
-			return cachedNodeKey.cloneKey();
+			Key nodeKey;
+			synchronized(this) {
+				if(ehDocname == null)
+					throw new NullPointerException();
+				if(pubKeyHash == null)
+					throw new NullPointerException();
+				if (cachedNodeKey == null || cachedNodeKey.getKeyBytes() == null || cachedNodeKey.getRoutingKey() == null)
+					cachedNodeKey = new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
+				nodeKey = cachedNodeKey;
+			}
+			return cloneKey ? nodeKey.cloneKey() : nodeKey;
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
 			Logger.error(this, "Have already verified and yet it fails!: "+e);

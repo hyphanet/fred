@@ -12,11 +12,22 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 public class RequestStarterGroup {
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	private final ThrottleWindowManager throttleWindow;
 	// These are for diagnostic purposes
@@ -98,7 +109,6 @@ public class RequestStarterGroup {
 	}
 
 	public class MyRequestThrottle implements BaseRequestThrottle {
-
 		private final BootstrappingDecayingRunningAverage roundTripTime;
 		/** Data size for purposes of getRate() */
 		private final int size;
@@ -124,7 +134,7 @@ public class RequestStarterGroup {
 
 		public synchronized void successfulCompletion(long rtt) {
 			roundTripTime.report(Math.max(rtt, 10));
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Reported successful completion: "+rtt+" on "+this+" avg "+roundTripTime.currentValue());
 		}
 		

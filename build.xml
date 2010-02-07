@@ -22,7 +22,7 @@
 	<property name="recommendedExtVersion" value="-1"/>
 	<property name="GWT.generatedjs" value="${src}/freenet/clients/http/staticfiles/freenetjs"/>
 	<property name="GWT.lib" value="generator/js/lib"/>
-	<property name="GWT.lib.dev" value="${GWT.lib}/gwt-dev-linux.jar"/>
+	<property name="GWT.lib.dev" value="${GWT.lib}/gwt-dev.jar"/>
 	<property name="GWT.lib.user" value="${GWT.lib}/gwt-user.jar"/>
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.build" value="freenet/node/Version.class" />
@@ -74,8 +74,8 @@
 	
 	<target name="get-GWT-lib-dev" depends="env" unless="GWT.lib.dev.present">
 		<mkdir dir="${GWT.lib}"/>
-		<get src="http://localhost/gwt-dev-linux.jar" 
-			dest="${GWT.lib}/gwt-dev-linux.jar" 
+		<get src="http://localhost/gwt-dev.jar" 
+			dest="${GWT.lib}/gwt-dev.jar" 
 			verbose="true"
 			usetimestamp="true"/>
 		<property name="GWT.lib.dev.present" value="true"/>

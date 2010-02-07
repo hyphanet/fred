@@ -36,7 +36,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
-public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
+public abstract class NodeUpdater implements ClientGetCallback, USKCallback, RequestClient {
 
 	static private boolean logMINOR;
 	private FetchContext ctx;
@@ -45,23 +45,24 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 	private FreenetURI URI;
 	private final Ticker ticker;
 	public final NodeClientCore core;
-	private final Node node;
+	protected final Node node;
 	public final NodeUpdateManager manager;
 	private final int currentVersion;
 	private int realAvailableVersion;
 	private int availableVersion;
 	private int fetchingVersion;
-	private int fetchedVersion;
+	protected int fetchedVersion;
 	private int writtenVersion;
 	private int maxDeployVersion;
 	private int minDeployVersion;
 	private boolean isRunning;
 	private boolean isFetching;
-	public final boolean extUpdate;
 	private final String blobFilenamePrefix;
-	private File tempBlobFile;
+	protected File tempBlobFile;
+	
+	public abstract String jarName();
 
-	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, int min, int max, String blobFilenamePrefix) {
+	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, int current, int min, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
@@ -73,7 +74,6 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 		this.isRunning = true;
 		this.cg = null;
 		this.isFetching = false;
-		this.extUpdate = extUpdate;
 		this.blobFilenamePrefix = blobFilenamePrefix;
 		this.maxDeployVersion = max;
 		this.minDeployVersion = min;
@@ -109,13 +109,13 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 
 			realAvailableVersion = found;
 			if(found > maxDeployVersion) {
-				System.err.println("Ignoring "+(extUpdate ? "freenet-ext.jar " : "") + "update edition "+l+": version too new");
+				System.err.println("Ignoring "+jarName() + "update edition "+l+": version too new");
 				found = maxDeployVersion;
 			}
 			
 			if(found <= availableVersion)
 				return;
-			System.err.println("Found " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + found);
+			System.err.println("Found " + jarName() + " update edition " + found);
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
 		}
@@ -133,9 +133,11 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 			System.err.println("Cancelling fetch for "+found+": not newer than current version "+currentVersion);
 			return;
 		}
-		manager.onStartFetching(extUpdate);
-		Logger.minor(this, "Fetching " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + found);
+		onStartFetching();
+		Logger.minor(this, "Fetching " + jarName() + " update edition " + found);
 	}
+
+	protected abstract void onStartFetching();
 
 	public void maybeUpdate() {
 		ClientGetter toStart = null;
@@ -172,7 +174,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 					if(logMINOR)
 						Logger.minor(this, "Scheduling request for " + URI.setSuggestedEdition(availableVersion));
 					if(availableVersion > currentVersion)
-						System.err.println("Starting " + (extUpdate ? "freenet-ext.jar " : "") + "fetch for " + availableVersion);
+						System.err.println("Starting " + jarName() + " fetch for " + availableVersion);
 					tempBlobFile =
 						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
@@ -182,7 +184,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				} else {
-					System.err.println("Already fetching "+(extUpdate ? "freenet-ext.jar " : "") + "fetch for " + fetchingVersion + " want "+availableVersion);
+					System.err.println("Already fetching "+jarName() + " fetch for " + fetchingVersion + " want "+availableVersion);
 				}
 				isFetching = true;
 			} catch(Exception e) {
@@ -231,7 +233,7 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 		synchronized(this) {
 			writtenVersion = fetched;
 		}
-		System.err.println("Written " + (extUpdate ? "ext" : "main") + " jar to " + fNew);
+		System.err.println("Written " + jarName() + " to " + fNew);
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
@@ -240,8 +242,6 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		int requiredExt = -1;
-		int recommendedExt = -1;
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -277,75 +277,72 @@ public class NodeUpdater implements ClientGetCallback, USKCallback, RequestClien
 						Logger.error(this, "Not able to rename binary blob for node updater: " + tempBlobFile + " -> " + blobFile + " - may not be able to tell other peers about this build");
 			}
 			this.fetchedVersion = fetchedVersion;
-			System.out.println("Found " + (extUpdate ? "ext " : "") + fetchedVersion);
+			System.out.println("Found " + jarName() + " version " + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
-			if(!extUpdate) {
-				InputStream is = null;
-				try {
-					is = result.asBucket().getInputStream();
-					ZipInputStream zis = new ZipInputStream(is);
-					ZipEntry ze;
-					while(true) {
-						ze = zis.getNextEntry();
-						if(ze == null) break;
-						if(ze.isDirectory()) continue;
-						String name = ze.getName();
-						
-						if(name.equals("META-INF/MANIFEST.MF")) {
-							if(logMINOR) Logger.minor(this, "Found manifest");
-							long size = ze.getSize();
-							if(logMINOR) Logger.minor(this, "Manifest size: "+size);
-							if(size > MAX_MANIFEST_SIZE) {
-								Logger.error(this, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
-								break;
-							}
-							byte[] buf = new byte[(int) size];
-							DataInputStream dis = new DataInputStream(zis);
-							dis.readFully(buf);
-							ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-							InputStreamReader isr = new InputStreamReader(bais, "UTF-8");
-							BufferedReader br = new BufferedReader(isr);
-							String line;
-							while((line = br.readLine()) != null) {
-								if(line.startsWith(REQUIRED_EXT_PREFIX)) {
-									requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
-								} else if(line.startsWith(RECOMMENDED_EXT_PREFIX)) {
-									recommendedExt = Integer.parseInt(line.substring(RECOMMENDED_EXT_PREFIX.length()));
-								}
-							}
-						} else {
-							zis.closeEntry();
-						}
-					}
-				} catch (IOException e) {
-					Logger.error(this, "IOException trying to read manifest on update");
-				} catch (Throwable t) {
-					Logger.error(this, "Failed to parse update manifest: "+t, t);
-					requiredExt = recommendedExt = -1;
-				} finally {
-					Closer.close(is);
-				}
-				if(requiredExt != -1) {
-					System.err.println("Required ext version: "+requiredExt);
-					Logger.normal(this, "Required ext version: "+requiredExt);
-				}
-				if(recommendedExt != -1) {
-					System.err.println("Recommended ext version: "+recommendedExt);
-					Logger.normal(this, "Recommended ext version: "+recommendedExt);
-				}
-				
-			}
+			maybeParseManifest(result);
 			this.cg = null;
 			if(this.result != null)
 				this.result.asBucket().free();
 			this.result = result;
 		}
-		manager.onDownloadedNewJar(extUpdate, requiredExt, recommendedExt);
+		processSuccess();
 	}
 	
-	private static final String REQUIRED_EXT_PREFIX = "Required-Ext-Version: ";
-	private static final String RECOMMENDED_EXT_PREFIX = "Recommended-Ext-Version: ";
+	/** We have fetched the jar! Do something after onSuccess(). Called unlocked. */
+	protected abstract void processSuccess();
+
+	/** Called with locks held 
+	 * @param result */
+	protected abstract void maybeParseManifest(FetchResult result);
+
+	protected void parseManifest(FetchResult result) {
+		InputStream is = null;
+		try {
+			is = result.asBucket().getInputStream();
+			ZipInputStream zis = new ZipInputStream(is);
+			ZipEntry ze;
+			while(true) {
+				ze = zis.getNextEntry();
+				if(ze == null) break;
+				if(ze.isDirectory()) continue;
+				String name = ze.getName();
+				
+				if(name.equals("META-INF/MANIFEST.MF")) {
+					if(logMINOR) Logger.minor(this, "Found manifest");
+					long size = ze.getSize();
+					if(logMINOR) Logger.minor(this, "Manifest size: "+size);
+					if(size > MAX_MANIFEST_SIZE) {
+						Logger.error(this, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
+						break;
+					}
+					byte[] buf = new byte[(int) size];
+					DataInputStream dis = new DataInputStream(zis);
+					dis.readFully(buf);
+					ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+					InputStreamReader isr = new InputStreamReader(bais, "UTF-8");
+					BufferedReader br = new BufferedReader(isr);
+					String line;
+					while((line = br.readLine()) != null) {
+						parseManifestLine(line);
+					}
+				} else {
+					zis.closeEntry();
+				}
+			}
+		} catch (IOException e) {
+			Logger.error(this, "IOException trying to read manifest on update");
+		} catch (Throwable t) {
+			Logger.error(this, "Failed to parse update manifest: "+t, t);
+		} finally {
+			Closer.close(is);
+		}
+	}
+
+	protected void parseManifestLine(String line) {
+		// Do nothing by default, only some NodeUpdater's will use this, those that don't won't call parseManifest().
+	}
+	
 	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {

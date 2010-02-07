@@ -34,7 +34,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 	private LowLevelPutException failedPut;
 	
 	public PersistentChosenBlock(boolean isInsert, PersistentChosenRequest parent, SendableRequestItem token, Key key, ClientKey ckey, RequestScheduler sched) {
-		super(token, key, ckey, parent.localRequestOnly, parent.ignoreStore, parent.canWriteClientCache, sched);
+		super(token, key, ckey, parent.localRequestOnly, parent.ignoreStore, parent.canWriteClientCache, parent.forkOnCacheable, sched);
 		this.isInsert = isInsert;
 		this.parent = parent;
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Created "+this+" for "+parent+" ckey="+ckey);

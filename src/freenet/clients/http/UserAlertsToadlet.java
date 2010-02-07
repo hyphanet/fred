@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.LongAlertElement;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -26,6 +24,7 @@ public class UserAlertsToadlet extends Toadlet {
 	UserAlertsToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
 		super(client);
 		this.node = node;
+		this.alerts = core.alerts;
 	}
 
 	private UserAlertManager alerts;
@@ -38,11 +37,16 @@ public class UserAlertsToadlet extends Toadlet {
 		}
 
 		PageNode page = ctx.getPageMaker().getPageNode(l10n("titleWithName", "name", node.getMyName()), ctx);
-        HTMLNode pageNode = page.outer;
-        HTMLNode contentNode = page.content;
-        contentNode.addChild(new LongAlertElement(ctx,false));
-        
-        writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
+		HTMLNode alertsNode = alerts.createAlerts(false);
+		if (alertsNode.getFirstTag() == null) {
+			alertsNode = new HTMLNode("div", "class", "infobox");
+			alertsNode.addChild("div", "class", "infobox-content").addChild("div", NodeL10n.getBase().getString("UserAlertsToadlet.noMessages"));
+		}
+		contentNode.addChild(alertsNode);
+
+		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {

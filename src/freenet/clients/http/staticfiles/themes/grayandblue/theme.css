@@ -560,6 +560,16 @@ div#statusbar div {
 	display: inline;
 }
 
+div#statusbar div.progressbar {
+	display: inline-block;
+	margin-bottom: -3px;
+}
+
+div#statusbar div.progressbar div.progress_fraction_finalized {
+	float: left;
+	overflow: hidden;
+}
+
 div#statusbar div.separator {
 	display: inline-block;
 	background: none;

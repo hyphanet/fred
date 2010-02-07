@@ -14,7 +14,9 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.Enumeration;
+import java.util.Map;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -29,6 +31,7 @@ import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
+import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -78,8 +81,8 @@ public class OpennetManager {
 	public static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it.
 	 * This should be long enough to cover a typical reboot, but not so long as to result in a lot
-	 * of disconnected nodes in the Strangers list. */
-	public static final int DROP_DISCONNECT_DELAY = 10*60*1000;
+	 * of disconnected nodes in the Strangers list. Also it should probably not be longer than DROP_MIN_AGE! */
+	public static final int DROP_DISCONNECT_DELAY = 5*60*1000;
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
 	public static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected */
@@ -314,6 +317,8 @@ public class OpennetManager {
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer) {
 		boolean notMany = false;
 		boolean noDisconnect;
+		long now = System.currentTimeMillis();
+		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+")");
 		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
@@ -332,14 +337,17 @@ public class OpennetManager {
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
-				if(nodeToAddNow != null || !justChecking)
+				if(nodeToAddNow == null && !justChecking)
 					timeLastOffered = System.currentTimeMillis();
 				notMany = true;
 				// Don't check timeLastAddedOldOpennetPeer, since we want it anyway. But do update it.
 				if(oldOpennetPeer)
 					timeLastAddedOldOpennetPeer = System.currentTimeMillis();
 			}
-			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
+			// Old opennet peers should only replace free slots / disconnected droppable nodes.
+			// We can make offers regardless of timeLastOffered provided they are disconnected droppable peers.
+			// And we only allow a connection to be dropped every 10 successful fetches.
+			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS) || now - timeLastDropped < DROP_CONNECTED_TIME;
 		}
 		if(notMany) {
 			if(nodeToAddNow != null)
@@ -352,31 +360,36 @@ public class OpennetManager {
 			int maxPeers = getNumberOfConnectedPeersToAim();
 			// If we have dropped a disconnected peer, then the inter-peer offer cooldown doesn't apply: we can accept immediately.
 			boolean hasDisconnected = false;
-			if(getSize() == maxPeers && nodeToAddNow == null) {
-				PeerNode toDrop = peerToDrop(true, false);
+			if(oldOpennetPeer) {
+				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
+					canAdd = false;
+			}
+			int size;
+			if((size = getSize()) == maxPeers && nodeToAddNow == null && canAdd) {
+				// Allow an offer to be predicated on throwing out a connected node,
+				// provided that we meet the other criteria e.g. time since last added,
+				// node isn't too new.
+				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
-			} else while(getSize() > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
+			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null, false);
+				toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
 					break;
 				}
-				if(logMINOR)
-					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
-				if(!toDrop.isConnected())
-					hasDisconnected = true;
-				peersLRU.remove(toDrop);
-				dropList.add(toDrop);
-			}
-			long now = System.currentTimeMillis();
-			if(canAdd && oldOpennetPeer) {
-				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
-					canAdd = false;
+				if(nodeToAddNow != null || size > maxPeers) {
+					if(logMINOR)
+						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
+					if(!toDrop.isConnected())
+						hasDisconnected = true;
+					peersLRU.remove(toDrop);
+					dropList.add(toDrop);
+				}
 			}
 			if(canAdd && !justChecking) {
 				if(nodeToAddNow != null) {
@@ -387,24 +400,18 @@ public class OpennetManager {
 						peersLRU.push(nodeToAddNow);
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" after clearing "+dropList.size()+" items - now have "+peersLRU.size()+" opennet peers");
 					oldPeers.remove(nodeToAddNow);
-					if(!dropList.isEmpty())
+					if(!dropList.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "Dropped opennet peer: "+dropList.get(0));
 						timeLastDropped = now;
+					}
 					if(oldOpennetPeer)
 						timeLastAddedOldOpennetPeer = now;
 				} else {
-					if(now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS && !hasDisconnected) {
+					// Do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
+					if(!justChecking) {
+						timeLastOffered = now;
 						if(logMINOR)
-							Logger.minor(this, "Cannot make offer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
-						// Cancel
-						canAdd = false;
-					} else {
-						if(!dropList.isEmpty())
-							timeLastDropped = now;
-						if(!justChecking) {
-							timeLastOffered = now;
-							if(logMINOR)
-								Logger.minor(this, "Sending offer");
-						}
+							Logger.minor(this, "Sending offer");
 					}
 				}
 			}
@@ -427,10 +434,12 @@ public class OpennetManager {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
-			toDrop = peerToDrop(false, false);
-			if(toDrop == null) toDrop = peerToDrop(false, true);
+			toDrop = peerToDrop(false, false, false);
+			if(toDrop == null) toDrop = peerToDrop(false, true, false);
 			if(toDrop == null) return;
-			peersLRU.remove(toDrop);
+			synchronized(this) {
+				peersLRU.remove(toDrop);
+			}
 			if(logMINOR)
 				Logger.minor(this, "Dropping "+toDrop);
 			node.peers.disconnect(toDrop, true, true, true);
@@ -452,21 +461,34 @@ public class OpennetManager {
 		return x;
 	}
 
-	synchronized OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force) {
+	synchronized OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force, boolean addingNode) {
 		if(getSize() < getNumberOfConnectedPeersToAim()) {
 			// Don't drop any peers
+			if(logMINOR) Logger.minor(this, "peerToDrop(): Not dropping any peer (force="+force+" addingNode="+addingNode+") because don't need to");
 			return null;
 		} else {
+			EnumMap<NOT_DROP_REASON, Integer> map = null;
+			if(addingNode) map = new EnumMap<NOT_DROP_REASON, Integer>(NOT_DROP_REASON.class);
 			// Do we want it?
 			OpennetPeerNode[] peers = peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
-					// Doesn't count anyway.
+					// Doesn't count towards the opennet peers limit, so no point dropping it.
 					continue;
 				}
 				if(pn == null) continue;
-				if((!pn.isDroppable(false)) && !force) continue;
+				NOT_DROP_REASON reason = pn.isDroppableWithReason(false);
+				if(map != null) {
+					Integer x = map.get(reason);
+					if(x == null)
+						map.put(reason, 1);
+					else
+						map.put(reason, x+1);
+				}
+				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
+					continue;
+				}
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(Logger.shouldLog(Logger.MINOR, this))
@@ -475,9 +497,17 @@ public class OpennetManager {
 					return pn;
 				}
 			}
-			if(System.currentTimeMillis() - timeLastDropped < DROP_CONNECTED_TIME)
+			if(noDisconnect) {
+				if(addingNode && logMINOR) {
+					Logger.minor(this, "Not disconnecting");
+					if(map != null)
+						for(Map.Entry<NOT_DROP_REASON, Integer> entry : map.entrySet()) {
+							Logger.minor(this, ""+entry.getKey()+" : "+entry.getValue());
+						}
+				}
 				return null;
-			if(noDisconnect) return null;
+			}
+			if(map != null) map.clear();
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
@@ -485,12 +515,29 @@ public class OpennetManager {
 					// Doesn't count anyway.
 					continue;
 				}
-				if((!pn.isDroppable(false)) && !force) continue;
+				NOT_DROP_REASON reason = pn.isDroppableWithReason(false);
+				if(map != null) {
+					Integer x = map.get(reason);
+					if(x == null)
+						map.put(reason, 1);
+					else
+						map.put(reason, x+1);
+				}
+				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
+					continue;
+				}
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
 							(System.currentTimeMillis() - timeLastDropped)+" ms since last dropped peer");
 				pn.setWasDropped();
 				return pn;
+			}
+			if(addingNode && logMINOR) {
+				Logger.minor(this, "Nothing to drop");
+				if(map != null)
+					for(Map.Entry<NOT_DROP_REASON, Integer> entry : map.entrySet()) {
+						Logger.minor(this, ""+entry.getKey()+" : "+entry.getValue());
+					}
 			}
 		}
 		return null;
@@ -808,5 +855,11 @@ public class OpennetManager {
 
 	public int getAnnouncementThreshold() {
 		return announcer.getAnnouncementThreshold();
+	}
+
+	/** Notification that a peer was disconnected. Query the Announcer,
+	 * it may need to rerun. */
+	public void onDisconnect(PeerNode node2) {
+		announcer.maybeSendAnnouncementOffThread();
 	}
 }

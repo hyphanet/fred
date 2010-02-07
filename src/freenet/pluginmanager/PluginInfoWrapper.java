@@ -113,9 +113,14 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	 * terminate. Set to -1 if you don't want to wait at all, 0 to wait forever
 	 * or else a value in milliseconds.
 	 **/
-	public void stopPlugin(PluginManager manager, int maxWaitTime) {
-		unregister(manager);
-		plug.terminate();
+	public void stopPlugin(PluginManager manager, int maxWaitTime, boolean reloading) {
+		unregister(manager, reloading);
+		// TODO add a timeout for plug.terminate() too
+		try {
+			plug.terminate();
+		} catch (Throwable t) {
+			Logger.error(this, "Error while terminating plugin.", t);
+		}
 		synchronized(this) {
 			stopping = true;
 		}
@@ -152,18 +157,12 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 	 * registered with. Call this before manager.removePlugin(): the plugin becomes
 	 * unvisitable immediately, but it may take time for it to shut down completely.
 	 */
-	void unregister(PluginManager manager) {
+	void unregister(PluginManager manager, boolean reloading) {
 		synchronized(this) {
 			if(unregistered) return;
 			unregistered = true;
 		}
-		manager.unregisterPluginToadlet(this);
-		if(isIPDetectorPlugin)
-			manager.node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
-		if(isPortForwardPlugin)
-			manager.node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
-		if(isBandwidthIndicator)
-			manager.node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+		manager.unregisterPlugin(this, plug, reloading);
 	}
 
 	public boolean isPproxyPlugin() {
@@ -224,6 +223,10 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 		} else {
 			return -1;
 		}
+	}
+
+	public FredPlugin getPlugin() {
+		return this.plug;
 	}
 
 	public int compareTo(PluginInfoWrapper pi) {

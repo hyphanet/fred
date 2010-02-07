@@ -54,6 +54,24 @@ public class NodeSSK extends Key {
 		return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);
 	}
 	
+	@Override
+	public Key archivalCopy() {
+		return new ArchiveNodeSSK(pubKeyHash, encryptedHashedDocname, cryptoAlgorithm);
+	}
+	
+	public NodeSSK(byte[] pkHash, byte[] ehDocname, byte cryptoAlgorithm) {
+		super(makeRoutingKey(pkHash, ehDocname));
+		this.encryptedHashedDocname = ehDocname;
+		this.pubKeyHash = pkHash;
+		this.cryptoAlgorithm = cryptoAlgorithm;
+		this.pubKey = null;
+		if(ehDocname.length != E_H_DOCNAME_SIZE)
+			throw new IllegalArgumentException("ehDocname must be "+E_H_DOCNAME_SIZE+" bytes");
+		if(pkHash.length != PUBKEY_HASH_SIZE)
+			throw new IllegalArgumentException("pubKeyHash must be "+PUBKEY_HASH_SIZE+" bytes");
+		hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
+	}
+	
 	public NodeSSK(byte[] pkHash, byte[] ehDocname, DSAPublicKey pubKey, byte cryptoAlgorithm) throws SSKVerifyException {
 		super(makeRoutingKey(pkHash, ehDocname));
 		this.encryptedHashedDocname = ehDocname;
@@ -244,5 +262,22 @@ public class NodeSSK extends Key {
 	public void removeFrom(ObjectContainer container) {
 		super.removeFrom(container);
 	}
+
+}
+
+final class ArchiveNodeSSK extends NodeSSK {
+
+	public ArchiveNodeSSK(byte[] pubKeyHash, byte[] encryptedHashedDocname, byte cryptoAlgorithm) {
+		super(pubKeyHash, encryptedHashedDocname, cryptoAlgorithm);
+	}
+	
+	public void setPubKey(DSAPublicKey pubKey2) throws SSKVerifyException {
+		throw new UnsupportedOperationException();
+	}
+	
+	public boolean grabPubkey(GetPubkey pubkeyCache, boolean canReadClientCache, boolean forULPR, BlockMetadata meta) {
+		throw new UnsupportedOperationException();
+	}
 	
 }
+

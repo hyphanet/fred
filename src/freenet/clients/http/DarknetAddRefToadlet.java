@@ -6,9 +6,6 @@ import java.io.StringWriter;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.clients.http.updateableelements.LongAlertElement;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -81,7 +78,7 @@ public class DarknetAddRefToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(new LongAlertElement(ctx,true));
+		contentNode.addChild(core.alerts.createSummary());
 		
 		HTMLNode boxContent = pageMaker.getInfobox("infobox-information", l10n("explainBoxTitle"), contentNode, "darknet-explanations", true);
 		boxContent.addChild("p", l10n("explainBox1"));

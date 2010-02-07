@@ -74,13 +74,14 @@ public class SortedLongSet {
 				newData[i] = Long.MAX_VALUE;
 			data = newData;
 		}
-		verify();
+		
+		assert(verify());
 	}
 
 	/**
 	 * verify internal state. can be removed without ill effect
 	 */
-	private synchronized void verify() {
+	private synchronized boolean verify() { // TODO: Move to a unit test.
 		long lastItem = -1;
 		for(int i=0;i<length;i++) {
 			long item = data[i];
@@ -93,6 +94,8 @@ public class SortedLongSet {
 		for(int i=length;i<data.length;i++)
 			if(data[i] != Long.MAX_VALUE)
 				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != Long.MAX_VALUE");
+		
+		return true;
 	}
 
 	/**
@@ -141,7 +144,8 @@ public class SortedLongSet {
 			System.arraycopy(data, x, data, x+1, length-x);
 		data[x] = num;
 		length++;
-		verify();
+		
+		assert(verify());
 	}
 
 	/**

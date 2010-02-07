@@ -17,28 +17,20 @@ div#content div.infobox-alert.infobox-summary-detailed {
 
 /* Various colors */
 
-div#statusbar div#statusbar-peers {
-	font-weight: bold;
+div#statusbar div.progressbar div.progressbar-peers.very-few-peers {
+	background-color: red;
 }
 
-div#statusbar div#statusbar-peers.no-peers {
-	color: #700;
+div#statusbar div.progressbar div.progressbar-peers.few-peers {
+	background-color: orange;
 }
 
-div#statusbar div#statusbar-peers.very-few-peers {
-	color: #700;
+div#statusbar div.progressbar div.progressbar-peers.avg-peers {
+	background-color: greenyellow;
 }
 
-div#statusbar div#statusbar-peers.few-peers {
-	color: #FA0;
-}
-
-div#statusbar div#statusbar-peers.avg-peers {
-	color: #FA0;
-}
-
-div#statusbar div#statusbar-peers.lots-of-peers {
-	color: green;
+div#statusbar div.progressbar div.progressbar-peers.full-peers {
+	background-color: green;
 }
 
 div#statusbar div#statusbar-seclevels a {
@@ -59,7 +51,7 @@ div#statusbar div#statusbar-seclevels a.high {
 }
 
 div#statusbar div#statusbar-seclevels a.maximum {
-	color: #d9bd00;
+	color: darkgreen;
 }
 
 div#statusbar div#statusbar-alerts.contains-error, div#statusbar div#statusbar-alerts.contains-error a {

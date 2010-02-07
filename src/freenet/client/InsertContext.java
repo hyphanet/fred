@@ -43,10 +43,15 @@ public class InsertContext implements Cloneable {
 	 * @see Compressor.COMPRESSOR_TYPES#getCompressorsArray(String compressordescriptor)
 	 */
 	public String compressorDescriptor;
+	public boolean forkOnCacheable;
+	/** Number of extra inserts for a single block inserted on its own. */
+	public int extraInsertsSingleBlock;
+	/** Number of extra inserts for a block inserted above a splitfile. */
+	public int extraInsertsSplitfileHeaderBlock;
 
 	public InsertContext(
 			int maxRetries, int rnfsToSuccess, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean canWriteClientCache, String compressorDescriptor) {
+			ClientEventProducer eventProducer, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock) {
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
@@ -55,7 +60,10 @@ public class InsertContext implements Cloneable {
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.canWriteClientCache = canWriteClientCache;
+		this.forkOnCacheable = forkOnCacheable;
 		this.compressorDescriptor = compressorDescriptor;
+		this.extraInsertsSingleBlock = extraInsertsSingleBlock;
+		this.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeaderBlock;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -67,6 +75,9 @@ public class InsertContext implements Cloneable {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.compressorDescriptor = ctx.compressorDescriptor;
+		this.forkOnCacheable = ctx.forkOnCacheable;
+		this.extraInsertsSingleBlock = ctx.extraInsertsSingleBlock;
+		this.extraInsertsSplitfileHeaderBlock = ctx.extraInsertsSplitfileHeaderBlock;
 	}
 	
 	/** Make public, but just call parent for a field for field copy */

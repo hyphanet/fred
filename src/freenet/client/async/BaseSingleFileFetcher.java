@@ -65,7 +65,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public SendableRequestItem chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
-		if(fetching.hasKey(key.getNodeKey())) return null;
+		if(fetching.hasKey(key.getNodeKey(false))) return null;
 		return keys[0];
 	}
 	
@@ -73,7 +73,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
-		return !fetching.hasKey(key.getNodeKey());
+		return !fetching.hasKey(key.getNodeKey(false));
 	}
 	
 	@Override
@@ -210,7 +210,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				throw new NullPointerException();
 			if(this.key == null)
 				throw new NullPointerException("Key is null on "+this);
-			if(!key.equals(this.key.getNodeKey())) {
+			if(!key.equals(this.key.getNodeKey(false))) {
 				Logger.normal(this, "Got sent key "+key+" but want "+this.key+" for "+this);
 				return;
 			}
@@ -256,8 +256,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		if(persistent)
 			container.activate(this.key, 5);
-		if(!(key.equals(this.key.getNodeKey()))) {
-			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey()+" for "+this.key);
+		if(!(key.equals(this.key.getNodeKey(false)))) {
+			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey(false)+" for "+this.key);
 			return;
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -304,7 +304,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		else {
 			if(persistent)
 				container.activate(key, 5);
-			return new Key[] { key.getNodeKey() };
+			return new Key[] { key.getNodeKey(true) };
 		}
 	}
 
@@ -313,7 +313,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(persistent)
 			container.activate(key, 5);
 		ClientKey ckey = key.cloneKey();
-		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], ckey.getNodeKey(), ckey, sched);
+		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], ckey.getNodeKey(true), ckey, sched);
 		return Collections.singletonList(block);
 	}
 
@@ -330,7 +330,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(persistent) container.delete(this);
 			return null;
 		}
-		Key newKey = key.getNodeKey().cloneKey();
+		Key newKey = key.getNodeKey(true);
 		short prio = parent.getPriorityClass();
 		KeyListener ret = new SingleKeyListener(newKey, this, prio, persistent);
 		if(persistent) {

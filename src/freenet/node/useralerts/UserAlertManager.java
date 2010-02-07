@@ -28,10 +28,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	// No point keeping them sorted as some alerts can change priority.
 	private final Set<UserAlert> alerts;
 	private final NodeClientCore core;
-	
-	/** Listeners that will be notified when the alerts list is changed*/
-	private final Set<UserEventListener> listeners;
-
 	private final Set<FCPConnectionHandler> subscribers;
 	private final Map<UserEvent.Type, UserEvent> events;
 	private final Set<UserEvent.Type> unregisteredEventTypes;
@@ -39,7 +35,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
-		listeners = new CopyOnWriteArraySet<UserEventListener>();
 		alerts = new HashSet<UserAlert>();
 		subscribers = new CopyOnWriteArraySet<FCPConnectionHandler>();
 		events = new HashMap<UserEvent.Type, UserEvent>();
@@ -50,17 +45,12 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	public void register(UserAlert alert) {
 		if(alert instanceof UserEvent)
 			register((UserEvent) alert);
-		boolean needNotification=false;
 		synchronized (alerts) {
 			if (!alerts.contains(alert)) {
 				alerts.add(alert);
 				lastUpdated = System.currentTimeMillis();
 				notifySubscribers(alert);
-				needNotification=true;
 			}
-		}
-		if(needNotification){
-			notifyListeners();
 		}
 	}
 
@@ -81,7 +71,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			events.put(event.getEventType(), event);
 			lastUpdated = System.currentTimeMillis();
 			notifySubscribers(event);
-			notifyListeners();
 		}
 	}
 
@@ -95,13 +84,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			}
 		}, "UserAlertManager callback executor");
 	}
-	
-	/** Notifies the listeners that alerts are changed*/
-	private void notifyListeners(){
-		for(UserEventListener l:listeners){
-			l.alertsChanged();
-		}
-	}
 
 	public void unregister(UserAlert alert) {
 		if(alert == null) return;
@@ -110,7 +92,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		synchronized (alerts) {
 			alerts.remove(alert);
 		}
-		notifyListeners();
 	}
 
 	public void unregister(UserEvent.Type eventType) {
@@ -126,7 +107,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 					alerts.remove(latestEvent);
 				}
 		}
-		notifyListeners();
 	}
 
 	/**
@@ -149,33 +129,9 @@ public class UserAlertManager implements Comparator<UserAlert> {
 					} else {
 						userAlert.isValid(false);
 					}
-					notifyListeners();
 				}
 			}
 		}
-	}
-	
-	/** Dismisses an alert identified by it's anchor
-	 * @param anchor - The anchor that identifies the alert*/
-	public boolean dismissByAnchor(String anchor){
-		boolean success=false;
-		UserAlert[] userAlerts = getAlerts();
-		for (int index = 0, count = userAlerts.length; index < count; index++) {
-			UserAlert userAlert = userAlerts[index];
-			if (userAlert.anchor().compareTo( anchor)==0) {
-				if (userAlert.userCanDismiss()) {
-					if (userAlert.shouldUnregisterOnDismiss()) {
-						userAlert.onDismiss();
-						unregister(userAlert);
-					} else {
-						userAlert.isValid(false);
-					}
-					notifyListeners();
-					success=true;
-				}
-			}
-		}
-		return success;
 	}
 
 	public UserAlert[] getAlerts() {
@@ -213,6 +169,33 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		}
 	}
 
+	public HTMLNode createAlerts() {
+		return createAlerts(true);
+	}
+
+	/**
+	 * Write the alerts as HTML.
+	 */
+	public HTMLNode createAlerts(boolean showOnlyErrors) {
+		HTMLNode alertsNode = new HTMLNode("div");
+		UserAlert[] alerts = getAlerts();
+		int totalNumber = 0;
+		for (int i = 0; i < alerts.length; i++) {
+			UserAlert alert = alerts[i];
+			if(showOnlyErrors && alert.getPriorityClass() > alert.ERROR)
+				continue;
+			if (!alert.isValid())
+				continue;
+			totalNumber++;
+			alertsNode.addChild("a", "name", alert.anchor());
+			alertsNode.addChild(renderAlert(alert));
+		}
+		if (totalNumber == 0) {
+			return new HTMLNode("#", "");
+		}
+		return alertsNode;
+	}
+	
 	/**
 	 * Renders the given alert and returns the rendered HTML node.
 	 * 
@@ -237,7 +220,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		return userAlertNode;
 	}
 
-	public static String getAlertLevelName(short level) {
+	private String getAlertLevelName(short level) {
 		if (level <= UserAlert.CRITICAL_ERROR)
 			return "error";
 		else if (level <= UserAlert.ERROR)
@@ -247,12 +230,122 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		else if (level <= UserAlert.MINOR)
 			return "minor";
 		else {
-			Logger.error(UserAlertManager.class, "Unknown alert level: "+level, new Exception("debug"));
+			Logger.error(this, "Unknown alert level: "+level, new Exception("debug"));
 			return "error";
 		}
 	}
 
-	public static String l10n(String key) {
+	public HTMLNode createSummary() {
+		// This method is called by the toadlets when they want to show
+		// a summary of alerts. With a status bar, we only show full errors here.
+		return createAlerts(true);
+	}
+
+	/**
+	 * Write the alert summary as HTML to a StringBuilder
+	 */
+	public HTMLNode createSummary(boolean oneLine) {
+		short highestLevel = 99;
+		int numberOfCriticalError = 0;
+		int numberOfError = 0;
+		int numberOfWarning = 0;
+		int numberOfMinor = 0;
+		int totalNumber = 0;
+		UserAlert[] alerts = getAlerts();
+		for (int i = 0; i < alerts.length; i++) {
+			UserAlert alert = alerts[i];
+			if (!alert.isValid())
+				continue;
+			short level = alert.getPriorityClass();
+			if (level < highestLevel)
+				highestLevel = level;
+			if (level <= UserAlert.CRITICAL_ERROR)
+				numberOfCriticalError++;
+			else if (level <= UserAlert.ERROR)
+				numberOfError++;
+			else if (level <= UserAlert.WARNING)
+				numberOfWarning++;
+			else if (level <= UserAlert.MINOR)
+				numberOfMinor++;
+			totalNumber++;
+		}
+
+		if(numberOfMinor == 0 && numberOfWarning == 0 && oneLine)
+			return null;
+
+		if (totalNumber == 0)
+			return new HTMLNode("#", "");
+
+		boolean separatorNeeded = false;
+		String separator = oneLine?", ":" | ";
+		int messageTypes=0;
+		StringBuilder alertSummaryString = new StringBuilder(1024);
+		if (numberOfCriticalError != 0 && !oneLine) {
+			alertSummaryString.append(l10n("criticalErrorCountLabel")).append(' ').append(numberOfCriticalError);
+			separatorNeeded = true;
+			messageTypes++;
+		}
+		if (numberOfError != 0 && !oneLine) {
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
+			alertSummaryString.append(l10n("errorCountLabel")).append(' ').append(numberOfError);
+			separatorNeeded = true;
+			messageTypes++;
+		}
+		if (numberOfWarning != 0) {
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
+			if(oneLine) {
+			alertSummaryString.append(numberOfWarning).append(' ').append(l10n("warningCountLabel").replace(":", ""));
+			} else {
+				alertSummaryString.append(l10n("warningCountLabel")).append(' ').append(numberOfWarning);
+			}
+			separatorNeeded = true;
+			messageTypes++;
+		}
+		if (numberOfMinor != 0) {
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
+			if(oneLine) {
+				alertSummaryString.append(numberOfMinor).append(' ').append(l10n("minorCountLabel").replace(":", ""));
+			} else {
+				alertSummaryString.append(l10n("minorCountLabel")).append(' ').append(numberOfMinor);
+			}
+			separatorNeeded = true;
+			messageTypes++;
+		}
+		if (messageTypes != 1 && !oneLine) {
+			if (separatorNeeded)
+				alertSummaryString.append(separator);
+			alertSummaryString.append(l10n("totalLabel")).append(' ').append(totalNumber);
+		}
+		HTMLNode summaryBox = null;
+
+		String classes = oneLine?"alerts-line contains-":"infobox infobox-";
+
+		if (highestLevel <= UserAlert.CRITICAL_ERROR && !oneLine)
+			summaryBox = new HTMLNode("div", "class", classes + "error");
+		else if (highestLevel <= UserAlert.ERROR && !oneLine)
+			summaryBox = new HTMLNode("div", "class", classes + "alert");
+		else if (highestLevel <= UserAlert.WARNING)
+			summaryBox = new HTMLNode("div", "class", classes + "warning");
+		else if (highestLevel <= UserAlert.MINOR)
+			summaryBox = new HTMLNode("div", "class", classes + "information");
+		summaryBox.addChild("div", "class", "infobox-header", l10n("alertsTitle"));
+		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content");
+		if(!oneLine) {
+			summaryContent.addChild("#", alertSummaryString.toString() + separator + " ");
+			NodeL10n.getBase().addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
+				new String[] { "link", "/link" },
+				new String[] { "<a href=\"/alerts/\">", "</a>" });
+		} else {
+			summaryContent.addChild("a", "href", "/alerts/", NodeL10n.getBase().getString("StatusBar.alerts") + " " + alertSummaryString.toString());
+		}
+		summaryBox.addAttribute("id", "messages-summary-box");
+		return summaryBox;
+	}
+
+	private String l10n(String key) {
 		return NodeL10n.getBase().getString("UserAlertManager."+key);
 	}
 
@@ -283,18 +376,6 @@ public class UserAlertManager implements Comparator<UserAlert> {
 
 	public void unwatch(FCPConnectionHandler subscriber) {
 		subscribers.remove(subscriber);
-	}
-	
-	/** Registers a listener that will be notified when alerts changed
-	 * @param listener - The listener to be registered*/
-	public void registerListener(UserEventListener listener){
-		listeners.add(listener);
-	}
-	
-	/** Removes a listener
-	 * @param listener - The listener to be removed*/
-	public void deregisterListener(UserEventListener listener){
-		listeners.remove(listener);
 	}
 
 	//Formats a Unix timestamp according to RFC 3339

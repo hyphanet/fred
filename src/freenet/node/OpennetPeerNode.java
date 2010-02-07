@@ -46,12 +46,23 @@ public class OpennetPeerNode extends PeerNode {
 		return false;
 	}
 
+	enum NOT_DROP_REASON {
+		DROPPABLE,
+		TOO_NEW_PEER,
+		TOO_LOW_UPTIME,
+		RECONNECT_GRACE_PERIOD
+	}
+	
 	public boolean isDroppable(boolean ignoreDisconnect) {
+		return isDroppableWithReason(ignoreDisconnect) == NOT_DROP_REASON.DROPPABLE;
+	}
+		
+	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
 		if(now - getPeerAddedTime() < OpennetManager.DROP_MIN_AGE)
-			return false; // New node
+			return NOT_DROP_REASON.TOO_NEW_PEER; // New node
 		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
-			return false; // Give them time to connect after we startup
+			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
 		int status = getPeerNodeStatus();
 		if(!ignoreDisconnect) {
 		synchronized(this) {
@@ -59,11 +70,11 @@ public class OpennetPeerNode extends PeerNode {
 					now - timeLastDisconnect < OpennetManager.DROP_DISCONNECT_DELAY &&
 					now - timePrevDisconnect > OpennetManager.DROP_DISCONNECT_DELAY_COOLDOWN) {
 				// Grace period for node restarting
-				return false;
+				return NOT_DROP_REASON.RECONNECT_GRACE_PERIOD;
 			}
 		}
 		}
-		return true;
+		return NOT_DROP_REASON.DROPPABLE;
 	}
 	
 	@Override

@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
@@ -192,7 +190,7 @@ public class BrowserTestToadlet extends Toadlet {
 		HTMLNode contentNode = page.content;
 		
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(new LongAlertElement(ctx,true));
+			contentNode.addChild(core.alerts.createSummary());
 		
 		// #### Test MIME inline
 		ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline", contentNode, "mime-inline-test", true).

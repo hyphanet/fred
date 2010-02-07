@@ -7,13 +7,29 @@ import java.io.Serializable;
 
 public interface RunningAverage extends Serializable {
 
-	public Object clone();
+    /**
+     *
+     * @return
+     */
+    public Object clone();
 
-	public double currentValue();
+        /**
+         *
+         * @return
+         */
+        public double currentValue();
 
-	public void report(double d);
+        /**
+         *
+         * @param d
+         */
+        public void report(double d);
 
-	public void report(long d);
+        /**
+         *
+         * @param d
+         */
+        public void report(long d);
 
 	/**
 	 * Get what currentValue() would be if we reported some given value

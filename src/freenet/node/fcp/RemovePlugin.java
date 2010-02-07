@@ -55,7 +55,7 @@ public class RemovePlugin extends FCPMessage {
 				if (pi == null) {
 					handler.outputHandler.queue(new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_PLUGIN, false, "Plugin '"+ plugname + "' does not exist or is not a FCP plugin", identifier, false));
 				} else {
-					pi.stopPlugin(node.pluginManager, maxWaitTime);
+					pi.stopPlugin(node.pluginManager, maxWaitTime, false);
 					if (purge) {
 						node.pluginManager.removeCachedCopy(pi.getFilename());
 					}

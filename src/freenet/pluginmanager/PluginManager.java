@@ -5,6 +5,7 @@ package freenet.pluginmanager;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -13,6 +14,8 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -32,7 +35,6 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
-import freenet.clients.http.updateableelements.RequestElement;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -412,6 +414,8 @@ public class PluginManager {
 			if (store)
 				core.storeConfig();
 		}
+		if(pi != null)
+			node.nodeUpdater.startPluginUpdater(filename);
 		return pi;
 	}
 
@@ -647,20 +651,22 @@ public class PluginManager {
 	 */
 	public void removeCachedCopy(String pluginSpecification) {
 		int lastSlash = pluginSpecification.lastIndexOf('/');
-		File pluginFile;
+		String pluginFilename;
 		if(lastSlash == -1)
 			/* Windows, maybe? */
 			lastSlash = pluginSpecification.lastIndexOf('\\');
 		File pluginDirectory = new File(node.getNodeDir(), "plugins");
 		if(lastSlash == -1)
 			/* it's an official plugin! */
-			pluginFile = new File(pluginDirectory, pluginSpecification + ".jar");
+			pluginFilename = pluginSpecification + ".jar";
 		else
-			pluginFile = new File(pluginDirectory, pluginSpecification.substring(lastSlash + 1));
+			pluginFilename = pluginSpecification.substring(lastSlash + 1);
 		if(logDEBUG)
-			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + "filename: " + pluginFile.getAbsolutePath(), new Exception("debug"));
-		if(pluginFile.exists())
-			pluginFile.delete();
+			Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + "filename: " + pluginFilename, new Exception("debug"));
+		File[] cachedFiles = getPreviousInstances(pluginDirectory, pluginFilename);
+		for (File cachedFile : cachedFiles) {
+			cachedFile.delete();
+		}
 	}
 
 	public void unregisterPluginToadlet(PluginInfoWrapper pi) {
@@ -746,7 +752,7 @@ public class PluginManager {
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);
-				if(pi.getPluginClassName().equals(plugname))
+				if(pi.getPluginClassName().equals(plugname) || pi.getFilename().equals(plugname))
 					return pi;
 			}
 		}
@@ -802,6 +808,25 @@ public class PluginManager {
 		return false;
 	}
 
+	/**
+	 * @param plugname The plugin filename e.g. "Library" for an official plugin.
+	 * @return the true if not found
+	 */
+	public boolean isPluginLoadedOrLoadingOrWantLoad(String plugname) {
+		synchronized(pluginWrappers) {
+			for(int i = 0; i < pluginWrappers.size(); i++) {
+				PluginInfoWrapper pi = pluginWrappers.get(i);
+				if(pi.getFilename().equals(plugname))
+					return true;
+				
+			}
+		}
+		if(pluginsFailedLoad.containsKey(plugname)) return true;
+		for(PluginProgress prog : startingPlugins)
+			if(prog.name.equals(plugname)) return true;
+		return false;
+	}
+
 	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized(toadletList) {
@@ -841,7 +866,7 @@ public class PluginManager {
 		throw new NotFoundPluginHTTPException("Plugin '"+plugin+"' not found!", "/plugins");
 	}
 
-	public void killPlugin(String name, int maxWaitTime) {
+	public void killPlugin(String name, int maxWaitTime, boolean reloading) {
 		PluginInfoWrapper pi = null;
 		boolean found = false;
 		synchronized(pluginWrappers) {
@@ -854,7 +879,23 @@ public class PluginManager {
 			}
 		}
 		if(found)
-			pi.stopPlugin(this, maxWaitTime);
+			pi.stopPlugin(this, maxWaitTime, reloading);
+	}
+
+	public void killPluginByFilename(String name, int maxWaitTime, boolean reloading) {
+		PluginInfoWrapper pi = null;
+		boolean found = false;
+		synchronized(pluginWrappers) {
+			for(int i = 0; i < pluginWrappers.size() && !found; i++) {
+				pi = pluginWrappers.get(i);
+				if(pi.getFilename().equals(name)) {
+					found = true;
+					break;
+				}
+			}
+		}
+		if(found)
+			pi.stopPlugin(this, maxWaitTime, reloading);
 	}
 
 	public void killPluginByClass(String name, int maxWaitTime) {
@@ -870,7 +911,7 @@ public class PluginManager {
 			}
 		}
 		if(found)
-			pi.stopPlugin(this, maxWaitTime);
+			pi.stopPlugin(this, maxWaitTime, false);
 	}
 
 	public void killPlugin(FredPlugin plugin, int maxWaitTime) {
@@ -884,7 +925,7 @@ public class PluginManager {
 			}
 		}
 		if(found)
-			pi.stopPlugin(this, maxWaitTime);
+			pi.stopPlugin(this, maxWaitTime, false);
 	}
 
 	public static class OfficialPluginDescription {
@@ -911,7 +952,7 @@ public class PluginManager {
 		}
 	}
 
-	static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
+	public static Map<String, OfficialPluginDescription> officialPlugins = new HashMap<String, OfficialPluginDescription>();
 
 	static {
 		try {
@@ -928,7 +969,7 @@ public class PluginManager {
 		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
 		addOfficialPlugin("XMLSpider", false, 42, true, new FreenetURI("CHK@TiDE5Wd4sT02iiLir5f4j9ZHD~1E8VQdYJ5hkqWflR4,lv3R-WyanYoqxCeqDSFE3nYTRSl3QMCKGOGv615DWBY,AAIC--8/XMLSpider.jar"));
 		addOfficialPlugin("Freereader", false, 2, true, new FreenetURI("CHK@ijfUy3ptA-UTk~vBpnxl92AVgLtH34FD46CJXNeJk5Q,p8ZtjT0Fg0YmA2LDt3kyxIagCQ6-KtsfwDyAVoOhQKE,AAIC--8/Freereader.jar"));
-		addOfficialPlugin("Library", false, 2, true, new FreenetURI("CHK@-Wo9oN3CjrXSkyE7qgP~ssVNmhzynU90tCw7D-EocQE,8ffeywEfj0fvlYlfIz1DuHiRvk5EagEwJrBiAMRCLH4,AAIC--8/Library.jar"));
+		addOfficialPlugin("Library", false, 7, true, new FreenetURI("CHK@c2J-92JqdznhTP2ZLz-Rhi8ZUhG9tsZzxthSsqJq~CM,stzV0o2kYcktA1vc3PIQ3F~pdPupAqzyyA8eLlqJHiE,AAIC--8/Library.jar"));
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
@@ -979,6 +1020,13 @@ public class PluginManager {
 	 * must not be taken in any other circumstance. */
 	private final Object pluginLoadSyncObject = new Object();
 
+	public File getPluginFilename(String pluginName) {
+		File pluginDirectory = new File(node.getNodeDir(), "plugins");
+		if((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs()))
+			return null;
+		return new File(pluginDirectory, pluginName + ".jar");
+	}
+	
 	/**
 	 * Tries to load a plugin from the given name. If the name only contains the
 	 * name of a plugin it is loaded from the plugin directory, if found,
@@ -1007,10 +1055,20 @@ public class PluginManager {
 
 		/* get plugin filename. */
 		String filename = pdl.getPluginName(name);
-		File pluginFile = new File(pluginDirectory, filename);
+		boolean pluginIsLocal = pdl instanceof PluginDownLoaderFile;
+		File pluginFile = new File(pluginDirectory, filename + "-" + System.currentTimeMillis());
 
-		if(pdl instanceof PluginDownLoaderFile) {
-			pluginFile.delete();
+		/* check for previous instances and delete them. */
+		File[] filesInPluginDirectory = getPreviousInstances(pluginDirectory, filename);
+		boolean first = true;
+		for (File cachedFile : filesInPluginDirectory) {
+			if (first && !pluginIsLocal) {
+				first = false;
+				pluginFile = new File(pluginDirectory, cachedFile.getName());
+				continue;
+			}
+			first = false;
+			cachedFile.delete();
 		}
 
 		boolean downloaded = false;
@@ -1257,6 +1315,45 @@ public class PluginManager {
 		return null;
 	}
 
+	/**
+	 * This returns all existing instances of cached JAR files that start with
+	 * the given filename followed by a dash (“-”), sorted numerically by the
+	 * appendix, largest (i.e. newest) first.
+	 *
+	 * @param pluginDirectory
+	 *            The plugin cache directory
+	 * @param filename
+	 *            The name of the JAR file
+	 * @return All cached instances
+	 */
+	private File[] getPreviousInstances(File pluginDirectory, final String filename) {
+		File[] cachedFiles = pluginDirectory.listFiles(new FileFilter() {
+
+			public boolean accept(File pathname) {
+				return pathname.isFile() && pathname.getName().startsWith(filename);
+			}
+		});
+		Arrays.sort(cachedFiles, new Comparator<File>() {
+
+			public int compare(File file1, File file2) {
+				return (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, extractTimestamp(file2.getName()) - extractTimestamp(file1.getName())));
+			}
+
+			private long extractTimestamp(String filename) {
+				int lastIndexOfDash = filename.lastIndexOf(".jar-");
+				if (lastIndexOfDash == -1) {
+					return 0;
+				}
+				try {
+					return Long.valueOf(filename.substring(lastIndexOfDash + 5));
+				} catch (NumberFormatException nfe1) {
+					return 0;
+				}
+			}
+		});
+		return cachedFiles;
+	}
+
 	private String getFileDigest(File file, String digest) throws PluginNotFoundException {
 		final int BUFFERSIZE = 4096;
 		MessageDigest hash = null;
@@ -1410,7 +1507,7 @@ public class PluginManager {
 		
 		public HTMLNode toLocalisedHTML() {
 			if(pluginProgress == PROGRESS_STATE.DOWNLOADING && total > 0) {
-				return RequestElement.createProgressCell(false, true, ClientPut.COMPRESS_STATE.WORKING, current, failed, fatallyFailed, minSuccessful, total, finalisedTotal, false);
+				return QueueToadlet.createProgressCell(false, true, ClientPut.COMPRESS_STATE.WORKING, current, failed, fatallyFailed, minSuccessful, total, finalisedTotal, false);
 			} else if(pluginProgress == PROGRESS_STATE.DOWNLOADING)
 				return new HTMLNode("td", NodeL10n.getBase().getString("PproxyToadlet.startingPluginStatus.downloading"));
 			else if(pluginProgress == PROGRESS_STATE.STARTING)
@@ -1494,5 +1591,17 @@ public class PluginManager {
 
 	public boolean loadOfficialPluginsFromWeb() {
 		return alwaysLoadOfficialPluginsFromCentralServer;
+	}
+
+	public void unregisterPlugin(PluginInfoWrapper wrapper, FredPlugin plug, boolean reloading) {
+		unregisterPluginToadlet(wrapper);
+		if(wrapper.isIPDetectorPlugin())
+			node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
+		if(wrapper.isPortForwardPlugin())
+			node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
+		if(wrapper.isBandwidthIndicator())
+			node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
+		if(!reloading)
+			node.nodeUpdater.stopPluginUpdater(wrapper.getFilename());
 	}
 }

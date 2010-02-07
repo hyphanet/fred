@@ -353,115 +353,108 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-		try{
-			Logger.minor(this, "Succeeded: "+identifier);
-			Bucket data = result.asBucket();
-			if(persistenceType == PERSIST_FOREVER) {
-				if(data != null)
-					container.activate(data, 5);
-				if(returnBucket != null)
-					container.activate(returnBucket, 5);
-				container.activate(client, 1);
-				if(tempFile != null)
-					container.activate(tempFile, 5);
-				if(targetFile != null)
-					container.activate(targetFile, 5);
-			}
-			if(returnBucket != data && !binaryBlob) {
-				boolean failed = true;
-				synchronized(this) {
-					if(finished) {
-						Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
-						data.free();
-						if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
-						return; // Already failed - bucket error maybe??
-					}
-					if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
-						// Lost bucket for some reason e.g. bucket error (caused by IOException) on previous try??
-						// Recover...
-						returnBucket = data;
-						failed = false;
-					}
-				}
-				if(failed && persistenceType == PERSIST_FOREVER) {
-					if(container.ext().getID(returnBucket) == container.ext().getID(data)) {
-						Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
-						// Succeed anyway, hope that the returned bucket is consistent...
-						returnBucket = data;
-						failed = false;
-					}
-				}
-				if(failed) {
-					Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
-					// Caller guarantees that data == returnBucket
-					onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
-					return;
-				}
-			}
-			boolean dontFree = false;
-			// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
-			AllDataMessage adm = null;
+		Logger.minor(this, "Succeeded: "+identifier);
+		Bucket data = result.asBucket();
+		if(persistenceType == PERSIST_FOREVER) {
+			if(data != null)
+				container.activate(data, 5);
+			if(returnBucket != null)
+				container.activate(returnBucket, 5);
+			container.activate(client, 1);
+			if(tempFile != null)
+				container.activate(tempFile, 5);
+			if(targetFile != null)
+				container.activate(targetFile, 5);
+		}
+		if(returnBucket != data && !binaryBlob) {
+			boolean failed = true;
 			synchronized(this) {
-				if(succeeded) {
-					Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
-					return; // We might be called twice; ignore it if so.
+				if(finished) {
+					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
+					data.free();
+					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
+					return; // Already failed - bucket error maybe??
 				}
-				started = true;
-				if(!binaryBlob)
-					this.foundDataMimeType = result.getMimeType();
-				else
-					this.foundDataMimeType = BinaryBlob.MIME_TYPE;
-	
-				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-					// Send all the data at once
-					// FIXME there should be other options
-					// FIXME: CompletionTime is set on finish() : we need to give it current time here
-					// but it means we won't always return the same value to clients... Does it matter ?
-					adm = new AllDataMessage(returnBucket, identifier, global, startupTime, System.currentTimeMillis(), this.foundDataMimeType);
-					if(persistenceType == PERSIST_CONNECTION)
-						adm.setFreeOnSent();
-					dontFree = true;
-					/* 
-					 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
-					// Do nothing
-					 */
-				} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-					// Write to temp file, then rename over filename
-					if(!FileUtil.renameTo(tempFile, targetFile)) {
-						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
-						// Don't delete temp file, user might want it.
-					}
-					returnBucket = new FileBucket(targetFile, false, true, false, false, false);
+				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
+					// Lost bucket for some reason e.g. bucket error (caused by IOException) on previous try??
+					// Recover...
+					returnBucket = data;
+					failed = false;
 				}
-				if(persistenceType == PERSIST_FOREVER && progressPending != null) {
-					container.activate(progressPending, 1);
-					progressPending.removeFrom(container);
+			}
+			if(failed && persistenceType == PERSIST_FOREVER) {
+				if(container.ext().getID(returnBucket) == container.ext().getID(data)) {
+					Logger.error(this, "DB4O BUG DETECTED WITHOUT ARRAY HANDLING! EVIL HORRIBLE BUG! UID(returnBucket)="+container.ext().getID(returnBucket)+" for "+returnBucket+" active="+container.ext().isActive(returnBucket)+" stored = "+container.ext().isStored(returnBucket)+" but UID(data)="+container.ext().getID(data)+" for "+data+" active = "+container.ext().isActive(data)+" stored = "+container.ext().isStored(data));
+					// Succeed anyway, hope that the returned bucket is consistent...
+					returnBucket = data;
+					failed = false;
 				}
-				progressPending = null;
-				this.foundDataLength = returnBucket.size();
-				this.succeeded = true;
-				finished = true;
 			}
-			trySendDataFoundOrGetFailed(null, container);
-	
-			if(adm != null)
-				trySendAllDataMessage(adm, null, container);
-			if(!dontFree) {
-				data.free();
-			}
-			if(persistenceType == PERSIST_FOREVER) {
-				returnBucket.storeTo(container);
-				container.store(this);
-			}
-			finish(container);
-			if(client != null)
-				client.notifySuccess(this, container);
-		}finally{
-			//Notify the whiteboard, but only if it is persisted longer than the connection
-			if(persistenceType!=PERSIST_CONNECTION){
-				client.getWhiteboard().event(getIdentifier(), this);
+			if(failed) {
+				Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
+				// Caller guarantees that data == returnBucket
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
+				return;
 			}
 		}
+		boolean dontFree = false;
+		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
+		AllDataMessage adm = null;
+		synchronized(this) {
+			if(succeeded) {
+				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+ ')');
+				return; // We might be called twice; ignore it if so.
+			}
+			started = true;
+			if(!binaryBlob)
+				this.foundDataMimeType = result.getMimeType();
+			else
+				this.foundDataMimeType = BinaryBlob.MIME_TYPE;
+
+			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+				// Send all the data at once
+				// FIXME there should be other options
+				// FIXME: CompletionTime is set on finish() : we need to give it current time here
+				// but it means we won't always return the same value to clients... Does it matter ?
+				adm = new AllDataMessage(returnBucket, identifier, global, startupTime, System.currentTimeMillis(), this.foundDataMimeType);
+				if(persistenceType == PERSIST_CONNECTION)
+					adm.setFreeOnSent();
+				dontFree = true;
+				/* 
+				 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+				// Do nothing
+				 */
+			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+				// Write to temp file, then rename over filename
+				if(!FileUtil.renameTo(tempFile, targetFile)) {
+					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier, global);
+					// Don't delete temp file, user might want it.
+				}
+				returnBucket = new FileBucket(targetFile, false, true, false, false, false);
+			}
+			if(persistenceType == PERSIST_FOREVER && progressPending != null) {
+				container.activate(progressPending, 1);
+				progressPending.removeFrom(container);
+			}
+			progressPending = null;
+			this.foundDataLength = returnBucket.size();
+			this.succeeded = true;
+			finished = true;
+		}
+		trySendDataFoundOrGetFailed(null, container);
+
+		if(adm != null)
+			trySendAllDataMessage(adm, null, container);
+		if(!dontFree) {
+			data.free();
+		}
+		if(persistenceType == PERSIST_FOREVER) {
+			returnBucket.storeTo(container);
+			container.store(this);
+		}
+		finish(container);
+		if(client != null)
+			client.notifySuccess(this, container);
 	}
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler, ObjectContainer container) {
@@ -585,34 +578,27 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-		try{
-			if(finished) return;
-			synchronized(this) {
-				succeeded = false;
-				getFailedMessage = new GetFailedMessage(e, identifier, global);
-				finished = true;
-				started = true;
-			}
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Caught "+e, e);
-			trySendDataFoundOrGetFailed(null, container);
-			if(persistenceType == PERSIST_FOREVER) {
-				container.activate(client, 1);
-			}
-			// We do not want the data to be removed on failure, because the request
-			// may be restarted, and the bucket persists on the getter, even if we get rid of it here.
-			//freeData(container);
-			finish(container);
-			if(client != null)
-				client.notifyFailure(this, container);
-			if(persistenceType == PERSIST_FOREVER)
-				container.store(this);
-		}finally{
-			//Notify the whiteboard, but only if it is persisted longer than the connection
-			if(persistenceType!=PERSIST_CONNECTION){
-				client.getWhiteboard().event(getIdentifier(), this);
-			}
+		if(finished) return;
+		synchronized(this) {
+			succeeded = false;
+			getFailedMessage = new GetFailedMessage(e, identifier, global);
+			finished = true;
+			started = true;
 		}
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Caught "+e, e);
+		trySendDataFoundOrGetFailed(null, container);
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(client, 1);
+		}
+		// We do not want the data to be removed on failure, because the request
+		// may be restarted, and the bucket persists on the getter, even if we get rid of it here.
+		//freeData(container);
+		finish(container);
+		if(client != null)
+			client.notifyFailure(this, container);
+		if(persistenceType == PERSIST_FOREVER)
+			container.store(this);
 	}
 
 	@Override
@@ -670,43 +656,37 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
-		try{
-			// Don't need to lock, verbosity is final and finished is never unset.
-			if(finished) return;
-			final FCPMessage progress;
-			if(ce instanceof SplitfileProgressEvent) {
-				if(!((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS))
-					return;
-				progress =
-					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
-			} else if(ce instanceof SendingToNetworkEvent) {
-				if(!((verbosity & VERBOSITY_SENT_TO_NETWORK) == VERBOSITY_SENT_TO_NETWORK))
-					return;
-				progress = new SendingToNetworkMessage(identifier, global);
+		// Don't need to lock, verbosity is final and finished is never unset.
+		if(finished) return;
+		final FCPMessage progress;
+		if(ce instanceof SplitfileProgressEvent) {
+			if(!((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS))
+				return;
+			lastActivity = System.currentTimeMillis();
+			progress =
+				new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
+		} else if(ce instanceof SendingToNetworkEvent) {
+			if(!((verbosity & VERBOSITY_SENT_TO_NETWORK) == VERBOSITY_SENT_TO_NETWORK))
+				return;
+			progress = new SendingToNetworkMessage(identifier, global);
+		}
+		else return; // Don't know what to do with event
+		// container may be null...
+		if(persistenceType == PERSIST_FOREVER && container == null) {
+			try {
+				context.jobRunner.queue(new DBJob() {
+
+					public boolean run(ObjectContainer container, ClientContext context) {
+						trySendProgress(progress, null, container);
+						return false;
+					}
+					
+				}, NativeThread.HIGH_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Not much we can do
 			}
-			else return; // Don't know what to do with event
-			// container may be null...
-			if(persistenceType == PERSIST_FOREVER && container == null) {
-				try {
-					context.jobRunner.queue(new DBJob() {
-	
-						public boolean run(ObjectContainer container, ClientContext context) {
-							trySendProgress(progress, null, container);
-							return false;
-						}
-						
-					}, NativeThread.HIGH_PRIORITY, false);
-				} catch (DatabaseDisabledException e) {
-					// Not much we can do
-				}
-			} else {
-				trySendProgress(progress, null, container);
-			}
-		}finally{
-			//Notify the whiteboard, but only if it is persisted longer than the connection
-			if(persistenceType!=PERSIST_CONNECTION){
-				client.getWhiteboard().event(getIdentifier(), this);
-			}
+		} else {
+			trySendProgress(progress, null, container);
 		}
 	}
 
@@ -759,6 +739,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fs.put("StartupTime", startupTime);
 		if(finished)
 			fs.put("CompletionTime", completionTime);
+		fs.put("LastActivity", lastActivity);
 
 		return fs;
 	}
@@ -1000,9 +981,5 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 	public void onRemoveEventProducer(ObjectContainer container) {
 		// Do nothing, we called the removeFrom().
-	}
-	
-	public FetchContext getFetchContext(){
-		return fctx;
 	}
 }

@@ -1,6 +1,5 @@
 package freenet.clients.http;
 
-import freenet.node.SecurityLevels;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -10,12 +9,10 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.clients.http.filter.PushingTagReplacerCallback;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
+import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
+import freenet.node.SecurityLevels;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -171,7 +168,7 @@ public final class PageMaker {
 		}
 	}
 
-	public void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin) {
+	public synchronized void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin) {
 		SubMenu menu = new SubMenu(link, name, title, plugin);
 		subMenus.put(name, menu);
 		menuList.add(menu);
@@ -181,14 +178,14 @@ public final class PageMaker {
 	 * Add a navigation category to the menu at a given offset.
 	 * @param menuOffset The position of the link in FProxy's menu. 0 = left.
 	 */
-	public void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin, int menuOffset) {
+	public synchronized void addNavigationCategory(String link, String name, String title, FredPluginL10n plugin, int menuOffset) {
 		SubMenu menu = new SubMenu(link, name, title, plugin);
 		subMenus.put(name, menu);
 		menuList.add(menuOffset, menu);
 	}
 	
 
-	public void removeNavigationCategory(String name) {
+	public synchronized void removeNavigationCategory(String name) {
 		SubMenu menu = subMenus.remove(name);
 		if (menu == null) {
 			Logger.error(this, "can't remove navigation category, name="+name);
@@ -197,20 +194,20 @@ public final class PageMaker {
 		menuList.remove(menu);
 	}
 	
-	public void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+	public synchronized void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
 		SubMenu menu = subMenus.get(menutext);
 		menu.addNavigationLink(path, name, title, fullOnly, cb);
 	}
 	
 	/* FIXME: Implement a proper way for chosing what the menu looks like upon handleHTTPGet/Post */
 	@Deprecated
-	public void removeNavigationLink(String menutext, String name) {
+	public synchronized void removeNavigationLink(String menutext, String name) {
 		SubMenu menu = subMenus.get(menutext);
 		menu.removeNavigationLink(name);
 	}
 	
 	@Deprecated
-	public void removeAllNavigationLinks() {
+	public synchronized void removeAllNavigationLinks() {
 		for(SubMenu menu : subMenus.values())
 			menu.removeAllNavigationLinks();
 	}
@@ -267,12 +264,13 @@ public final class PageMaker {
 
 		final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
-			if(node != null && node.clientCore != null) {
-				if(node.clientCore.alerts.getAlerts().length > 0) {
-					statusBarDiv.addChild(new AlertElement(true, ctx)).addAttribute("id", "statusbar-alerts");
-					statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-				}
-			}
+		 if (node != null && node.clientCore != null) {
+			 final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
+			 if (alerts != null) {
+				 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
+				 statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+			 }
+		 }
 	
 
 		statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
@@ -308,19 +306,48 @@ public final class PageMaker {
 			statusBarDiv.addChild("div", "class", "separator", "\u00a0");
 
 			final int connectedPeers = node.peers.countConnectedPeers();
-			final HTMLNode peers = statusBarDiv.addChild("div", "id", "statusbar-peers", connectedPeers + " Peers");
-
-			if (connectedPeers == 0) {
-				peers.addAttribute("class", "no-peers");
-			} else if (connectedPeers < 4) {
-				peers.addAttribute("class", "very-few-peers");
-			} else if (connectedPeers < 7) {
-				peers.addAttribute("class", "few-peers");
-			} else if (connectedPeers < 10) {
-				peers.addAttribute("class", "avg-peers");
-			} else {
-				peers.addAttribute("class", "lots-of-peers");
+			int darknetTotal = 0;
+			for(DarknetPeerNode n : node.peers.getDarknetPeers()) {
+				if(n == null) continue;
+				if(n.isDisabled()) continue;
+				darknetTotal++;
 			}
+			final int connectedDarknetPeers = node.peers.countConnectedDarknetPeers();
+			final int totalPeers = (node.getOpennet() == null) ? (darknetTotal > 0 ? darknetTotal : Integer.MAX_VALUE) : node.getOpennet().getNumberOfConnectedPeersToAimIncludingDarknet();
+			final double connectedRatio = ((double)connectedPeers) / (double)totalPeers;
+			final String additionnalClass;
+
+			// If we use Opennet, we color the bar by the ratio of connected nodes
+			if(connectedPeers > connectedDarknetPeers) {
+				if (connectedRatio < 0.3D || connectedPeers < 3) {
+					additionnalClass = "very-few-peers";
+				} else if (connectedRatio < 0.5D) {
+					additionnalClass = "few-peers";
+				} else if (connectedRatio < 0.75D) {
+					additionnalClass = "avg-peers";
+				} else {
+					additionnalClass = "full-peers";
+				}
+			} else {
+				// If we are darknet only, we color by absolute connected peers
+				if (connectedDarknetPeers < 3) {
+					additionnalClass = "very-few-peers";
+				} else if (connectedDarknetPeers < 5) {
+					additionnalClass = "few-peers";
+				} else if (connectedDarknetPeers < 10) {
+					additionnalClass = "avg-peers";
+				} else {
+					additionnalClass = "full-peers";
+				}
+			}
+
+			HTMLNode progressBar = statusBarDiv.addChild("div", "class", "progressbar");
+			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done progressbar-peers " + additionnalClass, "width: " +
+					Math.floor(100*connectedRatio) + "%;" });
+
+			progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", NodeL10n.getBase().getString("StatusBar.connectedPeers", new String[]{"X", "Y"},
+					new String[]{Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.countConnectedOpennetPeers())}) },
+					Integer.toString(connectedPeers) + ((totalPeers != Integer.MAX_VALUE) ? " / " + Integer.toString(totalPeers) : ""));
 		}
 
 		topBarDiv.addChild("h1", title);
@@ -328,6 +355,7 @@ public final class PageMaker {
 			SubMenu selected = null;
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
+			synchronized (this) {
 			for (SubMenu menu : menuList) {
 				HTMLNode subnavlist = new HTMLNode("ul");
 				boolean isSelected = false;
@@ -346,8 +374,22 @@ public final class PageMaker {
 						sublistItem = subnavlist.addChild("li");
 					}
 					if(menu.plugin != null) {
-						if(navigationTitle != null) navigationTitle = menu.plugin.getString(navigationTitle);
-						if(navigationLink != null) navigationLink = menu.plugin.getString(navigationLink);
+						if(navigationTitle != null) {
+							String newNavigationTitle = menu.plugin.getString(navigationTitle);
+							if(newNavigationTitle == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+							} else {
+								navigationTitle = newNavigationTitle;
+							}
+						}
+						if(navigationLink != null) {
+							String newNavigationLink = menu.plugin.getString(navigationLink);
+							if(newNavigationLink == null) {
+								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+							} else {
+								navigationLink = newNavigationLink;
+							}
+						}
 					} else {
 						if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
 						if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);
@@ -373,15 +415,25 @@ public final class PageMaker {
 						menuItemTitle = NodeL10n.getBase().getString(menuItemTitle);
 						text = NodeL10n.getBase().getString(text);
 					} else {
-						menuItemTitle = menu.plugin.getString(menuItemTitle);
-						text = menu.plugin.getString(text);
+						String newTitle = menu.plugin.getString(menuItemTitle);
+						if(newTitle == null) {
+							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+						} else {
+							menuItemTitle = newTitle;
+						}
+						String newText = menu.plugin.getString(text);
+						if(newText == null) {
+							Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+						} else {
+							text = newText;
+						}
 					}
-					
+
 					listItem.addChild("a", new String[] { "href", "title" }, new String[] { menu.defaultNavigationLink, menuItemTitle }, text);
 					listItem.addChild(subnavlist);
 					navbarUl.addChild(listItem);
 				}
-					
+			}
 			}
 			if(selected != null) {
 				HTMLNode div = new HTMLNode("div", "id", "selected-subnavbar");
@@ -510,7 +562,7 @@ public final class PageMaker {
 	}
 	
 	/** Call this before getPageNode(), so the menus reflect the advanced mode setting. */
-	protected int parseMode(HTTPRequest req, ToadletContainer container) {
+	public int parseMode(HTTPRequest req, ToadletContainer container) {
 		int mode = container.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
 		
 		if(req.isParameterSet("mode")) {

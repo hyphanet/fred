@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.clients.http.updateableelements.LongAlertElement;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.useralerts.UserAlertManager;
@@ -32,7 +29,7 @@ public class ChatForumsToadlet extends Toadlet implements LinkEnabledCallback {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(new LongAlertElement(ctx,true));
+		contentNode.addChild(alerts.createSummary());
 		
 		HTMLNode contentBox = ctx.getPageMaker().getInfobox("infobox-information", l10n("title"), contentNode, "chat-list", true);
 		

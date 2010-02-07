@@ -11,8 +11,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.clients.http.updateableelements.LongAlertElement;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.NodeClientCore;
@@ -103,7 +101,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())
-				contentNode.addChild(new LongAlertElement(toadletContext,true));
+				contentNode.addChild(core.alerts.createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));
@@ -152,8 +150,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 				if (currentFile.isDirectory()) {
 					if (currentFile.canRead()) {
 						HTMLNode cellNode = fileRow.addChild("td");
-						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm"); 
+						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm");
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
+						formNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "compress" }, l10n("compress"));
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
 						if(furi != null)
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toASCIIString() });
@@ -167,8 +166,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 				} else {
 					if (currentFile.canRead()) {
 						HTMLNode cellNode = fileRow.addChild("td");
-						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm"); 
+						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm");
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
+						formNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "compress" }, l10n("compress"));
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
 						if(furi != null)
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toASCIIString() });
@@ -186,7 +186,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			if(toadletContext.isAllowedFullAccess())
-				contentNode.addChild(new LongAlertElement(toadletContext,true));
+				contentNode.addChild(core.alerts.createSummary());
 			
 			HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 			infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));

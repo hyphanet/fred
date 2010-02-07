@@ -23,7 +23,12 @@ public class IPAddressDetector implements Runnable {
 	//private String preferedAddressString = null;
 	private final int interval;
 	private final NodeIPDetector detector;
-	public IPAddressDetector(int interval, NodeIPDetector detector) {
+        /**
+         * 
+         * @param interval
+         * @param detector
+         */
+        public IPAddressDetector(int interval, NodeIPDetector detector) {
 		this.interval = interval;
 		this.detector = detector;
 	}
@@ -55,7 +60,8 @@ public class IPAddressDetector implements Runnable {
 
 	/**
 	 * Get the IP address
-	 * @return Detected ip address
+         * @param recheckTime
+         * @return Detected ip address
 	 */
 	public InetAddress[] getAddress(long recheckTime) {
 		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime))
@@ -67,7 +73,6 @@ public class IPAddressDetector implements Runnable {
 
 	/**
 	 * Execute a checkpoint - detect our internet IP address and log it
-	 * @param preferedAddress An address that for some reason is preferred above others. Might be null
 	 */
 	protected synchronized void checkpoint() {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
@@ -128,7 +133,11 @@ public class IPAddressDetector implements Runnable {
 		}
 	}
 
-	protected InetAddress oldDetect() {
+        /**
+         *
+         * @return
+         */
+        protected InetAddress oldDetect() {
 		boolean shouldLog = Logger.shouldLog(Logger.DEBUG, this);
 		if (shouldLog)
 			Logger.debug(
@@ -221,7 +230,10 @@ public class IPAddressDetector implements Runnable {
 		}
 	}
 
-	public void clearCached() {
+        /**
+         *
+         */
+        public void clearCached() {
 		lastAddressList = null;
 		lastDetectedTime = -1;
 	}

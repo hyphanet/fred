@@ -10,9 +10,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.clients.http.updateableelements.LongAlertElement;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.MasterKeysFileTooBigException;
 import freenet.node.MasterKeysFileTooShortException;
@@ -502,7 +499,7 @@ public class SecurityLevelsToadlet extends Toadlet {
 		HTMLNode pageNode = page.outer;
 		HTMLNode contentNode = page.content;
 		
-		contentNode.addChild(new LongAlertElement(ctx,true));
+		contentNode.addChild(core.alerts.createSummary());
 		
 		drawSecurityLevelsPage(contentNode, ctx);
 		

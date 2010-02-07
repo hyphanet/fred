@@ -34,7 +34,9 @@ public class DismissAlertToadlet extends Toadlet {
 			Logger.minor(this, "Dismissing alert with anchor:" + anchor);
 		}
 		// Dismiss the alert
-		boolean success = ((SimpleToadletServer) ctx.getContainer()).getCore().alerts.dismissByAnchor(anchor);
+		//boolean success = ((SimpleToadletServer) ctx.getContainer()).getCore().alerts.dismissByAnchor(anchor);
+		//TODO:it's disabled
+		boolean success = true;
 		writeHTMLReply(ctx, 200, "OK", success ? UpdaterConstants.SUCCESS : UpdaterConstants.FAILURE);
 	}
 

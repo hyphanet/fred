@@ -47,6 +47,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_SWAP_QUEUEING = false;
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
+    static final boolean FORK_ON_CACHEABLE = false;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -149,7 +150,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 }
                 
                 System.err.println();
-                System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey());
+                System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey(false));
                 System.err.println();
                 
                 byte[] data = dataString.getBytes("UTF-8");
@@ -158,7 +159,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
 					insertAttempts++;
-					randomNode.clientCore.realPut(block, false);
+					randomNode.clientCore.realPut(block, false, FORK_ON_CACHEABLE);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
 					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {

@@ -628,14 +628,10 @@ public class Node implements TimeSkewDetectorCallback {
 
 	final GetPubkey getPubKey;
 	
-	/** RequestSender's currently running, by KeyHTLPair */
-	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
 	/** RequestSender's currently transferring, by key */
 	private final HashMap<NodeCHK, RequestSender> transferringRequestSenders;
 	/** UIDs of RequestHandler's currently transferring */
 	private final HashSet<Long> transferringRequestHandlers;
-	/** CHKInsertSender's currently running, by KeyHTLPair */
-	private final HashMap<KeyHTLPair, AnyInsertSender> insertSenders;
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 	
@@ -715,6 +711,8 @@ public class Node implements TimeSkewDetectorCallback {
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
+	/** Should inserts fork when the HTL reaches cacheability? */
+	public static final boolean FORK_ON_CACHEABLE_DEFAULT = true;
 	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
@@ -1069,10 +1067,8 @@ public class Node implements TimeSkewDetectorCallback {
 			throw new Error(e3);
 		}
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
-		requestSenders = new HashMap<KeyHTLPair, RequestSender>();
 		transferringRequestSenders = new HashMap<NodeCHK, RequestSender>();
 		transferringRequestHandlers = new HashSet<Long>();
-		insertSenders = new HashMap<KeyHTLPair, AnyInsertSender>();
 		runningUIDs = new HashMap<Long,UIDTag>();
 		runningCHKGetUIDs = new HashMap<Long,RequestTag>();
 		runningLocalCHKGetUIDs = new HashMap<Long,RequestTag>();
@@ -3907,19 +3903,7 @@ public class Node implements TimeSkewDetectorCallback {
 			return null;
 		}
 		
-		synchronized(requestSenders) {
-			
-			// No request coalescing.
-			// Given that HTL can be reset (also if we had no HTL),
-			// request coalescing causes deadlocks: Request A joins request B, which then
-			// joins request A. There are various convoluted fixes, but IMHO
-			// the best solution long term is to kill the request (RecentlyFailed with 
-			// 0 timeout so it doesn't prevent future requests), and send it the data 
-			// through ULPRs if it is found.
-			
-			sender = new RequestSender(key, null, htl, uid, this, source, offersOnly, canWriteClientCache, canWriteDatastore);
-			// RequestSender adds itself to requestSenders
-		}
+		sender = new RequestSender(key, null, htl, uid, this, source, offersOnly, canWriteClientCache, canWriteDatastore);
 		sender.start();
 		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);
 		return sender;
@@ -3945,65 +3929,6 @@ public class Node implements TimeSkewDetectorCallback {
 	 * inserts that don't get cached. */
 	boolean canWriteDatastoreInsert(short htl) {
 		return htl <= (maxHTL - 3);
-	}
-
-	static class KeyHTLPair {
-		final Key key;
-		final short htl;
-		final long uid;
-		KeyHTLPair(Key key, short htl, long uid) {
-			this.key = key;
-			this.htl = htl;
-			this.uid = uid;
-		}
-		
-		@Override
-		public boolean equals(Object o) {
-			if(o instanceof KeyHTLPair) {
-				KeyHTLPair p = (KeyHTLPair) o;
-				return (p.key.equals(key) && (p.htl == htl) && (p.uid==uid));
-			} else return false;
-		}
-		
-		@Override
-		public int hashCode() {
-			return key.hashCode() ^ htl ^ (int)uid;
-		}
-		
-		@Override
-		public String toString() {
-			return key.toString()+ ':' +htl +':'+uid;
-		}
-	}
-
-	/**
-	 * Add a RequestSender to our HashMap.
-	 */
-	public void addRequestSender(Key key, short htl, RequestSender sender) {
-		synchronized(requestSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.uid);
-			if(requestSenders.containsKey(kh)) {
-				RequestSender rs = requestSenders.get(kh);
-				Logger.error(this, "addRequestSender(): KeyHTLPair '"+kh+"' already in requestSenders as "+rs+" and you want to add "+sender);
-				return;
-			}
-			requestSenders.put(kh, sender);
-		}
-	}
-
-	/**
-	 * Add a AnyInsertSender to our HashMap.
-	 */
-	public void addInsertSender(Key key, short htl, AnyInsertSender sender) {
-		synchronized(insertSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
-			if(insertSenders.containsKey(kh)) {
-				AnyInsertSender is = insertSenders.get(kh);
-				Logger.error(this, "addInsertSender(): KeyHTLPair '"+kh+"' already in insertSenders as "+is+" and you want to add "+sender);
-				return;
-			}
-			insertSenders.put(kh, sender);
-		}
 	}
 
 	/**
@@ -4295,40 +4220,6 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	/**
-	 * Remove a RequestSender from the map.
-	 */
-	public void removeRequestSender(Key key, short htl, RequestSender sender) {
-		synchronized(requestSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.uid);
-//			RequestSender rs = (RequestSender) requestSenders.remove(kh);
-//			if(rs != sender) {
-//				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+ ',' +htl+" in removeRequestSender");
-//			}
-			
-			// Since there is no request coalescing, we only remove it if it matches,
-			// and don't complain if it doesn't.
-			if(requestSenders.get(kh) == sender) {
-				requestSenders.remove(kh);
-				requestSenders.notifyAll();
-			}
-		}
-	}
-
-	/**
-	 * Remove an CHKInsertSender from the map.
-	 */
-	public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
-		synchronized(insertSenders) {
-			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
-			AnyInsertSender is = insertSenders.remove(kh);
-			if(is != sender) {
-				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+ ',' +htl+" in removeInsertSender");
-			}
-			insertSenders.notifyAll();
-		}
-	}
-
 	final boolean decrementAtMax;
 	final boolean decrementAtMin;
 	
@@ -4368,20 +4259,11 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean canWriteClientCache, boolean forkOnCacheable) {
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
-		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		CHKInsertSender is = null;
-		synchronized(insertSenders) {
-			is = (CHKInsertSender) insertSenders.get(kh);
-		}
-		if(is != null) {
-			if(logMINOR) Logger.minor(this, "Found "+is+" for "+kh);
-			return is;
-		}
-		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
+		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, canWriteClientCache, forkOnCacheable);
 		is.start();
-		if(logMINOR) Logger.minor(this, is.toString()+" for "+kh.toString());
 		// CHKInsertSender adds itself to insertSenders
 		return is;
 	}
@@ -4398,7 +4280,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * if it originated locally.
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore) {
+			boolean fromStore, boolean canWriteClientCache, boolean canWriteDatastore, boolean forkOnCacheable) {
 		NodeSSK key = block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
@@ -4406,19 +4288,9 @@ public class Node implements TimeSkewDetectorCallback {
 		
 		getPubKey.cacheKey(key.getPubKeyHash(), key.getPubKey(), false, canWriteClientCache, canWriteDatastore, false, writeLocalToDatastore);
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
-		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;
-		synchronized(insertSenders) {
-			is = (SSKInsertSender) insertSenders.get(kh);
-		}
-		if(is != null) {
-			Logger.minor(this, "Found "+is+" for "+kh);
-			return is;
-		}
-		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, canWriteDatastoreInsert(htl));
+		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, canWriteClientCache, forkOnCacheable);
 		is.start();
-		Logger.minor(this, is.toString()+" for "+kh.toString());
-		// SSKInsertSender adds itself to insertSenders
 		return is;
 	}
 	
@@ -4569,28 +4441,6 @@ public class Node implements TimeSkewDetectorCallback {
 			sb.append(peers.getStatus());
 		else
 			sb.append("No peers yet");
-		sb.append("\nInserts: ");
-		AnyInsertSender[] senders;
-		synchronized(insertSenders) {
-			senders = insertSenders.values().toArray(new AnyInsertSender[insertSenders.size()]);
-		}
-		int x = senders.length;
-		sb.append(x);
-		if((x < 5) && (x > 0)) {
-			sb.append('\n');
-			// Dump
-			Iterator<AnyInsertSender> i = insertSenders.values().iterator();
-			while(i.hasNext()) {
-				AnyInsertSender s = i.next();
-				sb.append(s.getUID());
-				sb.append(": ");
-				sb.append(s.getStatusString());
-				sb.append('\n');
-			}
-		}
-		sb.append("\nRequests: ");
-		sb.append(getNumRequestSenders());
-		sb.append("\nTransferring requests: ");
 		sb.append(getNumTransferringRequestSenders());
 		sb.append('\n');
 		return sb.toString();
@@ -4608,18 +4458,6 @@ public class Node implements TimeSkewDetectorCallback {
 		return sb.toString();
 	}
 	
-	public int getNumInsertSenders() {
-		synchronized(insertSenders) {
-			return insertSenders.size();
-		}
-	}
-	
-	public int getNumRequestSenders() {
-		synchronized(requestSenders) {
-			return requestSenders.size();
-		}
-	}
-
 	public int getNumSSKRequests() {
 		return runningSSKGetUIDs.size() + runningLocalSSKGetUIDs.size();
 	}
@@ -4697,14 +4535,10 @@ public class Node implements TimeSkewDetectorCallback {
 	 */
 	public String getFreevizOutput() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\nrequests=");
-		sb.append(getNumRequestSenders());
 		
 		sb.append("\ntransferring_requests=");
 		sb.append(getNumTransferringRequestSenders());
 		
-		sb.append("\ninserts=");
-		sb.append(getNumInsertSenders());
 		sb.append('\n');
 		
 		if (peers != null)
@@ -4759,7 +4593,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
-		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false, null);
+		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(true), false, canReadClientCache, canWriteClientCache, canWriteDatastore, false, null);
 		if(block == null) {
 			if(logMINOR)
 				Logger.minor(this, "Could not find key for "+clientSSK);
@@ -5747,7 +5581,7 @@ public class Node implements TimeSkewDetectorCallback {
 	private long completeInsertsStored;
 	private long completeInsertsOldStore;
 	private long completeInsertsTotal;
-	private long completeInsertsNotStoredWouldHaveStored;	// for DEBUGGING, should be ZERO
+	private long completeInsertsNotStoredWouldHaveStored;	// DEBUGGING: should be 0 but can be nonzero if e.g. a request originates from a backed off node; should be very low in any case; FIXME remove eventually
 	
 	/** Should we commit the block to the store rather than the cache?
 	 * 
@@ -5825,9 +5659,9 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public synchronized void drawStoreStats(HTMLNode infobox) {
 		if (completeInsertsTotal != 0) {
-			infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+((completeInsertsStored*100.0)/completeInsertsTotal)+"%)");
-			infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsOldStore*100.0)/completeInsertsTotal)+")");
-			infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsNotStoredWouldHaveStored*100.0)/completeInsertsTotal)+")");
+			infobox.addChild("p", "Stored inserts: "+completeInsertsStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsStored*1.0)/completeInsertsTotal)+")");
+			infobox.addChild("p", "Would have stored: "+completeInsertsOldStore+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsOldStore*1.0)/completeInsertsTotal)+")");
+			infobox.addChild("p", "Would have stored but wasn't stored: "+completeInsertsNotStoredWouldHaveStored+" of "+completeInsertsTotal+" ("+fix3p3pct.format((completeInsertsNotStoredWouldHaveStored*1.0)/completeInsertsTotal)+")");
 		}
 	}
 }

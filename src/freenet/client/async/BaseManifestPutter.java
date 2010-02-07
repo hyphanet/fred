@@ -88,14 +88,14 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				for (PutHandler ph : phv) {
 					HashMap<String, Object> hm = putHandlersTransformMap.get(ph);
 					perContainerPutHandlersWaitingForMetadata.get(ph.parentPutHandler).remove(ph);
-					container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
+					if(persistent) container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
 					if (ph.targetInArchive == null)
 						throw new NullPointerException();
 					Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI().setMetaString(new String[] { ph.targetInArchive }), cm);
 					hm.put(ph.itemName, m);
-					container.ext().store(hm, 2);
+					if(persistent) container.ext().store(hm, 2);
 					putHandlersTransformMap.remove(ph);
-					container.ext().store(putHandlersTransformMap, 2);
+					if(persistent) container.ext().store(putHandlersTransformMap, 2);
 					try {
 						tryStartParentContainer(ph.parentPutHandler, container, context);
 					} catch (InsertException e) {
@@ -104,7 +104,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 					}
 				}
 				putHandlersArchiveTransformMap.remove(this);
-				container.ext().store(putHandlersArchiveTransformMap, 2);
+				if(persistent) container.ext().store(putHandlersArchiveTransformMap, 2);
 			}
 			if(persistent) {
 				container.deactivate(BaseManifestPutter.this, 1);
@@ -217,7 +217,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		private ExternPutHandler(BaseManifestPutter bmp, PutHandler parent, String name, Bucket data, ClientMetadata cm2, boolean getCHKOnly2) {
 			super(bmp, parent, name, cm2, runningPutHandlers, null);
 			InsertBlock block = new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly2, true, null, null, false, null, earlyEncode);
+			this.origSFI = new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly2, true, null, null, false, null, earlyEncode, false);
 		}
 
 		@Override
@@ -329,7 +329,8 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		// final metadata
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, InsertBlock insertBlock, boolean getCHKOnly, ObjectContainer container) {
 			super(smp, parent, null, null, null, container);
-			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, false, getCHKOnly, false, null, null, true, null, earlyEncode);
+			// Treat as splitfile for purposes of determining number of reinserts.
+			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, false, getCHKOnly, false, null, null, true, null, earlyEncode, true);
 			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
 		}
 		
@@ -338,8 +339,9 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			super(smp, parent, null, null, runningPutHandlers, container);
 			Bucket b = toResolve.toBucket(bf);
 			metadata = toResolve;
+			// Treat as splitfile for purposes of determining number of reinserts.
 			InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode);
+			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true);
 			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
 		}
 		
@@ -1566,13 +1568,6 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		container.activate(ctx, 1);
 		ctx.removeFrom(container);
 		ArrayList<Metadata> metas = null;
-		if(metas != null) {
-			for(Metadata meta : metas) {
-				if(meta == baseMetadata) continue;
-				container.activate(meta, 1);
-				meta.removeFrom(container);
-			}
-		}
 		if(baseMetadata != null) {
 			container.activate(baseMetadata, 1);
 			baseMetadata.removeFrom(container);

@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Set;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.updateableelements.AlertElement;
-import freenet.clients.http.updateableelements.LongAlertElement;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -160,7 +157,7 @@ public class PproxyToadlet extends Toadlet {
 			if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				String pluginThreadName = request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH);
 				String pluginSpecification = getPluginSpecification(pm, pluginThreadName);
-				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
+				pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME, false);
 				if (request.isPartSet("purge")) {
 					pm.removeCachedCopy(pluginSpecification);
 				}
@@ -214,6 +211,21 @@ public class PproxyToadlet extends Toadlet {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
+			} else if (request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+				// Deploy the plugin update
+				final String pluginFilename = request.getPartAsString("update", MAX_PLUGIN_NAME_LENGTH);
+
+				if (!pm.isPluginLoaded(pluginFilename)) {
+					sendErrorPage(ctx, 404, l10n("pluginNotFoundUpdatingTitle"), 
+							l10n("pluginNotFoundUpdating", "name", pluginFilename));
+				} else {
+					node.nodeUpdater.deployPluginWhenReady(pluginFilename);
+
+					headers.put("Location", ".");
+					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				}
+				return;
+				
 			}else if (request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 				boolean purge = request.isPartSet("purge");
 				String pluginThreadName = request.getPartAsString("reloadconfirm", MAX_PLUGIN_NAME_LENGTH);
@@ -221,9 +233,9 @@ public class PproxyToadlet extends Toadlet {
 
 				if (fn == null) {
 					sendErrorPage(ctx, 404, l10n("pluginNotFoundReloadTitle"), 
-							NodeL10n.getBase().getString("PluginToadlet.pluginNotFoundReload"));
+							l10n("pluginNotFoundReload"));
 				} else {
-					pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME);
+					pm.killPlugin(pluginThreadName, MAX_THREADED_UNLOAD_WAIT_TIME, true);
 					if (purge) {
 						pm.removeCachedCopy(fn);
 					}
@@ -311,7 +323,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 				HTMLNode contentNode = page.content;
 
-				contentNode.addChild(new LongAlertElement(ctx,true));
+				contentNode.addChild(core.alerts.createSummary());
 
 				/* find which plugins have already been loaded. */
 				List<OfficialPluginDescription> availablePlugins = pm.findAvailablePlugins();
@@ -418,6 +430,7 @@ public class PproxyToadlet extends Toadlet {
 		} else {
 			HTMLNode pluginTable = infoboxContent.addChild("table", "class", "plugins");
 			HTMLNode headerRow = pluginTable.addChild("tr");
+			headerRow.addChild("th", l10n("pluginFilename"));
 			headerRow.addChild("th", l10n("classNameTitle"));
 			headerRow.addChild("th", l10n("versionTitle"));
 			headerRow.addChild("th", l10n("internalIDTitle"));
@@ -429,6 +442,7 @@ public class PproxyToadlet extends Toadlet {
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
+				pluginRow.addChild("td", pi.getFilename());
 				pluginRow.addChild("td", pi.getPluginClassName());
 				long ver = pi.getPluginLongVersion();
 				if(ver != -1)
@@ -539,7 +553,9 @@ public class PproxyToadlet extends Toadlet {
 
 	@Override
 	public String path() {
-		return "/plugins/";
+		return PATH;
 	}
+	
+	public static String PATH = "/plugins/";
 
 }

@@ -18,6 +18,7 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -52,7 +53,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	// Probably saving it would conflict with later changes (full persistence at
 	// ClientPutter level).
 	protected FCPMessage progressMessage;
-
+	
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
 
@@ -63,7 +64,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, String compressorDescriptor, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -72,13 +73,16 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.maxInsertRetries = maxRetries;
 		ctx.canWriteClientCache = canWriteClientCache;
 		ctx.compressorDescriptor = compressorDescriptor;
+		ctx.forkOnCacheable = forkOnCacheable;
+		ctx.extraInsertsSingleBlock = extraInsertsSingleBlock;
+		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
 			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeader, String compressorDescriptor, FCPServer server, ObjectContainer container) throws MalformedURLException {
 		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global, container);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InsertContext(server.defaultInsertContext, new SimpleEventProducer());
@@ -87,6 +91,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		ctx.maxInsertRetries = maxRetries;
 		ctx.canWriteClientCache = canWriteClientCache;
 		ctx.compressorDescriptor = compressorDescriptor;
+		ctx.forkOnCacheable = forkOnCacheable;
+		ctx.extraInsertsSingleBlock = extraInsertsSingleBlock;
+		ctx.extraInsertsSplitfileHeaderBlock = extraInsertsSplitfileHeader;
 		this.earlyEncode = earlyEncode;
 		publicURI = getPublicURI(uri);
 	}
@@ -117,6 +124,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 				putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
 		}
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
+		if(fs.get("ForkOnCacheable") != null)
+			ctx.forkOnCacheable = fs.getBoolean("ForkOnCacheable", false);
+		else
+			ctx.forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
 	}
 
 	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
@@ -145,50 +156,36 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
-		try{
-			synchronized(this) {
-				// Including this helps with certain bugs...
-				//progressMessage = null;
-				succeeded = true;
-				finished = true;
-				if(generatedURI == null)
-					Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
-			}
-			// Could restart, and is on the putter, don't free data until we remove the putter
-			//freeData(container);
-			finish(container);
-			trySendFinalMessage(null, container);
-			if(client != null)
-				client.notifySuccess(this, container);
-		}finally{
-			//Notify the whiteboard, but only if it is persisted longer than the connection
-			if(persistenceType!=PERSIST_CONNECTION){
-				client.getWhiteboard().event(getIdentifier(), this);
-			}
+		synchronized(this) {
+			// Including this helps with certain bugs...
+			//progressMessage = null;
+			succeeded = true;
+			finished = true;
+			if(generatedURI == null)
+				Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
 		}
+		// Could restart, and is on the putter, don't free data until we remove the putter
+		//freeData(container);
+		finish(container);
+		trySendFinalMessage(null, container);
+		if(client != null)
+			client.notifySuccess(this, container);
 	}
 
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
-		try{
-			if(finished) return;
-			synchronized(this) {
-				finished = true;
-				putFailedMessage = new PutFailedMessage(e, identifier, global);
-			}
-			if(persistenceType == PERSIST_FOREVER)
-				container.store(this);
-			// Could restart, and is on the putter, don't free data until we remove the putter
-			//freeData(container);
-			finish(container);
-			trySendFinalMessage(null, container);
-			if(client != null)
-				client.notifyFailure(this, container);
-		}finally{
-			//Notify the whiteboard, but only if it is persisted longer than the connection
-			if(persistenceType!=PERSIST_CONNECTION){
-				client.getWhiteboard().event(getIdentifier(), this);
-			}
+		if(finished) return;
+		synchronized(this) {
+			finished = true;
+			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.store(this);
+		// Could restart, and is on the putter, don't free data until we remove the putter
+		//freeData(container);
+		finish(container);
+		trySendFinalMessage(null, container);
+		if(client != null)
+			client.notifyFailure(this, container);
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
@@ -263,50 +260,44 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 	}
 
 	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
-		try{
-			if(finished) return;
-			if(persistenceType == PERSIST_FOREVER && container == null) {
-				try {
-					context.jobRunner.queue(new DBJob() {
-	
-						public boolean run(ObjectContainer container, ClientContext context) {
-							container.activate(ClientPutBase.this, 1);
-							receive(ce, container, context);
-							container.deactivate(ClientPutBase.this, 1);
-							return false;
-						}
-						
-					}, NativeThread.NORM_PRIORITY, false);
-				} catch (DatabaseDisabledException e) {
-					// Impossible, not much we can do.
-				}
-				return;
+		if(finished) return;
+		if(persistenceType == PERSIST_FOREVER && container == null) {
+			try {
+				context.jobRunner.queue(new DBJob() {
+
+					public boolean run(ObjectContainer container, ClientContext context) {
+						container.activate(ClientPutBase.this, 1);
+						receive(ce, container, context);
+						container.deactivate(ClientPutBase.this, 1);
+						return false;
+					}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			} catch (DatabaseDisabledException e) {
+				// Impossible, not much we can do.
 			}
-			if(ce instanceof SplitfileProgressEvent) {
-				if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
-					SimpleProgressMessage progress = 
-						new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
-					trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, container, context);
-				}
-			} else if(ce instanceof StartedCompressionEvent) {
-				if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
-					StartedCompressionMessage msg =
-						new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
-					trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
-					onStartCompressing();
-				}
-			} else if(ce instanceof FinishedCompressionEvent) {
-				if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
-					FinishedCompressionMessage msg = 
-						new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
-					trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
-					onStopCompressing();
-				}
+			return;
+		}
+		if(ce instanceof SplitfileProgressEvent) {
+			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
+				SimpleProgressMessage progress = 
+					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
+				lastActivity = System.currentTimeMillis();
+				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, container, context);
 			}
-		}finally{
-			//Notify the whiteboard, but only if it is persisted longer than the connection
-			if(persistenceType!=PERSIST_CONNECTION){
-				client.getWhiteboard().event(getIdentifier(), this);
+		} else if(ce instanceof StartedCompressionEvent) {
+			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
+				StartedCompressionMessage msg =
+					new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+				onStartCompressing();
+			}
+		} else if(ce instanceof FinishedCompressionEvent) {
+			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
+				FinishedCompressionMessage msg = 
+					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
+				onStopCompressing();
 			}
 		}
 	}
@@ -483,7 +474,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		fs.put("StartupTime", startupTime);
 		if(finished)
 			fs.put("CompletionTime", completionTime);
-		
+		fs.put("LastActivity", lastActivity);
+
 		return fs;
 	}
 
@@ -605,10 +597,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
-	}
-	
-	public InsertContext getInsertContext(){
-		return ctx;
 	}
 	
 }

@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.HighLevelSimpleClientImpl;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -72,6 +73,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean binaryBlob;
 	final boolean canWriteClientCache;
 	final String compressorDescriptor;
+	final boolean forkOnCacheable;
+	final int extraInsertsSingleBlock;
+	final int extraInsertsSplitfileHeaderBlock;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
@@ -226,6 +230,12 @@ public class ClientPutMessage extends DataCarryingMessage {
 				codecs = null;
 		}
 		compressorDescriptor = codecs;
+		if(fs.get("ForkOnCacheable") != null)
+			forkOnCacheable = fs.getBoolean("ForkOnCacheable", false);
+		else
+			forkOnCacheable = Node.FORK_ON_CACHEABLE_DEFAULT;
+		extraInsertsSingleBlock = fs.getInt("ExtraInsertsSingleBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK);
+		extraInsertsSplitfileHeaderBlock = fs.getInt("ExtraInsertsSplitfileHeaderBlock", HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER);
 	}
 
 	@Override

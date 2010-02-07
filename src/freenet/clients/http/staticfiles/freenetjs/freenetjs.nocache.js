@@ -2,8 +2,8 @@ function freenetjs(){
   var $wnd_0 = window, $doc_0 = document, $stats = $wnd_0.__gwtStatsEvent?function(a){
     return $wnd_0.__gwtStatsEvent(a);
   }
-  :null, scriptsDone, loadDone, bodyDone, base = '', metaProps = {}, values = [], providers = [], answers = [], onLoadErrorFunc, propertyErrorFunc;
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'begin'});
+  :null, $sessionId_0 = $wnd_0.__gwtStatsSessionId?$wnd_0.__gwtStatsSessionId:null, scriptsDone, loadDone, bodyDone, base = '', metaProps = {}, values = [], providers = [], answers = [], onLoadErrorFunc, propertyErrorFunc;
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'bootstrap', millis:(new Date).getTime(), type:'begin'});
   if (!$wnd_0.__gwt_stylesLoaded) {
     $wnd_0.__gwt_stylesLoaded = {};
   }
@@ -13,7 +13,8 @@ function freenetjs(){
   function isHostedMode(){
     var result = false;
     try {
-      result = $wnd_0.external && ($wnd_0.external.gwtOnLoad && $wnd_0.location.search.indexOf('gwt.hybrid') == -1);
+      var query = $wnd_0.location.search;
+      return (query.indexOf('gwt.codesvr=') != -1 || (query.indexOf('gwt.hosted=') != -1 || $wnd_0.external && $wnd_0.external.gwtOnLoad)) && query.indexOf('gwt.hybrid') == -1;
     }
      catch (e) {
     }
@@ -36,7 +37,7 @@ function freenetjs(){
       }
       freenetjs = null;
       frameWnd.gwtOnLoad(onLoadErrorFunc, 'freenetjs', base);
-      $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date()).getTime(), type:'end'});
+      $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date).getTime(), type:'end'});
     }
   }
 
@@ -165,8 +166,8 @@ function freenetjs(){
       iframe.style.cssText = 'position:absolute;width:0;height:0;border:none';
       iframe.tabIndex = -1;
       $doc_0.body.appendChild(iframe);
-      $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date()).getTime(), type:'moduleRequested'});
-      iframe.contentWindow.location.replace(base + strongName);
+      $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'moduleStartup', millis:(new Date).getTime(), type:'moduleRequested'});
+      iframe.contentWindow.location.replace(base + initialHtml);
     }
   }
 
@@ -217,30 +218,33 @@ function freenetjs(){
   ;
   freenetjs.onInjectionDone = function(){
     scriptsDone = true;
-    $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date()).getTime(), type:'end'});
+    $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date).getTime(), type:'end'});
     maybeStartModule();
   }
   ;
   computeScriptBase();
   var strongName;
+  var initialHtml;
   if (isHostedMode()) {
-    if ($wnd_0.external.initModule && $wnd_0.external.initModule('freenetjs')) {
+    if ($wnd_0.external && ($wnd_0.external.initModule && $wnd_0.external.initModule('freenetjs'))) {
       $wnd_0.location.reload();
       return;
     }
-    strongName = 'hosted.html?freenetjs';
+    initialHtml = 'hosted.html?freenetjs';
+    strongName = '';
   }
   processMetas();
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'selectingPermutation'});
-  if (!strongName) {
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'bootstrap', millis:(new Date).getTime(), type:'selectingPermutation'});
+  if (!isHostedMode()) {
     try {
-      unflattenKeylistIntoAnswers(['ie6'], '4EA296F8638794129D0EFFF4234E98BD.cache.html');
-      unflattenKeylistIntoAnswers(['ie8'], '2AECAB36D5EADB468C38A98BEC591C80.cache.html');
-      unflattenKeylistIntoAnswers(['gecko1_8'], 'CCA5EA6EDEF8314385F7C09CF5E316BF.cache.html');
-      unflattenKeylistIntoAnswers(['opera'], '514A166D853C38C186A964D7E275A74C.cache.html');
-      unflattenKeylistIntoAnswers(['safari'], '9BA8BA5D9145AF37F14C55536BA457E0.cache.html');
-      unflattenKeylistIntoAnswers(['gecko'], '0AA4E4EE36A5FD73462A6ECABEDFC2E1.cache.html');
+      unflattenKeylistIntoAnswers(['opera'], '29B0F92DF10550FCA1B8BC4150AB0536');
+      unflattenKeylistIntoAnswers(['safari'], '453AC050A4A15926CCB4A752C8DCE482');
+      unflattenKeylistIntoAnswers(['gecko'], '481B5EDCD43A88EFE1ADCB86658CD469');
+      unflattenKeylistIntoAnswers(['ie8'], '989FF8DD7864BE8DC6E0337E68FD0368');
+      unflattenKeylistIntoAnswers(['gecko1_8'], 'C3A49A825E74BC7438F6F16B6BD9A606');
+      unflattenKeylistIntoAnswers(['ie6'], 'CD8BC1A987DE14187225A149988289AB');
       strongName = answers[computePropValue('user.agent')];
+      initialHtml = strongName + '.cache.html';
     }
      catch (e) {
       return;
@@ -274,8 +278,8 @@ function freenetjs(){
     }
   }
   , 50);
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'bootstrap', millis:(new Date()).getTime(), type:'end'});
-  $stats && $stats({moduleName:'freenetjs', subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date()).getTime(), type:'begin'});
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'bootstrap', millis:(new Date).getTime(), type:'end'});
+  $stats && $stats({moduleName:'freenetjs', sessionId:$sessionId_0, subSystem:'startup', evtGroup:'loadExternalRefs', millis:(new Date).getTime(), type:'begin'});
   $doc_0.write('<script defer="defer">freenetjs.onInjectionDone(\'freenetjs\')<\/script>');
 }
 

@@ -58,7 +58,7 @@ public class ClientPutDir extends ClientPutBase {
 			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.compressorDescriptor, server, container);
+				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, server, container);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.wasDiskPut = wasDiskPut;
 		
@@ -88,8 +88,8 @@ public class ClientPutDir extends ClientPutBase {
 	*	Puts a disk dir
 	 * @throws InsertException 
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
-		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, null, server, container);
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
+		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, server, container);
 		wasDiskPut = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
@@ -103,6 +103,23 @@ public class ClientPutDir extends ClientPutBase {
 			totalSize = -1;
 		}
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
+	}
+
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, HashMap<String, Object> elements, String defaultName, boolean global, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
+		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, server, container);
+		wasDiskPut = false;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.manifestElements = elements;
+		this.defaultName = defaultName;
+		makePutter();
+		if(putter != null) {
+			numberOfFiles = putter.countFiles();
+			totalSize = putter.totalSize();
+		} else {
+			numberOfFiles = -1;
+			totalSize = -1;
+		}
+		if(logMINOR) Logger.minor(this, "Putting data from custom buckets "+identifier+" : "+priorityClass);
 	}
 
 	@Override

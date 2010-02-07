@@ -188,6 +188,9 @@ public final class SessionManager {
 	 * @return Returns the session ID stored in the cookies of the HTTP headers of the given {@link ToadletContext}. Returns null if there is no session ID stored.
 	 */
 	private UUID getSessionID(ToadletContext context) {
+		if(context == null)
+			return null;
+		
 		try {
 			ReceivedCookie sessionCookie = context.getCookie(null, mCookiePath, SESSION_COOKIE_NAME);
 			

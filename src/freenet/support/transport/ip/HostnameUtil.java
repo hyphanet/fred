@@ -19,7 +19,13 @@ public class HostnameUtil {
                 });
         }
 
-	public static boolean isValidHostname(String hn, boolean allowIPAddress) {
+        /**
+         *
+         * @param hn
+         * @param allowIPAddress
+         * @return
+         */
+        public static boolean isValidHostname(String hn, boolean allowIPAddress) {
 		if(allowIPAddress) {	
 			// debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
 			AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(hn, true);
