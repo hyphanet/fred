@@ -295,7 +295,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.fatallyFailedBlock(container, context);
 		else
 			parent.failedBlock(container, context);
-		unregister(container, context);
+		unregister(container, context, getPriorityClass(container));
 		if(freeData) {
 			if(persistent) container.activate(sourceData, 1);
 			sourceData.free();
@@ -426,7 +426,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.store(this);
 		}
 		parent.completedBlock(false, container, context);
-		unregister(container, context);
+		unregister(container, context, getPriorityClass(container));
 		if(persistent)
 			container.activate(cb, 1);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
@@ -459,7 +459,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(persistent)
 				container.store(this);
 		}
-		super.unregister(container, context);
+		super.unregister(container, context, getPriorityClass(container));
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 		if(!wasActive)
 			container.deactivate(cb, 1);

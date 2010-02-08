@@ -466,8 +466,7 @@ public class DatastoreChecker implements PrioRunnable {
 		return false;
 	}
 
-	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context) {
-		short prio = request.getPriorityClass(container);
+	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context, short prio) {
 		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
 		if(!persistent) {
 			synchronized(this) {

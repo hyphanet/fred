@@ -131,7 +131,7 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(finished) return;
 			finished = true;
 		}
-		super.unregister(container, context);
+		super.unregister(container, context, prioClass);
 	}
 
 	@Override

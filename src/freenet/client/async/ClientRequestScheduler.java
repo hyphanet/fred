@@ -861,10 +861,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			Logger.error(this, "Listener not found when removing: "+getter);
 	}
 
-	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
-		schedTransient.reregisterAll(request, random, this, null, clientContext);
+	public void reregisterAll(final ClientRequester request, ObjectContainer container, short oldPrio) {
+		schedTransient.reregisterAll(request, random, this, null, clientContext, oldPrio);
 		if(schedCore != null)
-			schedCore.reregisterAll(request, random, this, container, clientContext);
+			schedCore.reregisterAll(request, random, this, container, clientContext, oldPrio);
 		starter.wakeUp();
 	}
 	

@@ -121,8 +121,8 @@ public abstract class SendableGet extends BaseSendableGet {
 		return false;
 	}
 	
-	public void unregister(ObjectContainer container, ClientContext context) {
-		super.unregister(container, context);
-		context.checker.removeRequest(this, persistent, container, context);
+	public void unregister(ObjectContainer container, ClientContext context, short oldPrio) {
+		super.unregister(container, context, oldPrio);
+		context.checker.removeRequest(this, persistent, container, context, oldPrio == -1 ? getPriorityClass(container) : oldPrio);
 	}
 }

@@ -672,7 +672,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.store(this);
 			container.deactivate(errors, 5);
 		}
-		unregister(container, context);
+		unregister(container, context, getPriorityClass(container));
 		parent.segmentFinished(this, container, context);
 
 		freeBucketsArray(container, dataBlocks);
@@ -775,7 +775,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	private void cancelInner(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Cancelling "+this);
-		super.unregister(container, context);
+		super.unregister(container, context, getPriorityClass(container));
 		if(persistent) {
 			container.store(this);
 			container.activate(parent, 1);
