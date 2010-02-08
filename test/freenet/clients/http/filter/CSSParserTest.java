@@ -818,8 +818,9 @@ public class CSSParserTest extends TestCase {
 		getCharsetTest("UTF-8");
 		getCharsetTest("UTF-16BE");
 		getCharsetTest("UTF-16LE");
-		getCharsetTest("UTF-32BE");
-		getCharsetTest("UTF-32LE");
+		// not availiable in java 1.5.0_22
+		// getCharsetTest("UTF-32BE");
+		// getCharsetTest("UTF-32LE");
 		
 		getCharsetTest("ISO-8859-1", "UTF-8");
 		getCharsetTest("ISO-8859-15", "UTF-8");
@@ -915,7 +916,8 @@ public class CSSParserTest extends TestCase {
 	public void testMaybeCharset() throws UnsafeContentTypeException, URISyntaxException, IOException {
 		testUseMaybeCharset("UTF-8");
 		testUseMaybeCharset("UTF-16");
-		testUseMaybeCharset("UTF-32LE");
+		// not availiable in java 1.5.0_22
+		// testUseMaybeCharset("UTF-32LE");
 		testUseMaybeCharset("IBM01140");
 	}
 	
