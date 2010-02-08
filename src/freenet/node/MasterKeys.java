@@ -19,6 +19,7 @@ import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Fields;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
 /** Keys read from the master keys file */
@@ -48,7 +49,7 @@ public class MasterKeys {
 		System.err.println("Trying to read master keys file...");
 		if(masterKeysFile != null) {
 			// Try to read the keys
-			FileInputStream fis;
+			FileInputStream fis = null;
 			// FIXME move declarations of sensitive data out and clear() in finally {}
 			try {
 				fis = new FileInputStream(masterKeysFile);
@@ -123,6 +124,8 @@ public class MasterKeys {
 				throw new Error(e);
 			} catch (EOFException e) {
 				throw new MasterKeysFileTooShortException();
+			} finally {
+				Closer.close(fis);
 			}
 		}
 		System.err.println("Creating new master keys file");
