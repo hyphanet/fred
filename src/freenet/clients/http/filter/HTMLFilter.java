@@ -20,6 +20,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -697,7 +698,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
-	static final Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
+	static final Map<String, TagVerifier> allowedTagsVerifiers = new LinkedHashMap<String, TagVerifier>();
 	static final String[] emptyStringArray = new String[0];
 
 	static {
@@ -1282,7 +1283,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
-			Map<String, Object> h = new HashMap<String, Object>();
+			Map<String, Object> h = new LinkedHashMap<String, Object>();
 			boolean equals = false;
 			String prevX = "";
 			if (t.unparsedAttrs != null)
@@ -1351,7 +1352,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Map<String, Object> hn = new HashMap<String, Object>();
+			Map<String, Object> hn = new LinkedHashMap<String, Object>();
 			for (Map.Entry<String, Object> entry : h.entrySet()) {
 				String x = entry.getKey();
 				Object o = entry.getValue();

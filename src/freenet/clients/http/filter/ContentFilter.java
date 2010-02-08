@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Hashtable;
 
 import freenet.clients.http.filter.CharsetExtractor.BOMDetection;
@@ -202,7 +203,7 @@ public class ContentFilter {
 					charset = after;
 				} else {
 					if (otherParams == null)
-						otherParams = new HashMap<String, String>();
+						otherParams = new LinkedHashMap<String, String>();
 					otherParams.put(before, after);
 				}
 			}
