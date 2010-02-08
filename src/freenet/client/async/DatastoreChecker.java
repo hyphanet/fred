@@ -250,6 +250,10 @@ public class DatastoreChecker implements PrioRunnable {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);
 			}
+			if(logMINOR && transientGetters[prio].indexOf(getter) != -1) {
+				Logger.error(this, "Transient request "+getter+" is already queued!");
+				return;
+			}
 			transientGetters[prio].add(getter);
 			transientKeys[prio].add(finalKeysToCheck.toArray(new Key[finalKeysToCheck.size()]));
 			transientBlockSets[prio].add(blocks);
@@ -464,6 +468,7 @@ public class DatastoreChecker implements PrioRunnable {
 
 	public void removeRequest(SendableGet request, boolean persistent, ObjectContainer container, ClientContext context) {
 		short prio = request.getPriorityClass(container);
+		if(logMINOR) Logger.minor(this, "Removing request prio="+prio+" persistent="+persistent);
 		if(!persistent) {
 			synchronized(this) {
 				int index = transientGetters[prio].indexOf(request);
@@ -471,6 +476,7 @@ public class DatastoreChecker implements PrioRunnable {
 				transientGetters[prio].remove(index);
 				transientKeys[prio].remove(index);
 				transientBlockSets[prio].remove(index);
+				if(logMINOR) Logger.minor(this, "Removed transient request");
 			}
 		} else {
 			synchronized(this) {
