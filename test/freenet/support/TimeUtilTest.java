@@ -127,7 +127,7 @@ public class TimeUtilTest extends TestCase {
 	 */
 	public void testFormatTime_LongIntBoolean_milliseconds() {
 		long methodValue = 1;	//1ms
-		assertEquals(TimeUtil.formatTime(methodValue,6,false),"0");
+		assertEquals(TimeUtil.formatTime(methodValue,6,false),"0s");
 		assertEquals(TimeUtil.formatTime(methodValue,6,true),"0.001s");
 	}
 	
