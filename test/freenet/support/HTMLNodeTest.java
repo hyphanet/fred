@@ -528,15 +528,15 @@ public class HTMLNodeTest extends TestCase {
 			
 			assertEquals(("<"+nodeNamesArray[i]+" ").toLowerCase() + 
 					SAMPLE_OKAY_ATTRIBUTE_NAME + "=" +
-					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\">" + '\n' +
+					 "\""+SAMPLE_ATTRIBUTE_VALUE+"\"\n>" +
 					 SAMPLE_NODE_CONTENT +
 					 
 					 //child
 					 generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME,
 							 SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 								SAMPLE_NODE_CONTENT) +
+					 ("</"+nodeNamesArray[i]+"\n>").toLowerCase(),
 					 
-					 ("</"+nodeNamesArray[i]+">").toLowerCase() + '\n',
 					 methodHTMLNode.generate());
 		}
 	}
