@@ -2678,9 +2678,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		if(node.clientCore == null || node.clientCore.alerts == null)
 			return;
-		node.clientCore.alerts.register(disconnectedStillNotAckedAlert);
+		// FIXME XXX: We have had this alert enabled for MONTHS which got us hundreds of bug reports about it. Unfortunately, nobody spend any work on fixing
+		// the issue after the alert was added so I have disabled it to quit annoying our users. We should not waste their time if we don't do anything. xor
+		// Notice that the same alert is commented out in PacketSender. 
+		// node.clientCore.alerts.register(disconnectedStillNotAckedAlert);
 	}
 	
+	@SuppressWarnings("unused")
 	private UserAlert disconnectedStillNotAckedAlert = new AbstractUserAlert() {
 
 		public String anchor() {
