@@ -111,6 +111,7 @@ public final class PageMaker {
 		private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
 		private final Map<String, String> navigationLinks = new HashMap<String, String>();
 		private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
+		private final Map<String, FredPluginL10n> navigationLinkL10n = new HashMap<String, FredPluginL10n>();
 		
 		public SubMenu(String link, String name, String title, FredPluginL10n plugin) {
 			this.navigationLinkText = name;
@@ -119,7 +120,7 @@ public final class PageMaker {
 			this.plugin = plugin;
 		}
 
-		public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+		public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
 			navigationLinkTexts.add(name);
 			if(!fullOnly)
 				navigationLinkTextsNonFull.add(name);
@@ -127,6 +128,8 @@ public final class PageMaker {
 			navigationLinks.put(name, path);
 			if(cb != null)
 				navigationLinkCallbacks.put(name, cb);
+			if (l10n != null)
+				navigationLinkL10n.put(name, l10n);
 		}
 
 		@Deprecated
@@ -135,6 +138,7 @@ public final class PageMaker {
 			navigationLinkTextsNonFull.remove(name);
 			navigationLinkTitles.remove(name);
 			navigationLinks.remove(name);
+			navigationLinkL10n.remove(name); //Should this be here? If so, why not remove from navigationLinkCallbacks too
 		}
 
 		@Deprecated
@@ -143,6 +147,7 @@ public final class PageMaker {
 			navigationLinkTextsNonFull.clear();
 			navigationLinkTitles.clear();
 			navigationLinks.clear();
+			navigationLinkL10n.clear(); //Should this be here? If so, why not clear navigationLinkCallbacks too
 		}
 	}
 	
@@ -193,9 +198,9 @@ public final class PageMaker {
 		menuList.remove(menu);
 	}
 	
-	public synchronized void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+	public synchronized void addNavigationLink(String menutext, String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
 		SubMenu menu = subMenus.get(menutext);
-		menu.addNavigationLink(path, name, title, fullOnly, cb);
+		menu.addNavigationLink(path, name, title, fullOnly, cb, l10n);
 	}
 	
 	/* FIXME: Implement a proper way for chosing what the menu looks like upon handleHTTPGet/Post */
@@ -361,19 +366,22 @@ public final class PageMaker {
 					} else {
 						sublistItem = subnavlist.addChild("li");
 					}
-					if(menu.plugin != null) {
+					
+					FredPluginL10n l10n = menu.navigationLinkL10n.get(navigationLink);
+					if(l10n == null) l10n = menu.plugin;
+					if(l10n != null) {
 						if(navigationTitle != null) {
-							String newNavigationTitle = menu.plugin.getString(navigationTitle);
+							String newNavigationTitle = l10n.getString(navigationTitle);
 							if(newNavigationTitle == null) {
-								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+								Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
 							} else {
 								navigationTitle = newNavigationTitle;
 							}
 						}
 						if(navigationLink != null) {
-							String newNavigationLink = menu.plugin.getString(navigationLink);
+							String newNavigationLink = l10n.getString(navigationLink);
 							if(newNavigationLink == null) {
-								Logger.error(this, "Plugin '"+menu.plugin+"' did return null in getString(key)!");
+								Logger.error(this, "Plugin '"+l10n+"' did return null in getString(key)!");
 							} else {
 								navigationLink = newNavigationLink;
 							}
@@ -439,9 +447,12 @@ public final class PageMaker {
 					} else {
 						sublistItem = subnavlist.addChild("li");
 					}
-					if(selected.plugin != null) {
-						if(navigationTitle != null) navigationTitle = selected.plugin.getString(navigationTitle);
-						if(navigationLink != null) navigationLink = selected.plugin.getString(navigationLink);
+					
+					FredPluginL10n l10n = selected.navigationLinkL10n.get(navigationLink);
+					if (l10n == null) l10n = selected.plugin;
+					if(l10n != null) {
+						if(navigationTitle != null) navigationTitle = l10n.getString(navigationTitle);
+						if(navigationLink != null) navigationLink = l10n.getString(navigationLink);
 					} else {
 						if(navigationTitle != null) navigationTitle = NodeL10n.getBase().getString(navigationTitle);
 						if(navigationLink != null) navigationLink = NodeL10n.getBase().getString(navigationLink);

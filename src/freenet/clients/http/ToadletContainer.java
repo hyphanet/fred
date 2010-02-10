@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import freenet.clients.http.PageMaker.THEME;
+import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.BucketFactory;
 
@@ -22,6 +23,8 @@ public interface ToadletContainer {
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullAccessOnly);
 
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb);
+	
+	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n);
 	
 	public void unregister(Toadlet t);
 	
