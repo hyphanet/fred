@@ -4,7 +4,7 @@ var $gwt_version = "2.0.1";
 var $wnd = parent;
 var $doc = $wnd.document;
 var $moduleName, $moduleBase;
-var $strongName = '989FF8DD7864BE8DC6E0337E68FD0368';
+var $strongName = '8379DEB14CD7924095302D5FF24AA267';
 var $stats = $wnd.__gwtStatsEvent ? function(a) {return $wnd.__gwtStatsEvent(a);} : null,
 $sessionId = $wnd.__gwtStatsSessionId ? $wnd.__gwtStatsSessionId : null;
 $stats && $stats({moduleName:'freenetjs',sessionId:$sessionId,subSystem:'startup',evtGroup:'moduleStartup',millis:(new Date()).getTime(),type:'moduleEvalStart'});
@@ -3390,7 +3390,7 @@ function urlEncode(s){
   return $toString_1(sb.data);
 }
 
-var cm = null, isDebug = false, isPushingCancelledExpected = false, keepaliveManager = null, logCounter = P0_longLit, requestId_0 = null;
+var cm = null, isDebug = true, isPushingCancelledExpected = false, keepaliveManager = null, logCounter = P0_longLit, requestId_0 = null;
 function getClass_76(){
   return Lfreenet_client_FreenetJs$1_2_classLit;
 }
@@ -3430,6 +3430,7 @@ _ = KeepaliveManager.prototype = new Object_0;
 _.getClass$ = getClass_77;
 _.typeId$ = 0;
 _.cancelled = false;
+_.firstSuccess = false;
 function $clinit_166(){
   $clinit_166 = nullMethod;
   $clinit_81();
@@ -3475,7 +3476,13 @@ function onError(request, exception){
 }
 
 function onResponseReceived(request, response){
-  compareTo(response.val$xmlHttpRequest.responseText, 'SUCCESS') != 0 && $closeConnection(this.this$1.this$0);
+  if (compareTo(response.val$xmlHttpRequest.responseText, 'SUCCESS') != 0) {
+    !this.this$1.this$0.firstSuccess && (isPushingCancelledExpected = true);
+    $closeConnection(this.this$1.this$0);
+  }
+   else {
+    this.this$1.this$0.firstSuccess = true;
+  }
 }
 
 function KeepaliveManager$KeepaliveTimer$1(){
@@ -4277,10 +4284,10 @@ function DefaultUpdateManager(){
 
 _ = DefaultUpdateManager.prototype = new Object_0;
 _.getClass$ = getClass_95;
-_.typeId$ = 0;
-var listeners, updaters = null;
 --></script>
 <script><!--
+_.typeId$ = 0;
+var listeners, updaters = null;
 function $DefaultUpdateManager$UpdaterRequestCallback(this$static, elementId){
   this$static.elementId = elementId;
   return this$static;

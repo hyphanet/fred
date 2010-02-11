@@ -15,8 +15,6 @@ import freenet.client.tools.FreenetRequest;
 import freenet.client.tools.QueryParameter;
 import freenet.client.update.DefaultUpdateManager;
 
-import freenet.client.tools.Base64;
-
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */

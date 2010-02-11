@@ -4,7 +4,7 @@ var $gwt_version = "2.0.1";
 var $wnd = parent;
 var $doc = $wnd.document;
 var $moduleName, $moduleBase;
-var $strongName = '453AC050A4A15926CCB4A752C8DCE482';
+var $strongName = '098683704C7B0E3BAAEFF685F429B680';
 var $stats = $wnd.__gwtStatsEvent ? function(a) {return $wnd.__gwtStatsEvent(a);} : null,
 $sessionId = $wnd.__gwtStatsSessionId ? $wnd.__gwtStatsSessionId : null;
 $stats && $stats({moduleName:'freenetjs',sessionId:$sessionId,subSystem:'startup',evtGroup:'moduleStartup',millis:(new Date()).getTime(),type:'moduleEvalStart'});
@@ -3577,7 +3577,7 @@ function urlEncode(s){
   return sb.impl.string;
 }
 
-var cm = null, isDebug = false, isPushingCancelledExpected = false, keepaliveManager = null, logCounter = P0_longLit, requestId_0 = null;
+var cm = null, isDebug = true, isPushingCancelledExpected = false, keepaliveManager = null, logCounter = P0_longLit, requestId_0 = null;
 function getClass_82(){
   return Lfreenet_client_FreenetJs$1_2_classLit;
 }
@@ -3617,6 +3617,7 @@ _ = KeepaliveManager.prototype = new Object_0;
 _.getClass$ = getClass_83;
 _.typeId$ = 0;
 _.cancelled = false;
+_.firstSuccess = false;
 function $clinit_165(){
   $clinit_165 = nullMethod;
   $clinit_82();
@@ -3662,7 +3663,13 @@ function onError(request, exception){
 }
 
 function onResponseReceived(request, response){
-  compareTo(response.val$xmlHttpRequest.responseText, 'SUCCESS') != 0 && $closeConnection(this.this$1.this$0);
+  if (compareTo(response.val$xmlHttpRequest.responseText, 'SUCCESS') != 0) {
+    !this.this$1.this$0.firstSuccess && (isPushingCancelledExpected = true);
+    $closeConnection(this.this$1.this$0);
+  }
+   else {
+    this.this$1.this$0.firstSuccess = true;
+  }
 }
 
 function KeepaliveManager$KeepaliveTimer$1(){

@@ -21,10 +21,13 @@ import freenet.client.tools.QueryParameter;
 public class KeepaliveManager implements IConnectionManager {
 
 	/** The timer that schedules the periodic message */
-	private KeepaliveTimer	timer		= new KeepaliveTimer();
+	private KeepaliveTimer	timer			= new KeepaliveTimer();
 
 	/** Is it cancelled already? */
-	private boolean			cancelled	= false;
+	private boolean			cancelled		= false;
+
+	/** Does the first keepalive succeded? */
+	private boolean			firstSuccess	= false;
 
 	@Override
 	public void closeConnection() {
@@ -32,7 +35,7 @@ public class KeepaliveManager implements IConnectionManager {
 		// If it wasn't cancelled, then we show a message about pushing cancelled. It makes sure that this message shows only once
 		if (cancelled == false) {
 			if (FreenetJs.isPushingCancelledExpected == false) {
-				MessageManager.get().addMessage(new Message(L10n.get("pushingCancelled"), Priority.ERROR, null,true));
+				MessageManager.get().addMessage(new Message(L10n.get("pushingCancelled"), Priority.ERROR, null, true));
 			}
 			cancelled = true;
 		}
@@ -53,7 +56,12 @@ public class KeepaliveManager implements IConnectionManager {
 				public void onResponseReceived(Request request, Response response) {
 					// If not success, then close the connection
 					if (response.getText().compareTo(UpdaterConstants.SUCCESS) != 0) {
+						if (firstSuccess == false) {
+							FreenetJs.isPushingCancelledExpected = true;
+						}
 						closeConnection();
+					} else {
+						firstSuccess = true;
 					}
 				}
 
