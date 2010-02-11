@@ -200,20 +200,20 @@ public class HTMLNode implements XMLCharacterClasses {
 				tagBuffer.append(" />");
 			}
 		} else {
-			tagBuffer.append('>');
 			if(("div").equals(name) || ("form").equals(name) || ("input").equals(name) || ("script").equals(name) || ("table").equals(name) || ("tr").equals(name) || ("td").equals(name)) {
 				tagBuffer.append('\n');
 			}
+			tagBuffer.append('>');
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
 			tagBuffer.append("</");
 			tagBuffer.append(name);
-			tagBuffer.append('>');
 			if(("div").equals(name)|| ("form").equals(name)|| ("input").equals(name)|| ("li").equals(name)|| ("option").equals(name)|| ("script").equals(name)|| ("table").equals(name)|| ("tr").equals(name)|| ("td").equals(name)) {
 				tagBuffer.append('\n');
 			}
+			tagBuffer.append('>');
 		}
 		return tagBuffer;
 	}
