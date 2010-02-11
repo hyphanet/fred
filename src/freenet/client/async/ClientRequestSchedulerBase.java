@@ -195,7 +195,7 @@ abstract class ClientRequestSchedulerBase {
 			cr.removeFromRequests(req, container, dontComplain);
 	}
 	
-	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context) {
+	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context, short oldPrio) {
 		if(request.persistent() != persistent()) return;
 		SendableRequest[] reqs = getSendableRequests(request, container);
 		
@@ -204,13 +204,14 @@ abstract class ClientRequestSchedulerBase {
 			SendableRequest req = reqs[i];
 			if(persistent())
 				container.activate(req, 1);
+			boolean isInsert = req.isInsert();
 			// FIXME call getSendableRequests() and do the sorting in ClientRequestScheduler.reregisterAll().
-			if(req.isInsert() != isInsertScheduler || req.isSSK() != isSSKScheduler) {
+			if(isInsert != isInsertScheduler || req.isSSK() != isSSKScheduler) {
 				if(persistent()) container.deactivate(req, 1);
 				continue;
 			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-			req.unregister(container, context);
+			req.unregister(container, context, oldPrio);
 			// Then can do innerRegister() (not register()).
 			innerRegister(req, random, container, null);
 			if(persistent())

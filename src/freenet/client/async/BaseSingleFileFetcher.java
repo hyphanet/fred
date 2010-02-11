@@ -110,7 +110,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				if(cooldownWakeupTime > now) {
 					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(cooldownWakeupTime - now), new Exception("error"));
 					// We must be registered ... unregister
-					unregister(container, context);
+					unregister(container, context, getPriorityClass(container));
 				} else {
 					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
@@ -120,15 +120,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(persistent)
 						container.deactivate(key, 5);
 					// Unregister as going to cooldown queue.
-					unregister(container, context);
+					unregister(container, context, getPriorityClass(container));
 				}
 			} else {
-				unregister(container, context);
+				unregister(container, context, getPriorityClass(container));
 				reschedule(container, context);
 			}
 			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}
-		unregister(container, context);
+		unregister(container, context, getPriorityClass(container));
 		return false;
 	}
 
@@ -172,7 +172,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	 */
 	public void unregisterAll(ObjectContainer container, ClientContext context) {
 		getScheduler(context).removePendingKeys(this, false);
-		super.unregister(container, context);
+		super.unregister(container, context, getPriorityClass(container));
 	}
 
 	@Override
@@ -215,7 +215,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				return;
 			}
 		}
-		unregister(container, context); // Key has already been removed from pendingKeys
+		unregister(container, context, getPriorityClass(container)); // Key has already been removed from pendingKeys
 		try {
 			onSuccess(Key.createKeyBlock(this.key, block), false, null, container, context);
 		} catch (KeyVerifyException e) {

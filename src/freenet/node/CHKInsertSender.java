@@ -300,15 +300,21 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
              */
             // Decrement at this point so we can DNF immediately on reaching HTL 0.
             boolean canWriteStorePrev = node.canWriteDatastoreInsert(htl);
-            if((!canWriteStorePrev) && (!starting) && (highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES)) {
-            	// While we are in no-cache mode, we do not want to decrement HTL just because we hit a RejectedOverload.
-            	// If we did that, we would end up caching the data on nodes far too close to the originator.
-            	// So we allow 5 failures, and then we RNF, rather than using up all available HTL.
-            	// This isn't as bad as it sounds given that nodes go into backoff after RejectedOverload's and so we choose a different one next time ...
-                finish(ROUTE_NOT_FOUND, null);
-                return;
+            if((!starting) && (!canWriteStorePrev)) {
+            	// We always decrement on starting a sender.
+            	// However, after that, if our HTL is above the no-cache threshold,
+            	// we do not want to decrement the HTL for trivial rejections (e.g. RejectedLoop),
+            	// because we would end up caching data too close to the originator.
+            	// So allow 5 failures and then RNF.
+            	if(highHTLFailureCount++ >= MAX_HIGH_HTL_FAILURES) {
+            		if(logMINOR) Logger.minor(this, "Too many failures at non-cacheable HTL");
+                    finish(ROUTE_NOT_FOUND, null);
+                    return;
+            	}
+            	if(logMINOR) Logger.minor(this, "Allowing failure "+highHTLFailureCount+" htl is still "+htl);
             } else {
                 htl = node.decrementHTL(sentRequest ? next : source, htl);
+                if(logMINOR) Logger.minor(this, "Decremented HTL to "+htl);
             }
             starting = false;
             synchronized (this) {

@@ -57,7 +57,7 @@ public class TimeUtil {
             l = l * -1;
         }
         if( !withSecondFractions && l < 1000 ) {
-            return "0";
+            return "0s";
         }
         if(termCount >= maxTerms) {
             return sb.toString();

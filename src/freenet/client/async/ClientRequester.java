@@ -239,11 +239,15 @@ public abstract class ClientRequester {
 	 * be running on the database thread; you should schedule a job using the DBJobRunner.
 	 */
 	public void setPriorityClass(short newPriorityClass, ClientContext ctx, ObjectContainer container) {
-		this.priorityClass = newPriorityClass;
-		ctx.getChkFetchScheduler().reregisterAll(this, container);
-		ctx.getChkInsertScheduler().reregisterAll(this, container);
-		ctx.getSskFetchScheduler().reregisterAll(this, container);
-		ctx.getSskInsertScheduler().reregisterAll(this, container);
+		short oldPrio;
+		synchronized(this) {
+			oldPrio = priorityClass;
+			this.priorityClass = newPriorityClass;
+		}
+		ctx.getChkFetchScheduler().reregisterAll(this, container, oldPrio);
+		ctx.getChkInsertScheduler().reregisterAll(this, container, oldPrio);
+		ctx.getSskFetchScheduler().reregisterAll(this, container, oldPrio);
+		ctx.getSskInsertScheduler().reregisterAll(this, container, oldPrio);
 		if(persistent()) container.store(this);
 	}
 

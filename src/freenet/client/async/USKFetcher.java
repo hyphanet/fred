@@ -820,7 +820,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 			@Override
 			public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
-				unregister(container, context);
+				unregister(container, context, getPriorityClass(container));
 				USKAttempt[] attempts;
 				synchronized(USKFetcher.this) {
 					if(cancelled) return;

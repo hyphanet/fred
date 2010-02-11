@@ -941,7 +941,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		sb.append("/");
 		sb.append(uri.toASCIIString());
 		char c = '?';
-		if(requestedMimeType != null && requestedMimeType != "") {
+		if(requestedMimeType != null && requestedMimeType.length() != 0) {
 			sb.append(c).append("type=").append(URLEncoder.encode(requestedMimeType,false)); c = '&';
 		}
 		if(maxSize > 0 && maxSize != MAX_LENGTH) {

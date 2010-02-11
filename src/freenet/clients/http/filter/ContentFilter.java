@@ -11,6 +11,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Hashtable;
 
 import freenet.clients.http.filter.CharsetExtractor.BOMDetection;
@@ -206,7 +207,7 @@ public class ContentFilter {
 					charset = after;
 				} else {
 					if (otherParams == null)
-						otherParams = new HashMap<String, String>();
+						otherParams = new LinkedHashMap<String, String>();
 					otherParams.put(before, after);
 				}
 			}
@@ -314,7 +315,7 @@ public class ContentFilter {
 		}
 		
 		// If no BOM, use the charset from the referring document.
-		if(handler.useMaybeCharset && maybeCharset != null && !(maybeCharset == ""))
+		if(handler.useMaybeCharset && maybeCharset != null && (maybeCharset.length() != 0))
 			return maybeCharset;
 		
 		// If it doesn't have a BOM, then it's *probably* safe to use as default.

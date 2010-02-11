@@ -391,9 +391,13 @@ public class PacketSender implements Runnable, Ticker {
 		}
 		if(node.clientCore == null || node.clientCore.alerts == null)
 			return;
-		node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
+		// FIXME XXX: We have had this alert enabled for MONTHS which got us hundreds of bug reports about it. Unfortunately, nobody spend any work on fixing
+		// the issue after the alert was added so I have disabled it to quit annoying our users. We should not waste their time if we don't do anything. xor
+		// Notice that the same alert is commented out in FNPPacketMangler. 
+		// node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
 	}
 	
+	@SuppressWarnings("unused")
 	private UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
 
 		public String anchor() {
