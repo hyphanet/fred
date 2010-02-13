@@ -998,6 +998,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	public synchronized boolean probablyWantKey(Key key, byte[] saltedKey) {
+		if(!(key instanceof NodeSSK)) return false;
+		NodeSSK k = (NodeSSK) key;
+		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
+			return false;
 		for(ClientSSK ssk : keysWatching)
 			if(ssk.getNodeKey(false).equals(key)) return true;
 		return false;
