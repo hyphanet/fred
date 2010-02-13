@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -21,6 +22,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
+import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.USK;
 import freenet.node.KeysFetchingLocally;
@@ -937,6 +939,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	public synchronized short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
+		if(!(key instanceof NodeSSK)) return -1;
+		NodeSSK k = (NodeSSK) key;
+		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
+			return -1;
 		for(ClientSSK ssk : keysWatching)
 			if(ssk.getNodeKey(false).equals(key)) return progressPollPriority;
 		return -1;
