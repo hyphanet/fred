@@ -56,8 +56,8 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 	}
 
 	public String processTag(ParsedTag pt, URIProcessor uriProcessor) {
-		// If javascript is disabled, then it won't need pushing
-		if (ctx.getContainer().isFProxyJavascriptEnabled()) {
+		// If javascript or pushing is disabled, then it won't need pushing
+		if (ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled()) {
 			if (pt.element.toLowerCase().compareTo("img") == 0) {
 				// Img's needs to be replaced with pushed ImageElement's
 				for (int i = 0; i < pt.unparsedAttrs.length; i++) {

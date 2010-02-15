@@ -30,8 +30,8 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.node.Ticker;
 import freenet.node.SecurityLevelListener;
+import freenet.node.Ticker;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
@@ -98,6 +98,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	volatile static boolean noConfirmPanic;
 	public BookmarkManager bookmarkManager;				// move to WelcomeToadlet / BookmarkEditorToadlet ?
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
+	private volatile boolean fProxyWebPushingEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
 	
@@ -303,6 +304,27 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	private static class FProxyWebPushingEnabledCallback extends BooleanCallback{
+		
+		private final SimpleToadletServer ts;
+		
+		FProxyWebPushingEnabledCallback(SimpleToadletServer ts){
+			this.ts=ts;
+		}
+		
+		@Override
+		public Boolean get() {
+			return ts.isFProxyWebPushingEnabled();
+		}
+		
+		@Override
+		public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+			if (get().equals(val))
+				return;
+				ts.enableFProxyWebPushing(val);
+		}
+	}
+	
 	private boolean haveCalledFProxy = false;
 	
 	public void createFproxy() {
@@ -372,6 +394,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		fproxyConfig.register("javascriptEnabled", true, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
+		fproxyConfig.register("webPushingEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.enableWP", "SimpleToadletServer.enableWPLong", new FProxyWebPushingEnabledCallback(this));
 		fproxyConfig.register("hasCompletedWizard", false, configItemOrder++, true, false, "SimpleToadletServer.hasCompletedWizard", "SimpleToadletServer.hasCompletedWizardLong",
 				new BooleanCallback() {
 					@Override
@@ -401,6 +424,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		fproxyHasCompletedWizard = fproxyConfig.getBoolean("hasCompletedWizard");
 		fProxyJavascriptEnabled = fproxyConfig.getBoolean("javascriptEnabled");
+		fProxyWebPushingEnabled = fproxyConfig.getBoolean("webPushingEnabled");
 		disableProgressPage = fproxyConfig.getBoolean("disableProgressPage");
 		enableExtendedMethodHandling = fproxyConfig.getBoolean("enableExtendedMethodHandling");
 
@@ -809,6 +833,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public synchronized void enableFProxyJavascript(boolean b){
 		fProxyJavascriptEnabled = b;
+	}
+	
+	public synchronized boolean isFProxyWebPushingEnabled() {
+		return this.fProxyWebPushingEnabled;
+	}
+	
+	public synchronized void enableFProxyWebPushing(boolean b){
+		fProxyWebPushingEnabled = b;
 	}
 
 	public String getFormPassword() {

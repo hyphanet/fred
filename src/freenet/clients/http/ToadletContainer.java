@@ -76,6 +76,8 @@ public interface ToadletContainer {
 	
 	public boolean isFProxyJavascriptEnabled();
 
+	public boolean isFProxyWebPushingEnabled();
+
 	public boolean disableProgressPage();
 
 	public PageMaker getPageMaker();
