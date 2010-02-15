@@ -261,8 +261,11 @@ public final class PageMaker {
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		//Add a hidden input that has the request's id
 		bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
-		bodyNode.addChild("script",new String[]{"type","language"},new String[]{"text/javascript","javascript"}).addChild("%", PushingTagReplacerCallback.getClientSideLocalizationScript());
 		
+		// Add the GWT generated js files only if web pushing is enabled
+		if (ctx.getContainer().isFProxyWebPushingEnabled()) {
+			bodyNode.addChild("script", new String[] { "type", "language" }, new String[] { "text/javascript", "javascript" }).addChild("%", PushingTagReplacerCallback.getClientSideLocalizationScript());
+		}
 		
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");

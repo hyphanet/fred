@@ -35,7 +35,6 @@ import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.clients.http.updateableelements.ProgressBarElement;
 import freenet.clients.http.updateableelements.ProgressInfoElement;
-import freenet.clients.http.updateableelements.TesterElement;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
@@ -594,6 +593,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(isJsEnabled){
 					//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
 					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
+						// If pushing is disabled, but js is enabled, then we add the original progresspage.js
+						if (ctx.getContainer().isFProxyWebPushingEnabled() == false) {
+							HTMLNode scriptNode = headNode.addChild("script", "//abc");
+							scriptNode.addAttribute("type", "text/javascript");
+							scriptNode.addAttribute("src", "/static/js/progresspage.js");
+						}
 				}else{
 					//If he disabled it, we just put the http refresh meta, without the noscript
 					headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
