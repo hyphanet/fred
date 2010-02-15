@@ -126,7 +126,7 @@ public abstract class LoggerHook extends Logger {
 
 	@Override
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
-		if ((details == null) || (details.length() == 0))
+		if (details == null)
 			return;
 		StringTokenizer st = new StringTokenizer(details, ",", false);
 		ArrayList<DetailedThreshold> stuff = new ArrayList<DetailedThreshold>();

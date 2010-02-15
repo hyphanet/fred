@@ -645,16 +645,20 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, boolean fullOnly) {
-		register(t, menu, urlPrefix, atFront, null, null, fullOnly, null);
+		register(t, menu, urlPrefix, atFront, null, null, fullOnly, null, null);
 	}
 	
 	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+		register(t, menu, urlPrefix, atFront, name, title, fullOnly, cb, null);
+	}
+	
+	public void register(Toadlet t, String menu, String urlPrefix, boolean atFront, String name, String title, boolean fullOnly, LinkEnabledCallback cb, FredPluginL10n l10n) {
 		ToadletElement te = new ToadletElement(t, urlPrefix);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
 		if (name != null) {
-			pageMaker.addNavigationLink(menu, urlPrefix, name, title, fullOnly, cb);
+			pageMaker.addNavigationLink(menu, urlPrefix, name, title, fullOnly, cb, l10n);
 		}
 	}
 	
