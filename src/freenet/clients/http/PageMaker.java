@@ -247,8 +247,9 @@ public final class PageMaker {
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
 		
-		//Add the generated javascript, if it is enabled
-		if(ctx.getContainer().isFProxyJavascriptEnabled()) headNode.addChild("script",new String[]{"type","language","src"},new String[]{"text/javascript","javascript","/static/freenetjs/freenetjs.nocache.js"});
+		// Add the generated javascript, if it and pushing is enabled
+		if (ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled()) headNode.addChild("script", new String[] { "type", "language", "src" }, new String[] {
+				"text/javascript", "javascript", "/static/freenetjs/freenetjs.nocache.js" });
 		
 		Toadlet t;
 		if (ctx != null) {
@@ -262,7 +263,7 @@ public final class PageMaker {
 		//Add a hidden input that has the request's id
 		bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
 		
-		// Add the GWT generated js files only if web pushing is enabled
+		// Add the client-side localization only when pushing is enabled
 		if (ctx.getContainer().isFProxyWebPushingEnabled()) {
 			bodyNode.addChild("script", new String[] { "type", "language" }, new String[] { "text/javascript", "javascript" }).addChild("%", PushingTagReplacerCallback.getClientSideLocalizationScript());
 		}
