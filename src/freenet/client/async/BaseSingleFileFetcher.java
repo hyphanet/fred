@@ -36,11 +36,18 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	/** It is essential that we know when the cooldown will end, otherwise we cannot 
 	 * remove the key from the queue if we are killed before that */
 	long cooldownWakeupTime;
+	
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+	
+	static {
+		Logger.registerClass(BaseManifestPutter.class);
+	}
 
 	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, boolean deleteFetchContext) {
 		super(parent);
 		this.deleteFetchContext = deleteFetchContext;
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Creating BaseSingleFileFetcher for "+key);
 		retryCount = 0;
 		this.maxRetries = maxRetries;
@@ -98,7 +105,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		retryCount++;
 		if(isEmpty(container))
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this+" finished="+finished+" cancelled="+cancelled);
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
@@ -112,7 +119,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					// We must be registered ... unregister
 					unregister(container, context, getPriorityClass(container));
 				} else {
-					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Adding to cooldown queue "+this);
+					if(logMINOR) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
 						container.activate(key, 5);
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
@@ -198,7 +205,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		synchronized(this) {
 			if(finished) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(logMINOR)
 					Logger.minor(this, "onGotKey() called twice on "+this, new Exception("debug"));
 				return;
 			}
@@ -251,11 +258,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	@Override
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		if(cooldownWakeupTime > time) {
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");
+			if(logMINOR) Logger.minor(this, "Not requeueing as deadline has not passed yet");
 			return;
 		}
 		if(isEmpty(container)) {
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as cancelled or finished");
+			if(logMINOR) Logger.minor(this, "Not requeueing as cancelled or finished");
 			return;
 		}
 		if(persistent)
@@ -264,7 +271,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey(false)+" for "+this.key);
 			return;
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
 		reschedule(container, context);
 		if(persistent)
