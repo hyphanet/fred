@@ -269,6 +269,10 @@ public class DatastoreChecker implements PrioRunnable {
 	 * @param getter
 	 */
 	public void queuePersistentRequest(SendableGet getter, BlockSet blocks, ObjectContainer container) {
+		if(getter.isEmpty(container)) {
+			if(logMINOR) Logger.minor(this, "Request is empty, not checking store: "+getter);
+			return;
+		}
 		Key[] checkKeys = getter.listKeys(container);
 		short prio = getter.getPriorityClass(container);
 		ClientRequestScheduler sched = getter.getScheduler(context);

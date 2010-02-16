@@ -300,6 +300,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private void innerRegister(final HasKeyListener hasListener, final SendableGet[] getters, final BlockSet blocks, boolean noCheckStore, ObjectContainer container) throws KeyListenerConstructionException {
 		final KeyListener listener;
 		if(hasListener != null) {
+			if(hasListener.isCancelled(container)) {
+				if(logMINOR) Logger.minor(this, "Key listener is cancelled, not registering: "+hasListener);
+				return;
+			}
 			listener = hasListener.makeKeyListener(container, clientContext);
 			schedCore.addPendingKeys(listener);
 			container.store(hasListener);
