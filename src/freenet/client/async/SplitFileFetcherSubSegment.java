@@ -723,6 +723,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(persistent) {
 			container.activate(segment, 1);
 		}
+		if(cancelled) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as already cancelled");
+			return;
+		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
 		if(!segment.requeueAfterCooldown(key, time, container, context, this)) {
