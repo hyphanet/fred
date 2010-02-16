@@ -96,7 +96,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	/** Try again - returns true if we can retry */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
 		retryCount++;
-		if(finished)
+		if(isEmpty(container))
 			return false; // Cannot retry e.g. because we got the block and it failed to decode - that's a fatal error.
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this+" finished="+finished+" cancelled="+cancelled);
@@ -252,6 +252,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		if(cooldownWakeupTime > time) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");
+			return;
+		}
+		if(isEmpty(container)) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as cancelled or finished");
 			return;
 		}
 		if(persistent)
