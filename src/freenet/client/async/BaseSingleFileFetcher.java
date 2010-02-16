@@ -303,13 +303,13 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	@Override
 	public Key[] listKeys(ObjectContainer container) {
-		if(cancelled || finished)
-			return new Key[0];
-		else {
-			if(persistent)
-				container.activate(key, 5);
-			return new Key[] { key.getNodeKey(true) };
+		synchronized(this) {
+			if(cancelled || finished)
+				return new Key[0];
 		}
+		if(persistent)
+			container.activate(key, 5);
+		return new Key[] { key.getNodeKey(true) };
 	}
 
 	@Override
@@ -327,8 +327,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			container.activate(parent, 1);
 			container.activate(ctx, 1);
 		}
-		if(finished) return null;
-		if(cancelled) return null;
+		synchronized(this) {
+			if(finished) return null;
+			if(cancelled) return null;
+		}
 		if(key == null) {
 			Logger.error(this, "Key is null - left over BSSF? on "+this+" in makeKeyListener()", new Exception("error"));
 			if(persistent) container.delete(this);
