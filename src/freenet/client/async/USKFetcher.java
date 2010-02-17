@@ -920,6 +920,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		} catch (Throwable t) {
 			runningStoreChecker = null;
 			Logger.error(this, "Unable to start: "+t, t);
+			try {
+				storeChecker.unregister(null, context, progressPollPriority);
+			} catch (Throwable ignored) {
+				// Ignore, hopefully it's already unregistered
+			}
 		}
 	}
 
