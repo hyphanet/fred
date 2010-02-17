@@ -562,6 +562,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel(container, context);
 		if(storeChecker != null)
+			// Remove from the store checker queue.
 			storeChecker.unregister(container, context, storeChecker.getPriorityClass(container));
 	}
 
