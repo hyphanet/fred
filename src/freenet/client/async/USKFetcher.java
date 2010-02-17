@@ -722,7 +722,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 
-	private boolean runningStoreChecker = false;
+	private SendableGet runningStoreChecker = null;
 	
 	private synchronized void fillKeysWatching(long ed, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "fillKeysWatching from "+ed+" for "+this+" : "+origUSK, new Exception("debug"));
@@ -753,7 +753,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 //			}
 			firstKeyWatching = ed;
 //		}
-		if(runningStoreChecker) return;
+		if(runningStoreChecker != null) return;
 		long firstCheck = Math.max(firstKeyWatching, checkedDatastoreUpTo + 1);
 		final long lastCheck = firstKeyWatching + keysWatching.size() - 1;
 		if(logMINOR) Logger.minor(this, "firstCheck="+firstCheck+" lastCheck="+lastCheck);
@@ -827,7 +827,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				USKAttempt[] attempts;
 				synchronized(USKFetcher.this) {
 					if(cancelled) return;
-					runningStoreChecker = false;
+					runningStoreChecker = null;
 					// FIXME should we only start the USKAttempt's if the datastore check hasn't made progress?
 					attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
 					attemptsToStart.clear();
@@ -911,14 +911,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			
 		};
-		runningStoreChecker = true;
+		runningStoreChecker = storeChecker;
 		try {
 			context.getSskFetchScheduler().register(null, new SendableGet[] { storeChecker } , false, null, null, false);
 		} catch (KeyListenerConstructionException e1) {
 			// Impossible
-			runningStoreChecker = false;
+			runningStoreChecker = null;
 		} catch (Throwable t) {
-			runningStoreChecker = false;
+			runningStoreChecker = null;
 			Logger.error(this, "Unable to start: "+t, t);
 		}
 	}
