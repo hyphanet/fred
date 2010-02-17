@@ -554,6 +554,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		synchronized(this) {
 			cancelled = true;
 			attempts = runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
+			attemptsToStart.clear();
 		}
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel(container, context);
