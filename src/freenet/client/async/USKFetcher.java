@@ -551,13 +551,18 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		assert(container == null);
 		USKAttempt[] attempts;
 		uskManager.onFinished(this);
+		SendableGet storeChecker;
 		synchronized(this) {
 			cancelled = true;
 			attempts = runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 			attemptsToStart.clear();
+			storeChecker = runningStoreChecker;
+			runningStoreChecker = null;
 		}
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel(container, context);
+		if(storeChecker != null)
+			storeChecker.unregister(container, context, storeChecker.getPriorityClass(container));
 	}
 
 	/** Set of interested USKCallbacks. Note that we don't actually
