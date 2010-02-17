@@ -46,6 +46,9 @@ final public class FileUtil {
 	/**
 	 * Return true if the JVM is running on windows or if there was an error during the detection of the operating system.
 	 * Therefore this function should never throw.
+	 * 
+	 * This function is optimized for low false positive rate because it is used for deciding which characters might be invalid in filenames:
+	 * File creation won't work if we try to use invalid characters, but not using some characters even though they would be valid won't cause much problems.
 	 */
 	private static final boolean operatingSystemIsWindows() { // TODO: Move to the proper class
 		try {
