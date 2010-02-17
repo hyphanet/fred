@@ -29,6 +29,15 @@ public class URLEncoderDecoderTest extends TestCase {
 
 	public static final String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
 	public static final String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
+	public static final String allCharsExceptNull = new String(UTFUtil.ALL_CHARACTERS).replace("\u0000", "");
+	
+	/**
+	 * Encodes a string of ALL unicode characters except the 0-character and tests whether it is decoded correctly. 
+	 */
+	public void testEncodeDecodeString_allChars() throws URLEncodedFormatException {
+		assertTrue(areCorrectlyEncodedDecoded(new String[] { allCharsExceptNull }, true));
+		assertTrue(areCorrectlyEncodedDecoded(new String[] { allCharsExceptNull }, false));
+	}
 			
 	/**
 	 * Tests if URLEncode.encode(String) and

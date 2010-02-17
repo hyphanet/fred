@@ -28,6 +28,16 @@ public final class UTFUtil extends TestCase {
 		
 	}
 	
+	public static final char ALL_CHARACTERS[];
+	
+	static {
+		ALL_CHARACTERS = new char[Character.MAX_VALUE - Character.MIN_VALUE + 1];
+		
+		for(int i = 0; i <= (Character.MAX_VALUE - Character.MIN_VALUE); ++i) {
+			ALL_CHARACTERS[i] = (char)(Character.MIN_VALUE + i);
+		}
+	}
+	
 	//printable ascii symbols
 	public static final char PRINTABLE_ASCII[] = {
 		' ','!','@','#','$','%','^','&','(',')','+','=','{','}','[',']',':',';','\\','\"','\'',

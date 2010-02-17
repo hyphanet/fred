@@ -27,6 +27,7 @@ public class URIPreEncoderTest extends TestCase {
 
 	private String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
 	private String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
+	public static final String allChars = new String(UTFUtil.ALL_CHARACTERS);
 	
 	private boolean containsOnlyValidChars(String aString) {
 		char eachChar;
@@ -46,6 +47,9 @@ public class URIPreEncoderTest extends TestCase {
 	public void testEncode() {
 		String toEncode = prtblAscii+stressedUTF_8Chars;
 		String encoded = URIPreEncoder.encode(toEncode);
+		assertTrue(containsOnlyValidChars(encoded));
+		
+		encoded = URIPreEncoder.encode(allChars);
 		assertTrue(containsOnlyValidChars(encoded));
 	}
 
