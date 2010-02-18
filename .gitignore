@@ -11,3 +11,4 @@
 *.ipr
 *.iws
 .*
+/build.properties

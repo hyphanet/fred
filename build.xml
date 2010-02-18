@@ -10,6 +10,11 @@
 		Possible targets: compile, dist (default), clean
 	</description>
 
+	<!-- Give user a chance to override without editing this file
+			(and without typing -D each time it compiles it) -->
+	<property file="build.properties" />
+
+
 	<!-- set global properties for this build -->
 	<property name="src" location="src"/>
 	<property name="test" location="test"/>
