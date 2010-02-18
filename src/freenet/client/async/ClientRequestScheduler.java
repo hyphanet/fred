@@ -388,7 +388,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					continue;
 				} else
 					getters[i].preRegister(container, clientContext, true);
-				schedTransient.innerRegister(getters[i], random, null, getters);
+				if(!getters[i].isEmpty(null))
+					schedTransient.innerRegister(getters[i], random, null, getters);
 			}
 			starter.wakeUp();
 		}
