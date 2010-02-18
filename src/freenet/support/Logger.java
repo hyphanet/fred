@@ -258,17 +258,14 @@ public abstract class Logger {
 
 	public synchronized static void error(Class<?> c, String s) {
 		logger.log(c, s, ERROR);
-		assert(false);
 	}
 
 	public synchronized static void error(Object o, String s) {
 		logger.log(o, s, ERROR);
-		assert(false);
 	}
 
 	public synchronized static void error(Object o, String s, Throwable e) {
 		logger.log(o, s, e, ERROR);
-		assert(false);
 	}
 
 	public synchronized static void minor(Class<?> c, String s) {
