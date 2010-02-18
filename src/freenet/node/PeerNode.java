@@ -2386,7 +2386,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private void processNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
 		if(logMINOR)
 			Logger.minor(this, "Parsing: \n" + fs);
-		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
+		boolean changedAnything = innerProcessNewNoderef(fs, forARK, forDiffNodeRef) || forARK;
 		if(changedAnything)
 			node.peers.writePeers();
 	}
