@@ -163,8 +163,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 		
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
+		return fetch(uri, maxSize, clientContext, callback, fctx, priorityClass);
+	}
+	
+	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, uri, fctx, priorityClass, clientContext, null, null);
+		ClientGetter get = new ClientGetter(callback, uri, fctx, prio, clientContext, null, null);
 		try {
 			core.clientContext.start(get);
 		} catch (DatabaseDisabledException e) {

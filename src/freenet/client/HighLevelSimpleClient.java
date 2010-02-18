@@ -57,6 +57,17 @@ public interface HighLevelSimpleClient {
 	 */
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
 	
+	/**
+	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
+	 * Will return immediately, the callback will be called later.
+	 * @param callback Will be called when the request completes, fails, etc. If the request is persistent
+	 * this will be called on the database thread with a container parameter.
+	 * @param fctx Fetch context so you can customise the search process.
+	 * @param priorityClass What priority to start at. It is much more efficient to specify it here than to change it later.
+	 * @return The ClientGetter object, which will have been started already.
+	 */
+	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx, short priorityClass) throws FetchException;
+	
 	@Deprecated
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientCallback callback, FetchContext fctx) throws FetchException;
 	
