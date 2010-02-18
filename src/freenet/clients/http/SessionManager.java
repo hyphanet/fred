@@ -35,7 +35,6 @@ public final class SessionManager {
 	 * Constructs a new session manager.
 	 * 
 	 * @param myCookiePath The path in which the cookies should be valid 
-	 * @param myLogInRedirectURI The URI to which a RedirectException should be thrown if the specified session ID is not valid anymore.
 	 */
 	public SessionManager(URI myCookiePath) {
 		if(myCookiePath.isAbsolute())
