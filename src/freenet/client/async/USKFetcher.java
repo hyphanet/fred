@@ -599,6 +599,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(localCallbacks.length == 0) {
 			normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
 			progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
+			if(logMINOR) Logger.minor(this, "Updating priorities: normal = "+normalPollPriority+" progress = "+progressPollPriority+" for "+this+" for "+origUSK);
 			return;
 		}
 		
