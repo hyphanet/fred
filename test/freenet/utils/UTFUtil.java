@@ -28,13 +28,25 @@ public final class UTFUtil extends TestCase {
 		
 	}
 	
-	public static final char ALL_CHARACTERS[];
+	/**
+	 * Contains all unicode characters except the low and high surrogates (they are no valid characters and constructing strings with them will cause
+	 * the JRE to replace them with the default replacement character). Even 0x0000 is included.
+	 */
+	public static final char[] ALL_CHARACTERS;
 	
 	static {
 		ALL_CHARACTERS = new char[Character.MAX_VALUE - Character.MIN_VALUE + 1];
 		
 		for(int i = 0; i <= (Character.MAX_VALUE - Character.MIN_VALUE); ++i) {
-			ALL_CHARACTERS[i] = (char)(Character.MIN_VALUE + i);
+			int characterValue = (Character.MIN_VALUE + i);
+			
+			// The low and high surrogates are no valid unicode characters.
+			if(characterValue >= Character.MIN_LOW_SURROGATE && characterValue <= Character.MAX_LOW_SURROGATE)
+				ALL_CHARACTERS[i]  = ' ';
+			else if(characterValue >= Character.MIN_HIGH_SURROGATE && characterValue <= Character.MAX_HIGH_SURROGATE)
+				ALL_CHARACTERS[i]  = ' ';
+			else
+				ALL_CHARACTERS[i] = (char)characterValue;
 		}
 	}
 	
