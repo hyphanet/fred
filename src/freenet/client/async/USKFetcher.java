@@ -222,8 +222,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		public short getPriority() {
 			if(backgroundPoll) {
-				if(minFailures == origMinFailures && minFailures != maxMinFailures) {
-					// Either just started, or just advanced, either way boost the priority.
+				if((minFailures == origMinFailures && !firstLoop) && minFailures != maxMinFailures) {
+					// Just advanced, boost the priority.
+					// Do NOT boost the priority if just started.
 					return progressPollPriority;
 				} else {
 					return normalPollPriority;
@@ -242,6 +243,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	 * we have finished (unless in background poll mode) */
 	long minFailures;
 	final long origMinFailures;
+	boolean firstLoop;
 	
 	static final int origSleepTime = 30 * 60 * 1000;
 	static final int maxSleepTime = 24 * 60 * 60 * 1000;
@@ -277,6 +279,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.origUSK = origUSK;
 		this.uskManager = manager;
 		this.minFailures = this.origMinFailures = minFailures;
+		firstLoop = true;
 		runningAttempts = new Vector<USKAttempt>();
 		callbacks = new LinkedList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
@@ -328,6 +331,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					// Only if we actually DO advance, not if we just confirm our suspicion (valueAtSchedule always starts at 0).
 					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
+					firstLoop = false;
 					end = now;
 					if(logMINOR)
 						Logger.minor(this, "We have advanced: at start, "+valueAtSchedule+" at end, "+valAtEnd);
