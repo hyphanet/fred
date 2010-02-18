@@ -334,7 +334,7 @@ public class USKManager implements RequestClient {
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
 	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
-		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb);
+		if(logMINOR) Logger.minor(this, "Subscribing to "+origUSK+" for "+cb+" prio "+cb.getPollingPriorityNormal()+" progress "+cb.getPollingPriorityProgress());
 		if(client.persistent()) throw new UnsupportedOperationException("USKManager subscriptions cannot be persistent");
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
