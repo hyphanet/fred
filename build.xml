@@ -82,7 +82,7 @@
 	<condition property="do.junit" value="true">
 		<and>
 			<or>
-				<isset property="force_tests" />
+				<istrue value="${force_tests}" />
 				<not>
 					<isset property="skip_tests" />
 				</not>
