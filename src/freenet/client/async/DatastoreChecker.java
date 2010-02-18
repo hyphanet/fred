@@ -377,12 +377,12 @@ public class DatastoreChecker implements PrioRunnable {
 					}
 				}
 				if(keys == null) {
-					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
 					try {
 						context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
 					} catch (DatabaseDisabledException e1) {
 						// Ignore
 					}
+					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
 					try {
 						wait(100*1000);
 					} catch (InterruptedException e) {
