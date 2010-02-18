@@ -342,6 +342,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						newMinFailures = maxMinFailures;
 					minFailures = newMinFailures;
 				}
+				if(logMINOR) Logger.minor(this, "Sleep time is "+sleepTime+" this sleep is "+(end-now)+" min failures is "+minFailures+" for "+this);
 			}
 			schedule(end-now, null, context);
 		} else {
