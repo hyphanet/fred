@@ -177,7 +177,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(persistent) container.activate(uri, 5);
 					FreenetURI uu = uri.setMetaString(null).uskForSSK();
 					USK usk = USK.create(uu);
-					context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
+					if(!block.isMetadata())
+						context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
+					else
+						// We don't know whether the metadata is fetchable.
+						// FIXME add a callback so if the rest of the request completes we updateKnownGood().
+						context.uskManager.updateSlot(usk, uu.getSuggestedEdition(), context);
 				}
 			} catch (MalformedURLException e) {
 				Logger.error(this, "Caught "+e, e);
