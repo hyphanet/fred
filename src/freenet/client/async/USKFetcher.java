@@ -136,13 +136,18 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	 * Callbacks are told when the USKFetcher finishes, and unless background poll is
 	 * enabled, they are only sent onFoundEdition *once*, on completion.
 	 * 
+	 * However they do help to determine the fetcher's priority.
+	 * 
 	 * FIXME: Don't allow callbacks if backgroundPoll is enabled??
 	 * @param cb
 	 * @return
 	 */
-	public synchronized boolean addCallback(USKFetcherCallback cb) {
-		if(completed) return false; 
-		callbacks.add(cb);
+	public boolean addCallback(USKFetcherCallback cb) {
+		synchronized(this) {
+			if(completed) return false; 
+			callbacks.add(cb);
+		}
+		updatePriorities();
 		return true;
 	}
 	
@@ -593,10 +598,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		short normalPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 		short progressPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 		USKCallback[] localCallbacks;
+		USKFetcherCallback[] fetcherCallbacks;
 		synchronized(this) {
 			localCallbacks = subscribers.toArray(new USKCallback[subscribers.size()]);
+			// Callbacks also determine the fetcher's priority.
+			// Otherwise USKFetcherTag would have no way to tell us the priority we should run at.
+			fetcherCallbacks = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 		}
-		if(localCallbacks.length == 0) {
+		if(localCallbacks.length == 0 && fetcherCallbacks.length == 0) {
 			normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
 			progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 			if(logMINOR) Logger.minor(this, "Updating priorities: normal = "+normalPollPriority+" progress = "+progressPollPriority+" for "+this+" for "+origUSK);
@@ -605,6 +614,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		for(int i=0;i<localCallbacks.length;i++) {
 			USKCallback cb = localCallbacks[i];
+			short prio = cb.getPollingPriorityNormal();
+			if(logDEBUG) Logger.debug(this, "Normal priority for "+cb+" : "+prio);
+			if(prio < normalPrio) normalPrio = prio;
+			if(logDEBUG) Logger.debug(this, "Progress priority for "+cb+" : "+prio);
+			prio = cb.getPollingPriorityProgress();
+			if(prio < progressPrio) progressPrio = prio;
+		}
+		for(int i=0;i<fetcherCallbacks.length;i++) {
+			USKFetcherCallback cb = fetcherCallbacks[i];
 			short prio = cb.getPollingPriorityNormal();
 			if(logDEBUG) Logger.debug(this, "Normal priority for "+cb+" : "+prio);
 			if(prio < normalPrio) normalPrio = prio;
