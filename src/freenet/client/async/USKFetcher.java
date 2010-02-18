@@ -24,6 +24,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
+import freenet.keys.SSKVerifyException;
 import freenet.keys.USK;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
@@ -371,13 +372,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block, final ClientContext context) {
+		onSuccess(att, att.number, dontUpdate, block, context);
+	}
+	
+	void onSuccess(USKAttempt att, long curLatest, boolean dontUpdate, ClientSSKBlock block, final ClientContext context) {
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
-		long curLatest;
 		boolean decode = false;
 		Vector<USKAttempt> killAttempts;
 		synchronized(this) {
-			runningAttempts.remove(att);
-			curLatest = att.number;
+			if(att != null) runningAttempts.remove(att);
 			if(completed || cancelled) return;
 			decode = curLatest >= lastEd && !(dontUpdate && block == null);
 			curLatest = Math.max(lastEd, curLatest);
@@ -396,7 +399,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		finishCancelBefore(killAttempts, context);
 		Bucket data = null;
-		if(decode) {
+		if(decode && block != null) {
 			try {
 				data = block.decode(context.getBucketFactory(parent.persistent()), 1025 /* it's an SSK */, true);
 			} catch (KeyDecodeException e) {
@@ -408,6 +411,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		synchronized(this) {
 			if (decode) {
+				if(block != null) {
 					lastCompressionCodec = block.getCompressionCodec();
 					lastWasMetadata = block.isMetadata();
 					if(keepLastData) {
@@ -416,6 +420,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						lastRequestData = data;
 					} else
 						data.free();
+				} else {
+					lastCompressionCodec = -1;
+					lastWasMetadata = false;
+					lastRequestData = null;
+				}
 			}
 		}
 		if(!dontUpdate)
@@ -1008,7 +1017,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		// FIXME remove
 		assert(edition == realKey.getURI().uskForSSK().getSuggestedEdition());
-		onFoundEdition(edition, origUSK, container, context, false, (short)-1, null, false, false);
+		ClientSSKBlock data;
+		try {
+			data = ClientSSKBlock.construct((SSKBlock)found, realKey);
+		} catch (SSKVerifyException e) {
+			data = null;
+		}
+		onSuccess(null, edition, false, data, context);
 		return true;
 	}
 
