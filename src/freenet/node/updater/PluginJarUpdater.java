@@ -7,6 +7,7 @@ import freenet.clients.http.PproxyToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
+import freenet.node.RequestClient;
 import freenet.node.Version;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -217,6 +218,10 @@ public class PluginJarUpdater extends NodeUpdater {
 			deployOnNoRevocation = true;
 			System.out.println("Deploying "+pluginName+" after next revocation check");
 		}
+	}
+
+	protected RequestClient getRequestClient() {
+		return pluginManager.singleUpdaterRequestClient;
 	}
 	
 }

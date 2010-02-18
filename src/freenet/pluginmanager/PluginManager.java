@@ -32,6 +32,8 @@ import java.util.zip.ZipException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.QueueToadlet;
 import freenet.clients.http.PageMaker.THEME;
@@ -46,6 +48,7 @@ import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.SecurityLevelListener;
 import freenet.node.Ticker;
@@ -1019,6 +1022,19 @@ public class PluginManager {
 	 * writing the config file, and because we do a lot inside the lock below; it
 	 * must not be taken in any other circumstance. */
 	private final Object pluginLoadSyncObject = new Object();
+
+	/** All plugin updates are on a single request client. */
+	public final RequestClient singleUpdaterRequestClient = new RequestClient() {
+
+		public boolean persistent() {
+			return false;
+		}
+
+		public void removeFrom(ObjectContainer container) {
+			// Do nothing.
+		}
+		
+	};
 
 	public File getPluginFilename(String pluginName) {
 		File pluginDirectory = new File(node.getNodeDir(), "plugins");
