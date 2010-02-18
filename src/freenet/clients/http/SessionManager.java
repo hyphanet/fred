@@ -30,8 +30,6 @@ public final class SessionManager {
 	public static final String SESSION_COOKIE_NAME = "SessionID"; 
 	
 	private final URI mCookiePath;
-	
-	private final URI mLogInRedirectURI;
 
 	/**
 	 * Constructs a new session manager.
@@ -39,7 +37,7 @@ public final class SessionManager {
 	 * @param myCookiePath The path in which the cookies should be valid 
 	 * @param myLogInRedirectURI The URI to which a RedirectException should be thrown if the specified session ID is not valid anymore.
 	 */
-	public SessionManager(URI myCookiePath, URI myLogInRedirectURI) {
+	public SessionManager(URI myCookiePath) {
 		if(myCookiePath.isAbsolute())
 			throw new IllegalArgumentException("Illegal cookie path, must be relative: " + myCookiePath);
 		
@@ -50,7 +48,6 @@ public final class SessionManager {
 		
 		//mCookieDomain = myCookieDomain;
 		mCookiePath = myCookiePath;
-		mLogInRedirectURI = myLogInRedirectURI;
 	}
 	
 	public static final class Session {
@@ -146,12 +143,12 @@ public final class SessionManager {
 	 * 
 	 * If the session was valid, then its validity is extended by {@link MAX_SESSION_IDLE_TIME}.
 	 * 
-	 * If the session is not valid anymore, a {@link RedirectException} to the log-in page of this SessionManager is thrown.
+	 * If the session is not valid anymore, <code>null</code> is returned.
 	 */
-	public synchronized Session useSession(ToadletContext context) throws RedirectException {
+	public synchronized Session useSession(ToadletContext context) {
 		UUID sessionID = getSessionID(context);
 		if(sessionID == null)
-			throw new RedirectException(mLogInRedirectURI);
+			return null;
 		
 		// We must synchronize around the fetching of the time and mSessionsByID.push() because mSessionsByID is no sorting data structure: It's a plain
 		// LRUHashtable so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
@@ -162,7 +159,7 @@ public final class SessionManager {
 		Session session = mSessionsByID.get(sessionID);
 		
 		if(session == null)
-			throw new RedirectException(mLogInRedirectURI);
+			return null;
 		
 		session.updateExpiresAtTime(time);
 		mSessionsByID.push(session.getID(), session);
