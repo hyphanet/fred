@@ -28,6 +28,7 @@
 	<property name="version.src" value="freenet/node/Version.java" />
 	<property name="version.build" value="freenet/node/Version.class" />
 	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<available file="${junit.location}" property="junit.present"/>
 
 	<path id="lib.path">
 		<pathelement location="${freenet-ext.location}"/>
@@ -55,6 +56,7 @@
 			<isset property="git.describe" />
 		</and>
 	</condition>
+	
 
 	<target name="mkdir">
 		<mkdir dir="${build}"/>
@@ -64,7 +66,7 @@
 
 	<target name="env" depends="mkdir"   description="Learn about the environment">
 		<available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
-		<available file="${junit.location}" property="junit.present"/>
+		<!-- available file="${junit.location}" property="junit.present"/ -->
 	</target>
 
 	<target name="get-extjar" depends="env" unless="freenet-ext.present"
@@ -77,6 +79,17 @@
 		<property name="freenet-ext.present" value="true"/>
 	</target>
 
+	<condition property="do.junit" value="true">
+		<and>
+			<or>
+				<isset property="force_tests" />
+				<not>
+					<isset property="skip_tests" />
+				</not>
+			</or>
+			<isset property="junit.present" />
+		</and>
+	</condition>
 	<!-- ================================================== -->
 
 	<target name="compile" depends="get-extjar">
@@ -155,7 +168,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
+	<target name="unit-build" depends="compile" if="do.junit">
 		<delete dir="${build-test}"/>
 		<mkdir dir="${build-test}"/>
 
@@ -174,7 +187,7 @@
 		</copy>
 	</target>
 
-	<target name="unit" depends="unit-build" if="junit.present" unless="skip_tests">
+	<target name="unit" depends="unit-build" if="do.junit">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<path refid="lib.path"/>
