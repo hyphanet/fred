@@ -371,6 +371,8 @@ public class DatastoreChecker implements PrioRunnable {
 						sched = persistentSchedulers[prio].remove(0);
 						item = persistentCheckerItems[prio].remove(0);
 						blocks = persistentBlockSets[prio].remove(0);
+						if(logMINOR)
+							Logger.minor(this, "Checking persistent request at prio "+prio);
 						break;
 					}
 				}
