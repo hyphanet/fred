@@ -11,7 +11,9 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertException;
 import freenet.client.NullClientCallback;
 import freenet.clients.http.FProxyToadlet;
 import freenet.keys.FreenetURI;
@@ -186,7 +188,7 @@ public class USKManager implements RequestClient {
 	}
 
 	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context, final FetchContext fctx, boolean prefetchContent) {
-		USK clear = usk.clearCopy();
+		final USK clear = usk.clearCopy();
 		USKFetcher sched = null;
 		Vector<USKFetcher> toCancel = null;
 		synchronized(this) {
@@ -214,10 +216,25 @@ public class USKManager implements RequestClient {
 						// Ok
 					}
 
-					public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+					public void onFoundEdition(final long l, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 						if(l <= min) return;
 						FreenetURI uri = key.copy(l).getURI();
-						final ClientGetter get = new ClientGetter(new NullClientCallback(), uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+						final ClientGetter get = new ClientGetter(new ClientGetCallback() {
+
+							public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+								// Ignore
+							}
+
+							public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+								result.asBucket().free();
+								updateKnownGood(clear, l, context);
+							}
+
+							public void onMajorProgress(ObjectContainer container) {
+								// Ignore
+							}
+
+						}, uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
 						try {
 							get.start(null, context);
 						} catch (FetchException e) {
