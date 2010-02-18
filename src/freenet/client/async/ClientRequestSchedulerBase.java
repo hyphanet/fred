@@ -127,6 +127,8 @@ abstract class ClientRequestSchedulerBase {
 				deactivate = !container.ext().isActive(clientRequest);
 				if(deactivate) container.activate(clientRequest, 1);
 			}
+			// If the request goes through the datastore checker (SendableGet's unless they have the don't check store flag) it will have already been registered.
+			// That does not matter.
 			clientRequest.addToRequests(req, container);
 			if(deactivate) container.deactivate(clientRequest, 1);
 		}

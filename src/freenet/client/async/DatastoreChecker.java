@@ -246,6 +246,9 @@ public class DatastoreChecker implements PrioRunnable {
 		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter+" priority "+prio+" keys "+checkKeys.length);
 		// FIXME check using store.probablyInStore
 		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
+		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
+		ClientRequester requestor = getter.getClientRequest();
+		requestor.addToRequests(getter, null);
 		synchronized(this) {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);
@@ -279,6 +282,10 @@ public class DatastoreChecker implements PrioRunnable {
 		DatastoreCheckerItem item = new DatastoreCheckerItem(getter, context.nodeDBHandle, prio, blocks);
 		container.store(item);
 		container.activate(blocks, 5);
+		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
+		ClientRequester requestor = getter.getClientRequest();
+		container.activate(requestor, 1);
+		requestor.addToRequests(getter, null);
 		synchronized(this) {
 			// FIXME only add if queue not full.
 			int queueSize = 0;
