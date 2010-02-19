@@ -285,7 +285,7 @@ public class DatastoreChecker implements PrioRunnable {
 		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
 		ClientRequester requestor = getter.getClientRequest();
 		container.activate(requestor, 1);
-		requestor.addToRequests(getter, null);
+		requestor.addToRequests(getter, container);
 		synchronized(this) {
 			// FIXME only add if queue not full.
 			int queueSize = 0;
