@@ -1183,7 +1183,6 @@ public class Node implements TimeSkewDetectorCallback {
 				if(db == null) return;
 				System.err.println("Rolling back unfinished transactions...");
 				db.rollback();
-				db.ext().purge(); // As of db4o 7.4 rollback() is bugged and only undos stuff if followed by purge!
 				System.err.println("Closing database...");
 				db.close();
 				if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
@@ -2850,7 +2849,6 @@ public class Node implements TimeSkewDetectorCallback {
 			e.printStackTrace();
 			try {
 				database.rollback();
-				database.ext().purge(); // As of db4o 7.4 rollback() is bugged and only undos stuff if followed by purge!
 			} catch (Throwable t) {} // ignore, closing
 			try {
 				database.close();
@@ -2862,7 +2860,6 @@ public class Node implements TimeSkewDetectorCallback {
 			e.printStackTrace();
 			try {
 				database.rollback();
-				database.ext().purge(); // As of db4o 7.4 rollback() is bugged and only undos stuff if followed by purge!
 			} catch (Throwable t) {} // ignore, closing
 			try {
 				database.close();

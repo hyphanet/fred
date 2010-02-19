@@ -1652,7 +1652,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if(killed) {
 					node.db.rollback();
-					node.db.ext().purge(); // As of db4o 7.4 rollback() is bugged and only undos stuff if followed by purge!
 					return;
 				} else if(commit) {
 					persistentTempBucketFactory.preCommit(node.db);
@@ -1678,7 +1677,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 				}
 				if(killed) {
 					node.db.rollback();
-					node.db.ext().purge(); // As of db4o 7.4 rollback() is bugged and only undos stuff if followed by purge!
 				}
 			}
 		}
