@@ -344,6 +344,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			return null;
 		}
 		Key newKey = key.getNodeKey(true);
+		if(parent == null) {
+			Logger.error(this, "Parent is null on "+this+" persistent="+persistent+" key="+key+" ctx="+ctx);
+			if(container != null)
+				Logger.error(this, "Stored = "+container.ext().isStored(this)+" active = "+container.ext().isActive(this));
+			return null;
+		}
 		short prio = parent.getPriorityClass();
 		KeyListener ret = new SingleKeyListener(newKey, this, prio, persistent);
 		if(persistent) {
