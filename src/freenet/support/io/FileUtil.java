@@ -330,12 +330,8 @@ final public class FileUtil {
 		
 		// Now the filename might be one of the reserved filenames in windows (CON etc.) and we must replace it if it is...
 		if(onWindowsOS) {
-			int nameEnd = sb.lastIndexOf(".");
-			if(nameEnd == -1)
-				nameEnd = sb.length() ;
-			
-			if(StringValidityChecker.isWindowsReservedFilename(sb.substring(0, nameEnd)))
-				sb.append('_');
+			if(StringValidityChecker.isWindowsReservedFilename(sb.toString()))
+				sb.insert(0, '_');
 		}
 	
 		if(sb.length() == 0) {

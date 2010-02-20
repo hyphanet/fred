@@ -128,7 +128,12 @@ public final class StringValidityChecker {
 	}
 	
 	public static boolean isWindowsReservedFilename(String filename) {
-		return windowsReservedFilenames.contains(filename.toLowerCase());
+		filename = filename.toLowerCase();
+		int nameEnd = filename.indexOf('.'); // For files with multiple dots, the part before the first dot counts as the filename. E.g. "con.blah.txt" is reserved.
+		if(nameEnd == -1)
+			nameEnd = filename.length();
+		
+		return windowsReservedFilenames.contains(filename.substring(0, nameEnd));
 	}
 
 	/**
