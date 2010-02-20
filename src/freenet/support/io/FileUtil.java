@@ -31,11 +31,14 @@ final public class FileUtil {
 	
 	private static final boolean onWindowsOS;
 	
+	private static final boolean onMacOS;
+	
 	private static final Charset fileNameCharset;
 
 	
 	static {
 		onWindowsOS = operatingSystemIsWindows();
+		onMacOS = operatingSystemIsMacOS();
 		// I did not find any way to detect the Charset of the file system so I'm using the file encoding charset. 
 		// On Windows and Linux this is set based on the users configured system language which is probably equal to the filename charset.
 		// The worst thing which can happen if we misdetect the filename charset is that downloads fail because the filenames are invalid:
@@ -56,6 +59,18 @@ final public class FileUtil {
 		} catch(Throwable t) {
 			return true;	// :)
 		}
+	}
+	
+	/**
+	 * Return true if the JVM is running on MacOS, false if not or if there was an error.
+	 * Therefore this function should never throw.
+	 */
+	private static final boolean operatingSystemIsMacOS() {
+		try {
+			return System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0;
+		} catch(Throwable t) {
+			return false;
+		}		
 	}
 	
 	/**
@@ -293,12 +308,38 @@ final public class FileUtil {
 		final StringBuilder sb = new StringBuilder(fileName.length() + 1);
 
 		for(char c : buffer.array()) {
-			if(onWindowsOS && StringValidityChecker.isWindowsReservedFilenameCharacter(c))
+			if(onWindowsOS && StringValidityChecker.isWindowsReservedPrintableFilenameCharacter(c))
+				sb.append(' ');
+			else if(onMacOS && StringValidityChecker.isMacOSReservedPrintableFilenameCharacter(c))
 				sb.append(' ');
 			else if(File.separatorChar == c || File.pathSeparatorChar == c || Character.getType(c) == Character.CONTROL|| Character.isWhitespace(c))
 				sb.append(' ');
 			else
 				sb.append(c);
+		}
+		
+		// In windows, the last character of a filename may not be space or dot. We cut them off
+		if(onWindowsOS) {
+			int lastCharIndex = sb.length() - 1;
+			while(lastCharIndex >= 0) {
+				char lastChar = sb.charAt(lastCharIndex);
+				if(lastChar == ' ' ||  lastChar == '.')
+					sb.deleteCharAt(lastCharIndex);
+			}
+		}
+		
+		// Now the filename might be one of the reserved filenames in windows (CON etc.) and we must replace it if it is...
+		if(onWindowsOS) {
+			int nameEnd = sb.lastIndexOf(".");
+			if(nameEnd == -1)
+				nameEnd = sb.length() ;
+			
+			if(StringValidityChecker.isWindowsReservedFilename(sb.substring(0, nameEnd)))
+				sb.append('_');
+		}
+	
+		if(sb.length() == 0) {
+			sb.append("Invalid filename"); // TODO: L10n
 		}
 		
 		return sb.toString();
