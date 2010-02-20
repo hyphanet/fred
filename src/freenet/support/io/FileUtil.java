@@ -31,8 +31,8 @@ final public class FileUtil {
 	
 	public static enum OperatingSystem {
 		All,
-		Unix,
 		MacOS,
+		Unix,
 		Windows
 	};
 	
