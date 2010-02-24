@@ -885,7 +885,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					if(attempts[i].number > lastEd)
 						attempts[i].schedule(container, context);
 					else {
-						synchronized(this) {
+						synchronized(USKFetcher.this) {
 							runningAttempts.remove(attempts[i]);
 						}
 					}
