@@ -918,6 +918,11 @@ public class FreenetURI implements Cloneable {
 		}
 		if(metaStr != null)
 			for(int i = 0; i < metaStr.length; i++) {
+				if(metaStr[i] == null || metaStr[i].equals("")) {
+					if(logMINOR)
+						Logger.minor(this, "metaString " + i + ": was null or empty");
+					continue;
+				}
 				if(logMINOR)
 					Logger.minor(this, "Adding metaString " + i + ": " + metaStr[i]);
 				names.add(metaStr[i]);
