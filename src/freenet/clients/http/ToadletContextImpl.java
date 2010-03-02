@@ -375,9 +375,6 @@ public class ToadletContextImpl implements ToadletContext {
 					String after = line.substring(index+1);
 					after = after.trim();
 					headers.put(before, after);
-					
-					if(logMINOR)
-						Logger.minor(ToadletContextImpl.class, "Received HTTP header '" + before + "', value:" + after);
 				}
 				
 				boolean disconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers) || !container.enablePersistentConnections();

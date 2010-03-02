@@ -9,6 +9,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import freenet.support.Logger;
+
 /**
  * A cookie which the server has received from the client.
  * 
@@ -52,6 +54,10 @@ public final class ReceivedCookie extends Cookie {
 	 * @throws ParseException If the general formatting of the cookie is wrong.
 	 */
 	protected static ArrayList<ReceivedCookie> parseHeader(String httpHeader) throws ParseException {
+		final boolean logMINOR = Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class);
+		
+		if(logMINOR)
+			Logger.minor(ReceivedCookie.class, "Received HTTP cookie header:" + httpHeader);
 		
 		char[] header = httpHeader.toCharArray();
 		
