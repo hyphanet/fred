@@ -200,7 +200,10 @@ public abstract class Logger {
 	/** These indicate the verbosity levels for calls to log() * */
 
 	/** This message indicates an error which prevents correct functionality* */
-	public static final int ERROR = 16;
+	public static final int ERROR = 32;
+
+	/** This message indicates something that should not happen, but less severe than ERROR* */
+	public static final int WARNING = 16;
 
 	/** A normal level occurrence * */
 	public static final int NORMAL = 8;
@@ -294,6 +297,18 @@ public abstract class Logger {
 
 	public synchronized static void normal(Class<?> c, String s) {
 		logger.log(c, s, NORMAL);
+	}
+
+	public synchronized static void warning(Class<?> c, String s) {
+		logger.log(c, s, WARNING);
+	}
+
+	public synchronized static void warning(Object o, String s) {
+		logger.log(o, s, WARNING);
+	}
+
+	public synchronized static void warning(Object o, String s, Throwable e) {
+		logger.log(o, s, e, WARNING);
 	}
 
 	public synchronized static void logStatic(Object o, String s, int prio) {
