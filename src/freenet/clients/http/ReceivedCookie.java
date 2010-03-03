@@ -9,6 +9,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import freenet.support.Logger;
+
 /**
  * A cookie which the server has received from the client.
  * 
@@ -17,6 +19,13 @@ import java.util.Hashtable;
  * @author xor (xor@freenetproject.org)
  */
 public final class ReceivedCookie extends Cookie {
+	
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerClass(ReceivedCookie.class);
+	}
 	
 	private String notValidatedName;
 	
@@ -52,7 +61,10 @@ public final class ReceivedCookie extends Cookie {
 	 * @throws ParseException If the general formatting of the cookie is wrong.
 	 */
 	protected static ArrayList<ReceivedCookie> parseHeader(String httpHeader) throws ParseException {
-		
+
+		if(logMINOR)
+			Logger.minor(ReceivedCookie.class, "Received HTTP cookie header:" + httpHeader);
+
 		char[] header = httpHeader.toCharArray();
 		
 		String currentCookieName = null;
