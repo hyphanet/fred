@@ -1156,7 +1156,9 @@ public class Node implements TimeSkewDetectorCallback {
 			f = null;
 		} else {
 			f = new File(value);
-			if((!nodeDir.getPath().equals(".")) && !f.isAbsolute()) f = new File(nodeDir, value);
+			if((!nodeDir.getPath().equals(".")) && !f.isAbsolute() && !value.startsWith(nodeDir.getPath()))
+				f = new File(nodeDir, value);
+
 			if(f.exists() && !(f.canWrite() && f.canRead()))
 				throw new NodeInitException(NodeInitException.EXIT_CANT_WRITE_MASTER_KEYS, "Cannot read from and write to master keys file "+f);
 		}
