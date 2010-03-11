@@ -18,6 +18,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.FSParseException;
+import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -177,12 +178,15 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false);
+                try {
+                	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false);
+                } catch (LowLevelGetException e) {
+                	block = null;
+                }
                 if(block == null) {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
                     requestsAvg.report(0.0);
-                    System.exit(EXIT_REQUEST_FAILED);
                 } else {
                     byte[] results = block.memoryDecode();
                     requestsAvg.report(1.0);
