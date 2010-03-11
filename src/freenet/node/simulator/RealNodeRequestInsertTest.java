@@ -18,6 +18,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.FSParseException;
+import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
@@ -36,7 +37,7 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 500;
+    static final int NUMBER_OF_NODES = 100;
     static final int DEGREE = 5;
     static final short MAX_HTL = (short)5;
     static final boolean START_WITH_IDEAL_LOCATIONS = true;
@@ -48,6 +49,9 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
     static final boolean FORK_ON_CACHEABLE = false;
+    static final boolean DISABLE_PROBABILISTIC_HTLS = false;
+    // Set to true to cache everything. This depends on security level.
+    static final boolean USE_SLASHDOT_CACHE = false;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -58,7 +62,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final int BWLIMIT = 1000*1024;
     
     //public static final int DARKNET_PORT_BASE = RealNodePingTest.DARKNET_PORT2+1;
-    public static final int DARKNET_PORT_BASE = 8000;
+    public static final int DARKNET_PORT_BASE = 10000;
     public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException {
@@ -77,18 +81,19 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource(3142);
+        DummyRandomSource topologyRandom = new DummyRandomSource(3143);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
         // Now link them up
-        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
+        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, topologyRandom);
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
@@ -173,12 +178,16 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false);
+                try {
+                	block = fetchNode.clientCore.realGetKey(fetchKey, false, false, false);
+                } catch (LowLevelGetException e) {
+                	block = null;
+                }
                 if(block == null) {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
+                    System.err.println("Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
                     requestsAvg.report(0.0);
-                    System.exit(EXIT_REQUEST_FAILED);
                 } else {
                     byte[] results = block.memoryDecode();
                     requestsAvg.report(1.0);

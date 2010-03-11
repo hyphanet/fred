@@ -41,11 +41,6 @@ public class InsertableUSK extends USK {
 		this.privKey = key;
 		this.group = group;
 	}
-	
-	@Override
-	public FreenetURI getURI() {
-		return new FreenetURI(pubKeyHash, cryptoKey, null, siteName, suggestedEdition);
-	}
 
 	public USK getUSK() {
 		return new USK(pubKeyHash, cryptoKey, siteName, suggestedEdition, cryptoAlgorithm);
