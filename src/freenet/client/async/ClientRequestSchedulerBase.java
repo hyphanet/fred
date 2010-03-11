@@ -228,10 +228,10 @@ abstract class ClientRequestSchedulerBase {
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
 		synchronized (this) {
-			if(logMINOR && keyListeners.contains(listener)) {
-				Logger.error(this, "Adding to pending keys twice: "+listener, new Exception("error"));
-			} else
-				keyListeners.add(listener);
+			// We have to register before checking the disk, so it may well get registered twice.
+			if(keyListeners.contains(listener))
+				return;
+			keyListeners.add(listener);
 		}
 		if (logMINOR)
 			Logger.minor(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
