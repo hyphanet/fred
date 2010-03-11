@@ -186,6 +186,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 if(block == null) {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
+                    System.err.println("Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
                     requestsAvg.report(0.0);
                 } else {
                     byte[] results = block.memoryDecode();
