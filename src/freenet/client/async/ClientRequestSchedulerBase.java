@@ -228,7 +228,10 @@ abstract class ClientRequestSchedulerBase {
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
 		synchronized (this) {
-			keyListeners.add(listener);
+			if(logMINOR && keyListeners.contains(listener)) {
+				Logger.error(this, "Adding to pending keys twice: "+listener, new Exception("error"));
+			} else
+				keyListeners.add(listener);
 		}
 		if (logMINOR)
 			Logger.minor(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
@@ -238,6 +241,8 @@ abstract class ClientRequestSchedulerBase {
 		boolean ret;
 		synchronized (this) {
 			ret = keyListeners.remove(listener);
+			while(logMINOR && keyListeners.remove(listener))
+				Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+listener, new Exception("error"));
 			listener.onRemove();
 		}
 		if (logMINOR)
