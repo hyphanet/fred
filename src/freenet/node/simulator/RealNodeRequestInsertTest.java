@@ -49,6 +49,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_FOAF = true;
     static final boolean FORK_ON_CACHEABLE = false;
     static final boolean DISABLE_PROBABILISTIC_HTLS = false;
+    // Set to true to cache everything. This depends on security level.
+    static final boolean USE_SLASHDOT_CACHE = false;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -85,7 +87,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, DISABLE_PROBABILISTIC_HTLS, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, BWLIMIT, ENABLE_FOAF, false, true, USE_SLASHDOT_CACHE, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
@@ -194,8 +196,6 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                         	System.exit(0);
                         }
                     } else {
-						int percentSuccess=100*fetchSuccesses/insertAttempts;
-                        System.err.println("Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%): \""+new String(results)+'\"');
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                         System.err.println("Returned invalid data!: "+new String(results));
                         System.exit(EXIT_BAD_DATA);

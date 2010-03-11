@@ -83,21 +83,21 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetA[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, true, null);
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, true, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'A' node "+totalNodes);
         }
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetB[i] = 
-			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, true, null);
+			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, true, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'B' node "+totalNodes);
         }
 		for(int i=0;i<BRIDGES;i++) {
 			allNodes[totalNodes] =
             bridges[i] = 
-			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false,true,null);
+			NodeStarter.createTestNode(DARKNET_PORT_BASE+totalNodes, 0, wd, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false,true,false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created bridge node "+totalNodes);
         }
