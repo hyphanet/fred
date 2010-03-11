@@ -228,6 +228,9 @@ abstract class ClientRequestSchedulerBase {
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
 		synchronized (this) {
+			// We have to register before checking the disk, so it may well get registered twice.
+			if(keyListeners.contains(listener))
+				return;
 			keyListeners.add(listener);
 		}
 		if (logMINOR)
@@ -238,6 +241,8 @@ abstract class ClientRequestSchedulerBase {
 		boolean ret;
 		synchronized (this) {
 			ret = keyListeners.remove(listener);
+			while(logMINOR && keyListeners.remove(listener))
+				Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+listener, new Exception("error"));
 			listener.onRemove();
 		}
 		if (logMINOR)

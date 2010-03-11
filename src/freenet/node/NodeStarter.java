@@ -341,7 +341,7 @@ public class NodeStarter implements WrapperListener {
 		boolean enableSwapping, boolean enableARKs, boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
 		int outputBandwidthLimit, boolean enableFOAF,
-		boolean connectToSeednodes, boolean longPingTimes, String ipAddressOverride) throws NodeInitException {
+		boolean connectToSeednodes, boolean longPingTimes, boolean useSlashdotCache, String ipAddressOverride) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -361,6 +361,7 @@ public class NodeStarter implements WrapperListener {
 			configFS.put("node.outputBandwidthLimit", 16 * 1024 * 1024);
 			configFS.put("node.throttleLocalTraffic", false);
 		}
+		configFS.put("node.useSlashdotCache", useSlashdotCache);
 		configFS.put("node.listenPort", port);
 		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
 		configFS.put("fproxy.enabled", false);

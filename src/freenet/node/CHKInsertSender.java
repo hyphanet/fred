@@ -325,7 +325,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	}
             }
             
-            if( node.canWriteDatastoreInsert(htl) && !canWriteStorePrev) {
+            if( node.canWriteDatastoreInsert(htl) && (!canWriteStorePrev) && forkOnCacheable) {
             	// FORK! We are now cacheable, and it is quite possible that we have already gone over the ideal sink nodes,
             	// in which case if we don't fork we will miss them, and greatly reduce the insert's reachability.
             	// So we fork: Create a new UID so we can go over the previous hops again if they happen to be good places to store the data.
