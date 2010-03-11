@@ -78,6 +78,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource(3142);
+        DummyRandomSource topologyRandom = new DummyRandomSource(3143);
         //DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
@@ -89,7 +90,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         }
         
         // Now link them up
-        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
+        makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, topologyRandom);
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
