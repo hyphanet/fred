@@ -47,7 +47,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_SWAP_QUEUEING = false;
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
-    static final boolean FORK_ON_CACHEABLE = true;
+    static final boolean FORK_ON_CACHEABLE = false;
     static final boolean DISABLE_PROBABILISTIC_HTLS = false;
     
     static final int TARGET_SUCCESSES = 20;
@@ -194,6 +194,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                         	System.exit(0);
                         }
                     } else {
+						int percentSuccess=100*fetchSuccesses/insertAttempts;
+                        System.err.println("Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%): \""+new String(results)+'\"');
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                         System.err.println("Returned invalid data!: "+new String(results));
                         System.exit(EXIT_BAD_DATA);
