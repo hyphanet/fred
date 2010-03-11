@@ -712,7 +712,7 @@ public class Node implements TimeSkewDetectorCallback {
 	public static final short DEFAULT_MAX_HTL = (short)18;
 	private short maxHTL;
 	/** Should inserts fork when the HTL reaches cacheability? */
-	public static final boolean FORK_ON_CACHEABLE_DEFAULT = true;
+	public static boolean FORK_ON_CACHEABLE_DEFAULT = true;
 	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
