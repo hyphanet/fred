@@ -60,10 +60,20 @@ public class OpennetPeerNode extends PeerNode {
 		return isDroppableWithReason(ignoreDisconnect) == NOT_DROP_REASON.DROPPABLE;
 	}
 		
+	/** Is the peer droppable? 
+	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. */ 
 	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
-		if(now - getPeerAddedTime() < OpennetManager.DROP_MIN_AGE)
+		if(now - getPeerAddedTime() < OpennetManager.DROP_MIN_AGE) {
+			// Based on the time added, *not* the last connected time.
+			// This prevents various dubious ways of staying connected while not delivering anything useful.
 			return NOT_DROP_REASON.TOO_NEW_PEER; // New node
+		} else {
+			synchronized(this) {
+				peerAddedTime = 0;
+				opennetNodeAddedReason = null;
+			}
+		}
 		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
 			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
 		int status = getPeerNodeStatus();
@@ -172,5 +182,26 @@ public class OpennetPeerNode extends PeerNode {
 	
 	public synchronized ConnectionType getAddedReason() {
 		return opennetNodeAddedReason;
+	}
+
+	@Override
+	/** Opennet nodes need to know when a peer node was added. 
+	 * We do NOT clear it on connect, because we use it for determining whether we are in the initial grace period.
+	 * However we will reset it after the grace period expires, in isDroppableWithReason(). */
+	protected void maybeClearPeerAddedTimeOnConnect() {
+		// Guarantee that it gets cleared.
+		node.getTicker().queueTimedJob(new FastRunnable() {
+
+			public void run() {
+				isDroppableWithReason(false);
+			}
+			
+		}, OpennetManager.DROP_MIN_AGE+1);
+	}
+
+	@Override
+	/* Opennet peers do not export the peer added time. It is only relevant for the grace period anyway. */ 
+	protected boolean shouldExportPeerAddedTime() {
+		return false;
 	}
 }

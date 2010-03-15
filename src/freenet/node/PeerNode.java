@@ -299,8 +299,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long lastAttemptedHandshakeIPUpdateTime;
 	/** True if we have never connected to this peer since it was added to this node */
 	private boolean neverConnected;
-	/** When this peer was added to this node */
-	private long peerAddedTime = 1;
+	/** When this peer was added to this node. 
+	 * This is used differently by opennet and darknet nodes.
+	 * Darknet nodes clear it after connecting but persist it across restarts.
+	 * Opennet nodes clear it after the post-connect grace period elapses, and don't persist it across restarts.
+	 * In any case it is cleared after 30 days. */
+	protected long peerAddedTime = 1;
 	/** Average proportion of requests which are rejected or timed out */
 	private TimeDecayingRunningAverage pRejected;
 	/** Total low-level input bytes */
@@ -673,7 +677,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					long tempPeerAddedTime = Fields.parseLong(tempPeerAddedTimeString, 0);
 					peerAddedTime = tempPeerAddedTime;
 				} else
-					peerAddedTime = 0;
+					peerAddedTime = 0; // This is normal: Not only do exported refs not include it, opennet peers don't either.
 				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
 				if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
 					peerAddedTime = 0;
@@ -2009,7 +2013,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// In case of a race condition (two setups between A and B complete at the same time),
 				// we might want to keep the unverified tracker rather than the previous tracker.
 				neverConnected = false;
-				peerAddedTime = 0;  // don't store anymore
+				maybeClearPeerAddedTimeOnConnect();
 				maybeSwapTrackers();
 				prev = previousTracker;
 			}
@@ -2065,6 +2069,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return packets.trackerID;
 	}
 
+	protected abstract void maybeClearPeerAddedTimeOnConnect();
+	
 	/**
 	 * Resolve race conditions where two connection setups between two peers complete simultaneously.
 	 * Swap prev and current if:
@@ -2253,6 +2259,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				unverifiedTracker = null;
 				isConnected = true;
 				neverConnected = false;
+				maybeClearPeerAddedTimeOnConnect();
 				peerAddedTime = 0;  // don't store anymore
 				ctx = null;
 				maybeSwapTrackers();
@@ -2663,7 +2670,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("timeLastConnected", Long.toString(timeLastConnected));
 		if(timeLastRoutable() > 0)
 			fs.putSingle("timeLastRoutable", Long.toString(timeLastRoutable));
-		if(getPeerAddedTime() > 0)
+		if(getPeerAddedTime() > 0 && shouldExportPeerAddedTime())
 			fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
 		if(neverConnected)
 			fs.putSingle("neverConnected", "true");
@@ -2675,6 +2682,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("peersLocation", currentPeersLocation);
 		return fs;
 	}
+
+	// Opennet peers don't persist or export the peer added time.
+	protected abstract boolean shouldExportPeerAddedTime();
 
 	/**
 	* Export volatile data about the node as a SimpleFieldSet
