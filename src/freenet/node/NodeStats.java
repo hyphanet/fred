@@ -1586,6 +1586,7 @@ public class NodeStats implements Persistable {
 	// the requests' totals.
 	
 	private long announceBytesSent;
+	private long announceBytesPayload;
 	
 	public final ByteCounter announceByteCounter = new ByteCounter() {
 
@@ -1600,13 +1601,19 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			// Ignore
+			synchronized(NodeStats.this) {
+				announceBytesPayload += x;
+			}
 		}
 		
 	};
 	
 	public synchronized long getAnnounceBytesSent() {
 		return announceBytesSent;
+	}
+	
+	public synchronized long getAnnounceBytesPayloadSent() {
+		return announceBytesPayload;
 	}
 	
 	private long routingStatusBytesSent;
@@ -1910,7 +1917,7 @@ public class NodeStats implements Persistable {
 		+ totalAuthBytesSent // connection setup
 		+ resendBytesSent // resends - FIXME might be dependant on requests?
 		+ uomBytesSent // update over mandatory
-		+ announceBytesSent // announcements
+		+ announceBytesSent // announcements, including payload
 		+ routingStatusBytesSent // routing status
 		+ networkColoringSentBytesCounter // network coloring
 		+ pingBytesSent // ping bytes

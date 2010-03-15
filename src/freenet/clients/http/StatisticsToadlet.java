@@ -890,6 +890,7 @@ public class StatisticsToadlet extends Toadlet {
 			long totalBytesSentResends = node.nodeStats.getResendBytesSent();
 			long totalBytesSentUOM = node.nodeStats.getUOMBytesSent();
 			long totalBytesSentAnnounce = node.nodeStats.getAnnounceBytesSent();
+			long totalBytesSentAnnouncePayload = node.nodeStats.getAnnounceBytesPayloadSent();
 			long totalBytesSentRoutingStatus = node.nodeStats.getRoutingStatusBytes();
 			long totalBytesSentNetworkColoring = node.nodeStats.getNetworkColoringSentBytes();
 			long totalBytesSentPing = node.nodeStats.getPingSentBytes();
@@ -916,7 +917,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("ackOnlyBytes", "total", SizeUtil.formatSize(totalBytesSentAckOnly, true)));
 			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(totalBytesSentResends, true)));
 			activityList.addChild("li", l10n("uomBytes", "total",  SizeUtil.formatSize(totalBytesSentUOM, true)));
-			activityList.addChild("li", l10n("announceBytes", "total", SizeUtil.formatSize(totalBytesSentAnnounce, true)));
+			activityList.addChild("li", l10n("announceBytes", new String[] { "total", "payload" }, new String[] { SizeUtil.formatSize(totalBytesSentAnnounce, true), SizeUtil.formatSize(totalBytesSentAnnouncePayload, true) }));
 			activityList.addChild("li", l10n("adminBytes", new String[] { "routingStatus", "disconn", "initial", "changedIP" }, new String[] { SizeUtil.formatSize(totalBytesSentRoutingStatus, true), SizeUtil.formatSize(totalBytesSentDisconn, true), SizeUtil.formatSize(totalBytesSentInitial, true), SizeUtil.formatSize(totalBytesSentChangedIP, true) }));
 			activityList.addChild("li", l10n("debuggingBytes", new String[] { "netColoring", "ping", "probe", "routed" }, new String[] { SizeUtil.formatSize(totalBytesSentNetworkColoring, true), SizeUtil.formatSize(totalBytesSentPing, true), SizeUtil.formatSize(totalBytesSentProbeRequest, true), SizeUtil.formatSize(totalBytesSentRouted, true) } ));
 			activityList.addChild("li", l10n("nodeToNodeBytes", "total", SizeUtil.formatSize(totalBytesSentNodeToNode, true)));
