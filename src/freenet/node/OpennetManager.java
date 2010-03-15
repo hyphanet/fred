@@ -114,6 +114,14 @@ public class OpennetManager {
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = 31 * 24 * 60 * 60 * 1000;
 	
+	// This is only relevant while the connection is in the grace period.
+	// Null means none of the above e.g. not in grace period.
+	public enum ConnectionType {
+		PATH_FOLDING,
+		ANNOUNCE,
+		RECONNECT
+	}
+	
 	private final long creationTime;
     
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
@@ -254,7 +262,7 @@ public class OpennetManager {
 		crypto.socket.getAddressTracker().setPresumedInnocent();
 	}
 
-	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs, ConnectionType connectionType) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		try {
 		OpennetPeerNode pn = new OpennetPeerNode(fs, node, crypto, this, node.peers, false, crypto.packetMangler);
 		if(Arrays.equals(pn.getIdentity(), crypto.myIdentity)) {
@@ -265,7 +273,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return null;
 		}
-		if(wantPeer(pn, true, false, false)) return pn;
+		if(wantPeer(pn, true, false, false, connectionType)) return pn;
 		else return null;
 		// Start at bottom. Node must prove itself.
 		} catch (Throwable t) {
@@ -314,7 +322,7 @@ public class OpennetManager {
 	 * because of the first check.
 	 * @return True if the node was added / should be added.
 	 */
-	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer) {
+	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer, ConnectionType connectionType) {
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
@@ -555,7 +563,7 @@ public class OpennetManager {
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
-		if(!wantPeer(pn, false, false, false)) // Start at top as it just succeeded
+		if(!wantPeer(pn, false, false, false, null)) // Start at top as it just succeeded
 			node.peers.disconnect(pn, true, false, true);
 	}
 
