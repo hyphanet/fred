@@ -2259,7 +2259,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				isConnected = true;
 				neverConnected = false;
 				maybeClearPeerAddedTimeOnConnect();
-				peerAddedTime = 0;  // don't store anymore
 				ctx = null;
 				maybeSwapTrackers();
 				if(previousTracker != null && previousTracker.packets != currentTracker.packets)
