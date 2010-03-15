@@ -440,7 +440,6 @@ public class OpennetManager {
 		}
 		return canAdd;
 	}
-
 	
 	private synchronized boolean enforcePerTypeGracePeriodLimits(int maxPeers, ConnectionType type) {
 		if(type == null) {
