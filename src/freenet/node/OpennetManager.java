@@ -449,9 +449,9 @@ public class OpennetManager {
 		int announceMax;
 		int reconnectMax;
 		int pathFoldingMax;
-		if(maxPeers <= 6) return false;
-		announceMax = reconnectMax = (maxPeers + 9) / 10; // 1 for <=10, 2 for <=20, 3 for <=30, 4 for <=40
+		announceMax = reconnectMax = Math.max(1, (maxPeers + 9) / 10); // 1 for <=10, 2 for <=20, 3 for <=30, 4 for <=40
 		pathFoldingMax = maxPeers - announceMax - reconnectMax;
+		if(pathFoldingMax < 2) return false;
 		if(logMINOR) Logger.minor(this, "Per type grace period limits: total peers: "+maxPeers+" announce "+announceMax+" reconnect "+reconnectMax+" path folding "+pathFoldingMax);
 		int myLimit;
 		if(type == ConnectionType.PATH_FOLDING)
