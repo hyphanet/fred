@@ -521,6 +521,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	}
 	
 	public void sentPayload(int x) {
+		node.nodeStats.announceByteCounter.sentPayload(x);
 		// Doesn't count.
 	}
 
