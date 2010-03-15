@@ -79,6 +79,7 @@ public class OpennetPeerNode extends PeerNode {
 		int status = getPeerNodeStatus();
 		if(!ignoreDisconnect) {
 		synchronized(this) {
+			// This only applies after it has connected, and only if !ignoreDisconnect.
 			if((status == PeerManager.PEER_NODE_STATUS_DISCONNECTED) && (!super.neverConnected()) && 
 					now - timeLastDisconnect < OpennetManager.DROP_DISCONNECT_DELAY &&
 					now - timePrevDisconnect > OpennetManager.DROP_DISCONNECT_DELAY_COOLDOWN) {
