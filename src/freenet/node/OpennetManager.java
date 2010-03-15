@@ -75,8 +75,10 @@ public class OpennetManager {
 	public static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
 	public static final int DONT_READD_TIME = 60*1000;
-	/** Don't drop a node until it's at least this old */
+	/** Don't drop a node until it's at least this old, if it's connected. */
 	public static final int DROP_MIN_AGE = 300*1000;
+	/** Don't drop a node until it's at least this old, if it's not connected (if it has connected once then DROP_DISCONNECT_DELAY applies, but only once an hour as below). Must be less than DROP_MIN_AGE. */
+	public static final int DROP_MIN_AGE_DISCONNECTED = 60*1000;
 	/** Don't drop a node until this long after startup */
 	public static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it.

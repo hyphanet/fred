@@ -64,10 +64,17 @@ public class OpennetPeerNode extends PeerNode {
 	 * SIDE EFFECT: If we are now outside the grace period, we reset peerAddedTime and opennetPeerAddedReason. */ 
 	public NOT_DROP_REASON isDroppableWithReason(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
-		if(now - getPeerAddedTime() < OpennetManager.DROP_MIN_AGE) {
-			// Based on the time added, *not* the last connected time.
-			// This prevents various dubious ways of staying connected while not delivering anything useful.
-			return NOT_DROP_REASON.TOO_NEW_PEER; // New node
+		int status = getPeerNodeStatus();
+		long age = now - getPeerAddedTime();
+		if(age < OpennetManager.DROP_MIN_AGE) {
+			if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTED) {
+				if(age < OpennetManager.DROP_MIN_AGE_DISCONNECTED)
+					return NOT_DROP_REASON.TOO_NEW_PEER;
+			} else {
+				// Based on the time added, *not* the last connected time.
+				// This prevents various dubious ways of staying connected while not delivering anything useful.
+				return NOT_DROP_REASON.TOO_NEW_PEER; // New node
+			}
 		} else {
 			synchronized(this) {
 				peerAddedTime = 0;
@@ -76,7 +83,6 @@ public class OpennetPeerNode extends PeerNode {
 		}
 		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
 			return NOT_DROP_REASON.TOO_LOW_UPTIME; // Give them time to connect after we startup
-		int status = getPeerNodeStatus();
 		if(!ignoreDisconnect) {
 		synchronized(this) {
 			// This only applies after it has connected, and only if !ignoreDisconnect.
