@@ -471,6 +471,7 @@ public class OpennetManager {
 				return true;
 			}
 		}
+		if(logMINOR) Logger.minor(this, "Per type grace period limit allowed connection of type "+type+" count is "+count+" limit is "+myLimit);
 		return false;
 	}
 
