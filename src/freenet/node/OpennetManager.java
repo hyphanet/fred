@@ -357,11 +357,11 @@ public class OpennetManager {
 			// And we only allow a connection to be dropped every 10 successful fetches.
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS) || now - timeLastDropped < DROP_CONNECTED_TIME;
 		}
+		if(nodeToAddNow != null)
+			nodeToAddNow.setAddedReason(connectionType);
 		if(notMany) {
-			if(nodeToAddNow != null) {
-				nodeToAddNow.setAddedReason(connectionType);
+			if(nodeToAddNow != null)
 				node.peers.addPeer(nodeToAddNow, true, true); // Add to peers outside the OM lock
-			}
 			return true;
 		}
 		boolean canAdd = true;
