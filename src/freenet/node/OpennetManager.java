@@ -358,8 +358,10 @@ public class OpennetManager {
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS) || now - timeLastDropped < DROP_CONNECTED_TIME;
 		}
 		if(notMany) {
-			if(nodeToAddNow != null)
+			if(nodeToAddNow != null) {
+				nodeToAddNow.setAddedReason(connectionType);
 				node.peers.addPeer(nodeToAddNow, true, true); // Add to peers outside the OM lock
+			}
 			return true;
 		}
 		boolean canAdd = true;
@@ -432,6 +434,7 @@ public class OpennetManager {
 		}
 		for(OpennetPeerNode pn : dropList) {
 			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
+			pn.setAddedReason(null);
 			node.peers.disconnect(pn, true, true, true);
 		}
 		return canAdd;

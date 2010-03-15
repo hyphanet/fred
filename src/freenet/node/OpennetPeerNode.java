@@ -2,12 +2,15 @@ package freenet.node;
 
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.OpennetManager.ConnectionType;
 import freenet.support.SimpleFieldSet;
 
 public class OpennetPeerNode extends PeerNode {
 
 	final OpennetManager opennet;
 	private long timeLastSuccess;
+	// Not persisted across restart, since after restart grace periods don't apply anyway (except disconnection, which is really separate anyway).
+	private ConnectionType opennetNodeAddedReason;
 	
 	public OpennetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, OpennetManager opennet, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
@@ -163,4 +166,11 @@ public class OpennetPeerNode extends PeerNode {
 		return ret;
 	}
 	
+	public synchronized void setAddedReason(ConnectionType connectionType) {
+		opennetNodeAddedReason = connectionType;
+	}
+	
+	public synchronized ConnectionType getAddedReason() {
+		return opennetNodeAddedReason;
+	}
 }

@@ -59,6 +59,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
+import freenet.node.OpennetManager.ConnectionType;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -4372,4 +4373,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isLowUptime() {
 		return getUptime() < Node.MIN_UPTIME_STORE_KEY;
 	}
+	
+	public void setAddedReason(ConnectionType connectionType) {
+		// Do nothing.
+	}
+	
+	public synchronized ConnectionType getAddedReason() {
+		return null;
+	}
+
 }
