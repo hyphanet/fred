@@ -375,7 +375,7 @@ public class OpennetManager {
 					canAdd = false;
 			}
 			int size = getSize();
-			if(size >= maxPeers && canAdd && enforcePerTypeGracePeriodLimits(maxPeers, connectionType)) return false;
+			if(size >= maxPeers && canAdd && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null && canAdd)) return false;
 			if(size == maxPeers && nodeToAddNow == null && canAdd) {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
@@ -441,7 +441,7 @@ public class OpennetManager {
 		return canAdd;
 	}
 	
-	private synchronized boolean enforcePerTypeGracePeriodLimits(int maxPeers, ConnectionType type) {
+	private synchronized boolean enforcePerTypeGracePeriodLimits(int maxPeers, ConnectionType type, boolean addingPeer) {
 		if(type == null) {
 			if(logMINOR) Logger.minor(this, "No type set, not enforcing per type limits");
 		}
@@ -470,7 +470,7 @@ public class OpennetManager {
 				return true;
 			}
 		}
-		if(logMINOR) Logger.minor(this, "Per type grace period limit allowed connection of type "+type+" count is "+count+" limit is "+myLimit);
+		if(logMINOR) Logger.minor(this, "Per type grace period limit allowed connection of type "+type+" count is "+count+" limit is "+myLimit+" addingPeer="+addingPeer);
 		return false;
 	}
 
