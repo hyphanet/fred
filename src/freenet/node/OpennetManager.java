@@ -374,8 +374,9 @@ public class OpennetManager {
 				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
 					canAdd = false;
 			}
-			int size;
-			if((size = getSize()) == maxPeers && nodeToAddNow == null && canAdd) {
+			int size = getSize();
+			if(size >= maxPeers && enforcePerTypeGracePeriodLimits(maxPeers, connectionType)) return false;
+			if(size == maxPeers && nodeToAddNow == null && canAdd) {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
@@ -438,6 +439,39 @@ public class OpennetManager {
 			node.peers.disconnect(pn, true, true, true);
 		}
 		return canAdd;
+	}
+
+	
+	private synchronized boolean enforcePerTypeGracePeriodLimits(int maxPeers, ConnectionType type) {
+		if(type == null) {
+			if(logMINOR) Logger.minor(this, "No type set, not enforcing per type limits");
+		}
+		int announceMax;
+		int reconnectMax;
+		int pathFoldingMax;
+		if(maxPeers <= 6) return false;
+		announceMax = reconnectMax = (maxPeers + 9) / 10; // 1 for <=10, 2 for <=20, 3 for <=30, 4 for <=40
+		pathFoldingMax = maxPeers - announceMax - reconnectMax;
+		if(logMINOR) Logger.minor(this, "Per type grace period limits: total peers: "+maxPeers+" announce "+announceMax+" reconnect "+reconnectMax+" path folding "+pathFoldingMax);
+		int myLimit;
+		if(type == ConnectionType.PATH_FOLDING)
+			myLimit = pathFoldingMax;
+		else if(type == ConnectionType.ANNOUNCE)
+			myLimit = announceMax;
+		else
+			myLimit = reconnectMax;
+		int count = 0;
+		OpennetPeerNode[] peers = peersLRU.toArray(new OpennetPeerNode[peersLRU.size()]);
+		for(OpennetPeerNode pn : peers) {
+			if(pn.getAddedReason() != type) continue;
+			if(!pn.isConnected()) continue;
+			if(pn.isDroppable(false)) continue;
+			if(++count > myLimit) {
+				if(logMINOR) Logger.minor(this, "Per type grace period limit rejected peer of type "+type+" count is "+count+" limit is "+myLimit);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void dropExcessPeers() {
