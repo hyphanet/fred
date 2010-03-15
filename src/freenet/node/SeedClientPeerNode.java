@@ -139,4 +139,10 @@ public class SeedClientPeerNode extends PeerNode {
 	protected boolean shouldExportPeerAddedTime() {
 		return true; // For diagnostic purposes only.
 	}
+	
+	@Override
+	protected void maybeClearPeerAddedTimeOnRestart(long now) {
+		// Do nothing.
+	}
+
 }

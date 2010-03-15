@@ -1599,5 +1599,11 @@ public class DarknetPeerNode extends PeerNode {
 	protected boolean shouldExportPeerAddedTime() {
 		return true;
 	}
-
+	
+	protected void maybeClearPeerAddedTimeOnRestart(long now) {
+		if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
+			peerAddedTime = 0;
+		if(!neverConnected)
+			peerAddedTime = 0;
+	}
 }

@@ -298,12 +298,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** The last time we attempted to update handshakeIPs */
 	private long lastAttemptedHandshakeIPUpdateTime;
 	/** True if we have never connected to this peer since it was added to this node */
-	private boolean neverConnected;
+	protected boolean neverConnected;
 	/** When this peer was added to this node. 
 	 * This is used differently by opennet and darknet nodes.
-	 * Darknet nodes clear it after connecting but persist it across restarts.
+	 * Darknet nodes clear it after connecting but persist it across restarts, and clear it on restart unless the peer has never connected, or if it is more than 30 days ago.
 	 * Opennet nodes clear it after the post-connect grace period elapses, and don't persist it across restarts.
-	 * In any case it is cleared after 30 days. */
+	 */
 	protected long peerAddedTime = 1;
 	/** Average proportion of requests which are rejected or timed out */
 	private TimeDecayingRunningAverage pRejected;
@@ -679,10 +679,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} else
 					peerAddedTime = 0; // This is normal: Not only do exported refs not include it, opennet peers don't either.
 				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
-				if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
-					peerAddedTime = 0;
-				if(!neverConnected)
-					peerAddedTime = 0;
+				maybeClearPeerAddedTimeOnRestart(now);
 				String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
 				if(tempHadRoutableConnectionCountString != null) {
 					long tempHadRoutableConnectionCount = Fields.parseLong(tempHadRoutableConnectionCountString, 0);
@@ -723,6 +720,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
+
+	protected abstract void maybeClearPeerAddedTimeOnRestart(long now);
 
 	private boolean parseARK(SimpleFieldSet fs, boolean onStartup, boolean forDiffNodeRef) {
 		USK ark = null;

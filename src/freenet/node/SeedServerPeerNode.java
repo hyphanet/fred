@@ -153,4 +153,10 @@ public class SeedServerPeerNode extends PeerNode {
 		// For diagnostic purposes only.
 		return true;
 	}
+
+	@Override
+	protected void maybeClearPeerAddedTimeOnRestart(long now) {
+		// Do nothing.
+	}
+
 }

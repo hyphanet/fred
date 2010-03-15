@@ -204,4 +204,9 @@ public class OpennetPeerNode extends PeerNode {
 	protected boolean shouldExportPeerAddedTime() {
 		return false;
 	}
+
+	@Override
+	protected void maybeClearPeerAddedTimeOnRestart(long now) {
+		// Do nothing.
+	}
 }
