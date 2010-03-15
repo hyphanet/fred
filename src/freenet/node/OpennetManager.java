@@ -467,7 +467,7 @@ public class OpennetManager {
 			if(pn.getAddedReason() != type) continue;
 			if(!pn.isConnected()) continue;
 			if(pn.isDroppable(false)) continue;
-			if(++count > myLimit) {
+			if(++count >= myLimit) {
 				if(logMINOR) Logger.minor(this, "Per type grace period limit rejected peer of type "+type+" count is "+count+" limit is "+myLimit);
 				return true;
 			}
