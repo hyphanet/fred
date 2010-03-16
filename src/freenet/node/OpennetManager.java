@@ -885,14 +885,14 @@ public class OpennetManager {
 		long now = System.currentTimeMillis();
 
 		synchronized (knownIds) {
-			Logger.minor(this, "Adding Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(this, "Adding Id " + d + " knownIds size " + knownIds.size());
 			knownIds.push(d, now);
-			Logger.minor(this, "Added Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(this, "Added Id " + d + " knownIds size " + knownIds.size());
 			knownIds.removeBefore(now - MAX_AGE);
-			Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
 		}
 		if (logMINOR)
-			Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
+			if(logMINOR) Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
 	}
     //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
 	public int getNetworkSizeEstimate(long timestamp) {
