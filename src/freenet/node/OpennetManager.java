@@ -384,7 +384,7 @@ public class OpennetManager {
 					canAdd = false;
 			}
 			int size = getSize();
-			if(size >= maxPeers && canAdd && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null && canAdd)) return false;
+			if(size >= maxPeers && canAdd && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null)) return false;
 			if(size == maxPeers && nodeToAddNow == null && canAdd) {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
