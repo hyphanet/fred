@@ -59,6 +59,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
+import freenet.node.OpennetManager.ConnectionType;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -297,9 +298,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** The last time we attempted to update handshakeIPs */
 	private long lastAttemptedHandshakeIPUpdateTime;
 	/** True if we have never connected to this peer since it was added to this node */
-	private boolean neverConnected;
-	/** When this peer was added to this node */
-	private long peerAddedTime = 1;
+	protected boolean neverConnected;
+	/** When this peer was added to this node. 
+	 * This is used differently by opennet and darknet nodes.
+	 * Darknet nodes clear it after connecting but persist it across restarts, and clear it on restart unless the peer has never connected, or if it is more than 30 days ago.
+	 * Opennet nodes clear it after the post-connect grace period elapses, and don't persist it across restarts.
+	 */
+	protected long peerAddedTime = 1;
 	/** Average proportion of requests which are rejected or timed out */
 	private TimeDecayingRunningAverage pRejected;
 	/** Total low-level input bytes */
@@ -688,6 +693,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(tempPeerAddedTimeString != null) {
 					long tempPeerAddedTime = Fields.parseLong(tempPeerAddedTimeString, 0);
 					peerAddedTime = tempPeerAddedTime;
+<<<<<<< HEAD
 				} else {
 					peerAddedTime = 0;
 				}
@@ -698,6 +704,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(!neverConnected) {
 					peerAddedTime = 0;
 				}
+=======
+				} else
+					peerAddedTime = 0; // This is normal: Not only do exported refs not include it, opennet peers don't either.
+				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
+				maybeClearPeerAddedTimeOnRestart(now);
+>>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 				String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
 				if(tempHadRoutableConnectionCountString != null) {
 					long tempHadRoutableConnectionCount = Fields.parseLong(tempHadRoutableConnectionCountString, 0);
@@ -740,6 +752,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
+
+	protected abstract void maybeClearPeerAddedTimeOnRestart(long now);
 
 	private boolean parseARK(SimpleFieldSet fs, boolean onStartup, boolean forDiffNodeRef) {
 		USK ark = null;
@@ -2087,7 +2101,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// In case of a race condition (two setups between A and B complete at the same time),
 				// we might want to keep the unverified tracker rather than the previous tracker.
 				neverConnected = false;
-				peerAddedTime = 0;  // don't store anymore
+				maybeClearPeerAddedTimeOnConnect();
 				maybeSwapTrackers();
 				prev = previousTracker;
 			}
@@ -2148,6 +2162,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return packets.trackerID;
 	}
 
+	protected abstract void maybeClearPeerAddedTimeOnConnect();
+	
 	/**
 	 * Resolve race conditions where two connection setups between two peers complete simultaneously.
 	 * Swap prev and current if:
@@ -2344,7 +2360,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				unverifiedTracker = null;
 				isConnected = true;
 				neverConnected = false;
-				peerAddedTime = 0;  // don't store anymore
+				maybeClearPeerAddedTimeOnConnect();
 				ctx = null;
 				maybeSwapTrackers();
 				if(previousTracker != null && previousTracker.packets != currentTracker.packets) {
@@ -2775,8 +2791,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(timeLastRoutable() > 0) {
 			fs.putSingle("timeLastRoutable", Long.toString(timeLastRoutable));
+<<<<<<< HEAD
 		}
 		if(getPeerAddedTime() > 0) {
+=======
+		if(getPeerAddedTime() > 0 && shouldExportPeerAddedTime())
+>>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 			fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
 		}
 		if(neverConnected) {
@@ -2793,6 +2813,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		return fs;
 	}
+
+	// Opennet peers don't persist or export the peer added time.
+	protected abstract boolean shouldExportPeerAddedTime();
 
 	/**
 	* Export volatile data about the node as a SimpleFieldSet
@@ -4552,4 +4575,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isLowUptime() {
 		return getUptime() < Node.MIN_UPTIME_STORE_KEY;
 	}
+	
+	public void setAddedReason(ConnectionType connectionType) {
+		// Do nothing.
+	}
+	
+	public synchronized ConnectionType getAddedReason() {
+		return null;
+	}
+
 }

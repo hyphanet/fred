@@ -1585,4 +1585,25 @@ public class DarknetPeerNode extends PeerNode {
 		return false;
 	}
 
+	@Override
+	/** Darknet peers clear peerAddedTime on connecting. */
+	protected void maybeClearPeerAddedTimeOnConnect() {
+		peerAddedTime = 0;  // don't store anymore
+	}
+
+	@Override
+	/** Darknet nodes *do* export the peer added time. However it gets
+	 * cleared on connecting: It is only kept for never-connected peers
+	 * so we can see that we haven't had a connection in a long time and
+	 * offer to get rid of them. */
+	protected boolean shouldExportPeerAddedTime() {
+		return true;
+	}
+	
+	protected void maybeClearPeerAddedTimeOnRestart(long now) {
+		if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000))  // 30 days
+			peerAddedTime = 0;
+		if(!neverConnected)
+			peerAddedTime = 0;
+	}
 }
