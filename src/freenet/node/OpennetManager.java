@@ -33,6 +33,7 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
 import freenet.support.LRUQueue;
+import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
@@ -92,7 +93,17 @@ public class OpennetManager {
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
 	public static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
-	private static boolean logMINOR;
+	
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			@Override
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	/** How big to pad opennet noderefs to? If they are bigger than this then we won't send them. */
 	public static final int PADDED_NODEREF_SIZE = 3072;
@@ -131,7 +142,6 @@ public class OpennetManager {
 	private final long creationTime;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.creationTime = System.currentTimeMillis();
 		this.node = node;
 		crypto =
@@ -195,7 +205,6 @@ public class OpennetManager {
 	}
 
 	private void writeFile(File orig, File backup) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet fs = crypto.exportPrivateFieldSet();
 
 		if(orig.exists()) backup.delete();
@@ -339,7 +348,7 @@ public class OpennetManager {
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+")");
+		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
 		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
@@ -933,15 +942,20 @@ public class OpennetManager {
 		long now = System.currentTimeMillis();
 
 		synchronized (knownIds) {
-			Logger.minor(this, "Adding Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(this, "Adding Id " + d + " knownIds size " + knownIds.size());
 			knownIds.push(d, now);
-			Logger.minor(this, "Added Id " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(this, "Added Id " + d + " knownIds size " + knownIds.size());
 			knownIds.removeBefore(now - MAX_AGE);
-			Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
+			if(logMINOR) Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
 		}
+<<<<<<< HEAD
 		if (logMINOR) {
 			Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
 		}
+=======
+		if (logMINOR)
+			if(logMINOR) Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
+>>>>>>> 30e4af865fab99bc940555ec19b3f8c8a6772657
 	}
 	//Return the estimated network size based on locations seen after timestamp or for the whole session if -1
 	public int getNetworkSizeEstimate(long timestamp) {
