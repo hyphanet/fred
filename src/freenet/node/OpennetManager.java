@@ -381,8 +381,11 @@ public class OpennetManager {
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
 				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
-				if(toDrop == null)
+				if(toDrop == null) {
+					if(logMINOR)
+						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
+				}
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
