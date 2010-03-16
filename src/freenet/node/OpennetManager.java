@@ -337,7 +337,7 @@ public class OpennetManager {
 		boolean notMany = false;
 		boolean noDisconnect;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+")");
+		if(logMINOR) Logger.minor(this, "wantPeer("+addAtLRU+","+justChecking+","+oldOpennetPeer+","+connectionType+")");
 		synchronized(this) {
 			if(nodeToAddNow != null &&
 					peersLRU.contains(nodeToAddNow)) {
