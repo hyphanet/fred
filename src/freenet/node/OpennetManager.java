@@ -385,6 +385,8 @@ public class OpennetManager {
 				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
+				else
+					canAdd = false;
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
