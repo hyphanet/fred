@@ -914,7 +914,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
-			PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
+			PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title"+(uploads?"Uploads":"Downloads"), new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			/* add alert summary box */
