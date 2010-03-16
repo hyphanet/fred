@@ -370,8 +370,6 @@ public class OpennetManager {
 		ArrayList<OpennetPeerNode> dropList = new ArrayList<OpennetPeerNode>();
 		synchronized(this) {
 			int maxPeers = getNumberOfConnectedPeersToAim();
-			// If we have dropped a disconnected peer, then the inter-peer offer cooldown doesn't apply: we can accept immediately.
-			boolean hasDisconnected = false;
 			if(oldOpennetPeer) {
 				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
 					canAdd = false;
@@ -383,9 +381,7 @@ public class OpennetManager {
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
 				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
-				if(toDrop != null)
-					hasDisconnected = !toDrop.isConnected();
-				else
+				if(toDrop == null)
 					canAdd = false;
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
@@ -400,8 +396,6 @@ public class OpennetManager {
 				if(nodeToAddNow != null || size > maxPeers) {
 					if(logMINOR)
 						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
-					if(!toDrop.isConnected())
-						hasDisconnected = true;
 					peersLRU.remove(toDrop);
 					dropList.add(toDrop);
 				}
