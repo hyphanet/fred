@@ -384,7 +384,6 @@ public class OpennetManager {
 					canAdd = false;
 			}
 			int size = getSize();
-			if(size >= maxPeers && canAdd && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null)) return false;
 			if(size == maxPeers && nodeToAddNow == null && canAdd) {
 				// Allow an offer to be predicated on throwing out a connected node,
 				// provided that we meet the other criteria e.g. time since last added,
@@ -394,6 +393,11 @@ public class OpennetManager {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
+				} else {
+					// Only check per-type limits if we are throwing out connected peers.
+					// This is important for bootstrapping, given the low announcement limit.
+					if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null))
+						return false;
 				}
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
@@ -405,6 +409,10 @@ public class OpennetManager {
 					canAdd = false;
 					break;
 				}
+				// Only check per-type limits if we are throwing out connected peers.
+				// This is important for bootstrapping, given the low announcement limit.
+				if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null))
+					return false;
 				if(nodeToAddNow != null || size > maxPeers) {
 					if(logMINOR)
 						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
