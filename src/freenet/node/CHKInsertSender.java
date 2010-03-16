@@ -334,8 +334,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	
             	forkedRequestTag = new InsertTag(false, InsertTag.START.REMOTE);
             	uid = node.random.nextLong();
-            	System.err.println("FORKING CHK INSERT "+origUID+" to "+uid);
-            	Logger.error(this, "FORKING CHK INSERT "+origUID+" to "+uid);
+            	Logger.normal(this, "FORKING CHK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, false, true, false, false, forkedRequestTag);
             }
