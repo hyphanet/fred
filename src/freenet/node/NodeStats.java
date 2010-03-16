@@ -1604,12 +1604,8 @@ public class NodeStats implements Persistable {
 	// the requests' totals.
 
 	private long announceBytesSent;
-<<<<<<< HEAD
-
-=======
 	private long announceBytesPayload;
 	
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 	public final ByteCounter announceByteCounter = new ByteCounter() {
 
 		public void receivedBytes(int x) {
@@ -1633,15 +1629,11 @@ public class NodeStats implements Persistable {
 	public synchronized long getAnnounceBytesSent() {
 		return announceBytesSent;
 	}
-<<<<<<< HEAD
 
-=======
-	
 	public synchronized long getAnnounceBytesPayloadSent() {
 		return announceBytesPayload;
 	}
-	
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
+
 	private long routingStatusBytesSent;
 
 	ByteCounter setRoutingStatusCtr = new ByteCounter() {

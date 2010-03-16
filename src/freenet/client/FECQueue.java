@@ -17,7 +17,6 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
-import freenet.client.FECJob;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;

@@ -53,7 +53,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	// Only implements PutCompletionCallback for the final metadata insert
-	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
+	public class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 		
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
 			super(smp.priorityClass, smp.client);

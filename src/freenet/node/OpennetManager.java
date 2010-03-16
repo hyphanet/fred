@@ -126,9 +126,6 @@ public class OpennetManager {
 	public static final int PANIC_MAX_PEERS = 50;
 	/** Stop trying to reconnect to an old-opennet-peer after a month. */
 	public static final long MAX_TIME_ON_OLD_OPENNET_PEERS = 31 * 24 * 60 * 60 * 1000;
-<<<<<<< HEAD
-
-=======
 	
 	// This is only relevant while the connection is in the grace period.
 	// Null means none of the above e.g. not in grace period.
@@ -138,7 +135,6 @@ public class OpennetManager {
 		RECONNECT
 	}
 	
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 	private final long creationTime;
 
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
@@ -405,15 +401,11 @@ public class OpennetManager {
 				// provided that we meet the other criteria e.g. time since last added,
 				// node isn't too new.
 				PeerNode toDrop = peerToDrop(noDisconnect, false, nodeToAddNow != null);
-<<<<<<< HEAD
-				if(toDrop != null) {
-					hasDisconnected = !toDrop.isConnected();
-=======
 				if(toDrop == null) {
-					if(logMINOR)
+					if(logMINOR) {
 						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
+					}
 					canAdd = false;
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 				}
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
@@ -429,13 +421,7 @@ public class OpennetManager {
 				if(nodeToAddNow != null || size > maxPeers) {
 					if(logMINOR) {
 						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
-<<<<<<< HEAD
 					}
-					if(!toDrop.isConnected()) {
-						hasDisconnected = true;
-					}
-=======
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 					peersLRU.remove(toDrop);
 					dropList.add(toDrop);
 				}
@@ -948,14 +934,8 @@ public class OpennetManager {
 			knownIds.removeBefore(now - MAX_AGE);
 			if(logMINOR) Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
 		}
-<<<<<<< HEAD
-		if (logMINOR) {
-			Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
-		}
-=======
-		if (logMINOR)
 			if(logMINOR) Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
->>>>>>> 30e4af865fab99bc940555ec19b3f8c8a6772657
+
 	}
 	//Return the estimated network size based on locations seen after timestamp or for the whole session if -1
 	public int getNetworkSizeEstimate(long timestamp) {

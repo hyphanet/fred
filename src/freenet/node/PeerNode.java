@@ -693,23 +693,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(tempPeerAddedTimeString != null) {
 					long tempPeerAddedTime = Fields.parseLong(tempPeerAddedTimeString, 0);
 					peerAddedTime = tempPeerAddedTime;
-<<<<<<< HEAD
-				} else {
-					peerAddedTime = 0;
-				}
-				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
-				if((now - peerAddedTime) > (((long) 30) * 24 * 60 * 60 * 1000)) { // 30 days
-					peerAddedTime = 0;
-				}
-				if(!neverConnected) {
-					peerAddedTime = 0;
-				}
-=======
 				} else
 					peerAddedTime = 0; // This is normal: Not only do exported refs not include it, opennet peers don't either.
 				neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
 				maybeClearPeerAddedTimeOnRestart(now);
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 				String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
 				if(tempHadRoutableConnectionCountString != null) {
 					long tempHadRoutableConnectionCount = Fields.parseLong(tempHadRoutableConnectionCountString, 0);
@@ -2791,12 +2778,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(timeLastRoutable() > 0) {
 			fs.putSingle("timeLastRoutable", Long.toString(timeLastRoutable));
-<<<<<<< HEAD
-		}
-		if(getPeerAddedTime() > 0) {
-=======
 		if(getPeerAddedTime() > 0 && shouldExportPeerAddedTime())
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 			fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
 		}
 		if(neverConnected) {

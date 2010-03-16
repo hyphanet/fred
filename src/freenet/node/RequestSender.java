@@ -1219,32 +1219,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	}
 
 	/**
-<<<<<<< HEAD
-	 * Do path folding, maybe.
-	 * Wait for either a CompletedAck or a ConnectDestination.
-	 * If the former, exit.
-	 * If we want a connection, reply with a ConnectReply, otherwise send a ConnectRejected and exit.
-	 * Add the peer.
-	 */
-	private void finishOpennet(PeerNode next) {
-
-		OpennetManager om;
-
-		try {
-			om = node.getOpennet();
-
-			if(om == null) return; // Nothing to do
-
-			byte[] noderef = om.waitForOpennetNoderef(false, next, uid, this);
-
-			if(noderef == null) return;
-
-			SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, next, false);
-
-			if(ref == null) return;
-
-			if(node.addNewOpennetNode(ref) == null) {
-=======
      * Do path folding, maybe.
      * Wait for either a CompletedAck or a ConnectDestination.
      * If the former, exit.
@@ -1266,10 +1240,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	
         	SimpleFieldSet ref = om.validateNoderef(noderef, 0, noderef.length, next, false);
         	
-        	if(ref == null) return;
-        	
+			if(ref == null) return;
+
 			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
->>>>>>> 1e0cc3dd82ea66b52eed0f968aff40e8039dc4ea
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;
