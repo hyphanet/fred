@@ -37,7 +37,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 	static final boolean ENABLE_SWAP_QUEUEING = false;
 	static final boolean ENABLE_FOAF = true;
 	
-	public static int DARKNET_PORT_BASE = RealNodeRequestInsertTest.DARKNET_PORT_END;
+	public static int DARKNET_PORT_BASE = 10000;
 	public static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
 
 	public static void main(String[] args) throws Exception {

@@ -24,11 +24,12 @@ import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Logger;
 
 /** Implementation of allowedHosts */
-public class AllowedHosts {
-	
+public class AllowedHosts
+{
 	protected final List<AddressMatcher> addressMatchers = new ArrayList<AddressMatcher>();
 	
-	public AllowedHosts(String allowedHosts) {
+	public AllowedHosts(String allowedHosts)
+	{
 		setAllowedHosts(allowedHosts);
 	}
 
@@ -39,8 +40,9 @@ public class AllowedHosts {
 	 * @param allowedHosts
 	 *            The new list of allowed hosts s
 	 */
-	public void setAllowedHosts(String allowedHosts) {
-                if(allowedHosts == null || allowedHosts.equals("")) allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
+	public void setAllowedHosts(String allowedHosts)
+	{
+		if(allowedHosts == null || "".equals(allowedHosts)) allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer allowedHostsTokens = new StringTokenizer(allowedHosts, ",");
 		List<AddressMatcher> newAddressMatchers = new ArrayList<AddressMatcher>();
 		while (allowedHostsTokens.hasMoreTokens()) {
@@ -54,7 +56,7 @@ public class AllowedHosts {
 				newAddressMatchers.add(new Inet4AddressMatcher(allowedHost));
 			} else if (addressType == AddressType.IPv6) {
 				newAddressMatchers.add(new Inet6AddressMatcher(allowedHost));
-			} else if (allowedHost.equals("*")) {
+			} else if ("*".equals(allowedHost)) {
 				newAddressMatchers.add(new EverythingMatcher());
 			} else {
 				Logger.error(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);
@@ -66,19 +68,22 @@ public class AllowedHosts {
 		}
 	}
 
-	public boolean allowed(InetAddress clientAddress) {
+	public boolean allowed(InetAddress clientAddress)
+	{
 		AddressType clientAddressType = AddressIdentifier.getAddressType(clientAddress.getHostAddress());
 		return allowed(clientAddressType, clientAddress);
 	}
 
-	public synchronized boolean allowed(AddressType clientAddressType, InetAddress clientAddress) {
+	public synchronized boolean allowed(AddressType clientAddressType, InetAddress clientAddress)
+	{
 		for(AddressMatcher matcher: addressMatchers) {
 			if(matcher.matches(clientAddress)) return true;
 		}
 		return false;
 	}
 
-	public synchronized String getAllowedHosts() {
+	public synchronized String getAllowedHosts()
+	{
 		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<addressMatchers.size();i++) {
 			AddressMatcher matcher = addressMatchers.get(i);

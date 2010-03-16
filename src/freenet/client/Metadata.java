@@ -467,7 +467,7 @@ public class Metadata implements Cloneable {
 					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
-				if(key.equals("")) {
+				if("".equals(key)) {
 					Logger.error(this, "Creating a subdirectory called \"\" - it will not be possible to access this through fproxy!", new Exception("error"));
 				}
 				HashMap<String, Object> hm = (HashMap<String, Object>)o;
@@ -571,7 +571,7 @@ public class Metadata implements Cloneable {
 			}
 			if(uri == null) throw new NullPointerException();
 			simpleRedirectKey = uri;
-			if(!(uri.getKeyType().equals("CHK") && !uri.hasMetaStrings()))
+			if(!("CHK".equals(uri.getKeyType()) && !uri.hasMetaStrings()))
 				fullKeys = true;
 		} else
 			throw new IllegalArgumentException();
@@ -733,20 +733,20 @@ public class Metadata implements Cloneable {
 	}
 	
 	/**
-     * Get all documents in the manifest (ignores default doc).
-     * @throws MetadataParseException
-     */
-    public HashMap<String, Metadata> getDocuments() {
-    	HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
-        Set<String> s = manifestEntries.keySet();
-        Iterator<String> i = s.iterator();
-        while (i.hasNext()) {
-        	String st = i.next();
-        	if (st.length()>0)
-        		docs.put(st, manifestEntries.get(st));
-        }
-        return docs;
-    }
+	 * Get all documents in the manifest (ignores default doc).
+	 * @throws MetadataParseException
+	 */
+	public HashMap<String, Metadata> getDocuments() {
+		HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
+		Set<String> s = manifestEntries.keySet();
+		Iterator<String> i = s.iterator();
+		while (i.hasNext()) {
+			String st = i.next();
+			if (st.length()>0)
+				docs.put(st, manifestEntries.get(st));
+		}
+		return docs;
+	}
 
 	/**
 	 * Does the metadata point to a single URI?

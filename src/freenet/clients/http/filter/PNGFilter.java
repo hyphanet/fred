@@ -33,9 +33,9 @@ import freenet.support.io.FileBucket;
 
 /**
  * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).
- * 
+ *
  * It can strip the timestamp and "text(.)*" chunks if asked to
- * 
+ *
  * FIXME: validate chunk contents where possible.
  */
 public class PNGFilter implements ContentDataFilter {
@@ -44,15 +44,15 @@ public class PNGFilter implements ContentDataFilter {
 	private final boolean deleteTimestamp;
 	private final boolean checkCRCs;
 	static final byte[] pngHeader = { (byte) 137, (byte) 80, (byte) 78, (byte) 71, (byte) 13, (byte) 10, (byte) 26,
-	        (byte) 10 };
+			(byte) 10 };
 	static final String[] HARMLESS_CHUNK_TYPES = {
 	// http://www.w3.org/TR/PNG/
-	        "tRNS", "cHRM", "gAMA", "iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
-	        "sBIT", // FIXME rather obscure ??
-	        "sRGB", "bKGD", "hIST", "pHYs", "sPLT",
-	        // APNG chunks (Firefox 3 will support APNG)
-	        // http://wiki.mozilla.org/APNG_Specification
-	        "acTL", "fcTL", "fdAT"
+			"tRNS", "cHRM", "gAMA", "iCCP", // FIXME Embedded ICC profile: could this conceivably cause a web lookup?
+			"sBIT", // FIXME rather obscure ??
+			"sRGB", "bKGD", "hIST", "pHYs", "sPLT",
+			// APNG chunks (Firefox 3 will support APNG)
+			// http://wiki.mozilla.org/APNG_Specification
+			"acTL", "fcTL", "fdAT"
 	// MNG isn't supported by Firefox and IE because of lack of market demand. Big surprise
 	// given nobody supports it! It is supported by Konqueror though. Complex standard,
 	// not worth it for the time being.
@@ -68,12 +68,14 @@ public class PNGFilter implements ContentDataFilter {
 	}
 
 	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+			FilterCallback cb) throws DataFilterException, IOException {
 		Bucket output = readFilter(data, bf, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, null);
-		if (output != null)
+		if (output != null) {
 			return output;
-		if (Logger.shouldLog(Logger.MINOR, this))
+		}
+		if (Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "Need to modify PNG...");
+		}
 		Bucket filtered = bf.makeBucket(-1);
 		OutputStream os = new BufferedOutputStream(filtered.getOutputStream());
 		try {
@@ -88,8 +90,8 @@ public class PNGFilter implements ContentDataFilter {
 	}
 
 	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs, OutputStream output)
-	        throws DataFilterException, IOException {
+			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs, OutputStream output)
+			throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		InputStream is = null;
@@ -107,7 +109,7 @@ public class PNGFilter implements ContentDataFilter {
 				String message = l10n("invalidHeader");
 				String title = l10n("invalidHeaderTitle");
 				throw new DataFilterException(title, title, "<p>" + message + "</p>", new HTMLNode("p").addChild("#",
-				        message));
+						message));
 			}
 
 			ByteArrayOutputStream baos = null;
@@ -116,8 +118,9 @@ public class PNGFilter implements ContentDataFilter {
 				baos = new ByteArrayOutputStream();
 				dos = new DataOutputStream(baos);
 				output.write(pngHeader);
-				if (logMINOR)
+				if (logMINOR) {
 					Logger.minor(this, "Writing the PNG header to the output bucket");
+				}
 			}
 
 			// Check the chunks :
@@ -138,11 +141,13 @@ public class PNGFilter implements ContentDataFilter {
 				dis.readFully(lengthBytes);
 
 				int length = ((lengthBytes[0] & 0xff) << 24) + ((lengthBytes[1] & 0xff) << 16)
-				        + ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff);
-				if (logMINOR)
+						+ ((lengthBytes[2] & 0xff) << 8) + (lengthBytes[3] & 0xff);
+				if (logMINOR) {
 					Logger.minor(this, "length " + length);
-				if (dos != null)
+				}
+				if (dos != null) {
 					dos.write(lengthBytes);
+				}
 
 				// Type of the chunk : Should match [a-zA-Z]{4}
 				dis.readFully(lengthBytes);
@@ -159,31 +164,37 @@ public class PNGFilter implements ContentDataFilter {
 					}
 				}
 				chunkTypeString = sb.toString();
-				if (logMINOR)
+				if (logMINOR) {
 					Logger.minor(this, "name " + chunkTypeString);
+				}
 
 				// Content of the chunk
 				byte[] chunkData = new byte[length];
 				dis.readFully(chunkData, 0, length);
-				if (logMINOR)
-					if (logDEBUG)
+				if (logMINOR) {
+					if (logDEBUG) {
 						Logger.minor(this, "data " + (chunkData.length == 0 ? "null" : HexUtil.bytesToHex(chunkData)));
-					else
+					} else {
 						Logger.minor(this, "data " + chunkData.length);
-				if (dos != null)
+					}
+				}
+				if (dos != null) {
 					dos.write(chunkTypeBytes);
-				if (dos != null)
+				}
+				if (dos != null) {
 					dos.write(chunkData);
+				}
 
 				// CRC of the chunk
 				byte[] crcLengthBytes = new byte[4];
 				dis.readFully(crcLengthBytes);
-				if (dos != null)
+				if (dos != null) {
 					dos.write(crcLengthBytes);
+				}
 
 				if (checkCRCs) {
 					long readCRC = (((crcLengthBytes[0] & 0xff) << 24) + ((crcLengthBytes[1] & 0xff) << 16)
-					        + ((crcLengthBytes[2] & 0xff) << 8) + (crcLengthBytes[3] & 0xff)) & 0x00000000ffffffffL;
+							+ ((crcLengthBytes[2] & 0xff) << 8) + (crcLengthBytes[3] & 0xff)) & 0x00000000ffffffffL;
 					CRC32 crc = new CRC32();
 					crc.update(chunkTypeBytes);
 					crc.update(chunkData);
@@ -191,94 +202,109 @@ public class PNGFilter implements ContentDataFilter {
 
 					if (readCRC != computedCRC) {
 						skip = true;
-						if (logMINOR)
+						if (logMINOR) {
 							Logger.minor(this, "CRC of the chunk " + chunkTypeString + " doesn't match ("
-							        + Long.toHexString(readCRC) + " but should be " + Long.toHexString(computedCRC)
-							        + ")!");
+									+ Long.toHexString(readCRC) + " but should be " + Long.toHexString(computedCRC)
+									+ ")!");
+						}
 					}
 				}
 
 				boolean validChunkType = false;
 
 				if (!skip && "IHDR".equals(chunkTypeString)) {
-					if (hasSeenIHDR)
+					if (hasSeenIHDR) {
 						throwError("Duplicate IHDR", "Two IHDR chunks detected!!");
+					}
 					hasSeenIHDR = true;
 					validChunkType = true;
 				}
 
-				if (!hasSeenIHDR)
+				if (!hasSeenIHDR) {
 					throwError("No IHDR chunk!", "No IHDR chunk!");
+				}
 
 				if (!skip && "IEND".equals(chunkTypeString)) {
-					if (hasSeenIEND) // XXX impossible code path: it should have throwed as "IEND not last chunk" 
+					if (hasSeenIEND) { // XXX impossible code path: it should have throwed as "IEND not last chunk"
 						throwError("Two IEND chunks detected!!", "Two IEND chunks detected!!");
+					}
 					hasSeenIEND = true;
 					validChunkType = true;
 				}
 
 				if (!skip && "PLTE".equalsIgnoreCase(chunkTypeString)) {
-					if (hasSeenIDAT)
+					if (hasSeenIDAT) {
 						throwError("PLTE must be before IDAT", "PLTE must be before IDAT");
+					}
 					validChunkType = true;
 				}
 
 				if (!skip && "IDAT".equalsIgnoreCase(chunkTypeString)) {
-					if (hasSeenIDAT && !"IDAT".equalsIgnoreCase(lastChunkType))
+					if (hasSeenIDAT && !"IDAT".equalsIgnoreCase(lastChunkType)) {
 						throwError("Multiple IDAT chunks must be consecutive!",
-						        "Multiple IDAT chunks must be consecutive!");
+								"Multiple IDAT chunks must be consecutive!");
+					}
 					hasSeenIDAT = true;
 					validChunkType = true;
 				}
 
 				if (!validChunkType) {
 					for (int i = 0; i < HARMLESS_CHUNK_TYPES.length; i++) {
-						if (HARMLESS_CHUNK_TYPES[i].equals(chunkTypeString))
+						if (HARMLESS_CHUNK_TYPES[i].equals(chunkTypeString)) {
 							validChunkType = true;
+						}
 					}
 				}
 
 				if (dis.available() < 1) {
-					if (!(hasSeenIEND && hasSeenIHDR))
+					if (!(hasSeenIEND && hasSeenIHDR)) {
 						throwError("Missing IEND or IHDR!", "Missing IEND or IHDR!");
+					}
 					finished = true;
 				}
 
 				if ("text".equalsIgnoreCase(chunkTypeString) || "itxt".equalsIgnoreCase(chunkTypeString)
-				        || "ztxt".equalsIgnoreCase(chunkTypeString)) {
-					if (deleteText)
+						|| "ztxt".equalsIgnoreCase(chunkTypeString)) {
+					if (deleteText) {
 						skip = true;
-					else
+					} else {
 						validChunkType = true;
+					}
 				} else if (deleteTimestamp && "time".equalsIgnoreCase(chunkTypeString)) {
-					if (deleteTimestamp)
+					if (deleteTimestamp) {
 						skip = true;
-					else
+					} else {
 						validChunkType = true;
+					}
 				}
 
 				if (!validChunkType) {
-					if (logMINOR)
+					if (logMINOR) {
 						Logger.minor(this, "Skipping unknown chunk type " + chunkTypeString);
-					if (output == null)
+					}
+					if (output == null) {
 						return null;
+					}
 					skip = true;
 				}
 
-				if (skip && output == null)
+				if (skip && output == null) {
 					return null;
+				}
 				else if (!skip && output != null) {
-					if (logMINOR)
+					if (logMINOR) {
 						Logger
-						        .minor(this, "Writing " + chunkTypeString + " (" + baos.size()
-						                + ") to the output bucket");
+								.minor(this, "Writing " + chunkTypeString + " (" + baos.size()
+										+ ") to the output bucket");
+					}
 					baos.writeTo(output);
 					baos.flush();
 				}
 				lastChunkType = chunkTypeString;
 			}
-			if (hasSeenIEND && dis.available() > 0)
+			if (hasSeenIEND && dis.available() > 0) {
 				throwError("IEND not last chunk", "IEND not last chunk");
+			}
 
 			dis.close();
 		} catch (ArrayIndexOutOfBoundsException e) {
@@ -300,7 +326,7 @@ public class PNGFilter implements ContentDataFilter {
 	}
 
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+			FilterCallback cb) throws DataFilterException, IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -314,7 +340,7 @@ public class PNGFilter implements ContentDataFilter {
 		try {
 			Logger.setupStdoutLogging(Logger.MINOR, "");
 			ContentFilter.FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "image/png",
-			        new URI("http://127.0.0.1:8888/"), null, null);
+					new URI("http://127.0.0.1:8888/"), null, null);
 			BucketTools.copy(output.data, out);
 		} catch (IOException e) {
 			System.out.println("Bucket error?: " + e.getMessage());
@@ -329,14 +355,17 @@ public class PNGFilter implements ContentDataFilter {
 	private void throwError(String shortReason, String reason) throws DataFilterException {
 		// Throw an exception
 		String message = "Invalid PNG";
-		if (reason != null)
+		if (reason != null) {
 			message += ' ' + reason;
-		if (shortReason != null)
+		}
+		if (shortReason != null) {
 			message += " - " + shortReason;
+		}
 		DataFilterException e = new DataFilterException(shortReason, shortReason, "<p>" + message + "</p>",
-		        new HTMLNode("p").addChild("#", message));
-		if (Logger.shouldLog(Logger.NORMAL, this))
+				new HTMLNode("p").addChild("#", message));
+		if (Logger.shouldLog(Logger.NORMAL, this)) {
 			Logger.normal(this, "Throwing " + e, e);
+		}
 		throw e;
 	}
 }

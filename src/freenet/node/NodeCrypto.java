@@ -43,7 +43,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 
 /**
- * Cryptographic and transport level node identity. 
+ * Cryptographic and transport level node identity.
  * @author toad
  */
 public class NodeCrypto {
@@ -79,18 +79,18 @@ public class NodeCrypto {
 	final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
 	final BlockCipher anonSetupCipher;
-	
+
 	// Noderef related
 	/** An ordered version of the noderef FieldSet, without the signature */
 	private String mySignedReference = null;
 	/** The signature of the above fieldset */
 	private DSASignature myReferenceSignature = null;
 	/** A synchronization object used while signing the reference fieldset */
-	private volatile Object referenceSync = new Object();
-	
+	private final Object referenceSync = new Object();
+
 	/**
 	 * Get port number from a config, create socket and packet mangler
-	 * @throws NodeInitException 
+	 * @throws NodeInitException
 	 */
 	public NodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
 
@@ -99,17 +99,17 @@ public class NodeCrypto {
 		random = node.random;
 		this.isOpennet = isOpennet;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		
+
 		config.starting(this);
-		
+
 		try {
-		
+
 		int port = config.getPort();
-		
+
 		FreenetInetAddress bindto = config.getBindTo();
-		
+
 		UdpSocketHandler u = null;
-		
+
 		if(port > 65535) {
 			throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
 		} else if(port == -1) {
@@ -127,8 +127,9 @@ public class NodeCrypto {
 					continue;
 				}
 			}
-			if(u == null)
+			if(u == null) {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
+			}
 		} else {
 			try {
 				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.collector);
@@ -145,15 +146,15 @@ public class NodeCrypto {
 		System.out.println("FNP port created on "+bindto+ ':' +port);
 		portNumber = port;
 		config.setPort(port);
-		
+
 		socket.setDropProbability(config.getDropProbability());
-		
+
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
-		
+
 		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 
 		anonSetupCipher = new Rijndael(256,256);
-		
+
 		} catch (NodeInitException e) {
 			config.stopping(this);
 			throw e;
@@ -170,7 +171,7 @@ public class NodeCrypto {
 			config.maybeStarted(this);
 		}
 	}
-	
+
 	private String getTitle(int port) {
 		// FIXME l10n
 		return "UDP " + (isOpennet ? "Opennet " : "Darknet ") + "port " + port;
@@ -179,12 +180,13 @@ public class NodeCrypto {
 	/**
 	 * Read the cryptographic keys etc from a SimpleFieldSet
 	 * @param fs
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void readCrypto(SimpleFieldSet fs) throws IOException {
 		String identity = fs.get("identity");
-		if(identity == null)
+		if(identity == null) {
 			throw new IOException();
+		}
 		try {
 			myIdentity = Base64.decode(identity);
 		} catch (IllegalBase64Exception e2) {
@@ -193,7 +195,7 @@ public class NodeCrypto {
 		identityHash = SHA256.digest(myIdentity);
 		anonSetupCipher.initialize(identityHash);
 		identityHashHash = SHA256.digest(identityHash);
-		
+
 		try {
 			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
@@ -206,11 +208,11 @@ public class NodeCrypto {
 			throw new IOException(e.toString());
 		}
 		InsertableClientSSK ark = null;
-		
+
 		// ARK
-		
+
 		String s = fs.get("ark.number");
-		
+
 		String privARK = fs.get("ark.privURI");
 		try {
 			if(privARK != null) {
@@ -237,7 +239,7 @@ public class NodeCrypto {
 			myARKNumber = 0;
 		}
 		myARK = ark;
-		
+
 		String cn = fs.get("clientNonce");
 		if(cn != null) {
 			try {
@@ -249,7 +251,7 @@ public class NodeCrypto {
 			clientNonce = new byte[32];
 			node.random.nextBytes(clientNonce);
 		}
-		
+
 	}
 
 	/**
@@ -276,13 +278,13 @@ public class NodeCrypto {
 		packetMangler.start();
 		socket.start();
 	}
-	
+
 	public SimpleFieldSet exportPrivateFieldSet() {
 		SimpleFieldSet fs = exportPublicFieldSet(false, false, false);
 		addPrivateFields(fs);
 		return fs;
 	}
-	
+
 	/**
 	 * Export my node reference so that another node can connect to me.
 	 * Public version, includes everything apart from private keys.
@@ -291,7 +293,7 @@ public class NodeCrypto {
 	public SimpleFieldSet exportPublicFieldSet() {
 		return exportPublicFieldSet(false, false, false);
 	}
-	
+
 	/**
 	 * Export my reference so that another node can connect to me.
 	 * @param forSetup If true, strip out everything that isn't needed for the references
@@ -307,21 +309,24 @@ public class NodeCrypto {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
 			if(ips != null) {
-				for(int i=0;i<ips.length;i++)
+				for(int i=0;i<ips.length;i++) {
 					fs.putAppend("physical.udp", ips[i].toString()); // Keep; important that node know all our IPs
+				}
 			}
 		} // Don't include IPs for anonymous initiator.
 		// Negotiation types
 		fs.putSingle("version", Version.getVersionString()); // Keep, vital that peer know our version. For example, some types may be sent in different formats to different node versions (e.g. Peer).
-		if(!forAnonInitiator)
+		if(!forAnonInitiator) {
 			fs.putSingle("lastGoodVersion", Version.getLastGoodVersionString()); // Also vital
+		}
 		if(node.testnetEnabled) {
 			fs.put("testnet", true);
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
-		if((!isOpennet) && (!forSetup) && (!forARK))
+		if((!isOpennet) && (!forSetup) && (!forARK)) {
 			fs.putSingle("myName", node.getMyName());
-		
+		}
+
 		if(!forAnonInitiator) {
 			// Anonymous initiator setup type specifies whether the node is opennet or not.
 			fs.put("opennet", isOpennet);
@@ -337,7 +342,7 @@ public class NodeCrypto {
 				fs.putSingle("sig", myReferenceSignature.toLongString());
 			}
 		}
-		
+
 		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
 		return fs;
 	}
@@ -345,10 +350,11 @@ public class NodeCrypto {
 	SimpleFieldSet exportPublicCryptoFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		int[] negTypes = packetMangler.supportedNegTypes();
-		if(!(forSetup || forAnonInitiator))
+		if(!(forSetup || forAnonInitiator)) {
 			// Can't change on setup.
 			// Anonymous initiator doesn't need identity as we don't use it.
 			fs.putSingle("identity", Base64.encode(myIdentity));
+		}
 		if(!forSetup) {
 			// These are invariant. They cannot change on connection setup. They can safely be excluded.
 			fs.put("dsaGroup", cryptoGroup.asFieldSet());
@@ -368,15 +374,16 @@ public class NodeCrypto {
 	DSASignature signRef(String mySignedReference) throws NodeInitException {
 		if(logMINOR) Logger.minor(this, "Signing reference:\n"+mySignedReference);
 
-		try{
+		try {
 			byte[] ref = mySignedReference.getBytes("UTF-8");
 			BigInteger m = new BigInteger(1, SHA256.digest(ref));
 			if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
 			DSASignature _signature = DSA.sign(cryptoGroup, privKey, m, random);
-			if(logMINOR && !DSA.verify(pubKey, _signature, m, false))
+			if(logMINOR && !DSA.verify(pubKey, _signature, m, false)) {
 				throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
+			}
 			return _signature;
-		} catch(UnsupportedEncodingException e){
+		} catch(UnsupportedEncodingException e) {
 			//duh ?
 			Logger.error(this, "Error while signing the node identity!" + e, e);
 			System.err.println("Error while signing the node identity!"+e);
@@ -388,40 +395,45 @@ public class NodeCrypto {
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
 		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
-		if(shouldStripGroup)
+		if(shouldStripGroup) {
 			fs.removeSubset("dsaGroup");
-		
+		}
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
 		try {
 			fs.writeTo(gis);
-                } catch (IOException e) {
-                    Logger.error(this, "IOE :"+e.getMessage(), e);
+		} catch (IOException e) {
+			Logger.error(this, "IOE :"+e.getMessage(), e);
 		} finally {
 			Closer.close(gis);
-                        Closer.close(baos);
+			Closer.close(baos);
 		}
-		
+
 		byte[] buf = baos.toByteArray();
-		if(buf.length >= 4096)
+		if(buf.length >= 4096) {
 			throw new IllegalStateException("We are attempting to send a "+buf.length+" bytes big reference!");
+		}
 		byte[] obuf = new byte[buf.length + 1 + (shouldStripGroup ? 1 : 0)];
 		int offset = 0;
 		if(shouldStripGroup) {
 			obuf[offset++] = 0x3; // compressed noderef - group
 			int dsaGroupIndex = Global.GROUP_INDEX_BIG_A;
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "We are stripping the group from the reference as it's a known group (groupIndex="+dsaGroupIndex+')');
+			}
 			obuf[offset++] = (byte)(dsaGroupIndex & 0xff);
-		} else
+		} else {
 			obuf[offset++] = 0x01; // compressed noderef
+		}
 		System.arraycopy(buf, 0, obuf, offset, buf.length);
-		if(logMINOR) 
+		if(logMINOR) {
 			Logger.minor(this, "myCompressedRef("+setup+","+heavySetup+") returning "+obuf.length+" bytes");
+		}
 		return obuf;
 	}
-	
+
 	/**
 	 * The part of our node reference which is exchanged in the connection setup, compressed.
 	 * @see exportSetupFieldSet()
@@ -446,16 +458,17 @@ public class NodeCrypto {
 	public byte[] myCompressedFullRef() {
 		return myCompressedRef(false, false, false);
 	}
-	
+
 	void addPrivateFields(SimpleFieldSet fs) {
 		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
 		// FIXME remove the conditional after we've removed it from exportPublic...
 		// We must save the location!
-		if(fs.get("location") == null)
+		if(fs.get("location") == null) {
 			fs.put("location", node.lm.getLocation());
+		}
 		fs.putSingle("clientNonce", Base64.encode(clientNonce));
-		
+
 	}
 
 	public int getIdentityHash(){
@@ -481,21 +494,22 @@ public class NodeCrypto {
 
 	public PeerNode[] getPeerNodes() {
 		if(node.peers == null) return null;
-		if(isOpennet)
+		if(isOpennet) {
 			return node.peers.getOpennetPeers();
-		else
+		} else {
 			return node.peers.getDarknetPeers();
+		}
 	}
 
 	public boolean allowConnection(PeerNode pn, FreenetInetAddress addr) {
-    	if(config.oneConnectionPerAddress()) {
-    		// Disallow multiple connections to the same address
-    		if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)) {
-    			Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
-    			return false;
-    		}
+		if(config.oneConnectionPerAddress()) {
+			// Disallow multiple connections to the same address
+			if(node.peers.anyConnectedPeerHasAddress(addr, pn) && !detector.includes(addr)) {
+				Logger.normal(this, "Not sending handshake packets to "+addr+" for "+pn+" : Same IP address as another node");
+				return false;
+			}
 		}
-    	return true;
+		return true;
 	}
 
 	DSAGroup getCryptoGroup() {
@@ -514,12 +528,13 @@ public class NodeCrypto {
 		PeerNode[] peers = node.peers.myPeers;
 		for(int i=0;i<peers.length;i++) {
 			PeerNode pn = peers[i];
-			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
+			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler) {
 				v.add(pn);
+			}
 		}
 		return v.toArray(new PeerNode[v.size()]);
 	}
-	
+
 	void setPortForwardingBroken() {
 		this.socket.getAddressTracker().setBroken();
 	}
@@ -530,16 +545,17 @@ public class NodeCrypto {
 	 * in packets 3 and 4.
 	 */
 	public byte[] getIdentity(boolean unknownInitiator) {
-		if(unknownInitiator)
+		if(unknownInitiator) {
 			return this.pubKey.asBytesHash();
-		else
+		} else {
 			return myIdentity;
+		}
 	}
 
 	public boolean definitelyPortForwarded() {
 		return socket.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
 	}
-	
+
 	public int getDetectedConnectivityStatus() {
 		return socket.getDetectedConnectivityStatus();
 	}

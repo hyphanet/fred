@@ -13,29 +13,31 @@ import java.util.Random;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FilenameGenerator {
 
-    private transient Random random;
-    private String prefix;
-    private File tmpDir;
+	private transient Random random;
+	private String prefix;
+	private File tmpDir;
 
-    /**
-     * @param random
-     * @param wipeFiles
-     * @param dir if <code>null</code> then use the default temporary directory
-     * @param prefix
-     * @throws IOException
-     */
+	/**
+	 * @param random
+	 * @param wipeFiles
+	 * @param dir if <code>null</code> then use the default temporary directory
+	 * @param prefix
+	 * @throws IOException
+	 */
 	public FilenameGenerator(Random random, boolean wipeFiles, File dir, String prefix) throws IOException {
 		this.random = random;
 		this.prefix = prefix;
-		if (dir == null)
+		if (dir == null) {
 			tmpDir = FileUtil.getCanonicalFile(new File(System.getProperty("java.io.tmpdir")));
-		else
+		} else {
 			tmpDir = FileUtil.getCanonicalFile(dir);
-        if(!tmpDir.exists()) {
-            tmpDir.mkdir();
 		}
-		if(!(tmpDir.isDirectory() && tmpDir.canRead() && tmpDir.canWrite()))
+		if(!tmpDir.exists()) {
+			tmpDir.mkdir();
+		}
+		if(!(tmpDir.isDirectory() && tmpDir.canRead() && tmpDir.canWrite())) {
 			throw new IOException("Not a directory or cannot read/write: "+tmpDir);
+		}
 		if(wipeFiles) {
 			long wipedFiles = 0;
 			long wipeableFiles = 0;
@@ -44,18 +46,20 @@ public class FilenameGenerator {
 			if(filenames != null) {
 				for(int i=0;i<filenames.length;i++) {
 					WrapperManager.signalStarting(5*60*1000);
-					if(i % 1024 == 0 && i > 0)
+					if(i % 1024 == 0 && i > 0) {
 						// User may want some feedback during startup
 						System.err.println("Deleted "+wipedFiles+" temp files ("+(i - wipeableFiles)+" non-temp files in temp dir)");
+					}
 					File f = filenames[i];
 					String name = f.getName();
 					if((((File.separatorChar == '\\') && name.toLowerCase().startsWith(prefix.toLowerCase())) ||
 							name.startsWith(prefix))) {
 						wipeableFiles++;
-						if((!f.delete()) && f.exists())
+						if((!f.delete()) && f.exists()) {
 							System.err.println("Unable to delete temporary file "+f+" - permissions problem?");
-						else
+						} else {
 							wipedFiles++;
+						}
 					}
 				}
 				long endWipe = System.currentTimeMillis();
@@ -72,8 +76,9 @@ public class FilenameGenerator {
 			String filename = prefix + Long.toHexString(randomFilename);
 			File ret = new File(tmpDir, filename);
 			if(!ret.exists()) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(Logger.MINOR, this)) {
 					Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
+				}
 				return randomFilename;
 			}
 		}
@@ -82,7 +87,7 @@ public class FilenameGenerator {
 	public File getFilename(long id) {
 		return new File(tmpDir, prefix + Long.toHexString(id));
 	}
-	
+
 	public File makeRandomFile() throws IOException {
 		while(true) {
 			File file = getFilename(makeRandomFilename());
@@ -165,10 +170,11 @@ public class FilenameGenerator {
 					File f = list[i];
 					String name = f.getName();
 					if(!name.startsWith(prefix)) continue;
-					if(FileUtil.moveTo(f, new File(dir, name), true))
+					if(FileUtil.moveTo(f, new File(dir, name), true)) {
 						moved++;
-					else
+					} else {
 						failed++;
+					}
 				}
 				if(failed > 0) {
 					// FIXME maybe a useralert

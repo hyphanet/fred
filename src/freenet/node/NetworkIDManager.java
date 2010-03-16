@@ -33,43 +33,43 @@ import freenet.support.math.TrivialRunningAverage;
 public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.PeerNetworkGroup> {
 	public static boolean disableSecretPings = true;
 	public static boolean disableSecretPinger = true;
-	
+
 	private static final int ACCEPTED_TIMEOUT   =  5000;
 	private static final int SECRETPONG_TIMEOUT = 20000;
-	
+
 	//Intervals between connectivity checks and NetworkID reckoning.
 	//Checks for added peers may be delayed up to LONG_PERIOD, so don't make it too long.
 	//Coincidentally, LONG_PERIOD is also the interval at which we send out FNPNetworkID reminders.
 	private static final long BETWEEN_PEERS =   2000;
 	private static final long STARTUP_DELAY =  20000;
 	private static final long LONG_PERIOD   = 120000;
-	
+
 	private final short MAX_HTL;
 	private static final short MIN_HTL = 3;
 	private final boolean logMINOR;
-	
+
 	private static final int NO_NETWORKID = 0;
-	
+
 	//The minimum number of pings per-node we will try and send out before doing any kind of network id reasoning.
 	private static final int MIN_PINGS_FOR_STARTUP=3;
 	//The number of pings, etc. beyond which is considered a sane value to start experimenting from.
 	private static final int COMFORT_LEVEL=20;
 	//e.g. ping this many of your N peers, then see if the network has changed; this times BETWEEN_PEERS in the min. time between network id changes.
 	private static final int PING_VOLLEYS_PER_NETWORK_RECOMPUTE = 5;
-	
+
 	//Atomic: Locking for both via secretsByPeer
 	private final HashMap<PeerNode, StoredSecret> secretsByPeer = new HashMap<PeerNode, StoredSecret>();
 	private final HashMap<Long, StoredSecret> secretsByUID = new HashMap<Long, StoredSecret>();
-	
+
 	//1.0 is disabled, this amounts to a threshold; if connectivity between peers in > this, they get there own group for sure.
 	private static final double MAGIC_LINEAR_GRACE = 0.8;
 	//Commit everyone with less than this amount of "connectivity" to there own networkgroup.
 	//Provides fall-open effect by grouping all peers with disabled secretpings into there own last group.
 	private static final double FALL_OPEN_MARK = 0.2;
-	
+
 	private final Node node;
 	private int startupChecks;
-	
+
 	NetworkIDManager(final Node node) {
 		this.node=node;
 		this.MAX_HTL=node.maxHTL();
@@ -85,7 +85,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}, STARTUP_DELAY);
 		}
 	}
-	
+
 	/**
 	 * Stores the secret&uid contained in the message associated with the peer it comes from.
 	 * "FNPStoreSecret" messages are *never* forwarded, they are only between peers as an alert
@@ -106,7 +106,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		return true;
 	}
-	
+
 	public boolean handleSecretPing(final Message m) {
 		if(disableSecretPings) return true;
 		final PeerNode source=(PeerNode)m.getSource();
@@ -124,12 +124,12 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}}, "SecretPingHandler for UID "+uid+" on "+node.getDarknetPortNumber());
 		return true;
 	}
-	
+
 	/*
 	 @throws NotConnectedException if the *source* goes away
 	 */
 	private boolean _handleSecretPing(Message m, PeerNode source, long uid, short htl, short dawnHtl, int counter) throws NotConnectedException {
-		
+
 		if (disableSecretPings || node.recentlyCompleted(uid)) {
 			if (logMINOR) Logger.minor(this, "recently complete/loop: "+uid);
 			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
@@ -152,38 +152,38 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			} else {
 				//Set the completed flag immediately for determining reject loops rather than locking the uid.
 				node.completed(uid);
-				
+
 				//Not a local match... forward
 				double target=m.getDouble(DMT.TARGET_LOCATION);
 				HashSet<PeerNode> routedTo = new HashSet<PeerNode>();
 				while (true) {
 					PeerNode next;
-					
+
 					if (htl > dawnHtl && routedTo.isEmpty()) {
 						next=node.peers.getRandomPeer(source);
 					} else {
 						next = node.peers.closerPeer(source, routedTo, target, true, node.isAdvancedModeEnabled(), -1,
-						        null, null, htl);
+								null, null, htl);
 					}
-					
+
 					if (next==null) {
 						//would be rnf... but this is a more exhaustive and lightweight search I suppose.
 						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
 						break;
 					}
-					
+
 					htl=next.decrementHTL(htl);
-					
+
 					if (htl<=0) {
 						//would be dnf if we were looking for data.
 						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
 						break;
 					}
-					
+
 					if (!source.isConnected()) {
 						throw new NotConnectedException("source gone away while forwarding");
 					}
-					
+
 					counter++;
 					routedTo.add(next);
 					try {
@@ -192,40 +192,41 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 						Logger.normal(this, next+" disconnected before secret-ping-forward");
 						continue;
 					}
-					
+
 					//wait for a reject or pong
 					MessageFilter mfPong = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SECRETPONG_TIMEOUT).setType(DMT.FNPSecretPong);
 					MessageFilter mfRejectLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SECRETPONG_TIMEOUT).setType(DMT.FNPRejectedLoop);
 					Message msg;
-					
+
 					try {
 						msg = node.usm.waitFor(mfPong.or(mfRejectLoop), null);
 					} catch (DisconnectedException e) {
 						Logger.normal(this, next+" disconnected while waiting for a secret-pong");
 						continue;
 					}
-					
+
 					if (msg==null) {
 						Logger.error(this, "fatal timeout in waiting for secretpong from "+next);
 						//backoff?
 						break;
 					}
-					
+
 					if (msg.getSpec() == DMT.FNPSecretPong) {
 						int suppliedCounter=msg.getInt(DMT.COUNTER);
-						if (suppliedCounter>counter)
+						if (suppliedCounter>counter) {
 							counter=suppliedCounter;
+						}
 						long secret=msg.getLong(DMT.SECRET);
 						if (logMINOR) Logger.minor(this, node+" forwarding apparently-successful secretpong response: "+counter+"/"+secret+" from "+next+" to "+source);
 						source.sendAsync(DMT.createFNPSecretPong(uid, counter, secret), null, ctr);
 						break;
 					}
-					
+
 					if (msg.getSpec() == DMT.FNPRejectedLoop) {
 						if (logMINOR) Logger.minor(this, "secret ping (reject/loop): "+source+" -> "+next);
 						continue;
 					}
-					
+
 					Logger.error(this, "unexpected message type: "+msg);
 					break;
 				}
@@ -234,7 +235,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		return true;
 	}
-	
+
 	//FIXME: This needs to be wired in.
 	public void onDisconnect(PeerNode pn) {
 		synchronized (secretsByPeer) {
@@ -246,7 +247,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 		}
 	}
-	
+
 	private void addOrReplaceSecret(StoredSecret s) {
 		synchronized (secretsByPeer) {
 			StoredSecret prev = secretsByPeer.get(s.peer);
@@ -260,13 +261,13 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			secretsByUID.put(s.uid, s);
 		}
 	}
-	
+
 	private void removeSecret(StoredSecret s) {
 		//synchronized (secretsByPeer) in calling functions
 		secretsByPeer.remove(s.peer);
 		secretsByUID.remove(s.uid);
 	}
-	
+
 	private static final class StoredSecret {
 		PeerNode peer;
 		long uid;
@@ -284,7 +285,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			return DMT.createFNPSecretPong(uid, counter, secret);
 		}
 	}
-	
+
 	private final class PingRecord {
 		PeerNode target;
 		PeerNode via;
@@ -305,8 +306,9 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			lastTry=now;
 			lastSuccess=now;
 			average.report(1.0);
-			if (counter < shortestSuccess)
+			if (counter < shortestSuccess) {
 				shortestSuccess=counter;
+			}
 			dawn=(short)(htl-dawn);
 			sHtl.report(htl);
 			sDawn.report(dawn);
@@ -328,14 +330,16 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			} else if (average.currentValue()>0.8) {
 				//looking good, try lower htl
 				short htl=(short)(sHtl.currentValue()-0.5);
-				if (htl<MIN_HTL)
+				if (htl<MIN_HTL) {
 					htl=MIN_HTL;
+				}
 				return htl;
 			} else {
 				//not so good, try higher htl
 				short htl=(short)(sHtl.currentValue()+0.5);
-				if (htl>MAX_HTL)
+				if (htl>MAX_HTL) {
 					htl=MAX_HTL;
+				}
 				return htl;
 			}
 		}
@@ -356,33 +360,37 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				//Just a different algorithim than getNextHtl() so that they both might stabilize...
 				diff=(short)(0.25*fDawn.currentValue()+0.75*sDawn.currentValue());
 			}
-			if (diff>max)
+			if (diff>max) {
 				diff=max;
+			}
 			return (short)(htl-diff);
 		}
 		@Override
-        public boolean equals(Object obj) {
-	        if (this == obj)
-		        return true;
-	        if (obj == null)
-		        return false;
-	        if (getClass() != obj.getClass())
-		        return false;
-	         else if (!via.equals(((PingRecord) obj).via))
-		        return false;
-	        return true;
-        }
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (getClass() != obj.getClass()) {
+				return false;
+			} else if (!via.equals(((PingRecord) obj).via)) {
+				return false;
+			}
+			return true;
+		}
 		@Override
 		public int hashCode() {
 			return via.hashCode();
 		}
 	}
-	
+
 	//Directional lists of reachability, a "Map of Maps" of peers to pingRecords.
 	//This is asymmetric; so recordsByPeer.get(a).get(b) [i.e. a's reachability through peer b] may not
 	//be nearly the same as recordsByPeer.get(b).get(a) [i.e. b's reachability through peer a].
-	private HashMap<PeerNode, HashMap<PeerNode, PingRecord>> recordMapsByPeer = new HashMap<PeerNode, HashMap<PeerNode, PingRecord>>();
-	
+	private final HashMap<PeerNode, HashMap<PeerNode, PingRecord>> recordMapsByPeer = new HashMap<PeerNode, HashMap<PeerNode, PingRecord>>();
+
 	private PingRecord getPingRecord(PeerNode target, PeerNode via) {
 		PingRecord retval;
 		synchronized (recordMapsByPeer) {
@@ -403,7 +411,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		return retval;
 	}
-	
+
 	private void forgetPingRecords(PeerNode p) {
 		synchronized (workQueue) {
 			workQueue.remove(p);
@@ -421,16 +429,16 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 		}
 	}
-	
-	private List<PeerNode> workQueue = new ArrayList<PeerNode>();
+
+	private final List<PeerNode> workQueue = new ArrayList<PeerNode>();
 	private PeerNode processing;
 	private boolean processingRace;
 	private int pingVolleysToGo=PING_VOLLEYS_PER_NETWORK_RECOMPUTE;
-	
+
 	private void reschedule(long period) {
 		node.getTicker().queueTimedJob(this, period);
 	}
-	
+
 	public void run() {
 		//pick a target
 		synchronized (workQueue) {
@@ -438,8 +446,9 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				Logger.error(this, "possibly *bad* programming error, only one thread should use secretpings");
 				return;
 			}
-			if (!workQueue.isEmpty())
+			if (!workQueue.isEmpty()) {
 				processing = workQueue.remove(0);
+			}
 		}
 		if (processing!=null) {
 			PeerNode target=processing;
@@ -490,10 +499,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 		}
 	}
-	
+
 	public long secretPingSuccesses;
 	public long totalSecretPingAttempts;
-	
+
 	// Best effort ping from next to target, if anything out of the ordinary happens, it counts as a failure.
 	private void blockingUpdatePingRecord(PeerNode target, PeerNode next) {
 		//make a secret & uid
@@ -502,35 +511,35 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		PingRecord record=getPingRecord(target, next);
 		short htl=record.getNextHtl();
 		short dawn=record.getNextDawnHtl(htl);
-		
+
 		boolean success=false;
 		int suppliedCounter=1;
-		
+
 		totalSecretPingAttempts++;
-		
+
 		try {
 			//store secret in target
 			target.sendSync(DMT.createFNPStoreSecret(uid, secret), null);
-			
+
 			//Wait for an accepted or give up
 			MessageFilter mfAccepted = MessageFilter.create().setSource(target).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
 			Message msg = node.usm.waitFor(mfAccepted, null);
-			
+
 			if (msg==null || (msg.getSpec() != DMT.FNPAccepted)) {
 				//backoff?
 				Logger.error(this, "peer is unresponsive to StoreSecret "+target);
 				return;
 			}
-			
+
 			//next... send a secretping through next to target
 			next.sendSync(DMT.createFNPSecretPing(uid, target.getLocation(), htl, dawn, 0, target.identity), null);
-			
+
 			//wait for a response; SecretPong, RejectLoop, or timeout
 			MessageFilter mfPong = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SECRETPONG_TIMEOUT).setType(DMT.FNPSecretPong);
 			MessageFilter mfRejectLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SECRETPONG_TIMEOUT).setType(DMT.FNPRejectedLoop);
-			
+
 			msg = node.usm.waitFor(mfPong.or(mfRejectLoop), null);
-			
+
 			if (msg==null) {
 				Logger.error(this, "fatal timeout in waiting for secretpong from "+next);
 			} else if (msg.getSpec() == DMT.FNPSecretPong) {
@@ -554,7 +563,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 		}
 	}
-	
+
 	private void betweenPingSleep(PeerNode target) {
 		//We are currently sending secret pings to target, sleep for a while to be nice; could increase for cause of target's backoff.
 		try {
@@ -563,12 +572,12 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			//ignore
 		}
 	}
-	
+
 	private void addWorkToLockedQueue(PeerNode p) {
 		if (p!=null && !workQueue.contains(p))
 			workQueue.add(p);
 	}
-	
+
 	public void checkAllPeers() {
 		Set<PeerNode> set = getAllConnectedPeers();
 		synchronized (workQueue) {
@@ -577,7 +586,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 		}
 	}
-	
+
 	private HashSet<PeerNode> getAllConnectedPeers() {
 		double randomTarget=node.random.nextDouble();
 		HashSet<PeerNode> connectedPeers = new HashSet<PeerNode>();
@@ -588,7 +597,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		return connectedPeers;
 	}
-	
+
 	/**
 	 * Takes all the stored PingRecords, combines it with the network id's advertised by our peers,
 	 * and then does the monstrous task of doing something useful with that data. At the end of this
@@ -602,18 +611,19 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		HashSet<PeerNode> all = getAllConnectedPeers();
 		@SuppressWarnings("unchecked")
 		HashSet<PeerNode> todo = (HashSet<PeerNode>) all.clone();
-		
+
 		synchronized (transitionLock) {
 			inTransition=true;
 		}
-		
+
 		if (logMINOR) Logger.minor(this, "doNetworkIDReckoning for "+all.size()+" peers");
-		
-		if (todo.isEmpty())
+
+		if (todo.isEmpty()) {
 			return;
-		
+		}
+
 		//optimization, if no stats have changed, just rescan the list consensus?
-		
+
 		//Note that in all this set manipulation, we never consult in what group a user previously was.
 		while (!todo.isEmpty()) {
 			PeerNode mostConnected=findMostConnectedPeerInSet(todo, all);
@@ -631,43 +641,44 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 			newGroup.setMembers(members);
 		}
-		
+
 		//The groups are broken up, now sort by priority & assign them a network id.
 		Collections.sort(newNetworkGroups, this);
-		
+
 		HashSet<Integer> takenNetworkIds = new HashSet<Integer>();
-		
+
 		for (PeerNetworkGroup newGroup : newNetworkGroups) {
 			newGroup.setForbiddenIds(takenNetworkIds);
-			
+
 			int id=newGroup.getConsensus(true);
-			if (id==NO_NETWORKID)
+			if (id==NO_NETWORKID) {
 				id=node.random.nextInt();
+			}
 			newGroup.assignNetworkId(id);
 			takenNetworkIds.add(id);
 			if (logMINOR) Logger.minor(this, "net "+id+" has "+newGroup.members.size()+" peers");
 		}
-		
+
 		synchronized (transitionLock) {
 			PeerNetworkGroup ourgroup = newNetworkGroups.get(0);
 			ourNetworkId=ourgroup.networkid;
-			
+
 			Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
 			Logger.error(this, "largestGroup="+ourgroup.members.size());
 			Logger.error(this, "bestFirst="+cheat_stats_general_bestOther.currentValue());
 			Logger.error(this, "bestGeneralFactor="+cheat_stats_findBestSetwisePingAverage_best_general.currentValue());
-			
+
 			networkGroups=newNetworkGroups;
-			
+
 			inTransition=false;
 		}
 	}
-	
+
 	// Returns the 'best-connected' peer in the given set, or null if the set is empty.
 	private PeerNode findMostConnectedPeerInSet(HashSet<PeerNode> set, HashSet<PeerNode> possibleTargets) {
 		double max=-1.0;
 		PeerNode theMan=null;
-		
+
 		for (PeerNode p : set) {
 			double value=getPeerNodeConnectedness(p, possibleTargets);
 			if (value>max) {
@@ -675,10 +686,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				theMan=p;
 			}
 		}
-		
+
 		return theMan;
 	}
-	
+
 	// Return a double between [0.0-1.0] somehow indicating how "wellconnected" this peer is to all the peers in possibleTargets.
 	private double getPeerNodeConnectedness(PeerNode p, HashSet<PeerNode> possibleTargets) {
 		double retval=1.0;
@@ -693,7 +704,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		return retval;
 	}
-	
+
 	/*
 	 * Returns the set of peers which appear to be reasonably connected to 'thisPeer' and as a
 	 * side effect removes those peers from the set passed in. The set includes at-least the
@@ -704,10 +715,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		//       What recently-connected, peers who only have one or two pings so far?
 		/*
 		 Idea: Right now thisPeer is in a network group by itself, but we know that it is the
-		       best connected peer, so now we just need to find it's peers. In this implementation
-		       A peer belongs to this newly forming network group if it is at least as connected to
-		       the new forming group as the first peer is connected to the original group.
-		       Why? I don't know...
+			   best connected peer, so now we just need to find it's peers. In this implementation
+			   A peer belongs to this newly forming network group if it is at least as connected to
+			   the new forming group as the first peer is connected to the original group.
+			   Why? I don't know...
 		 */
 		List<PeerNode> currentGroup = new ArrayList<PeerNode>();
 		currentGroup.add(thisPeer);
@@ -721,7 +732,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			cheat_stats_general_bestOther.report(0.0);
 			return currentGroup;
 		}
-		
+
 		cheat_stats_general_bestOther.report(goodConnectivity);
 		goodConnectivity *= MAGIC_LINEAR_GRACE;
 		while (!remainder.isEmpty()) {
@@ -747,7 +758,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		return currentGroup;
 	}
-	
+
 	private double getSetwisePingAverage(PeerNode thisPeer, Collection<PeerNode> toThesePeers) {
 		Iterator<PeerNode> i = toThesePeers.iterator();
 		double accum=0.0;
@@ -762,7 +773,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		return accum/toThesePeers.size();
 	}
-	
+
 	private PeerNode findBestSetwisePingAverage(HashSet<PeerNode> ofThese, Collection<PeerNode> towardsThese) {
 		PeerNode retval=null;
 		double best=-1.0;
@@ -784,20 +795,20 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		cheat_stats_findBestSetwisePingAverage_best_general.report(best);
 		return retval;
 	}
-	
+
 	private double cheat_findBestSetwisePingAverage_best;
 	private RunningAverage cheat_stats_general_bestOther=new TrivialRunningAverage();
 	private RunningAverage cheat_stats_findBestSetwisePingAverage_best_general=new TrivialRunningAverage();
-	
+
 	boolean inTransition=false;
-	Object transitionLock=new Object();
-	
+	final Object transitionLock=new Object();
+
 	public void onPeerNodeChangedNetworkID(PeerNode p) {
 		/*
 		 If the network group we assigned to them is (unstable?)... that is; we would have made a
 		 different assignment based on there preference, change the network id for that entire group
 		 and readvertise it to the peers.
-		 
+
 		 This helps the network form a consensus much more quickly by not waiting for the next round
 		 of peer-secretpinging/and network-id-reckoning. Note that we must still not clobber priorities
 		 so...
@@ -810,8 +821,9 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		 peer to notify us of a new network id, but this will be authoritatively clobbered next round.
 		 */
 		synchronized (transitionLock) {
-			if (inTransition)
+			if (inTransition) {
 				return;
+			}
 			//Networks are listed in order of priority, generally the biggest one should be first.
 			//The forbidden ids is already set in this way, but if we decide that one group needs to use the id of a lesser group, we must tell the other group to use a different one; i.e. realign all the previous id's.
 			boolean haveFoundIt=false;
@@ -862,7 +874,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			}
 		}
 	}
-	
+
 	/**
 	 A list of peers that we have assigned a network id to, and some logic as to why.
 	 */
@@ -873,11 +885,11 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		long lastAssign;
 		///True if the last call to getConsensus() found only one network id for all members of this group
 		boolean unanimous;
-		
+
 		/*
 		 Returns the group consensus. If no peer in this group has advertised an id, then the last-assigned id is returned.
 		 As a side effect, unanimous is set if there is only one network id for all peers in this group.
-		 
+
 		 @param probabilistic if true, may return any id from the set with increased probability towards the greater consensus.
 		 @todo should be explicit or weighted towards most-successful (not necessarily just 'consensus')
 		 */
@@ -891,15 +903,18 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				for (PeerNode p : members) {
 					Integer id = p.providedNetworkID;
 					//Reject the advertized id which conflicts with our pre-determined boundaries (which can change)
-					if (forbiddenIds.contains(id))
+					if (forbiddenIds.contains(id)) {
 						continue;
-					if (id == NO_NETWORKID)
+					}
+					if (id == NO_NETWORKID) {
 						continue;
+					}
 					totalWitnesses++;
 					int count=1;
 					Integer prev = h.get(id);
-					if (prev!=null)
+					if (prev!=null) {
 						count=prev.intValue()+1;
+					}
 					h.put(id, count);
 					if (count>maxCount) {
 						maxCount=count;
@@ -910,10 +925,12 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				//Should we include ourselves in the count? Probably not, as we generally determine our network id on consensus.
 				//If there is only one option everyone agrees (NO_NETWORKID is stripped out)
 				unanimous=(h.size()==1);
-				if (h.size()<=1)
+				if (h.size()<=1) {
 					return lastId.intValue();
-				if (!probabilistic)
+				}
+				if (!probabilistic) {
 					return maxId;
+				}
 				/*
 				 To choose a prob. network id, choose a random number between 0.0-1.0 and pick a network id such that if
 				 lined up they occupy as much of the number space (0.0-1.0) as there are peers in the group to that id.
@@ -931,7 +948,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 						return id;
 					}
 				}
-				Logger.error(this, "logic error; winningTarget="+winningTarget+", sum@end="+sum+", count="+h.size()); 
+				Logger.error(this, "logic error; winningTarget="+winningTarget+", sum@end="+sum+", count="+h.size());
 				return maxId;
 			}
 		}
@@ -971,29 +988,31 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			return (System.currentTimeMillis()-lastAssign) < BETWEEN_PEERS;
 		}
 	}
-	
+
 	//List of PeerNetworkGroups ordered by priority
 	List<PeerNetworkGroup> networkGroups = new ArrayList<PeerNetworkGroup>();
-	
+
 	//or zero if we don't know yet
 	public int ourNetworkId = NO_NETWORKID;
-	
+
 	/**
 	 * Returns true if (and only if) the connectivity between two given nodes have been computed and
 	 * they have been determined to be in separate keyspace networks. Fail-safe false, if either of the
 	 * two peers have been recently added, if this class is not past its initial startupChecks, etc.
 	 */
 	public boolean inSeparateNetworks(PeerNode a, PeerNode b) {
-		if (a==null || b==null || a.assignedNetworkID == NO_NETWORKID || b.assignedNetworkID == NO_NETWORKID)
+		if (a==null || b==null || a.assignedNetworkID == NO_NETWORKID || b.assignedNetworkID == NO_NETWORKID) {
 			return false;
+		}
 		synchronized (transitionLock) {
-			if (inTransition)
+			if (inTransition) {
 				return false;
+			}
 			//NB: Object.equal's; but they should be the very same object. Neither should be null.
 			return !a.networkGroup.equals(b.networkGroup);
 		}
 	}
-	
+
 	/**
 	 * Orders PeerNetworkGroups by size largest first. Determines the priority-order in the master list.
 	 * Throws on comparison of non-network-groups or those without members assigned.
@@ -1002,7 +1021,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		//since we want largest-first, this is backwards of what it would normally be (a-b).
 		return b.members.size()-a.members.size();
 	}
-	
+
 	private final ByteCounter ctr = new ByteCounter() {
 
 		public void receivedBytes(int x) {
@@ -1016,7 +1035,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		public void sentPayload(int x) {
 			// Ignore
 		}
-		
+
 	};
-	
+
 }

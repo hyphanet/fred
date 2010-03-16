@@ -40,7 +40,7 @@ import freenet.keys.NodeSSK;
  */
 public class Serializer {
 
-    public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
+	public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
 	public static final int MAX_BITARRAY_SIZE = 2048*8;
 
 	public static List<Object> readListFromDataInputStream(Class<?> elementType, DataInput dis) throws IOException {
@@ -55,10 +55,12 @@ public class Serializer {
 	public static Object readFromDataInputStream(Class<?> type, DataInput dis) throws IOException {
 		if (type.equals(Boolean.class)) {
 			int bool = dis.readByte();
-			if (bool==1)
+			if (bool==1) {
 				return Boolean.TRUE;
-			if (bool==0)
+			}
+			if (bool==0) {
 				return Boolean.FALSE;
+			}
 			throw new IOException("Boolean is non boolean value: "+bool);
 		} else if (type.equals(Byte.class)) {
 			int b = dis.readByte();
@@ -70,7 +72,7 @@ public class Serializer {
 		} else if (type.equals(Long.class)) {
 			return dis.readLong();
 		} else if (type.equals(Double.class)) {
-		    return dis.readDouble();
+			return dis.readDouble();
 		} else if (type.equals(String.class)) {
 			int length = dis.readInt();
 			StringBuilder sb = new StringBuilder(length);
@@ -81,7 +83,7 @@ public class Serializer {
 		} else if (type.equals(Buffer.class)) {
 			return new Buffer(dis);
 		} else if (type.equals(ShortBuffer.class)) {
-		    return new ShortBuffer(dis);
+			return new ShortBuffer(dis);
 //		} else if (type.equals(VeryLongInteger.class)) {
 //			return new VeryLongInteger(dis);
 		} else if (type.equals(Peer.class)) {
@@ -95,13 +97,13 @@ public class Serializer {
 			// Use Key.read(...) because write(...) writes the TYPE field.
 			return Key.read(dis);
 		} else if (type.equals(Key.class)) {
-		    return Key.read(dis);
+			return Key.read(dis);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}
 	}
 
-	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {	
+	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {
 		Class<?> type = object.getClass();
 		if (type.equals(Long.class)) {
 			dos.writeLong(((Long) object).longValue());
@@ -112,7 +114,7 @@ public class Serializer {
 		} else if (type.equals(Short.class)) {
 			dos.writeShort(((Short) object).shortValue());
 		} else if (type.equals(Double.class)) {
-		    dos.writeDouble(((Double) object).doubleValue());
+			dos.writeDouble(((Double) object).doubleValue());
 		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
 			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
 			b.writeToDataOutputStream(dos);

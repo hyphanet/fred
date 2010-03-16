@@ -76,11 +76,13 @@ public class AddressTracker {
 			// Fall through
 		} finally {
 			if(fis != null)
+			{
 				try {
 					fis.close();
 				} catch (IOException e) {
 					// Ignore
 				}
+			}
 		}
 		return new AddressTracker();
 	}
@@ -94,8 +96,9 @@ public class AddressTracker {
 	
 	private AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
 		int version = fs.getInt("Version");
-		if(version != 1)
+		if(version != 1) {
 			throw new FSParseException("Unknown Version "+version);
+		}
 		long savedBootID = fs.getLong("BootID");
 		if(savedBootID != lastBootID) throw new FSParseException("Wrong boot ID - maybe unclean shutdown? Last was "+lastBootID+" stored "+savedBootID);
 		// Sadly we don't know whether there were packets arriving during the gap,
@@ -106,26 +109,26 @@ public class AddressTracker {
 		peerTrackers = new HashMap<Peer, PeerAddressTrackerItem>();
 		SimpleFieldSet peers = fs.subset("Peers");
 		if(peers != null) {
-		Iterator<String> i = peers.directSubsetNameIterator();
-		if(i != null) {
-		while(i.hasNext()) {
-			SimpleFieldSet peer = peers.subset(i.next());
-			PeerAddressTrackerItem item = new PeerAddressTrackerItem(peer);
-			peerTrackers.put(item.peer, item);
-		}
-		}
+			Iterator<String> i = peers.directSubsetNameIterator();
+			if(i != null) {
+				while(i.hasNext()) {
+					SimpleFieldSet peer = peers.subset(i.next());
+					PeerAddressTrackerItem item = new PeerAddressTrackerItem(peer);
+					peerTrackers.put(item.peer, item);
+				}
+			}
 		}
 		ipTrackers = new HashMap<InetAddress, InetAddressAddressTrackerItem>();
 		SimpleFieldSet ips = fs.subset("IPs");
 		if(ips != null) {
-		Iterator<String> i = ips.directSubsetNameIterator();
-		if(i != null) {
-		while(i.hasNext()) {
-			SimpleFieldSet peer = ips.subset(i.next());
-			InetAddressAddressTrackerItem item = new InetAddressAddressTrackerItem(peer);
-			ipTrackers.put(item.addr, item);
-		}
-		}
+			Iterator<String> i = ips.directSubsetNameIterator();
+			if(i != null) {
+				while(i.hasNext()) {
+					SimpleFieldSet peer = ips.subset(i.next());
+					InetAddressAddressTrackerItem item = new InetAddressAddressTrackerItem(peer);
+					ipTrackers.put(item.addr, item);
+				}
+			}
 		}
 	}
 	
@@ -159,10 +162,11 @@ public class AddressTracker {
 				}
 				peerTrackers.put(peer, peerItem);
 			}
-			if(sent)
+			if(sent) {
 				peerItem.sentPacket(now);
-			else
+			} else {
 				peerItem.receivedPacket(now);
+			}
 			InetAddressAddressTrackerItem ipItem = ipTrackers.get(ip);
 			if(ipItem == null) {
 				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, ip);
@@ -174,10 +178,11 @@ public class AddressTracker {
 				}
 				ipTrackers.put(ip, ipItem);
 			}
-			if(sent)
+			if(sent) {
 				ipItem.sentPacket(now);
-			else
+			} else {
 				ipItem.receivedPacket(now);
+			}
 		}
 	}
 
@@ -241,16 +246,19 @@ public class AddressTracker {
 	public int getPortForwardStatus() {
 		long minGap = getLongestSendReceiveGap(HORIZON);
 		
-		if(minGap > DEFINITELY_TUNNEL_LENGTH)
+		if(minGap > DEFINITELY_TUNNEL_LENGTH) {
 			return DEFINITELY_PORT_FORWARDED;
-		if(minGap > MAYBE_TUNNEL_LENGTH)
+		}
+		if(minGap > MAYBE_TUNNEL_LENGTH) {
 			return MAYBE_PORT_FORWARDED;
+		}
 		// Only take isBroken into account if we're not sure.
 		// Somebody could be playing with us by sending bogus FNPSentPackets...
 		synchronized(this) {
 			if(isBroken()) return DEFINITELY_NATED;
-			if(minGap == 0 && timePresumeGuilty > 0 && System.currentTimeMillis() > timePresumeGuilty)
+			if(minGap == 0 && timePresumeGuilty > 0 && System.currentTimeMillis() > timePresumeGuilty) {
 				return MAYBE_NATED;
+			}
 		}
 		return DONT_KNOW;
 	}
@@ -301,11 +309,13 @@ public class AddressTracker {
 			return;
 		} finally {
 			if(fos != null)
+			{
 				try {
 					fos.close();
 				} catch (IOException e) {
 					// Ignore
 				}
+			}
 		}
 	}
 
@@ -318,16 +328,18 @@ public class AddressTracker {
 		PeerAddressTrackerItem[] peerItems = getPeerAddressTrackerItems();
 		SimpleFieldSet items = new SimpleFieldSet(true);
 		if(peerItems.length > 0) {
-			for(int i = 0; i < peerItems.length; i++)
+			for(int i = 0; i < peerItems.length; i++) {
 				items.put(Integer.toString(i), peerItems[i].toFieldSet());
+			}
 			sfs.put("Peers", items);
 		}
 		InetAddressAddressTrackerItem[] inetItems = getInetAddressTrackerItems();
 		items = new SimpleFieldSet(true);
 		if(inetItems.length > 0) {
-		    for(int i = 0; i < inetItems.length; i++)
-			items.put(Integer.toString(i), inetItems[i].toFieldSet());
-		    sfs.put("IPs", items);
+			for(int i = 0; i < inetItems.length; i++) {
+				items.put(Integer.toString(i), inetItems[i].toFieldSet());
+			}
+			sfs.put("IPs", items);
 		}
 		return sfs;
 	}
@@ -344,8 +356,9 @@ public class AddressTracker {
 	private long timePresumeGuilty = -1;
 	
 	public synchronized void setPresumedGuiltyAt(long l) {
-		if(timePresumeGuilty <= 0)
+		if(timePresumeGuilty <= 0) {
 			timePresumeGuilty = l;
+		}
 	}
 
 	public synchronized void setPresumedInnocent() {

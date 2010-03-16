@@ -14,19 +14,19 @@ public class MedianMeanRunningAverage implements RunningAverage {
 	final ArrayList<Double> reports;
 	final TrivialRunningAverage mean;
 
-        /**
-         *
-         */
-        public MedianMeanRunningAverage() {
+	/**
+	 *
+	 */
+	public MedianMeanRunningAverage() {
 		reports = new ArrayList<Double>();
 		mean = new TrivialRunningAverage();
 	}
 
-        /**
-         *
-         * @param average
-         */
-        public MedianMeanRunningAverage(MedianMeanRunningAverage average) {
+	/**
+	 *
+	 * @param average
+	 */
+	public MedianMeanRunningAverage(MedianMeanRunningAverage average) {
 		this.mean = new TrivialRunningAverage(average.mean);
 		this.reports = new ArrayList<Double>();
 		reports.addAll(average.reports);
@@ -43,48 +43,48 @@ public class MedianMeanRunningAverage implements RunningAverage {
 		return reports.size();
 	}
 
-        /**
-         *
-         * @return
-         */
-        public synchronized double currentValue() {
+	/**
+	 *
+	 * @return
+	 */
+	public synchronized double currentValue() {
 		int size = reports.size();
 		int middle = size / 2;
 		java.util.Collections.sort(reports);
 		return reports.get(middle);
 	}
 
-        /**
-         *
-         * @param d
-         */
-        public synchronized void report(double d) {
+	/**
+	 *
+	 * @param d
+	 */
+	public synchronized void report(double d) {
 		mean.report(d);
 		reports.add(d);
 	}
 
-        /**
-         *
-         * @param d
-         */
-        public void report(long d) {
+	/**
+	 *
+	 * @param d
+	 */
+	public void report(long d) {
 		report((double)d);
 	}
 
 	public double valueIfReported(double r) {
 		throw new UnsupportedOperationException();
 	}
-	
+
 	@Override
 	public synchronized String toString() {
 		return "Median "+currentValue()+" mean "+mean.currentValue();
 	}
-	
-        /**
-         *
-         * @return
-         */
-        public synchronized double meanValue() {
+
+	/**
+	 *
+	 * @return
+	 */
+	public synchronized double meanValue() {
 		return mean.currentValue();
 	}
 

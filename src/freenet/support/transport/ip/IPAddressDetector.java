@@ -19,16 +19,16 @@ import freenet.support.Logger;
  */
 
 public class IPAddressDetector implements Runnable {
-	
+
 	//private String preferedAddressString = null;
 	private final int interval;
 	private final NodeIPDetector detector;
-        /**
-         * 
-         * @param interval
-         * @param detector
-         */
-        public IPAddressDetector(int interval, NodeIPDetector detector) {
+	/**
+	 *
+	 * @param interval
+	 * @param detector
+	 */
+	public IPAddressDetector(int interval, NodeIPDetector detector) {
 		this.interval = interval;
 		this.detector = detector;
 	}
@@ -40,7 +40,7 @@ public class IPAddressDetector implements Runnable {
 		return "Autodetection of IP addresses";
 	}
 
-	/** 
+	/**
 	 * @return next scheduling point
 	 */
 	public long nextCheckpoint() {
@@ -50,7 +50,7 @@ public class IPAddressDetector implements Runnable {
 	InetAddress[] lastAddressList = null;
 	long lastDetectedTime = -1;
 
-	/** 
+	/**
 	 * Fetches the currently detected IP address. If not detected yet a detection is forced
 	 * @return Detected ip address
 	 */
@@ -60,12 +60,13 @@ public class IPAddressDetector implements Runnable {
 
 	/**
 	 * Get the IP address
-         * @param recheckTime
-         * @return Detected ip address
+		 * @param recheckTime
+		 * @return Detected ip address
 	 */
 	public InetAddress[] getAddress(long recheckTime) {
-		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime))
+		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime)) {
 			checkpoint();
+		}
 		return lastAddressList == null ? new InetAddress[0] : lastAddressList;
 	}
 
@@ -93,32 +94,36 @@ public class IPAddressDetector implements Runnable {
 		if (!old) {
 			while (interfaces.hasMoreElements()) {
 				java.net.NetworkInterface iface = interfaces.nextElement();
-				if (logDEBUG)
+				if (logDEBUG) {
 					Logger.debug(
 						this,
 						"Scanning NetworkInterface " + iface.getDisplayName());
+				}
 				Enumeration<InetAddress> ee = iface.getInetAddresses();
 				while (ee.hasMoreElements()) {
 
 					InetAddress addr = ee.nextElement();
 					addrs.add(addr);
-					if (logDEBUG)
+					if (logDEBUG) {
 						Logger.debug(
 							this,
 							"Adding address "
 								+ addr
 								+ " from "
 								+ iface.getDisplayName());
+					}
 				}
-				if (logDEBUG)
+				if (logDEBUG) {
 					Logger.debug(
 						this,
 						"Finished scanning interface " + iface.getDisplayName());
+				}
 			}
-			if (logDEBUG)
+			if (logDEBUG) {
 				Logger.debug(
 					this,
 					"Finished scanning interfaces");
+			}
 		}
 
 		// FIXME: what are we doing here? lastInetAddress is always null.
@@ -133,16 +138,17 @@ public class IPAddressDetector implements Runnable {
 		}
 	}
 
-        /**
-         *
-         * @return
-         */
-        protected InetAddress oldDetect() {
+		/**
+		 *
+		 * @return
+		 */
+		protected InetAddress oldDetect() {
 		boolean shouldLog = Logger.shouldLog(Logger.DEBUG, this);
-		if (shouldLog)
+		if (shouldLog) {
 			Logger.debug(
 				this,
 				"Running old style detection code");
+		}
 		DatagramSocket ds = null;
 		try {
 			try {
@@ -170,17 +176,18 @@ public class IPAddressDetector implements Runnable {
 
 	/**
 	 * Do something with the list of detected IP addresses.
-	 * 
+	 *
 	 * @param addrs
 	 *            Vector of InetAddresses
 	 */
 	protected void onGetAddresses(List<InetAddress> addrs) {
 		List<InetAddress> output = new ArrayList<InetAddress>();
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-		if (logDEBUG)
+		if (logDEBUG) {
 			Logger.debug(
 				this,
 				"onGetAddresses found " + addrs.size() + " potential addresses)");
+		}
 		if (addrs.size() == 0) {
 			Logger.error(this, "No addresses found!");
 			lastAddressList = null;
@@ -190,10 +197,11 @@ public class IPAddressDetector implements Runnable {
 			for (int x = 0; x < addrs.size(); x++) {
 				if (addrs.get(x) != null) {
 					InetAddress i = addrs.get(x);
-					if (logDEBUG)
+					if (logDEBUG) {
 						Logger.debug(
 							this,
 							"Address " + x + ": " + i);
+					}
 					if(i.isAnyLocalAddress()) {
 						// Wildcard address, 0.0.0.0, ignore.
 					} else if(i.isLinkLocalAddress() || i.isLoopbackAddress() ||
@@ -205,8 +213,9 @@ public class IPAddressDetector implements Runnable {
 					} else {
 						// Ignore ISATAP addresses
 						// @see http://archives.freenetproject.org/message/20071129.220955.ac2a2a36.en.html
-						if(!AddressIdentifier.isAnISATAPIPv6Address(i.toString()))
+						if(!AddressIdentifier.isAnISATAPIPv6Address(i.toString())) {
 							output.add(i);
+						}
 					}
 				}
 			}
@@ -230,10 +239,10 @@ public class IPAddressDetector implements Runnable {
 		}
 	}
 
-        /**
-         *
-         */
-        public void clearCached() {
+	/**
+	 *
+	 */
+	public void clearCached() {
 		lastAddressList = null;
 		lastDetectedTime = -1;
 	}

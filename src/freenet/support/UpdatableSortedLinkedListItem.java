@@ -3,7 +3,7 @@ package freenet.support;
 import freenet.support.DoublyLinkedList.Item;
 
 public interface UpdatableSortedLinkedListItem<T extends UpdatableSortedLinkedListItem<T>> extends
-        DoublyLinkedList.Item<T>, Comparable<T> {
+		DoublyLinkedList.Item<T>, Comparable<T> {
 
 	public abstract T getNext();
 

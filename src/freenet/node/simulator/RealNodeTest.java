@@ -27,17 +27,17 @@ public class RealNodeTest {
 	static final int EXIT_INSERT_FAILED = EXIT_BASE + 5;
 	static final int EXIT_REQUEST_FAILED = EXIT_BASE + 6;
 	static final int EXIT_BAD_DATA = EXIT_BASE + 7;
-	
+
 	/* Because we start a whole bunch of nodes at once, we will get many "Not reusing
 	 * tracker, so wiping old trackers" messages. This is normal, all the nodes start
 	 * handshaking straight off, they all send JFK(1)s, and we get race conditions. */
-	
+
 	/*
 	 Borrowed from mrogers simulation code (February 6, 2008)
 	 --
 	 FIXME: May not generate good networks. Presumably this is because the arrays are always scanned
-	        [0..n], some nodes tend to have *much* higher connections than the degree (the first few),
-	        starving the latter ones.
+			[0..n], some nodes tend to have *much* higher connections than the degree (the first few),
+			starving the latter ones.
 	 */
 	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree, boolean forceNeighbourConnections, RandomSource random)
 	{
@@ -79,7 +79,7 @@ public class RealNodeTest {
 			}
 		}
 	}
-	
+
 	static void connect(Node a, Node b) {
 		try {
 			a.connect (b);
@@ -92,25 +92,27 @@ public class RealNodeTest {
 			Logger.error(RealNodeSecretPingTest.class, "cannot connect #3!!!!", e);
 		}
 	}
-	
+
 	static double distance(Node a, Node b) {
 		double aL=a.getLocation();
 		double bL=b.getLocation();
 		return Location.distance(aL, bL);
 	}
-	
+
 	static String getPortNumber(PeerNode p) {
-		if (p == null || p.getPeer() == null)
+		if (p == null || p.getPeer() == null) {
 			return "null";
+		}
 		return Integer.toString(p.getPeer().getPort());
 	}
-	
+
 	static String getPortNumber(Node n) {
-		if (n == null)
+		if (n == null) {
 			return "null";
+		}
 		return Integer.toString(n.getDarknetPortNumber());
 	}
-	
+
 	static void waitForAllConnected(Node[] nodes) throws InterruptedException {
 		long tStart = System.currentTimeMillis();
 		while(true) {
@@ -143,12 +145,14 @@ public class RealNodeTest {
 					countFullyConnected++;
 					if(countBackedOff == 0) countReallyConnected++;
 				} else {
-					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class)) 
+					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class)) {
 						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
+					}
 				}
 				if(countBackedOff > 0) {
-					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class))
+					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class)) {
 						Logger.minor(RealNodeTest.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
+					}
 				}
 			}
 			double avgPingTime = totalPingTime / nodes.length;

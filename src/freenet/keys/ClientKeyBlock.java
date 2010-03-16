@@ -22,11 +22,11 @@ public interface ClientKeyBlock extends KeyBlock {
 	 */
 	boolean isMetadata();
 
-    /**
-     * @return The ClientKey for this key.
-     */
-    public ClientKey getClientKey();
-    
-    public byte[] memoryDecode() throws KeyDecodeException;
+	/**
+	 * @return The ClientKey for this key.
+	 */
+	public ClientKey getClientKey();
+
+	public byte[] memoryDecode() throws KeyDecodeException;
 
 }

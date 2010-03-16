@@ -166,7 +166,7 @@ public class FCPServer implements Runnable {
 	}
 	
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
+		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				realRun();
@@ -254,8 +254,9 @@ public class FCPServer implements Runnable {
 
 		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if (get().equals(val))
+			if (get().equals(val)) {
 				return;
+			}
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with FCP");
 			}
@@ -390,8 +391,9 @@ public class FCPServer implements Runnable {
 		
 		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if (get().equals(val))
+			if (get().equals(val)) {
 				return;
+			}
 			server.assumeDownloadDDAIsAllowed = val;
 		}
 	}
@@ -406,8 +408,9 @@ public class FCPServer implements Runnable {
 		
 		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if (get().equals(val))
+			if (get().equals(val)) {
 				return;
+			}
 			server.assumeUploadDDAIsAllowed = val;
 		}
 	}
@@ -463,13 +466,16 @@ public class FCPServer implements Runnable {
 	}
 
 	private void checkFile(File f) throws InvalidConfigValueException {
-		if(f.isDirectory()) 
+		if(f.isDirectory()) {
 			throw new InvalidConfigValueException(l10n("downloadsFileIsDirectory"));
-		if(f.isFile() && !(f.canRead() && f.canWrite()))
+		}
+		if(f.isFile() && !(f.canRead() && f.canWrite())) {
 			throw new InvalidConfigValueException(l10n("downloadsFileUnreadable"));
+		}
 		File parent = f.getParentFile();
-		if((parent != null) && !parent.exists())
+		if((parent != null) && !parent.exists()) {
 			throw new InvalidConfigValueException(l10n("downloadsFileParentDoesNotExist"));
+		}
 		if(!f.exists()) {
 			try {
 				if(!f.createNewFile()) {
@@ -537,10 +543,10 @@ public class FCPServer implements Runnable {
 	public void unregisterClient(FCPClient client, ObjectContainer container) {
 		if(client.persistenceType == ClientRequest.PERSIST_REBOOT) {
 			assert(container == null);
-		synchronized(this) {
-			String name = client.name;
-			rebootClientsByName.remove(name);
-		}
+			synchronized(this) {
+				String name = client.name;
+				rebootClientsByName.remove(name);
+			}
 		} else {
 			persistentRoot.maybeUnregisterClient(client, container);
 		}
@@ -559,8 +565,9 @@ public class FCPServer implements Runnable {
 			Logger.normal(this, "Loading persistent requests from "+file);
 			if (file.length() > 0) {
 				loadPersistentRequests(bis, container);
-			} else
+			} else {
 				throw new IOException("File empty"); // If it's empty, try the temp file.
+			}
 		} catch (IOException e) {
 			Logger.normal(this, "IOE : " + e.getMessage(), e);
 			File file = new File(persistentDownloadsTempFile+".gz");
@@ -657,7 +664,9 @@ public class FCPServer implements Runnable {
 				}
 				return success.value;
 			}
-		} else return true;
+		} else {
+			return true;
+		}
 	}
 	
 	public boolean removeAllGlobalRequestsBlocking() throws DatabaseDisabledException {
@@ -816,7 +825,7 @@ public class FCPServer implements Runnable {
 	 * @throws IOException 
 	 */
 	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString, ObjectContainer container) throws NotAllowedException, IOException {
-		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
+		boolean persistence = "reboot".equalsIgnoreCase(persistenceTypeString);
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
@@ -870,12 +879,15 @@ public class FCPServer implements Runnable {
 		if((expectedMimeType != null) && (expectedMimeType.length() > 0) &&
 				!expectedMimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
 			ext = DefaultMIMETypes.getExtension(expectedMimeType);
-		} else ext = null;
+		} else {
+			ext = null;
+		}
 		String extAdd = (ext == null ? "" : '.' + ext);
 		String preferred = uri.getPreferredFilename();
 		String preferredWithExt = preferred;
-		if(!(ext != null && preferredWithExt.endsWith(ext)))
+		if(!(ext != null && preferredWithExt.endsWith(ext))) {
 			preferredWithExt += extAdd;
+		}
 		File f = new File(core.getDownloadDir(), preferredWithExt);
 		File f1 = new File(core.getDownloadDir(), preferredWithExt + ".freenet-tmp");
 		int x = 0;
@@ -919,8 +931,9 @@ public class FCPServer implements Runnable {
 			// Rename
 			if(from.exists()) {
 				File target = new File(from.getPath()+".old.pre-db4o");
-				if(logMINOR)
+				if(logMINOR) {
 					Logger.minor(this, "Trying to move "+persistentDownloadsFile+" to "+target);
+				}
 				if(from.renameTo(target)) {
 					Logger.error(this, "Successfully migrated persistent downloads and renamed "+from.getName()+" to "+target.getName());
 					movedMain = true;
@@ -928,10 +941,12 @@ public class FCPServer implements Runnable {
 			}
 			if(fromTemp.exists()) {
 				File target = new File(fromTemp.getPath()+".old.pre-db4o");
-				if(logMINOR)
+				if(logMINOR) {
 					Logger.minor(this, "Trying to move "+fromTemp+" to "+target);
-				if(fromTemp.renameTo(target) && !movedMain)
+				}
+				if(fromTemp.renameTo(target) && !movedMain) {
 					Logger.error(this, "Successfully migrated persistent downloads and renamed "+fromTemp.getName()+" to "+target.getName());
+				}
 			}
 			
 		}
@@ -951,8 +966,9 @@ public class FCPServer implements Runnable {
 	
 	public ClientRequest getGlobalRequest(String identifier, ObjectContainer container) {
 		ClientRequest req = globalRebootClient.getRequest(identifier, null);
-		if(req == null)
+		if(req == null) {
 			req = globalForeverClient.getRequest(identifier, container);
+		}
 		return req;
 	}
 
@@ -969,15 +985,16 @@ public class FCPServer implements Runnable {
 	}
 	
 	public void setCompletionCallback(RequestCompletionCallback cb) {
-		if(globalForeverClient != null)
+		if(globalForeverClient != null) {
 			globalForeverClient.addRequestCompletionCallback(cb);
+		}
 		globalRebootClient.addRequestCompletionCallback(cb);
 	}
 
 	public void startBlocking(final ClientRequest req, ObjectContainer container, ClientContext context) throws IdentifierCollisionException, DatabaseDisabledException {
 		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
 			req.start(null, core.clientContext);
-		} else {
+		} else { //outer
 			class OutputWrapper {
 				boolean done;
 				IdentifierCollisionException collided;
@@ -987,46 +1004,47 @@ public class FCPServer implements Runnable {
 					req.register(container, false);
 					req.start(container, context);
 				container.deactivate(req, 1);
-			} else {
+			} else { //inner
 				final OutputWrapper ow = new OutputWrapper();
-			core.clientContext.jobRunner.queue(new DBJob() {
+				core.clientContext.jobRunner.queue(new DBJob() {
 				
-				public boolean run(ObjectContainer container, ClientContext context) {
-					// Don't activate, it may not be stored yet.
-					try {
-						req.register(container, false);
-						req.start(container, context);
-					} catch (IdentifierCollisionException e) {
-						ow.collided = e;
-					} finally {
-						synchronized(ow) {
-							ow.done = true;
-							ow.notifyAll();
-						}
-					}
-					container.deactivate(req, 1);
-					return true;
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
-			
-			synchronized(ow) {
-				while(true) {
-					if(!ow.done) {
+					public boolean run(ObjectContainer container, ClientContext context) {
+						// Don't activate, it may not be stored yet.
 						try {
-							ow.wait();
-						} catch (InterruptedException e) {
-							// Ignore
+							req.register(container, false);
+							req.start(container, context);
+						} catch (IdentifierCollisionException e) {
+							ow.collided = e;
+						} finally {
+							synchronized(ow) {
+								ow.done = true;
+								ow.notifyAll();
+							}
 						}
-					} else {
-						if(ow.collided != null)
-							throw ow.collided;
-						return;
+						container.deactivate(req, 1);
+						return true;
+					}
+				
+				}, NativeThread.HIGH_PRIORITY, false);
+			
+				synchronized(ow) {
+					while(true) {
+						if(!ow.done) {
+							try {
+								ow.wait();
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+						} else {
+							if(ow.collided != null) {
+								throw ow.collided;
+							}
+							return;
+						}
 					}
 				}
-			}
-		}
-		}
+			} //end else (inner)
+		} //end else (outer)
 	}
 	
 	public boolean restartBlocking(final String identifier) throws DatabaseDisabledException {
@@ -1074,7 +1092,7 @@ public class FCPServer implements Runnable {
 					}
 				}
 			}
-		}
+		} //end else
 	}
 
 
@@ -1133,7 +1151,7 @@ public class FCPServer implements Runnable {
 					}
 				}
 				return false;
-			}
+			} //end run
 			
 		}, NativeThread.HIGH_PRIORITY, false);
 		

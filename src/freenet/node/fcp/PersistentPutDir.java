@@ -21,12 +21,12 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 public class PersistentPutDir extends FCPMessage {
 
 	static final String name = "PersistentPutDir";
-	
+
 	final String identifier;
 	final FreenetURI uri;
-	final int verbosity; 
+	final int verbosity;
 	final short priorityClass;
-	final short persistenceType; 
+	final short persistenceType;
 	final boolean global;
 	private final HashMap<String, Object> manifestElements;
 	final String defaultName;
@@ -35,10 +35,10 @@ public class PersistentPutDir extends FCPMessage {
 	final int maxRetries;
 	final boolean wasDiskPut;
 	private final SimpleFieldSet cached;
-	
+
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
-	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
-	        String token, boolean started, int maxRetries, boolean wasDiskPut, ObjectContainer container) {
+			short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
+			String token, boolean started, int maxRetries, boolean wasDiskPut, ObjectContainer container) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -88,16 +88,19 @@ public class PersistentPutDir extends FCPMessage {
 				Bucket origData = e.getData();
 				Bucket data = origData;
 				boolean deactivate = false;
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 					deactivate = !container.ext().isActive(data);
-				if(deactivate)
+				}
+				if(deactivate) {
 					container.activate(data, 1);
+				}
 				if(data instanceof DelayedFreeBucket) {
 					data = ((DelayedFreeBucket)data).getUnderlying();
 				}
 				subset.put("DataLength", e.getSize());
-				if(mimeOverride != null)
+				if(mimeOverride != null) {
 					subset.putSingle("Metadata.ContentType", mimeOverride);
+				}
 				// What to do with the bucket?
 				// It is either a persistent encrypted bucket or a file bucket ...
 				if(data == null) {
@@ -110,15 +113,17 @@ public class PersistentPutDir extends FCPMessage {
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
 				}
-				if(deactivate)
+				if(deactivate) {
 					container.deactivate(origData, 1);
+				}
 			}
 			files.put(num, subset);
 		}
 		files.put("Count", elements.length);
 		fs.put("Files", files);
-		if(token != null)
+		if(token != null) {
 			fs.putSingle("ClientToken", token);
+		}
 		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);
 		return fs;

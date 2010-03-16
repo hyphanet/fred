@@ -15,8 +15,8 @@ import freenet.support.api.BucketFactory;
 public interface ContentDataFilter {
 	
 	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException;
+			FilterCallback cb) throws DataFilterException, IOException;
 
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException;
+			FilterCallback cb) throws DataFilterException, IOException;
 }

@@ -29,7 +29,7 @@ import java.io.*;
  */
 public interface WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: WritableToDataOutputStream.java,v 1.1 2005/01/29 19:12:10 amphibian Exp $";
+	public static final String VERSION = "$Id: WritableToDataOutputStream.java,v 1.1 2005/01/29 19:12:10 amphibian Exp $";
 
 	public void writeToDataOutputStream(DataOutputStream stream) throws IOException;
 }

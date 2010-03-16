@@ -186,7 +186,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						line.addChild("#", filename);
 					}
 				}
-				if(type != null && !type.equals("")) {
+				if(type != null && !"".equals(type)) {
 					
 					HTMLNode line = infoList.addChild("li");
 					boolean finalized = request.isPartSet("finalizedType");
@@ -300,8 +300,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					
 					// trim leading/trailing space
 					currentKey = currentKey.trim();
-					if (currentKey.length() == 0)
+					if (currentKey.length() == 0) {
 						continue;
+					}
 					
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
@@ -368,8 +369,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					try {
 						String u = request.getPartAsString("key", 128);
 						insertURI = new FreenetURI(u);
-						if(logMINOR)
+						if(logMINOR) {
 							Logger.minor(this, "Inserting key: "+insertURI+" ("+u+")");
+						}
 					} catch (MalformedURLException mue1) {
 						writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
 						return;
@@ -383,10 +385,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				final boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				final String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				final String fnam;
-				if(insertURI.getKeyType().equals("CHK"))
+				if("CHK".equals(insertURI.getKeyType())) {
 					fnam = file.getFilename();
-				else
+				} else {
 					fnam = null;
+				}
 				/* copy bucket data */
 				final Bucket copiedBucket = core.persistentTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
@@ -396,46 +399,46 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 						public boolean run(ObjectContainer container, ClientContext context) {
 							try {
-							final ClientPut clientPut;
-							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
-								if(clientPut != null)
-									try {
-										fcp.startBlocking(clientPut, container, context);
-									} catch (IdentifierCollisionException e) {
-										Logger.error(this, "Cannot put same file twice in same millisecond");
-										writePermanentRedirect(ctx, "Done", path());
-										return false;
+								final ClientPut clientPut;
+								try {
+									clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
+									if(clientPut != null)
+										try {
+											fcp.startBlocking(clientPut, container, context);
+										} catch (IdentifierCollisionException e) {
+											Logger.error(this, "Cannot put same file twice in same millisecond");
+											writePermanentRedirect(ctx, "Done", path());
+											return false;
+										}
+									writePermanentRedirect(ctx, "Done", path());
+									return true;
+								} catch (IdentifierCollisionException e) {
+									Logger.error(this, "Cannot put same file twice in same millisecond");
+									writePermanentRedirect(ctx, "Done", path());
+									return false;
+								} catch (NotAllowedException e) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorAccessDenied"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
+									return false;
+								} catch (FileNotFoundException e) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
+									return false;
+								} catch (MalformedURLException mue1) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+									return false;
+								} catch (MetadataUnresolvedException e) {
+									Logger.error(this, "Unresolved metadata in starting insert from data uploaded from browser: "+e, e);
+									writePermanentRedirect(ctx, "Done", path());
+									return false;
+									// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
+								} catch (Throwable t) {
+									writeInternalError(t, ctx);
+									return false;
+								} finally {
+									synchronized(done) {
+										done.value = true;
+										done.notifyAll();
 									}
-								writePermanentRedirect(ctx, "Done", path());
-								return true;
-							} catch (IdentifierCollisionException e) {
-								Logger.error(this, "Cannot put same file twice in same millisecond");
-								writePermanentRedirect(ctx, "Done", path());
-								return false;
-							} catch (NotAllowedException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorAccessDenied"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
-								return false;
-							} catch (FileNotFoundException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
-								return false;
-							} catch (MalformedURLException mue1) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
-								return false;
-							} catch (MetadataUnresolvedException e) {
-								Logger.error(this, "Unresolved metadata in starting insert from data uploaded from browser: "+e, e);
-								writePermanentRedirect(ctx, "Done", path());
-								return false;
-								// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
-							} catch (Throwable t) {
-								writeInternalError(t, ctx);
-								return false;
-							} finally {
-								synchronized(done) {
-									done.value = true;
-									done.notifyAll();
 								}
-							}
 							} catch (IOException e) {
 								// Ignore
 								return false;
@@ -479,10 +482,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					furi = new FreenetURI("CHK@");
 				}
 				final String target;
-				if(!furi.getKeyType().equals("CHK"))
+				if(!"CHK".equals(furi.getKeyType())) {
 					target = null;
-				else
+				} else {
 					target = file.getName();
+				}
 				final MutableBoolean done = new MutableBoolean();
 				try {
 					core.queue(new DBJob() {
@@ -490,45 +494,45 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						public boolean run(ObjectContainer container, ClientContext context) {
 							final ClientPut clientPut;
 							try {
-							try {
-								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
-								if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
-								if(clientPut != null)
-									try {
-										fcp.startBlocking(clientPut, container, context);
-									} catch (IdentifierCollisionException e) {
-										Logger.error(this, "Cannot put same file twice in same millisecond");
-										writePermanentRedirect(ctx, "Done", path());
-										return false;
-									} catch (DatabaseDisabledException e) {
-										// Impossible???
+								try {
+									clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
+									if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
+									if(clientPut != null)
+										try {
+											fcp.startBlocking(clientPut, container, context);
+										} catch (IdentifierCollisionException e) {
+											Logger.error(this, "Cannot put same file twice in same millisecond");
+											writePermanentRedirect(ctx, "Done", path());
+											return false;
+										} catch (DatabaseDisabledException e) {
+											// Impossible???
+										}
+									writePermanentRedirect(ctx, "Done", path());
+									return true;
+								} catch (IdentifierCollisionException e) {
+									Logger.error(this, "Cannot put same file twice in same millisecond");
+									writePermanentRedirect(ctx, "Done", path());
+									return false;
+								} catch (MalformedURLException e) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+									return false;
+								} catch (FileNotFoundException e) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ target }), ctx);
+									return false;
+								} catch (NotAllowedException e) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorAccessDenied"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
+									return false;
+								} catch (MetadataUnresolvedException e) {
+									Logger.error(this, "Unresolved metadata in starting insert from data from file: "+e, e);
+									writePermanentRedirect(ctx, "Done", path());
+									return false;
+									// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
+								} finally {
+									synchronized(done) {
+										done.value = true;
+										done.notifyAll();
 									}
-								writePermanentRedirect(ctx, "Done", path());
-								return true;
-							} catch (IdentifierCollisionException e) {
-								Logger.error(this, "Cannot put same file twice in same millisecond");
-								writePermanentRedirect(ctx, "Done", path());
-								return false;
-							} catch (MalformedURLException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
-								return false;
-							} catch (FileNotFoundException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ target }), ctx);
-								return false;
-							} catch (NotAllowedException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorAccessDenied"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
-								return false;
-							} catch (MetadataUnresolvedException e) {
-								Logger.error(this, "Unresolved metadata in starting insert from data from file: "+e, e);
-								writePermanentRedirect(ctx, "Done", path());
-								return false;
-								// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
-							} finally {
-								synchronized(done) {
-									done.value = true;
-									done.notifyAll();
 								}
-							}
 							} catch (IOException e) {
 								// Ignore
 								return false;
@@ -577,39 +581,40 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						public boolean run(ObjectContainer container, ClientContext context) {
 							ClientPutDir clientPutDir;
 							try {
-							try {
-								boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-								clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, file, null, false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
-								if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
-								if(clientPutDir != null)
-									try {
-										fcp.startBlocking(clientPutDir, container, context);
-									} catch (IdentifierCollisionException e) {
-										Logger.error(this, "Cannot put same file twice in same millisecond");
-										writePermanentRedirect(ctx, "Done", path());
-										return false;
-									} catch (DatabaseDisabledException e) {
-										sendPersistenceDisabledError(ctx);
-										return false;
+								try {
+									boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+									clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, file, null, false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
+									if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
+									if(clientPutDir != null) {
+										try {
+											fcp.startBlocking(clientPutDir, container, context);
+										} catch (IdentifierCollisionException e) {
+											Logger.error(this, "Cannot put same file twice in same millisecond");
+											writePermanentRedirect(ctx, "Done", path());
+											return false;
+										} catch (DatabaseDisabledException e) {
+											sendPersistenceDisabledError(ctx);
+											return false;
+										}
 									}
-								writePermanentRedirect(ctx, "Done", path());
-								return true;
-							} catch (IdentifierCollisionException e) {
-								Logger.error(this, "Cannot put same directory twice in same millisecond");
-								writePermanentRedirect(ctx, "Done", path());
-								return false;
-							} catch (MalformedURLException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
-								return false;
-							} catch (FileNotFoundException e) {
-								writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
-								return false;
-							} finally {
-								synchronized(done) {
-									done.value = true;
-									done.notifyAll();
+									writePermanentRedirect(ctx, "Done", path());
+									return true;
+								} catch (IdentifierCollisionException e) {
+									Logger.error(this, "Cannot put same directory twice in same millisecond");
+									writePermanentRedirect(ctx, "Done", path());
+									return false;
+								} catch (MalformedURLException e) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorInvalidURI"), NodeL10n.getBase().getString("QueueToadlet.errorInvalidURIToU"), ctx);
+									return false;
+								} catch (FileNotFoundException e) {
+									writeError(NodeL10n.getBase().getString("QueueToadlet.errorNoFileOrCannotRead"), NodeL10n.getBase().getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
+									return false;
+								} finally {
+									synchronized(done) {
+										done.value = true;
+										done.notifyAll();
+									}
 								}
-							}
 							} catch (IOException e) {
 								// Ignore
 								return false;
@@ -673,8 +678,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						return;
 					}
 				for(DarknetPeerNode peer : core.node.getDarknetConnections()) {
-					if(request.isPartSet("node_" + peer.hashCode()))
+					if(request.isPartSet("node_" + peer.hashCode())) {
 						peer.sendDownloadFeed(furi, description);
+					}
 				}
 				writePermanentRedirect(ctx, "Done", path());
 				return;
@@ -704,10 +710,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirmpanic", l10n("confirmPanicButtonYes") });
 		form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "noconfirmpanic", l10n("confirmPanicButtonNo") });
 		
-		if(uploads)
+		if(uploads) {
 			content.addChild("p").addChild("a", "href", path(), l10n("backToUploadsPage"));
-		else
+		} else {
 			content.addChild("p").addChild("a", "href", path(), l10n("backToDownloadsPage"));
+		}
 		
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
@@ -729,17 +736,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return;
 
 		}
-		if(core.node.isStopping())
+		if(core.node.isStopping()) {
 			sendErrorPage(ctx, 200,
 					NodeL10n.getBase().getString("QueueToadlet.shuttingDownTitle"),
 					NodeL10n.getBase().getString("QueueToadlet.shuttingDown"));
-		else
+		} else {
 			sendErrorPage(ctx, 200, 
 					NodeL10n.getBase().getString("QueueToadlet.persistenceBrokenTitle"),
 					NodeL10n.getBase().getString("QueueToadlet.persistenceBroken",
 							new String[]{ "TEMPDIR", "DBFILE" },
 							new String[]{ FileUtil.getCanonicalFile(core.getPersistentTempDir()).toString()+File.separator, FileUtil.getCanonicalFile(core.node.getNodeDir())+File.separator+"node.db4o" }
 					));
+		}
 	}
 
 	private void writeError(String header, String message, ToadletContext context) throws ToadletContextClosedException, IOException {
@@ -784,7 +792,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		boolean countRequests = false;
 		
 		if (requestPath.length() > 0) {
-			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
+			if("countRequests.html".equals(requestPath) || "/countRequests.html".equals(requestPath)) {
 				countRequests = true;
 			} else {
 				/* okay, there is something in the path, check it. */
@@ -799,8 +807,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						String requestedMimeType = request.getParam("type", null);
 						String forceString = request.getParam("force");
 						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/downloads/", key, "", "/downloads/", false, ctx, core, false, null);
-						if(result.freeWhenDone)
+						if(result.freeWhenDone) {
 							data.free();
+						}
 						return;
 					}
 				} catch (MalformedURLException mue1) {
@@ -882,13 +891,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		}
 		
 		MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
-		if(pageNode != null)
+		if(pageNode != null) {
 			writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
-		else {
-			if(core.killedDatabase())
+		} else {
+			if(core.killedDatabase()) {
 				sendPersistenceDisabledError(ctx);
-			else
+			} else {
 				this.writeError("Internal error", "Internal error", ctx);
+			}
 		}
 
 	}
@@ -910,22 +920,26 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		LinkedList<ClientRequest> uncompletedDirUpload = new LinkedList<ClientRequest>();
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests(container);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "Request count: "+reqs.length);
+		}
 		
 		if(reqs.length < 1){
 			PageNode page = pageMaker.getPageNode(NodeL10n.getBase().getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
 			/* add alert summary box */
-			if(ctx.isAllowedFullAccess())
+			if(ctx.isAllowedFullAccess()) {
 				contentNode.addChild(core.alerts.createSummary());
+			}
 			HTMLNode infoboxContent = pageMaker.getInfobox("infobox-information", NodeL10n.getBase().getString("QueueToadlet.globalQueueIsEmpty"), contentNode, "queue-empty", true);
 			infoboxContent.addChild("#", NodeL10n.getBase().getString("QueueToadlet.noTaskOnGlobalQueue"));
-			if(uploads)
+			if(uploads) {
 				contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
-			if(!uploads)
+			}
+			if(!uploads) {
 				contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
+			}
 			return pageNode;
 		}
 
@@ -939,23 +953,26 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			if(req instanceof ClientGet && !uploads) {
 				ClientGet cg = (ClientGet) req;
 				if(cg.hasSucceeded()) {
-					if(cg.isDirect())
+					if(cg.isDirect()) {
 						completedDownloadToTemp.add(cg);
-					else if(cg.isToDisk())
+					} else if(cg.isToDisk()) {
 						completedDownloadToDisk.add(cg);
-					else
+					} else {
 						// FIXME
 						Logger.error(this, "Don't know what to do with "+cg);
+					}
 				} else if(cg.hasFinished()) {
 					failedDownload.add(cg);
 				} else {
 					short prio = cg.getPriority();
-					if(prio < lowestQueuedPrio)
+					if(prio < lowestQueuedPrio) {
 						lowestQueuedPrio = prio;
+					}
 					uncompletedDownload.add(cg);
 					long size = cg.getDataSize(container);
-					if(size > 0)
+					if(size > 0) {
 						totalQueuedDownloadSize += size;
+					}
 				}
 			} else if(req instanceof ClientPut && uploads) {
 				ClientPut cp = (ClientPut) req;
@@ -970,8 +987,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					uncompletedUpload.add(cp);
 				}
 				long size = cp.getDataSize(container);
-				if(size > 0)
+				if(size > 0) {
 					totalQueuedUploadSize += size;
+				}
 			} else if(req instanceof ClientPutDir && uploads) {
 				ClientPutDir cp = (ClientPutDir) req;
 				if(cp.hasSucceeded()) {
@@ -985,8 +1003,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					uncompletedDirUpload.add(cp);
 				}
 				long size = cp.getTotalDataSize();
-				if(size > 0)
+				if(size > 0) {
 					totalQueuedUploadSize += size;
+				}
 			}
 		}
 		Logger.minor(this, "Total queued downloads: "+SizeUtil.formatSize(totalQueuedDownloadSize));
@@ -997,23 +1016,25 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				int result = 0;
 				boolean isSet = true;
 				
-				if(request.isParameterSet("sortBy")){
+				if(request.isParameterSet("sortBy")) {
 					final String sortBy = request.getParam("sortBy"); 
 
-					if(sortBy.equals("id")){
+					if("id".equals(sortBy)) {
 						result = firstRequest.getIdentifier().compareToIgnoreCase(secondRequest.getIdentifier());
-					}else if(sortBy.equals("size")){
+					} else if("size".equals(sortBy)) {
 						result = (firstRequest.getTotalBlocks(container) - secondRequest.getTotalBlocks(container)) < 0 ? -1 : 1;
-					}else if(sortBy.equals("progress")){
+					} else if("progress".equals(sortBy)) {
 						result = (firstRequest.getFetchedBlocks(container) / firstRequest.getMinBlocks(container) - secondRequest.getFetchedBlocks(container) / secondRequest.getMinBlocks(container)) < 0 ? -1 : 1;
-					} else if (sortBy.equals("lastActivity")) {
+					} else if ("lastActivity".equals(sortBy)) {
 						result = (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, firstRequest.getLastActivity() - secondRequest.getLastActivity()));
-					}else
-						isSet=false;
-				}else
-					isSet=false;
+					} else {
+						isSet = false;
+					}
+				} else {
+					isSet = false;
+				}
 				
-				if(!isSet){
+				if(!isSet) {
 					int priorityDifference =  firstRequest.getPriority() - secondRequest.getPriority(); 
 					if (priorityDifference != 0) 
 						result = (priorityDifference < 0 ? -1 : 1);
@@ -1021,12 +1042,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						result = firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
 				}
 
-				if(result == 0){
+				if(result == 0) {
 					return 0;
-				}else if(request.isParameterSet("reversed")){
+				} else if(request.isParameterSet("reversed")) {
 					isReversed = true;
 					return result > 0 ? -1 : 1;
-				}else{
+				} else {
 					isReversed = false;
 					return result < 0 ? -1 : 1;
 				}
@@ -1045,19 +1066,20 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		Collections.sort(uncompletedDirUpload, jobComparator);
 		
 		String pageName;
-		if(uploads)
+		if(uploads) {
 			pageName = 
 				"(" + (uncompletedDirUpload.size() + uncompletedUpload.size()) +
 				'/' + (failedDirUpload.size() + failedUpload.size()) +
 				'/' + (completedDirUpload.size() + completedUpload.size()) +
 				") "+NodeL10n.getBase().getString("QueueToadlet.titleUploads", "nodeName", core.getMyName());
-		else
+		} else {
 			pageName = 
 				"(" + uncompletedDownload.size() +
 				'/' + failedDownload.size() +
 				'/' + (completedDownloadToDisk.size() + completedDownloadToTemp.size()) +
 				") "+NodeL10n.getBase().getString("QueueToadlet.titleDownloads", "nodeName", core.getMyName());
-		
+		}
+
 		final int mode = pageMaker.parseMode(request, this.container);
 		
 		PageNode page = pageMaker.getPageNode(pageName, ctx);
@@ -1145,8 +1167,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
 		HTMLNode legendRow = legendTable.addChild("tr");
 		for(int i=0; i<7; i++){
-			if(i > RequestStarter.INTERACTIVE_PRIORITY_CLASS || advancedModeEnabled || i <= lowestQueuedPrio)
+			if(i > RequestStarter.INTERACTIVE_PRIORITY_CLASS || advancedModeEnabled || i <= lowestQueuedPrio) {
 				legendRow.addChild("td", "class", "priority" + i, priorityClasses[i]);
+			}
 		}
 
 		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
@@ -1253,8 +1276,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			}
 		}
 		
-		if(!uploads)
+		if(!uploads) {
 			contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
+		}
 		
 		return pageNode;
 	}
@@ -1305,12 +1329,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
 			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
 
-			if (failed > 0)
+			if (failed > 0) {
 				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
-			if (fatallyFailed > 0)
+			}
+			if (fatallyFailed > 0) {
 				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
-			if ((fetched + failed + fatallyFailed) < min)
+			}
+			if ((fetched + failed + fatallyFailed) < min) {
 				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-min", "width: " + (minPercent - fetchedPercent) + "%;" });
+			}
 			
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
@@ -1531,10 +1558,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	 * {@link TimeUtil#formatTime(long)}.
 	 *
 	 * @param now
-	 *            The current time (for a unified point of reference for the
-	 *            whole page)
+	 *			The current time (for a unified point of reference for the
+	 *			whole page)
 	 * @param lastActivity
-	 *            The last activity of the request
+	 *			The last activity of the request
 	 * @return The created table cell HTML node
 	 */
 	private HTMLNode createLastActivityCell(long now, long lastActivity) {
@@ -1623,7 +1650,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI(container), false));
 					} else if (clientRequest instanceof ClientPut) {
 						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(container), false));
-					}else {
+					} else {
 						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(container), true));
 					}
 				} else if (column == LIST_FILENAME) {
@@ -1639,10 +1666,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				} else if (column == LIST_TOTAL_SIZE) {
 					requestRow.addChild(createSizeCell(((ClientPutDir) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
 				} else if (column == LIST_PROGRESS) {
-					if(clientRequest instanceof ClientPut)
+					if(clientRequest instanceof ClientPut) {
 						requestRow.addChild(createProgressCell(clientRequest.isStarted(), ((ClientPut)clientRequest).isCompressing(container), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
-					else
+					} else {
 						requestRow.addChild(createProgressCell(clientRequest.isStarted(), COMPRESS_STATE.WORKING, (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
+					}
 				} else if (column == LIST_REASON) {
 					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(container)));
 				} else if (column == LIST_RECOMMEND && hasFriends) {
@@ -1700,8 +1728,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				readCompletedIdentifiers(oldCompletedIdentifiersList);
 				migrated = true;
 			}
-		} else
+		} else {
 			oldCompletedIdentifiersList.delete();
+		}
 		final boolean writeAnyway = migrated;
 		core.clientContext.jobRunner.queue(new DBJob() {
 
@@ -1777,8 +1806,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			synchronized(completedRequestIdentifiers) {
 				identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 			}
-			for(int i=0;i<identifiers.length;i++)
+			for(int i=0;i<identifiers.length;i++) {
 				bw.write(identifiers[i]+'\n');
+			}
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Unable to save completed requests list (can't find node directory?!!?): "+e, e);
 			return;
@@ -1817,17 +1847,20 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private void registerAlert(ClientRequest req, ObjectContainer container) {
 		final String identifier = req.getIdentifier();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR)
+		if(logMINOR) {
 			Logger.minor(this, "Registering alert for "+identifier);
+		}
 		if(!req.hasFinished()) {
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Request hasn't finished: "+req+" for "+identifier, new Exception("debug"));
+			}
 			return;
 		}
 		if(req instanceof ClientGet) {
 			FreenetURI uri = ((ClientGet)req).getURI(container);
-			if(req.isPersistentForever() && uri != null)
+			if(req.isPersistentForever() && uri != null) {
 				container.activate(uri, 5);
+			}
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
@@ -1840,8 +1873,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			core.alerts.register(event);
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI(container);
-			if(req.isPersistentForever() && uri != null)
+			if(req.isPersistentForever() && uri != null) {
 				container.activate(uri, 5);
+			}
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
@@ -1854,8 +1888,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			core.alerts.register(event);
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI(container);
-			if(req.isPersistentForever() && uri != null)
+			if(req.isPersistentForever() && uri != null) {
 				container.activate(uri, 5);
+			}
 			if(uri == null) {
 				Logger.error(this, "No URI for supposedly finished request "+req);
 				return;
@@ -1904,10 +1939,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	@Override
 	public String path() {
-		if(uploads)
+		if(uploads) {
 			return "/uploads/";
-		else
+		} else {
 			return "/downloads/";
+		}
 	}
 
 	private class GetCompletedEvent extends StoringUserEvent<GetCompletedEvent> {
@@ -1947,10 +1983,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		public String getTitle() {
 			String title = null;
 			synchronized(events) {
-				if(events.size() == 1)
+				if(events.size() == 1) {
 					title = l10n("downloadSucceededTitle", "filename", uri.getPreferredFilename());
-				else
+				} else {
 					title = l10n("downloadsSucceededTitle", "nr", Integer.toString(events.size()));
+				}
 			}
 			return title;
 		}
@@ -2000,13 +2037,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return text;
 		}
 
+		@Override
 		public String getTitle() {
 			String title = null;
 			synchronized(events) {
-				if(events.size() == 1)
+				if(events.size() == 1) {
 					title = l10n("uploadSucceededTitle", "filename", uri.getPreferredFilename());
-				else
+				} else {
 					title = l10n("uploadsSucceededTitle", "nr", Integer.toString(events.size()));
+				}
 			}
 			return title;
 		}
@@ -2059,13 +2098,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return text;
 		}
 
+		@Override
 		public String getTitle() {
 			String title = null;
 			synchronized(events) {
-				if(events.size() == 1)
+				if(events.size() == 1) {
 					title = l10n("siteUploadSucceededTitle", "filename", uri.getPreferredFilename());
-				else
+				} else {
 					title = l10n("sitesUploadSucceededTitle", "nr", Integer.toString(events.size()));
+				}
 			}
 			return title;
 		}

@@ -23,7 +23,7 @@ public class Location {
 			return -1;
 		}
 	}
-	
+
 	static double distance(PeerNode p, double loc) {
 		double d = distance(p.getLocation(), loc);
 		return d;
@@ -39,22 +39,25 @@ public class Location {
 	}
 
 	public static double distance(double a, double b, boolean allowCrazy) {
-	    // Circular keyspace
+		// Circular keyspace
 		if(!allowCrazy) {
 			if((a < 0.0 || a > 1.0)||(b < 0.0 || b > 1.0)) {
-		    	Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
-		    	throw new NullPointerException();
+				Logger.error(PeerManager.class, "Invalid Location ! a = "+a +" b = "+ b + "Please report this bug!", new Exception("error"));
+				throw new NullPointerException();
 			}
-			return simpleDistance(a, b);	
+			return simpleDistance(a, b);
 		} else {
 			if(a < 0.0 || a > 1.0) a = 2.0;
 			if(b < 0.0 || b > 1.0) b = 2.0;
-			if(a > 1.0 && b > 2.0)
+			if(a > 1.0 && b > 2.0) {
 				return 0.0; // Both are out of range so both are equal
-			if(a > 1.0)
+			}
+			if(a > 1.0) {
 				return a - b;
-			if(b > 1.0)
+			}
+			if(b > 1.0) {
 				return b - a;
+			}
 			return simpleDistance(a, b);
 		}
 	}
@@ -85,7 +88,7 @@ public class Location {
 			}
 		}
 	}
-	
+
 	/**
 	 * Given an arbitrary double (not bound to [0.0, 1.0]) return the normalized double [0.0, 1.0] which would result in simple
 	 * wrapping/overflowing. e.g. normalize(1.0+0.5)==0.5, normalize(0.5-1.0)==0.5, normalize({0.0,1.0})=={0.0,1.0}
@@ -95,11 +98,12 @@ public class Location {
 		int intPart=(int)rough;
 		double maybeNegative=rough-intPart;
 		//note: maybeNegative is bound between (-1.0, 1.0)
-		if (maybeNegative < 0)
+		if (maybeNegative < 0) {
 			return 1.0+maybeNegative;
+		}
 		return maybeNegative;
 	}
-	
+
 	public static boolean equals(double newLoc, double currentLocation) {
 		return Math.abs(newLoc - currentLocation) < Double.MIN_VALUE * 2;
 	}

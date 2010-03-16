@@ -9,35 +9,35 @@ import freenet.node.*;
 import freenet.support.*;
 
 /**
- * Node answer message after a RemovePersistentRequest message from client. 
+ * Node answer message after a RemovePersistentRequest message from client.
  */
 public class PersistentRequestRemovedMessage extends FCPMessage {
 
-    private final String ident;
-    private final boolean global;
-    
-    public PersistentRequestRemovedMessage(String identifier, boolean global) {
-        this.ident = identifier;
-        this.global = global;
-    }
+	private final String ident;
+	private final boolean global;
 
-    @Override
+	public PersistentRequestRemovedMessage(String identifier, boolean global) {
+		this.ident = identifier;
+		this.global = global;
+	}
+
+	@Override
 	public SimpleFieldSet getFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet(true);
-        fs.putSingle("Identifier", ident);
-        if(global) fs.putSingle("Global", "true");
-        return fs;
-    }
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.putSingle("Identifier", ident);
+		if(global) fs.putSingle("Global", "true");
+		return fs;
+	}
 
-    @Override
+	@Override
 	public String getName() {
-        return "PersistentRequestRemoved";
-    }
+		return "PersistentRequestRemoved";
+	}
 
-    @Override
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-        throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentRequestRemoved goes from server to client not the other way around", ident, global);
-    }
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentRequestRemoved goes from server to client not the other way around", ident, global);
+	}
 
 	@Override
 	public void removeFrom(ObjectContainer container) {

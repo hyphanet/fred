@@ -30,12 +30,13 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 	
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
+		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			realRun();
 		} catch (IOException e) {
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(Logger.MINOR, this)) {
 				Logger.minor(this, "Caught "+e, e);
+			}
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
@@ -91,8 +92,9 @@ public class FCPConnectionOutputHandler implements Runnable {
 	}
 
 	public void queue(FCPMessage msg) {
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(Logger.DEBUG, this)) {
 			Logger.debug(this, "Queueing "+msg, new Exception("debug"));
+		}
 		if(msg == null) throw new NullPointerException();
 		synchronized(outQueue) {
 			if(closedOutputQueue) {

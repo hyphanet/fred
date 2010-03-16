@@ -31,7 +31,7 @@ public class ClientKSK extends InsertableClientSSK {
 	}
 	
 	public static InsertableClientSSK create(FreenetURI uri) {
-		if(!uri.getKeyType().equals("KSK"))
+		if(!"KSK".equals(uri.getKeyType()))
 			throw new IllegalArgumentException();
 		return create(uri.getDocName());
 	}

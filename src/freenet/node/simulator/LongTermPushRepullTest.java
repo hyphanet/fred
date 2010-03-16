@@ -32,7 +32,7 @@ import freenet.support.io.FileUtil;
 
 /**
  * Push / Pull test over long period of time
- * 
+ *
  * Unlike LongTermPushPullTest, this only inserts one key per day. That key
  * is then re-pulled at increasing intervals.
  */
@@ -88,8 +88,8 @@ public class LongTermPushRepullTest {
 
 			// Create one node
 			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL,
-			        0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
-			        12 * 1024, true, true, false, false, null);
+					0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
+					12 * 1024, true, true, false, false, null);
 			Logger.getChain().setThreshold(Logger.ERROR);
 
 			// Start it
@@ -99,24 +99,24 @@ public class LongTermPushRepullTest {
 				exitCode = EXIT_FAILED_TARGET;
 				return;
 			}
-				
+
 			long t2 = System.currentTimeMillis();
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
 
 			// Push one block only.
-			
+
 			Bucket data = randomData(node);
 			HighLevelSimpleClient client = node.clientCore.makeClient((short) 0);
 			FreenetURI uri = new FreenetURI("KSK@" + uid + "-" + dateFormat.format(today.getTime()));
 			System.out.println("PUSHING " + uri);
-			
+
 			try {
 				InsertBlock block = new InsertBlock(data, new ClientMetadata(), uri);
 				t1 = System.currentTimeMillis();
 				client.insert(block, false, null);
 				t2 = System.currentTimeMillis();
-				
+
 				System.out.println("PUSH-TIME-" + ":" + (t2 - t1));
 				csvLine.add(String.valueOf(t2 - t1));
 			} catch (InsertException e) {
@@ -135,8 +135,8 @@ public class LongTermPushRepullTest {
 			FileUtil.writeTo(fis, new File(innerDir2, "seednodes.fref"));
 			fis.close();
 			node2 = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false,
-			        Node.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
-			        true, true, true, true, 12 * 1024, false, true, false, false, null);
+					Node.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
+					true, true, true, true, 12 * 1024, false, true, false, false, null);
 			node2.start(true);
 
 			t1 = System.currentTimeMillis();
@@ -166,7 +166,7 @@ public class LongTermPushRepullTest {
 					csvLine.add(String.valueOf(t2 - t1));
 				} catch (FetchException e) {
 					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-					        && e.getMode() != FetchException.DATA_NOT_FOUND)
+							&& e.getMode() != FetchException.DATA_NOT_FOUND)
 						e.printStackTrace();
 					csvLine.add(FetchException.getShortMessage(e.getMode()));
 				}
@@ -176,13 +176,15 @@ public class LongTermPushRepullTest {
 			exitCode = EXIT_THREW_SOMETHING;
 		} finally {
 			try {
-				if (node != null)
+				if (node != null) {
 					node.park();
+				}
 			} catch (Throwable t1) {
 			}
 			try {
-				if (node2 != null)
+				if (node2 != null) {
 					node2.park();
+				}
 			} catch (Throwable t1) {
 			}
 
@@ -199,7 +201,7 @@ public class LongTermPushRepullTest {
 				e.printStackTrace();
 				exitCode = EXIT_THREW_SOMETHING;
 			}
-			
+
 			System.exit(exitCode);
 		}
 	}

@@ -106,10 +106,11 @@ public class Yarrow extends RandomSource {
 			throw new RuntimeException("Cannot initialize Yarrow!: " + e, e);
 		}
 		
-		if(updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
+		if(updateSeed && !("/dev/urandom".equals(seed.toString()))) { //Dont try to update the seedfile if we know that it wont be possible anyways
 			seedfile = seed;
-		else
+		} else {
 			seedfile = null;
+		}
 		if(reseedOnStartup) {
 			entropy_init(seed, reseedOnStartup);
 			seedFromExternalStuff(canBlock);
@@ -245,8 +246,9 @@ public class Yarrow extends RandomSource {
 
 			EntropySource seedFile = new EntropySource();
 			try {
-				for(int i = 0; i < 32; i++)
+				for(int i = 0; i < 32; i++) {
 					acceptEntropy(seedFile, dis.readLong(), 64);
+				}
 			} catch(EOFException f) {
 			}
 			dis.close();
@@ -266,14 +268,16 @@ public class Yarrow extends RandomSource {
 	}
 
 	public void write_seed(File filename, boolean force) {
-		if(!force)
+		if(!force) {
 			synchronized(this) {
 				long now = System.currentTimeMillis();
-				if(now - timeLastWroteSeed <= 60 * 60 * 1000 /* once per hour */)
+				if(now - timeLastWroteSeed <= 60 * 60 * 1000 /* once per hour */) {
 					return;
-				else
+				} else {
 					timeLastWroteSeed = now;
+				}
 			}
+		}
 
 		FileOutputStream fos = null;
 		BufferedOutputStream bos = null;
@@ -283,8 +287,9 @@ public class Yarrow extends RandomSource {
 			bos = new BufferedOutputStream(fos);
 			dos = new DataOutputStream(bos);
 
-			for(int i = 0; i < 32; i++)
+			for(int i = 0; i < 32; i++) {
 				dos.writeLong(nextLong());
+			}
 
 			dos.flush();
 			dos.close();
@@ -314,9 +319,11 @@ public class Yarrow extends RandomSource {
 	}
 
 	private final void counterInc() {
-		for(int i = counter.length - 1; i >= 0; i--)
-			if(++counter[i] != 0)
+		for(int i = counter.length - 1; i >= 0; i--) {
+			if(++counter[i] != 0) {
 				break;
+			}
+		}
 	}
 
 	private final void generateOutput() {
@@ -353,71 +360,42 @@ public class Yarrow extends RandomSource {
 		fetch_counter += count;
 		return rv;
 	}
-	static final int bitTable[][] = {{0, 0x0}, {
-			1, 0x1
-		}, {
-			1, 0x3
-		}, {
-			1, 0x7
-		}, {
-			1, 0xf
-		}, {
-			1, 0x1f
-		}, {
-			1, 0x3f
-		}, {
-			1, 0x7f
-		}, {
-			1, 0xff
-		}, {
-			2, 0x1ff
-		}, {
-			2, 0x3ff
-		}, {
-			2, 0x7ff
-		}, {
-			2, 0xfff
-		}, {
-			2, 0x1fff
-		}, {
-			2, 0x3fff
-		}, {
-			2, 0x7fff
-		}, {
-			2, 0xffff
-		}, {
-			3, 0x1ffff
-		}, {
-			3, 0x3ffff
-		}, {
-			3, 0x7ffff
-		}, {
-			3, 0xfffff
-		}, {
-			3, 0x1fffff
-		}, {
-			3, 0x3fffff
-		}, {
-			3, 0x7fffff
-		}, {
-			3, 0xffffff
-		}, {
-			4, 0x1ffffff
-		}, {
-			4, 0x3ffffff
-		}, {
-			4, 0x7ffffff
-		}, {
-			4, 0xfffffff
-		}, {
-			4, 0x1fffffff
-		}, {
-			4, 0x3fffffff
-		}, {
-			4, 0x7fffffff
-		}, {
-			4, 0xffffffff
-		}};
+	static final int bitTable[][] = {
+		   { 0, 0x0
+		}, { 1, 0x1
+		}, { 1, 0x3
+		}, { 1, 0x7
+		}, { 1, 0xf
+		}, { 1, 0x1f
+		}, { 1, 0x3f
+		}, { 1, 0x7f
+		}, { 1, 0xff
+		}, { 2, 0x1ff
+		}, { 2, 0x3ff
+		}, { 2, 0x7ff
+		}, { 2, 0xfff
+		}, { 2, 0x1fff
+		}, { 2, 0x3fff
+		}, { 2, 0x7fff
+		}, { 2, 0xffff
+		}, { 3, 0x1ffff
+		}, { 3, 0x3ffff
+		}, { 3, 0x7ffff
+		}, { 3, 0xfffff
+		}, { 3, 0x1fffff
+		}, { 3, 0x3fffff
+		}, { 3, 0x7fffff
+		}, { 3, 0xffffff
+		}, { 4, 0x1ffffff
+		}, { 4, 0x3ffffff
+		}, { 4, 0x7ffffff
+		}, { 4, 0xfffffff
+		}, { 4, 0x1fffffff
+		}, { 4, 0x3fffffff
+		}, { 4, 0x7fffffff
+		}, { 4, 0xffffffff
+		}
+	};
 
 	// This may *look* more complicated than in is, but in fact it is
 	// loop unrolled, cache and operation optimized.
@@ -430,12 +408,13 @@ public class Yarrow extends RandomSource {
 
 		int val = output_buffer[offset];
 
-		if(parameters[0] == 4)
+		if(parameters[0] == 4) {
 			val += (output_buffer[offset + 1] << 24) + (output_buffer[offset + 2] << 16) + (output_buffer[offset + 3] << 8);
-		else if(parameters[0] == 3)
+		} else if(parameters[0] == 3) {
 			val += (output_buffer[offset + 1] << 16) + (output_buffer[offset + 2] << 8);
-		else if(parameters[0] == 2)
+		} else if(parameters[0] == 2) {
 			val += output_buffer[offset + 2] << 8;
+		}
 
 		return val & parameters[1];
 	}
@@ -520,16 +499,17 @@ public class Yarrow extends RandomSource {
 					if(contributedEntropy == null) {
 						contributedEntropy = new int[] { actualEntropy };
 						entropySeen.put(source, contributedEntropy);
-					} else
+					} else {
 						contributedEntropy[0]+=actualEntropy;
-
+					}
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {
 						int kc = 0;
 						for(Map.Entry<EntropySource, int[]> e : entropySeen.entrySet()) {
 							EntropySource key = e.getKey();
 							int[] v = e.getValue();
-							if(DEBUG)
+							if(DEBUG) {
 								Logger.normal(this, "Key: <" + key + "> " + v);
+							}
 							if(v[0] > SLOW_THRESHOLD) {
 								kc++;
 								if(kc >= SLOW_K) {
@@ -542,19 +522,22 @@ public class Yarrow extends RandomSource {
 					}
 				}
 			}
-			if(DEBUG)
+			if(DEBUG) {
 				//	    Core.logger.log(this,"Fast pool: "+fast_entropy+"\tSlow pool:
 				// "+slow_entropy, Logger.NORMAL);
 				System.err.println("Fast pool: " + fast_entropy + "\tSlow pool: " + slow_entropy);
+			}
 		}
 		if(performedPoolReseed && (seedfile != null)) {
 			//Dont do this while synchronized on 'this' since
 			//opening a file seems to be suprisingly slow on windows
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Writing seedfile");
+			}
 			write_seed(seedfile);
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Written seedfile");
+			}
 		}
 
 		return actualEntropy;
@@ -687,7 +670,7 @@ public class Yarrow extends RandomSource {
 
 		byte[] b = new byte[1024];
 
-		if((args.length == 0) || args[0].equalsIgnoreCase("latency")) {
+		if((args.length == 0) || "latency".equalsIgnoreCase(args[0])) {
 			if(args.length == 2)
 				b = new byte[Integer.parseInt(args[1])];
 			long start = System.currentTimeMillis();
@@ -705,13 +688,13 @@ public class Yarrow extends RandomSource {
 				r.nextLong();
 			System.out.println(
 				(double) (System.currentTimeMillis() - start) / 1000 + " ms/long");
-		} else if(args[0].equalsIgnoreCase("randomness")) {
+		} else if("randomness".equalsIgnoreCase(args[0])) {
 			int kb = Integer.parseInt(args[1]);
 			for(int i = 0; i < kb; i++) {
 				r.nextBytes(b);
 				System.out.write(b);
 			}
-		} else if(args[0].equalsIgnoreCase("gathering")) {
+		} else if("gathering".equalsIgnoreCase(args[0])) {
 			System.gc();
 			EntropySource t = new EntropySource();
 			long start = System.currentTimeMillis();
@@ -725,7 +708,7 @@ public class Yarrow extends RandomSource {
 				r.acceptTimerEntropy(t);
 			System.err.println(
 				(double) (System.currentTimeMillis() - start) / 100000);
-		} else if(args[0].equalsIgnoreCase("volume")) {
+		} else if("volume".equalsIgnoreCase(args[0])) {
 			b = new byte[1020];
 			long duration =
 				System.currentTimeMillis() + Integer.parseInt(args[1]);
@@ -733,7 +716,7 @@ public class Yarrow extends RandomSource {
 				r.nextBytes(b);
 				System.out.write(b);
 			}
-//		} else if (args[0].equals("stream")) {
+//		} else if ("stream".equals(args[0])) {
 //			RandFile f = new RandFile(args[1]);
 //			EntropySource rf = new EntropySource();
 //			byte[] buffer = new byte[131072];
@@ -742,7 +725,7 @@ public class Yarrow extends RandomSource {
 //				r.nextBytes(buffer);
 //				System.out.write(buffer);
 //			}
-		} else if(args[0].equalsIgnoreCase("bitstream"))
+		} else if("bitstream".equalsIgnoreCase(args[0]))
 			while(true) {
 				int v = r.nextInt();
 				for(int i = 0; i < 32; i++) {
@@ -752,8 +735,8 @@ public class Yarrow extends RandomSource {
 						System.out.print('0');
 				}
 			}
-		else if(args[0].equalsIgnoreCase("sample"))
-			if((args.length == 1) || args[1].equals("general")) {
+		else if("sample".equalsIgnoreCase(args[0]))
+			if((args.length == 1) || "general".equals(args[1])) {
 				System.out.println("nextInt(): ");
 				for(int i = 0; i < 3; i++)
 					System.out.println(r.nextInt());
@@ -772,7 +755,7 @@ public class Yarrow extends RandomSource {
 				System.out.println("nextFullDouble(): ");
 				for(int i = 0; i < 3; i++)
 					System.out.println(r.nextFullDouble());
-			} else if(args[1].equals("normalized"))
+			} else if("normalized".equals(args[1]))
 				for(int i = 0; i < 20; i++)
 					System.out.println(r.nextDouble());
 	}

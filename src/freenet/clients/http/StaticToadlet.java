@@ -76,10 +76,10 @@ public class StaticToadlet extends Toadlet {
 	 * the JAR for resources in a jar and the mtime for files.
 	 */
 	private Date getUrlMTime(URL url) {
-		if (url.getProtocol().equals("jar")) {
+		if ("jar".equals(url.getProtocol())) {
 			File f = new File(url.getPath().substring(0, url.getPath().indexOf('!')));
 			return new Date(f.lastModified());
-		} else if (url.getProtocol().equals("file")) {
+		} else if ("file".equals(url.getProtocol())) {
 			File f = new File(url.getPath());
 			return new Date(f.lastModified());
 		} else {

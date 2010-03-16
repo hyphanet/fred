@@ -17,30 +17,32 @@ public class DSA {
 
 	// FIXME DSAgroupBigA is 256 bits long and therefore cannot accomodate
 	// all SHA-256 output's. Therefore we chop it down to 255 bits.
-	
+
 	static final BigInteger SIGNATURE_MASK =
 		Util.TWO.pow(255).subtract(BigInteger.ONE);
-	
+
 	/**
 	 * Returns a DSA signature given a group, private key (x), a random nonce
 	 * (k), and the hash of the message (m).
 	 */
 	static DSASignature sign(DSAGroup g,
 			DSAPrivateKey x,
-			BigInteger k, 
+			BigInteger k,
 			BigInteger m,
 			RandomSource random) {
 		if(k.signum() == -1) throw new IllegalArgumentException();
 		if(m.signum() == -1) throw new IllegalArgumentException();
-		if(g.getQ().bitLength() == 256)
+		if(g.getQ().bitLength() == 256) {
 			m = m.and(SIGNATURE_MASK);
-		if(m.compareTo(g.getQ()) != -1)
+		}
+		if(m.compareTo(g.getQ()) != -1) {
 			throw new IllegalArgumentException();
+		}
 		BigInteger r=g.getG().modPow(k, g.getP()).mod(g.getQ());
 
 		BigInteger kInv=k.modInverse(g.getQ());
 		return sign(g, x, r, kInv, m, random);
-	} 
+	}
 
 	public static DSASignature sign(DSAGroup g, DSAPrivateKey x, BigInteger m,
 			RandomSource r) {
@@ -49,12 +51,12 @@ public class DSA {
 	}
 
 	/**
-	 * Returns a DSA signature given a group, private key (x), 
+	 * Returns a DSA signature given a group, private key (x),
 	 * the precalculated values of r and k^-1, and the hash
 	 * of the message (m)
 	 */
 	static DSASignature sign(DSAGroup g, DSAPrivateKey x,
-			BigInteger r, BigInteger kInv, 
+			BigInteger r, BigInteger kInv,
 			BigInteger m, RandomSource random) {
 		BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
 		BigInteger s=kInv.multiply(s1).mod(g.getQ());
@@ -66,10 +68,10 @@ public class DSA {
 	}
 
 	private static BigInteger generateK(DSAGroup g, Random r){
-            if(g.getQ().bitLength() < DSAGroup.Q_BIT_LENGTH)
-		    throw new IllegalArgumentException("Q is too short! (" + g.getQ().bitLength() + '<' + DSAGroup.Q_BIT_LENGTH + ')');
-		
-            BigInteger k;
+			if(g.getQ().bitLength() < DSAGroup.Q_BIT_LENGTH)
+			throw new IllegalArgumentException("Q is too short! (" + g.getQ().bitLength() + '<' + DSAGroup.Q_BIT_LENGTH + ')');
+
+			BigInteger k;
 		do {
 			k=new NativeBigInteger(DSAGroup.Q_BIT_LENGTH, r);
 		} while ((g.getQ().compareTo(k) < 1) || (k.compareTo(BigInteger.ZERO) < 1));
@@ -85,19 +87,22 @@ public class DSA {
 			DSASignature sig,
 			BigInteger m, boolean forceMod) {
 		if(m.signum() == -1) throw new IllegalArgumentException();
-		if(kp.getGroup().getQ().bitLength() == 256 && !forceMod)
+		if(kp.getGroup().getQ().bitLength() == 256 && !forceMod) {
 			m = m.and(SIGNATURE_MASK);
+		}
 		try {
 			// 0<r<q has to be true
 			if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) {
-				if(Logger.shouldLog(Logger.MINOR, DSA.class))
+				if(Logger.shouldLog(Logger.MINOR, DSA.class)) {
 					Logger.minor(DSA.class, "r < 0 || r > q: r="+sig.getR()+" q="+kp.getQ());
+				}
 				return false;
 			}
 			// 0<s<q has to be true as well
 			if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) {
-				if(Logger.shouldLog(Logger.MINOR, DSA.class))
+				if(Logger.shouldLog(Logger.MINOR, DSA.class)) {
 					Logger.minor(DSA.class, "s < 0 || s > q: s="+sig.getS()+" q="+kp.getQ());
+				}
 				return false;
 			}
 
@@ -111,8 +116,9 @@ public class DSA {
 
 			//FIXME: is there a better way to handle this exception raised on the 'w=' line above?
 		} catch (ArithmeticException e) {  // catch error raised by invalid data
-			if(Logger.shouldLog(Logger.MINOR, DSA.class))
+			if(Logger.shouldLog(Logger.MINOR, DSA.class)) {
 				Logger.minor(DSA.class, "Verify failed: "+e, e);
+			}
 			return false;                  // and report that that data is bad.
 		}
 	}
@@ -181,5 +187,5 @@ public class DSA {
 			System.out.println("Total pub key size: "+totalPubKeySize+" (max "+maxPubKeySize+ ')');
 			System.out.println("Total priv key size: "+totalPrivKeySize+" (max "+maxPrivKeySize+ ')');
 		}
-    }
+	}
 }

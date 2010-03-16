@@ -112,7 +112,7 @@ public abstract class FCPMessage {
 			return new TestDDAResponseMessage(fs);
 		if(name.equals(WatchGlobal.NAME))
 			return new WatchGlobal(fs);
-		if(name.equals("Void"))
+		if("Void".equals(name))
 			return null;
 
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null, false);

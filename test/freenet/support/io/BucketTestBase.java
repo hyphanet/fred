@@ -14,7 +14,7 @@ import freenet.support.api.Bucket;
 public abstract class BucketTestBase extends TestCase {
 	protected byte[] DATA1 = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08 };
 	protected byte[] DATA2 = new byte[] { 0x70, (byte) 0x81, (byte) 0x92, (byte) 0xa3, (byte) 0xb4, (byte) 0xc5,
-	        (byte) 0xd6, (byte) 0xe7, (byte) 0xf8 };
+		(byte) 0xd6, (byte) 0xe7, (byte) 0xf8 };
 
 	protected abstract Bucket makeBucket(long size) throws IOException;
 
@@ -90,8 +90,9 @@ public abstract class BucketTestBase extends TestCase {
 
 			// Read byte
 			is = bucket.getInputStream();
-			for (byte b : DATA1)
+			for (byte b : DATA1) {
 				assertEquals("SimpleRead-2", b, (byte) is.read());
+			}
 
 			// EOF
 			assertEquals("SimpleRead-EOF0", -1, is.read(new byte[4]));
@@ -108,8 +109,9 @@ public abstract class BucketTestBase extends TestCase {
 
 	// Write twice -- should overwrite, not append
 	public void testReuse() throws IOException {
-		if (!canOverwrite)
+		if (!canOverwrite) {
 			return;
+		}
 		
 		Bucket bucket = makeBucket(Math.max(DATA1.length, DATA2.length));
 		try {
@@ -172,8 +174,9 @@ public abstract class BucketTestBase extends TestCase {
 	protected static byte[] DATA_LONG;
 	static {
 		DATA_LONG = new byte[32768 + 1]; // 32K + 1
-		for (int i = 0; i < DATA_LONG.length; i++)
+		for (int i = 0; i < DATA_LONG.length; i++) {
 			DATA_LONG[i] = (byte) i;
+		}
 	}
 
 	public void testLargeData() throws IOException {
@@ -182,8 +185,9 @@ public abstract class BucketTestBase extends TestCase {
 		try {
 			// Write
 			OutputStream os = bucket.getOutputStream();
-			for (int i = 0; i < 16; i++)
+			for (int i = 0; i < 16; i++) {
 				os.write(DATA_LONG);
+			}
 			os.close();
 
 			// Read byte[]

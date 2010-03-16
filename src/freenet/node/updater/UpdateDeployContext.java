@@ -54,13 +54,13 @@ class UpdateDeployContext {
 			boolean isAbsolute = f.isAbsolute();
 			String name = f.getName().toLowerCase();
 			if(extJar == null) {
-				if(name.equals("freenet-ext.jar.new")) {
+				if("freenet-ext.jar.new".equals(name)) {
 					extJar = f;
 					newExtJar = new File(extJar.getParent(), "freenet-ext.jar");
 					extJarAbsolute = isAbsolute;
 					extClasspathNo = propNo;
 					continue;
-				} else if(name.equals("freenet-ext.jar")) {
+				} else if("freenet-ext.jar".equals(name)) {
 					extJar = f;
 					newExtJar = new File(extJar.getParent(), "freenet-ext.jar.new");
 					extClasspathNo = propNo;
@@ -161,7 +161,7 @@ class UpdateDeployContext {
 				} else {
 					bw.write(line+'\n');
 				}
-			} else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE")) {
+			} else if("wrapper.restart.reload_configuration=TRUE".equalsIgnoreCase(line)) {
 				writtenReload = true;
 				bw.write(line+'\n');
 			} else

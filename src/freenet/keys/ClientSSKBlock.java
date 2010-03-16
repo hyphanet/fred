@@ -16,11 +16,11 @@ import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
 public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
-	
+
 	static final int DATA_DECRYPT_KEY_LENGTH = 32;
-	
+
 	static public final int MAX_DECOMPRESSED_DATA_LENGTH = 32768;
-	
+
 	/** Is metadata. Set on decode. */
 	private boolean isMetadata;
 	/** Has decoded? */
@@ -30,20 +30,21 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 
 	/** Compression algorithm from last time tried to decompress. */
 	private short compressionAlgorithm = -1;
-	
+
 	public ClientSSKBlock(byte[] data, byte[] headers, ClientSSK key, boolean dontVerify) throws SSKVerifyException {
 		super(data, headers, (NodeSSK) key.getNodeKey(true), dontVerify);
 		this.key = key;
 	}
-	
+
 	public static ClientSSKBlock construct(SSKBlock block, ClientSSK key) throws SSKVerifyException {
 		// Constructor expects clientkey to have the pubkey.
 		// In the case of binary blobs, the block may have it instead.
-		if(key.getPubKey() == null)
+		if(key.getPubKey() == null) {
 			key.setPublicKey(block.getPubKey());
+		}
 		return new ClientSSKBlock(block.data, block.headers, key, false);
 	}
-	
+
 	/**
 	 * Decode the data.
 	 */
@@ -84,21 +85,22 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		if(dataLength > data.length) {
 			throw new SSKDecodeException("Data length: "+dataLength+" but data.length="+data.length);
 		}
-		
-        compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
-        decoded = true;
-        
-        if(dontDecompress) {
-        	return BucketTools.makeImmutableBucket(factory, dataOutput, dataLength);
-        }
 
-        Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, dataLength, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
-        return b;
+		compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
+		decoded = true;
+
+		if(dontDecompress) {
+			return BucketTools.makeImmutableBucket(factory, dataOutput, dataLength);
+		}
+
+		Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, dataLength, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
+		return b;
 	}
 
 	public boolean isMetadata() {
-		if(!decoded)
+		if(!decoded) {
 			throw new IllegalStateException("Cannot read isMetadata before decoded");
+		}
 		return isMetadata;
 	}
 
@@ -109,15 +111,15 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	public short getCompressionCodec() {
 		return compressionAlgorithm;
 	}
-	
+
 	public byte[] memoryDecode() throws KeyDecodeException {
 		return memoryDecode(false);
 	}
-	
-    /**
-     * Decode into RAM, if short.
-     * @throws KeyDecodeException 
-     */
+
+	/**
+	 * Decode into RAM, if short.
+	 * @throws KeyDecodeException
+	 */
 	public byte[] memoryDecode(boolean dontDecompress) throws KeyDecodeException {
 		try {
 			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, dontDecompress);
@@ -131,7 +133,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	public int hashCode() {
 		return super.hashCode() ^ key.hashCode();
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof ClientSSKBlock)) return false;
@@ -139,5 +141,5 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		if(!key.equals(block.key)) return false;
 		return super.equals(o);
 	}
-	
+
 }

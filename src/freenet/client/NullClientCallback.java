@@ -12,12 +12,12 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
 public class NullClientCallback implements ClientCallback {
-    private static volatile boolean logMINOR;
-    private static volatile boolean logDEBUG;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
-    static {
+	static {
 		Logger.registerClass(NullClientCallback.class);
-    }
+	}
 	
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFailure e=" + e + ", state=" + state + ", container=" + container, e);

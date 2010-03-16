@@ -171,10 +171,10 @@ public class StatisticsToadlet extends Toadlet {
 		// Statistic gathering box
 		HTMLNode statGatheringContent = ctx.getPageMaker().getInfobox("#", l10n("statisticGatheringTitle"), nextTableCell, "statistics-generating", true);
 		// Generate a Thread-Dump
-		if(node.isUsingWrapper()){
+		//if(node.isUsingWrapper()){
 			HTMLNode threadDumpForm = ctx.addFormChild(statGatheringContent, "/", "threadDumpForm");
 			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", l10n("threadDumpButton")});
-		}
+		//} //TheSeeker
 		// Get logs
 		HTMLNode logsList = statGatheringContent.addChild("ul");
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))

@@ -7,33 +7,34 @@ import freenet.io.comm.IncomingPacketFilterException;
  */
 public class WouldBlockException extends IncomingPacketFilterException {
 
-    private static final long serialVersionUID = -1;
-    private static volatile boolean logDEBUG;
+	private static final long serialVersionUID = -1;
+	private static volatile boolean logDEBUG;
 
-    static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 
-            @Override
-            public void shouldUpdate() {
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-            }
-        });
-    }
+			@Override
+			public void shouldUpdate() {
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 
-    public WouldBlockException(String string) {
-        super(string);
-    }
+	public WouldBlockException(String string) {
+		super(string);
+	}
 
-    public WouldBlockException() {
-        super();
-    }
+	public WouldBlockException() {
+		super();
+	}
 
-    // Optimization :
-    // http://blogs.sun.com/jrose/entry/longjumps_considered_inexpensive?resubmit=damnit
-    @Override
-    public final synchronized Throwable fillInStackTrace() {
-        if(logDEBUG)
-            return super.fillInStackTrace();
-        return null;
-    }
+	// Optimization :
+	// http://blogs.sun.com/jrose/entry/longjumps_considered_inexpensive?resubmit=damnit
+	@Override
+	public final synchronized Throwable fillInStackTrace() {
+		if(logDEBUG) {
+			return super.fillInStackTrace();
+		}
+		return null;
+	}
 }

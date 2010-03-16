@@ -18,6 +18,7 @@ package freenet.support;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,25 +57,25 @@ public class BufferTest extends TestCase {
 
 		Buffer buffer = new Buffer(data, 4, 5);
 		
-		assertFalse(dataSub.equals(buffer.getData()));
+		assertFalse(Arrays.equals(dataSub,buffer.getData()));
 
 		doTestBuffer(dataSub, buffer);
 	}
 
 	public void testBadLength() {
-		try{
+		try {
 			new Buffer(new byte[0], 0, -1);
 			fail();
 		} catch(IllegalArgumentException e) {
 			// expect this
 		}
-		try{
+		try {
 			new Buffer(new byte[0], 0, 1);
 			fail();
 		} catch(IllegalArgumentException e) {
 			// expect this
 		}
-		try{
+		try {
 			new Buffer(new byte[0], 1, 0);
 			fail();
 		} catch(IllegalArgumentException e) {
@@ -119,11 +120,10 @@ public class BufferTest extends TestCase {
 			assertEquals(data[i], buffer.byteAt(i));
 		}
 		
-		try{
+		try {
 			buffer.byteAt(data.length + 1); // expect exception
 			fail();
-		}
-		catch(ArrayIndexOutOfBoundsException e) {
+		} catch(ArrayIndexOutOfBoundsException e) {
 			// expect this
 		}
 	}

@@ -177,7 +177,7 @@ public class InsertCompressor implements CompressJob {
 						shouldFreeOnFinally = false;
 					}
 				} catch(CompressionOutputSizeException e) {
-					continue;       // try next compressor type
+					continue;		// try next compressor type
 				} catch (DatabaseDisabledException e) {
 					Logger.error(this, "Database disabled compressing data", new Exception("error"));
 					shouldFreeOnFinally = true;

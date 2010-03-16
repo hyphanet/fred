@@ -18,15 +18,15 @@ import freenet.support.NullObject;
 
 /**
  * An FCP client.
- * Identified by its Name which is sent on connection. 
+ * Identified by its Name which is sent on connection.
  * Tracks persistent requests for either PERSISTENCE_REBOOT or PERSISTENCE_FOREVER.
- * 
- * Note that anything that modifies a non-transient field on a PERSISTENCE_FOREVER client should be called in a transaction. 
+ *
+ * Note that anything that modifies a non-transient field on a PERSISTENCE_FOREVER client should be called in a transaction.
  * Hence the addition of the ObjectContainer parameter to all such methods.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FCPClient {
-	
+
 	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, ObjectContainer container) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
@@ -45,10 +45,11 @@ public class FCPClient {
 				return forever;
 			}
 			public void removeFrom(ObjectContainer container) {
-				if(forever)
+				if(forever) {
 					container.delete(this);
-				else
+				} else {
 					throw new UnsupportedOperationException();
+				}
 			}
 		};
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
@@ -56,10 +57,11 @@ public class FCPClient {
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			assert(root != null);
 			this.root = root;
-		} else
+		} else {
 			this.root = null;
+		}
 	}
-	
+
 	/** The persistent root object, null if persistenceType is PERSIST_REBOOT */
 	final FCPPersistentRoot root;
 	/** The client's Name sent in the ClientHello message */
@@ -84,19 +86,20 @@ public class FCPClient {
 	private transient List<RequestCompletionCallback> completionCallbacks;
 	/** Connection mode */
 	final short persistenceType;
-	
+
 	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
 	}
-	
+
 	public synchronized void setConnection(FCPConnectionHandler handler) {
 		this.currentConnection = handler;
 	}
 
 	public synchronized void onLostConnection(FCPConnectionHandler handler) {
 		handler.freeDDAJobs();
-		if(currentConnection == handler)
+		if(currentConnection == handler) {
 			currentConnection = null;
+		}
 	}
 
 	/**
@@ -104,8 +107,9 @@ public class FCPClient {
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
 	public void finishedClientRequest(ClientRequest get, ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "Finished client request", new Exception("debug"));
+		}
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		assert(get.persistenceType == persistenceType);
 		if(container != null) {
@@ -122,7 +126,7 @@ public class FCPClient {
 					container.ext().store(runningPersistentRequests, 2);
 					container.ext().store(completedUnackedRequests, 2);
 				}
-			}	
+			}
 		}
 	}
 
@@ -142,12 +146,13 @@ public class FCPClient {
 		}
 		for(int i=0;i<reqs.length;i++) {
 			ClientRequest req = (ClientRequest) reqs[i];
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.activate(req, 1);
+			}
 			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false, container);
 		}
 	}
-	
+
 	/**
 	 * Queue any and all pending messages from running requests. Happens on demand.
 	 */
@@ -167,7 +172,7 @@ public class FCPClient {
 			req.sendPendingMessages(outputHandler, true, false, false, container);
 		}
 	}
-	
+
 	public void register(ClientRequest cg, ObjectContainer container) throws IdentifierCollisionException {
 		assert(cg.persistenceType == persistenceType);
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
@@ -181,8 +186,9 @@ public class FCPClient {
 		synchronized(this) {
 			String ident = cg.getIdentifier();
 			ClientRequest old = clientRequestsByIdentifier.get(ident);
-			if((old != null) && (old != cg))
+			if((old != null) && (old != cg)) {
 				throw new IdentifierCollisionException();
+			}
 			if(cg.hasFinished()) {
 				completedUnackedRequests.add(cg);
 				if(container != null) {
@@ -243,13 +249,16 @@ public class FCPClient {
 				if(req == null) return false;
 			} else if(!((removedFromRunning = runningPersistentRequests.remove(req)) || completedUnackedRequests.remove(req))) {
 				Logger.error(this, "Removing "+identifier+": in clientRequestsByIdentifier but not in running/completed maps!");
-				
+
 				return false;
 			}
 			clientRequestsByIdentifier.remove(identifier);
 			if(container != null) {
-				if(removedFromRunning) container.ext().store(runningPersistentRequests, 2);
-				else container.ext().store(completedUnackedRequests, 2);
+				if(removedFromRunning) {
+					container.ext().store(runningPersistentRequests, 2);
+				} else {
+					container.ext().store(completedUnackedRequests, 2);
+				}
 				container.ext().store(clientRequestsByIdentifier, 2);
 			}
 		}
@@ -259,15 +268,17 @@ public class FCPClient {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
 			req.cancel(container, context);
 		}
-        req.requestWasRemoved(container, context);
-        RequestCompletionCallback[] callbacks = null;
-        synchronized(this) {
-        	if(completionCallbacks != null)
-        		callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
-        }
+		req.requestWasRemoved(container, context);
+		RequestCompletionCallback[] callbacks = null;
+		synchronized(this) {
+			if(completionCallbacks != null) {
+				callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
+			}
+		}
 		if(callbacks != null) {
-			for(RequestCompletionCallback cb : callbacks)
+			for(RequestCompletionCallback cb : callbacks) {
 				cb.onRemove(req, container);
+			}
 		}
 		return true;
 	}
@@ -275,13 +286,15 @@ public class FCPClient {
 	public boolean hasPersistentRequests(ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		if(runningPersistentRequests == null) {
-			if(!container.ext().isActive(this))
+			if(!container.ext().isActive(this)) {
 				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
+			}
 			throw new NullPointerException();
 		}
 		if(completedUnackedRequests == null) {
-			if(!container.ext().isActive(this))
+			if(!container.ext().isActive(this)) {
 				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
+			}
 			throw new NullPointerException();
 		}
 		if(container != null) {
@@ -337,10 +350,11 @@ public class FCPClient {
 			server.globalForeverClient.watch(this);
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
-				if(persistenceType == ClientRequest.PERSIST_REBOOT)
+				if(persistenceType == ClientRequest.PERSIST_REBOOT) {
 					server.globalRebootClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
-				else
+				} else {
 					server.globalForeverClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
+				}
 			}
 			watchGlobal = true;
 		}
@@ -352,7 +366,7 @@ public class FCPClient {
 	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, ObjectContainer container) {
 		queueClientRequestMessage(msg, verbosityLevel, false, container);
 	}
-	
+
 	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, boolean useGlobalMask, ObjectContainer container) {
 		if(useGlobalMask && (verbosityLevel & watchGlobalVerbosityMask) != verbosityLevel)
 			return;
@@ -363,36 +377,41 @@ public class FCPClient {
 		FCPClient[] clients;
 		if(isGlobalQueue) {
 			synchronized(clientsWatchingLock) {
-				if(clientsWatching != null)
-				clients = clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
-				else
+				if(clientsWatching != null) {
+					clients = clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
+				} else {
 					clients = null;
+				}
 			}
 			if(clients != null)
 			for(int i=0;i<clients.length;i++) {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 					container.activate(clients[i], 1);
+				}
 				if(clients[i].persistenceType != persistenceType) continue;
 				clients[i].queueClientRequestMessage(msg, verbosityLevel, true, container);
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 					container.deactivate(clients[i], 1);
+				}
 			}
 		}
 	}
-	
+
 	private void unwatch(FCPClient client) {
 		if(!isGlobalQueue) return;
 		synchronized(clientsWatchingLock) {
-			if(clientsWatching != null)
-			clientsWatching.remove(client);
+			if(clientsWatching != null){
+				clientsWatching.remove(client);
+			}
 		}
 	}
 
 	private void watch(FCPClient client) {
 		if(!isGlobalQueue) return;
 		synchronized(clientsWatchingLock) {
-			if(clientsWatching == null)
+			if(clientsWatching == null) {
 				clientsWatching = new LinkedList<FCPClient>();
+			}
 			clientsWatching.add(client);
 		}
 	}
@@ -418,14 +437,16 @@ public class FCPClient {
 	 */
 	public void notifySuccess(ClientRequest req, ObjectContainer container) {
 		assert(req.persistenceType == persistenceType);
-        RequestCompletionCallback[] callbacks = null;
-        synchronized(this) {
-        	if(completionCallbacks != null)
-        		callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
-        }
+		RequestCompletionCallback[] callbacks = null;
+		synchronized(this) {
+			if(completionCallbacks != null) {
+				callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
+			}
+		}
 		if(callbacks != null) {
-			for(RequestCompletionCallback cb : callbacks)
+			for(RequestCompletionCallback cb : callbacks) {
 				cb.notifySuccess(req, container);
+			}
 		}
 	}
 
@@ -435,17 +456,17 @@ public class FCPClient {
 	 */
 	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		assert(req.persistenceType == persistenceType);
-        RequestCompletionCallback[] callbacks = null;
-        synchronized(this) {
-        	if(completionCallbacks != null)
-        		callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
-        }
+		RequestCompletionCallback[] callbacks = null;
+		synchronized(this) {
+			if(completionCallbacks != null)
+				callbacks = completionCallbacks.toArray(new RequestCompletionCallback[completionCallbacks.size()]);
+		}
 		if(callbacks != null) {
 			for(RequestCompletionCallback cb : callbacks)
 				cb.notifyFailure(req, container);
 		}
 	}
-	
+
 	public synchronized void addRequestCompletionCallback(RequestCompletionCallback cb) {
 		if(completionCallbacks == null) completionCallbacks = new ArrayList<RequestCompletionCallback>(); // it is transient so it might be null
 		completionCallbacks.add(cb);
@@ -488,8 +509,9 @@ public class FCPClient {
 				toKill.add(req);
 			}
 			clientRequestsByIdentifier.clear();
-			if (persistenceType == ClientRequest.PERSIST_FOREVER)
+			if (persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.ext().store(clientRequestsByIdentifier, 2);
+			}
 		}
 	}
 
@@ -504,13 +526,15 @@ public class FCPClient {
 			ClientRequest req = completedUnackedRequests.get(i);
 			if(!(req instanceof ClientGet)) continue;
 			ClientGet getter = (ClientGet) req;
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.activate(getter, 1);
+			}
 			if(getter.getURI(container).equals(key)) {
 				return getter;
 			} else {
-				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 					container.deactivate(getter, 1);
+				}
 			}
 		}
 		return null;

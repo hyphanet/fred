@@ -25,12 +25,14 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	private byte[] fingerprint = null;
 
 	public DSAPublicKey(DSAGroup g, BigInteger y) {
-		if(y.signum() != 1)
+		if(y.signum() != 1) {
 			throw new IllegalArgumentException();
+		}
 		this.y = y;
 		this.group = g;
-		if(y.compareTo(g.getP()) > 0)
+		if(y.compareTo(g.getP()) > 0) {
 			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + g.getP());
+		}
 	}
 
 	/**
@@ -39,11 +41,13 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	 */
 	public DSAPublicKey(DSAGroup g, String yAsHexString) throws NumberFormatException {
 		this.y = new NativeBigInteger(yAsHexString, 16);
-		if(y.signum() != 1)
+		if(y.signum() != 1) {
 			throw new IllegalArgumentException();
+		}
 		this.group = g;
-		if(g == null)
+		if(g == null) {
 			throw new NullPointerException();
+		}
 	}
 
 	public DSAPublicKey(DSAGroup g, DSAPrivateKey p) {
@@ -53,8 +57,9 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	public DSAPublicKey(InputStream is) throws IOException, CryptFormatException {
 		group = (DSAGroup) DSAGroup.read(is);
 		y = Util.readMPI(is);
-		if(y.compareTo(group.getP()) > 0)
+		if(y.compareTo(group.getP()) > 0) {
 			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + group.getP());
+		}
 	}
 
 	public DSAPublicKey(byte[] pubkeyBytes) throws IOException, CryptFormatException {
@@ -101,21 +106,21 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return group;
 	}
 
-//    public void writeForWireWithoutGroup(OutputStream out) throws IOException {
-//		Util.writeMPI(y, out);
-//    }
-//
-//    public void writeForWire(OutputStream out) throws IOException {
-//		Util.writeMPI(y, out);
-//		group.writeForWire(out);
-//    }
-//
-//    public void writeWithoutGroup(OutputStream out) 
-//	throws IOException {
-//		write(out, getClass().getName());
-//		Util.writeMPI(y, out);
-//    }
-//
+	/*public void writeForWireWithoutGroup(OutputStream out) throws IOException {
+	Util.writeMPI(y, out);
+	}
+
+	public void writeForWire(OutputStream out) throws IOException {
+	Util.writeMPI(y, out);
+	group.writeForWire(out);
+	}
+
+	public void writeWithoutGroup(OutputStream out)
+	throws IOException {
+	write(out, getClass().getName());
+	Util.writeMPI(y, out);
+	}*/
+
 	public static CryptoKey read(InputStream i) throws IOException, CryptFormatException {
 		return new DSAPublicKey(i);
 	}
@@ -130,9 +135,10 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	// this won't correctly read the output from writeAsField
 	//public static CryptoKey readFromField(DSAGroup group, String field) {
-	//    BigInteger y=Util.byteArrayToMPI(Util.hexToBytes(field));
-	//    return new DSAPublicKey(group, y);
+	//	BigInteger y=Util.byteArrayToMPI(Util.hexToBytes(field));
+	//	return new DSAPublicKey(group, y);
 	//}
+
 	@Override
 	public byte[] asBytes() {
 		byte[] groupBytes = group.asBytes();
@@ -150,10 +156,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	public byte[] asPaddedBytes() {
 		byte[] asBytes = asBytes();
-		if(asBytes.length == PADDED_SIZE)
+		if(asBytes.length == PADDED_SIZE) {
 			return asBytes;
-		if(asBytes.length > PADDED_SIZE)
+		}
+		if(asBytes.length > PADDED_SIZE) {
 			throw new Error("Cannot fit key in " + PADDED_SIZE + " - real size is " + asBytes.length);
+		}
 		byte[] padded = new byte[PADDED_SIZE];
 		System.arraycopy(asBytes, 0, padded, 0, asBytes.length);
 		return padded;
@@ -162,15 +170,17 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	@Override
 	public byte[] fingerprint() {
 		synchronized(this) {
-			if(fingerprint == null)
+			if(fingerprint == null) {
 				fingerprint = fingerprint(new BigInteger[]{y});
+			}
 			return fingerprint;
 		}
 	}
 
 	public boolean equals(DSAPublicKey o) {
-		if(this == o) // Not necessary, but a very cheap optimization
+		if(this == o) { // Not necessary, but a very cheap optimization
 			return true;
+		}
 		return y.equals(o.y) && group.equals(o.group);
 	}
 
@@ -181,10 +191,11 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	@Override
 	public boolean equals(Object o) {
-		if(this == o) // Not necessary, but a very cheap optimization
+		if(this == o) { // Not necessary, but a very cheap optimization
 			return true;
-		else if((o == null) || (o.getClass() != this.getClass()))
+		} else if((o == null) || (o.getClass() != this.getClass())) {
 			return false;
+		}
 		return y.equals(((DSAPublicKey) o).y) && group.equals(((DSAPublicKey) o).group);
 	}
 

@@ -80,18 +80,22 @@ public class BloomFilterTest extends TestCase {
 		}
 
 		// Remove the "NEW" keys and count false positive
-		for (byte[] b : newList.values())
+		for (byte[] b : newList.values()) {
 			filter.removeKey(b);
-		for (byte[] b : newList.values())
-			if (filter.checkFilter(b))
+		}
+		for (byte[] b : newList.values()) {
+			if (filter.checkFilter(b)) {
 				fPos++;
+			}
+		}
 
 		// Check if some should were removed
 		assertFalse("100% false positive?", fPos == PASS_REMOVE);
 
 		// Check if old keys still here
-		for (byte[] b : baseList.values())
+		for (byte[] b : baseList.values()) {
 			assertTrue("check original", filter.checkFilter(b));
+		}
 	}
 
 	private void _testFilterFalsePositive(BloomFilter filter) {
@@ -116,8 +120,9 @@ public class BloomFilterTest extends TestCase {
 			byte[] b = new byte[64]; // 64 bytes, sure not exist
 			rand.nextBytes(b);
 
-			if (filter.checkFilter(b))
+			if (filter.checkFilter(b)) {
 				fPos++;
+			}
 		}
 
 		final int K = filter.getK();

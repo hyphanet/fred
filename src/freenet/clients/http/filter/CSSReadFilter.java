@@ -27,7 +27,8 @@ import freenet.support.io.NullWriter;
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+		FilterCallback cb) throws DataFilterException, IOException
+	{
 		if (Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(
 				this,
@@ -36,7 +37,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 					+ " on "
 					+ bucket
 					+ ','
-                        + charset);
+					+ charset);
 		InputStream strm = bucket.getInputStream();
 		Bucket temp = bf.makeBucket(-1);
 		OutputStream os = temp.getOutputStream();
@@ -72,11 +73,13 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+		FilterCallback cb) throws DataFilterException, IOException
+	{
 		throw new UnsupportedOperationException();
 	}
 
-	public String getCharset(Bucket data, String charset) throws DataFilterException, IOException {
+	public String getCharset(Bucket data, String charset) throws DataFilterException, IOException
+	{
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
 		InputStream strm = data.getInputStream();
@@ -124,12 +127,14 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	
 	static final int maxBOMLength = Math.max(utf16be.length, Math.max(utf16le.length, Math.max(utf32_le.length, Math.max(utf32_be.length, Math.max(ebcdic.length, Math.max(ibm1026.length, Math.max(utf32_2143.length, Math.max(utf32_3412.length, gsm.length))))))));
 	
-	static final byte[] parse(String s) {
+	static final byte[] parse(String s)
+	{
 		s = s.replaceAll(" ", "");
 		return HexUtil.hexToBytes(s);
 	}
 	
-	public BOMDetection getCharsetByBOM(Bucket bucket) throws DataFilterException, IOException {
+	public BOMDetection getCharsetByBOM(Bucket bucket) throws DataFilterException, IOException
+	{
 		
 		InputStream is = null;
 		try {
@@ -177,7 +182,8 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		return null;
 	}
 
-	public static String filterMediaList(String media) {
+	public static String filterMediaList(String media)
+	{
 		String[] split = media.split(",");
 		boolean first = true;
 		StringBuffer sb = new StringBuffer();

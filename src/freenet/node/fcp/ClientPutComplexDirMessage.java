@@ -63,8 +63,9 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		long totalBytes = 0;
 		// Now parse the meat
 		SimpleFieldSet files = fs.subset("Files");
-		if(files == null)
+		if(files == null) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier, global);
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(int i=0;;i++) {
 			SimpleFieldSet subset = files.subset(Integer.toString(i));
@@ -163,7 +164,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	 */
 	@SuppressWarnings("unchecked")
 	private void convertFilesByNameToManifestElements(HashMap<String, Object> filesByName,
-	        HashMap<String, Object> manifestElements, Node node) throws MessageInvalidException {
+			HashMap<String, Object> manifestElements, Node node) throws MessageInvalidException {
 		
 		for (Map.Entry<String, Object> entry : filesByName.entrySet()) {
 			String tempName = entry.getKey();
@@ -175,8 +176,9 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				convertFilesByNameToManifestElements(h, manifests, node);
 			} else {
 				DirPutFile f = (DirPutFile) val;
-				if(f instanceof DiskDirPutFile && !node.clientCore.allowUploadFrom(((DiskDirPutFile)f).getFile()))
+				if(f instanceof DiskDirPutFile && !node.clientCore.allowUploadFrom(((DiskDirPutFile)f).getFile())) {
 					throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload "+((DiskDirPutFile) f).getFile(), identifier, global);
+				}
 				ManifestElement e = f.getElement();
 				manifestElements.put(tempName, e);
 			}

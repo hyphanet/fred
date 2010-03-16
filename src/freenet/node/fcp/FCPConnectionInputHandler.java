@@ -44,14 +44,15 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 	
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
+		freenet.support.Logger.OSThread.logPID(this);
 		try {
 			realRun();
 		} catch (TooLongException e) {
 			Logger.normal(this, "Caught "+e.getMessage(), e);
 		} catch (IOException e) {
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Caught "+e, e);
+			}
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 		} catch (Throwable t) {
@@ -82,8 +83,9 @@ public class FCPConnectionInputHandler implements Runnable {
 				Closer.close(is);
 				return;
 			}
-			if(messageType.equals(""))
+			if("".equals(messageType)) {
 				continue;
+			}
 			fs = new SimpleFieldSet(lis, 4096, 128, true, true, true, true);
 			
 			// check for valid endmarker
@@ -135,8 +137,9 @@ public class FCPConnectionInputHandler implements Runnable {
 				continue;
 			}
 			try {
-				if(logDEBUG)
+				if(logDEBUG) {
 					Logger.debug(this, "Parsed message: "+msg+" for "+handler);
+				}
 				msg.run(handler, handler.server.node);
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident, e.global);

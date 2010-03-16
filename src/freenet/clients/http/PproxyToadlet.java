@@ -11,7 +11,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.pluginmanager.AccessDeniedPluginHTTPException;
 import freenet.pluginmanager.DownloadPluginHTTPException;
 import freenet.pluginmanager.NotFoundPluginHTTPException;
@@ -307,7 +306,7 @@ public class PproxyToadlet extends Toadlet {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Pproxy fetching "+path);
 		try {
-			if (path.equals("")) {
+			if ("".equals(path)) {
 				if (!ctx.isAllowedFullAccess()) {
 					super.sendErrorPage(ctx, 403, "Unauthorized", NodeL10n.getBase().getString("Toadlet.unauthorized"));
 					return;
@@ -338,7 +337,7 @@ public class PproxyToadlet extends Toadlet {
 					 * The "Freemail" plugin is show on "Aviliable Plugin" even
 					 * if it is loaded. However fixing the plugin itself may break
 					 * running it as standalone application. */
-					if (shortPluginName.equals("FreemailPlugin")) availablePlugins.remove("Freemail"); // DOH!
+					if ("FreemailPlugin".equals(shortPluginName)) availablePlugins.remove("Freemail"); // DOH!
 				}
 				while (loadingPlugins.hasNext()) {
 					PluginProgress pluginProgress = loadingPlugins.next();

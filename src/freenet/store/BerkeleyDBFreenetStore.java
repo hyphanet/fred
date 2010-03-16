@@ -52,7 +52,7 @@ import freenet.support.io.NativeThread;
  * Freenet datastore based on BerkelyDB Java Edition by Sleepycat Software, Inc.
  * (now Oracle). More info at <a
  * href="http://www.oracle.com/database/berkeley-db/je/">http://www.oracle.com/database/berkeley-db/je/</a>.
- * 
+ *
  * @author tubbie
  * @author amphibian
  */
@@ -60,17 +60,17 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
-	
+
 	// If we get a DbChecksumException, create this file.
 	private final File reconstructFile;
-	private final int dataBlockSize; 
+	private final int dataBlockSize;
 	private final int headerBlockSize;
 	private final RandomSource random;
 
 	private final Environment environment;
 	private final TupleBinding<StoreBlock> storeBlockTupleBinding;
 	private final File fixSecondaryFile;
-	
+
 	private long blocksInStore = 0;
 	private final Object blocksInStoreLock = new Object();
 	private long maxBlocksInStore;
@@ -92,67 +92,67 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/** Callback which translates records to blocks and back, specifies the size of blocks etc. */
 	private final StoreCallback<T> callback;
 	private final boolean collisionPossible;
-	
+
 	private long lastRecentlyUsed;
 	private final Object lastRecentlyUsedSync = new Object();
-	
+
 	private boolean closed;
 	private boolean reallyClosed;
-	
+
 	public static String getName(boolean isStore, StoreType type) {
 		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		return newDBPrefix + "CHK";
 	}
-	
+
 	public static File getFile(boolean isStore, StoreType type, File baseStoreDir, String suffix) {
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		return new File(baseStoreDir, newStoreFileName);
 	}
-	
+
 	public static <T extends StorableBlock> FreenetStore<T> construct(File baseStoreDir, boolean isStore, String suffix, long maxStoreKeys,
-	        StoreType type, Environment storeEnvironment, SemiOrderedShutdownHook storeShutdownHook,
-	        File reconstructFile, StoreCallback<T> callback, RandomSource random) throws DatabaseException, IOException {
+			StoreType type, Environment storeEnvironment, SemiOrderedShutdownHook storeShutdownHook,
+			File reconstructFile, StoreCallback<T> callback, RandomSource random) throws DatabaseException, IOException {
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
 		File lruFile = new File(baseStoreDir, newStoreFileName+".lru");
-		
+
 		File keysFile;
 		if(callback.storeFullKeys()) {
 			keysFile = new File(baseStoreDir, newStoreFileName+".keys");
 		} else {
 			keysFile = null;
 		}
-		
-		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';		
+
+		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		File newFixSecondaryFile = new File(baseStoreDir, "recreate_secondary_db-"+newStoreFileName);
-		
+
 		System.err.println("Opening database using "+newStoreFile);
 		return openStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys, storeShutdownHook,
 				reconstructFile, callback, random);
 	}
 
 	private static <T extends StorableBlock> FreenetStore<T> openStore(Environment storeEnvironment, String newDBPrefix, File newStoreFile, File lruFile,
-			File keysFile, File newFixSecondaryFile, long maxStoreKeys, SemiOrderedShutdownHook storeShutdownHook, 
+			File keysFile, File newFixSecondaryFile, long maxStoreKeys, SemiOrderedShutdownHook storeShutdownHook,
 			File reconstructFile, StoreCallback<T> callback, RandomSource random) throws DatabaseException, IOException {
 		try {
 			// First try just opening it.
 			return new BerkeleyDBFreenetStore<T>(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
-					maxStoreKeys, false, storeShutdownHook, reconstructFile, 
+					maxStoreKeys, false, storeShutdownHook, reconstructFile,
 					callback, random);
 		} catch (DatabaseException e) {
-			
+
 			// Try a reconstruct
-			
+
 			System.err.println("Could not open store: "+e);
 			e.printStackTrace();
-			
+
 			System.err.println("Attempting to reconstruct index...");
 			WrapperManager.signalStarting(5*60*60*1000);
-			
+
 			// Reconstruct
-			
-			return new BerkeleyDBFreenetStore<T>(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
+
+			return new BerkeleyDBFreenetStore<T>(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
 					maxStoreKeys, storeShutdownHook, reconstructFile, callback, random);
 		}
 	}
@@ -160,10 +160,10 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	private static String typeName(StoreType type) {
 		return type.toString().toLowerCase();
 	}
-	
+
 	/**
 	 * Initializes the datastore
-	 * 
+	 *
 	 * @param env
 	 *            Berkeley DB {@link Environment}.
 	 * @param prefix
@@ -199,7 +199,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			StoreCallback<T> callback, RandomSource random) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-		
+
 		this.random = random;
 		this.environment = env;
 		this.name = prefix;
@@ -212,7 +212,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		this.headerBlockSize = callback.headerLength();
 		this.keyLength = callback.fullKeyLength();
 		callback.setStore(this);
-		
+
 		OOMHandler.addOOMHook(this);
 
 		this.freeBlocks = new SortedLongSet();
@@ -248,28 +248,36 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 		// Initialize the store file
 		try {
-			if(!storeFile.exists())
-				if(!storeFile.createNewFile())
+			if(!storeFile.exists()) {
+				if(!storeFile.createNewFile()) {
 					throw new IOException("Can't create a new file " + storeFile + " !");
+				}
+			}
 			storeRAF = new RandomAccessFile(storeFile,"rw");
 			storeFC = storeRAF.getChannel();
 
-			if(!lruFile.exists()) 
-				if(!lruFile.createNewFile())
+			if(!lruFile.exists())  {
+				if(!lruFile.createNewFile()) {
 					throw new IOException("Can't create a new file " + lruFile + " !");
+				}
+			}
 			lruRAF = new RandomAccessFile(lruFile,"rw");
 			lruFC = lruRAF.getChannel();
 
 			if(keysFile != null) {
-				if(!keysFile.exists())
-					if(!keysFile.createNewFile())
+				if(!keysFile.exists()) {
+					if(!keysFile.createNewFile()) {
 						throw new IOException("Can't create a new file " + keysFile + " !");
+					}
+				}
 				keysRAF = new RandomAccessFile(keysFile,"rw");
 				keysFC = keysRAF.getChannel();
-			} else keysRAF = null;
+			} else {
+				keysRAF = null;
+			}
 
 			if (wipe) {
-                                // wipe and reconstruct
+								// wipe and reconstruct
 				blocksInStore = 0;
 				lastRecentlyUsed = 0;
 
@@ -281,11 +289,11 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 				maybeOfflineShrink(true);
 			} else {
-                                // just open
-                                boolean dontCheckForHolesShrinking = false;
+				// just open
+				boolean dontCheckForHolesShrinking = false;
 
-                                long chkBlocksInDatabase = highestBlockNumberInDatabase();
-                                blocksInStore = chkBlocksInDatabase;
+				long chkBlocksInDatabase = highestBlockNumberInDatabase();
+				blocksInStore = chkBlocksInDatabase;
 				long chkBlocksFromFile = countCHKBlocksFromFile();
 				lastRecentlyUsed = getMaxRecentlyUsed();
 
@@ -300,7 +308,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 
 				if(((blocksInStore == 0) && (chkBlocksFromFile != 0)) ||
-                                            (((blocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
+						(((blocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
 					try {
 						close(false);
 					} catch (Throwable t) {
@@ -326,13 +334,13 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			System.err.println("Caught exception, closing database: " + prefix + " (" + t + ")");
 			t.printStackTrace();
 			close(false);
-			
+
 			throw t;
 		} catch (IOException t) {
 			System.err.println("Caught exception, closing database: " + prefix + " (" + t + ")");
 			Logger.error(this, "Caught exception, closing database: " + prefix, t);
 			close(false);
-			
+
 			throw t;
 		}
 	}
@@ -347,17 +355,19 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			DatabaseEntry blockNumEntry = new DatabaseEntry();
 			DatabaseEntry found = new DatabaseEntry();
 			LongBinding.longToEntry(i, blockNumEntry);
-			
+
 			OperationStatus success =
 				blockNumDB.get(null, blockNumEntry, found, LockMode.DEFAULT);
-			
+
 			if(success.equals(OperationStatus.NOTFOUND)) {
 				addFreeBlock(i, true, "hole found");
 				holes++;
-			} else
+			} else {
 				maxPresent = i;
-			if(i % 1024 == 0)
-			System.err.println("Checked "+i+" blocks, found "+holes+" holes");
+			}
+			if(i % 1024 == 0) {
+				System.err.println("Checked "+i+" blocks, found "+holes+" holes");
+			}
 		}
 		System.err.println("Checked database of "+blocksInFile+" blocks, found "+holes+" holes, maximum non-hole block: "+maxPresent);
 		long bound = maxPresent+1;
@@ -367,11 +377,13 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				try {
 					storeRAF.setLength(bound * (dataBlockSize + headerBlockSize));
 					lruRAF.setLength(bound * 8);
-					if(keysRAF != null)
+					if(keysRAF != null) {
 						keysRAF.setLength(bound * keyLength);
+					}
 					blocksInStore = bound;
-					for(long l=bound;l<blocksInStore;l++)
+					for(long l=bound;l<blocksInStore;l++) {
 						freeBlocks.remove(l);
+					}
 				} catch (IOException e) {
 					Logger.error(this, "Unable to truncate!: "+e, e);
 					System.err.println("Unable to truncate: "+e);
@@ -384,10 +396,10 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private final Object shrinkLock = new Object();
 	private boolean shrinking = false;
-	
+
 	/**
 	 * Do an offline shrink, if necessary. Will not return until completed.
-	 * 
+	 *
 	 * @param dontCheckForHoles If <code>true</code>, don't check for holes.
 	 * @throws DatabaseException
 	 * @throws IOException
@@ -400,7 +412,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	/**
 	 * Do an online shrink, if necessary. This method is non-blocking (i.e. it
 	 * will do the shrink on a new thread).
-	 * 
+	 *
 	 * @param forceBigOnlineShrinks If true, force the node to shrink the store
 	 *        immediately even if it is a major (more than <tt>10%</tt>)
 	 *        shrink. <br />
@@ -439,39 +451,40 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			return true;
 		} else return false;
 	}
-	
+
 	private void maybeSlowShrink(boolean dontCheckForHoles, boolean inStartUp) throws DatabaseException, IOException {
 		List<Integer> wantedKeep = new ArrayList<Integer>(); // keep; content is wanted, and is in the right place
 		List<Integer> unwantedIgnore = new ArrayList<Integer>(); // ignore; content is not wanted, and is not in the right place
 		List<Integer> wantedMove = new ArrayList<Integer>(); // content is wanted, but is in the wrong part of the store
 		List<Integer> unwantedMove = new ArrayList<Integer>(); // content is not wanted, but is in the part of the store we will keep
 		List<Integer> alreadyDropped = new ArrayList<Integer>(); // any blocks past the end which have already been truncated, but which there are still database blocks pointing to
-		
+
 		Cursor c = null;
 		Transaction t = null;
 
 		long newSize = maxBlocksInStore;
 		if(blocksInStore < maxBlocksInStore) return;
-		
+
 		System.err.println("Shrinking from "+blocksInStore+" to "+maxBlocksInStore+" (from db "+keysDB.count()+" from file "+countCHKBlocksFromFile()+ ')');
-		
-		if(!dontCheckForHoles)
+
+		if(!dontCheckForHoles) {
 			checkForHoles(maxBlocksInStore, true);
-		
+		}
+
 		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000 + blocksInStore * 100L))); // 10 per second
-		
+
 		long realSize = countCHKBlocksFromFile();
-		
+
 		long highestBlock = 0;
-		
+
 		try {
 			c = accessTimeDB.openCursor(null,null);
-			
+
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry blockDBE = new DatabaseEntry();
 			OperationStatus opStat;
 			opStat = c.getLast(keyDBE, blockDBE, LockMode.RMW);
-			
+
 			if(opStat == OperationStatus.NOTFOUND) {
 				System.err.println("Database is empty (shrinking).");
 				c.close();
@@ -500,7 +513,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					// Truncated already?
 					Logger.minor(this, "Truncated already? "+blockNum.longValue());
 					alreadyDropped.add(blockNum);
-					
+
 				} else {
 					if(x < newSize) {
 						// Wanted
@@ -530,19 +543,20 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 						break;
 					}
 				}
-				
+
 				opStat = c.getPrev(keyDBE, blockDBE, LockMode.RMW);
 				if(opStat == OperationStatus.NOTFOUND) {
 					System.out.println("Read store: "+x+" keys.");
 					break;
 				}
 			}
-			
+
 		} finally {
-			if(c != null)
+			if(c != null) {
 				c.close();
+			}
 		}
-		
+
 		Integer[] wantedKeepNums = wantedKeep.toArray(new Integer[wantedKeep.size()]);
 		Integer[] unwantedIgnoreNums = unwantedIgnore.toArray(new Integer[unwantedIgnore.size()]);
 		Integer[] wantedMoveNums = wantedMove.toArray(new Integer[wantedMove.size()]);
@@ -552,7 +566,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		Arrays.sort(unwantedIgnoreNums);
 		Arrays.sort(wantedMoveNums);
 		Arrays.sort(unwantedMoveNums);
-		
+
 		for(int i=0;i<newSize;i++) {
 			Integer ii = Integer.valueOf(i);
 			if(Arrays.binarySearch(wantedKeepNums, ii) >= 0) continue;
@@ -562,17 +576,17 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			unwantedMove.add(ii);
 		}
 		unwantedMoveNums = unwantedMove.toArray(new Integer[unwantedMove.size()]);
-		
+
 		System.err.println("Keys to keep where they are:     "+wantedKeepNums.length);
 		System.err.println("Keys which will be wiped anyway: "+unwantedIgnoreNums.length);
 		System.err.println("Keys to move:                    "+wantedMoveNums.length);
 		System.err.println("Keys to be moved over:           "+unwantedMoveNums.length);
 		System.err.println("Free slots to be moved over:     "+freeEarlySlots.length);
-		
+
 		// Now move all the wantedMove blocks onto the corresponding unwantedMove's.
-		
+
 		WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + wantedMoveNums.length*1000L + alreadyDropped.size() * 100L))); // 1 per second
-		
+
 		ByteBuffer buf = ByteBuffer.allocate(headerBlockSize + dataBlockSize);
 		long lruValue;
 		byte[] keyBuf = new byte[keyLength];
@@ -598,9 +612,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 			for(int i=0;i<wantedMoveNums.length;i++) {
 				Integer wantedBlock = wantedMoveNums[i];
-				
+
 				Integer unwantedBlock;
-				
+
 				// Can we move over an empty slot?
 				if(i < freeEarlySlots.length) {
 					// Don't need to delete old block
@@ -619,7 +633,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					return;
 				}
 				// Move old data to new location
-				
+
 				DatabaseEntry wantedBlockEntry = new DatabaseEntry();
 				LongBinding.longToEntry(wantedBlock.longValue(), wantedBlockEntry);
 				long entry = wantedBlock.longValue();
@@ -629,8 +643,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					buf.rewind();
 					do {
 						int byteRead = storeFC.read(buf, entry * (headerBlockSize + dataBlockSize) + buf.position());
-						if (byteRead == -1)
+						if (byteRead == -1) {
 							throw new EOFException();
+						}
 					} while (buf.hasRemaining());
 					buf.flip();
 					lruValue = 0;
@@ -651,8 +666,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				entry = unwantedBlock.longValue();
 				do {
 					int byteWritten = storeFC.write(buf, entry * (headerBlockSize + dataBlockSize) + buf.position());
-					if (byteWritten == -1)
+					if (byteWritten == -1) {
 						throw new EOFException();
+					}
 				} while (buf.hasRemaining());
 				if(readLRU) {
 					fcWriteLRU(entry, lruValue);
@@ -660,9 +676,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				if(readKey) {
 					fcWriteKey(entry, keyBuf);
 				}
-				
+
 				// Update the database w.r.t. the old block.
-				
+
 				DatabaseEntry routingKeyDBE = new DatabaseEntry();
 				DatabaseEntry blockDBE = new DatabaseEntry();
 				blockNumDB.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
@@ -670,9 +686,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				block.offset = unwantedBlock.longValue();
 				storeBlockTupleBinding.objectToEntry(block, blockDBE);
 				keysDB.put(t, routingKeyDBE, blockDBE);
-				
+
 				// Think about committing the transaction.
-				
+
 				if((i+1) % 2048 == 0) {
 					t.commit();
 					t = environment.beginTransaction(null,null);
@@ -686,19 +702,20 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				t = null;
 			}
 		} finally {
-			if(t != null)
+			if(t != null) {
 				t.abort();
+			}
 			t = null;
 		}
 		System.out.println("Completing shrink"); // FIXME remove
-		
+
 		int totalUnwantedBlocks = unwantedMoveNums.length+freeEarlySlots.length;
 		WrapperManager.signalStarting((int) Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100L));
 		// If there are any slots left over, they must be free.
-		
+
 		// FIXME put these into the database as we do in reconstruct().
 		// Not doing that now as its not immediately obvious how to deal with it...
-		
+
 		freeBlocks.clear();
 		t = environment.beginTransaction(null,null);
 		for(int i=wantedMoveNums.length;i<totalUnwantedBlocks;i++) {
@@ -717,29 +734,31 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			if(i % 1024 == 0) {
 				System.out.println("Trimmed surplus keys in database: "+(i-wantedMoveNums.length)+"/"+(totalUnwantedBlocks-wantedMoveNums.length));
 				t.commit();
-				if(i == totalUnwantedBlocks-1)
+				if(i == totalUnwantedBlocks-1) {
 					t = null;
-				else
+				} else {
 					t = environment.beginTransaction(null,null);
+				}
 			}
 			addFreeBlock(blockNo, true, reason);
 		}
 		if(t != null) t.commit();
 		t = null;
-		
+
 		System.out.println("Finishing shrink"); // FIXME remove
-		
+
 		storeRAF.setLength(newSize * (dataBlockSize + headerBlockSize));
 		lruRAF.setLength(newSize * 8);
-		if(keysRAF != null)
+		if(keysRAF != null) {
 			keysRAF.setLength(newSize * keyLength);
-		
+		}
+
 		synchronized(this) {
 			blocksInStore = newSize;
 		}
 		System.err.println("Shrunk store, now have "+blocksInStore+" of "+maxBlocksInStore);
 	}
-	
+
 	/**
 	* Shrink the store, on the fly/quickly.
 	* @param offline If false, keep going until the store has shrunk enough.
@@ -788,19 +807,20 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				long deleted = 0;
 				for(long i=curBlocks-1;i>=maxBlocks;i--) {
 
-					if(t == null)
+					if(t == null) {
 						t = environment.beginTransaction(null,null);
-					
+					}
+
 					// Delete the block with this blocknum.
-					
+
 					DatabaseEntry blockNumEntry = new DatabaseEntry();
 					LongBinding.longToEntry(i, blockNumEntry);
-					
+
 					OperationStatus result =
 						blockNumDB.delete(t, blockNumEntry);
 					if(result.equals(OperationStatus.SUCCESS))
 						deleted++;
-					
+
 					t.commit();
 					t = null;
 
@@ -813,14 +833,15 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 						if(maxBlocks >= curBlocks) break;
 					}
 				}
-				
-				if(t != null)
+
+				if(t != null) {
 					t.commit();
-				
+				}
+
 				System.err.println("Deleted "+deleted+" keys");
-				
+
 				t = null;
-				
+
 				if(offline) break;
 				System.err.println("Checking...");
 				synchronized(this) {
@@ -829,15 +850,16 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					if(maxBlocks >= curBlocks) break;
 				}
 			}
-			
+
 			storeRAF.setLength(maxBlocksInStore * (dataBlockSize + headerBlockSize));
 			lruRAF.setLength(maxBlocksInStore * 8);
-			if(keysRAF != null)
+			if(keysRAF != null) {
 				keysRAF.setLength(maxBlocksInStore * keyLength);
-			
+			}
+
 			blocksInStore = maxBlocksInStore;
 			System.err.println("Successfully shrunk store to "+blocksInStore);
-			
+
 		} finally {
 			if(t != null) t.abort();
 		}
@@ -878,7 +900,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		this(env, prefix, storeFile, lruFile, keysFile, fixSecondaryFile, maxChkBlocks, true, storeShutdownHook,
 				reconstructFile, callback, random);
 	}
-	
+
 	private static void wipeOldDatabases(Environment env, String prefix) {
 		wipeDatabase(env, prefix+"CHK");
 		wipeDatabase(env, prefix+"CHK_accessTime");
@@ -902,16 +924,16 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 	/**
 	 * Reconstruct the database using flat file stores and other dark magic.
-	 * 
+	 *
 	 * <strong>You are not expected to understand this.</strong>
-	 * 
+	 *
 	 * <dl>
 	 * <dt>header + data</dt>
 	 * <dd>read from storeRAF, always available.</dd>
-	 * 
+	 *
 	 * <dt>fullKey</dt>
 	 * <dd>read from keyRAF, maybe null.</dd>
-	 * 
+	 *
 	 * <dt>routingkey </dt>
 	 * <dd>
 	 * <ol>
@@ -924,24 +946,25 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	 * <code> callback.construct().getRoutingKey()  == routingkey </code> on <code>fetch()</code>
 	 * </dd>
 	 * </dl>
-	 * 
+	 *
 	 * On <code>OperationStatus.KEYEXIST</code> or bad <code> callback.construct</code>:
 	 * <ol>
 	 * <li>insert a database entry with random key, (minimum lru - 1); </li>
 	 * <li>if <code>op != OperationStatus.SUCCESS</code>, <code>addFreeBlock()</code>.</li>
 	 * </ol>
-	 * 
-	 * 
+	 *
+	 *
 	 * @throws DatabaseException
 	 * @throws IOException
 	 */
 	private void reconstruct(boolean canReadClientCache) throws DatabaseException, IOException {
-		if(keysDB.count() != 0)
+		if(keysDB.count() != 0) {
 			throw new IllegalStateException("Store must be empty before reconstruction!");
+		}
 		// Timeout must be well below Integer.MAX_VALUE. It is added to previous timeouts in an integer value.
 		// If it's too high, we get wraparound and instant timeout.
 		int timeout = (int) (Math.min(7 * 24 * 60 * 60 * 1000, 5 * 60 * 1000
-		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L));
+				+ (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L));
 		System.err.println("Reconstructing store index from store file: callback="+callback+" - allowing "+timeout+"ms");
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
 		WrapperManager.signalStarting(timeout);
@@ -976,8 +999,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				keysRAFLength = keysRAF.length();
 			}
 			for(l=0;true;l++) {
-				if(l % 1024 == 0)
+				if(l % 1024 == 0) {
 					System.out.println("Key "+l+ '/' +expectedLength+" OK ("+dupes+" dupes, "+failures+" failures)");
+				}
 
 				long lruVal = 0;
 				Transaction t = null;
@@ -1038,7 +1062,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 							failures++;
 						}
 					}
-					
+
 					if (routingkey == null) { // can't recover, mark this as free
 						t = environment.beginTransaction(null, null);
 						reconstructAddFreeBlock(l, t, --minLRU);
@@ -1046,7 +1070,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 						t = null;
 						continue;
 					}
-					
+
 					t = environment.beginTransaction(null,null);
 					StoreBlock storeBlock = new StoreBlock(l, lruVal);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
@@ -1130,8 +1154,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			try {
 				storeRAF.setLength(size);
 				lruRAF.setLength(l * 8);
-				if(keysRAF != null)
+				if(keysRAF != null) {
 					keysRAF.setLength(l * keyLength);
+				}
 			} catch (IOException e1) {
 				System.err.println("Failed to set size");
 			}
@@ -1153,13 +1178,14 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	private boolean isAllNull(byte[] buf) {
-		for(int i=0;i<buf.length;i++)
+		for(int i=0;i<buf.length;i++) {
 			if(buf[i] != 0) return false;
+		}
 		return true;
 	}
 
 	private int runningFetches;
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -1169,7 +1195,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		if(meta != null) meta.noMetadata = true;
 		return retval;
 	}
-	
+
 	/**
 	 * {@inheritDoc}
 	 */
@@ -1179,17 +1205,18 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		int running;
 		synchronized(this) {
-			if(closed)
+			if(closed) {
 				return null;
+			}
 			running = runningFetches++;
 		}
-		
+
 		Cursor c = null;
 		Transaction t = null;
 		try {
 			t = environment.beginTransaction(null,null);
 			c = keysDB.openCursor(t,null);
-			
+
 			/**
 			* We will have to write, unless both dontPromote and the key is valid.
 			* The lock only applies to this record, so it's not a big problem for our use.
@@ -1213,9 +1240,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 
 			StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(blockDBE);
-						
+
 			T block = null;
-			
+
 			if(logMINOR) Logger.minor(this, "Reading block "+storeBlock.offset+"...");
 			try {
 				byte[] header = new byte[headerBlockSize];
@@ -1232,49 +1259,51 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					addFreeBlock(storeBlock.offset, true, "Data off end of store file");
 					return null;
 				}
-				
+
 				block = callback.construct(data, header, routingkey, fullKey, canReadClientCache, canReadSlashdotCache, null, knownPublicKey);
-				
+
 				// Write the key.
 				byte[] newFullKey = block.getFullKey();
 				if(keysRAF != null) {
 					fcWriteKey(storeBlock.offset, newFullKey);
 				}
-				
+
 				if(!Arrays.equals(block.getRoutingKey(), routingkey)) {
-					
+
 					synchronized(this) {
 						misses++;
 					}
-					
+
 					keysDB.delete(t, routingkeyDBE);
-					
+
 					// Insert the block into the index.
 					// Set the LRU to minimum - 1.
-					
+
 					long lru = getMinRecentlyUsed(t) - 1;
-					
+
 					Logger.normal(this, "Does not verify (not the expected key), setting accessTime to "+lru+" for : "+HexUtil.bytesToHex(routingkey));
-					
+
 					storeBlock = new StoreBlock(storeBlock.offset, lru);
-					
+
 					routingkeyDBE = new DatabaseEntry(block.getRoutingKey());
-					
+
 					blockDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					try {
 						keysDB.put(t,routingkeyDBE,blockDBE);
-						if(fullKey == null)
+						if(fullKey == null) {
 							fullKey = block.getFullKey();
-						
+						}
+
 							if(keysRAF != null) {
 								fcWriteKey(storeBlock.offset, fullKey);
-								if(logDEBUG)
+								if(logDEBUG) {
 									Logger.debug(this, "Written full key length "+fullKey.length+" to block "+storeBlock.offset+" at "+(storeBlock.offset * keyLength)+" for "+callback);
+								}
 							} else if(logDEBUG) {
 								Logger.debug(this, "Not writing full key length "+fullKey.length+" for block "+storeBlock.offset+" for "+callback);
 							}
-						
+
 					} catch (DatabaseException e) {
 						Logger.error(this, "Caught database exception "+e+" while replacing element");
 						addFreeBlock(storeBlock.offset, true, "Bogus key");
@@ -1291,7 +1320,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					t = null;
 					return null;
 				}
-				
+
 				if(!dontPromote) {
 					storeBlock.updateRecentlyUsed(this);
 					DatabaseEntry updateDBE = new DatabaseEntry();
@@ -1308,39 +1337,39 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					t.abort();
 					t = null;
 				}
-				
+
 				if(logMINOR) {
 					Logger.minor(this, "Headers: " + header.length+" bytes, hash " + Fields.hashCode(header));
 					Logger.minor(this, "Data: " + data.length + " bytes, hash " + Fields.hashCode(data) + " fetching " + HexUtil.bytesToHex(routingkey));
 				}
-				
+
 			} catch(KeyVerifyException ex) {
 				Logger.normal(this, "Does not verify ("+ex+"), setting accessTime to 0 for : "+HexUtil.bytesToHex(routingkey), ex);
 				synchronized(this) {
 					misses++;
 				}
-				
+
 					// Clear the key in the keys file.
 					byte[] buf = new byte[keyLength];
 					for(int i=0;i<buf.length;i++) buf[i] = 0; // FIXME unnecessary?
 					if(keysRAF != null) {
 						fcWriteKey(storeBlock.offset, buf);
 					}
-				
+
 				keysDB.delete(t, routingkeyDBE);
-				
+
 				// Insert the block into the index with a random key, so that it's part of the LRU.
 				// Set the LRU to minimum - 1.
-				
+
 				long lru = getMinRecentlyUsed(t) - 1;
-				
+
 				byte[] randomKey = new byte[keyLength];
 				random.nextBytes(randomKey);
-				
+
 				storeBlock = new StoreBlock(storeBlock.offset, lru);
-				
+
 				routingkeyDBE = new DatabaseEntry(randomKey);
-				
+
 				blockDBE = new DatabaseEntry();
 				storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 				try {
@@ -1393,7 +1422,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			if(logMINOR) Logger.minor(this, "Running fetches now "+x);
 		}
 	}
-	
+
 	private void addFreeBlock(long offset, boolean loud, String reason) {
 		if(freeBlocks.push(offset)) {
 			if(loud) {
@@ -1414,32 +1443,35 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		// We do not support flagging a block as old because we do not support block flags.
 		byte[] routingkey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
-		
-		if(logMINOR)
+
+		if(logMINOR) {
 			Logger.minor(this, "Putting "+HexUtil.bytesToHex(routingkey)+" for "+callback);
+		}
 		StorableBlock oldBlock = fetch(routingkey, fullKey, false, false, false, block instanceof SSKBlock ? ((SSKBlock)block).getPubKey() : null);
 		if(oldBlock != null) {
 			if(!collisionPossible) return;
 			if(!block.equals(oldBlock)) {
-				if(!overwrite)
+				if(!overwrite) {
 					throw new KeyCollisionException();
-				else
+				} else {
 					overwriteKeyUnchanged(routingkey, fullKey, data, header);
+				}
 			} // else return; // already in store
 		} else {
 			innerPut(block, routingkey, fullKey, data, header);
 		}
 	}
-	
+
 	/**
 	 * Overwrite a block with a new block which has the same key.
 	 */
 	private boolean overwriteKeyUnchanged(byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
 		synchronized(this) {
-			if(closed)
+			if(closed) {
 				return false;
+			}
 		}
-		
+
 		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		Cursor c = null;
@@ -1459,18 +1491,18 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 
 			StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(blockDBE);
-						
+
 			fcWriteStore(storeBlock.offset, header, data);
 			if (keysRAF != null) {
 				fcWriteKey(storeBlock.offset, fullKey);
 			}
-			
+
 			// Unlock record.
 			c.close();
 			c = null;
 			t.commit();
 			t = null;
-			
+
 		} catch(Throwable ex) {  // FIXME: ugly
 			checkSecondaryDatabaseError(ex);
 			Logger.error(this, "Caught "+ex, ex);
@@ -1478,24 +1510,26 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			throw new IOException(ex.getMessage());
 		} finally {
 			if(c!=null) {
-				try{c.close();}catch(DatabaseException ex2){}
-			
+				try {
+				 	c.close();
+				} catch (DatabaseException ex2){}
 			}
 			if(t!=null) {
 				try{t.abort();}catch(DatabaseException ex2){}
 			}
-			
+
 		}
-			
+
 		return true;
 	}
-	
+
 	private void innerPut(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
 		synchronized(this) {
-			if(closed)
+			if(closed) {
 				return;
+			}
 		}
-			
+
 		if(data.length!=dataBlockSize) {
 			Logger.error(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
 			return;
@@ -1504,20 +1538,20 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			Logger.error(this, "This header is "+data.length+" bytes. Should be "+headerBlockSize);
 			return;
 		}
-		
+
 		Transaction t = null;
-		
+
 		try {
 			t = environment.beginTransaction(null,null);
 			DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
-			
+
 			DatabaseEntry blockDBE = new DatabaseEntry();
-			
+
 			// Check whether it already exists
-			
+
 			if(logMINOR) Logger.minor(this, "Putting key "+block+" - checking whether it exists first");
 			OperationStatus result = keysDB.get(t, routingkeyDBE, blockDBE, LockMode.RMW);
-			
+
 			if(result == OperationStatus.SUCCESS || result == OperationStatus.KEYEXIST) {
 				if(logMINOR) Logger.minor(this, "Key already exists");
 				// Key already exists!
@@ -1534,14 +1568,15 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				// Put it in anyway
 			} else if(result == OperationStatus.NOTFOUND) {
 				// Good
-			} else
+			} else {
 				throw new IllegalStateException("Unknown operation status: "+result);
-			
+			}
+
 			writeBlock(header, data, t, routingkeyDBE, fullKey);
-			
+
 			t.commit();
 			t = null;
-			
+
 			if(logMINOR) {
 				Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
 				Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data)+" putting "+HexUtil.bytesToHex(routingkey));
@@ -1566,7 +1601,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			}
 		}
 	}
-	
+
 	private void overwriteLRUBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE, byte[] fullKey) throws DatabaseException, IOException {
 		// Overwrite an other block
 		Cursor c = accessTimeDB.openCursor(t,null);
@@ -1587,11 +1622,12 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 		keysDB.put(t,routingkeyDBE,blockDBE);
-		
+
 		fcWriteStore(storeBlock.getOffset(), header, data);
 		fcWriteLRU( storeBlock.getOffset(),storeBlock.recentlyUsed);
-		if (keysRAF != null)
+		if (keysRAF != null) {
 			fcWriteKey(storeBlock.getOffset(), fullKey);
+		}
 		synchronized (this) {
 			writes++;
 		}
@@ -1608,7 +1644,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			DatabaseEntry blockNumEntry = new DatabaseEntry();
 			DatabaseEntry found = new DatabaseEntry();
 			LongBinding.longToEntry(blockNum, blockNumEntry);
-			
+
 			OperationStatus success =
 				blockNumDB.get(t, blockNumEntry, found, LockMode.DEFAULT);
 
@@ -1622,20 +1658,21 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				throw e;
 			}
 		}
-		
+
 			fcWriteStore(blockNum, header, data);
 			fcWriteLRU(blockNum, lruValue);
 			if(keysRAF != null) {
 				fcWriteKey(blockNum, fullKey);
-				if(logDEBUG)
+				if(logDEBUG) {
 					Logger.debug(this, "Written full key length "+fullKey.length+" to block "+blockNum+" at "+(blockNum * keyLength)+" for "+callback);
+				}
 			} else if(logDEBUG) {
 				Logger.debug(this, "Not writing full key length "+fullKey.length+" for block "+blockNum+" for "+callback);
 			}
 			synchronized (this) {
 			writes++;
 		}
-		
+
 		return true;
 	}
 
@@ -1661,7 +1698,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
-				
+
 				System.err.println("Flusing data store files (" + getName() + ")");
 				flushAndCloseRAF(storeRAF);
 				storeRAF = null;
@@ -1669,12 +1706,12 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				lruRAF = null;
 				flushAndCloseRAF(keysRAF);
 				keysRAF = null;
-				
+
 				WrapperManager.restart();
 				System.exit(freenet.node.NodeInitException.EXIT_DATABASE_REQUIRES_RESTART);
 			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException ||
 					// UGH! We really shouldn't have to do this ... :(
-					(msg != null && 
+					(msg != null &&
 							(msg.indexOf("LogFileNotFoundException") >= 0 || msg.indexOf("DbChecksumException") >= 0
 							|| msg.indexOf("RunRecoveryException") >= 0))) {
 				System.err.println("Corrupt database! Will be reconstructed on restart");
@@ -1686,7 +1723,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 					System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
 					return; // Not sure what else we can do
 				}
-				
+
 				System.err.println("Flusing data store files (" + getName() + ")");
 				flushAndCloseRAF(storeRAF);
 				storeRAF = null;
@@ -1694,49 +1731,55 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				lruRAF = null;
 				flushAndCloseRAF(keysRAF);
 				keysRAF = null;
-				
+
 				System.err.println("Restarting to fix corrupt store database...");
 				Logger.error(this, "Restarting to fix corrupt store database...");
 				WrapperManager.restart();
 			} else {
-				if(ex.getCause() != null)
+				if(ex.getCause() != null) {
 					checkSecondaryDatabaseError(ex.getCause());
-			} 
+				}
+			}
 		}
 	}
 
 	private void writeBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE, byte[] fullKey) throws DatabaseException, IOException {
-		
+
 		long blockNum;
-		
+
 		// Keep trying until we succeed.
 		while(true) {
 				if((blockNum = grabFreeBlock()) >= 0) {
-					if(logMINOR)
+					if(logMINOR) {
 						Logger.minor(this, "Overwriting free block: "+blockNum);
-					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE, fullKey))
+					}
+					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE, fullKey)) {
 						return;
+					}
 				} else if(blocksInStore<maxBlocksInStore) {
 					// Expand the store file
 					synchronized(blocksInStoreLock) {
 						blockNum = blocksInStore;
 						blocksInStore++;
 					}
-					if(logMINOR)
+					if(logMINOR) {
 						Logger.minor(this, "Expanding store and writing block "+blockNum);
+					}
 					// Just in case
 					freeBlocks.remove(blockNum);
-					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE, fullKey))
+					if(writeNewBlock(blockNum, header, data, t, routingkeyDBE, fullKey)) {
 						return;
+					}
 				} else {
-					if(logMINOR)
+					if(logMINOR) {
 						Logger.minor(this, "Overwriting LRU block");
+					}
 					overwriteLRUBlock(header, data, t, routingkeyDBE, fullKey);
 					return;
 				}
-			
+
 		}
-		
+
 	}
 
 	private long grabFreeBlock() {
@@ -1750,65 +1793,65 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	private static class StoreBlock {
 		private long recentlyUsed;
 		private long offset;
-		
+
 		public StoreBlock(final BerkeleyDBFreenetStore<?> bdbfs, long offset) {
 			this(offset, bdbfs.getNewRecentlyUsed());
 		}
-		
+
 		public StoreBlock(long offset,long recentlyUsed) {
 			this.offset = offset;
 			this.recentlyUsed = recentlyUsed;
 		}
-				
-	
+
+
 		public long getRecentlyUsed() {
 			return recentlyUsed;
 		}
-		
+
 		public void setRecentlyUsedToZero() {
 			recentlyUsed = 0;
 		}
-		
+
 		public void updateRecentlyUsed(BerkeleyDBFreenetStore<?> bdbfs) {
 			recentlyUsed = bdbfs.getNewRecentlyUsed();
 		}
-		
+
 		public long getOffset() {
 			return offset;
 		}
 	}
-	
+
 	/**
 	* Convert StoreBlock's to the format used by the database
 	*/
 	private class StoreBlockTupleBinding extends TupleBinding<StoreBlock> {
 
 		@Override
-        public void objectToEntry(StoreBlock myData, TupleOutput to) {
+		public void objectToEntry(StoreBlock myData, TupleOutput to) {
 			to.writeLong(myData.getOffset());
 			to.writeLong(myData.getRecentlyUsed());
 		}
 
 		@Override
-        public StoreBlock entryToObject(TupleInput ti) {
+		public StoreBlock entryToObject(TupleInput ti) {
 			long offset = ti.readLong();
 			long lastAccessed = ti.readLong();
-			
+
 			StoreBlock storeBlock = new StoreBlock(offset,lastAccessed);
 			return storeBlock;
 		}
 	}
-	
+
 	/**
 	* Used to create the secondary database sorted on accesstime
 	*/
 	private static class AccessTimeKeyCreator implements SecondaryKeyCreator {
 		private final TupleBinding<StoreBlock> theBinding;
-		
+
 		public AccessTimeKeyCreator(TupleBinding<StoreBlock> theBinding1) {
 			theBinding = theBinding1;
 		}
-		
+
 		public boolean createSecondaryKey(SecondaryDatabase secDb,
 				DatabaseEntry keyEntry,
 				DatabaseEntry dataEntry,
@@ -1822,11 +1865,11 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private static class BlockNumberKeyCreator implements SecondaryKeyCreator {
 		private final TupleBinding<StoreBlock> theBinding;
-		
+
 		public BlockNumberKeyCreator(TupleBinding<StoreBlock> theBinding1) {
 			theBinding = theBinding1;
 		}
-		
+
 		public boolean createSecondaryKey(SecondaryDatabase secDb,
 				DatabaseEntry keyEntry,
 				DatabaseEntry dataEntry,
@@ -1836,28 +1879,29 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			LongBinding.longToEntry(storeblock.offset, resultEntry);
 			return true;
 		}
-		
 	}
-	
+
 	private class ShutdownHook extends NativeThread {
-		
-        public ShutdownHook() {
+
+		public ShutdownHook() {
 			super(name, NativeThread.HIGH_PRIORITY, true);
 			// TODO Auto-generated constructor stub
 		}
 
+		@Override
 		public void realRun() {
 			System.err.println("Closing database due to shutdown.");
 			close(true);
 		}
 	}
-	
+
 	private final Object closeLock = new Object();
 
 	private static void flushAndCloseRAF(RandomAccessFile file) {
 		try {
-			if (file != null)
+			if (file != null) {
 				file.getChannel().force(true);
+			}
 		} catch (IOException e) {
 			// ignore
 		}
@@ -1865,16 +1909,17 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 	}
 
 	private static void closeRAF(RandomAccessFile file, boolean logError) {
-			try {
-						if (file != null)
-								file.close();
-				} catch (IOException e) {
-						if (logError) {
-								System.err.println("Caught closing file: " + e);
-								e.printStackTrace();
-						}
-				}
+		try {
+			if (file != null) {
+				file.close();
+			}
+		} catch (IOException e) {
+			if (logError) {
+				System.err.println("Caught closing file: " + e);
+					e.printStackTrace();
+			}
 		}
+	}
 
 	private static void closeDB(Database db, boolean logError) {
 				try {
@@ -1887,7 +1932,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 						}
 				}
 		}
-	
+
 	private void close(boolean sleep) {
 		try {
 			// FIXME: 	we should be sure all access to the database has stopped
@@ -1896,7 +1941,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			//			happen is that we miss the last few store()'s and get an exception.
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Closing database "+this);
-			
+
 			synchronized (this) {
 				closed = true;
 			}
@@ -1908,18 +1953,18 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				} catch (InterruptedException ie) {
 					Logger.error(this, "Thread interrupted.", ie);
 				}
-			
+
 			if(reallyClosed) {
 				Logger.error(this, "Already closed "+this);
 				return;
 			}
-			
+
 			synchronized(closeLock) {
 				if(reallyClosed) {
 					Logger.error(this, "Already closed "+this);
 					return;
 				}
-				
+
 				closeRAF(storeRAF, true);
 				storeRAF = null;
 				closeRAF(lruRAF, true);
@@ -1944,7 +1989,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			reallyClosed = true;
 		}
 	}
-	
+
 	private long highestBlockNumberInDatabase() throws DatabaseException {
 		Cursor c = null;
 		try {
@@ -1968,7 +2013,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		}
 		return 0;
 	}
-	
+
 	private long countCHKBlocksFromFile() throws IOException {
 		int keySize = headerBlockSize + dataBlockSize;
 		long fileSize = storeRAF.length();
@@ -1977,7 +2022,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private long getMaxRecentlyUsed() {
 		long maxRecentlyUsed = 0;
-		
+
 		Cursor c = null;
 		try {
 			c = accessTimeDB.openCursor(null,null);
@@ -2000,13 +2045,13 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 			}
 		}
-		
+
 		return maxRecentlyUsed;
 	}
-	
+
 	private long getMinRecentlyUsed(Transaction t) {
 		long minRecentlyUsed = 0;
-		
+
 		Cursor c = null;
 		try {
 			c = accessTimeDB.openCursor(t,null);
@@ -2029,10 +2074,10 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 				}
 			}
 		}
-		
+
 		return minRecentlyUsed;
 	}
-	
+
 	private long getNewRecentlyUsed() {
 		synchronized(lastRecentlyUsedSync) {
 			lastRecentlyUsed++;
@@ -2087,7 +2132,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 	/**
 	 * Remove all secondary database of this datastore.
-	 * 
+	 *
 	 * @throws DatabaseException
 	 */
 	private void removeSecondaryDatabase() throws DatabaseException {
@@ -2122,7 +2167,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 	/**
 	 * Open a secondary database of this datastore.
-	 * 
+	 *
 	 * @param dbName
 	 *                Full database name
 	 * @param create
@@ -2173,8 +2218,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 
 				System.err.println("Reconstructing index for secondary database: " + dbName);
 				Logger.error(this,"Reconstructing index for secondary database: " + dbName);
-				if (db != null)
+				if (db != null) {
 					db.close();
+				}
 				try {
 					environment.removeDatabase(null, dbName);
 				} catch (DatabaseNotFoundException e1) {
@@ -2205,26 +2251,29 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		bf.flip();
 		do {
 			int byteWritten = lruFC.write(bf, entry * 8 + bf.position());
-			if (byteWritten == -1)
+			if (byteWritten == -1) {
 				throw new EOFException();
+			}
 		} while (bf.hasRemaining());
 	}
 	private long fcReadLRU(long entry) throws IOException {
 		ByteBuffer bf = ByteBuffer.allocate(8);
 		do {
 			int byteRead = lruFC.read(bf, entry * 8 + bf.position());
-			if (byteRead == -1)
+			if (byteRead == -1) {
 				throw new EOFException();
+			}
 		} while (bf.hasRemaining());
 		bf.flip();
 		return bf.getLong();
 	}
-	private void fcReadKey(long entry, byte[] data) throws IOException {	
+	private void fcReadKey(long entry, byte[] data) throws IOException {
 		ByteBuffer bf = ByteBuffer.wrap(data);
 		do {
 			int byteRead = keysFC.read(bf, entry * keyLength + bf.position());
-			if (byteRead == -1)
+			if (byteRead == -1) {
 				throw new EOFException();
+			}
 		} while (bf.hasRemaining());
 	}
 	private void fcWriteKey(long entry, byte[] data) throws IOException {
@@ -2232,8 +2281,9 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		ByteBuffer bf = ByteBuffer.wrap(data);
 		do {
 			int byteWritten = keysFC.write(bf, entry * keyLength + bf.position());
-			if (byteWritten == -1)
+			if (byteWritten == -1) {
 				throw new EOFException();
+			}
 		} while (bf.hasRemaining());
 	}
 	private void fcWriteStore(long entry, byte[] header, byte[] data) throws IOException {
@@ -2243,33 +2293,38 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		bf.flip();
 		do {
 			int byteWritten = storeFC.write(bf, (headerBlockSize + dataBlockSize) * entry + bf.position());
-			if (byteWritten == -1)
+			if (byteWritten == -1) {
 				throw new EOFException();
+			}
 		} while (bf.hasRemaining());
 	}
 	private void fcReadStore(long entry,byte[] header, byte[] data ) throws IOException {
 		ByteBuffer bf = ByteBuffer.allocate(headerBlockSize + dataBlockSize);
-		
+
 		do {
 			int dataRead = storeFC.read(bf, (headerBlockSize + dataBlockSize) * entry);
-			if (dataRead == -1)
+			if (dataRead == -1) {
 				throw new EOFException();
+			}
 		} while (bf.hasRemaining());
-		
+
 		bf.flip();
 		bf.get(header);
 		bf.get(data);
 	}
-	
-    public void handleLowMemory() throws Exception {
-    	// Flush all
-		if (storeFC != null)
+
+	public void handleLowMemory() throws Exception {
+		// Flush all
+		if (storeFC != null) {
 			storeFC.force(true);
-		if (keysFC != null)
+		}
+		if (keysFC != null) {
 			keysFC.force(true);
-		if (lruFC != null)
+		}
+		if (lruFC != null) {
 			lruFC.force(true);
-		
+		}
+
 		environment.evictMemory();
 	}
 
@@ -2277,57 +2332,60 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 		// database likely to be corrupted,
 		// reconstruct it just in case
 		reconstructFile.createNewFile();
-		
+
 		// Flush all
-		if (storeFC != null)
+		if (storeFC != null) {
 			storeFC.force(true);
-		if (keysFC != null)
+		}
+		if (keysFC != null) {
 			keysFC.force(true);
-		if (lruFC != null)
+		}
+		if (lruFC != null) {
 			lruFC.force(true);
+		}
 	}
-	
+
 	/**
-     * @return
-     */
-    public static EnvironmentConfig getBDBConfig() {
-        // First, global settings
-    	
-    	// Percentage of the database that must contain usefull data
-    	// decrease to increase performance, increase to save disk space
-    	// Let it stay at the default of 50% for best performance.
-    	// We only use it for indexes, so it won't get huge.
-    	//System.setProperty("je.cleaner.minUtilization","90");
-    	// Delete empty log files
-    	System.setProperty("je.cleaner.expunge","true");
-    	EnvironmentConfig envConfig = new EnvironmentConfig();
-    	envConfig.setAllowCreate(true);
-    	envConfig.setTransactional(true);
-    	envConfig.setTxnWriteNoSync(true);
-    	envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
-    	// Note that the above is in *MICRO*seconds.
-    	envConfig.setConfigParam("je.log.faultReadSize", "6144");
-    	// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
-    	envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
-    	envConfig.setConfigParam("je.evictor.nodesPerScan", "50");  //Is not a mutable config option and must be set before opening of environment.
-    	// Recommended is 100, but smaller values reduce latency cost.
-    	
-    	// Tune latency
-    	envConfig.setConfigParam("je.env.backgroundReadLimit", "65536");
-    	envConfig.setConfigParam("je.env.backgroundWriteLimit", "65536");
-    	envConfig.setConfigParam("je.env.backgroundSleepInterval", "10000" /* microseconds */); // 10ms
-        return envConfig;
-    }
+	 * @return
+	 */
+	public static EnvironmentConfig getBDBConfig() {
+		// First, global settings
+
+		// Percentage of the database that must contain usefull data
+		// decrease to increase performance, increase to save disk space
+		// Let it stay at the default of 50% for best performance.
+		// We only use it for indexes, so it won't get huge.
+		//System.setProperty("je.cleaner.minUtilization","90");
+		// Delete empty log files
+		System.setProperty("je.cleaner.expunge","true");
+		EnvironmentConfig envConfig = new EnvironmentConfig();
+		envConfig.setAllowCreate(true);
+		envConfig.setTransactional(true);
+		envConfig.setTxnWriteNoSync(true);
+		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
+		// Note that the above is in *MICRO*seconds.
+		envConfig.setConfigParam("je.log.faultReadSize", "6144");
+		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
+		envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
+		envConfig.setConfigParam("je.evictor.nodesPerScan", "50");  //Is not a mutable config option and must be set before opening of environment.
+		// Recommended is 100, but smaller values reduce latency cost.
+
+		// Tune latency
+		envConfig.setConfigParam("je.env.backgroundReadLimit", "65536");
+		envConfig.setConfigParam("je.env.backgroundWriteLimit", "65536");
+		envConfig.setConfigParam("je.env.backgroundSleepInterval", "10000" /* microseconds */); // 10ms
+		return envConfig;
+	}
 
 	public long getBloomFalsePositive() {
 		return -1;
 	}
-	
-    public boolean probablyInStore(byte[] routingKey) {
-    	// This needs to be fast, so that it can be run from any thread.
-    	// Accessing the bdbje database is often slow, involves many disk seeks,
-    	// and can stall for long periods.
-    	return true;
+
+	public boolean probablyInStore(byte[] routingKey) {
+		// This needs to be fast, so that it can be run from any thread.
+		// Accessing the bdbje database is often slow, involves many disk seeks,
+		// and can stall for long periods.
+		return true;
 		/*-
 		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingKey);
 		DatabaseEntry blockDBE = new DatabaseEntry();
@@ -2340,7 +2398,7 @@ public class BerkeleyDBFreenetStore<T extends StorableBlock> implements FreenetS
 			return keysDB.get(null, routingkeyDBE, blockDBE, LockMode.READ_UNCOMMITTED) == OperationStatus.SUCCESS;
 		} catch (DatabaseException e) {
 			return false;
-		} 
+		}
 		 */
 	}
 }

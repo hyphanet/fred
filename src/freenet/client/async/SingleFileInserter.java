@@ -36,7 +36,7 @@ import freenet.support.io.SegmentedBucketChainBucket;
  * Then hand it off to SimpleFileInserter.
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
-class SingleFileInserter implements ClientPutState {
+public class SingleFileInserter implements ClientPutState {
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
@@ -121,7 +121,7 @@ class SingleFileInserter implements ClientPutState {
 	public void start(SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws InsertException {
 		if(fs != null) {
 			String type = fs.get("Type");
-			if(type.equals("SplitHandler")) {
+			if("SplitHandler".equals(type)) {
 				// Try to reconstruct SplitHandler.
 				// If we succeed, we bypass both compression and FEC encoding!
 				try {
@@ -170,16 +170,16 @@ class SingleFileInserter implements ClientPutState {
 			onCompressedInner(output, container, context);
 		} catch (InsertException e) {
 			cb.onFailure(e, SingleFileInserter.this, container, context);
-        } catch (OutOfMemoryError e) {
+		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 			System.err.println("OffThreadCompressor thread above failed.");
 			// Might not be heap, so try anyway
 			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, e, null), SingleFileInserter.this, container, context);
-        } catch (Throwable t) {
-            Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
-            System.err.println("Caught in OffThreadCompressor: "+t);
-            t.printStackTrace();
-            // Try to fail gracefully
+		} catch (Throwable t) {
+			Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
+			System.err.println("Caught in OffThreadCompressor: "+t);
+			t.printStackTrace();
+			// Try to fail gracefully
 			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this, container, context);
 		}
 		if(!cbActive)
@@ -220,10 +220,10 @@ class SingleFileInserter implements ClientPutState {
 		boolean isCHK = false;
 		if(persistent) container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType();
-		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
+		if("SSK".equals(type) || "KSK".equals(type) || "USK".equals(type)) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;
-		} else if(type.equals("CHK")) {
+		} else if("CHK".equals(type)) {
 			blockSize = CHKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 			isCHK = true;
@@ -426,10 +426,10 @@ class SingleFileInserter implements ClientPutState {
 		if(persistent)
 			container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType().toUpperCase();
-		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
+		if("SSK".equals(type) || "KSK".equals(type) || "USK".equals(type)) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;
-		} else if(type.equals("CHK")) {
+		} else if("CHK".equals(type)) {
 			blockSize = CHKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 		} else {
@@ -472,7 +472,7 @@ class SingleFileInserter implements ClientPutState {
 		uri.checkInsertURI(); // will throw an exception if needed
 		
 		if(persistent) container.activate(ctx, 1);
-		if(uri.getKeyType().equals("USK")) {
+		if("USK".equals(uri.getKeyType())) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 					getCHKOnly, addToParent, this.token, container, context, freeData, persistent, forSplitfile ? ctx.extraInsertsSplitfileHeaderBlock : ctx.extraInsertsSingleBlock);
@@ -554,11 +554,11 @@ class SingleFileInserter implements ClientPutState {
 			if(metaFS != null) {
 				try {
 					String type = metaFS.get("Type");
-					if(type.equals("SplitFileInserter")) {
+					if("SplitFileInserter".equals(type)) {
 						// FIXME insertAsArchiveManifest ?!?!?!
 						newMetaPutter = 
 							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, archiveType, metaFS, container, context);
-					} else if(type.equals("SplitHandler")) {
+					} else if("SplitHandler".equals(type)) {
 						newMetaPutter = new SplitHandler();
 						((SplitHandler)newMetaPutter).start(metaFS, true, container, context);
 					}

@@ -55,6 +55,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	private static boolean logMINOR;
 	private boolean cancelled;
 	
+	@Override
 	public boolean isStorageBroken(ObjectContainer container) {
 		if(!container.ext().isActive(this))
 			throw new IllegalStateException("Must be activated first!");
@@ -377,7 +378,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		boolean forceFatal = false;
 		if(parent.isCancelled()) {
-			if(Logger.shouldLog(Logger.MINOR, this)) 
+			if(logMINOR)
 				Logger.minor(this, "Failing: cancelled");
 			e = new FetchException(FetchException.CANCELLED);
 			forceFatal = true;
@@ -498,7 +499,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 //			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Adding "+blocks+" blocks to "+this);
 		synchronized(segment) {
 			if(cancelled)
@@ -528,7 +528,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 //			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this);
 		if(blockNo < 0) throw new IllegalArgumentException();
 		Integer i = Integer.valueOf(blockNo);

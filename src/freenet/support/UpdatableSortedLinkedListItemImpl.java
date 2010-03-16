@@ -6,7 +6,7 @@ import freenet.support.DoublyLinkedList.Item;
  * An item that can be put into an UpdatableSortedLinkedList.
  */
 public abstract class UpdatableSortedLinkedListItemImpl<T extends UpdatableSortedLinkedListItemImpl<T>> implements
-        UpdatableSortedLinkedListItem<T> {
+		UpdatableSortedLinkedListItem<T> {
 
 	private T next;
 	private T prev;

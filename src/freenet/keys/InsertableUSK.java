@@ -27,7 +27,7 @@ public class InsertableUSK extends USK {
 	public final DSAGroup group;
 	
 	public static InsertableUSK createInsertable(FreenetURI uri, boolean persistent) throws MalformedURLException {
-		if(!uri.getKeyType().equalsIgnoreCase("USK"))
+		if(!"USK".equals(uri.getKeyType()))
 			throw new MalformedURLException();
 		InsertableClientSSK ssk =
 			InsertableClientSSK.create(uri.setKeyType("SSK"));

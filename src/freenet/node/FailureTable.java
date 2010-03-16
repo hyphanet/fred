@@ -37,13 +37,13 @@ import freenet.support.io.NativeThread;
 
 /**
  * Tracks recently DNFed keys, where they were routed to, what the location was at the time, who requested them.
- * Implements Ultra-Lightweight Persistent Requests: Refuse requests for a key for 10 minutes after it's DNFed 
+ * Implements Ultra-Lightweight Persistent Requests: Refuse requests for a key for 10 minutes after it's DNFed
  * (UNLESS we find a better route for the request), and when it is found, offer it to those who've asked for it
  * in the last hour.
  * @author toad
  */
 public class FailureTable implements OOMHook {
-	
+
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
@@ -62,7 +62,7 @@ public class FailureTable implements OOMHook {
 	/** BlockOfferList by key */
 	private final LRUHashtable<Key,BlockOfferList> blockOfferListByKey;
 	private final Node node;
-	
+
 	/** Maximum number of keys to track */
 	static final int MAX_ENTRIES = 20*1000;
 	/** Maximum number of offers to track */
@@ -77,7 +77,7 @@ public class FailureTable implements OOMHook {
 	final byte[] offerAuthenticatorKey;
 	/** Clean up old data every 10 minutes to save memory and improve privacy */
 	static final int CLEANUP_PERIOD = 10*60*1000;
-	
+
 	FailureTable(Node node) {
 		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();
 		blockOfferListByKey = new LRUHashtable<Key,BlockOfferList>();
@@ -87,15 +87,15 @@ public class FailureTable implements OOMHook {
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
 		node.ps.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
 	}
-	
+
 	public void start() {
 		offerExecutor.start(node.executor, "FailureTable offers executor");
 		OOMHandler.addOOMHook(this);
 	}
-	
+
 	/**
 	 * Called when we route to a node and it fails for some reason, but we continue the request.
-	 * Normally the timeout will be the time it took to route to that node and wait for its 
+	 * Normally the timeout will be the time it took to route to that node and wait for its
 	 * response / timeout waiting for its response.
 	 * @param key
 	 * @param routedTo
@@ -108,32 +108,36 @@ public class FailureTable implements OOMHook {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
-			if(entry == null)
+			if(entry == null) {
 				entry = new FailureTableEntry(key);
+			}
 			entriesByKey.push(key, entry);
 			trimEntries(now);
 		}
 		entry.failedTo(routedTo, timeout, now, htl);
 	}
-	
+
 	public void onFinalFailure(Key key, PeerNode routedTo, short htl, short origHTL, int timeout, PeerNode requestor) {
 		if(!(node.enableULPRDataPropagation || node.enablePerNodeFailureTables)) return;
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = entriesByKey.get(key);
-			if(entry == null)
+			if(entry == null) {
 				entry = new FailureTableEntry(key);
+			}
 			entriesByKey.push(key, entry);
 
 			trimEntries(now);
 		}
-		if(routedTo != null)
+		if(routedTo != null) {
 			entry.failedTo(routedTo, timeout, now, htl);
-		if(requestor != null)
+		}
+		if(requestor != null) {
 			entry.addRequestor(requestor, now, origHTL);
+		}
 	}
-	
+
 	private synchronized void trimEntries(long now) {
 		while(entriesByKey.size() > MAX_ENTRIES) {
 			entriesByKey.popKey();
@@ -143,7 +147,7 @@ public class FailureTable implements OOMHook {
 	private final class BlockOfferList {
 		private BlockOffer[] offers;
 		final FailureTableEntry entry;
-		
+
 		BlockOfferList(FailureTableEntry entry, BlockOffer offer) {
 			this.entry = entry;
 			this.offers = new BlockOffer[] { offer };
@@ -174,10 +178,12 @@ public class FailureTable implements OOMHook {
 				}
 				if(idx < 0) return;
 				BlockOffer[] newOffers = new BlockOffer[offerLength - 1];
-				if(idx > 0)
+				if(idx > 0) {
 					System.arraycopy(offers, 0, newOffers, 0, idx);
-				if(idx < newOffers.length)
+				}
+				if(idx < newOffers.length) {
 					System.arraycopy(offers, idx + 1, newOffers, idx, offers.length - idx - 1);
+				}
 				offers = newOffers;
 			}
 			if(offers.length < 1) {
@@ -194,14 +200,14 @@ public class FailureTable implements OOMHook {
 			newOffers[offers.length] = offer;
 			offers = newOffers;
 		}
-		
+
 		@Override
 		public String toString() {
 			return super.toString()+"("+offers.length+")";
 		}
 	}
-	
-	static final class BlockOffer {
+
+	public static final class BlockOffer {
 		final long offeredTime;
 		/** Either offered by or offered to this node */
 		final WeakReference<PeerNode> nodeRef;
@@ -209,7 +215,7 @@ public class FailureTable implements OOMHook {
 		final byte[] authenticator;
 		/** Boot ID when the offer was made */
 		final long bootID;
-		
+
 		BlockOffer(PeerNode pn, long now, byte[] authenticator, long bootID) {
 			this.nodeRef = pn.myRef;
 			this.offeredTime = now;
@@ -229,7 +235,7 @@ public class FailureTable implements OOMHook {
 			return isExpired(System.currentTimeMillis());
 		}
 	}
-	
+
 	/**
 	 * Called when a data block is found (after it has been stored; there is a good chance of its being available in the
 	 * near future). If there are nodes waiting for it, we will offer it to them.
@@ -248,17 +254,17 @@ public class FailureTable implements OOMHook {
 		if(!node.enableULPRDataPropagation) return;
 		entry.offer();
 	}
-	
-	/** Run onOffer() on a separate thread since it can block for disk I/O, and we don't want to cause 
+
+	/** Run onOffer() on a separate thread since it can block for disk I/O, and we don't want to cause
 	 * transfer timeouts etc because of slow disk. */
 	private final SerialExecutor offerExecutor;
-	
+
 	/**
 	 * Called when we get an offer for a key. If this is an SSK, we will only accept it if we have previously asked for it.
 	 * If it is a CHK, we will accept it if we want it.
 	 * @param key The key we are being offered.
 	 * @param peer The node offering it.
-	 * @param authenticator 
+	 * @param authenticator
 	 */
 	void onOffer(final Key key, final PeerNode peer, final byte[] authenticator) {
 		if(!node.enableULPRDataPropagation) return;
@@ -294,7 +300,7 @@ public class FailureTable implements OOMHook {
 			Logger.minor(this, "Already have key");
 			return;
 		}
-		
+
 		// Re-check after potentially long disk I/O.
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
@@ -312,29 +318,29 @@ public class FailureTable implements OOMHook {
 		 * It's good because it makes the whole structure much more reliable; it's bad because
 		 * it's not entirely under our control - we didn't choose to route it to the node, the node
 		 * routed it to us. Now it's found it before we did...
-		 * 
+		 *
 		 * Attacks:
 		 * - Frost spamming etc: Is it easier to offer data to our peers rather than inserting it? Will
 		 * it result in it being propagated further? The peer node would then do the request, rather than
 		 * this node doing an insert. Is that beneficial?
-		 * 
+		 *
 		 * Not relevant with CHKs anyway.
-		 * 
-		 * On the plus side, propagation to nodes that have asked is worthwhile because reduced polling 
+		 *
+		 * On the plus side, propagation to nodes that have asked is worthwhile because reduced polling
 		 * cost enables more secure messaging systems e.g. outbox polling...
-		 * - Social engineering: If a key is unpopular, you can put a different copy of it on different 
-		 * nodes. You can then use this to trace the requestor - identify that he is or isn't on the target. 
-		 * You can't do this with a regular insert because it will often go several nodes even at htl 0. 
+		 * - Social engineering: If a key is unpopular, you can put a different copy of it on different
+		 * nodes. You can then use this to trace the requestor - identify that he is or isn't on the target.
+		 * You can't do this with a regular insert because it will often go several nodes even at htl 0.
 		 * With subscriptions, you might be able to bypass this - but only if you know no other nodes in the
-		 * neighbourhood are subscribed. Easier with SSKs; with CHKs you have only binary information of 
-		 * whether the person got the key (with social engineering). Hard to exploit on darknet; if you're 
+		 * neighbourhood are subscribed. Easier with SSKs; with CHKs you have only binary information of
+		 * whether the person got the key (with social engineering). Hard to exploit on darknet; if you're
 		 * that close to the suspect there are easier ways to get at them e.g. correlation attacks.
-		 * 
+		 *
 		 * Conclusion: We should accept the request if:
 		 * - We asked for it from that node. (Note that a node might both have asked us and been asked).
 		 * - That node asked for it, and it's a CHK.
 		 */
-		
+
 		boolean weAsked = entry.askedFromPeer(peer, now);
 		boolean heAsked = entry.askedByPeer(peer, now);
 		if(!(weAsked || heAsked)) {
@@ -347,12 +353,12 @@ public class FailureTable implements OOMHook {
 			return;
 		}
 		if(entry.isEmpty(now)) entriesByKey.removeKey(key);
-		
+
 		// Valid offer.
-		
+
 		// Add to offers list
-		
-		synchronized(this) {			
+
+		synchronized(this) {
 			if(logMINOR) Logger.minor(this, "Valid offer");
 			BlockOfferList bl = blockOfferListByKey.get(key);
 			BlockOffer offer = new BlockOffer(peer, now, authenticator, peer.getBootID());
@@ -364,7 +370,7 @@ public class FailureTable implements OOMHook {
 			blockOfferListByKey.push(key, bl);
 			trimOffersList(now);
 		}
-		
+
 		// Accept the offer.
 		// Either a peer wants it, in which case we want it for them,
 		// or we want it, or we have requested it in the past, in which case
@@ -425,13 +431,13 @@ public class FailureTable implements OOMHook {
 				node.unlockUID(uid, isSSK, false, false, true, false, tag);
 				return;
 			}
-			
+
 			final Message data = DMT.createFNPSSKDataFoundData(uid, block.getRawData());
 			Message headers = DMT.createFNPSSKDataFoundHeaders(uid, block.getRawHeaders());
 			final int dataLength = block.getRawData().length;
-			
+
 			source.sendAsync(headers, null, senderCounter);
-			
+
 			node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {
@@ -454,9 +460,9 @@ public class FailureTable implements OOMHook {
 						node.unlockUID(uid, isSSK, false, false, true, false, tag);
 					}
 				}
-				
+
 			}, "Send offered SSK");
-			
+
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
 				source.sendAsync(pk, null, senderCounter);
@@ -471,11 +477,11 @@ public class FailureTable implements OOMHook {
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 			source.sendAsync(df, null, senderCounter);
-        	PartiallyReceivedBlock prb =
-        		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
-        	final BlockTransmitter bt =
-        		new BlockTransmitter(node.usm, source, uid, prb, senderCounter);
-        	node.executor.execute(new PrioRunnable() {
+			PartiallyReceivedBlock prb =
+				new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
+			final BlockTransmitter bt =
+				new BlockTransmitter(node.usm, source, uid, prb, senderCounter);
+			node.executor.execute(new PrioRunnable() {
 
 				public int getPriority() {
 					return NativeThread.HIGH_PRIORITY;
@@ -490,14 +496,14 @@ public class FailureTable implements OOMHook {
 						node.unlockUID(uid, isSSK, false, false, true, false, tag);
 					}
 				}
-        		
-        	}, "CHK offer sender");
+
+			}, "CHK offer sender");
 		}
 	}
 
 	public final OfferedKeysByteCounter senderCounter = new OfferedKeysByteCounter();
-	
-	class OfferedKeysByteCounter implements ByteCounter {
+
+	public class OfferedKeysByteCounter implements ByteCounter {
 
 		public void receivedBytes(int x) {
 			node.nodeStats.offeredKeysSenderReceivedBytes(x);
@@ -511,10 +517,10 @@ public class FailureTable implements OOMHook {
 			node.sentPayload(x);
 			node.nodeStats.offeredKeysSenderSentBytes(-x);
 		}
-		
+
 	}
-	
-	class OfferList {
+
+	public class OfferList {
 
 		OfferList(BlockOfferList offerList) {
 			this.offerList = offerList;
@@ -523,23 +529,25 @@ public class FailureTable implements OOMHook {
 			long now = System.currentTimeMillis();
 			BlockOffer[] offers = offerList.offers;
 			for(int i=0;i<offers.length;i++) {
-				if(!offers[i].isExpired(now))
+				if(!offers[i].isExpired(now)) {
 					recentOffers.add(offers[i]);
-				else
+				} else {
 					expiredOffers.add(offers[i]);
+				}
 			}
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Offers: "+recentOffers.size()+" recent "+expiredOffers.size()+" expired");
+			}
 		}
-		
+
 		private final BlockOfferList offerList;
-		
+
 		private final Vector<BlockOffer> recentOffers;
 		private final Vector<BlockOffer> expiredOffers;
-		
+
 		/** The last offer we returned */
 		private BlockOffer lastOffer;
-		
+
 		public BlockOffer getFirstOffer() {
 			if(lastOffer != null) {
 				throw new IllegalStateException("Last offer not dealt with");
@@ -555,7 +563,7 @@ public class FailureTable implements OOMHook {
 			// No more offers.
 			return null;
 		}
-		
+
 		/**
 		 * Delete the last offer - we have used it, successfully or not.
 		 */
@@ -571,7 +579,7 @@ public class FailureTable implements OOMHook {
 		public void keepLastOffer() {
 			lastOffer = null;
 		}
-		
+
 	}
 
 	public OfferList getOffers(Key key) {
@@ -596,7 +604,7 @@ public class FailureTable implements OOMHook {
 			return entriesByKey.get(key);
 		}
 	}
-	
+
 	public class FailureTableCleaner implements Runnable {
 
 		public void run() {
@@ -621,9 +629,9 @@ public class FailureTable implements OOMHook {
 				if(entries[i].cleanup()) {
 					synchronized(FailureTable.this) {
 						synchronized(entries[i]) {
-						if(entries[i].isEmpty()) {
-							entriesByKey.removeKey(entries[i].key);
-						}
+							if(entries[i].isEmpty()) {
+								entriesByKey.removeKey(entries[i].key);
+							}
 						}
 					}
 				}

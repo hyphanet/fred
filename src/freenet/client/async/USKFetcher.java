@@ -81,19 +81,18 @@ import freenet.support.io.BucketTools;
  * - Passive requests (when we have passive requests).
  */
 public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, KeyListener {
-    private static volatile boolean logMINOR;
-    private static volatile boolean logDEBUG;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
-    static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-
-            @Override
-            public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-            }
-        });
-    }
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 	
 	/** USK manager */
 	private final USKManager uskManager;
@@ -152,7 +151,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return true;
 	}
 	
-	class USKAttempt implements USKCheckerCallback {
+	public class USKAttempt implements USKCheckerCallback {
 		/** Edition number */
 		long number;
 		/** Attempt to fetch that edition number (or null if the fetch has finished) */
@@ -319,13 +318,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			long now = System.currentTimeMillis();
 			synchronized(this) {
 				started = false; // don't finish before have rescheduled
-                
-                //Find out when we should check next ('end'), in an increasing delay (unless we make progress).
-                int newSleepTime = sleepTime * 2;
+
+				//Find out when we should check next ('end'), in an increasing delay (unless we make progress).
+				int newSleepTime = sleepTime * 2;
 				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
 				sleepTime = newSleepTime;
 				end = now + context.random.nextInt(sleepTime);
-                
+
 				if(valAtEnd > valueAtSchedule && valAtEnd > origUSK.suggestedEdition) {
 					// We have advanced; keep trying as if we just started.
 					// Only if we actually DO advance, not if we just confirm our suspicion (valueAtSchedule always starts at 0).
@@ -537,7 +536,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}, delay);
 		}
 	}
-    
+
 	public void schedule(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(cancelled) return;

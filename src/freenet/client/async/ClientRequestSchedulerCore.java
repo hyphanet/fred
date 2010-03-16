@@ -109,7 +109,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		this.globalSalt = null;
 	}
 
-	private final byte[] globalSalt;
+	//private final byte[] globalSalt;
+	//this is already defined in schedulerbase, why define it again? -TheSeeker
 	
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		super.onStarted();

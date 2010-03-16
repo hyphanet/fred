@@ -101,33 +101,33 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
-			if(sortBy.equals("address")){
+			if("address".equals(sortBy)){
 				return firstNode.getPeerAddress().compareToIgnoreCase(secondNode.getPeerAddress());
-			}else if(sortBy.equals("location")){
+			}else if("location".equals(sortBy)){
 				return compareLocations(firstNode, secondNode);
-			}else if(sortBy.equals("version")){
+			}else if("version".equals(sortBy)){
 				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
-			}else if(sortBy.equals("backoff")){
+			}else if("backoff".equals(sortBy)){
 				return Double.compare(firstNode.getBackedOffPercent(), secondNode.getBackedOffPercent());
-			}else if(sortBy.equals(("overload_p"))){
+			}else if("overload_p".equals(sortBy)){
 				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
-			}else if(sortBy.equals(("idle"))){
+			}else if("idle".equals(sortBy)){
 				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
-			}else if(sortBy.equals("time_routable")){
+			}else if("time_routable".equals(sortBy)){
 				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
-			}else if(sortBy.equals("total_traffic")){
+			}else if("total_traffic".equals(sortBy)){
 				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
-				}else if(sortBy.equals("total_traffic_since_startup")){
+				}else if("total_traffic_since_startup".equals(sortBy)){
 					long total1 = firstNode.getTotalInputSinceStartup()+firstNode.getTotalOutputSinceStartup();
 					long total2 = secondNode.getTotalInputSinceStartup()+secondNode.getTotalOutputSinceStartup();
 					return compareLongs(total1, total2);
-			}else if(sortBy.equals("selection_percentage")){
+			}else if("selection_percentage".equals(sortBy)){
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
-			}else if(sortBy.equals("time_delta")){
+			}else if("time_delta".equals(sortBy)){
 				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
-			}else if(sortBy.equals(("uptime"))){
+			}else if("uptime".equals(sortBy)){
 				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
 			}else
 				return 0;
@@ -325,32 +325,32 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(fProxyJavascriptEnabled) {
 				StringBuilder jsBuf = new StringBuilder();
 				// FIXME: There's probably some icky Javascript in here (this is the first thing that worked for me); feel free to fix up to Javascript guru standards
-				jsBuf.append( "  function peerNoteChange() {\n" );
-				jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
-				jsBuf.append( "    var length = theobj.options.length;\n" );
-				jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
-				jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
-				jsBuf.append( "        theobj.options[i].select = true;\n" );
-				jsBuf.append( "      } else {\n" );
-				jsBuf.append( "        theobj.options[i].select = false;\n" );
-				jsBuf.append( "      }\n" );
-				jsBuf.append( "    }\n" );
-				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
-				//jsBuf.append( "    document.getElementById( \"peersForm\" ).submit();\n" );
-				jsBuf.append( "    document.getElementById( \"peersForm\" ).doAction.click();\n" );
-				jsBuf.append( "  }\n" );
-				jsBuf.append( "  function peerNoteBlur() {\n" );
-				jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
-				jsBuf.append( "    var length = theobj.options.length;\n" );
-				jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
-				jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
-				jsBuf.append( "        theobj.options[i].select = true;\n" );
-				jsBuf.append( "      } else {\n" );
-				jsBuf.append( "        theobj.options[i].select = false;\n" );
-				jsBuf.append( "      }\n" );
-				jsBuf.append( "    }\n" );
-				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
-				jsBuf.append( "  }\n" );
+				jsBuf.append( "function peerNoteChange() {\n" );
+				jsBuf.append( "	var theobj = document.getElementById( \"action\" );\n" );
+				jsBuf.append( "	var length = theobj.options.length;\n" );
+				jsBuf.append( "	for (var i = 0; i < length; i++) {\n" );
+				jsBuf.append( "		if(theobj.options[i] == \"update_notes\") {\n" );
+				jsBuf.append( "			theobj.options[i].select = true;\n" );
+				jsBuf.append( "		} else {\n" );
+				jsBuf.append( "			theobj.options[i].select = false;\n" );
+				jsBuf.append( "		}\n" );
+				jsBuf.append( "	}\n" );
+				jsBuf.append( "	theobj.value=\"update_notes\";\n" );
+				//jsBuf.append( "	document.getElementById( \"peersForm\" ).submit();\n" );
+				jsBuf.append( "	document.getElementById( \"peersForm\" ).doAction.click();\n" );
+				jsBuf.append( "}\n" );
+				jsBuf.append( "function peerNoteBlur() {\n" );
+				jsBuf.append( "	var theobj = document.getElementById( \"action\" );\n" );
+				jsBuf.append( "	var length = theobj.options.length;\n" );
+				jsBuf.append( "	for (var i = 0; i < length; i++) {\n" );
+				jsBuf.append( "		if(theobj.options[i] == \"update_notes\") {\n" );
+				jsBuf.append( "			theobj.options[i].select = true;\n" );
+				jsBuf.append( "		} else {\n" );
+				jsBuf.append( "			theobj.options[i].select = false;\n" );
+				jsBuf.append( "		}\n" );
+				jsBuf.append( "	}\n" );
+				jsBuf.append( "	theobj.value=\"update_notes\";\n" );
+				jsBuf.append( "}\n" );
 				contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
 			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");

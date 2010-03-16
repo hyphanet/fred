@@ -12,23 +12,23 @@ import freenet.support.LogThresholdCallback;
  * Track average round-trip time for each peer node, get a geometric mean.
  */
 public class NodePinger implements Runnable {
-    private static volatile boolean logMINOR;
+	private static volatile boolean logMINOR;
 
-    static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 
-            @Override
-            public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
-            }
-        });
-    }
+			@Override
+			public void shouldUpdate() {
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	private final Node node;
 	private volatile double meanPing = 0;
-	
+
 	public static final double CRAZY_MAX_PING_TIME = 365.25*24*60*60*1000;
-	
+
 	NodePinger(Node n) {
 		this.node = n;
 	}
@@ -36,39 +36,40 @@ public class NodePinger implements Runnable {
 	void start() {
 		run();
 	}
-	
-	public void run() {
-        try {
-        PeerNode[] peers = null;
-        synchronized(node.peers) {
-	    if((node.peers.connectedPeers == null) || (node.peers.connectedPeers.length == 0)) return;
-	    peers = new PeerNode[node.peers.connectedPeers.length];
-            System.arraycopy(node.peers.connectedPeers, 0, peers, 0, node.peers.connectedPeers.length);
-        }
 
-        // Now we don't have to care about synchronization anymore
-        recalculateMean(peers);
-        } finally {
-        	// Requeue after to avoid exacerbating overload
-        	node.ps.queueTimedJob(this, 200);
-        }
+	public void run() {
+		try {
+		PeerNode[] peers = null;
+		synchronized(node.peers) {
+			if((node.peers.connectedPeers == null) || (node.peers.connectedPeers.length == 0)) return;
+			peers = new PeerNode[node.peers.connectedPeers.length];
+			System.arraycopy(node.peers.connectedPeers, 0, peers, 0, node.peers.connectedPeers.length);
+		}
+
+		// Now we don't have to care about synchronization anymore
+		recalculateMean(peers);
+		} finally {
+			// Requeue after to avoid exacerbating overload
+			node.ps.queueTimedJob(this, 200);
+		}
 	}
 
 	/** Recalculate the mean ping time */
 	private void recalculateMean(PeerNode[] peers) {
 		if(peers.length == 0) return;
 		meanPing = calculateMedianPing(peers);
-		if(logMINOR)
+		if(logMINOR) {
 			Logger.minor(this, "Median ping: "+meanPing);
+		}
 	}
-	
+
 	private double calculateMedianPing(PeerNode[] peers) {
 		double[] allPeers = new double[peers.length];
-        for(int i = 0; i < peers.length; i++) {
-            PeerNode peer = peers[i];
-            allPeers[i] = peer.averagePingTime();
-        }
-		
+		for(int i = 0; i < peers.length; i++) {
+			PeerNode peer = peers[i];
+			allPeers[i] = peer.averagePingTime();
+		}
+
 		Arrays.sort(allPeers);
 		return allPeers[peers.length / 2];
 	}

@@ -34,17 +34,17 @@ public class URLEncoder {
 			if (((safeURLCharacters.indexOf(c) >= 0) || ((!ascii) && c >= 0200 && Character.isDefined(c) && !Character.isISOControl(c)) || extraSafeChars.indexOf(c) >= 0)
 					&& (force == null || force.indexOf(c) < 0)) {
 				enc.append(c);
-				
 			} else {
 				try {
 					byte[] encoded = ("" + c).getBytes("UTF-8");
 					for (int j = 0; j < encoded.length; j++) {
 						byte b = encoded[j];
 						int x = b & 0xFF;
-						if (x < 16)
+						if (x < 16) {
 							enc.append("%0");
-						else
+						} else {
 							enc.append('%');
+						}
 						enc.append(Integer.toHexString(x));
 					}
 				} catch (UnsupportedEncodingException e) {

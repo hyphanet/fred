@@ -5,10 +5,10 @@ package freenet.support.io;
 import java.io.*;
 
 public class NullOutputStream extends OutputStream {
-    public NullOutputStream() {}
-    @Override
+	public NullOutputStream() {}
+	@Override
 	public void write(int b) {}
-    @Override
+	@Override
 	public void write(byte[] buf, int off, int len) {}
 }
 

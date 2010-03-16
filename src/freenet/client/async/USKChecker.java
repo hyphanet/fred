@@ -22,8 +22,8 @@ class USKChecker extends BaseSingleFileFetcher {
 
 	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(key, maxRetries, ctx, parent, false);
-        if(Logger.shouldLog(Logger.MINOR, this))
-        	Logger.minor(this, "Created USKChecker for "+key);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Created USKChecker for "+key);
 		this.cb = cb;
 	}
 	
@@ -42,8 +42,8 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(this, 1);
 			container.activate(cb, 1);
 		}
-        if(Logger.shouldLog(Logger.MINOR, this))
-        	Logger.minor(this, "onFailure: "+e+" for "+this);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
 		boolean canRetry;
 		switch(e.code) {

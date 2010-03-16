@@ -20,7 +20,7 @@ import freenet.support.LogThresholdCallback;
 /**
  * Starts requests.
  * Nobody starts a request directly, you have to go through RequestStarter.
- * And you have to provide a RequestStarterClient. We do round robin between 
+ * And you have to provide a RequestStarterClient. We do round robin between
  * clients on the same priority level.
  */
 public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionList {
@@ -52,17 +52,17 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	public static final short PREFETCH_PRIORITY_CLASS = 5;
 	/** Anything less important than prefetch (redundant??) */
 	public static final short MINIMUM_PRIORITY_CLASS = 6;
-	
+
 	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
-	
+
 	/** If true, local requests are subject to shouldRejectRequest(). If false, they are only subject to the token
 	 * buckets and the thread limit. FIXME make configurable. */
 	private static final boolean LOCAL_REQUESTS_COMPETE_FAIRLY = true;
-	
+
 	public static boolean isValidPriorityClass(int prio) {
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
-	
+
 	final BaseRequestThrottle throttle;
 	final TokenBucket inputBucket;
 	final TokenBucket outputBucket;
@@ -74,7 +74,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	private long sentRequestTime;
 	private final boolean isInsert;
 	private final boolean isSSK;
-	
+
 	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest, boolean isInsert, boolean isSSK) {
 		this.core = node;
@@ -92,20 +92,20 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	void setScheduler(RequestScheduler sched) {
 		this.sched = sched;
 	}
-	
+
 	void start() {
 		sched.start(core);
 		core.getExecutor().execute(this, name);
 		sched.queueFillRequestStarterQueue();
 	}
-	
+
 	final String name;
-	
+
 	@Override
 	public String toString() {
 		return name;
 	}
-	
+
 	void realRun() {
 		ChosenBlock req = null;
 		sentRequestTime = System.currentTimeMillis();
@@ -153,8 +153,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				String reason;
 				if(LOCAL_REQUESTS_COMPETE_FAIRLY) {
 					if((reason = stats.shouldRejectRequest(true, isInsert, isSSK, true, false, null, false)) != null) {
-						if(logMINOR)
+						if(logMINOR) {
 							Logger.minor(this, "Not sending local request: "+reason);
+						}
 						// Wait one throttle-delay before trying again
 						cycleTime = System.currentTimeMillis();
 						continue; // Let local requests compete with all the others
@@ -163,7 +164,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					stats.waitUntilNotOverloaded(isInsert);
 				}
 			} else {
-				if(logMINOR) Logger.minor(this, "Waiting...");				
+				if(logMINOR) Logger.minor(this, "Waiting...");
 				// Always take the lock on RequestStarter first. AFAICS we don't synchronize on RequestStarter anywhere else.
 				// Nested locks here prevent extra latency when there is a race, and therefore allow us to sleep indefinitely
 				synchronized(this) {
@@ -180,8 +181,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
 				// Don't log if it's a cancelled transient request.
-				if(!((!req.isPersistent()) && req.isCancelled()))
+				if(!((!req.isPersistent()) && req.isCancelled())) {
 					Logger.normal(this, "No requests to start on "+req);
+				}
 			}
 			req = null;
 			cycleTime = sentRequestTime = System.currentTimeMillis();
@@ -210,23 +212,23 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
+		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
 				realRun();
-            } catch (OutOfMemoryError e) {
+			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}
 		}
 	}
-	
+
 	private class SenderThread implements Runnable {
 
 		private final ChosenBlock req;
 		private final Key key;
-		
+
 		public SenderThread(ChosenBlock req, Key key) {
 			this.req = req;
 			this.key = key;
@@ -234,26 +236,29 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 		public void run() {
 			try {
-		    freenet.support.Logger.OSThread.logPID(this);
-		    // FIXME ? key is not known for inserts here
-		    if (key != null)
-		    	stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());
-		    if(!req.send(core, sched)) {
-				if(!((!req.isPersistent()) && req.isCancelled()))
-					Logger.error(this, "run() not able to send a request on "+req);
-				else
-					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");
-			}
-			if(logMINOR) 
-				Logger.minor(this, "Finished "+req);
+				freenet.support.Logger.OSThread.logPID(this);
+				// FIXME ? key is not known for inserts here
+				if (key != null) {
+					stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());
+				}
+				if(!req.send(core, sched)) {
+					if(!((!req.isPersistent()) && req.isCancelled())) {
+						Logger.error(this, "run() not able to send a request on "+req);
+					} else {
+						Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");
+					}
+				}
+				if(logMINOR)
+					Logger.minor(this, "Finished "+req);
 			} finally {
-				if(key != null) sched.removeFetchingKey(key);
-				else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert)
+				if(key != null) {
+					sched.removeFetchingKey(key);
+				} else if((!req.isPersistent()) && ((TransientChosenBlock)req).request instanceof SendableInsert) {
 					sched.removeTransientInsertFetching((SendableInsert)(((TransientChosenBlock)req).request), req.token);
-
+				}
 			}
-		}
-		
+		} //end run
+
 	}
 
 	public void wakeUp() {

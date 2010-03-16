@@ -169,7 +169,7 @@ public class USK extends BaseClientKey {
 	}
 
 	public FreenetURI turnMySSKIntoUSK(FreenetURI uri) {
-		if(uri.getKeyType().equals("SSK") &&
+		if("SSK".equals(uri.getKeyType()) &&
 				Arrays.equals(uri.getRoutingKey(), pubKeyHash) &&
 				Arrays.equals(uri.getCryptoKey(), cryptoKey) &&
 				Arrays.equals(uri.getExtra(), ClientSSK.getExtraBytes(cryptoAlgorithm)) &&

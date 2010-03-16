@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -61,14 +61,14 @@ public class BlockTransmitter {
 
 	public static final int SEND_TIMEOUT = 60000;
 	public static final int PING_EVERY = 8;
-	
+
 	final MessageCore _usm;
 	final PeerContext _destination;
 	private boolean _sendComplete;
 	final long _uid;
 	final PartiallyReceivedBlock _prb;
 	private LinkedList<Integer> _unsent;
-	private Runnable _senderThread;
+	private final Runnable _senderThread;
 	private BitArray _sentPackets;
 	final PacketThrottle throttle;
 	private long timeAllSent = -1;
@@ -76,7 +76,7 @@ public class BlockTransmitter {
 	final int PACKET_SIZE;
 	private boolean asyncExitStatus;
 	private boolean asyncExitStatusSet;
-	
+
 	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr) {
 		_usm = usm;
 		_destination = destination;
@@ -94,7 +94,7 @@ public class BlockTransmitter {
 		}
 		throttle = _destination.getThrottle();
 		_senderThread = new PrioRunnable() {
-		
+
 			public void run() {
 				while (!_sendComplete) {
 					int packetNo;
@@ -166,11 +166,11 @@ public class BlockTransmitter {
 		}
 		sendAborted(reason, desc);
 	}
-	
+
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}
-	
+
 	private void sendAllSentNotification() {
 		try {
 			_usm.send(_destination, DMT.createAllSent(_uid), _ctr);
@@ -178,14 +178,14 @@ public class BlockTransmitter {
 			Logger.normal(this, "disconnected for allSent()");
 		}
 	}
-	
+
 	public boolean send(Executor executor) {
 		long startTime = System.currentTimeMillis();
 		PartiallyReceivedBlock.PacketReceivedListener myListener=null;
-		
+
 		try {
 			synchronized(_prb) {
-				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
+				_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {
 
 					public void packetReceived(int packetNo) {
 						synchronized(_senderThread) {
@@ -201,7 +201,7 @@ public class BlockTransmitter {
 				});
 			}
 			executor.execute(_senderThread, toString());
-			
+
 			while (true) {
 				synchronized(_senderThread) {
 					if(_sendComplete) return false;
@@ -249,8 +249,9 @@ public class BlockTransmitter {
 							}
 						} else {
 							// To be expected if the transfer is slow, since we send missingPacketNotification on a timeout.
-							if(logMINOR)
+							if(logMINOR) {
 								Logger.minor(this, "receiver requested block #"+packetNo+" which is not received");
+							}
 						}
 					}
 				} else if (msg.getSpec().equals(DMT.allReceived)) {
@@ -262,12 +263,12 @@ public class BlockTransmitter {
 							Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken);
 						}
 					}
-					
+
 					return true;
 				} else if (msg.getSpec().equals(DMT.sendAborted)) {
 					// Overloaded: receiver no longer wants the data
 					// Do NOT abort PRB, it's none of its business.
-					// And especially, we don't want a downstream node to 
+					// And especially, we don't want a downstream node to
 					// be able to abort our sends to all the others!
 					//They aborted, don't need to send an aborted back :)
 					return false;
@@ -301,8 +302,8 @@ public class BlockTransmitter {
 		}
 	}
 
-	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
-	
+	private static final MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+
 	public int getNumSent() {
 		int ret = 0;
 		for (int x=0; x<_sentPackets.getSize(); x++) {
@@ -320,12 +321,12 @@ public class BlockTransmitter {
 		executor.execute(new PrioRunnable() {
 			public void run() {
 						 try {
-						    asyncExitStatus=send(executor);
+							asyncExitStatus=send(executor);
 						 } finally {
-						    synchronized (BlockTransmitter.this) {
-						       asyncExitStatusSet=true;
-						       BlockTransmitter.this.notifyAll();
-						    }
+							synchronized (BlockTransmitter.this) {
+							   asyncExitStatusSet=true;
+							   BlockTransmitter.this.notifyAll();
+							}
 						 }
 					}
 
@@ -336,13 +337,13 @@ public class BlockTransmitter {
 	}
 
 	public boolean getAsyncExitStatus() {
-    	long deadline = System.currentTimeMillis() + 60*60*1000;
+		long deadline = System.currentTimeMillis() + 60*60*1000;
 		synchronized (this) {
 			while (!asyncExitStatusSet) {
 				try {
-	            	long now = System.currentTimeMillis();
-	            	if(now >= deadline) throw new IllegalStateException("Waited more than 1 hour for transfer completion!");
-	                wait(deadline - now);
+					long now = System.currentTimeMillis();
+					if(now >= deadline) throw new IllegalStateException("Waited more than 1 hour for transfer completion!");
+					wait(deadline - now);
 				} catch (InterruptedException e) {
 					//ignore
 				}
@@ -354,7 +355,7 @@ public class BlockTransmitter {
 	public PeerContext getDestination() {
 		return _destination;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "BlockTransmitter for "+_uid+" to "+_destination.shortToString();

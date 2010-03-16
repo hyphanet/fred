@@ -16,10 +16,10 @@ public class GlobalProbe implements Runnable {
 	final ProbeCallback cb;
 	final Node node;
 	int ctr;
-	
+
 	public GlobalProbe(Node n) {
 		this.node = n;
-    	cb = new ProbeCallback() {
+		cb = new ProbeCallback() {
 			public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short uniqueCount, short linearCount) {
 				String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+linearCount+" hops"+uniqueCount+" unique nodes) in "+(System.currentTimeMillis() - lastTime)+", id "+id+"\r\n";
 				Logger.error(this, msg);
@@ -39,10 +39,10 @@ public class GlobalProbe implements Runnable {
 			public void onRejectOverload() {
 				Logger.normal(this, "Probe trace received rejected overload");
 			}
-    	};
-		
+		};
+
 	}
-	
+
 	public void run() {
 		freenet.support.Logger.OSThread.logPID(this);
 		synchronized(this) {
@@ -51,49 +51,49 @@ public class GlobalProbe implements Runnable {
 			while(true) {
 				doneSomething = false;
 				lastTime = System.currentTimeMillis();
-	    		node.dispatcher.startProbe(lastLocation, cb);
-	    		for(int i=0;i<20 && !doneSomething;i++) {
-	    			try {
+				node.dispatcher.startProbe(lastLocation, cb);
+				for(int i=0;i<20 && !doneSomething;i++) {
+					try {
 						wait(1000*10);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
-	    			// All vars should be updated by resynchronizing here, right?
-	    		}
-	    		if(!doneSomething) {
-	    			error("Stalled on "+lastLocation+" , waiting some more.");
-	    			try {
+					// All vars should be updated by resynchronizing here, right?
+				}
+				if(!doneSomething) {
+					error("Stalled on "+lastLocation+" , waiting some more.");
+					try {
 						wait(100*1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
-	    			if(!doneSomething) {
-	    				error("Still no response to probe request, trying again.");
-		    			continue;
-	    			}
-	    		}
-	    		if(Math.abs(lastLocation-prevLoc) < (Double.MIN_VALUE*2)) {
-	    			error("Location is same as previous ! Sleeping then trying again");
-	    			try {
+					if(!doneSomething) {
+						error("Still no response to probe request, trying again.");
+						continue;
+					}
+				}
+				if(Math.abs(lastLocation-prevLoc) < (Double.MIN_VALUE*2)) {
+					error("Location is same as previous ! Sleeping then trying again");
+					try {
 						wait(100*1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
-	    			continue;
-	    		}
-	    		output(lastLocation, lastHops);
-	    		prevLoc = lastLocation;
-	    		if(lastLocation > 1.0 || Math.abs(lastLocation - 1.0) < 2*Double.MIN_VALUE) break;
-	    		ctr++;
-	    		// Sleep 10 seconds so we don't flood
-	    		try {
+					continue;
+				}
+				output(lastLocation, lastHops);
+				prevLoc = lastLocation;
+				if(lastLocation > 1.0 || Math.abs(lastLocation - 1.0) < 2*Double.MIN_VALUE) break;
+				ctr++;
+				// Sleep 10 seconds so we don't flood
+				try {
 					wait(10*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
 			}
 		}
-		
+
 	}
 
 	private void output(double loc, int hops) {

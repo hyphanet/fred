@@ -29,281 +29,284 @@ import freenet.support.io.LineReader;
 
 /**
  * @author amphibian
- * 
+ *
  * Very very simple FieldSet type thing, which uses the standard
  * Java facilities.
  */
 public class SimpleFieldSet {
 
-    private final Map<String, String> values;
-    private Map<String, SimpleFieldSet> subsets;
-    private String endMarker;
-    private final boolean shortLived;
-    static public final char MULTI_LEVEL_CHAR = '.';
-    static public final char MULTI_VALUE_CHAR = ';';
-    static public final char KEYVALUE_SEPARATOR_CHAR = '=';
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    
-    /**
-     * Create a SimpleFieldSet.
-     * @param shortLived If false, strings will be interned to ensure that they use as
-     * little memory as possible. Only set to true if the SFS will be short-lived or
-     * small.
-     */
-    public SimpleFieldSet(boolean shortLived) {
-        values = new HashMap<String, String>();
-       	subsets = null;
-       	this.shortLived = shortLived;
-    }
-    
-    /**
-     * Construct a SimpleFieldSet from reading a BufferedReader.
-     * @param br
-     * @param allowMultiple If true, multiple lines with the same field name will be
-     * combined; if false, the constructor will throw.
-     * @param shortLived If false, strings will be interned to ensure that they use as
-     * little memory as possible. Only set to true if the SFS will be short-lived or
-     * small.
-     * @throws IOException If the buffer could not be read, or if there was a formatting
-     * problem.
-     */
-    public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
-        this(shortLived);
-        read(br, allowMultiple);
-    }
+	private final Map<String, String> values;
+	private Map<String, SimpleFieldSet> subsets;
+	private String endMarker;
+	private final boolean shortLived;
+	static public final char MULTI_LEVEL_CHAR = '.';
+	static public final char MULTI_VALUE_CHAR = ';';
+	static public final char KEYVALUE_SEPARATOR_CHAR = '=';
+	private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
-    public SimpleFieldSet(SimpleFieldSet sfs){
-    	values = new HashMap<String, String>(sfs.values);
-    	if(sfs.subsets != null)
-    		subsets = new HashMap<String, SimpleFieldSet>(sfs.subsets);
-    	this.shortLived = false; // it's been copied!
-    	endMarker = sfs.endMarker;
-    }
-
-    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
-    	this(shortLived);
-    	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591, allowMultiple);
-    }
-
-    /**
-     * Construct from a string.
-     * String format:
-     * blah=blah
-     * blah=blah
-     * End
-     * @param shortLived If false, strings will be interned to ensure that they use as
-     * little memory as possible. Only set to true if the SFS will be short-lived or
-     * small.
-     * @throws IOException if the string is too short or invalid.
-     */
-    public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
-    	this(shortLived);
-        StringReader sr = new StringReader(content);
-        BufferedReader br = new BufferedReader(sr);
-	    read(br, allowMultiple);
-    }
-    
-    /**
-     * Read from disk
-     * Format:
-     * blah=blah
-     * blah=blah
-     * End
-     * @param allowMultiple 
-     */
-    private void read(BufferedReader br, boolean allowMultiple) throws IOException {
-        boolean firstLine = true;
-        while(true) {
-            String line = br.readLine();
-            if(line == null) {
-                if(firstLine) throw new EOFException();
-                throw new IOException("No end Marker!");
-            }
-            firstLine = false;
-            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
-            if(index >= 0) {
-                // Mapping
-                String before = line.substring(0, index);
-                String after = line.substring(index+1);
-                if(!shortLived) after = after.intern();
-                put(before, after, allowMultiple, false);
-            } else {
-            	endMarker = line;
-            	return;
-            }
-            
-        }
-    }
-
-    /**
-     * Read from disk
-     * Format:
-     * blah=blah
-     * blah=blah
-     * End
-     * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
-     */
-    private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
-        boolean firstLine = true;
-        while(true) {
-            String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
-            if(line == null) {
-                if(firstLine) throw new EOFException();
-                if(tolerant)
-                	Logger.error(this, "No end marker");
-                else
-                	throw new IOException("No end marker");
-                return;
-            }
-            if((line.length() == 0) && tolerant) continue; // ignore
-            firstLine = false;
-            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
-            if(index >= 0) {
-                // Mapping
-                String before = line.substring(0, index);
-                String after = line.substring(index+1);
-                if(!shortLived) after = after.intern();
-                put(before, after, allowMultiple, false);
-            } else {
-            	endMarker = line;
-            	return;
-            }
-            
-        }
-    }
-    
-    public synchronized String get(String key) {
-   		int idx = key.indexOf(MULTI_LEVEL_CHAR);
-   		if(idx == -1)
-   			return values.get(key);
-   		else if(idx == 0)
-			return (subset("") == null) ? null : subset("").get(key.substring(1));
-		else {
-   			if(subsets == null) return null;
-   			String before = key.substring(0, idx);
-   			String after = key.substring(idx+1);
-   			SimpleFieldSet fs = subsets.get(before);
-   			if(fs == null) return null;
-   			return fs.get(after);
-   		}
-    }
-    
-    public String[] getAll(String key) {
-    	String k = get(key);
-    	if(k == null) return null;
-    	return split(k);
-    }
-
-    private static final String[] split(String string) {
-    	if(string == null) return EMPTY_STRING_ARRAY;
-    	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
-//    	int index = string.indexOf(';');
-//    	if(index == -1) return null;
-//    	Vector v=new Vector();
-//    	v.removeAllElements();
-//        while(index>0){
-//            // Mapping
-//            String before = string.substring(0, index);         
-//            String after = string.substring(index+1);
-//            v.addElement(before);
-//            string=after;
-//            index = string.indexOf(';');
-//        }
-//    	
-//    	return (String[]) v.toArray();
+	/**
+	 * Create a SimpleFieldSet.
+	 * @param shortLived If false, strings will be interned to ensure that they use as
+	 * little memory as possible. Only set to true if the SFS will be short-lived or
+	 * small.
+	 */
+	public SimpleFieldSet(boolean shortLived) {
+		values = new HashMap<String, String>();
+		subsets = null;
+		this.shortLived = shortLived;
 	}
 
-    private static final String unsplit(String[] strings) {
-    	StringBuilder sb = new StringBuilder();
-    	for(int i=0;i<strings.length;i++) {
-    		if(i != 0) sb.append(MULTI_VALUE_CHAR);
-    		sb.append(strings[i]);
-    	}
-    	return sb.toString();
-    }
-    
-    /**
-     * Put contents of a fieldset, overwrite old values.
-     */
-    public void putAllOverwrite(SimpleFieldSet fs) {
-    	Iterator<String> i = fs.values.keySet().iterator();
-    	while(i.hasNext()) {
-    		String key = i.next();
-    		String hisVal = fs.values.get(key);
-    		values.put(key, hisVal); // overwrite old
-    	}
-    	if(fs.subsets == null) return;
+	/**
+	 * Construct a SimpleFieldSet from reading a BufferedReader.
+	 * @param br
+	 * @param allowMultiple If true, multiple lines with the same field name will be
+	 * combined; if false, the constructor will throw.
+	 * @param shortLived If false, strings will be interned to ensure that they use as
+	 * little memory as possible. Only set to true if the SFS will be short-lived or
+	 * small.
+	 * @throws IOException If the buffer could not be read, or if there was a formatting
+	 * problem.
+	 */
+	public SimpleFieldSet(BufferedReader br, boolean allowMultiple, boolean shortLived) throws IOException {
+		this(shortLived);
+		read(br, allowMultiple);
+	}
+
+	public SimpleFieldSet(SimpleFieldSet sfs){
+		values = new HashMap<String, String>(sfs.values);
+		if(sfs.subsets != null) {
+			subsets = new HashMap<String, SimpleFieldSet>(sfs.subsets);
+		}
+		this.shortLived = false; // it's been copied!
+		endMarker = sfs.endMarker;
+	}
+
+	public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
+		this(shortLived);
+		read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591, allowMultiple);
+	}
+
+	/**
+	 * Construct from a string.
+	 * String format:
+	 * blah=blah
+	 * blah=blah
+	 * End
+	 * @param shortLived If false, strings will be interned to ensure that they use as
+	 * little memory as possible. Only set to true if the SFS will be short-lived or
+	 * small.
+	 * @throws IOException if the string is too short or invalid.
+	 */
+	public SimpleFieldSet(String content, boolean allowMultiple, boolean shortLived) throws IOException {
+		this(shortLived);
+		StringReader sr = new StringReader(content);
+		BufferedReader br = new BufferedReader(sr);
+		read(br, allowMultiple);
+	}
+
+	/**
+	 * Read from disk
+	 * Format:
+	 * blah=blah
+	 * blah=blah
+	 * End
+	 * @param allowMultiple
+	 */
+	private void read(BufferedReader br, boolean allowMultiple) throws IOException {
+		boolean firstLine = true;
+		while(true) {
+			String line = br.readLine();
+			if(line == null) {
+				if(firstLine) throw new EOFException();
+				throw new IOException("No end Marker!");
+			}
+			firstLine = false;
+			int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
+			if(index >= 0) {
+				// Mapping
+				String before = line.substring(0, index);
+				String after = line.substring(index+1);
+				if(!shortLived) after = after.intern();
+				put(before, after, allowMultiple, false);
+			} else {
+				endMarker = line;
+				return;
+			}
+
+		}
+	}
+
+	/**
+	 * Read from disk
+	 * Format:
+	 * blah=blah
+	 * blah=blah
+	 * End
+	 * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
+	 */
+	private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
+		boolean firstLine = true;
+		while(true) {
+			String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
+			if(line == null) {
+				if(firstLine) throw new EOFException();
+				if(tolerant) {
+					Logger.error(this, "No end marker");
+				} else {
+					throw new IOException("No end marker");
+				}
+				return;
+			}
+			if((line.length() == 0) && tolerant) continue; // ignore
+			firstLine = false;
+			int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
+			if(index >= 0) {
+				// Mapping
+				String before = line.substring(0, index);
+				String after = line.substring(index+1);
+				if(!shortLived) after = after.intern();
+				put(before, after, allowMultiple, false);
+			} else {
+				endMarker = line;
+				return;
+			}
+
+		}
+	}
+
+	public synchronized String get(String key) {
+		int idx = key.indexOf(MULTI_LEVEL_CHAR);
+		if(idx == -1) {
+			return values.get(key);
+		} else if(idx == 0) {
+			return (subset("") == null) ? null : subset("").get(key.substring(1));
+		} else {
+			if(subsets == null) return null;
+			String before = key.substring(0, idx);
+			String after = key.substring(idx+1);
+			SimpleFieldSet fs = subsets.get(before);
+			if(fs == null) return null;
+			return fs.get(after);
+		}
+	}
+
+	public String[] getAll(String key) {
+		String k = get(key);
+		if(k == null) return null;
+		return split(k);
+	}
+
+	private static final String[] split(String string) {
+		if(string == null) return EMPTY_STRING_ARRAY;
+		return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
+//		int index = string.indexOf(';');
+//		if(index == -1) return null;
+//		Vector v=new Vector();
+//		v.removeAllElements();
+//		while(index>0){
+//			// Mapping
+//			String before = string.substring(0, index);
+//			String after = string.substring(index+1);
+//			v.addElement(before);
+//			string=after;
+//			index = string.indexOf(';');
+//		}
+//
+//		return (String[]) v.toArray();
+	}
+
+	private static final String unsplit(String[] strings) {
+		StringBuilder sb = new StringBuilder();
+		for(int i=0;i<strings.length;i++) {
+			if(i != 0) sb.append(MULTI_VALUE_CHAR);
+			sb.append(strings[i]);
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Put contents of a fieldset, overwrite old values.
+	 */
+	public void putAllOverwrite(SimpleFieldSet fs) {
+		Iterator<String> i = fs.values.keySet().iterator();
+		while(i.hasNext()) {
+			String key = i.next();
+			String hisVal = fs.values.get(key);
+			values.put(key, hisVal); // overwrite old
+		}
+		if(fs.subsets == null) return;
 	if(subsets == null) subsets = new HashMap<String, SimpleFieldSet>();
-    	i = fs.subsets.keySet().iterator();
-    	while(i.hasNext()) {
-    		String key = i.next();
-    		SimpleFieldSet hisFS = fs.subsets.get(key);
-    		SimpleFieldSet myFS = subsets.get(key);
-    		if(myFS != null) {
-    			myFS.putAllOverwrite(hisFS);
-    		} else {
-    			subsets.put(key, hisFS);
-    		}
-    	}
-    }
-    
-    /**
-     * Set a key to a value. If the value already exists, throw IllegalStateException.
-     * @param key The key.
-     * @param value The value.
-     */
-    public void putSingle(String key, String value) {
-    	if(value == null) return;
-    	if(!shortLived) value = value.intern();
-    	if(!put(key, value, false, false))
-    		throw new IllegalStateException("Value already exists: "+value+" but want to set "+key+" to "+value);
-    }
-    
-    /**
-     * Aggregating put. Set a key to a value, if the value already exists, append to it.
-     * If you do not need this functionality please use putOverwrite for a minimal
-     * performance gain.
-     *  
-     * @param key The key.
-     * @param value The value.
-     */
-    public void putAppend(String key, String value) {
-    	if(value == null) return;
-    	if(!shortLived) value = value.intern();
-    	put(key, value, true, false);
-    }
-    
-    /**
-     * Set a key to a value, overwriting any existing value if present.
-     * This function is a little bit faster than putAppend() because it does not
-     * check whether the key already exists.
-     * 
-     * @param key The key.
-     * @param value The value.
-     */
-    public void putOverwrite(String key, String value) {
-    	if(value == null) return;
-    	if(!shortLived) value = value.intern();
-    	put(key, value, false, true);
-    }
-    
-    /**
-     * Set a key to a value.
-     * @param key The key.
-     * @param value The value.
-     * @param allowMultiple If true, if the key already exists then the value will be
-     * appended to the existing value. If false, we return false to indicate that the
-     * old value is unchanged.
-     * @return True unless allowMultiple was false and there was a pre-existing value,
-     * or value was null.
-     */
+		i = fs.subsets.keySet().iterator();
+		while(i.hasNext()) {
+			String key = i.next();
+			SimpleFieldSet hisFS = fs.subsets.get(key);
+			SimpleFieldSet myFS = subsets.get(key);
+			if(myFS != null) {
+				myFS.putAllOverwrite(hisFS);
+			} else {
+				subsets.put(key, hisFS);
+			}
+		}
+	}
+
+	/**
+	 * Set a key to a value. If the value already exists, throw IllegalStateException.
+	 * @param key The key.
+	 * @param value The value.
+	 */
+	public void putSingle(String key, String value) {
+		if(value == null) return;
+		if(!shortLived) value = value.intern();
+		if(!put(key, value, false, false)) {
+			throw new IllegalStateException("Value already exists: "+value+" but want to set "+key+" to "+value);
+		}
+	}
+
+	/**
+	 * Aggregating put. Set a key to a value, if the value already exists, append to it.
+	 * If you do not need this functionality please use putOverwrite for a minimal
+	 * performance gain.
+	 *
+	 * @param key The key.
+	 * @param value The value.
+	 */
+	public void putAppend(String key, String value) {
+		if(value == null) return;
+		if(!shortLived) value = value.intern();
+		put(key, value, true, false);
+	}
+
+	/**
+	 * Set a key to a value, overwriting any existing value if present.
+	 * This function is a little bit faster than putAppend() because it does not
+	 * check whether the key already exists.
+	 *
+	 * @param key The key.
+	 * @param value The value.
+	 */
+	public void putOverwrite(String key, String value) {
+		if(value == null) return;
+		if(!shortLived) value = value.intern();
+		put(key, value, false, true);
+	}
+
+	/**
+	 * Set a key to a value.
+	 * @param key The key.
+	 * @param value The value.
+	 * @param allowMultiple If true, if the key already exists then the value will be
+	 * appended to the existing value. If false, we return false to indicate that the
+	 * old value is unchanged.
+	 * @return True unless allowMultiple was false and there was a pre-existing value,
+	 * or value was null.
+	 */
 	private synchronized final boolean put(String key, String value, boolean allowMultiple, boolean overwrite) {
 		int idx;
 		if(value == null) return true; // valid no-op
 		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
-		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {		
+		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			if(!shortLived) key = key.intern();
-			
+
 			if(overwrite) {
 				values.put(key, value);
 			} else {
@@ -318,8 +321,9 @@ public class SimpleFieldSet {
 			String before = key.substring(0, idx);
 			String after = key.substring(idx+1);
 			SimpleFieldSet fs = null;
-			if(subsets == null)
+			if(subsets == null) {
 				subsets = new HashMap<String, SimpleFieldSet>();
+			}
 			fs = subsets.get(before);
 			if(fs == null) {
 				fs = new SimpleFieldSet(shortLived);
@@ -329,151 +333,154 @@ public class SimpleFieldSet {
 			fs.put(after, value, allowMultiple, overwrite);
 		}
 		return true;
-    }
+	}
 
 	public void put(String key, int value) {
 		// Use putSingle so it does the intern check
 		putSingle(key, Integer.toString(value));
 	}
-	
+
 	public void put(String key, long value) {
 		putSingle(key, Long.toString(value));
 	}
-	
+
 	public void put(String key, short value) {
 		putSingle(key, Short.toString(value));
 	}
-	
+
 	public void put(String key, char c) {
 		putSingle(key, Character.toString(c));
 	}
-	
+
 	public void put(String key, boolean b) {
 		// Don't use putSingle, avoid intern check (Boolean.toString returns interned strings anyway)
 		put(key, Boolean.toString(b), false, false);
 	}
-	
+
 	public void put(String key, double windowSize) {
 		putSingle(key, Double.toString(windowSize));
 	}
 
-    /**
-     * Write the contents of the SimpleFieldSet to a Writer.
-     * Note: The caller *must* buffer the writer to avoid lousy performance!
-     * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
-     *
-     * @warning keep in mind that a Writer is not necessarily UTF-8!!
-     */
+	/**
+	 * Write the contents of the SimpleFieldSet to a Writer.
+	 * Note: The caller *must* buffer the writer to avoid lousy performance!
+	 * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
+	 *
+	 * @warning keep in mind that a Writer is not necessarily UTF-8!!
+	 */
 	public void writeTo(Writer w) throws IOException {
 		writeTo(w, "", false);
 	}
-	
-    /**
-     * Write the contents of the SimpleFieldSet to a Writer.
-     * Note: The caller *must* buffer the writer to avoid lousy performance!
-     * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
-     * 
-     * @warning keep in mind that a Writer is not necessarily UTF-8!!
-     */
-    synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
-    	for (Iterator<Map.Entry<String, String>> i = values.entrySet().iterator(); i.hasNext();) {
-            Map.Entry<String, String> entry = i.next();
+
+	/**
+	 * Write the contents of the SimpleFieldSet to a Writer.
+	 * Note: The caller *must* buffer the writer to avoid lousy performance!
+	 * (StringWriter is by definition buffered, otherwise wrap it in a BufferedWriter)
+	 *
+	 * @warning keep in mind that a Writer is not necessarily UTF-8!!
+	 */
+	synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
+		for (Iterator<Map.Entry<String, String>> i = values.entrySet().iterator(); i.hasNext();) {
+			Map.Entry<String, String> entry = i.next();
 			String key = entry.getKey();
 			String value = entry.getValue();
-            w.write(prefix);
-            w.write(key);
-            w.write(KEYVALUE_SEPARATOR_CHAR);
-            w.write(value);
-            w.write('\n');
-    	}
-    	if(subsets != null) {
-    		for (Iterator<Map.Entry<String, SimpleFieldSet>> i = subsets.entrySet().iterator(); i.hasNext();) {
+			w.write(prefix);
+			w.write(key);
+			w.write(KEYVALUE_SEPARATOR_CHAR);
+			w.write(value);
+			w.write('\n');
+		}
+		if(subsets != null) {
+			for (Iterator<Map.Entry<String, SimpleFieldSet>> i = subsets.entrySet().iterator(); i.hasNext();) {
 				Map.Entry<String, SimpleFieldSet> entry = i.next();
 				String key = entry.getKey();
 				SimpleFieldSet subset = entry.getValue();
-    			if(subset == null) throw new NullPointerException();
-    			subset.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true);
-    		}
-    	}
-    	if(!noEndMarker) {
-    		if(endMarker == null)
-    			w.write("End\n");
-    		else {
-    			w.write(endMarker);
-    			w.write('\n');
-    		}
-    	}
-    }
-    
-    public void writeToOrdered(Writer w) throws IOException {
+				if(subset == null) throw new NullPointerException();
+				subset.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true);
+			}
+		}
+		if(!noEndMarker) {
+			if(endMarker == null)
+				w.write("End\n");
+			else {
+				w.write(endMarker);
+				w.write('\n');
+			}
+		}
+	}
+
+	public void writeToOrdered(Writer w) throws IOException {
 		writeToOrdered(w, "", false);
 	}
-    
-    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
-    	String[] keys = values.keySet().toArray(new String[values.size()]);
-    	int i=0;
-    
-    	// Sort
-    	Arrays.sort(keys);
-    	
-    	// Output
-    	for(i=0; i < keys.length; i++)
-    		w.write(prefix+keys[i]+KEYVALUE_SEPARATOR_CHAR+get(keys[i])+'\n');
-    	
-    	if(subsets != null) {
-    		String[] orderedPrefixes = subsets.keySet().toArray(new String[subsets.size()]);
-    		// Sort
-    		Arrays.sort(orderedPrefixes);
-    		
-        	for(i=0; i < orderedPrefixes.length; i++) {
-    			SimpleFieldSet subset = subset(orderedPrefixes[i]);
-    			if(subset == null) throw new NullPointerException();
-    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true);
-    		}
-    	}
-    
-    	if(!noEndMarker) {
-    		if(endMarker == null)
-    			w.write("End\n");
-    		else
-    			w.write(endMarker+ '\n');
-    	}
-    }
-    
+
+	private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
+		String[] keys = values.keySet().toArray(new String[values.size()]);
+		int i=0;
+
+		// Sort
+		Arrays.sort(keys);
+
+		// Output
+		for(i=0; i < keys.length; i++) {
+			w.write(prefix+keys[i]+KEYVALUE_SEPARATOR_CHAR+get(keys[i])+'\n');
+		}
+
+		if(subsets != null) {
+			String[] orderedPrefixes = subsets.keySet().toArray(new String[subsets.size()]);
+			// Sort
+			Arrays.sort(orderedPrefixes);
+
+			for(i=0; i < orderedPrefixes.length; i++) {
+				SimpleFieldSet subset = subset(orderedPrefixes[i]);
+				if(subset == null) throw new NullPointerException();
+				subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true);
+			}
+		}
+
+		if(!noEndMarker) {
+			if(endMarker == null) {
+				w.write("End\n");
+			} else {
+				w.write(endMarker+ '\n');
+			}
+		}
+	}
+
 	@Override
-    public String toString() {
-        StringWriter sw = new StringWriter();
-        try {
-            writeTo(sw);
-        } catch (IOException e) {
-            Logger.error(this, "WTF?!: "+e+" in toString()!", e);
-        }
-        return sw.toString();
-    }
-    
-    public String toOrderedString() {
-    	StringWriter sw = new StringWriter();
-        try {
-            writeToOrdered(sw);
-        } catch (IOException e) {
-            Logger.error(this, "WTF?!: "+e+" in toString()!", e);
-        }
-        return sw.toString();
-    }
-    
-    public String getEndMarker() {
-    	return endMarker;
-    }
-    
-    public void setEndMarker(String s) {
-    	endMarker = s;
-    }
+	public String toString() {
+		StringWriter sw = new StringWriter();
+		try {
+			writeTo(sw);
+		} catch (IOException e) {
+			Logger.error(this, "WTF?!: "+e+" in toString()!", e);
+		}
+		return sw.toString();
+	}
+
+	public String toOrderedString() {
+		StringWriter sw = new StringWriter();
+		try {
+			writeToOrdered(sw);
+		} catch (IOException e) {
+			Logger.error(this, "WTF?!: "+e+" in toString()!", e);
+		}
+		return sw.toString();
+	}
+
+	public String getEndMarker() {
+		return endMarker;
+	}
+
+	public void setEndMarker(String s) {
+		endMarker = s;
+	}
 
 	public synchronized SimpleFieldSet subset(String key) {
 		if(subsets == null) return null;
 		int idx = key.indexOf(MULTI_LEVEL_CHAR);
-		if(idx == -1)
+		if(idx == -1) {
 			return subsets.get(key);
+		}
 		String before = key.substring(0, idx);
 		String after = key.substring(idx+1);
 		SimpleFieldSet fs = subsets.get(before);
@@ -483,14 +490,14 @@ public class SimpleFieldSet {
 
 	/**
 	 * Like subset(), only throws instead of returning null.
-	 * @throws FSParseException 
+	 * @throws FSParseException
 	 */
 	public synchronized SimpleFieldSet getSubset(String key) throws FSParseException {
 		SimpleFieldSet fs = subset(key);
 		if(fs == null) throw new FSParseException("No such subset "+key);
 		return fs;
 	}
-	
+
 	public Iterator<String> keyIterator() {
 		return new KeyIterator("");
 	}
@@ -498,48 +505,49 @@ public class SimpleFieldSet {
 	public KeyIterator keyIterator(String prefix) {
 		return new KeyIterator(prefix);
 	}
-        
-        public Iterator<String> toplevelKeyIterator() {
-            return values.keySet().iterator();
-        }
-	
-    public class KeyIterator implements Iterator<String> {    	
-    	final Iterator<String> valuesIterator;
-    	final Iterator<String> subsetIterator;
-    	KeyIterator subIterator;
-    	String prefix;
-    	
-    	/**
-    	 * It provides an iterator for the SimpleSetField
-    	 * which passes through every key.
-    	 * (e.g. for key1=value1 key2.sub2=value2 key1.sub=value3
-    	 * it will provide key1,key2.sub2,key1.sub)
-    	 * @param a prefix to put BEFORE every key
-    	 * (e.g. for key1=value, if the iterator is created with prefix "aPrefix",
-    	 * it will provide aPrefixkey1
-    	 */
-    	public KeyIterator(String prefix) {
-    		synchronized(SimpleFieldSet.this) {
-    			valuesIterator = values.keySet().iterator();
-    			if(subsets != null)
-    				subsetIterator = subsets.keySet().iterator();
-    			else
-    				subsetIterator = null;
-    			while(true) {
-    				if(valuesIterator != null && valuesIterator.hasNext()) break;
-    				if(subsetIterator == null || !subsetIterator.hasNext()) break;
-    				String name = subsetIterator.next();
-    				if(name == null) continue;
-    				SimpleFieldSet fs = subsets.get(name);
-    				if(fs == null) continue;
-    				String newPrefix = prefix + name + MULTI_LEVEL_CHAR;
-    				subIterator = fs.keyIterator(newPrefix);
-    				if(subIterator.hasNext()) break;
-    				subIterator = null;
-    			}
-    			this.prefix = prefix;
-    		}
-    	}
+
+		public Iterator<String> toplevelKeyIterator() {
+			return values.keySet().iterator();
+		}
+
+	public class KeyIterator implements Iterator<String> {
+		final Iterator<String> valuesIterator;
+		final Iterator<String> subsetIterator;
+		KeyIterator subIterator;
+		String prefix;
+
+		/**
+		 * It provides an iterator for the SimpleSetField
+		 * which passes through every key.
+		 * (e.g. for key1=value1 key2.sub2=value2 key1.sub=value3
+		 * it will provide key1,key2.sub2,key1.sub)
+		 * @param a prefix to put BEFORE every key
+		 * (e.g. for key1=value, if the iterator is created with prefix "aPrefix",
+		 * it will provide aPrefixkey1
+		 */
+		public KeyIterator(String prefix) {
+			synchronized(SimpleFieldSet.this) {
+				valuesIterator = values.keySet().iterator();
+				if(subsets != null) {
+					subsetIterator = subsets.keySet().iterator();
+				} else {
+					subsetIterator = null;
+				}
+				while(true) {
+					if(valuesIterator != null && valuesIterator.hasNext()) break;
+					if(subsetIterator == null || !subsetIterator.hasNext()) break;
+					String name = subsetIterator.next();
+					if(name == null) continue;
+					SimpleFieldSet fs = subsets.get(name);
+					if(fs == null) continue;
+					String newPrefix = prefix + name + MULTI_LEVEL_CHAR;
+					subIterator = fs.keyIterator(newPrefix);
+					if(subIterator.hasNext()) break;
+					subIterator = null;
+				}
+				this.prefix = prefix;
+			}
+		}
 
 		public boolean hasNext() {
 			synchronized(SimpleFieldSet.this) {
@@ -552,8 +560,9 @@ public class SimpleFieldSet {
 						SimpleFieldSet fs = subsets.get(key);
 						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
 						subIterator = fs.keyIterator(newPrefix);
-					} else
+					} else {
 						return false;
+					}
 				}
 			}
 		}
@@ -561,7 +570,7 @@ public class SimpleFieldSet {
 		public final String next() {
 			return nextKey();
 		}
-		
+
 		public String nextKey() {
 			synchronized(SimpleFieldSet.this) {
 				String ret = null;
@@ -574,9 +583,10 @@ public class SimpleFieldSet {
 						// If we have a retval, and we have a next value, return
 						if(ret != null) return ret;
 						ret = subIterator.next();
-						if(subIterator.hasNext())
+						if(subIterator.hasNext()) {
 							// If we have a retval, and we have a next value, return
 							if(ret != null) return ret;
+						}
 					}
 					// Otherwise, we need to get a new subIterator (or hasNext() will return false)
 					subIterator = null;
@@ -587,8 +597,9 @@ public class SimpleFieldSet {
 						subIterator = fs.keyIterator(newPrefix);
 					} else {
 						// No more subIterator's
-						if(ret == null)
+						if(ret == null) {
 							Logger.error(this, "Returning null from KeyIterator.nextKey() - should never happen!");
+						}
 						return ret;
 					}
 				}
@@ -600,20 +611,23 @@ public class SimpleFieldSet {
 		}
 	}
 
-    /** Tolerant put(); does nothing if fs is empty */
-    public void tput(String key, SimpleFieldSet fs) {
-    	if(fs == null || fs.isEmpty()) return;
-    	put(key, fs);
-    }
-    
+	/** Tolerant put(); does nothing if fs is empty */
+	public void tput(String key, SimpleFieldSet fs) {
+		if(fs == null || fs.isEmpty()) return;
+		put(key, fs);
+	}
+
 	public void put(String key, SimpleFieldSet fs) {
 		if(fs == null) return; // legal no-op, because used everywhere
-		if(fs.isEmpty()) // can't just no-op, because caller might add the FS then populate it...
+		if(fs.isEmpty()) { // can't just no-op, because caller might add the FS then populate it...
 			throw new IllegalArgumentException("Empty");
-		if(subsets == null)
+		}
+		if(subsets == null) {
 			subsets = new HashMap<String, SimpleFieldSet>();
-		if(subsets.containsKey(key))
+		}
+		if(subsets.containsKey(key)) {
 			throw new IllegalArgumentException("Already contains "+key+" but trying to add a SimpleFieldSet!");
+		}
 		if(!shortLived) key = key.intern();
 		subsets.put(key, fs);
 	}
@@ -633,8 +647,9 @@ public class SimpleFieldSet {
 			fs.removeValue(after);
 			if(fs.isEmpty()) {
 				subsets.remove(before);
-				if(subsets.isEmpty())
+				if(subsets.isEmpty()) {
 					subsets = null;
+				}
 			}
 		}
 	}
@@ -664,12 +679,13 @@ public class SimpleFieldSet {
 			fs.removeSubset(after);
 			if(fs.isEmpty()) {
 				subsets.remove(before);
-				if(subsets.isEmpty())
+				if(subsets.isEmpty()) {
 					subsets = null;
+				}
 			}
 		}
 	}
-	
+
 	/** Is this SimpleFieldSet empty? */
 	public synchronized boolean isEmpty() {
 		return values.isEmpty() && (subsets == null || subsets.isEmpty());
@@ -687,7 +703,7 @@ public class SimpleFieldSet {
 		BufferedInputStream bis = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
-		
+
 		try {
 			bis = new BufferedInputStream(is);
 			try {
@@ -700,45 +716,45 @@ public class SimpleFieldSet {
 			br = new BufferedReader(isr);
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);
 			br.close();
-			
+
 			return fs;
 		} finally {
-                        Closer.close(br);
-                        Closer.close(isr);
-                        Closer.close(bis);
-                }
+			Closer.close(br);
+			Closer.close(isr);
+			Closer.close(bis);
+		}
 	}
-	
+
 	public static SimpleFieldSet readFrom(File f, boolean allowMultiple, boolean shortLived) throws IOException {
 		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
 	}
-     
+
 	/** Write to the given OutputStream, close it and flush it. */
-        public void writeTo(OutputStream os) throws IOException {
-            BufferedOutputStream bos = null;
-            OutputStreamWriter osw = null;
-            BufferedWriter bw = null;
-            
-            try {
-                bos = new BufferedOutputStream(os);
-                try {
-                    osw = new OutputStreamWriter(bos, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    Logger.error(SimpleFieldSet.class, "Impossible: " + e, e);
-                    os.close();
-                    return;
-                }
-                bw = new BufferedWriter(osw);
-                writeTo(bw);
-                // close() calls flush() but IGNORES ALL ERRORS!
-                bw.flush();
-                bw.close();
-            }finally {
-                Closer.close(bw);
-                Closer.close(osw);
-                Closer.close(bos);
-            }
-        }
+		public void writeTo(OutputStream os) throws IOException {
+			BufferedOutputStream bos = null;
+			OutputStreamWriter osw = null;
+			BufferedWriter bw = null;
+
+			try {
+				bos = new BufferedOutputStream(os);
+				try {
+					osw = new OutputStreamWriter(bos, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					Logger.error(SimpleFieldSet.class, "Impossible: " + e, e);
+					os.close();
+					return;
+				}
+				bw = new BufferedWriter(osw);
+				writeTo(bw);
+				// close() calls flush() but IGNORES ALL ERRORS!
+				bw.flush();
+				bw.close();
+			} finally {
+				Closer.close(bw);
+				Closer.close(osw);
+				Closer.close(bos);
+			}
+		}
 
 	public int getInt(String key, int def) {
 		String s = get(key);
@@ -779,7 +795,7 @@ public class SimpleFieldSet {
 			throw new FSParseException("Cannot parse "+s+" for integer "+key);
 		}
 	}
-	
+
 	public long getLong(String key, long def) {
 		String s = get(key);
 		if(s == null) return def;
@@ -799,7 +815,7 @@ public class SimpleFieldSet {
 			throw new FSParseException("Cannot parse "+s+" for long "+key);
 		}
 	}
-	
+
 	public short getShort(String key) throws FSParseException {
 		String s = get(key);
 		if(s == null) throw new FSParseException("No key "+key);
@@ -809,7 +825,7 @@ public class SimpleFieldSet {
 			throw new FSParseException("Cannot parse "+s+" for short "+key);
 		}
 	}
-	
+
 	public short getShort(String key, short def) {
 		String s = get(key);
 		if(s == null) return def;
@@ -819,47 +835,51 @@ public class SimpleFieldSet {
 			return def;
 		}
 	}
-	
+
 	public char getChar(String key) throws FSParseException {
 		String s = get(key);
 		if(s == null) throw new FSParseException("No key "+key);
-			if (s.length() == 1)
-				return s.charAt(0);
-			else
-				throw new FSParseException("Cannot parse "+s+" for char "+key);
-	} 
-	
+		if (s.length() == 1) {
+			return s.charAt(0);
+		} else {
+			throw new FSParseException("Cannot parse "+s+" for char "+key);
+		}
+	}
+
 	public char getChar(String key, char def) {
 		String s = get(key);
 		if(s == null) return def;
-			if (s.length() == 1)
-				return s.charAt(0);
-			else
-				return def;
-	} 
+		if (s.length() == 1) {
+			return s.charAt(0);
+		} else {
+			return def;
+		}
+	}
 
 	public boolean getBoolean(String key, boolean def) {
 		return Fields.stringToBool(get(key), def);
 	}
-	
+
 	public boolean getBoolean(String key) throws FSParseException {
 		try {
-		    return Fields.stringToBool(get(key));
+			return Fields.stringToBool(get(key));
 		} catch(NumberFormatException e) {
-		    throw new FSParseException(e);
+			throw new FSParseException(e);
 		}
 	}
 
 	public void put(String key, int[] value) {
 		removeValue(key);
-		for(int v : value)
+		for(int v : value) {
 			putAppend(key, String.valueOf(v));
+		}
 	}
-	
+
 	public void put(String key, double[] value) {
 		removeValue(key);
-		for(double v : value)
+		for(double v : value) {
 			putAppend(key, String.valueOf(v));
+		}
 	}
 
 	public int[] getIntArray(String key) {
@@ -876,7 +896,7 @@ public class SimpleFieldSet {
 		}
 		return ret;
 	}
-	
+
 	public double[] getDoubleArray(String key) {
 		String[] strings = getAll(key);
 		if(strings == null) return null;
@@ -889,7 +909,7 @@ public class SimpleFieldSet {
 				return null;
 			}
 		}
-		
+
 		return ret;
 	}
 
@@ -905,8 +925,9 @@ public class SimpleFieldSet {
 
 	public void removeFrom(ObjectContainer container) {
 		container.delete(values);
-		for(SimpleFieldSet fs : subsets.values())
+		for(SimpleFieldSet fs : subsets.values()) {
 			fs.removeFrom(container);
+		}
 		container.delete(subsets);
 		container.delete(this);
 	}

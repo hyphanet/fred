@@ -12,13 +12,13 @@ public class IntOption extends Option<Integer> {
 	protected final boolean isSize;
 
 	public IntOption(SubConfig conf, String optionName, String defaultValueString, int sortOrder, boolean expert,
-	        boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
+			boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
 		this(conf, optionName, Fields.parseInt(defaultValueString), sortOrder, expert, forceWrite, shortDesc, longDesc,
-		        cb, isSize);
+				cb, isSize);
 	}
-	
+
 	public IntOption(SubConfig conf, String optionName, Integer defaultValue, int sortOrder, boolean expert,
-	        boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
+			boolean forceWrite, String shortDesc, String longDesc, IntCallback cb, boolean isSize) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);
 		this.defaultValue = defaultValue;
 		this.currentValue = defaultValue;

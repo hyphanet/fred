@@ -239,7 +239,7 @@ public class ToadletContextImpl implements ToadletContext {
 		if(mvt == null)
 			mvt = new MultiValueTable<String,String>();
 		if(mimeType != null)
-			if(mimeType.equalsIgnoreCase("text/html")){
+			if("text/html".equalsIgnoreCase(mimeType)){
 				mvt.put("content-type", mimeType+"; charset=UTF-8");
 			}else{
 				mvt.put("content-type", mimeType);
@@ -329,7 +329,7 @@ public class ToadletContextImpl implements ToadletContext {
 				if (firstLine == null) {
 					sock.close();
 					return;
-				} else if (firstLine.equals("")) {
+				} else if ("".equals(firstLine)) {
 					continue;
 				}
 				
@@ -377,7 +377,7 @@ public class ToadletContextImpl implements ToadletContext {
 					headers.put(before, after);
 				}
 				
-				boolean disconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers) || !container.enablePersistentConnections();
+				boolean disconnect = shouldDisconnectAfterHandled("HTTP/1.0".equals(split[2]), headers) || !container.enablePersistentConnections();
 
 				boolean allowPost = container.allowPosts();
 				BucketFactory bf = container.getBucketFactory();
@@ -429,7 +429,7 @@ public class ToadletContextImpl implements ToadletContext {
 						BucketTools.copyFrom(data, is, len);
 					} else {
 						FileUtil.skipFully(is, len);
-						if (method.equals("POST")) {
+						if ("POST".equals(method)) {
 							ctx.sendMethodNotAllowed("POST", true);
 						} else {
 							sendError(sock.getOutputStream(), 403, "Forbidden", "Content not allowed in this configuration", true, null);
@@ -573,10 +573,10 @@ public class ToadletContextImpl implements ToadletContext {
 	private static boolean shouldDisconnectAfterHandled(boolean isHTTP10, MultiValueTable<String,String> headers) {
 		String connection = headers.get("connection");
 		if(connection != null) {
-			if(connection.equalsIgnoreCase("close"))
+			if("close".equalsIgnoreCase(connection))
 				return true;
 			
-			if(connection.equalsIgnoreCase("keep-alive"))
+			if("keep-alive".equalsIgnoreCase(connection))
 				return false;
 		}
 		if(isHTTP10 == true)

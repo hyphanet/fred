@@ -74,17 +74,18 @@ public class ClientGetMessage extends FCPMessage {
 		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		identifier = fs.get("Identifier");
 		allowedMIMETypes = fs.getAll("AllowedMIMETypes");
-		if(identifier == null)
+		if(identifier == null) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
+		}
 		try {
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, e.getMessage(), identifier, global);
 		}
 		String verbosityString = fs.get("Verbosity");
-		if(verbosityString == null)
+		if(verbosityString == null) {
 			verbosity = 0;
-		else {
+		} else {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
@@ -105,36 +106,43 @@ public class ClientGetMessage extends FCPMessage {
 		} else if(returnType == RETURN_TYPE_DISK) {
 			defaultPriority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 			String filename = fs.get("Filename");
-			if(filename == null)
+			if(filename == null) {
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Filename", identifier, global);
+			}
 			diskFile = new File(filename);
 			String tempFilename = fs.get("TempFilename");
-			if(tempFilename == null)
+			if(tempFilename == null) {
 				tempFilename = filename + ".freenet-tmp";
+			}
 			tempFile = new File(tempFilename);
-			if(!diskFile.getAbsoluteFile().getParentFile().equals(tempFile.getAbsoluteFile().getParentFile()))
+			if(!diskFile.getAbsoluteFile().getParentFile().equals(tempFile.getAbsoluteFile().getParentFile())) {
 				throw new MessageInvalidException(ProtocolErrorMessage.FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR, null, identifier, global);
-			if(tempFile.exists())
+			}
+			if(tempFile.exists()) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, "Temp file exists", identifier, global);
-			if(diskFile.exists())
+			}
+			if(diskFile.exists()) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier, global);
+			}
 			try {
 				// Check whether we can create it, so that we return an error early on.
 				// Then delete it, as we have to rename over it anyway (atomic creation of a file does not guarantee
 				// that it won't be replaced with a symlink).
-				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite())))
+				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite()))) {
 					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier, global);
+				}
 				tempFile.delete();
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier, global);
 			}
-		} else
+		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, "Unknown return-type", identifier, global);
+		}
 		String maxSizeString = fs.get("MaxSize");
-		if(maxSizeString == null)
+		if(maxSizeString == null) {
 			// default to unlimited
 			maxSize = Long.MAX_VALUE;
-		else {
+		} else {
 			try {
 				maxSize = Long.parseLong(maxSizeString, 10);
 			} catch (NumberFormatException e) {
@@ -142,10 +150,10 @@ public class ClientGetMessage extends FCPMessage {
 			}
 		}
 		String maxTempSizeString = fs.get("MaxTempSize");
-		if(maxTempSizeString == null)
+		if(maxTempSizeString == null) {
 			// default to unlimited
 			maxTempSize = Long.MAX_VALUE;
-		else {
+		} else {
 			try {
 				maxTempSize = Long.parseLong(maxTempSizeString, 10);
 			} catch (NumberFormatException e) {
@@ -153,10 +161,10 @@ public class ClientGetMessage extends FCPMessage {
 			}
 		}
 		String maxRetriesString = fs.get("MaxRetries");
-		if(maxRetriesString == null)
+		if(maxRetriesString == null) {
 			// default to 0
 			maxRetries = 0;
-		else {
+		} else {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
@@ -172,21 +180,22 @@ public class ClientGetMessage extends FCPMessage {
 		} else {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
-				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
+				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)) {
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier, global);
+				}
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier, global);
 			}
 		}
 		String persistenceString = fs.get("Persistence");
-		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
+		if((persistenceString == null) || "connection".equalsIgnoreCase(persistenceString)) {
 			// Default: persists until connection loss.
 			persistenceType = ClientRequest.PERSIST_CONNECTION;
-		} else if(persistenceString.equalsIgnoreCase("reboot")) {
+		} else if("reboot".equalsIgnoreCase(persistenceString)) {
 			// Reports to client by name; persists over connection loss.
 			// Not saved to disk, so dies on reboot.
 			persistenceType = ClientRequest.PERSIST_REBOOT;
-		} else if(persistenceString.equalsIgnoreCase("forever")) {
+		} else if("forever".equalsIgnoreCase(persistenceString)) {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {
@@ -252,23 +261,29 @@ public class ClientGetMessage extends FCPMessage {
 	}
 	
 	public static short parseReturnType(String string) {
-		if(string == null)
+		if(string == null) {
 			return RETURN_TYPE_DIRECT;
-		if(string.equalsIgnoreCase("direct"))
+		}
+		if("direct".equalsIgnoreCase(string)) {
 			return RETURN_TYPE_DIRECT;
-		if(string.equalsIgnoreCase("none"))
+		}
+		if("none".equalsIgnoreCase(string)) {
 			return RETURN_TYPE_NONE;
-		if(string.equalsIgnoreCase("disk"))
+		}
+		if("disk".equalsIgnoreCase(string)) {
 			return RETURN_TYPE_DISK;
-		if(string.equalsIgnoreCase("chunked"))
+		}
+		if("chunked".equalsIgnoreCase(string)) {
 			return RETURN_TYPE_CHUNKED;
+		}
 		return Short.parseShort(string);
 	}
 
 	public static short parseValidReturnType(String string) {
 		short s = parseReturnType(string);
-		if((s == RETURN_TYPE_DIRECT) || (s == RETURN_TYPE_NONE) || (s == RETURN_TYPE_DISK))
+		if((s == RETURN_TYPE_DIRECT) || (s == RETURN_TYPE_NONE) || (s == RETURN_TYPE_DISK)) {
 			return s;
+		}
 		throw new IllegalArgumentException("Invalid or unsupported return type: "+returnTypeString(s));
 	}
 

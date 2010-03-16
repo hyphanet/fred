@@ -511,9 +511,9 @@ public final class PageMaker {
 
 	/** Create an infobox, attach it to the given parent, and return the content node. */
 	public HTMLNode getInfobox(String category, String header, HTMLNode parent, String title, boolean isUnique) {
-		InfoboxNode node = getInfobox(category, header, title, isUnique);
-		parent.addChild(node.outer);
-		return node.content;
+		InfoboxNode thisNode = getInfobox(category, header, title, isUnique);
+		parent.addChild(thisNode.outer);
+		return thisNode.content;
 	}
 
 	/**

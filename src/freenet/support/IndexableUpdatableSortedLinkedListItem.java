@@ -1,7 +1,7 @@
 package freenet.support;
 
 public interface IndexableUpdatableSortedLinkedListItem<T extends IndexableUpdatableSortedLinkedListItem<T>> extends
-        UpdatableSortedLinkedListItem<T> {
+		UpdatableSortedLinkedListItem<T> {
 
 	public Object indexValue();
 

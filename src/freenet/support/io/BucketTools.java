@@ -46,8 +46,9 @@ public class BucketTools {
 		ByteBuffer buffer = ByteBuffer.allocateDirect(BLOCK_SIZE);
 		while (readChannel.read(buffer) != -1) {
 			buffer.flip();
-			while(buffer.hasRemaining())
+			while(buffer.hasRemaining()) {
 				writeChannel.write(buffer);
+			}
 			buffer.clear();
 		}
 
@@ -126,10 +127,12 @@ public class BucketTools {
 				}
 			}
 		} finally {
-			if (in != null)
+			if (in != null) {
 				in.close();
-			if (out != null)
+			}
+			if (out != null) {
 				out.close();
+			}
 		}
 	}
 
@@ -210,8 +213,9 @@ public class BucketTools {
 
 	public static int toByteArray(Bucket bucket, byte[] output) throws IOException {
 		long size = bucket.size();
-		if(size > output.length)
+		if(size > output.length) {
 			throw new IllegalArgumentException("Data does not fit in provided buffer");
+		}
 		InputStream is = null;
 		try {
 			is = bucket.getInputStream();
@@ -250,16 +254,20 @@ public class BucketTools {
 				byte[] buf = new byte[4096];
 				while ((bytesRead < bucketLength) || (bucketLength == -1)) {
 					int readBytes = is.read(buf);
-					if (readBytes < 0)
+					if (readBytes < 0) {
 						break;
+					}
 					bytesRead += readBytes;
-					if (readBytes > 0)
+					if (readBytes > 0) {
 						md.update(buf, 0, readBytes);
+					}
 				}
-				if ((bytesRead < bucketLength) && (bucketLength > 0))
+				if ((bytesRead < bucketLength) && (bucketLength > 0)) {
 					throw new EOFException();
-				if ((bytesRead != bucketLength) && (bucketLength > 0))
+				}
+				if ((bytesRead != bucketLength) && (bucketLength > 0)) {
 					throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + " on " + data + '!');
+				}
 				byte[] retval = md.digest();
 				return retval;
 			} finally {
@@ -282,12 +290,14 @@ public class BucketTools {
 			while(moved < truncateLength) {
 				// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
 				int bytes = (int) Math.min(buf.length, truncateLength - moved);
-				if(bytes <= 0)
+				if(bytes <= 0) {
 					throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+				}
 				bytes = is.read(buf, 0, bytes);
 				if(bytes <= 0) {
-					if(truncateLength == Long.MAX_VALUE)
+					if(truncateLength == Long.MAX_VALUE) {
 						break;
+					}
 					IOException ioException = new IOException("Could not move required quantity of data in copyTo: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
 					ioException.printStackTrace();
 					throw ioException; 
@@ -312,14 +322,16 @@ public class BucketTools {
 			while(moved < truncateLength) {
 				// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
 				int bytes = (int) Math.min(buf.length, truncateLength - moved);
-				if(bytes <= 0)
+				if(bytes <= 0) {
 					throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+				}
 				bytes = is.read(buf, 0, bytes);
 				if(bytes <= 0) {
-					if(truncateLength == Long.MAX_VALUE)
+					if(truncateLength == Long.MAX_VALUE) {
 						break;
+					}
 					IOException ioException = new IOException("Could not move required quantity of data in copyFrom: "
-					        + bytes + " (moved " + moved + " of " + truncateLength + "): unable to read from " + is);
+							+ bytes + " (moved " + moved + " of " + truncateLength + "): unable to read from " + is);
 					ioException.printStackTrace();
 					throw ioException;
 				}
@@ -355,9 +367,11 @@ public class BucketTools {
 				Logger.error(BucketTools.class, "Asked to free data when splitting a FileBucket ?!?!? Not freeing as this would clobber the split result...");
 			}
 			Bucket[] buckets = ((FileBucket)origData).split(splitSize);
-			if(persistent)
-			for(Bucket bucket : buckets)
-				bucket.storeTo(container);
+			if(persistent) {
+				for(Bucket bucket : buckets) {
+					bucket.storeTo(container);
+				}
+			}
 			return buckets;
 		}
 		if(origData instanceof BucketChainBucket) {
@@ -365,8 +379,9 @@ public class BucketTools {
 			BucketChainBucket data = (BucketChainBucket)origData;
 			if(data.bucketSize == splitSize) {
 				Bucket[] buckets = data.getBuckets();
-				if(freeData)
+				if(freeData) {
 					data.clear();
+				}
 				return buckets;
 			} else {
 				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is "+data.bucketSize+" but mine is "+splitSize+" - we will copy the data, but this suggests a bug", new Exception("debug"));
@@ -376,10 +391,12 @@ public class BucketTools {
 			SegmentedBucketChainBucket data = (SegmentedBucketChainBucket)origData;
 			if(data.bucketSize == splitSize) {
 				Bucket[] buckets = data.getBuckets();
-				if(freeData)
+				if(freeData) {
 					data.clear();
-				if(persistent && freeData)
+				}
+				if(persistent && freeData) {
 					data.removeFrom(container);
+				}
 				// Buckets have already been stored, no need to storeTo().
 				return buckets;
 			} else {
@@ -387,12 +404,14 @@ public class BucketTools {
 			}
 		}
 		long length = origData.size();
-		if(length > ((long)Integer.MAX_VALUE) * splitSize)
+		if(length > ((long)Integer.MAX_VALUE) * splitSize) {
 			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
+		}
 		int bucketCount = (int) (length / splitSize);
 		if(length % splitSize > 0) bucketCount++;
-		if(Logger.shouldLog(Logger.MINOR, BucketTools.class))
+		if(Logger.shouldLog(Logger.MINOR, BucketTools.class)) {
 			Logger.minor(BucketTools.class, "Splitting bucket "+origData+" of size "+length+" into "+bucketCount+" buckets");
+		}
 		Bucket[] buckets = new Bucket[bucketCount];
 		InputStream is = origData.getInputStream();
 		DataInputStream dis = null;
@@ -414,18 +433,22 @@ public class BucketTools {
 				}
 			}
 		} finally {
-			if(dis != null)
+			if(dis != null) {
 				dis.close();
-			else
+			} else {
 				is.close();
+			}
 		}
-		if(freeData)
+		if(freeData) {
 			origData.free();
-		if(persistent && freeData)
+		}
+		if(persistent && freeData) {
 			origData.removeFrom(container);
+		}
 		if(persistent) {
-			for(Bucket bucket : buckets)
+			for(Bucket bucket : buckets) {
 				bucket.storeTo(container);
+			}
 		}
 		return buckets;
 	}
@@ -457,8 +480,9 @@ public class BucketTools {
 			}
 			os.close();
 			os = null;
-			if(b.size() != blockLength)
+			if(b.size() != blockLength) {
 				throw new IllegalStateException("The bucket's size is "+b.size()+" whereas it should be "+blockLength+'!');
+			}
 			return b;
 		} finally { Closer.close(os); }
 	}

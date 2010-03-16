@@ -109,14 +109,14 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		}
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		String persistenceString = fs.get("Persistence");
-		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
+		if((persistenceString == null) || "connection".equalsIgnoreCase(persistenceString)) {
 			// Default: persists until connection loss.
 			persistenceType = ClientRequest.PERSIST_CONNECTION;
-		} else if(persistenceString.equalsIgnoreCase("reboot")) {
+		} else if("reboot".equalsIgnoreCase(persistenceString)) {
 			// Reports to client by name; persists over connection loss.
 			// Not saved to disk, so dies on reboot.
 			persistenceType = ClientRequest.PERSIST_REBOOT;
-		} else if(persistenceString.equalsIgnoreCase("forever")) {
+		} else if("forever".equalsIgnoreCase(persistenceString)) {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
 		} else {

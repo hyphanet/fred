@@ -226,8 +226,9 @@ public abstract class Logger {
 		logger.setDetailedThresholds(detail);
 		FileLoggerHook fh;
 		fh = new FileLoggerHook(System.out, "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", level);
-		if(detail != null)
+		if(detail != null) {
 			fh.setDetailedThresholds(detail);
+		}
 		((LoggerHookChain) logger).addHook(fh);
 		fh.start();
 		return fh;
@@ -441,6 +442,7 @@ public abstract class Logger {
 		LogThresholdCallback ltc = new LogThresholdCallback() {
 			WeakReference<Class<?>> ref = new WeakReference<Class<?>> (clazz);
 
+			@Override
 			public void shouldUpdate() {
 				Class<?> clazz = ref.get();
 				if (clazz == null) {	// class unloaded
@@ -459,8 +461,7 @@ public abstract class Logger {
 				} catch (SecurityException e) {
 				} catch (NoSuchFieldException e) { 
 				} catch (IllegalArgumentException e) {
-                } catch (IllegalAccessException e) {
-                }
+				} catch (IllegalAccessException e) {}
 
 				try {
 					Field logDEBUG_Field = clazz.getDeclaredField("logDEBUG");
@@ -472,11 +473,11 @@ public abstract class Logger {
 				} catch (SecurityException e) {
 				} catch (NoSuchFieldException e) { 
 				} catch (IllegalArgumentException e) {
-                } catch (IllegalAccessException e) {
-                }
+				} catch (IllegalAccessException e) {}
                 
-                if (!done)
-                	Logger.error(this,	"No log level field for " + clazz);
+				if (!done) {
+					Logger.error(this,	"No log level field for " + clazz);
+				}
 			}
 		};
 
@@ -498,8 +499,9 @@ public abstract class Logger {
 	 * are not filtered out by the global logger hook chain's thresholds
 	 * will be passed to this logger. */
 	public synchronized static void globalAddHook(LoggerHook logger2) {
-		if(logger instanceof VoidLogger)
+		if(logger instanceof VoidLogger) {
 			setupChain();
+		}
 		((LoggerHookChain)logger).addHook(logger2);
 	}
 
@@ -539,8 +541,9 @@ public abstract class Logger {
 		else {
 			Logger oldLogger = logger;
 			if(!(oldLogger instanceof VoidLogger)) {
-				if(!(oldLogger instanceof LoggerHook))
+				if(!(oldLogger instanceof LoggerHook)) {
 					throw new IllegalStateException("The old logger is not a VoidLogger and is not a LoggerHook either!");
+				}
 			}
 			setupChain();
 			if(!(oldLogger instanceof VoidLogger)) {

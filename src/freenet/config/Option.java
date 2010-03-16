@@ -24,19 +24,19 @@ public abstract class Option<T> {
 	protected final String longDesc;
 	/** The configCallback associated to the Option */
 	protected final ConfigCallback<T> cb;
-	
+
 	protected T defaultValue;
 	protected T currentValue;
-	
+
 	public static enum DataType {
 		STRING, NUMBER, BOOLEAN, STRING_ARRAY
 	};
-	
+
 	/** Data type : used to make it possible to make user inputs more friendly in FCP apps */
 	final DataType dataType;
-	
+
 	Option(SubConfig config, String name, ConfigCallback<T> cb, int sortOrder, boolean expert, boolean forceWrite,
-	        String shortDesc, String longDesc, DataType dataType) {
+			String shortDesc, String longDesc, DataType dataType) {
 		this.config = config;
 		this.name = name;
 		this.cb = cb;
@@ -57,7 +57,7 @@ public abstract class Option<T> {
 		set(x);
 	}
 
-	protected abstract T parseString(String val) throws InvalidConfigValueException; 
+	protected abstract T parseString(String val) throws InvalidConfigValueException;
 	protected abstract String toString(T val);
 
 	protected final void set(T val) throws InvalidConfigValueException, NodeNeedRestartException {
@@ -69,7 +69,7 @@ public abstract class Option<T> {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Get the current value of the option as a string.
 	 */
@@ -80,7 +80,7 @@ public abstract class Option<T> {
 	/** Set to a value from the config file; this is not passed on to the callback, as we
 	 * expect the client-side initialization to check the value. The callback is not valid
 	 * until the client calls finishedInitialization().
-	 * @throws InvalidConfigValueException 
+	 * @throws InvalidConfigValueException
 	 */
 	public final void setInitialValue(String val) throws InvalidConfigValueException {
 		currentValue = parseString(val);
@@ -92,35 +92,35 @@ public abstract class Option<T> {
 	public void forceUpdate() throws InvalidConfigValueException, NodeNeedRestartException {
 		setValue(getValueString());
 	}
-	
+
 	public String getName(){
 		return name;
 	}
-	
+
 	public String getShortDesc(){
 		return shortDesc;
 	}
-	
+
 	public String getLongDesc(){
 		return longDesc;
 	}
-	
+
 	public boolean isExpert(){
 		return expert;
 	}
-	
+
 	public boolean isForcedWrite(){
 		return forceWrite;
 	}
-	
+
 	public int getSortOrder(){
 		return sortOrder;
 	}
-	
+
 	public DataType getDataType() {
 		return dataType;
 	}
-	
+
 	public String getDataTypeStr() {
 		switch(dataType) {
 		case STRING:
@@ -131,7 +131,8 @@ public abstract class Option<T> {
 			return "boolean";
 		case STRING_ARRAY:
 			return "stringArray";
-		default: return null;
+		default:
+			return null;
 		}
 	}
 
@@ -140,12 +141,13 @@ public abstract class Option<T> {
 	 * it is the value set at startup (possibly the default).
 	 */
 	public final T getValue() {
-		if (config.hasFinishedInitialization())
+		if (config.hasFinishedInitialization()) {
 			return currentValue = cb.get();
-		else
+		} else {
 			return currentValue;
+		}
 	}
-	
+
 	/**
 	 * Is this option set to the default?
 	 */
@@ -161,7 +163,7 @@ public abstract class Option<T> {
 	public final void setDefault() {
 		currentValue = defaultValue;
 	}
-	
+
 	public final String getDefault() {
 		return toString(defaultValue);
 	}

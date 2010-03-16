@@ -15,8 +15,9 @@ public class SortedLongSet {
 	 */
 	public SortedLongSet() {
 		this.data = new long[MIN_SIZE];
-		for(int i=0;i<data.length;i++)
+		for(int i=0;i<data.length;i++) {
 			data[i] = Long.MAX_VALUE;
+		}
 		length = 0;
 	}
 	
@@ -48,10 +49,11 @@ public class SortedLongSet {
 	 */
 	public synchronized boolean contains(long num) {
 		int x = binarySearch(num);
-		if(x >= 0)
+		if(x >= 0) {
 			return true;
-		else
+		} else {
 			return false;
+		}
 	}
 
 	/**
@@ -63,15 +65,17 @@ public class SortedLongSet {
 	public synchronized void remove(long item) {
 		int x = binarySearch(item);
 		if(x >= 0) {
-			if(x < length-1)
+			if(x < length-1) {
 				System.arraycopy(data, x+1, data, x, length-x-1);
+			}
 			data[--length] = Long.MAX_VALUE;
 		}
 		if((length*4 < data.length) && (length > MIN_SIZE)) {
 			long[] newData = new long[Math.max(data.length/2, MIN_SIZE)];
 			System.arraycopy(data, 0, newData, 0, length);
-			for(int i=length;i<newData.length;i++)
+			for(int i=length;i<newData.length;i++) {
 				newData[i] = Long.MAX_VALUE;
+			}
 			data = newData;
 		}
 		
@@ -86,14 +90,17 @@ public class SortedLongSet {
 		for(int i=0;i<length;i++) {
 			long item = data[i];
 			if(i>0) {
-				if(item <= lastItem)
+				if(item <= lastItem) {
 					throw new IllegalStateException("Verify failed!");
+				}
 			}
 			lastItem = item;
 		}
-		for(int i=length;i<data.length;i++)
-			if(data[i] != Long.MAX_VALUE)
+		for(int i=length;i<data.length;i++) {
+			if(data[i] != Long.MAX_VALUE) {
 				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != Long.MAX_VALUE");
+			}
+		}
 		
 		return true;
 	}
@@ -140,8 +147,9 @@ public class SortedLongSet {
 				newData[i] = Long.MAX_VALUE;
 			data = newData;
 		}
-		if(x < length)
+		if(x < length) {
 			System.arraycopy(data, x, data, x+1, length-x);
+		}
 		data[x] = num;
 		length++;
 		

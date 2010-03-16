@@ -512,7 +512,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					if(!decompressors.isEmpty()) out = null;
 					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, out);
 				} catch (IOException e) {
-					if(e.getMessage().equals("Not in GZIP format") && count == 1) {
+					if("Not in GZIP format".equals(e.getMessage()) && count == 1) {
 						Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);
 						break;
 					}

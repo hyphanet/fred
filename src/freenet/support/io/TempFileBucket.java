@@ -55,10 +55,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		//System.err.println("FProxyServlet.TempFileBucket -- created: " +
 		//         f.getAbsolutePath());
 		synchronized(this) {
-			if (logDebug)
+			if (logDebug) {
 				Logger.debug(
 					this,
 					"Initializing TempFileBucket(" + getFile()+" deleteOnExit="+deleteOnExit);
+			}
 		}
 	}
 

@@ -17,7 +17,7 @@ import freenet.support.api.BucketFactory;
  * A request to upload a file to a manifest.
  * A ClientPutComplexDir will contain many of these.
  */
-abstract class DirPutFile {
+abstract public class DirPutFile {
 
 	final String name;
 	ClientMetadata meta;
@@ -44,11 +44,11 @@ abstract class DirPutFile {
 	 */
 	public static DirPutFile create(SimpleFieldSet subset, String identifier, boolean global, BucketFactory bf) throws MessageInvalidException {
 		String type = subset.get("UploadFrom");
-		if((type == null) || type.equalsIgnoreCase("direct")) {
+		if((type == null) || "direct".equalsIgnoreCase(type)) {
 			return new DirectDirPutFile(subset, identifier, global, bf);
-		} else if(type.equalsIgnoreCase("disk")) {
+		} else if("disk".equalsIgnoreCase(type)) {
 			return new DiskDirPutFile(subset, identifier, global);
-		} else if(type.equalsIgnoreCase("redirect")) {
+		} else if("redirect".equalsIgnoreCase(type)) {
 			return new RedirectDirPutFile(subset, identifier, global);
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier, global);

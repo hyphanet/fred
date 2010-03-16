@@ -127,26 +127,30 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		box[1][7] = 1;
 		for (i = 2; i < 256; i++) {
 			j = alog[255 - log[i]];
-			for (t = 0; t < 8; t++)
+			for (t = 0; t < 8; t++) {
 				box[i][t] = (byte)((j >>> (7 - t)) & 0x01);
+			}
 		}
 		//
 		// affine transform:  box[i] <- B + A*box[i]
 		//
 		byte[][] cox = new byte[256][8];
-		for (i = 0; i < 256; i++)
+		for (i = 0; i < 256; i++) {
 			for (t = 0; t < 8; t++) {
 				cox[i][t] = B[t];
-				for (j = 0; j < 8; j++)
+				for (j = 0; j < 8; j++) {
 					cox[i][t] ^= A[t][j] * box[i][j];
+				}
 			}
+		}
 		//
 		// S-boxes and inverse S-boxes
 		//
 		for (i = 0; i < 256; i++) {
 			S[i] = (byte)(cox[i][0] << 7);
-			for (t = 1; t < 8; t++)
+			for (t = 1; t < 8; t++) {
 				S[i] ^= cox[i][t] << (7-t);
+			}
 			Si[S[i] & 0xFF] = (byte) i;
 		}
 		//
@@ -169,11 +173,12 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			pivot = AA[i][i];
 			if (pivot == 0) {
 				t = i + 1;
-				while ((AA[t][i] == 0) && (t < 4))
+				while ((AA[t][i] == 0) && (t < 4)) {
 					t++;
-				if (t == 4)
+				}
+				if (t == 4) {
 					throw new RuntimeException("G matrix is not invertible");
-				else {
+				} else {
 					for (j = 0; j < 8; j++) {
 						tmp = AA[i][j];
 						AA[i][j] = AA[t][j];
@@ -182,19 +187,26 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 					pivot = AA[i][i];
 				}
 			}
-			for (j = 0; j < 8; j++)
-				if (AA[i][j] != 0)
+			for (j = 0; j < 8; j++) {
+				if (AA[i][j] != 0) {
 					AA[i][j] = (byte)
 					alog[(255 + log[AA[i][j] & 0xFF] - log[pivot & 0xFF]) % 255];
-			for (t = 0; t < 4; t++)
+				}
+			}
+			for (t = 0; t < 4; t++) {
 				if (i != t) {
-					for (j = i+1; j < 8; j++)
+					for (j = i+1; j < 8; j++) {
 						AA[t][j] ^= mul(AA[i][j], AA[t][i]);
+					}
 					AA[t][i] = 0;
 				}
+			}
 		}
-		for (i = 0; i < 4; i++)
-			for (j = 0; j < 4; j++) iG[i][j] = AA[i][j + 4];
+		for (i = 0; i < 4; i++) {
+			for (j = 0; j < 4; j++) {
+				iG[i][j] = AA[i][j + 4];
+			}
+		}
 
 		int s;
 		for (t = 0; t < 256; t++) {
@@ -220,7 +232,9 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		//
 		rcon[0] = 1;
 		int r = 1;
-		for (t = 1; t < 30; ) rcon[t++] = (byte)(r = mul(2, r));
+		for (t = 1; t < 30; ) {
+			rcon[t++] = (byte)(r = mul(2, r));
+		}
 
 		time = System.currentTimeMillis() - time;
 
@@ -330,27 +344,27 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		int a0, a1, a2, a3;
 		for (int r = 1; r < ROUNDS; r++) {          // apply round transforms
 			Ker = Ke[r];
-		a0   = (T1[(t0 >>> 24) & 0xFF] ^
-				T2[(t1 >>> 16) & 0xFF] ^
-				T3[(t2 >>>  8) & 0xFF] ^
-				T4[ t3         & 0xFF]  ) ^ Ker[0];
-		a1   = (T1[(t1 >>> 24) & 0xFF] ^
-				T2[(t2 >>> 16) & 0xFF] ^
-				T3[(t3 >>>  8) & 0xFF] ^
-				T4[ t0         & 0xFF]  ) ^ Ker[1];
-		a2   = (T1[(t2 >>> 24) & 0xFF] ^
-				T2[(t3 >>> 16) & 0xFF] ^
-				T3[(t0 >>>  8) & 0xFF] ^
-				T4[ t1         & 0xFF]  ) ^ Ker[2];
-		a3   = (T1[(t3 >>> 24) & 0xFF] ^
-				T2[(t0 >>> 16) & 0xFF] ^
-				T3[(t1 >>>  8) & 0xFF] ^
-				T4[ t2         & 0xFF]  ) ^ Ker[3];
-		t0 = a0;
-		t1 = a1;
-		t2 = a2;
-		t3 = a3;
-		if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+			a0   = (T1[(t0 >>> 24) & 0xFF] ^
+					T2[(t1 >>> 16) & 0xFF] ^
+					T3[(t2 >>>  8) & 0xFF] ^
+					T4[ t3         & 0xFF]  ) ^ Ker[0];
+			a1   = (T1[(t1 >>> 24) & 0xFF] ^
+					T2[(t2 >>> 16) & 0xFF] ^
+					T3[(t3 >>>  8) & 0xFF] ^
+					T4[ t0         & 0xFF]  ) ^ Ker[1];
+			a2   = (T1[(t2 >>> 24) & 0xFF] ^
+					T2[(t3 >>> 16) & 0xFF] ^
+					T3[(t0 >>>  8) & 0xFF] ^
+					T4[ t1         & 0xFF]  ) ^ Ker[2];
+			a3   = (T1[(t3 >>> 24) & 0xFF] ^
+					T2[(t0 >>> 16) & 0xFF] ^
+					T3[(t1 >>>  8) & 0xFF] ^
+					T4[ t2         & 0xFF]  ) ^ Ker[3];
+			t0 = a0;
+			t1 = a1;
+			t2 = a2;
+			t3 = a3;
+			if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
 		}
 
 		// last round is special
@@ -419,27 +433,27 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		int a0, a1, a2, a3;
 		for (int r = 1; r < ROUNDS; r++) {          // apply round transforms
 			Kdr = Kd[r];
-		a0   = (T5[(t0 >>> 24) & 0xFF] ^
-				T6[(t3 >>> 16) & 0xFF] ^
-				T7[(t2 >>>  8) & 0xFF] ^
-				T8[ t1         & 0xFF]  ) ^ Kdr[0];
-		a1   = (T5[(t1 >>> 24) & 0xFF] ^
-				T6[(t0 >>> 16) & 0xFF] ^
-				T7[(t3 >>>  8) & 0xFF] ^
-				T8[ t2         & 0xFF]  ) ^ Kdr[1];
-		a2   = (T5[(t2 >>> 24) & 0xFF] ^
-				T6[(t1 >>> 16) & 0xFF] ^
-				T7[(t0 >>>  8) & 0xFF] ^
-				T8[ t3         & 0xFF]  ) ^ Kdr[2];
-		a3   = (T5[(t3 >>> 24) & 0xFF] ^
-				T6[(t2 >>> 16) & 0xFF] ^
-				T7[(t1 >>>  8) & 0xFF] ^
-				T8[ t0         & 0xFF]  ) ^ Kdr[3];
-		t0 = a0;
-		t1 = a1;
-		t2 = a2;
-		t3 = a3;
-		if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+			a0   = (T5[(t0 >>> 24) & 0xFF] ^
+					T6[(t3 >>> 16) & 0xFF] ^
+					T7[(t2 >>>  8) & 0xFF] ^
+					T8[ t1         & 0xFF]  ) ^ Kdr[0];
+			a1   = (T5[(t1 >>> 24) & 0xFF] ^
+					T6[(t0 >>> 16) & 0xFF] ^
+					T7[(t3 >>>  8) & 0xFF] ^
+					T8[ t2         & 0xFF]  ) ^ Kdr[1];
+			a2   = (T5[(t2 >>> 24) & 0xFF] ^
+					T6[(t1 >>> 16) & 0xFF] ^
+					T7[(t0 >>>  8) & 0xFF] ^
+					T8[ t3         & 0xFF]  ) ^ Kdr[2];
+			a3   = (T5[(t3 >>> 24) & 0xFF] ^
+					T6[(t2 >>> 16) & 0xFF] ^
+					T7[(t1 >>>  8) & 0xFF] ^
+					T8[ t0         & 0xFF]  ) ^ Kdr[3];
+			t0 = a0;
+			t1 = a1;
+			t2 = a2;
+			t3 = a3;
+			if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
 		}
 
 		// last round is special
@@ -505,10 +519,12 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	final static synchronized Object makeKey(byte[] k, int blockSize)
 	throws InvalidKeyException {
 		if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+ ')');
-		if (k == null)
+		if (k == null) {
 			throw new InvalidKeyException("Empty key");
-		if (!((k.length == 16) || (k.length == 24) || (k.length == 32)))
+		}
+		if (!((k.length == 16) || (k.length == 24) || (k.length == 32))) {
 			throw new InvalidKeyException("Incorrect key length");
+		}
 		int ROUNDS = getRounds(k.length, blockSize);
 		int BC = blockSize / 4;
 		int[][] Ke = new int[ROUNDS + 1][BC]; // encryption round keys
@@ -519,11 +535,12 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		int i, j;
 
 		// copy user material bytes into temporary ints
-		for (i = 0, j = 0; i < KC; )
+		for (i = 0, j = 0; i < KC; ) {
 			tk[i++] = (k[j++] & 0xFF) << 24 |
 			(k[j++] & 0xFF) << 16 |
 			(k[j++] & 0xFF) <<  8 |
 			(k[j++] & 0xFF);
+		}
 		// copy values into round key arrays
 		int t = 0;
 		for (j = 0; (j < KC) && (t < ROUND_KEY_COUNT); j++, t++) {
@@ -539,7 +556,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			(S[ tt         & 0xFF] & 0xFF) <<  8 ^
 			(S[(tt >>> 24) & 0xFF] & 0xFF)       ^
 			(rcon[rconpointer++]   & 0xFF) << 24;
-			if (KC != 8)
+			if (KC != 8) {
 				for (i = 1, j = 0; i < KC; ) {
 					//tk[i++] ^= tk[j++];
 					// The above line replaced with the code below in order to work around
@@ -547,7 +564,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 					tk[i] ^= tk[j++];
 					i++;
 				}
-			else {
+			} else {
 				for (i = 1, j = 0; i < KC / 2; ) {
 					//tk[i++] ^= tk[j++];
 					// The above line replaced with the code below in order to work around
@@ -574,7 +591,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 				Kd[ROUNDS - (t / BC)][t % BC] = tk[j];
 			}
 		}
-		for (int r = 1; r < ROUNDS; r++)    // inverse MixColumn where needed
+		for (int r = 1; r < ROUNDS; r++) {    // inverse MixColumn where needed
 			for (j = 0; j < BC; j++) {
 				tt = Kd[r][j];
 				Kd[r][j] = U1[(tt >>> 24) & 0xFF] ^
@@ -582,6 +599,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 				U3[(tt >>>  8) & 0xFF] ^
 				U4[ tt         & 0xFF];
 			}
+		}
 		// assemble the encryption (Ke) and decryption (Kd) round keys into
 		// one sessionKey object
 		Object[] sessionKey = new Object[] {Ke, Kd};
@@ -641,17 +659,19 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		int i;
 		int j = 0, tt;
 
-		for (i = 0; i < BC; i++)                   // plaintext to ints + key
-		t[i] = ((in[inOffset++] & 0xFF) << 24 |
-				(in[inOffset++] & 0xFF) << 16 |
-				(in[inOffset++] & 0xFF) <<  8 |
-				(in[inOffset++] & 0xFF)        ) ^ Ke[0][i];
+		for (i = 0; i < BC; i++) {                   // plaintext to ints + key
+			t[i] = ((in[inOffset++] & 0xFF) << 24 |
+					(in[inOffset++] & 0xFF) << 16 |
+					(in[inOffset++] & 0xFF) <<  8 |
+					(in[inOffset++] & 0xFF)        ) ^ Ke[0][i];
+			}
 		for (int r = 1; r < ROUNDS; r++) {          // apply round transforms
-			for (i = 0; i < BC; i++)
+			for (i = 0; i < BC; i++) {
 				a[i] = (T1[(t[ i           ] >>> 24) & 0xFF] ^
 						T2[(t[(i + s1) % BC] >>> 16) & 0xFF] ^
 						T3[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
 						T4[ t[(i + s3) % BC]         & 0xFF]  ) ^ Ke[r][i];
+			}
 			System.arraycopy(a, 0, t, 0, BC);
 			if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+ '=' +toString(t));
 		}
@@ -700,17 +720,19 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 		int i;
 		int j = 0, tt;
 
-		for (i = 0; i < BC; i++)                   // ciphertext to ints + key
+		for (i = 0; i < BC; i++) {                   // ciphertext to ints + key
 			t[i] = ((in[inOffset++] & 0xFF) << 24 |
 					(in[inOffset++] & 0xFF) << 16 |
 					(in[inOffset++] & 0xFF) <<  8 |
 					(in[inOffset++] & 0xFF)        ) ^ Kd[0][i];
+		}
 		for (int r = 1; r < ROUNDS; r++) {          // apply round transforms
-			for (i = 0; i < BC; i++)
+			for (i = 0; i < BC; i++) {
 				a[i] = (T5[(t[ i           ] >>> 24) & 0xFF] ^
 						T6[(t[(i + s1) % BC] >>> 16) & 0xFF] ^
 						T7[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
 						T8[ t[(i + s3) % BC]         & 0xFF]  ) ^ Kd[r][i];
+			}
 			System.arraycopy(a, 0, t, 0, BC);
 			if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+ '=' +toString(t));
 		}
@@ -737,10 +759,12 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			byte[] pt = new byte[BLOCK_SIZE];
 			int i;
 
-			for (i = 0; i < keysize; i++)
+			for (i = 0; i < keysize; i++) {
 				kb[i] = (byte) i;
-			for (i = 0; i < BLOCK_SIZE; i++)
+			}
+			for (i = 0; i < BLOCK_SIZE; i++) {
 				pt[i] = (byte) i;
+			}
 
 			if (RDEBUG && (debuglevel > 6)) {
 				System.out.println("==========");
@@ -768,8 +792,9 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 			blockDecrypt(ct, cpt, 0, key, BLOCK_SIZE);
 
 			ok = areEqual(pt, cpt);
-			if (!ok)
+			if (!ok) {
 				throw new RuntimeException("Symmetric operation failed");
+			}
 		}
 		catch (Exception x) {
 			if (RDEBUG && (debuglevel > 0)) {
@@ -812,11 +837,13 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 */
 	private static final boolean areEqual (byte[] a, byte[] b) {
 		int aLength = a.length;
-		if (aLength != b.length)
+		if (aLength != b.length) {
 			return false;
+		}
 		for (int i = 0; i < aLength; i++)
-			if (a[i] != b[i])
+			if (a[i] != b[i]) {
 				return false;
+			}
 		return true;
 	}
 

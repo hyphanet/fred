@@ -403,7 +403,7 @@ span.peer_disconnected {
 }
 
 span.peer_routing_disabled {
-        color: #7b68ee;
+	color: #7b68ee;
 }
 
 span.peer_never_connected {

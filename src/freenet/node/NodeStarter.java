@@ -85,8 +85,9 @@ public class NodeStarter implements WrapperListener {
 		if(args.length == 0) {
 			System.out.println("Using default config filename freenet.ini");
 			configFilename = new File("freenet.ini");
-		} else
+		} else {
 			configFilename = new File(args[0]);
+		}
 
 		// set Java's DNS cache not to cache forever, since many people
 		// use dyndns hostnames
@@ -247,8 +248,9 @@ public class NodeStarter implements WrapperListener {
 			//  handle the event ourselves.
 			if((event == WrapperManager.WRAPPER_CTRL_C_EVENT) ||
 				(event == WrapperManager.WRAPPER_CTRL_CLOSE_EVENT) ||
-				(event == WrapperManager.WRAPPER_CTRL_SHUTDOWN_EVENT))
+				(event == WrapperManager.WRAPPER_CTRL_SHUTDOWN_EVENT)) {
 				WrapperManager.stop(0);
+			}
 	}
 
 	/*---------------------------------------------------------------
@@ -380,8 +382,9 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.includeLocalAddressesInNoderefs", true);
 		configFS.put("node.enableARKs", false);
 		configFS.put("node.load.threadLimit", threadLimit);
-		if(ramStore)
+		if(ramStore) {
 			configFS.putSingle("node.storeType", "ram");
+		}
 		configFS.put("node.storeSize", storeSize);
 		configFS.put("node.disableHangCheckers", true);
 		configFS.put("node.enableSwapping", enableSwapping);
@@ -400,8 +403,9 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.opennet.connectToSeednodes", connectToSeednodes);
 		configFS.put("node.encryptTempBuckets", false);
 		configFS.put("node.encryptPersistentTempBuckets", false);
-		if(ipAddressOverride != null)
+		if(ipAddressOverride != null) {
 			configFS.putSingle("node.ipAddressOverride", ipAddressOverride);
+		}
 		if(longPingTimes) {
 			configFS.put("node.maxPingTime", 100000);
 			configFS.put("node.subMaxPingTime", 50000);

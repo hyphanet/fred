@@ -22,42 +22,10 @@ public abstract class Fields {
 	 * optimize numberList().
 	 */
 	private final static char[] digits = {
-		'0',
-		'1',
-		'2',
-		'3',
-		'4',
-		'5',
-		'6',
-		'7',
-		'8',
-		'9',
-		'a',
-		'b',
-		'c',
-		'd',
-		'e',
-		'f',
-		'g',
-		'h',
-		'i',
-		'j',
-		'k',
-		'l',
-		'm',
-		'n',
-		'o',
-		'p',
-		'q',
-		'r',
-		's',
-		't',
-		'u',
-		'v',
-		'w',
-		'x',
-		'y',
-		'z'
+		'0', '1', '2', '3', '4', '5', '6', '7', '8',
+		'9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+		'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q',
+		'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'
 	};
 	private static final long[] MULTIPLES = {
 		1000, 1l << 10,
@@ -90,15 +58,17 @@ public abstract class Fields {
 	public static final long hexToLong(String hex)
 		throws NumberFormatException {
 		int len = hex.length();
-		if(len > 16)
+		if(len > 16) {
 			throw new NumberFormatException();
+		}
 
 		long l = 0;
 		for(int i = 0; i < len; i++) {
 			l <<= 4;
 			int c = Character.digit(hex.charAt(i), 16);
-			if(c < 0)
+			if(c < 0) {
 				throw new NumberFormatException();
+			}
 			l |= c;
 		}
 		return l;
@@ -122,15 +92,17 @@ public abstract class Fields {
 	 */
 	public static final int hexToInt(String hex) throws NumberFormatException {
 		int len = hex.length();
-		if(len > 16)
+		if(len > 16) {
 			throw new NumberFormatException();
+		}
 
 		int l = 0;
 		for(int i = 0; i < len; i++) {
 			l <<= 4;
 			int c = Character.digit(hex.charAt(i), 16);
-			if(c < 0)
+			if(c < 0) {
 				throw new NumberFormatException();
+			}
 			l |= c;
 		}
 		return l;
@@ -151,9 +123,10 @@ public abstract class Fields {
 	 */
 	/* wooo, rocket science! (this is purely abstraction people) */
 	public static final boolean stringToBool(String s, boolean def) {
-		if(s == null)
+		if(s == null) {
 			return def;
-		return (def ? !s.equalsIgnoreCase("false") : s.equalsIgnoreCase("true"));
+		}
+		return (def ? !"false".equalsIgnoreCase(s) : "true".equalsIgnoreCase(s));
 	}
 
 	/**
@@ -162,12 +135,15 @@ public abstract class Fields {
 	 * @return
 	 */
 	public static boolean stringToBool(String s) throws NumberFormatException {
-		if(s == null)
+		if(s == null) {
 			throw new NumberFormatException("Null");
-		if(s.equalsIgnoreCase("false") || s.equalsIgnoreCase("no"))
+		}
+		if("false".equalsIgnoreCase(s) || "no".equalsIgnoreCase(s)) {
 			return false;
-		if(s.equalsIgnoreCase("true") || s.equalsIgnoreCase("yes"))
+		}
+		if("true".equalsIgnoreCase(s) || "yes".equalsIgnoreCase(s)) {
 			return true;
+		}
 		throw new NumberFormatException("Invalid boolean: " + s);
 	}
 
@@ -183,8 +159,9 @@ public abstract class Fields {
 	}
 
 	public static final String[] commaList(String ls) {
-		if(ls == null)
+		if(ls == null) {
 			return null;
+		}
 		StringTokenizer st = new StringTokenizer(ls, ",");
 		String[] r = new String[st.countTokens()];
 		for(int i = 0; i < r.length; i++) {
@@ -201,8 +178,9 @@ public abstract class Fields {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < ls.length; i++) {
 			sb.append(ls[i]);
-			if(i != ls.length - 1)
+			if(i != ls.length - 1) {
 				sb.append(ch);
+			}
 		}
 		return sb.toString();
 	}
@@ -231,8 +209,9 @@ public abstract class Fields {
 			} while(l != 0);
 
 			listBuf.append(numberBuf, charPos, (64 - charPos));
-			if(i != ls.length - 1)
+			if(i != ls.length - 1) {
 				listBuf.append(',');
+			}
 		}
 		return listBuf.toString();
 	}
@@ -248,43 +227,46 @@ public abstract class Fields {
 	public static final long dateTime(String date)
 		throws NumberFormatException {
 
-		if(date.length() == 0)
+		if(date.length() == 0) {
 			throw new NumberFormatException("Date time empty");
+		}
 
 		if((date.charAt(0) == '-') || (date.charAt(0) == '+')) {
 			// Relative date
 			StringBuilder sb = new StringBuilder(10);
 			for(int x = 1; x < date.length(); x++) {
 				char c = date.charAt(x);
-				if(Character.isDigit(c))
+				if(Character.isDigit(c)) {
 					sb.append(c);
-				else
+				} else {
 					break;
+				}
 			}
 			int num = Integer.parseInt(sb.toString());
 			int chop = 1 + sb.length();
 			int deltaType = 0;
-			if(date.length() == chop)
+			if(date.length() == chop) {
 				deltaType = Calendar.DAY_OF_YEAR;
-			else {
+			} else {
 				String deltaTypeString = date.substring(chop).toLowerCase();
-				if(deltaTypeString.equals("y") || deltaTypeString.equals("year"))
+				if(deltaTypeString.startsWith("y")) {
 					deltaType = Calendar.YEAR;
-				else if(deltaTypeString.equals("month") || deltaTypeString.equals("mo"))
+				} else if(deltaTypeString.startsWith("mo")) {
 					deltaType = Calendar.MONTH;
-				else if(deltaTypeString.equals("week") || deltaTypeString.equals("w"))
+				} else if(deltaTypeString.startsWith("w")) {
 					deltaType = Calendar.WEEK_OF_YEAR;
-				else if(deltaTypeString.equals("day") || deltaTypeString.equals("d"))
+				} else if(deltaTypeString.startsWith("d")) {
 					deltaType = Calendar.DAY_OF_YEAR;
-				else if(deltaTypeString.equals("hour") || deltaTypeString.equals("h"))
+				} else if(deltaTypeString.startsWith("h")) {
 					deltaType = Calendar.HOUR;
-				else if(deltaTypeString.equals("minute") || deltaTypeString.equals("min"))
+				} else if(deltaTypeString.startsWith("mi")) {
 					deltaType = Calendar.MINUTE;
-				else if(deltaTypeString.equals("second") || deltaTypeString.equals("s") || deltaTypeString.equals("sec"))
+				} else if(deltaTypeString.startsWith("s")) {
 					deltaType = Calendar.SECOND;
-				else
+				} else {
 					throw new NumberFormatException(
 						"unknown time/date delta type: " + deltaTypeString);
+				}
 				GregorianCalendar gc = new GregorianCalendar();
 				gc.add(deltaType, (date.charAt(0) == '+') ? num : -num);
 				return gc.getTime().getTime();
@@ -293,9 +275,10 @@ public abstract class Fields {
 
 		int dash = date.indexOf('-');
 
-		if(!((dash == -1) && (date.length() == 8)) && !((dash == 8) && (date.length() == 17)))
+		if(!((dash == -1) && (date.length() == 8)) && !((dash == 8) && (date.length() == 17))) {
 			throw new NumberFormatException(
 				"Date time: " + date + " not correct.");
+		}
 		int year = Integer.parseInt(date.substring(0, 4));
 		int month = Integer.parseInt(date.substring(4, 6));
 		int day = Integer.parseInt(date.substring(6, 8));
@@ -330,8 +313,9 @@ public abstract class Fields {
 		//String dateString = f.format(c.getTime());
 		String dateString = f.format(new Date(time * 1000));
 
-		if(dateString.endsWith("-00:00:00"))
+		if(dateString.endsWith("-00:00:00")) {
 			dateString = dateString.substring(0, 8);
+		}
 
 		return dateString;
 	}
@@ -339,14 +323,15 @@ public abstract class Fields {
 	public static final int compareBytes(byte[] b1, byte[] b2) {
 		int len = Math.max(b1.length, b2.length);
 		for(int i = 0; i < len; ++i) {
-			if(i == b1.length)
+			if(i == b1.length) {
 				return i == b2.length ? 0 : -1;
-			else if(i == b2.length)
+			} else if(i == b2.length) {
 				return 1;
-			else if((0xff & b1[i]) > (0xff & b2[i]))
+			} else if((0xff & b1[i]) > (0xff & b2[i])) {
 				return 1;
-			else if((0xff & b1[i]) < (0xff & b2[i]))
+			} else if((0xff & b1[i]) < (0xff & b2[i])) {
 				return -1;
+			}
 		}
 		return 0;
 	}
@@ -358,24 +343,28 @@ public abstract class Fields {
 		int boff,
 		int len) {
 		for(int i = 0; i < len; ++i) {
-			if(i + aoff == a.length)
+			if(i + aoff == a.length) {
 				return i + boff == b.length ? 0 : -1;
-			else if(i + boff == b.length)
+			} else if(i + boff == b.length) {
 				return 1;
-			else if((0xff & a[i + aoff]) > (0xff & b[i + boff]))
+			} else if((0xff & a[i + aoff]) > (0xff & b[i + boff])) {
 				return 1;
-			else if((0xff & a[i + aoff]) < (0xff & b[i + boff]))
+			} else if((0xff & a[i + aoff]) < (0xff & b[i + boff])) {
 				return -1;
+			}
 		}
 		return 0;
 	}
 
 	public static final boolean byteArrayEqual(byte[] a, byte[] b) {
-		if(a.length != b.length)
+		if(a.length != b.length) {
 			return false;
-		for(int i = 0; i < a.length; ++i)
-			if(a[i] != b[i])
+		}
+		for(int i = 0; i < a.length; ++i) {
+			if(a[i] != b[i]) {
 				return false;
+			}
+		}
 		return true;
 	}
 
@@ -385,11 +374,14 @@ public abstract class Fields {
 		int aoff,
 		int boff,
 		int len) {
-		if((a.length < aoff + len) || (b.length < boff + len))
+		if((a.length < aoff + len) || (b.length < boff + len)) {
 			return false;
-		for(int i = 0; i < len; ++i)
-			if(a[i + aoff] != b[i + boff])
+		}
+		for(int i = 0; i < len; ++i) {
+			if(a[i + aoff] != b[i + boff]) {
 				return false;
+			}
+		}
 		return true;
 	}
 
@@ -451,8 +443,9 @@ public abstract class Fields {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < addr.length; i++) {
 			sb.append(addr[i]);
-			if(i != addr.length - 1)
+			if(i != addr.length - 1) {
 				sb.append(comma);
+			}
 		}
 		return sb.toString();
 	}
@@ -488,8 +481,9 @@ public abstract class Fields {
 	 * @return
 	 */
 	public static long[] bytesToLongs(byte[] buf, int offset, int length) {
-		if(length % 8 != 0)
+		if(length % 8 != 0) {
 			throw new IllegalArgumentException();
+		}
 		long[] longs = new long[length / 8];
 		for(int i = 0; i < longs.length; i++) {
 			long x = 0;
@@ -513,8 +507,9 @@ public abstract class Fields {
 	 * Convert an array of bytes to a single long.
 	 */
 	public static long bytesToLong(byte[] buf, int offset) {
-		if(buf.length < 8 + offset)
+		if(buf.length < 8 + offset) {
 			throw new IllegalArgumentException();
+		}
 		long x = 0;
 		for(int j = 7; j >= 0; j--) {
 			long y = (buf[j + offset] & 0xff);
@@ -527,8 +522,9 @@ public abstract class Fields {
 	 * Convert an array of bytes to a single int.
 	 */
 	public static int bytesToInt(byte[] buf, int offset) {
-		if(buf.length < 4)
+		if(buf.length < 4) {
 			throw new IllegalArgumentException();
+		}
 		int x = 0;
 		for(int j = 3; j >= 0; j--) {
 			int y = (buf[j + offset] & 0xff);
@@ -538,8 +534,9 @@ public abstract class Fields {
 	}
 
 	public static int[] bytesToInts(byte[] buf, int offset, int length) {
-		if(length % 4 != 0)
+		if(length % 4 != 0) {
 			throw new IllegalArgumentException();
+		}
 		int[] ints = new int[length / 4];
 		for(int i = 0; i < ints.length; i++) {
 			int x = 0;
@@ -677,12 +674,14 @@ public abstract class Fields {
 			String multiplier = s.substring(0, x + 1).trim();
 			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
 				res *= Double.parseDouble(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+				if(Logger.shouldLog(Logger.MINOR, Fields.class)) {
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as double: " + res);
+				}
 			} else {
 				res *= Long.parseLong(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+				if(Logger.shouldLog(Logger.MINOR, Fields.class)) {
 					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as long: " + res);
+				}
 			}
 		} catch(ArithmeticException e) {
 			res = Long.MAX_VALUE;
@@ -694,14 +693,16 @@ public abstract class Fields {
 	public static String longToString(long val, boolean isSize) {
 		String ret = Long.toString(val);
 
-		if(val <= 0)
+		if(val <= 0) {
 			return ret;
+		}
 
 		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
 			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0 && (isSize || MULTIPLES[i] % 1000 == 0)) {
 				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
-				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i])) {
 					ret += "iB";
+				}
 				break;
 			}
 		}
@@ -711,14 +712,16 @@ public abstract class Fields {
 	public static String intToString(int val, boolean isSize) {
 		String ret = Integer.toString(val);
 
-		if(val <= 0)
+		if(val <= 0) {
 			return ret;
+		}
 
 		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
 			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0 && (isSize || MULTIPLES[i] % 1000 == 0)) {
 				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
-				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i])) {
 					ret += "iB";
+				}
 				break;
 			}
 		}
@@ -728,14 +731,16 @@ public abstract class Fields {
 	public static String shortToString(short val, boolean isSize) {
 		String ret = Short.toString(val);
 
-		if(val <= 0)
+		if(val <= 0) {
 			return ret;
+		}
 
 		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
 			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0 && (isSize || MULTIPLES[i] % 1000 == 0)) {
 				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
-				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i])) {
 					ret += "iB";
+				}
 				break;
 			}
 		}
@@ -745,15 +750,17 @@ public abstract class Fields {
 	public static double[] bytesToDoubles(byte[] data, int offset, int length) {
 		long[] longs = bytesToLongs(data, offset, length);
 		double[] doubles = new double[longs.length];
-		for(int i = 0; i < longs.length; i++)
+		for(int i = 0; i < longs.length; i++) {
 			doubles[i] = Double.longBitsToDouble(longs[i]);
+		}
 		return doubles;
 	}
 
 	public static byte[] doublesToBytes(double[] doubles) {
 		long[] longs = new long[doubles.length];
-		for(int i = 0; i < longs.length; i++)
+		for(int i = 0; i < longs.length; i++) {
 			longs[i] = Double.doubleToLongBits(doubles[i]);
+		}
 		return longsToBytes(longs);
 	}
 
@@ -768,17 +775,20 @@ public abstract class Fields {
 		int begin = origBegin;
 		int end = origEnd;
 		while(true) {
-			if(end < begin)	// so we can use origEnd=length-1 without worrying length=0
+			if(end < begin)	{ // so we can use origEnd=length-1 without worrying length=0
 				return -begin - 1;
+			}
 
 			int middle = (begin + end) >>> 1;
-			if(values[middle] == key)
+			if(values[middle] == key) {
 				return middle;
+			}
 
-			if(values[middle] > key)
+			if(values[middle] > key) {
 				end = middle - 1;
-			else if(values[middle] < key)
+			} else if(values[middle] < key){
 				begin = middle + 1;
+			}
 		}
 	}
 

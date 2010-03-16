@@ -86,12 +86,14 @@ public class TempBucketFactory implements BucketFactory {
 		private final Throwable tracer;
 		
 		public TempBucket(long now, Bucket cur) {
-			if(cur == null)
+			if(cur == null) {
 				throw new NullPointerException();
-			if (TRACE_BUCKET_LEAKS)
+			}
+			if (TRACE_BUCKET_LEAKS) {
 				tracer = new Throwable();
-			else
+			} else {
 				tracer = null;
+			}
 			this.currentBucket = cur;
 			this.creationTime = now;
 			this.osIndex = 0;
@@ -124,9 +126,10 @@ public class TempBucketFactory implements BucketFactory {
 		final void migrateToFileBucket() throws IOException {
 			Bucket toMigrate = null;
 			synchronized(this) {
-				if(!isRAMBucket() || hasBeenFreed)
+				if(!isRAMBucket() || hasBeenFreed) {
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
 					return;
+				}
 				toMigrate = currentBucket;
 				Bucket tempFB = _makeFileBucket();
 				if(os != null) {
@@ -134,8 +137,9 @@ public class TempBucketFactory implements BucketFactory {
 					Closer.close(os);
 					// DO NOT INCREMENT THE osIndex HERE!
 					os = tempFB.getOutputStream();
-					if(currentSize > 0)
+					if(currentSize > 0) {
 						BucketTools.copyTo(toMigrate, os, currentSize);
+					}
 				} else {
 					if(currentSize > 0) {
 						OutputStream temp = tempFB.getOutputStream();
@@ -143,16 +147,18 @@ public class TempBucketFactory implements BucketFactory {
 						temp.close();
 					}
 				}
-				if(toMigrate.isReadOnly())
+				if(toMigrate.isReadOnly()) {
 					tempFB.setReadOnly();
+				}
 				
 				closeInputStreams(false);
 				
 				currentBucket = tempFB;
 				// We need streams to be reset to point to the new bucket
 			}
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "We have migrated "+toMigrate.hashCode());
+			}
 			
 			// We can free it on-thread as it's a rambucket
 			toMigrate.free();
@@ -165,20 +171,23 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized OutputStream getOutputStream() throws IOException {
-			if(osIndex > 0)
+			if(osIndex > 0) {
 				throw new IOException("Only one OutputStream per bucket!");
+			}
 			hasWritten = true;
-			OutputStream os = new TempBucketOutputStream(++osIndex);
-			if(logMINOR)
-				Logger.minor(this, "Got "+os+" for "+this, new Exception());
-			return os;
+			OutputStream newos = new TempBucketOutputStream(++osIndex);
+			if(logMINOR) {
+				Logger.minor(this, "Got "+newos+" for "+this, new Exception());
+			}
+			return newos;
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
 			boolean closed = false;
 			TempBucketOutputStream(short idx) throws IOException {
-				if(os == null)
+				if(os == null) {
 					os = currentBucket.getOutputStream();
+				}
 			}
 			
 			private void _maybeMigrateRamBucket(long futureSize) throws IOException {
@@ -194,10 +203,11 @@ public class TempBucketFactory implements BucketFactory {
 					
 					if(shouldMigrate) {
 						if(logMINOR) {
-							if(isOversized)
+							if(isOversized) {
 								Logger.minor(this, "The bucket is over "+SizeUtil.formatSize(maxRAMBucketSize*RAMBUCKET_CONVERSION_FACTOR)+": we will force-migrate it to disk.");
-							else
+							} else {
 								Logger.minor(this, "The bucketpool is full: force-migrate before we go over the limit");
+							}
 						}
 						migrateToFileBucket();
 					}
@@ -223,8 +233,9 @@ public class TempBucketFactory implements BucketFactory {
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b, off, len);
 					currentSize = futureSize;
-					if(isRAMBucket()) // We need to re-check because it might have changed!
+					if(isRAMBucket()) { // We need to re-check because it might have changed!
 						_hasTaken(len);
+					}
 				}
 			}
 			
@@ -232,8 +243,9 @@ public class TempBucketFactory implements BucketFactory {
 			public final void flush() throws IOException {
 				synchronized(TempBucket.this) {
 					_maybeMigrateRamBucket(currentSize);
-					if(!closed)
+					if(!closed) {
 						os.flush();
+					}
 				}
 			}
 			
@@ -251,12 +263,14 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized InputStream getInputStream() throws IOException {
-			if(!hasWritten)
+			if(!hasWritten) {
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
+			}
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Got "+is+" for "+this, new Exception());
+			}
 			return is;
 		}
 		
@@ -274,9 +288,9 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			public void _maybeResetInputStream() throws IOException {
-				if(idx != osIndex)
+				if(idx != osIndex) {
 					close();
-				else {
+				} else {
 					Closer.close(currentIS);
 					currentIS = currentBucket.getInputStream();
 					long toSkip = index;
@@ -290,8 +304,9 @@ public class TempBucketFactory implements BucketFactory {
 			public final int read() throws IOException {
 				synchronized(TempBucket.this) {
 					int toReturn = currentIS.read();
-					if(toReturn != -1)
+					if(toReturn != -1) {
 						index++;
+					}
 					return toReturn;
 				}
 			}
@@ -307,8 +322,9 @@ public class TempBucketFactory implements BucketFactory {
 			public int read(byte b[], int off, int len) throws IOException {
 				synchronized(TempBucket.this) {
 					int toReturn = currentIS.read(b, off, len);
-					if(toReturn > 0)
+					if(toReturn > 0) {
 						index += toReturn;
+					}
 					return toReturn;
 				}
 			}
@@ -395,8 +411,9 @@ public class TempBucketFactory implements BucketFactory {
 		@Override
 		protected void finalize() {
 			if (!hasBeenFreed) {
-				if (TRACE_BUCKET_LEAKS)
+				if (TRACE_BUCKET_LEAKS) {
 					Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this, tracer);
+				}
 				free();
 			}
 		}
@@ -508,21 +525,22 @@ public class TempBucketFactory implements BucketFactory {
 		do {
 			synchronized(ramBucketQueue) {
 				final WeakReference<TempBucket> tmpBucketRef = ramBucketQueue.peek();
-				if (tmpBucketRef == null)
+				if (tmpBucketRef == null) {
 					shouldContinue = false;
-				else {
+				} else {
 					TempBucket tmpBucket = tmpBucketRef.get();
 					if (tmpBucket == null) {
 						ramBucketQueue.remove(tmpBucketRef);
 						continue; // ugh. this is freed
 					}
 
-					if (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now)
+					if (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now) {
 						shouldContinue = false;
-					else {
-						if (logMINOR)
+					} else {
+						if (logMINOR) {
 							Logger.minor(this, "The bucket is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
-							        + " old: we will force-migrate it to disk.");
+									+ " old: we will force-migrate it to disk.");
+						}
 						ramBucketQueue.remove(tmpBucketRef);
 						toMigrate.add(tmpBucket);
 					}
@@ -534,8 +552,9 @@ public class TempBucketFactory implements BucketFactory {
 			executor.execute(new Runnable() {
 
 				public void run() {
-					if(logMINOR)
+					if(logMINOR) {
 						Logger.minor(this, "We are going to migrate " + toMigrate.size() + " RAMBuckets");
+					}
 					for(TempBucket tmpBucket : toMigrate) {
 						try {
 							tmpBucket.migrateToFileBucket();

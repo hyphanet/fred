@@ -33,10 +33,10 @@ import freenet.support.api.IntCallback;
  * This is a simple server used for debugging. It allows remote developers
  * to access logfiles stored on this node, and may in future give more options
  * such as triggering an auto-update.
- * 
+ *
  * NOTE THAT IF THIS IS ENABLED, YOU HAVE NO ANONYMITY! It may also be possible
  * to exploit this for denial of service, as it is not authenticated in any way.
- * 
+ *
  * Currently provides two simple commands:
  * LIST\n - list all currently available logfiles, with size etc.
  * GET <date> - get the log file containing the given date.
@@ -44,9 +44,9 @@ import freenet.support.api.IntCallback;
  * The idea is that this should be as simple as possible...
  */
 public class TestnetHandler implements Runnable {
-	
+
 	private final TestnetStatusUploader uploader;
-	
+
 	public TestnetHandler(Node node2, int testnetPort) {
 		this.node = node2;
 		this.testnetPort = testnetPort;
@@ -66,13 +66,13 @@ public class TestnetHandler implements Runnable {
 		uploader.start();
 		System.err.println("Started testnet handler on port "+testnetPort);
 	}
-	
+
 	private final Node node;
 	private ServerSocket server;
 	private int testnetPort;
-	
+
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
+		freenet.support.Logger.OSThread.logPID(this);
 		while(true){
 			// Set up server socket
 			try {
@@ -89,34 +89,35 @@ public class TestnetHandler implements Runnable {
 					new TestnetSocketHandler(s).start();
 				} catch (IOException e) {
 					Logger.error(this, "Testnet failed to accept socket: "+e, e);
-				}	
+				}
 			}
 			Logger.normal(this, "Testnet handler has been stopped : restarting");
 		}
 	}
-	
+
 	public void rebind(int port){
-		synchronized(server) {
-			try{
-				if((!server.isClosed()) && server.isBound())
+		synchronized(this) { //was server -TheSeeker
+			try {
+				if((!server.isClosed()) && server.isBound()) {
 					server.close();
+				}
 				this.testnetPort=port;
-			}catch( IOException e){
+			} catch( IOException e){
 				Logger.error(this, "Error while stopping the testnet handler.");
 				node.exit(NodeInitException.EXIT_TESTNET_FAILED);
 				return;
 			}
 		}
 	}
-	
+
 	public int getPort(){
 		return testnetPort;
 	}
-	
+
 	public class TestnetSocketHandler implements Runnable {
 
 		private Socket s;
-		
+
 		public TestnetSocketHandler(Socket s2) {
 			this.s = s2;
 		}
@@ -124,9 +125,9 @@ public class TestnetHandler implements Runnable {
 		void start() {
 			node.executor.execute(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
 		}
-		
+
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
+			freenet.support.Logger.OSThread.logPID(this);
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			InputStream is = null;
 			OutputStream os = null;
@@ -147,7 +148,7 @@ public class TestnetHandler implements Runnable {
 					osw.write("ERROR: Could not serve testnet command because no FileLoggerHook");
 					return;
 				}
-				if(command.equalsIgnoreCase("LIST")) {
+				if("LIST".equalsIgnoreCase(command)) {
 					if(logMINOR) Logger.minor(this, "Listing available logs");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					loggerHook.listAvailableLogs(osw);
@@ -165,12 +166,12 @@ public class TestnetHandler implements Runnable {
 						return;
 					}
 					loggerHook.sendLogByContainedDate(d.getTime(), os);
-				} else if(command.equalsIgnoreCase("STATUS")) {
+				} else if("STATUS".equalsIgnoreCase(command)) {
 					if(logMINOR) Logger.minor(this, "Sending status");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					osw.write(node.getStatus());
 					osw.close();
-				} else if(command.equalsIgnoreCase("PEERS")) {
+				} else if("PEERS".equalsIgnoreCase(command)) {
 					if(logMINOR) Logger.minor(this, "Sending references");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					BufferedWriter bw = new BufferedWriter(osw);
@@ -185,24 +186,26 @@ public class TestnetHandler implements Runnable {
 					bw.write("\n\nMy peers:\n");
 					bw.write(node.peers.getDarknetPeersString().toString());
 					bw.close();
-				}else {
+				} else {
 					Logger.error(this, "Unknown testnet command: "+command);
 				}
 			} catch (IOException e) {
 				Logger.normal(this, "Failure handling testnet connection: "+e);
 			} finally {
-				if(is != null)
+				if(is != null) {
 					try {
 						is.close();
 					} catch (IOException e) {
 						// Ignore
 					}
-				if(os != null)
+				}
+				if(os != null) {
 					try {
 						os.close();
 					} catch (IOException e) {
 						// Ignore
 					}
+				}
 			}
 		}
 
@@ -211,11 +214,11 @@ public class TestnetHandler implements Runnable {
 	private static class TestnetEnabledCallback extends BooleanCallback  {
 
 		final Node node;
-		
+
 		TestnetEnabledCallback(Node node) {
 			this.node = node;
 		}
-		
+
 		@Override
 		public Boolean get() {
 			return node.testnetEnabled;
@@ -233,49 +236,50 @@ public class TestnetHandler implements Runnable {
 		}
 	}
 
-	
+
 	static class TestnetPortNumberCallback extends IntCallback  {
 		Node node;
-		
+
 		TestnetPortNumberCallback(Node n){
 			this.node = n;
 		}
-		
+
 		@Override
 		public Integer get() {
 			return node.testnetHandler.getPort();
 		}
-		
+
 		@Override
 		public void set(Integer val) throws InvalidConfigValueException {
-			if (get().equals(val))
+			if (get().equals(val)) {
 				return;
+			}
 			node.testnetHandler.rebind(val);
 		}
-	}	
-	
-	
+	}
+
+
 	public static TestnetHandler maybeCreate(Node node, Config config) throws NodeInitException {
-        SubConfig testnetConfig = new SubConfig("node.testnet", config);
-        
-        testnetConfig.register("enabled", false, 1, true /*Switch it to false if we want large-scale testing */, true, "TestnetHandler.enable", "TestnetHandler.enableLong", new TestnetEnabledCallback(node));
-        
-        boolean enabled = testnetConfig.getBoolean("enabled");
+		SubConfig testnetConfig = new SubConfig("node.testnet", config);
 
-        if(enabled) {
-        	// Get the testnet port
+		testnetConfig.register("enabled", false, 1, true /*Switch it to false if we want large-scale testing */, true, "TestnetHandler.enable", "TestnetHandler.enableLong", new TestnetEnabledCallback(node));
 
-        	testnetConfig.register("port", node.getDarknetPortNumber()+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
-        			new TestnetPortNumberCallback(node), false);
+		boolean enabled = testnetConfig.getBoolean("enabled");
 
-        	int port = testnetConfig.getInt("port");
-        	
-        	testnetConfig.finishedInitialization();
-        	return new TestnetHandler(node, port);
-        } else {
-        	testnetConfig.finishedInitialization();
-        	return null;
-        }
+		if(enabled) {
+			// Get the testnet port
+
+			testnetConfig.register("port", node.getDarknetPortNumber()+1000, 2, true, false, "TestnetHandler.port", "TestnetHandler.portLong",
+				new TestnetPortNumberCallback(node), false);
+
+			int port = testnetConfig.getInt("port");
+
+			testnetConfig.finishedInitialization();
+			return new TestnetHandler(node, port);
+		} else {
+			testnetConfig.finishedInitialization();
+			return null;
+		}
 	}
 
 }

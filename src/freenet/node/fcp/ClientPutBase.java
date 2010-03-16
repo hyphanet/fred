@@ -132,16 +132,16 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 
 	private FreenetURI getPublicURI(FreenetURI uri) throws MalformedURLException {
 		String type = uri.getKeyType();
-		if(type.equalsIgnoreCase("CHK")) {
+		if("CHK".equals(type)) {
 			return uri;
-		} else if(type.equalsIgnoreCase("SSK") || type.equalsIgnoreCase("USK")) {
-			if(type.equalsIgnoreCase("USK"))
+		} else if("SSK".equals(type) || "USK".equals(type)) {
+			if("USK".equals(type))
 				uri = uri.setKeyType("SSK");
 			InsertableClientSSK issk = InsertableClientSSK.create(uri);
 			uri = uri.setRoutingKey(issk.getURI().getRoutingKey());
 			uri = uri.setKeyType(type);
 			return uri;
-		} else if(type.equalsIgnoreCase("KSK")) {
+		} else if("KSK".equals(type)) {
 			return uri;
 		} else {
 			throw new IllegalArgumentException();

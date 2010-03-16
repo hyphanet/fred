@@ -23,17 +23,17 @@ public class SerializableToFieldSetBucketUtil {
 			Logger.minor(SerializableToFieldSetBucketUtil.class, "Creating: "+type);
 		if(type == null) {
 			throw new CannotCreateFromFieldSetException("No type");
-		} else if(type.equals("FileBucket")) {
+		} else if("FileBucket".equals(type)) {
 			return BaseFileBucket.create(fs, f);
-		} else if(type.equals("PaddedEphemerallyEncryptedBucket")) {
+		} else if("PaddedEphemerallyEncryptedBucket".equals(type)) {
 			return new PaddedEphemerallyEncryptedBucket(fs, random, f);
-		} else if(type.equals("NullBucket")) {
+		} else if("NullBucket".equals(type)) {
 			return new NullBucket();
-		} else if(type.equals("ReadOnlyFileSliceBucket")) {
+		} else if("ReadOnlyFileSliceBucket".equals(type)) {
 			return new ReadOnlyFileSliceBucket(fs);
-		} else if(type.equals("DelayedFreeBucket")) {
+		} else if("DelayedFreeBucket".equals(type)) {
 			return new DelayedFreeBucket(fs, random, f);
-		} else if(type.equals("PersistentTempFileBucket")) {
+		} else if("PersistentTempFileBucket".equals(type)) {
 			return PersistentTempFileBucket.create(fs, f);
 		} else
 			throw new CannotCreateFromFieldSetException("Unrecognized type "+type);

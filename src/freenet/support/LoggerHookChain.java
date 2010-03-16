@@ -7,104 +7,104 @@ package freenet.support;
  */
 public class LoggerHookChain extends LoggerHook {
 
-    // Best performance, least synchronization.
-    // We will only very rarely add or remove hooks
-    private LoggerHook[] hooks;
+	// Best performance, least synchronization.
+	// We will only very rarely add or remove hooks
+	private LoggerHook[] hooks;
 
-    /**
-     * Create a logger. Threshhold set to NORMAL.
-     */
-    public LoggerHookChain() {
-        this(NORMAL);
-    }
+	/**
+	 * Create a logger. Threshhold set to NORMAL.
+	 */
+	public LoggerHookChain() {
+		this(NORMAL);
+	}
 
-    /**
-     * Create a logger.
-     * @param threshold   Suppress all log calls with lower priority then 
-     *                     this.
-     */
-    public LoggerHookChain(int threshold) {
-        super(threshold);
-        hooks = new LoggerHook[0];
-    }
-    public LoggerHookChain(String threshold) throws InvalidThresholdException {
-    	super(threshold);
-        hooks = new LoggerHook[0];
-    }
-  
+	/**
+	 * Create a logger.
+	 * @param threshold   Suppress all log calls with lower priority then
+	 *                     this.
+	 */
+	public LoggerHookChain(int threshold) {
+		super(threshold);
+		hooks = new LoggerHook[0];
+	}
+	public LoggerHookChain(String threshold) throws InvalidThresholdException {
+		super(threshold);
+		hooks = new LoggerHook[0];
+	}
 
-    /**
-     * This is the implementation of LoggerHook method, which allows
-     * one logger receive events from another.
-     * @implements LoggerHook.log()
-     */
-    @Override
+
+	/**
+	 * This is the implementation of LoggerHook method, which allows
+	 * one logger receive events from another.
+	 * @implements LoggerHook.log()
+	 */
+	@Override
 	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
-        LoggerHook[] myHooks = hooks;
-        for(int i=0;i<myHooks.length;i++) {
-            myHooks[i].log(o,c,msg,e,priority);
-        }
-    }
+		LoggerHook[] myHooks = hooks;
+		for(int i=0;i<myHooks.length;i++) {
+			myHooks[i].log(o,c,msg,e,priority);
+		}
+	}
 
-    /**
-     * Add a hook which will be called every time a message is logged
-     */
-    public synchronized void addHook(LoggerHook lh) {
-        LoggerHook[] newHooks = new LoggerHook[hooks.length+1];
-        System.arraycopy(newHooks, 0, hooks, 0, hooks.length);
-        newHooks[hooks.length] = lh;
-        hooks = newHooks;
-    }
+	/**
+	 * Add a hook which will be called every time a message is logged
+	 */
+	public synchronized void addHook(LoggerHook lh) {
+		LoggerHook[] newHooks = new LoggerHook[hooks.length+1];
+		System.arraycopy(newHooks, 0, hooks, 0, hooks.length);
+		newHooks[hooks.length] = lh;
+		hooks = newHooks;
+	}
 
-    /**
-     * Remove a hook from the logger.
-     */
-    public synchronized void removeHook(LoggerHook lh) {
+	/**
+	 * Remove a hook from the logger.
+	 */
+	public synchronized void removeHook(LoggerHook lh) {
 	final int hooksLength = hooks.length;
-        LoggerHook[] newHooks = new LoggerHook[hooksLength > 1 ? hooksLength-1 : 0];
-        int x=0;
-        boolean removed = false;
-        for(int i=0;i<hooksLength;i++) {
-            if(hooks[i] == lh) {
-                removed = true;
-            } else {
-                newHooks[x++] = hooks[i];
-            }
-        }
-        if(!removed) return;
-        if(x == newHooks.length) {
-            hooks = newHooks;
-        } else {
-            LoggerHook[] finalHooks = new LoggerHook[x];
-            System.arraycopy(newHooks, 0, finalHooks, 0, x);
-            hooks = finalHooks;
-        }
-    }
+		LoggerHook[] newHooks = new LoggerHook[hooksLength > 1 ? hooksLength-1 : 0];
+		int x=0;
+		boolean removed = false;
+		for(int i=0;i<hooksLength;i++) {
+			if(hooks[i] == lh) {
+				removed = true;
+			} else {
+				newHooks[x++] = hooks[i];
+			}
+		}
+		if(!removed) return;
+		if(x == newHooks.length) {
+			hooks = newHooks;
+		} else {
+			LoggerHook[] finalHooks = new LoggerHook[x];
+			System.arraycopy(newHooks, 0, finalHooks, 0, x);
+			hooks = finalHooks;
+		}
+	}
 
-    /**
-     * Returns all the current hooks.
-     */
-    public synchronized LoggerHook[] getHooks() {
-        return hooks;
-    }
+	/**
+	 * Returns all the current hooks.
+	 */
+	public synchronized LoggerHook[] getHooks() {
+		return hooks;
+	}
 
-    @Override
+	@Override
 	public long minFlags()
-    {
-    	return 0;
-    }
+	{
+		return 0;
+	}
 
-    @Override
+	@Override
 	public long notFlags()
-    {
-    	return 0;
-    }
+	{
+		return 0;
+	}
 
-    @Override
+	@Override
 	public long anyFlags()
-    {
-    	return ((2*ERROR)-1) & ~(threshold-1);
-    }
+	{
+		return ((2*ERROR)-1) & ~(threshold-1);
+	}
 
 	@Override
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
@@ -118,8 +118,9 @@ public class LoggerHookChain extends LoggerHook {
 	public void setThreshold(int thresh) {
 		super.setThreshold(thresh);
 		LoggerHook[] h = getHooks();
-		for (int i = 0; i < h.length; i++)
+		for (int i = 0; i < h.length; i++) {
 			h[i].setThreshold(thresh);
+		}
 	}
 }
 

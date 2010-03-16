@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -27,7 +27,7 @@ import freenet.io.WritableToDataOutputStream;
 
 public class BitArray implements WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: BitArray.java,v 1.2 2005/08/25 17:28:19 amphibian Exp $";
+	public static final String VERSION = "$Id: BitArray.java,v 1.2 2005/08/25 17:28:19 amphibian Exp $";
 
 	private final int _size;
 	private final byte[] _bits;
@@ -36,7 +36,7 @@ public class BitArray implements WritableToDataOutputStream {
 		_bits = data;
 		_size = data.length*8;
 	}
-	
+
 	/**
 	 * This constructor does not check for unacceptable sizes, and should only be used on trusted data.
 	 */
@@ -45,7 +45,7 @@ public class BitArray implements WritableToDataOutputStream {
 		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
 		dis.readFully(_bits);
 	}
-	
+
 	public BitArray(DataInput dis, int maxSize) throws IOException {
 		_size = dis.readInt();
 		if (_size<=0 || _size>maxSize)
@@ -64,7 +64,7 @@ public class BitArray implements WritableToDataOutputStream {
 		this._bits = new byte[src._bits.length];
 		System.arraycopy(src._bits, 0, _bits, 0, src._bits.length);
 	}
-	
+
 	public void setBit(int pos, boolean f) {
 		int b = unsignedByteToInt(_bits[pos / 8]);
 		int mask = (1 << (pos % 8));
@@ -110,7 +110,7 @@ public class BitArray implements WritableToDataOutputStream {
 	public int getSize() {
 		return _size;
 	}
-	
+
 	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof BitArray)) {
@@ -127,10 +127,10 @@ public class BitArray implements WritableToDataOutputStream {
 		}
 		return true;
 	}
-	
+
 	@Override
 	public int hashCode() {
-	    return Fields.hashCode(_bits);
+		return Fields.hashCode(_bits);
 	}
 
 	public void setAllOnes() {

@@ -119,11 +119,11 @@ body {
 }
 
 #navlist .subnavlist {
-    display:none;
+	display:none;
 }
 
 #selected-subnavbar {
-    display:none;
+	display:none;
 }
 
 /* alerts */
@@ -396,16 +396,16 @@ table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes
 /* statistics page */
 
 div.peercircle {
-  margin: 0 auto;
+	margin: 0 auto;
 }
 
 div.peercircle span.mark {
-  color: #d0d0d0;
+	color: #d0d0d0;
 }
 
 div.peercircle span.me {
-  color: #0080ff;
-  font-weight: bold;
+	color: #0080ff;
+	font-weight: bold;
 }
 
 div.peercircle span.connected {
@@ -414,19 +414,19 @@ div.peercircle span.connected {
 }
 
 div.peercircle span.backed_off {
-  color: #008000;
-  font-weight: bold;
+	color: #008000;
+	font-weight: bold;
 }
 
 div.peercircle span.disconnected {
-  color: #d0d0d0;
-  font-weight: bold;
+	color: #d0d0d0;
+	font-weight: bold;
 }
 
 div.histogramLabel {
-  margin-left: 3px;
-  margin-right: 3px;
-  font-size: 60%;
+	margin-left: 3px;
+	margin-right: 3px;
+	font-size: 60%;
 }
 
 div.histogramConnected {

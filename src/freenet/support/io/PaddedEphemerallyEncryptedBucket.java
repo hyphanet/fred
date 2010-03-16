@@ -36,7 +36,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private long dataLength;
 	private boolean readOnly;
 	private int lastOutputStream;
-	
+
 	/**
 	 * Create a padded encrypted proxy bucket.
 	 * @param bucket The bucket which we are proxying to. Must be empty.
@@ -46,7 +46,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param weakPRNG a week prng we will padd from.
 	 * Serialization: Note that it is not our responsibility to free the random number generators,
 	 * but we WILL free the underlying bucket.
-	 * @throws UnsupportedCipherException 
+	 * @throws UnsupportedCipherException
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource strongPRNG, Random weakPRNG) {
 		this.bucket = bucket;
@@ -71,11 +71,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * alone and must be specified. If the bucket is smaller than this, we throw.
 	 * @param key
 	 * @param origRandom
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
-		if(bucket.size() < knownSize)
+		if(bucket.size() < knownSize) {
 			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
+		}
 		this.dataLength = knownSize;
 		this.bucket = bucket;
 		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
@@ -89,34 +90,38 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
 		String tmp = fs.get("DataLength");
-		if(tmp == null)
+		if(tmp == null) {
 			throw new CannotCreateFromFieldSetException("No DataLength");
+		}
 		try {
 			dataLength = Long.parseLong(tmp);
 		} catch (NumberFormatException e) {
 			throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+tmp, e);
 		}
 		SimpleFieldSet underlying = fs.subset("Underlying");
-		if(underlying == null)
+		if(underlying == null) {
 			throw new CannotCreateFromFieldSetException("No underlying bucket");
+		}
 		bucket = SerializableToFieldSetBucketUtil.create(underlying, origRandom, f);
 		tmp = fs.get("DecryptKey");
-		if(tmp == null)
+		if(tmp == null) {
 			throw new CannotCreateFromFieldSetException("No key");
+		}
 		key = HexUtil.hexToBytes(tmp);
 		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
 		tmp = fs.get("MinPaddedSize");
-		if(tmp == null)
+		if(tmp == null) {
 			throw new CannotCreateFromFieldSetException("No MinPaddedSize!");
-		else {
+		} else {
 			try {
 				minPaddedSize = Integer.parseInt(tmp);
 			} catch (NumberFormatException e) {
 				throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+tmp, e);
 			}
 		}
-		if(dataLength > bucket.size())
+		if(dataLength > bucket.size()) {
 			throw new CannotCreateFromFieldSetException("Underlying bucket "+bucket+" is too small: should be "+dataLength+" actually "+bucket.size());
+		}
 		randomSeed = new byte[32];
 		origRandom.nextBytes(randomSeed);
 	}
@@ -146,7 +151,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		final OutputStream out;
 		final int streamNumber;
 		private boolean closed;
-		
+
 		public PaddedEphemerallyEncryptedOutputStream(OutputStream out, int streamNumber) {
 			this.out = out;
 			dataLength = 0;
@@ -154,12 +159,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			Rijndael aes = getRijndael();
 			pcfb = PCFBMode.create(aes);
 		}
-		
+
 		@Override
 		public void write(int b) throws IOException {
 			if(closed) throw new IOException("Already closed!");
-			if(streamNumber != lastOutputStream)
+			if(streamNumber != lastOutputStream) {
 				throw new IllegalStateException("Writing to old stream in "+getName());
+			}
 			//if((b < 0) || (b > 255))
 			//	throw new IllegalArgumentException();
 			int toWrite = pcfb.encipher(b);
@@ -168,22 +174,25 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 				dataLength++;
 			}
 		}
-		
+
 		// Override this or FOS will use write(int)
 		@Override
 		public void write(byte[] buf) throws IOException {
-			if(closed)
+			if(closed) {
 				throw new IOException("Already closed!");
-			if(streamNumber != lastOutputStream)
+			}
+			if(streamNumber != lastOutputStream) {
 				throw new IllegalStateException("Writing to old stream in "+getName());
+			}
 			write(buf, 0, buf.length);
 		}
-		
+
 		@Override
 		public void write(byte[] buf, int offset, int length) throws IOException {
 			if(closed) throw new IOException("Already closed!");
-			if(streamNumber != lastOutputStream)
+			if(streamNumber != lastOutputStream) {
 				throw new IllegalStateException("Writing to old stream in "+getName());
+			}
 			if(length == 0) return;
 			byte[] enc = new byte[length];
 			System.arraycopy(buf, offset, enc, 0, length);
@@ -193,8 +202,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 				dataLength += enc.length;
 			}
 		}
-		
-        @Override
+
+		@Override
 		@SuppressWarnings("cast")
 		public void close() throws IOException {
 			if(closed) return;
@@ -233,14 +242,14 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		final InputStream in;
 		final PCFBMode pcfb;
 		long ptr;
-		
+
 		public PaddedEphemerallyEncryptedInputStream(InputStream in) {
 			this.in = in;
 			Rijndael aes = getRijndael();
 			pcfb = PCFBMode.create(aes);
 			ptr = 0;
 		}
-		
+
 		@Override
 		public int read() throws IOException {
 			if(ptr >= dataLength) return -1;
@@ -249,18 +258,19 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			ptr++;
 			return pcfb.decipher(x);
 		}
-		
+
 		@Override
 		public final int available() {
 			int x = (int)Math.min(dataLength - ptr, Integer.MAX_VALUE);
 			return (x < 0) ? 0 : x;
 		}
-		
+
 		@Override
 		public int read(byte[] buf, int offset, int length) throws IOException {
 			// FIXME remove debugging
-			if((length+offset > buf.length) || (offset < 0) || (length < 0))
+			if((length+offset > buf.length) || (offset < 0) || (length < 0)) {
 				throw new ArrayIndexOutOfBoundsException("a="+offset+", b="+length+", length "+buf.length);
+			}
 			int x = available();
 			if(x <= 0) return -1;
 			length = Math.min(length, x);
@@ -275,7 +285,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		public int read(byte[] buf) throws IOException {
 			return read(buf, 0, buf.length);
 		}
-		
+
 		@Override
 		public long skip(long bytes) throws IOException {
 			byte[] buf = new byte[(int)Math.min(4096, bytes)];
@@ -287,7 +297,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			}
 			return skipped;
 		}
-		
+
 		@Override
 		public void close() throws IOException {
 			in.close();
@@ -304,13 +314,16 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		long min = minPaddedSize;
 		long max = (long)minPaddedSize << 1;
 		while(true) {
-			if(max < 0)
+			if(max < 0) {
 				throw new Error("Impossible size: "+size+" - min="+min+", max="+max);
-			if(size < min)
+			}
+			if(size < min) {
 				throw new IllegalStateException("???");
+			}
 			if((size >= min) && (size <= max)) {
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(Logger.MINOR, this)) {
 					Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
+				}
 				return max;
 			}
 			min = max;
@@ -337,7 +350,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	public String toString() {
 		return super.toString()+ ':' +bucket;
 	}
-	
+
 	public synchronized long size() {
 		return dataLength;
 	}
@@ -345,7 +358,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	public boolean isReadOnly() {
 		return readOnly;
 	}
-	
+
 	public void setReadOnly() {
 		readOnly = true;
 	}
@@ -396,18 +409,19 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "Removing from database: "+this);
+		}
 		bucket.removeFrom(container);
 		container.delete(this);
 	}
-	
+
 	public void objectOnActivate(ObjectContainer container) {
 		Logger.minor(this, "Activating "+super.toString()+" bucket == null = "+(bucket == null));
 		// Cascading activation of dependancies
 		container.activate(bucket, 1);
 	}
-	
+
 	public Bucket createShadow() throws IOException {
 		Bucket newUnderlying = bucket.createShadow();
 		if(newUnderlying == null) return null;

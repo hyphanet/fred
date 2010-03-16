@@ -19,11 +19,11 @@ public abstract class LoggerHook extends Logger {
 		}
 	}
 
-	LoggerHook(int thresh){
+	LoggerHook(int thresh) {
 		this.threshold = thresh;
 	}
 
-	LoggerHook(String thresh) throws InvalidThresholdException{
+	LoggerHook(String thresh) throws InvalidThresholdException {
 		this.threshold = priorityOf(thresh);
 	}
 
@@ -99,8 +99,9 @@ public abstract class LoggerHook extends Logger {
 
 	@Override
 	public void log(Class<?> c, String message, Throwable e, int priority) {
-		if (!instanceShouldLog(priority, c))
+		if (!instanceShouldLog(priority, c)) {
 			return;
+		}
 		log(null, c, message, e, priority);
 	}
 
@@ -126,19 +127,23 @@ public abstract class LoggerHook extends Logger {
 
 	@Override
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
-		if (details == null)
+		if (details == null) {
 			return;
+		}
 		StringTokenizer st = new StringTokenizer(details, ",", false);
 		ArrayList<DetailedThreshold> stuff = new ArrayList<DetailedThreshold>();
 		while (st.hasMoreTokens()) {
 			String token = st.nextToken();
-			if (token.length() == 0)
+			if (token.length() == 0) {
 				continue;
+			}
 			int x = token.indexOf(':');
-			if (x < 0)
+			if (x < 0) {
 				continue;
-			if (x == token.length() - 1)
+			}
+			if (x == token.length() - 1) {
 				continue;
+			}
 			String section = token.substring(0, x);
 			String value = token.substring(x + 1, token.length());
 			int thresh = LoggerHook.priorityOf(value);
@@ -159,8 +164,9 @@ public abstract class LoggerHook extends Logger {
 		}
 		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<thresh.length;i++) {
-			if(i != 0)
+			if(i != 0) {
 				sb.append(',');
+			}
 			sb.append(thresh[i].section);
 			sb.append(':');
 			sb.append(LoggerHook.priorityOf(thresh[i].dThreshold));
@@ -175,15 +181,15 @@ public abstract class LoggerHook extends Logger {
 	 *           insensitive.
 	 **/
 	public static int priorityOf(String s) throws InvalidThresholdException {
-		if (s.equalsIgnoreCase("error"))
+		if ("error".equalsIgnoreCase(s))
 			return Logger.ERROR;
-		else if (s.equalsIgnoreCase("normal"))
+		else if ("normal".equalsIgnoreCase(s))
 			return Logger.NORMAL;
-		else if (s.equalsIgnoreCase("minor"))
+		else if ("minor".equalsIgnoreCase(s))
 			return Logger.MINOR;
-		else if (s.equalsIgnoreCase("debugging"))
+		else if ("debugging".equalsIgnoreCase(s))
 			return Logger.DEBUG;
-		else if (s.equalsIgnoreCase("debug"))
+		else if ("debug".equalsIgnoreCase(s))
 			return Logger.DEBUG;
 		else
 			throw new InvalidThresholdException(NodeL10n.getBase().getString("LoggerHook.unrecognisedPriority", "name", s));
@@ -223,8 +229,9 @@ public abstract class LoggerHook extends Logger {
 		if ((c != null) && (thresholds.length > 0)) {
 			String cname = c.getName();
 				for(DetailedThreshold dt : thresholds) {
-					if(cname.startsWith(dt.section))
+					if(cname.startsWith(dt.section)) {
 						thresh = dt.dThreshold;
+					}
 				}
 		}
 		return priority >= thresh;
@@ -249,8 +256,9 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	private final void notifyLogThresholdCallbacks() {
-		for(LogThresholdCallback ltc : thresholdsCallbacks)
+		for(LogThresholdCallback ltc : thresholdsCallbacks) {
 			ltc.shouldUpdate();
+		}
 	}
 
 	public abstract long minFlags(); // ignore unless all these bits set

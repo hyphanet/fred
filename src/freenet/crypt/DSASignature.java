@@ -15,59 +15,61 @@ import net.i2p.util.NativeBigInteger;
 
 public class DSASignature implements CryptoElement, java.io.Serializable {
 	private static final long serialVersionUID = -1;
-    private final BigInteger r, s;
-    private String toStringCached; //toString() cache 
+	private final BigInteger r, s;
+	private String toStringCached; //toString() cache
 
-    public DSASignature(InputStream in) throws IOException {
+	public DSASignature(InputStream in) throws IOException {
 		r=Util.readMPI(in);
 		s=Util.readMPI(in);
 		if(r.signum() != 1 || s.signum() != 1) throw new IOException("Both R and S should be positive!");
-    }
+	}
 
-    /**
-     * Parses a DSA Signature pair from a string, where r and s are 
-     * in unsigned hex-strings, separated by a comma
-     */
-    public DSASignature(String sig) throws NumberFormatException {
+	/**
+	 * Parses a DSA Signature pair from a string, where r and s are
+	 * in unsigned hex-strings, separated by a comma
+	 */
+	public DSASignature(String sig) throws NumberFormatException {
 		int x=sig.indexOf(',');
-		if (x <= 0)
-	    	throw new NumberFormatException("DSA Signatures have two values");
+		if (x <= 0) {
+			throw new NumberFormatException("DSA Signatures have two values");
+		}
 		r = new NativeBigInteger(sig.substring(0,x), 16);
 		s = new NativeBigInteger(sig.substring(x+1), 16);
 		if(r.signum() != 1 || s.signum() != 1) throw new IllegalArgumentException();
-    }
+	}
 
-    public static DSASignature read(InputStream in) throws IOException {
+	public static DSASignature read(InputStream in) throws IOException {
 		BigInteger r, s;
 		r=Util.readMPI(in);
 		s=Util.readMPI(in);
 		return new DSASignature(r,s);
-    }
+	}
 
-    public void write(OutputStream o) throws IOException {
+	public void write(OutputStream o) throws IOException {
 		Util.writeMPI(r, o);
 		Util.writeMPI(s, o);
-    }
+	}
 
-    public DSASignature(BigInteger r, BigInteger s) {
+	public DSASignature(BigInteger r, BigInteger s) {
 		this.r=r;
 		this.s=s;
 		if(r.signum() != 1 || s.signum() != 1) throw new IllegalArgumentException();
-    }
+	}
 
-    public BigInteger getR() {
+	public BigInteger getR() {
 		return r;
-    }
+	}
 
-    public BigInteger getS() {
+	public BigInteger getS() {
 		return s;
-    }
+	}
 
-    public String toLongString() {
-		if(toStringCached == null)
+	public String toLongString() {
+		if(toStringCached == null) {
 			toStringCached = HexUtil.biToHex(r) + ',' + HexUtil.biToHex(s);
-        return toStringCached;
-    }
+		}
+		return toStringCached;
+	}
 
 	public byte[] getRBytes(int length) {
 		return getParamBytes(r, length);
@@ -88,11 +90,12 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
 				byte[] out = new byte[length];
 				System.arraycopy(data, 1, out, 0, length);
 				return out;
-			} else
+			} else {
 				throw new IllegalArgumentException("Parameter longer than "+length+" bytes : "+param.bitLength());
+			}
 		} else if(data.length == length) {
 			return data;
 		} else throw new IllegalArgumentException("Length is much shorter: "+data.length+" but target length = "+length);
 	}
-		  
+
 }

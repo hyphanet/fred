@@ -79,45 +79,46 @@ public class PacketThrottle {
 		if(logMINOR) Logger.minor(this, "Set round trip time to "+rtt+" on "+this);
 	}
 
-    public synchronized void notifyOfPacketLost() {
+	public synchronized void notifyOfPacketLost() {
 		_droppedPackets++;
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
 		slowStart = false;
-		if(logMINOR)
+		if(logMINOR) {
 			Logger.minor(this, "notifyOfPacketLost(): "+this);
+		}
 		_packetSeqWindowFullChecked = _packetSeq;
-    }
+	}
 
-    public synchronized void notifyOfPacketAcknowledged() {
-        _totalPackets++;
+	public synchronized void notifyOfPacketAcknowledged() {
+		_totalPackets++;
 		// If we didn't use the whole window, shrink the window a bit.
 		// This is similar but not identical to RFC2861
 		// See [freenet-dev] Major weakness in our current link-level congestion control
-        int windowSize = (int)getWindowSize();
-        if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
-        	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
-        		// We haven't used the full window once since we last checked.
-        		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
-            	_packetSeqWindowFullChecked += windowSize;
-            	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_simulatedWindowSize+" for "+this);
-        		return;
-        	}
-        	_packetSeqWindowFullChecked += windowSize;
-        }
+		int windowSize = (int)getWindowSize();
+		if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
+			if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
+				// We haven't used the full window once since we last checked.
+				_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+				_packetSeqWindowFullChecked += windowSize;
+				if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_simulatedWindowSize+" for "+this);
+				return;
+			}
+			_packetSeqWindowFullChecked += windowSize;
+		}
 
-    	if(slowStart) {
-    		if(logMINOR) Logger.minor(this, "Still in slow start");
-    		_simulatedWindowSize += _simulatedWindowSize / SLOW_START_DIVISOR;
-    	} else {
-    		_simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
-    	}
-    	if(_simulatedWindowSize > (windowSize + 1))
-    		notifyAll();
-    	if(logMINOR)
-    		Logger.minor(this, "notifyOfPacketAcked(): "+this);
-    }
-    
+		if(slowStart) {
+			if(logMINOR) Logger.minor(this, "Still in slow start");
+			_simulatedWindowSize += _simulatedWindowSize / SLOW_START_DIVISOR;
+		} else {
+			_simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
+		}
+		if(_simulatedWindowSize > (windowSize + 1))
+			notifyAll();
+		if(logMINOR)
+			Logger.minor(this, "notifyOfPacketAcked(): "+this);
+	}
+
 	public synchronized long getDelay() {
 		float winSizeForMinPacketDelay = ((float)_roundTripTime / MIN_DELAY);
 		if (_simulatedWindowSize > winSizeForMinPacketDelay) {
@@ -232,10 +233,11 @@ public class PacketThrottle {
 			notifyAll();
 		}
 		long waitTime = System.currentTimeMillis() - start;
-		if(waitTime > 60*1000)
+		if(waitTime > 60*1000) {
 			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
-		else if(logMINOR)
+		} else if(logMINOR) {
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
+		}
 		MyCallback callback = new MyCallback(cbForAsyncSend);
 		try {
 			peer.sendAsync(msg, callback, ctr);

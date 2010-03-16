@@ -14,5 +14,5 @@ public interface OOMHook {
 	/**
 	 * Handle running out of memory
 	 */
-    void handleOutOfMemory() throws Exception;
+	void handleOutOfMemory() throws Exception;
 }

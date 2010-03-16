@@ -24,106 +24,108 @@ import freenet.support.io.NativeThread;
  */
 public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 
-    // Constants
-    static final int ACCEPTED_TIMEOUT = 5000;
-    static final int FETCH_TIMEOUT = 120000;
+	// Constants
+	static final int ACCEPTED_TIMEOUT = 5000;
+	static final int FETCH_TIMEOUT = 120000;
 
-    // Basics
-    final double target;
-    private short htl;
-    private double best;
-    private short counter;
-    private short linearCounter;
-    private short uniqueCounter;
-    final long uid;
-    final Node node;
-    private double nearestLoc;
-    /** The source of this request if any - purely so we can avoid routing to it */
-    final PeerNode source;
-    private boolean hasForwarded;
-	
-	private ArrayList<Listener> listeners=new ArrayList<Listener>();
+	// Basics
+	final double target;
+	private short htl;
+	private double best;
+	private short counter;
+	private short linearCounter;
+	private short uniqueCounter;
+	final long uid;
+	final Node node;
+	private double nearestLoc;
+	/** The source of this request if any - purely so we can avoid routing to it */
+	final PeerNode source;
+	private boolean hasForwarded;
 
-    private static boolean logMINOR;
-    
-    @Override
+	private final ArrayList<Listener> listeners=new ArrayList<Listener>();
+
+	private static boolean logMINOR;
+
+	@Override
 	public String toString() {
-        return super.toString()+" for "+uid;
-    }
+		return super.toString()+" for "+uid;
+	}
 
-    /**
-     * RequestSender constructor.
-     * @param key The key to request. Its public key should have been looked up
-     * already; RequestSender will not look it up.
-     */
-    public ProbeRequestSender(double target, short htl, long uid, Node n, double nearestLoc, 
-            PeerNode source, double best) {
-        this.htl = htl;
-        this.uid = uid;
-        this.node = n;
-        this.source = source;
-        this.nearestLoc = nearestLoc;
-        this.target = target;
-        this.best = best;
-        this.counter = 1;
-        this.linearCounter = 1;
-        this.uniqueCounter = 1;
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
-    	updateBest();
-    	if(target < 0.0 || target > 1.0)
-    		throw new IllegalArgumentException();
-    }
+	/**
+	 * RequestSender constructor.
+	 * @param key The key to request. Its public key should have been looked up
+	 * already; RequestSender will not look it up.
+	 */
+	public ProbeRequestSender(double target, short htl, long uid, Node n, double nearestLoc,
+			PeerNode source, double best) {
+		this.htl = htl;
+		this.uid = uid;
+		this.node = n;
+		this.source = source;
+		this.nearestLoc = nearestLoc;
+		this.target = target;
+		this.best = best;
+		this.counter = 1;
+		this.linearCounter = 1;
+		this.uniqueCounter = 1;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		updateBest();
+		if(target < 0.0 || target > 1.0) {
+			throw new IllegalArgumentException();
+		}
+	}
 
-    public void start() {
-    	node.executor.execute(this, "ResettingHTLProbeRequestSender for UID "+uid);
-    }
-    
-    public void run() {
-        try {
-        	realRun();
-        } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
-            fireTimeout("Internal error");
-        } finally {
-        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
-        }
-    }
+	public void start() {
+		node.executor.execute(this, "ResettingHTLProbeRequestSender for UID "+uid);
+	}
 
-    private void realRun() {
+	public void run() {
+		try {
+			realRun();
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			fireTimeout("Internal error");
+		} finally {
+			if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
+		}
+	}
+
+	private void realRun() {
 		int routeAttempts=0;
 		int rejectOverloads=0;
-        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
-        while(true) {
-            if(logMINOR) Logger.minor(this, "htl="+htl);
-            if(htl == 0) {
-            	fireCompletion();
-                return;
-            }
+		HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
+		while(true) { //outer
+			if(logMINOR) Logger.minor(this, "htl="+htl);
+			if(htl == 0) {
+				fireCompletion();
+				return;
+			}
 
 			routeAttempts++;
-            
-            // Route it
-            PeerNode next;
-            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
-			        null, htl);
-            
-            if(next == null) {
-				if (logMINOR && rejectOverloads>0)
+
+			// Route it
+			PeerNode next;
+			next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+					null, htl);
+
+			if(next == null) {
+				if (logMINOR && rejectOverloads>0) {
 					Logger.minor(this, "no more peers, but overloads ("+rejectOverloads+"/"+routeAttempts+" overloaded)");
-                // Backtrack
+				}
+				// Backtrack
 				fireRNF();
-                return;
-            }
-			
-            if(logMINOR) Logger.minor(this, "Routing request to "+next);
-            nodesRoutedTo.add(next);
-            
-	    htl = node.decrementHTL((hasForwarded ? next : source), htl);
-            
-            Message req = createDataRequest();
-            
-            try {
-            	//This is the first contact to this node, it is more likely to timeout
+				return;
+			}
+
+			if(logMINOR) Logger.minor(this, "Routing request to "+next);
+			nodesRoutedTo.add(next);
+
+			htl = node.decrementHTL((hasForwarded ? next : source), htl);
+
+			Message req = createDataRequest();
+
+			try {
+				//This is the first contact to this node, it is more likely to timeout
 				/*
 				 * using sendSync could:
 				 *   make ACCEPTED_TIMEOUT more accurate (as it is measured from the send-time),
@@ -132,71 +134,71 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 				 *   make ACCEPTED_TIMEOUT much more likely,
 				 *   leave many hanging-requests/unclaimedFIFO items,
 				 *   potentially make overloaded peers MORE overloaded (we make a request and promptly forget about them).
-				 * 
+				 *
 				 * Don't use sendAsync().
 				 */
-            	next.sendSync(req, this);
-            } catch (NotConnectedException e) {
-            	Logger.minor(this, "Not connected");
-            	continue;
-            }
-            
-            synchronized(this) {
-            	hasForwarded = true;
-            }
-            
-            Message msg = null;
-            
-            while(true) {
-            	
-                /**
-                 * What are we waiting for?
-                 * FNPAccepted - continue
-                 * FNPRejectedLoop - go to another node
-                 * FNPRejectedOverload - propagate back to source, go to another node if local
-                 */
-                
-                MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-                MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
+				next.sendSync(req, this);
+			} catch (NotConnectedException e) {
+				Logger.minor(this, "Not connected");
+				continue;
+			}
 
-                // mfRejectedOverload must be the last thing in the or
-                // So its or pointer remains null
-                // Otherwise we need to recreate it below
-                MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
-                
-                try {
-                    msg = node.usm.waitFor(mf, this);
-                    if(logMINOR) Logger.minor(this, "first part got "+msg);
-                } catch (DisconnectedException e) {
-                    Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
-                    break;
-                }
-                
-            	if(msg == null) {
-            		// Visited one node, at least, but maybe already been there.
-            		counter++;
-            		if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
-            		// Timeout waiting for Accepted
-            		next.localRejectedOverload("AcceptedTimeout");
-            		forwardRejectedOverload();
-            		// Try next node
-            		break;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPRejectedLoop) {
-            		// Visited one node, already visited it.
-            		counter++;
-            		if(logMINOR) Logger.minor(this, "Rejected loop");
-            		// Find another node to route to
-            		break;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-            		// Visited one and only one node.
-            		uniqueCounter++;
-            		counter++;
-            		if(logMINOR) Logger.minor(this, "Rejected: overload");
+			synchronized(this) {
+				hasForwarded = true;
+			}
+
+			Message msg = null;
+
+			while(true) { //inner 1
+
+				/**
+				 * What are we waiting for?
+				 * FNPAccepted - continue
+				 * FNPRejectedLoop - go to another node
+				 * FNPRejectedOverload - propagate back to source, go to another node if local
+				 */
+
+				MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
+				MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
+				MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
+
+				// mfRejectedOverload must be the last thing in the or
+				// So its or pointer remains null
+				// Otherwise we need to recreate it below
+				MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+
+				try {
+					msg = node.usm.waitFor(mf, this);
+					if(logMINOR) Logger.minor(this, "first part got "+msg);
+				} catch (DisconnectedException e) {
+					Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
+					break;
+				}
+
+				if(msg == null) {
+					// Visited one node, at least, but maybe already been there.
+					counter++;
+					if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
+					// Timeout waiting for Accepted
+					next.localRejectedOverload("AcceptedTimeout");
+					forwardRejectedOverload();
+					// Try next node
+					break;
+				}
+
+				if(msg.getSpec() == DMT.FNPRejectedLoop) {
+					// Visited one node, already visited it.
+					counter++;
+					if(logMINOR) Logger.minor(this, "Rejected loop");
+					// Find another node to route to
+					break;
+				}
+
+				if(msg.getSpec() == DMT.FNPRejectedOverload) {
+					// Visited one and only one node.
+					uniqueCounter++;
+					counter++;
+					if(logMINOR) Logger.minor(this, "Rejected: overload");
 					// Non-fatal - probably still have time left
 					forwardRejectedOverload();
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
@@ -206,97 +208,99 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 					}
 					//Could be a previous rejection, the timeout to incur another ACCEPTED_TIMEOUT is minimal...
 					continue;
-            	}
-            	
-            	if(msg.getSpec() != DMT.FNPAccepted) {
-            		Logger.error(this, "Unrecognized message: "+msg);
-            		continue;
-            	}
-            	
-            	// Don't increment here, we will let the node do it for us.
-            	break;
-            }
-            
-            if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) {
-            	// Try another node
-            	continue;
-            }
+				}
 
-            if(logMINOR) Logger.minor(this, "Got Accepted");
-            
-            // Otherwise, must be Accepted
-            
-            // So wait...
-            int gotMessages=0;
-            String lastMessage=null;
-            while(true) {
-            	
-                MessageFilter mfDF = makeDataFoundFilter(next);
-                MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
-                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
-                MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
-                MessageFilter mfTrace = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRHProbeTrace);
-                MessageFilter mf = mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfTrace))));
+				if(msg.getSpec() != DMT.FNPAccepted) {
+					Logger.error(this, "Unrecognized message: "+msg);
+					continue;
+				}
 
-                
-            	try {
-            		msg = node.usm.waitFor(mf, this);
-            	} catch (DisconnectedException e) {
-            		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
-            		break;
-            	}
-            	
-            	if(logMINOR) Logger.minor(this, "second part got "+msg);
-                
-            	if(msg == null) {
+				// Don't increment here, we will let the node do it for us.
+				break;
+			} //end while(true) inne 1
+
+			if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) {
+				// Try another node
+				continue;
+			}
+
+			if(logMINOR) Logger.minor(this, "Got Accepted");
+
+			// Otherwise, must be Accepted
+
+			// So wait...
+			int gotMessages=0;
+			String lastMessage=null;
+			while(true) { //inner 2
+
+				MessageFilter mfDF = makeDataFoundFilter(next);
+				MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
+				MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
+				MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
+				MessageFilter mfTrace = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRHProbeTrace);
+				MessageFilter mf = mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfTrace))));
+
+
+				try {
+					msg = node.usm.waitFor(mf, this);
+				} catch (DisconnectedException e) {
+					Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+					break;
+				}
+
+				if(logMINOR) Logger.minor(this, "second part got "+msg);
+
+				if(msg == null) {
 					Logger.normal(this, "request fatal-timeout (null) after accept ("+gotMessages+" messages; last="+lastMessage+")");
-            		// Fatal timeout
-            		forwardRejectedOverload();
-            		fireTimeout("Timeout");
-            		return;
-            	}
-				
+					// Fatal timeout
+					forwardRejectedOverload();
+					fireTimeout("Timeout");
+					return;
+				}
+
 				//For debugging purposes, remember the number of responses AFTER the insert, and the last message type we received.
 				gotMessages++;
 				lastMessage=msg.getSpec().getName();
-            	
-            	if(msg.getSpec() == DMT.FNPRouteNotFound) {
-            		// Backtrack within available hops
-            		short newHtl = msg.getShort(DMT.HTL);
-            		if(newHtl < htl) htl = newHtl;
-            		// Don't use the new nearestLoc, since we don't on requests, and anyway
-            		// it doesn't make any sense to do so - it's only valid within that pocket.
-            		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
-            		if(sub != null) {
-            			double newBest = sub.getDouble(DMT.BEST_LOCATION);
-            			if(newBest > target && newBest < best)
-            				best = newBest;
-            			counter += Math.max(0, sub.getShort(DMT.COUNTER));
-            			uniqueCounter += Math.max(0, sub.getShort(DMT.UNIQUE_COUNTER));
-            			// linearCounter is unchanged - it's only valid on a Reply
-            			// FIXME ideally we'd return it here if we don't manage to reroute.
-            		} else {
-            			counter++;
-            			uniqueCounter++;
-            			htl--;
-            		}
-            		break;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPRejectedOverload) {
+
+				if(msg.getSpec() == DMT.FNPRouteNotFound) {
+					// Backtrack within available hops
+					short newHtl = msg.getShort(DMT.HTL);
+					if(newHtl < htl) htl = newHtl;
+					// Don't use the new nearestLoc, since we don't on requests, and anyway
+					// it doesn't make any sense to do so - it's only valid within that pocket.
+					Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
+					if(sub != null) {
+						double newBest = sub.getDouble(DMT.BEST_LOCATION);
+						if(newBest > target && newBest < best) {
+							best = newBest;
+						}
+						counter += Math.max(0, sub.getShort(DMT.COUNTER));
+						uniqueCounter += Math.max(0, sub.getShort(DMT.UNIQUE_COUNTER));
+						// linearCounter is unchanged - it's only valid on a Reply
+						// FIXME ideally we'd return it here if we don't manage to reroute.
+					} else {
+						counter++;
+						uniqueCounter++;
+						htl--;
+					}
+					break;
+				}
+
+				if(msg.getSpec() == DMT.FNPRejectedOverload) {
 					// Non-fatal - probably still have time left
 					forwardRejectedOverload();
 					rejectOverloads++;
 					// Count the nodes involved for results purposes.
 					// Don't use the HTL or nearestLoc.
-            		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
-            		if(sub != null) {
-            			double newBest = sub.getDouble(DMT.BEST_LOCATION);
-            			if(newBest > target && newBest < best)
-            				best = newBest;
-            			counter += Math.max(0, sub.getShort(DMT.COUNTER));
-            			uniqueCounter += Math.max(0, sub.getShort(DMT.UNIQUE_COUNTER));
-            		}
+					Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
+					if(sub != null) {
+						double newBest = sub.getDouble(DMT.BEST_LOCATION);
+						if(newBest > target && newBest < best) {
+							best = newBest;
+						}
+						counter += Math.max(0, sub.getShort(DMT.COUNTER));
+						uniqueCounter += Math.max(0, sub.getShort(DMT.UNIQUE_COUNTER));
+					}
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						//NB: IS_LOCAL means it's terminal. not(IS_LOCAL) implies that the rejection message was forwarded from a downstream node.
 						//"Local" from our peers perspective, this has nothing to do with local requests (source==null)
@@ -306,41 +310,42 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 					}
 					//so long as the node does not send a (IS_LOCAL) message. Interestingly messages can often timeout having only received this message.
 					continue;
-            	}
+				}
 
-            	if(msg.getSpec() == DMT.FNPRHProbeReply) {
-            		double hisNearest = msg.getDouble(DMT.NEAREST_LOCATION);
-            		if(Location.distance(hisNearest, target, true) < Location.distance(nearestLoc, target, true))
-            			nearestLoc = hisNearest;
-            		double hisBest = msg.getDouble(DMT.BEST_LOCATION);
-            		if(hisBest > target && hisBest < best)
-            			best = hisBest;
-            		counter += (short) Math.max(0, msg.getShort(DMT.COUNTER));
-            		uniqueCounter += (short) Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
-            		linearCounter += (short) Math.max(0, msg.getShort(DMT.LINEAR_COUNTER));
-            		fireCompletion();
-            		// All finished.
-            		return;
-            	}
-            	
-            	if(msg.getSpec() == DMT.FNPRHProbeTrace) {
-            		fireTrace(msg.getDouble(DMT.NEAREST_LOCATION), msg.getDouble(DMT.BEST_LOCATION),
-            				msg.getShort(DMT.HTL), msg.getShort(DMT.COUNTER), 
-            				msg.getShort(DMT.UNIQUE_COUNTER), msg.getDouble(DMT.LOCATION), 
-            				msg.getLong(DMT.MY_UID), (ShortBuffer) msg.getObject(DMT.PEER_LOCATIONS), 
-            				(ShortBuffer) msg.getObject(DMT.PEER_UIDS), 
-            				msg.getShort(DMT.LINEAR_COUNTER), msg.getString(DMT.REASON), msg.getLong(DMT.PREV_UID));
-            		continue;
-            	}
-            	
-           		Logger.error(this, "Unexpected message: "+msg);
-            	
-            }
-        }
+				if(msg.getSpec() == DMT.FNPRHProbeReply) {
+					double hisNearest = msg.getDouble(DMT.NEAREST_LOCATION);
+					if(Location.distance(hisNearest, target, true) < Location.distance(nearestLoc, target, true)) {
+						nearestLoc = hisNearest;
+					}
+					double hisBest = msg.getDouble(DMT.BEST_LOCATION);
+					if(hisBest > target && hisBest < best) {
+						best = hisBest;
+					}
+					counter += (short) Math.max(0, msg.getShort(DMT.COUNTER));
+					uniqueCounter += (short) Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
+					linearCounter += (short) Math.max(0, msg.getShort(DMT.LINEAR_COUNTER));
+					fireCompletion();
+					// All finished.
+					return;
+				}
+
+				if(msg.getSpec() == DMT.FNPRHProbeTrace) {
+					fireTrace(msg.getDouble(DMT.NEAREST_LOCATION), msg.getDouble(DMT.BEST_LOCATION),
+							msg.getShort(DMT.HTL), msg.getShort(DMT.COUNTER),
+							msg.getShort(DMT.UNIQUE_COUNTER), msg.getDouble(DMT.LOCATION),
+							msg.getLong(DMT.MY_UID), (ShortBuffer) msg.getObject(DMT.PEER_LOCATIONS),
+							(ShortBuffer) msg.getObject(DMT.PEER_UIDS),
+							msg.getShort(DMT.LINEAR_COUNTER), msg.getString(DMT.REASON), msg.getLong(DMT.PREV_UID));
+					continue;
+				}
+
+				Logger.error(this, "Unexpected message: "+msg);
+			} //end while(true) inner 2
+		} //wnd while(true) outer
 	}
 
-	private void fireTrace(double nearest, double best, short htl, short counter, 
-			short uniqueCounter, double location, long myUID, ShortBuffer peerLocs, 
+	private void fireTrace(double nearest, double best, short htl, short counter,
+			short uniqueCounter, double location, long myUID, ShortBuffer peerLocs,
 			ShortBuffer peerUIDs, short linearCounter, String reason, long prevUID) {
 		if(this.best > target && this.best < best)
 			best = this.best;
@@ -362,10 +367,10 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 	}
 
 	/**
-     * Note that this must be first on the list.
-     */
+	 * Note that this must be first on the list.
+	 */
 	private MessageFilter makeDataFoundFilter(PeerNode next) {
-   		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRHProbeReply);
+		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRHProbeReply);
 	}
 
 	private Message createDataRequest() {
@@ -373,9 +378,9 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 	}
 
 	private volatile boolean hasForwardedRejectedOverload;
-    
-    /** Forward RejectedOverload to the request originator */
-    private void forwardRejectedOverload() {
+
+	/** Forward RejectedOverload to the request originator */
+	private void forwardRejectedOverload() {
 		synchronized (this) {
 			if(hasForwardedRejectedOverload) return;
 			hasForwardedRejectedOverload = true;
@@ -383,49 +388,49 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 		}
 		fireReceivedRejectOverload(nearestLoc, best, counter, uniqueCounter, linearCounter, "");
 	}
-    
-    // these are bit-masks
-    static final short WAIT_REJECTED_OVERLOAD = 1;
-    static final short WAIT_FINISHED = 4;
-    
-    static final short WAIT_ALL = 
-    	WAIT_REJECTED_OVERLOAD | WAIT_FINISHED;
 
-    public short getHTL() {
-        return htl;
-    }
-    
-	private volatile Object totalBytesSync = new Object();
+	// these are bit-masks
+	static final short WAIT_REJECTED_OVERLOAD = 1;
+	static final short WAIT_FINISHED = 4;
+
+	static final short WAIT_ALL =
+		WAIT_REJECTED_OVERLOAD | WAIT_FINISHED;
+
+	public short getHTL() {
+		return htl;
+	}
+
+	private final Object totalBytesSync = new Object();
 	private int totalBytesSent;
-	
+
 	public void sentBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
 		node.nodeStats.probeRequestCtr.sentBytes(x);
 	}
-	
+
 	public int getTotalSentBytes() {
 		synchronized(totalBytesSync) {
 			return totalBytesSent;
 		}
 	}
-	
+
 	private int totalBytesReceived;
-	
+
 	public void receivedBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
 		node.nodeStats.probeRequestCtr.receivedBytes(x);
 	}
-	
+
 	public int getTotalReceivedBytes() {
 		synchronized(totalBytesSync) {
 			return totalBytesReceived;
 		}
 	}
-	
+
 	synchronized boolean hasForwarded() {
 		return hasForwarded;
 	}
@@ -433,29 +438,29 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 	public void sentPayload(int x) {
 		Logger.error(this, "sentPayload("+x+") in ResettingHTLProbeRequestSender ?!?!? for "+this, new Exception("error"));
 	}
-	
+
 	public boolean isLocalRequestSearch() {
 		return (source==null);
 	}
-	
+
 	/** All these methods should return quickly! */
-	interface Listener {
-		/** Should return quickly, allocate a thread if it needs to block etc 
+	public interface Listener {
+		/** Should return quickly, allocate a thread if it needs to block etc
 		 * @throws NotConnectedException */
 		void onReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException;
 		void onTrace(long uid, double nearest, double best, short htl, short counter, short uniqueCounter, double location, long myUID, ShortBuffer peerLocs, ShortBuffer peerUIDs, short s, short linearCounter, String reason, long prevUID) throws NotConnectedException;
-		/** On completion 
+		/** On completion
 		 * @throws NotConnectedException */
 		void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException;
-		/** On RNF 
+		/** On RNF
 		 * @throws NotConnectedException */
 		void onRNF(short htl, double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException;
-		/** On timeout 
-		 * @param reason 
+		/** On timeout
+		 * @param reason
 		 * @throws NotConnectedException */
 		void onTimeout(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) throws NotConnectedException;
 	}
-	
+
 	public void addListener(Listener l) {
 		// No request coalescing atm, must be added before anything has happened.
 		synchronized (this) {
@@ -464,7 +469,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 			}
 		}
 	}
-	
+
 	private void fireReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) {
 		synchronized (listeners) {
 			for (Listener l : listeners) {
@@ -476,7 +481,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 			}
 		}
 	}
-	
+
 	private void fireCompletion() {
 		synchronized (listeners) {
 			for (Listener l : listeners) {
@@ -488,8 +493,8 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 			}
 		}
 	}
-    
-    private void fireRNF() {
+
+	private void fireRNF() {
 		synchronized (listeners) {
 			for (Listener l : listeners) {
 				try {
@@ -501,7 +506,7 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 		}
 	}
 
-    private void fireTimeout(String reason) {
+	private void fireTimeout(String reason) {
 		synchronized (listeners) {
 			for (Listener l : listeners) {
 				try {
@@ -511,17 +516,19 @@ public class ProbeRequestSender implements PrioRunnable, ByteCounter {
 				}
 			}
 		}
-    }
-    
+	}
+
 	private void updateBest() {
 		PeerNode[] nodes = node.peers.myPeers;
-		for(PeerNode node : nodes) {
-			if(!node.isConnected()) continue;
-			double loc = node.getLocation();
-			if(loc < target)
+		for(PeerNode tmpNode : nodes) {
+			if(!tmpNode.isConnected()) continue;
+			double loc = tmpNode.getLocation();
+			if(loc < target) {
 				continue;
-			if(loc > target && loc < best)
+			}
+			if(loc > target && loc < best) {
 				best = loc;
+			}
 		}
 	}
 

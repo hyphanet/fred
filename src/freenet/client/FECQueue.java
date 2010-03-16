@@ -17,6 +17,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
+import freenet.client.FECJob;
 import freenet.node.PrioRunnable;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
@@ -54,8 +55,8 @@ public class FECQueue implements OOMHook {
 	private transient FECQueue proxy;
 	private transient FECQueue proxiedFor;
 	
-    public static FECQueue create(final long nodeDBHandle, ObjectContainer container, FECQueue transientQueue) {
-    	@SuppressWarnings("serial")
+	public static FECQueue create(final long nodeDBHandle, ObjectContainer container, FECQueue transientQueue) {
+		@SuppressWarnings("serial")
 		ObjectSet<FECQueue> result = container.query(new Predicate<FECQueue>() {
 			@Override
 			public boolean match(FECQueue queue) {
@@ -95,7 +96,7 @@ public class FECQueue implements OOMHook {
 
 	/** Called after creating or deserializing the FECQueue. Initialises all the transient fields. */
 	@SuppressWarnings("unchecked")
-    public void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
+	public void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
 		this.priorities = priorities;
 		this.maxPersistentQueueCacheSize = maxCacheSize;
 		this.databaseJobRunner = dbJobRunner;
@@ -210,7 +211,7 @@ public class FECQueue implements OOMHook {
 					try {
 						if (job.isADecodingJob)
 							job.getCodec().realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength,
-							        job.bucketFactory);
+									job.bucketFactory);
 						else {
 							job.getCodec().realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
 							// Update SplitFileBlocks from buckets if necessary

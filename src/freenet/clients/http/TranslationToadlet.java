@@ -254,7 +254,7 @@ public class TranslationToadlet extends Toadlet {
 				}
 			}
 
-			if(translateFor.equals("Node")) {
+			if("Node".equals(translateFor)) {
 				this.translatingFor = "Node";
 				this.base = NodeL10n.getBase();
 			}

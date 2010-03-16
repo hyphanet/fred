@@ -44,20 +44,20 @@ public class FreenetURITest extends TestCase {
 		}
 		try {
 			new FreenetURI(
-			        "SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search-17XXXX/index_d51.xml")
-			        .sskForUSK();
+				"SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search-17XXXX/index_d51.xml")
+				.sskForUSK();
 			fail("no excpetion throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
 		try {
 			new FreenetURI(
-			        "SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search17/index_d51.xml")
-			        .sskForUSK();
+				"SSK@5hH~39FtjA7A9~VXWtBKI~prUDTuJZURudDG0xFn3KA,GDgRGt5f6xqbmo-WraQtU54x4H~871Sho9Hz6hC-0RA,AQACAAE/Search17/index_d51.xml")
+				.sskForUSK();
 			fail("no excpetion throw!");
 		} catch (IllegalStateException e) {
 			// pass
 		}
 	}
-	
+
 }

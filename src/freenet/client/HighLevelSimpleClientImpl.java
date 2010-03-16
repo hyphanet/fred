@@ -112,6 +112,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.random = hlsc.random;
 	}
 	
+	@Override
 	public HighLevelSimpleClientImpl clone() {
 		return new HighLevelSimpleClientImpl(this);
 	}
@@ -242,11 +243,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 	
 	/**
-     * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
-     */
-    public void addGlobalHook(ClientEventListener listener) {
-        addEventHook(listener);
-    }
+	 * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
+	 */
+	public void addGlobalHook(ClientEventListener listener) {
+		addEventHook(listener);
+	}
 
 	public void addEventHook(ClientEventListener listener) {
 		eventProducer.addEventListener(listener);

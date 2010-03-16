@@ -26,31 +26,31 @@ import freenet.support.SizeUtil;
 import freenet.support.StringValidityChecker;
 
 final public class FileUtil {
-	
+
 	private static final int BUFFER_SIZE = 32*1024;
-	
+
 	public static enum OperatingSystem {
 		All,
 		MacOS,
 		Unix,
 		Windows
 	};
-	
+
 	private static final OperatingSystem detectedOS;
-	
+
 	private static final Charset fileNameCharset;
 
-	
+
 	static {
 		detectedOS = detectOperatingSystem();
-		
-		// I did not find any way to detect the Charset of the file system so I'm using the file encoding charset. 
+
+		// I did not find any way to detect the Charset of the file system so I'm using the file encoding charset.
 		// On Windows and Linux this is set based on the users configured system language which is probably equal to the filename charset.
 		// The worst thing which can happen if we misdetect the filename charset is that downloads fail because the filenames are invalid:
 		// We disallow path and file separator characters anyway so its not possible to cause files to be stored in arbitrary places.
 		fileNameCharset = getFileEncodingCharset();
 	}
-	
+
 	/**
 	 * Detects the operating system in which the JVM is running. Returns OperatingSystem.All if the OS is unknown or an error occured.
 	 * Therefore this function should never throw.
@@ -58,42 +58,45 @@ final public class FileUtil {
 	private static final OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
 		try {
 			final String name =  System.getProperty("os.name").toLowerCase();
-			
-			// Order the if() by probability instead alphabetically to decrease the false-positive rate in case they decide to call it "Windows Mac" or whatever 
-			
+
+			// Order the if() by probability instead alphabetically to decrease the false-positive rate in case they decide to call it "Windows Mac" or whatever
+
 			// Please adapt sanitizeFileName when adding new OS.
-			
-			if(name.indexOf("win") >= 0)
+
+			if(name.indexOf("win") >= 0) {
 				return OperatingSystem.Windows;
-			
-			if(name.indexOf("mac") >= 0)
+			}
+
+			if(name.indexOf("mac") >= 0) {
 				return OperatingSystem.MacOS;
-			
-			if(name.indexOf("unix") >= 0 || name.indexOf("linux") >= 0)
+			}
+
+			if(name.indexOf("unix") >= 0 || name.indexOf("linux") >= 0) {
 				return OperatingSystem.Unix;
-			
+			}
+
 			Logger.error(FileUtil.class, "Unknown operating system:" + name);
 		} catch(Throwable t) {
 			Logger.error(FileUtil.class, "Operating system detection failed", t);
 		}
-		
+
 		return OperatingSystem.All;
 	}
-	
+
 	/**
-	 * Returns the Charset which is equal to the "file.encoding" property. 
+	 * Returns the Charset which is equal to the "file.encoding" property.
 	 * This property is set to the users configured system language on windows for example.
-	 * 
-	 * If any error occurs, the default Charset is returned. Therefore this function should never throw. 
+	 *
+	 * If any error occurs, the default Charset is returned. Therefore this function should never throw.
 	 */
 	public static final Charset getFileEncodingCharset() {
-		try { 
+		try {
 			return Charset.forName(System.getProperty("file.encoding"));
 		} catch(Throwable t) {
 			return Charset.defaultCharset();
 		}
 	}
-	
+
 
 	/** Round up a value to the next multiple of a power of 2 */
 	private static final long roundup_2n (long val, int blocksize) {
@@ -142,11 +145,11 @@ final public class FileUtil {
 			if(filename == null) return false;
 		}
 	}
-	
+
 	public static File getCanonicalFile(File file) {
 		// Having some problems storing File's in db4o ...
 		// It would start up, and canonicalise a file with path "/var/lib/freenet-experimental/persistent-temp-24374"
-		// to /var/lib/freenet-experimental/var/lib/freenet-experimental/persistent-temp-24374 
+		// to /var/lib/freenet-experimental/var/lib/freenet-experimental/persistent-temp-24374
 		// (where /var/lib/freenet-experimental is the current working dir)
 		// Regenerating from path worked. So do that here.
 		// And yes, it's voodoo.
@@ -159,17 +162,17 @@ final public class FileUtil {
 		}
 		return result;
 	}
-	
-        public static String readUTF(File file) throws FileNotFoundException, IOException {
-            return readUTF(file, 0);
-        }
-        
+
+		public static String readUTF(File file) throws FileNotFoundException, IOException {
+			return readUTF(file, 0);
+		}
+
 	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
 		StringBuilder result = new StringBuilder();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
 		InputStreamReader isr = null;
-		
+
 		try {
 			fis = new FileInputStream(file);
 			skipFully(fis, offset);
@@ -207,9 +210,10 @@ final public class FileUtil {
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
 		File file = File.createTempFile("temp", ".tmp", target.getParentFile());
-		if(Logger.shouldLog(Logger.MINOR, FileUtil.class))
+		if(Logger.shouldLog(Logger.MINOR, FileUtil.class)) {
 			Logger.minor(FileUtil.class, "Writing to "+file+" to be renamed to "+target);
-		
+		}
+
 		try {
 			dis = new DataInputStream(input);
 			fos = new FileOutputStream(file);
@@ -225,98 +229,100 @@ final public class FileUtil {
 			if(dis != null) dis.close();
 			if(fos != null) fos.close();
 		}
-		
-		if(FileUtil.renameTo(file, target))
+
+		if(FileUtil.renameTo(file, target)) {
 			return true;
-		else {
+		} else {
 			file.delete();
 			return false;
 		}
 	}
-        
-        public static boolean renameTo(File orig, File dest) {
-            // Try an atomic rename
-            // Shall we prevent symlink-race-conditions here ?
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if (!orig.renameTo(dest)) {
-                // Not supported on some systems (Windows)
-                if (!dest.delete()) {
-                    if (dest.exists()) {
-                        Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
-                    }
-                }
-                if (!orig.renameTo(dest)) {
-                    Logger.error("FileUtil", "Could not rename " + orig + " to " + dest +
-                            (dest.exists() ? " (target exists)" : "") +
-                            (orig.exists() ? " (source exists)" : "") +
-                            " - check permissions");
-                    return false;
-                }
-            }
-            return true;
-        }
 
-        /**
-         * Like renameTo(), but can move across filesystems, by copying the data.
-         * @param f
-         * @param file
-         */
-    	public static boolean moveTo(File orig, File dest, boolean overwrite) {
-            if(orig.equals(dest))
-                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
-            if(!orig.exists()) {
-            	throw new IllegalArgumentException("Original doesn't exist!");
-            }
-            if(dest.exists()) {
-            	if(overwrite)
-            		dest.delete();
-            	else {
-            		System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
-            		return false;
-            	}
-            }
-    		if(!orig.renameTo(dest)) {
-    			// Copy the data
-    			InputStream is = null;
-    			OutputStream os = null;
-    			try {
-    				is = new FileInputStream(orig);
-    				os = new FileOutputStream(dest);
-    				copy(is, os, orig.length());
-    				is.close();
-    				is = null;
-    				os.close();
-    				os = null;
-    				orig.delete();
-    				return true;
-    			} catch (IOException e) {
-    				dest.delete();
-    				Logger.error(FileUtil.class, "Move failed from "+orig+" to "+dest+" : "+e, e);
-    				System.err.println("Move failed from "+orig+" to "+dest+" : "+e);
-    				e.printStackTrace();
-    				return false;
-    			} finally {
-    				Closer.close(is);
-    				Closer.close(os);
-    			}
-    		} else return true;
-    	}
-    
-    /**
-     * Sanitizes the given filename to be valid on the given operating system.
-     * If OperatingSystem.All is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
-     * this is MacOS, Unix and Windows.
-     */
+		public static boolean renameTo(File orig, File dest) {
+			// Try an atomic rename
+			// Shall we prevent symlink-race-conditions here ?
+			if(orig.equals(dest)) {
+				throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
+			}
+			if(!orig.exists()) {
+				throw new IllegalArgumentException("Original doesn't exist!");
+			}
+			if (!orig.renameTo(dest)) {
+				// Not supported on some systems (Windows)
+				if (!dest.delete()) {
+					if (dest.exists()) {
+						Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
+					}
+				}
+				if (!orig.renameTo(dest)) {
+					Logger.error("FileUtil", "Could not rename " + orig + " to " + dest +
+							(dest.exists() ? " (target exists)" : "") +
+							(orig.exists() ? " (source exists)" : "") +
+							" - check permissions");
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * Like renameTo(), but can move across filesystems, by copying the data.
+		 * @param f
+		 * @param file
+		 */
+		public static boolean moveTo(File orig, File dest, boolean overwrite) {
+			if(orig.equals(dest)) {
+				throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
+			}
+			if(!orig.exists()) {
+				throw new IllegalArgumentException("Original doesn't exist!");
+			}
+			if(dest.exists()) {
+				if(overwrite) {
+					dest.delete();
+				} else {
+					System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
+					return false;
+				}
+			}
+			if(!orig.renameTo(dest)) {
+				// Copy the data
+				InputStream is = null;
+				OutputStream os = null;
+				try {
+					is = new FileInputStream(orig);
+					os = new FileOutputStream(dest);
+					copy(is, os, orig.length());
+					is.close();
+					is = null;
+					os.close();
+					os = null;
+					orig.delete();
+					return true;
+				} catch (IOException e) {
+					dest.delete();
+					Logger.error(FileUtil.class, "Move failed from "+orig+" to "+dest+" : "+e, e);
+					System.err.println("Move failed from "+orig+" to "+dest+" : "+e);
+					e.printStackTrace();
+					return false;
+				} finally {
+					Closer.close(is);
+					Closer.close(os);
+				}
+			} else return true;
+		}
+
+	/**
+	 * Sanitizes the given filename to be valid on the given operating system.
+	 * If OperatingSystem.All is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
+	 * this is MacOS, Unix and Windows.
+	 */
 	public static String sanitizeFileName(final String fileName, OperatingSystem targetOS) {
 		// Filter out any characters which do not exist in the charset.
 		final CharBuffer buffer = fileNameCharset.decode(fileNameCharset.encode(fileName)); // Charset are thread-safe
 
 		final StringBuilder sb = new StringBuilder(fileName.length() + 1);
-		
+
 		switch(targetOS) {
 			case All: break;
 			case MacOS: break;
@@ -335,22 +341,22 @@ final public class FileUtil {
 				sb.append(' ');
 				continue;
 			}
-			
-			
+
+
 			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
 				if(StringValidityChecker.isWindowsReservedPrintableFilenameCharacter(c)) {
 					sb.append(' ');
 					continue;
 				}
 			}
-			
+
 			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.MacOS) {
 				if(StringValidityChecker.isMacOSReservedPrintableFilenameCharacter(c)) {
 					sb.append(' ');
 					continue;
 				}
 			}
-			
+
 			// Nothing did continue; so the character is okay
 			sb.append(c);
 		}
@@ -360,26 +366,28 @@ final public class FileUtil {
 			int lastCharIndex = sb.length() - 1;
 			while(lastCharIndex >= 0) {
 				char lastChar = sb.charAt(lastCharIndex);
-				if(lastChar == ' ' ||  lastChar == '.')
+				if(lastChar == ' ' ||  lastChar == '.') {
 					sb.deleteCharAt(lastCharIndex);
-				else
+				} else {
 					break;
+				}
 			}
 		}
-		
+
 		// Now the filename might be one of the reserved filenames in Windows (CON etc.) and we must replace it if it is...
 		if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
-			if(StringValidityChecker.isWindowsReservedFilename(sb.toString()))
+			if(StringValidityChecker.isWindowsReservedFilename(sb.toString())) {
 				sb.insert(0, '_');
+			}
 		}
-	
+
 		if(sb.length() == 0) {
 			sb.append("Invalid filename"); // TODO: L10n
 		}
-		
+
 		return sb.toString();
 	}
-    	
+
 	public static String sanitize(String fileName) {
 		return sanitizeFileName(fileName, detectedOS);
 	}
@@ -401,7 +409,7 @@ final public class FileUtil {
 	 * Find the length of an input stream. This method will consume the complete
 	 * input stream until its {@link InputStream#read(byte[])} method returns
 	 * <code>-1</code>, thus signalling the end of the stream.
-	 * 
+	 *
 	 * @param source
 	 *            The input stream to find the length of
 	 * @return The numbe of bytes that can be read from the stream
@@ -427,7 +435,7 @@ final public class FileUtil {
 	 * as much bytes as possible will be copied (i.e. until
 	 * {@link InputStream#read()} returns <code>-1</code> to signal the end of
 	 * the stream).
-	 * 
+	 *
 	 * @param source
 	 *            The input stream to read from
 	 * @param destination
@@ -450,8 +458,9 @@ final public class FileUtil {
 				throw new EOFException("stream reached eof");
 			}
 			destination.write(buffer, 0, read);
-			if (remaining > 0)
+			if (remaining > 0) {
 				remaining -= read;
+			}
 		}
 	}
 
@@ -496,8 +505,9 @@ final public class FileUtil {
 				}
 				raf.getFD().sync();
 				// Then ffffff it out
-				for(int i=0;i<buf.length;i++)
+				for(int i=0;i<buf.length;i++) {
 					buf[i] = (byte)0xFF;
+				}
 				raf.seek(0);
 				count = 0;
 				while(count < size) {
@@ -518,8 +528,9 @@ final public class FileUtil {
 				raf.getFD().sync();
 				raf.seek(0);
 				// Then 0's again
-				for(int i=0;i<buf.length;i++)
+				for(int i=0;i<buf.length;i++) {
 					buf[i] = 0;
+				}
 				count = 0;
 				while(count < size) {
 					int written = (int) Math.min(buf.length, size - count);
@@ -531,8 +542,9 @@ final public class FileUtil {
 				Closer.close(raf);
 			}
 		}
-		if((!file.delete()) && file.exists())
+		if((!file.delete()) && file.exists()) {
 			throw new IOException("Unable to delete file");
+		}
 	}
 
 	public static final long getFreeSpace(File dir) {
@@ -557,5 +569,5 @@ final public class FileUtil {
 		}
 		return freeSpace;
 	}
-	
+
 }

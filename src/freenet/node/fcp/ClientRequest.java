@@ -228,11 +228,11 @@ public abstract class ClientRequest {
 	}
 
 	public static short parsePersistence(String string) {
-		if((string == null) || string.equalsIgnoreCase("connection"))
+		if((string == null) || "connection".equalsIgnoreCase(string))
 			return PERSIST_CONNECTION;
-		if(string.equalsIgnoreCase("reboot"))
+		if("reboot".equalsIgnoreCase(string))
 			return PERSIST_REBOOT;
-		if(string.equalsIgnoreCase("forever"))
+		if("forever".equalsIgnoreCase(string))
 			return PERSIST_FOREVER;
 		return Short.parseShort(string);
 	}
@@ -258,12 +258,12 @@ public abstract class ClientRequest {
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use loading request "+clientName+" "+fs.get("Identifier"));
 		try {
 			String type = fs.get("Type");
-			if(type.equals("GET")) {
+			if("GET".equals(type)) {
 				ClientGet cg = new ClientGet(fs, client, server);
 				cg.register(container, true);
 				cg.start(container, context);
 				return cg;
-			} else if(type.equals("PUT")) {
+			} else if("PUT".equals(type)) {
 				final ClientPut cp = new ClientPut(fs, client, server, container);
 				client.register(cp, container);
 				DBJob start = new DBJob() {
@@ -283,7 +283,7 @@ public abstract class ClientRequest {
 				context.jobRunner.queueRestartJob(start, NativeThread.HIGH_PRIORITY, container, false);
 				context.jobRunner.queue(start, NativeThread.HIGH_PRIORITY, false);
 				return cp;
-			} else if(type.equals("PUTDIR")) {
+			} else if("PUTDIR".equals(type)) {
 				final ClientPutDir cp = new ClientPutDir(fs, client, server, container);
 				client.register(cp, container);
 				DBJob start = new DBJob() {

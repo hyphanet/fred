@@ -17,80 +17,83 @@ import freenet.support.api.StringArrCallback;
 
 /**
  * Symlinker Toadlet
- * 
+ *
  * Provide alias to other toadlet URLs by throwing {@link RedirectException}.
  */
 public class SymlinkerToadlet extends Toadlet {	
 	private final HashMap<String, String> linkMap = new HashMap<String, String>();
 	private final Node node;
 	SubConfig tslconfig;
-	
+
 	public SymlinkerToadlet(HighLevelSimpleClient client,final Node node) {
 		super(client);
 		this.node = node;
 		tslconfig = new SubConfig("toadletsymlinker", node.config);
-		tslconfig.register("symlinks", null, 9, true, false, "SymlinkerToadlet.symlinks", "SymlinkerToadlet.symlinksLong", 
-        		new StringArrCallback() {
-			@Override
-			public String[] get() {
-				return getConfigLoadString();
-			}
-			@Override
-			public void set(String[] val) throws InvalidConfigValueException {
-				//if(storeDir.equals(new File(val))) return;
-				// FIXME
-				throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
-			}
+		tslconfig.register("symlinks", null, 9, true, false, "SymlinkerToadlet.symlinks", "SymlinkerToadlet.symlinksLong",
+				new StringArrCallback() {
+					@Override
+					public String[] get() {
+						return getConfigLoadString();
+					}
+					@Override
+					public void set(String[] val) throws InvalidConfigValueException {
+						//if(storeDir.equals(new File(val))) return;
+						// FIXME
+						throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
+					}
 
-			        @Override
+					@Override
 					public boolean isReadOnly() {
-				        return true;
-			        }
-		});
-		
+						return true;
+					}
+				});
+
 		String fns[] = tslconfig.getStringArr("symlinks");
 		if (fns != null) {
 			for (String fn : fns) {
 				String tuple[] = fn.split("#");
-				if (tuple.length == 2)
+				if (tuple.length == 2) {
 					addLink(tuple[0], tuple[1], false);
+				}
 			}
 		}
-		
+
 		tslconfig.finishedInitialization();
-		
+
 		addLink("/sl/search/", "/plugins/plugins.Librarian/", false);
 		addLink("/sl/gallery/", "/plugins/plugins.TestGallery/", false);
 	}
-	
+
 	public boolean addLink(String alias, String target, boolean store) {
 		boolean ret;
 		synchronized (linkMap) {
-			if (linkMap.put(alias, target) == alias)
+			if (linkMap.put(alias, target).equals(alias)) {
 				ret = true;
-			else 
+			} else  {
 				ret = false;
+			}
 			Logger.normal(this, "Adding link: " + alias + " => " + target);
 		}
 		if(store) node.clientCore.storeConfig();
 		return ret;
 	}
-	
+
 	public boolean removeLink(String alias, boolean store) {
 		boolean ret;
 		synchronized (linkMap) {
 			Object o;
-			if ((o = linkMap.remove(alias))!= null)
+			if ((o = linkMap.remove(alias))!= null) {
 				ret = true;
-			else 
+			} else {
 				ret = false;
-			
+			}
+
 			Logger.normal(this, "Removing link: " + alias + " => " + o);
 		}
 		if(store) node.clientCore.storeConfig();
 		return ret;
 	}
-	
+
 	private String[] getConfigLoadString() {
 		String retarr[] = new String[linkMap.size()];
 		synchronized (linkMap) {
@@ -116,27 +119,27 @@ public class SymlinkerToadlet extends Toadlet {
 				}
 			}
 		}
-		
+
 		// TODO redirect to errorpage
 		if ((foundtarget == null) || (foundkey == null)) {
-			writeTextReply(ctx, 404, "Not found", 
+			writeTextReply(ctx, 404, "Not found",
 					NodeL10n.getBase().getString("StaticToadlet.pathNotFound"));
 			return;
 		}
-		
+
 		path = foundtarget + path.substring(foundkey.length());
 		URI outuri = null;
 		try {
 			outuri = new URI(null, null,
-			         path, uri.getQuery(), uri.getFragment());
+					 path, uri.getQuery(), uri.getFragment());
 		} catch (URISyntaxException e) {
 			// TODO Handle error somehow
 			writeHTMLReply(ctx, 200, "OK", e.getMessage());
 			return;
 		}
-		
+
 		uri.getRawQuery();
-	    
+
 		throw new RedirectException(outuri);
 	}
 
@@ -144,5 +147,5 @@ public class SymlinkerToadlet extends Toadlet {
 	public String path() {
 		return "/sl/";
 	}
-	
+
 }

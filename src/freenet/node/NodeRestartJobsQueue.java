@@ -17,11 +17,11 @@ import freenet.support.io.NativeThread;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class NodeRestartJobsQueue {
-	
+
 	private final long nodeDBHandle;
 
 	@SuppressWarnings("unchecked")
-    public NodeRestartJobsQueue(long nodeDBHandle2) {
+	public NodeRestartJobsQueue(long nodeDBHandle2) {
 		nodeDBHandle = nodeDBHandle2;
 		dbJobs = new Set[NativeThread.JAVA_PRIORITY_RANGE];
 		dbJobsEarly = new Set[NativeThread.JAVA_PRIORITY_RANGE];
@@ -30,16 +30,16 @@ public class NodeRestartJobsQueue {
 			dbJobsEarly[i] = new HashSet<DBJob>();
 		}
 	}
-	
-    public static NodeRestartJobsQueue init(final long nodeDBHandle, ObjectContainer container) {
-    	@SuppressWarnings("serial")
-		ObjectSet<NodeRestartJobsQueue> results = 
+
+	public static NodeRestartJobsQueue init(final long nodeDBHandle, ObjectContainer container) {
+		@SuppressWarnings("serial")
+		ObjectSet<NodeRestartJobsQueue> results =
 			container.query(new Predicate<NodeRestartJobsQueue>() {
 			@Override
 			public boolean match(NodeRestartJobsQueue arg0) {
 				return (arg0.nodeDBHandle == nodeDBHandle);
 			}
-			
+
 		});
 		if(results.hasNext()) {
 			System.err.println("Found old restart jobs queue");
@@ -59,7 +59,7 @@ public class NodeRestartJobsQueue {
 
 	private Set<DBJob>[] dbJobs;
 	private Set<DBJob>[] dbJobsEarly;
-	
+
 	public synchronized void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) {
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Queueing restart job "+job+" at priority "+priority+" early="+early);
 		Set<DBJob> jobs = early ? dbJobsEarly[priority] : dbJobs[priority];
@@ -78,7 +78,7 @@ public class NodeRestartJobsQueue {
 		}
 		container.deactivate(jobs, 1);
 	}
-	
+
 	public synchronized void removeRestartJob(DBJob job, int priority, ObjectContainer container) {
 		boolean jobWasActive = container.ext().isActive(job);
 		if(!jobWasActive) container.activate(job, 1);
@@ -115,10 +115,11 @@ public class NodeRestartJobsQueue {
 				container.deactivate(dbJobs[priority], 1);
 				container.deactivate(dbJobsEarly[priority], 1);
 			}
-			if(found > 0)
+			if(found > 0) {
 				Logger.error(this, "Job "+job+" not in specified priority "+priority+" found in "+found+" other priorities when removing");
-			else
+			} else {
 				Logger.error(this, "Job "+job+" not found when removing it");
+			}
 		} else {
 			/*
 			 * Store to 1 hop only.
@@ -135,7 +136,7 @@ public class NodeRestartJobsQueue {
 		}
 		if(!jobWasActive) container.deactivate(job, 1);
 	}
-	
+
 	static class RestartDBJob {
 		public RestartDBJob(DBJob job2, int i) {
 			job = job2;
@@ -149,20 +150,23 @@ public class NodeRestartJobsQueue {
 		ArrayList<RestartDBJob> list = new ArrayList<RestartDBJob>();
 		for(int i=dbJobsEarly.length-1;i>=0;i--) {
 			container.activate(dbJobsEarly[i], 1);
-			if(!dbJobsEarly[i].isEmpty())
+			if(!dbJobsEarly[i].isEmpty()) {
 				System.err.println("Adding "+dbJobsEarly[i].size()+" early restart jobs at priority "+i);
-			for(DBJob job : dbJobsEarly[i])
+			}
+			for(DBJob job : dbJobsEarly[i]) {
 				list.add(new RestartDBJob(job, i));
+			}
 			container.deactivate(dbJobsEarly[i], 1);
 		}
 		return list.toArray(new RestartDBJob[list.size()]);
 	}
-	
+
 	void addLateRestartDatabaseJobs(DBJobRunner runner, ObjectContainer container) throws DatabaseDisabledException {
 		for(int i=dbJobsEarly.length-1;i>=0;i--) {
 			container.activate(dbJobs[i], 1);
-			if(!dbJobs[i].isEmpty())
+			if(!dbJobs[i].isEmpty()) {
 				System.err.println("Adding "+dbJobs[i].size()+" restart jobs at priority "+i);
+			}
 			for(Iterator<DBJob> it = dbJobs[i].iterator();it.hasNext();) {
 				DBJob job = it.next();
 				if(job == null) {
@@ -176,5 +180,5 @@ public class NodeRestartJobsQueue {
 			}
 		}
 	}
-	
+
 }

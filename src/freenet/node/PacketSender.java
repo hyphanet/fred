@@ -75,6 +75,7 @@ public class PacketSender implements Runnable, Ticker {
 			this.job = job;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(!(o instanceof Job)) return false;
 			// Ignore the name, we are only interested in the job, needed for noDupes.
@@ -97,7 +98,7 @@ public class PacketSender implements Runnable, Ticker {
 		System.out.println("Starting PacketSender");
 		long now = System.currentTimeMillis();
 		long transition = Version.transitionTime();
-		if(now < transition)
+		if(now < transition) {
 			queueTimedJob(new Runnable() {
 
 					public void run() {
@@ -109,6 +110,7 @@ public class PacketSender implements Runnable, Ticker {
 						}
 					}
 				}, transition - now);
+		}
 		myThread.start();
 	}
 
@@ -144,8 +146,9 @@ public class PacketSender implements Runnable, Ticker {
 			PeerNode pn = nodes[i];
 			// Only routing backed off nodes should need status updating since everything else
 			// should get updated immediately when it's changed
-			if(pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+			if(pn.getPeerNodeStatus() == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 				pn.setPeerNodeStatus(now);
+			}
 		}
 		pm.maybeLogPeerNodeStatusSummary(now);
 		pm.maybeUpdateOldestNeverConnectedPeerAge(now);
@@ -164,13 +167,14 @@ public class PacketSender implements Runnable, Ticker {
 		
 		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
 		long count = node.outputThrottle.getCount();
-		if(count > MAX_PACKET_SIZE)
+		if(count > MAX_PACKET_SIZE) {
 			canSendThrottled = true;
-		else {
+		} else {
 			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
 			canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+			}
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
 		}
 		
@@ -188,8 +192,9 @@ public class PacketSender implements Runnable, Ticker {
 
 			if(pn.isConnected()) {
 				
-				if(pn.shouldThrottle() && !canSendThrottled)
+				if(pn.shouldThrottle() && !canSendThrottled) {
 					continue;
+				}
 				
 				// Is the node dead?
 				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
@@ -210,20 +215,21 @@ public class PacketSender implements Runnable, Ticker {
 				}
 				
 				try {
-				if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
-					canSendThrottled = false;
-					count = node.outputThrottle.getCount();
-					if(count > MAX_PACKET_SIZE)
-						canSendThrottled = true;
-					else {
-						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
-						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
-						if(logMINOR)
-							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
-						nextActionTime = Math.min(nextActionTime, now + canSendAt);
-						newBrokeAt = idx;
+					if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+						canSendThrottled = false;
+						count = node.outputThrottle.getCount();
+						if(count > MAX_PACKET_SIZE) {
+							canSendThrottled = true;
+						} else {
+							long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+							canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+							if(logMINOR) {
+								Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+							}
+							nextActionTime = Math.min(nextActionTime, now + canSendAt);
+							newBrokeAt = idx;
+						}
 					}
-				}
 				} catch (BlockedTooLongException e) {
 					Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+this+" on "+e.tracker+" - DISCONNECTING!");
 					pn.forceDisconnect(true);
@@ -232,26 +238,31 @@ public class PacketSender implements Runnable, Ticker {
 				
 				long urgentTime = pn.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
-				if(urgentTime < Long.MAX_VALUE && logMINOR)
+				if(urgentTime < Long.MAX_VALUE && logMINOR) {
 					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
+				}
 				nextActionTime = Math.min(nextActionTime, urgentTime);
-			} else
+			} else {
 				// Not connected
 
-				if(pn.noContactDetails())
+				if(pn.noContactDetails()) {
 					pn.startARKFetcher();
-			
+				}
+			}
+
 			if(pn.shouldSendHandshake()) {
 				// Send handshake if necessary
 				long beforeHandshakeTime = System.currentTimeMillis();
 				pn.getOutgoingMangler().sendHandshake(pn, false);
 				long afterHandshakeTime = System.currentTimeMillis();
-				if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
+				if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000)) {
 					Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
+				}
 			}
 			long tempNow = System.currentTimeMillis();
-			if((tempNow - oldTempNow) > (5 * 1000))
+			if((tempNow - oldTempNow) > (5 * 1000)) {
 				Logger.error(this, "tempNow is more than 5 seconds past oldTempNow (" + (tempNow - oldTempNow) + ") in PacketSender working with " + pn.userToString());
+			}
 			oldTempNow = tempNow;
 		}
 		brokeAt = newBrokeAt;
@@ -266,8 +277,9 @@ public class PacketSender implements Runnable, Ticker {
 			PeerNode[] peers = om.getOldPeers();
 			
 			for(PeerNode pn : peers) {
-				if(pn.timeLastConnected() <= 0)
+				if(pn.timeLastConnected() <= 0) {
 					Logger.error(this, "Last connected is zero or negative for old-opennet-peer "+pn);
+				}
 				// Will be removed by next line.
 				if(now - pn.timeLastConnected() > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
 					om.purgeOldOpennetPeer(pn);
@@ -284,8 +296,9 @@ public class PacketSender implements Runnable, Ticker {
 					long beforeHandshakeTime = System.currentTimeMillis();
 					pn.getOutgoingMangler().sendHandshake(pn, true);
 					long afterHandshakeTime = System.currentTimeMillis();
-					if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
+					if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000)) {
 						Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
+					}
 				}
 			}
 			
@@ -301,8 +314,9 @@ public class PacketSender implements Runnable, Ticker {
 		// Send may have taken some time
 		now = System.currentTimeMillis();
 
-		if((now - oldNow) > (10 * 1000))
+		if((now - oldNow) > (10 * 1000)) {
 			Logger.error(this, "now is more than 10 seconds past oldNow (" + (now - oldNow) + ") in PacketSender");
+		}
 
 		List<Job> jobsToRun = null;
 
@@ -310,30 +324,34 @@ public class PacketSender implements Runnable, Ticker {
 			while(!timedJobsByTime.isEmpty()) {
 				Long tRun = timedJobsByTime.firstKey();
 				if(tRun.longValue() <= now) {
-					if(jobsToRun == null)
+					if(jobsToRun == null) {
 						jobsToRun = new ArrayList<Job>();
+					}
 					Object o = timedJobsByTime.remove(tRun);
 					if(o instanceof Job[]) {
 						Job[] r = (Job[]) o;
-						for(int i = 0; i < r.length; i++)
+						for(int i = 0; i < r.length; i++) {
 							jobsToRun.add(r[i]);
+						}
 					} else {
 						Job r = (Job) o;
 						jobsToRun.add(r);
 					}
-				} else
+				} else {
 					// FIXME how accurately do we want ticker jobs to be scheduled?
-       				// FIXME can they wait the odd 200ms?
+					// FIXME can they wait the odd 200ms?
 
 					break;
+				}
 			}
 		}
 
-		if(jobsToRun != null)
+		if(jobsToRun != null) {
 			for(Job r : jobsToRun) {
-				if(logMINOR)
+				if(logMINOR) {
 					Logger.minor(this, "Running " + r);
-				if(r.job instanceof FastRunnable)
+				}
+				if(r.job instanceof FastRunnable) {
 					// Run in-line
 
 					try {
@@ -341,7 +359,7 @@ public class PacketSender implements Runnable, Ticker {
 					} catch(Throwable t) {
 						Logger.error(this, "Caught " + t + " running " + r, t);
 					}
-				else
+				} else {
 					try {
 						node.executor.execute(r.job, r.name, true);
 					} catch(OutOfMemoryError e) {
@@ -353,7 +371,9 @@ public class PacketSender implements Runnable, Ticker {
 						System.err.println("Caught in PacketSender: " + t);
 						t.printStackTrace();
 					}
+				}
 			}
+		}
 
 		long sleepTime = nextActionTime - now;
 		// MAX_COALESCING_DELAYms maximum sleep time - same as the maximum coalescing delay
@@ -368,8 +388,9 @@ public class PacketSender implements Runnable, Ticker {
 		if(sleepTime > 0) {
 			// Update logging only when have time to do so
 			try {
-				if(logMINOR)
+				if(logMINOR) {
 					Logger.minor(this, "Sleeping for " + sleepTime);
+				}
 				synchronized(this) {
 					wait(sleepTime);
 				}
@@ -381,7 +402,7 @@ public class PacketSender implements Runnable, Ticker {
 		return brokeAt;
 	}
 
-	private HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
+	private final HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
 	
 	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
 		Peer p = pn.getPeer();
@@ -389,8 +410,9 @@ public class PacketSender implements Runnable, Ticker {
 			peersDumpedBlockedTooLong.add(p);
 			if(peersDumpedBlockedTooLong.size() > 1) return;
 		}
-		if(node.clientCore == null || node.clientCore.alerts == null)
+		if(node.clientCore == null || node.clientCore.alerts == null) {
 			return;
+		}
 		// FIXME XXX: We have had this alert enabled for MONTHS which got us hundreds of bug reports about it. Unfortunately, nobody spend any work on fixing
 		// the issue after the alert was added so I have disabled it to quit annoying our users. We should not waste their time if we don't do anything. xor
 		// Notice that the same alert is commented out in FNPPacketMangler. 
@@ -400,18 +422,22 @@ public class PacketSender implements Runnable, Ticker {
 	@SuppressWarnings("unused")
 	private UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
 
+		@Override
 		public String anchor() {
 			return "disconnectedStillNotAcked";
 		}
 
+		@Override
 		public String dismissButtonText() {
 			return null;
 		}
 
+		@Override
 		public short getPriorityClass() {
 			return UserAlert.ERROR;
 		}
 
+		@Override
 		public String getShortText() {
 			int sz;
 			synchronized(peersDumpedBlockedTooLong) {
@@ -420,6 +446,7 @@ public class PacketSender implements Runnable, Ticker {
 			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
@@ -436,6 +463,7 @@ public class PacketSender implements Runnable, Ticker {
 			return div;
 		}
 
+		@Override
 		public String getText() {
 			StringBuffer sb = new StringBuffer();
 			Peer[] peers;
@@ -454,34 +482,42 @@ public class PacketSender implements Runnable, Ticker {
 			return sb.toString();
 		}
 		
+		@Override
 		public String getTitle() {
 			return getShortText();
 		}
 
+		@Override
 		public Object getUserIdentifier() {
 			return PacketSender.this;
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return false;
 		}
 
+		@Override
 		public boolean isValid() {
 			return true;
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			// Ignore
 		}
 
+		@Override
 		public void onDismiss() {
 			// Ignore
 		}
 
+		@Override
 		public boolean shouldUnregisterOnDismiss() {
 			return false;
 		}
 
+		@Override
 		public boolean userCanDismiss() {
 			return false;
 		}
@@ -546,11 +582,11 @@ public class PacketSender implements Runnable, Ticker {
 				}
 			}
 			Object o = timedJobsByTime.get(l);
-			if(o == null)
+			if(o == null) {
 				timedJobsByTime.put(l, job);
-			else if(o instanceof Job)
+			} else if(o instanceof Job) {
 				timedJobsByTime.put(l, new Job[]{(Job) o, job});
-			else if(o instanceof Job[]) {
+			} else if(o instanceof Job[]) {
 				Job[] r = (Job[]) o;
 				Job[] jobs = new Job[r.length + 1];
 				System.arraycopy(r, 0, jobs, 0, r.length);

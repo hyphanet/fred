@@ -115,8 +115,9 @@ public class TempBucketTest extends TestSuite {
 			bucket.migrateToFileBucket();
 			byte[] readTo = new byte[16];
 			assertTrue(is.read(readTo, 0, 16) == 16);
-			for(int i=0;i<readTo.length;i++)
+			for(int i=0;i<readTo.length;i++) {
 				assertTrue(readTo[i] == 0);
+			}
 			is.close();
 			os.close();
 		}
@@ -134,8 +135,9 @@ public class TempBucketTest extends TestSuite {
 			bucket.migrateToFileBucket();
 			byte[] readTo = new byte[2048];
 			new DataInputStream(is).readFully(readTo);
-			for(int i=0;i<readTo.length;i++)
+			for(int i=0;i<readTo.length;i++) {
 				assertTrue(readTo[i] == data[i]);
+			}
 			is.close();
 			os.close();
 		}
@@ -199,7 +201,7 @@ public class TempBucketTest extends TestSuite {
 		}
 	}
 
-    public TempBucketTest() {
+	public TempBucketTest() {
 		super("TempBucketTest");
 		addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
 		addTest(new TestSuite(RealTempBucketTest_64_128_F.class));

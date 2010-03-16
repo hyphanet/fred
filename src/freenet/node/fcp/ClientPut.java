@@ -130,8 +130,9 @@ public class ClientPut extends ClientPutBase {
 			d = m.writeToByteArray();
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
-		} else
+		} else {
 			targetURI = null;
+		}
 
 		this.data = tempData;
 		this.clientMetadata = cm;
@@ -152,8 +153,9 @@ public class ClientPut extends ClientPutBase {
 		binaryBlob = message.binaryBlob;
 		
 		if(message.uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
-			if(!handler.server.core.allowUploadFrom(message.origFilename))
+			if(!handler.server.core.allowUploadFrom(message.origFilename)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+message.origFilename, identifier, global);
+			}
 
 			if(message.fileHash != null) {
 				try {
@@ -162,8 +164,9 @@ public class ClientPut extends ClientPutBase {
 				} catch (IllegalBase64Exception e) {
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Can't base64 decode " + ClientPutBase.FILE_HASH, identifier, global);
 				}
-			} else if(!handler.allowDDAFrom(message.origFilename, false))
-				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);		
+			} else if(!handler.allowDDAFrom(message.origFilename, false)) {
+				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to upload from "+message.origFilename+". Have you done a testDDA previously ?", identifier, global);
+			}
 		}
 			
 		this.targetFilename = message.targetFilename;
@@ -208,8 +211,9 @@ public class ClientPut extends ClientPutBase {
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
-		} else
+		} else {
 			targetURI = null;
+		}
 		this.data = tempData;
 		this.clientMetadata = cm;
 		
@@ -231,7 +235,7 @@ public class ClientPut extends ClientPutBase {
 					SHA256.returnMessageDigest(md);
 					Logger.error(this, "Got IOE: " + e.getMessage(), e);
 					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE,
-					        "Unable to access file: " + e, identifier, global);
+							"Unable to access file: " + e, identifier, global);
 				}
 				foundHash = md.digest();
 			} finally {
@@ -240,8 +244,9 @@ public class ClientPut extends ClientPutBase {
 
 			if(logMINOR) Logger.minor(this, "FileHash result : we found " + Base64.encode(foundHash) + " and were given " + Base64.encode(saltedHash) + '.');
 
-			if(!Arrays.equals(saltedHash, foundHash))
+			if(!Arrays.equals(saltedHash, foundHash)) {
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "The hash doesn't match! (salt used : \""+salt+"\")", identifier, global);
+			}
 		}
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
@@ -267,14 +272,14 @@ public class ClientPut extends ClientPutBase {
 
 		String from = fs.get("UploadFrom");
 		
-		if(from.equals("direct")) {
+		if("direct".equals(from)) {
 			uploadFrom = ClientPutMessage.UPLOAD_FROM_DIRECT;
-		} else if(from.equals("disk")) {
+		} else if("disk".equals(from)) {
 			uploadFrom = ClientPutMessage.UPLOAD_FROM_DISK;
-		} else if(from.equals("redirect")) {
+		} else if("redirect".equals(from)) {
 			uploadFrom = ClientPutMessage.UPLOAD_FROM_REDIRECT;
 		} else {
-				throw new PersistenceParseException("Unknown UploadFrom: "+from);
+			throw new PersistenceParseException("Unknown UploadFrom: "+from);
 		}
 		
 		ClientMetadata cm = new ClientMetadata(mimeType);
@@ -286,14 +291,16 @@ public class ClientPut extends ClientPutBase {
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Uploading from disk: "+origFilename+" for "+this);
+			}
 			data = new FileBucket(origFilename, true, false, false, false, false);
 			targetURI = null;
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Uploading from direct for "+this);
+			}
 			if(!finished) {
 				try {
 					data = SerializableToFieldSetBucketUtil.create(fs.subset("TempBucket"), server.core.random, server.core.persistentTempBucketFactory);
@@ -301,16 +308,18 @@ public class ClientPut extends ClientPutBase {
 					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 				}
 			} else {
-				if(Logger.shouldLog(Logger.MINOR, this)) 
+				if(Logger.shouldLog(Logger.MINOR, this)) {
 					Logger.minor(this, "Finished already so not reading bucket for "+this);
+				}
 				data = null;
 			}
 			targetURI = null;
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			String target = fs.get("TargetURI");
 			targetURI = new FreenetURI(target);
-			if(logMINOR)
+			if(logMINOR) {
 				Logger.minor(this, "Uploading from redirect for "+this+" : "+targetURI);
+			}
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, cm);
 			byte[] d;
 			try {
@@ -347,8 +356,9 @@ public class ClientPut extends ClientPutBase {
 
 	@Override
 	void register(ObjectContainer container, boolean noTags) throws IdentifierCollisionException {
-		if(persistenceType != PERSIST_CONNECTION)
+		if(persistenceType != PERSIST_CONNECTION) {
 			client.register(this, container);
+		}
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
 			FCPMessage msg = persistentTagMessage(container);
 			client.queueClientRequestMessage(msg, 0, container);
@@ -357,8 +367,9 @@ public class ClientPut extends ClientPutBase {
 	
 	@Override
 	public void start(ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(Logger.MINOR, this)) {
 			Logger.minor(this, "Starting "+this+" : "+identifier);
+		}
 		synchronized(this) {
 			if(finished) return;
 		}
@@ -371,8 +382,9 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
-			if(persistenceType == PERSIST_FOREVER)
+			if(persistenceType == PERSIST_FOREVER) {
 				container.store(this); // Update
+			}
 		} catch (InsertException e) {
 			synchronized(this) {
 				started = true;
@@ -393,13 +405,15 @@ public class ClientPut extends ClientPutBase {
 			d = data;
 			data = null;
 			if(d == null) return;
-			if(persistenceType == PERSIST_FOREVER)
+			if(persistenceType == PERSIST_FOREVER) {
 				container.activate(d, 5);
+			}
 			finishedSize = d.size();
 		}
 		d.free();
-		if(persistenceType == PERSIST_FOREVER)
+		if(persistenceType == PERSIST_FOREVER) {
 			d.removeFrom(container);
+		}
 	}
 	
 	@Override
@@ -430,8 +444,9 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	public FreenetURI getFinalURI(ObjectContainer container) {
-		if(persistenceType == PERSIST_FOREVER)
+		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(generatedURI, 5);
+		}
 		return generatedURI;
 	}
 
@@ -440,18 +455,23 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	public File getOrigFilename(ObjectContainer container) {
-		if(uploadFrom != ClientPutMessage.UPLOAD_FROM_DISK)
+		if(uploadFrom != ClientPutMessage.UPLOAD_FROM_DISK) {
 			return null;
-		if(persistenceType == PERSIST_FOREVER)
+		}
+		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(origFilename, 5);
+		}
 		return origFilename;
 	}
 
 	public long getDataSize(ObjectContainer container) {
-		if(data == null)
+		if(data == null) {
 			return finishedSize;
+		}
 		else {
-			if(persistenceType == PERSIST_FOREVER) container.activate(data, 1);
+			if(persistenceType == PERSIST_FOREVER) {
+				container.activate(data, 1);
+			}
 			return data.size();
 		}
 	}
@@ -484,8 +504,9 @@ public class ClientPut extends ClientPutBase {
 					started = true;
 				}
 			}
-			if(persistenceType == PERSIST_FOREVER)
+			if(persistenceType == PERSIST_FOREVER) {
 				container.store(this);
+			}
 			return true;
 		} catch (InsertException e) {
 			onFailure(e, null, container);
@@ -544,6 +565,5 @@ public class ClientPut extends ClientPutBase {
 	protected synchronized void onStopCompressing() {
 		compressing = false;
 	}
-	
 
 }

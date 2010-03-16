@@ -64,7 +64,7 @@ public class DatastoreChecker implements PrioRunnable {
 	}
 
 	@SuppressWarnings("unchecked")
-    public DatastoreChecker(Node node) {
+	public DatastoreChecker(Node node) {
 		this.node = node;
 		int priorities = RequestStarter.NUMBER_OF_PRIORITY_CLASSES;
 		persistentKeys = new ArrayList[priorities];
@@ -102,7 +102,7 @@ public class DatastoreChecker implements PrioRunnable {
 		
 	};
 	
-    public void loadPersistentRequests(ObjectContainer container, final ClientContext context) {
+	public void loadPersistentRequests(ObjectContainer container, final ClientContext context) {
 		int totalSize = 0;
 		synchronized(this) {
 			for(int i=0;i<persistentKeys.length;i++) {

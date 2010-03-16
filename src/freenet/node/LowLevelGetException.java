@@ -7,17 +7,17 @@ import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 
 public class LowLevelGetException extends Exception {
-    private static volatile boolean logDEBUG;
+	private static volatile boolean logDEBUG;
 
-    static {
-        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 
-            @Override
-            public void shouldUpdate() {
-                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-            }
-        });
-    }
+			@Override
+			public void shouldUpdate() {
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 
 	private static final long serialVersionUID = 1L;
 	/** Decode of data failed, probably was bogus at source */
@@ -45,7 +45,7 @@ public class LowLevelGetException extends Exception {
 	public static final int CANCELLED = 9;
 	/** Ran into a failure table */
 	public static final int RECENTLY_FAILED = 10;
-	
+
 	public static final String getMessage(int reason) {
 		switch(reason) {
 		case DECODE_FAILED:
@@ -72,10 +72,10 @@ public class LowLevelGetException extends Exception {
 			return "Unknown error code: "+reason;
 		}
 	}
-	
+
 	/** Failure code */
 	public final int code;
-	
+
 	public LowLevelGetException(int code, String message, Throwable t) {
 		super(message, t);
 		this.code = code;
@@ -85,17 +85,18 @@ public class LowLevelGetException extends Exception {
 		super(getMessage(reason));
 		this.code = reason;
 	}
-	
+
 	@Override
 	public String toString() {
 		return super.toString()+':'+getMessage(code);
 	}
 
-    @Override
-    public final synchronized Throwable fillInStackTrace() {
-        if(logDEBUG || code == INTERNAL_ERROR || code == DECODE_FAILED || code == VERIFY_FAILED)
-            return super.fillInStackTrace();
-        return null;
-    }
+	@Override
+	public final synchronized Throwable fillInStackTrace() {
+		if(logDEBUG || code == INTERNAL_ERROR || code == DECODE_FAILED || code == VERIFY_FAILED) {
+			return super.fillInStackTrace();
+		}
+		return null;
+	}
 
 }

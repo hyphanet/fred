@@ -137,7 +137,7 @@ public class BookmarkManager implements RequestClient {
 	}
 
 	public String parentPath(String path) {
-		if(path.equals("/"))
+		if("/".equals(path))
 			return "/";
 
 		return path.substring(0, path.substring(0, path.length() - 1).lastIndexOf("/")) + "/";
@@ -209,7 +209,7 @@ public class BookmarkManager implements RequestClient {
 				removeBookmark(path + cat.get(i).getName() + ((cat.get(i) instanceof BookmarkCategory) ? "/"
 					: ""));
 		} else
-			if(((BookmarkItem) bookmark).getKeyType().equals("USK"))
+			if("USK".equals(((BookmarkItem) bookmark).getKeyType()))
 				try {
 					USK u = ((BookmarkItem) bookmark).getUSK();
 					this.node.uskManager.unsubscribe(u, this.uskCB);

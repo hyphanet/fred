@@ -85,7 +85,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	}
 
 	public void run() {
-	    freenet.support.Logger.OSThread.logPID(this);
+		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			Encodeable sbi = null;
 			synchronized(this) {

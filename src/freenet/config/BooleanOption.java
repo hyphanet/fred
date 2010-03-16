@@ -16,9 +16,9 @@ public class BooleanOption extends Option<Boolean> {
 
 	@Override
 	public Boolean parseString(String val) throws InvalidConfigValueException {
-		if(val.equalsIgnoreCase("true") || val.equalsIgnoreCase("yes")) {
+		if("true".equalsIgnoreCase(val) || "yes".equalsIgnoreCase(val)) {
 			return true;
-		} else if(val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) {
+		} else if("false".equalsIgnoreCase(val) || "no".equalsIgnoreCase(val)) {
 			return false;
 		} else
 			throw new OptionFormatException(NodeL10n.getBase().getString("BooleanOption.parseError", "val", val));

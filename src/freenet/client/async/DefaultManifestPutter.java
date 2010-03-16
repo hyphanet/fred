@@ -8,8 +8,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import freenet.client.InsertContext;
-import freenet.client.async.BaseManifestPutter;
-import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.ContainerSizeEstimator;
@@ -113,8 +111,9 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 		System.out.println("STAT: handling "+((parentName==null)?"<root>?": parentName));
 		//if (doInsert && (parentName == null)) throw new IllegalStateException("Parent name cant be null for insert!");
 		//if (doInsert) containercounter += 1;
-		if (maxSize == DEFAULT_MAX_CONTAINERSIZE)
+		if (maxSize == DEFAULT_MAX_CONTAINERSIZE) {
 			maxSize = DEFAULT_MAX_CONTAINERSIZE - DEFAULT_CONTAINERSIZE_SPARE;
+		}
 
 		// first get the size (the whole one)
 		ContainerSize wholeSize = ContainerSizeEstimator.getSubTreeSize(manifestElements, DEFAULT_MAX_CONTAINERITEMSIZE, maxSize, Integer.MAX_VALUE);
@@ -337,10 +336,11 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 			Object o = manifestElements.get(name);
 			if(o instanceof ManifestElement) {
 				ManifestElement element = (ManifestElement) o;
-				if (element.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE)
+				if (element.getSize() > DEFAULT_MAX_CONTAINERITEMSIZE) {
 					containerBuilder.addExternal(name, element.getData(), element.getMimeTypeOverride(), name.equals(defaultName));
-				else
+				} else {
 					containerBuilder.addItem(name, prefix+name, element, name.equals(defaultName));
+				}
 				continue;
 			} else {
 				@SuppressWarnings("unchecked")

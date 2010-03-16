@@ -124,7 +124,7 @@ public class SHA256 {
 		if(md256 == null)
 			return;
 		String algo = md256.getAlgorithm();
-		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
+		if(!("SHA-256".equals(algo) || "SHA256".equals(algo)))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
 		md256.reset();
 		synchronized (digests) {

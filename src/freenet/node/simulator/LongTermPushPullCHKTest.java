@@ -36,7 +36,7 @@ import freenet.support.io.FileUtil;
  * Push / Pull test over long period of time
  *
  * Pushes N CHK's and records both their insert time and their CHKs.
- * 
+ *
  * Pulls CHK's for (2^n)-1 days ago, from 0 to 8, but obviously only if
  * there is a CHK for the given date in the log.
  */
@@ -92,8 +92,8 @@ public class LongTermPushPullCHKTest {
 
 			// Create one node
 			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL,
-			        0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
-			        12 * 1024, true, true, false, false, null);
+					0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
+					12 * 1024, true, true, false, false, null);
 			Logger.getChain().setThreshold(Logger.ERROR);
 
 			// Start it
@@ -103,11 +103,11 @@ public class LongTermPushPullCHKTest {
 				exitCode = EXIT_FAILED_TARGET;
 				return;
 			}
-				
+
 			long t2 = System.currentTimeMillis();
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
-			
+
 			FreenetURI todaysInsert = null;
 
 			// PUSH N+1 BLOCKS
@@ -144,8 +144,8 @@ public class LongTermPushPullCHKTest {
 			FileUtil.writeTo(fis, new File(innerDir2, "seednodes.fref"));
 			fis.close();
 			node2 = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false,
-			        Node.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
-			        true, true, true, true, 12 * 1024, false, true, false, false, null);
+					Node.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
+					true, true, true, true, 12 * 1024, false, true, false, false, null);
 			node2.start(true);
 
 			t1 = System.currentTimeMillis();
@@ -164,17 +164,18 @@ public class LongTermPushPullCHKTest {
 				targetDate.add(Calendar.DAY_OF_MONTH, -((1 << i) - 1));
 
 				FreenetURI uri = null;
-				
-				if(i == 0) uri = todaysInsert;
-				else {
+
+				if(i == 0) {
+					uri = todaysInsert;
+				} else {
 					uri = getHistoricURI(uid, i, targetDate);
 				}
-				
+
 				if(uri == null) {
 					System.out.println("SKIPPING PULL FOR "+i);
 					continue;
 				}
-				
+
 				System.out.println("PULLING " + uri);
 
 				try {
@@ -186,8 +187,9 @@ public class LongTermPushPullCHKTest {
 					csvLine.add(String.valueOf(t2 - t1));
 				} catch (FetchException e) {
 					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-					        && e.getMode() != FetchException.DATA_NOT_FOUND)
+							&& e.getMode() != FetchException.DATA_NOT_FOUND) {
 						e.printStackTrace();
+					}
 					csvLine.add(FetchException.getShortMessage(e.getMode()));
 				}
 			}
@@ -198,13 +200,11 @@ public class LongTermPushPullCHKTest {
 			try {
 				if (node != null)
 					node.park();
-			} catch (Throwable t1) {
-			}
+			} catch (Throwable t1) {}
 			try {
 				if (node2 != null)
 					node2.park();
-			} catch (Throwable t1) {
-			}
+			} catch (Throwable t1) {}
 
 			try {
 				File file = new File(uid + ".csv");
@@ -219,7 +219,7 @@ public class LongTermPushPullCHKTest {
 				e.printStackTrace();
 				exitCode = EXIT_THREW_SOMETHING;
 			}
-			
+
 			System.exit(exitCode);
 		}
 	}

@@ -3,13 +3,11 @@ package freenet.node.simulator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -35,13 +33,11 @@ import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
-import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
-import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -50,18 +46,18 @@ import freenet.support.io.FileUtil;
 
 /**
  * Push / Pull test over long period of time
- * 
+ *
  * <p>
  * This class push a series of keys in the format of
  * <code>KSK@&lt;unique identifier&gt;-DATE-n</code>. It will then try to pull them after (2^n - 1)
  * days.
  * <p>
  * The result is recorded as a CSV file in the format of:
- * 
+ *
  * <pre>
  * 	DATE, VERSION, SEED-TIME-1, PUSH-TIME-#0, ... , PUSH-TIME-#N, SEED-TIME-2, PULL-TIME-#0, ... , PULL-TIME-#N
  * </pre>
- * 
+ *
  * @author sdiz
  */
 public class LongTermPushPullTest {
@@ -87,8 +83,8 @@ public class LongTermPushPullTest {
 			System.exit(1);
 		}
 		String uid = args[0];
-		
-		if(args.length == 2 && (args[1].equalsIgnoreCase("--dump") || args[1].equalsIgnoreCase("-dump") || args[1].equalsIgnoreCase("dump"))) {
+
+		if(args.length == 2 && ("--dump".equalsIgnoreCase(args[1]) || "-dump".equalsIgnoreCase(args[1]) || "dump".equalsIgnoreCase(args[1]))) {
 			try {
 				dumpStats(uid);
 			} catch (IOException e) {
@@ -131,8 +127,8 @@ public class LongTermPushPullTest {
 
 			// Create one node
 			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL,
-			        0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
-			        12 * 1024, true, true, false, false, null);
+					0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
+					12 * 1024, true, true, false, false, null);
 			Logger.getChain().setThreshold(Logger.ERROR);
 
 			// Start it
@@ -142,7 +138,7 @@ public class LongTermPushPullTest {
 				exitCode = EXIT_FAILED_TARGET;
 				return;
 			}
-				
+
 			long t2 = System.currentTimeMillis();
 			System.out.println("SEED-TIME:" + (t2 - t1));
 			csvLine.add(String.valueOf(t2 - t1));
@@ -162,7 +158,7 @@ public class LongTermPushPullTest {
 					public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context) {
 						System.out.println(ce.getDescription());
 					}
-					
+
 				});
 
 				try {
@@ -190,8 +186,8 @@ public class LongTermPushPullTest {
 			FileUtil.writeTo(fis, new File(innerDir2, "seednodes.fref"));
 			fis.close();
 			node2 = NodeStarter.createTestNode(DARKNET_PORT2, OPENNET_PORT2, dir.getPath(), false,
-			        Node.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
-			        true, true, true, true, 12 * 1024, false, true, false, false, null);
+					Node.DEFAULT_MAX_HTL, 0, random, new PooledExecutor(), 1000, 5 * 1024 * 1024, true, true, true,
+					true, true, true, true, 12 * 1024, false, true, false, false, null);
 			node2.start(true);
 
 			t1 = System.currentTimeMillis();
@@ -221,8 +217,9 @@ public class LongTermPushPullTest {
 					csvLine.add(String.valueOf(t2 - t1));
 				} catch (FetchException e) {
 					if (e.getMode() != FetchException.ALL_DATA_NOT_FOUND
-					        && e.getMode() != FetchException.DATA_NOT_FOUND)
+							&& e.getMode() != FetchException.DATA_NOT_FOUND) {
 						e.printStackTrace();
+					}
 					csvLine.add(FetchException.getShortMessage(e.getMode()));
 				}
 			}
@@ -233,13 +230,11 @@ public class LongTermPushPullTest {
 			try {
 				if (node != null)
 					node.park();
-			} catch (Throwable t1) {
-			}
+			} catch (Throwable t1) {}
 			try {
 				if (node2 != null)
 					node2.park();
-			} catch (Throwable t1) {
-			}
+			} catch (Throwable t1) {}
 
 			try {
 				File file = new File(uid + ".csv");
@@ -254,7 +249,7 @@ public class LongTermPushPullTest {
 				e.printStackTrace();
 				exitCode = EXIT_THREW_SOMETHING;
 			}
-			
+
 			System.exit(exitCode);
 		}
 	}
@@ -351,10 +346,11 @@ public class LongTermPushPullTest {
 					if(element.pullTimes[i] == 0) {
 						String failureMode = element.pullFailures[i];
 						Integer count = failureModes.get(failureMode);
-						if(count == null)
+						if(count == null) {
 							failureModes.put(failureMode, 1);
-						else
+						} else {
 							failureModes.put(failureMode, count+1);
+						}
 						failures++;
 					} else {
 						successes++;
@@ -365,8 +361,9 @@ public class LongTermPushPullTest {
 			System.out.println("Successes: "+successes);
 			if(successes != 0) System.out.println("Average success time "+(successTime / successes));
 			System.out.println("Failures: "+failures);
-			for(Map.Entry<String,Integer> entry : failureModes.entrySet())
+			for(Map.Entry<String,Integer> entry : failureModes.entrySet()) {
 				System.out.println(entry.getKey()+" : "+entry.getValue());
+			}
 			System.out.println("No match: "+noMatch);
 			System.out.println("Insert failure: "+insertFailure);
 			double psuccess = (successes*1.0 / (1.0*(successes + failures)));
@@ -378,7 +375,7 @@ public class LongTermPushPullTest {
 			System.out.println();
 		}
 	}
-	
+
 	static class DumpElement {
 		public DumpElement(GregorianCalendar date, int version) {
 			this.date = date;
@@ -415,7 +412,7 @@ public class LongTermPushPullTest {
 		final int[] pullTimes;
 		final String[] pullFailures;
 	}
-	
+
 
 	private static Bucket randomData(Node node) throws IOException {
 		Bucket data = node.clientCore.tempBucketFactory.makeBucket(TEST_SIZE);

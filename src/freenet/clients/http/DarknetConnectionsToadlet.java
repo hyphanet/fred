@@ -37,9 +37,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	
 		@Override
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
-			if(sortBy.equals("name")) {
+			if("name".equals(sortBy)) {
 				return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
-			}else if(sortBy.equals("privnote")){
+			}else if("privnote".equals(sortBy)){
 				return ((DarknetPeerNodeStatus)firstNode).getPrivateDarknetCommentNote().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getPrivateDarknetCommentNote());
 			} else
 				return super.customCompare(firstNode, secondNode, sortBy);
@@ -158,196 +158,175 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	 */
 	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
-		if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
-			PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
-			HTMLNode pageNode = page.outer;
-			HTMLNode contentNode = page.content;
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			HashMap<String, String> peers = new HashMap<String, String>();
-			for(DarknetPeerNode pn : peerNodes) {
-				if (request.isPartSet("node_"+pn.hashCode())) {
-					String peer_name = pn.getName();
-					String peer_hash = "" + pn.hashCode();
-					if(!peers.containsKey(peer_hash)) {
-						peers.put(peer_hash, peer_name);
+		if (request.isPartSet("doAction"))
+		{
+			String curAction = request.getPartAsString("action",25);
+			if("send_n2ntm".equals(curAction)) {
+				PageNode page = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
+				HTMLNode pageNode = page.outer;
+				HTMLNode contentNode = page.content;
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				HashMap<String, String> tmpPeers = new HashMap<String, String>();
+				for(DarknetPeerNode pn : peerNodes) {
+					if (request.isPartSet("node_"+pn.hashCode())) {
+						String peer_name = pn.getName();
+						String peer_hash = "" + pn.hashCode();
+						if(!tmpPeers.containsKey(peer_hash)) {
+							tmpPeers.put(peer_hash, peer_name);
+						}
 					}
 				}
-			}
-			N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, peers);
-			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("update_notes")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("peerPrivateNote_"+peerNodes[i].hashCode())) {
-					if(!request.getPartAsString("peerPrivateNote_"+peerNodes[i].hashCode(),250).equals(peerNodes[i].getPrivateDarknetCommentNote())) {
-						peerNodes[i].setPrivateDarknetCommentNote(request.getPartAsString("peerPrivateNote_"+peerNodes[i].hashCode(),250));
-					}
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("enable")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].enablePeer();
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("disable")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].disablePeer();
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_burst_only")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setBurstOnly(true);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_burst_only")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setBurstOnly(false);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_ignore_source_port")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setIgnoreSourcePort(true);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_ignore_source_port")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setIgnoreSourcePort(false);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_dont_route")) {
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setRoutingStatus(true, true);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_dont_route")) {
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if(request.isPartSet("node_" + peerNodes[i].hashCode())) {
-					peerNodes[i].setRoutingStatus(false, true);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_listen_only")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setListenOnly(true);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_listen_only")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setListenOnly(false);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_allow_local")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setAllowLocalAddresses(true);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_allow_local")) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					peerNodes[i].setAllowLocalAddresses(false);
-				}
-			}
-			redirectHere(ctx);
-			return;
-		} else if (request.isPartSet("remove") || (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("remove"))) {			
-			if(logMINOR) Logger.minor(this, "Remove node");
-			
-			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {	
-					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) || request.isPartSet("forceit")){
-						this.node.removePeerConnection(peerNodes[i]);
-						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
-					}else{
-						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
-						PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
-						HTMLNode pageNode = page.outer;
-						HTMLNode contentNode = page.content;
-						HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode, "darknet-remove-node", true);
-						content.addChild("p").addChild("#",
-								NodeL10n.getBase().getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
-						HTMLNode removeForm = ctx.addFormChild(content, "/friends/", "removeConfirmForm");
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", l10n("remove") });
-						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", l10n("forceRemove") });
+				N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, tmpPeers);
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				return;
+			} else if ("update_notes".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
 
-						writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-						return; // FIXME: maybe it breaks multi-node removing
-					}				
-				} else {
-					if(logMINOR) Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("peerPrivateNote_"+peerNodes[i].hashCode())) {
+						if(!request.getPartAsString("peerPrivateNote_"+peerNodes[i].hashCode(),250).equals(peerNodes[i].getPrivateDarknetCommentNote())) {
+							peerNodes[i].setPrivateDarknetCommentNote(request.getPartAsString("peerPrivateNote_"+peerNodes[i].hashCode(),250));
+						}
+					}
 				}
+				redirectHere(ctx);
+				return;
+			} else if ("enable".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].enablePeer();
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("disable".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].disablePeer();
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("set_burst_only".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setBurstOnly(true);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("clear_burst_only".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setBurstOnly(false);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("set_ignore_source_port".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setIgnoreSourcePort(true);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("clear_ignore_source_port".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setIgnoreSourcePort(false);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("clear_dont_route".equals(curAction)) {
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setRoutingStatus(true, true);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("set_dont_route".equals(curAction)) {
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if(request.isPartSet("node_" + peerNodes[i].hashCode())) {
+						peerNodes[i].setRoutingStatus(false, true);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("set_listen_only".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setListenOnly(true);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("clear_listen_only".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setListenOnly(false);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("set_allow_local".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setAllowLocalAddresses(true);
+					}
+				}
+				redirectHere(ctx);
+				return;
+			} else if ("clear_allow_local".equals(curAction)) {
+				//int hashcode = Integer.decode(request.getParam("node")).intValue();
+
+				DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+				for(int i = 0; i < peerNodes.length; i++) {
+					if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+						peerNodes[i].setAllowLocalAddresses(false);
+					}
+				}
+				redirectHere(ctx);
+				return;
+
+			} else if ("remove".equals(curAction)) {
+				removeNode(request, ctx,logMINOR);
+				return;
 			}
-			redirectHere(ctx);
+		} else if(request.isPartSet("remove")) {
+			removeNode(request, ctx,logMINOR);
 			return;
 		} else if (request.isPartSet("acceptTransfer")) {
 			// FIXME this is ugly, should probably move both this code and the PeerNode code somewhere.
@@ -376,6 +355,41 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		} else {
 			this.handleMethodGET(uri, new HTTPRequestImpl(uri, "GET"), ctx);
 		}
+	}
+
+	protected void removeNode(HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException
+	{
+		if(logMINOR) Logger.minor(this, "Remove node");
+
+		DarknetPeerNode[] peerNodes = node.getDarknetConnections();
+		for(int i = 0; i < peerNodes.length; i++) {
+			if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+				if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == PeerManager.PEER_NODE_STATUS_NEVER_CONNECTED) || request.isPartSet("forceit")){
+					this.node.removePeerConnection(peerNodes[i]);
+					if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
+				}else{
+					if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
+					PageNode page = ctx.getPageMaker().getPageNode(l10n("confirmRemoveNodeTitle"), ctx);
+					HTMLNode pageNode = page.outer;
+					HTMLNode contentNode = page.content;
+					HTMLNode content =ctx.getPageMaker().getInfobox("infobox-warning", l10n("confirmRemoveNodeWarningTitle"), contentNode, "darknet-remove-node", true);
+					content.addChild("p").addChild("#",
+							NodeL10n.getBase().getString("DarknetConnectionsToadlet.confirmRemoveNode", new String[] { "name" }, new String[] { peerNodes[i].getName() }));
+					HTMLNode removeForm = ctx.addFormChild(content, "/friends/", "removeConfirmForm");
+					removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
+					removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel") });
+					removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", l10n("remove") });
+					removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", l10n("forceRemove") });
+
+					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+					return; // FIXME: maybe it breaks multi-node removing
+				}
+			} else {
+				if(logMINOR) Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
+			}
+		}
+		redirectHere(ctx);
+		return;
 	}
 
 	private void redirectHere(ToadletContext ctx) throws ToadletContextClosedException, IOException {

@@ -78,7 +78,7 @@ public class ClientGetter extends BaseClientGetter {
 	
 	@Deprecated
 	public ClientGetter(ClientCallback client,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
+			FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		this((ClientGetCallback) client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobBucket);
 	}
 
@@ -97,7 +97,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * accessed in the case of redundant structures such as splitfiles) in the binary blob format to this bucket.
 	 */
 	public ClientGetter(ClientGetCallback client,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
+				FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;

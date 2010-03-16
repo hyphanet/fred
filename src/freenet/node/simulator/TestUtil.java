@@ -15,15 +15,16 @@ public class TestUtil {
 			int opennetPeers = node.peers.countValidPeers();
 			int opennetConns = node.peers.countConnectedOpennetPeers();
 			System.err.println("" + seconds + " : seeds: " + seeds + ", connected: " + seedConns + " opennet: peers: "
-			        + opennetPeers + ", connected: " + opennetConns);
+					+ opennetPeers + ", connected: " + opennetConns);
 			seconds++;
 			if (opennetConns >= targetPeers) {
 				success = true;
 				break;
 			}
 		}
-		if (!success)
+		if (!success) {
 			System.err.println("Failed to reach target peers count " + targetPeers + " in 10 minutes.");
+		}
 		return success;
 	}
 }

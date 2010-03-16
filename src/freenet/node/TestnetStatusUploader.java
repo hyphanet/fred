@@ -12,12 +12,12 @@ import freenet.support.Logger;
 /**
  * Testnet StatusUploader.
  * This is a simple client for uploading status of the client to the
- * auditing server, which parses information and adds it to the database 
- * 
+ * auditing server, which parses information and adds it to the database
+ *
  * NOTE THAT IF THIS IS ENABLED, YOU HAVE NO ANONYMITY! It may also be possible
  * to exploit this for denial of service, as it is not authenticated in any way.
- * 
- * 
+ *
+ *
  */
 public class TestnetStatusUploader implements Runnable {
 
@@ -36,48 +36,43 @@ public class TestnetStatusUploader implements Runnable {
 	void start() {
 		node.executor.execute(this, "TestnetStatusUploader thread");
 	}
-	
+
 	private final Node node;
 	private final int updateInterval;
 	private Socket client;
-	
-	public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
-			//thread loop
-			
-			while(true){
-			
-				// Set up client socket
-				try
-				{
-					client = new Socket("emu.freenetproject.org", 23415);
-					PrintStream output = new PrintStream(client.getOutputStream());
-	            		
-					output.println(node.exportDarknetPublicFieldSet().toString());
-					output.println();
-					output.println(node.getFreevizOutput());
-					output.close();
-					
-					client.close();
-					
-				} catch (IOException e){
-					Logger.error(this, "Could not open connection to the uploadhost");
-					System.err.println("Could not open connection to the uploadhost");
-				}
-				
-				try{
-					Thread.sleep(updateInterval);
-						
-				//how i love java 
-				}catch (InterruptedException e){
-					return;
-					
-				}
-				
-			}
-			
 
+	public void run() {
+		freenet.support.Logger.OSThread.logPID(this);
+		//thread loop
+
+		while(true) {
+
+			// Set up client socket
+			try	{
+				client = new Socket("emu.freenetproject.org", 23415);
+				PrintStream output = new PrintStream(client.getOutputStream());
+
+				output.println(node.exportDarknetPublicFieldSet().toString());
+				output.println();
+				output.println(node.getFreevizOutput());
+				output.close();
+
+				client.close();
+
+			} catch (IOException e) {
+				Logger.error(this, "Could not open connection to the uploadhost");
+				System.err.println("Could not open connection to the uploadhost");
+			}
+
+			try {
+				Thread.sleep(updateInterval);
+
+			//how i love java
+			} catch (InterruptedException e) {
+				return;
+
+			}
+		}
 	}
-	
-	
+
 }

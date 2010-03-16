@@ -107,10 +107,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 			if(logMINOR) Logger.minor(this, "Processing "+u);
 			uri = URIPreEncoder.encodeURI(u).normalize();
 			if(logMINOR) Logger.minor(this, "Processing "+uri);
-			if(!noRelative)
+			if(!noRelative) {
 				resolved = baseURI.resolve(uri);
-			else
+			} else {
 				resolved = uri;
+			}
 			if(logMINOR) Logger.minor(this, "Resolved: "+resolved);
 		} catch (URISyntaxException e1) {
 			if(logMINOR) Logger.minor(this, "Failed to parse URI: "+e1);
@@ -119,8 +120,8 @@ public class GenericReadFilterCallback implements FilterCallback {
 		String path = uri.getPath();
 		
 		HTTPRequest req = new HTTPRequestImpl(uri, "GET");
-		if (path != null){
-			if(path.equals("/") && req.isParameterSet("newbookmark")){
+		if (path != null) {
+			if("/".equals(path) && req.isParameterSet("newbookmark")) {
 				// allow links to the root to add bookmarks
 				String bookmark_key = req.getParam("newbookmark");
 				String bookmark_desc = req.getParam("desc");
@@ -130,7 +131,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				bookmark_desc = HTMLEncoder.encode(bookmark_desc);
 
 				String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
-				if (!bookmark_activelink.equals("")) {
+				if (!"".equals(bookmark_activelink)) {
 					bookmark_activelink = HTMLEncoder.encode(bookmark_activelink);
 					url = url+"&hasAnActivelink=true";
 				}
@@ -150,7 +151,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Convert localhost uri's to relative internal ones.
 		
 		String host = uri.getHost();
-		if(host != null && (host.equals("localhost") || host.equals("127.0.0.1")) && uri.getPort() == 8888) {
+		if(host != null && ("localhost".equals(host) || "127.0.0.1".equals(host)) && uri.getPort() == 8888) {
 			try {
 				uri = new URI(null, null, null, -1, uri.getPath(), uri.getQuery(), uri.getFragment());
 			} catch (URISyntaxException e) {
@@ -221,9 +222,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 		
 		uri = origURI;
 		
-		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
+		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme())) {
 			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
-		else {
+		} else {
 			if(uri.getScheme() == null) {
 				throw new CommentException(reason);
 			}
@@ -241,8 +242,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 
 	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u, boolean noRelative) {
 		String typeOverride = req.getParam("type", null);
-		if(overrideType != null)
+		if(overrideType != null) {
 			typeOverride = overrideType;
+		}
 
 		if(typeOverride != null) {
 			String[] split = HTMLFilter.splitType(typeOverride);
@@ -255,14 +257,17 @@ public class GenericReadFilterCallback implements FilterCallback {
 						charset = null;
 					}
 				}
-				if(charset != null && charset.indexOf('&') != -1)
+				if(charset != null && charset.indexOf('&') != -1) {
 					charset = null;
-				if(charset != null && !Charset.isSupported(charset))
+				}
+				if(charset != null && !Charset.isSupported(charset)) {
 					charset = null;
-				if(charset != null)
+				}
+				if(charset != null) {
 					typeOverride = split[0]+"; charset="+charset;
-				else
+				} else {
 					typeOverride = split[0];
+				}
 			}
 		}
 		
@@ -300,21 +305,24 @@ public class GenericReadFilterCallback implements FilterCallback {
 			
 			URI uri = new URI(sb.toString());
 			
-			if(!noRelative)
+			if(!noRelative) {
 				uri = strippedBaseURI.relativize(uri);
-			if(Logger.shouldLog(Logger.MINOR, this))
+			}
+			if(Logger.shouldLog(Logger.MINOR, this)) {
 				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI+" stripped base uri="+strippedBaseURI.toString());
+			}
 			return uri.toASCIIString();
 		} catch (URISyntaxException e) {
 			Logger.error(this, "Could not parse own URI: path="+path+", typeOverride="+typeOverride+", frag="+u.getFragment()+" : "+e, e);
 			String p = path;
-			if(typeOverride != null)
+			if(typeOverride != null) {
 				p += "?type="+typeOverride;
-			if(u.getFragment() != null){
-				try{
+			}
+			if(u.getFragment() != null) {
+				try {
 				// FIXME encode it properly
 					p += URLEncoder.encode(u.getFragment(),"UTF-8");
-				}catch (UnsupportedEncodingException e1){
+				} catch (UnsupportedEncodingException e1) {
 					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 				}
 			}
@@ -354,8 +362,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 
 	public void onText(String s, String type) {
-		if(cb != null)
+		if(cb != null) {
 			cb.onText(s, type, baseURI);
+		}
 	}
 
 	static final String PLUGINS_PREFIX = "/plugins/";
@@ -371,26 +380,30 @@ public class GenericReadFilterCallback implements FilterCallback {
 		if(action == null) return null;
 		if(method == null) method = "GET";
 		method = method.toUpperCase();
-		if(!(method.equals("POST") || method.equals("GET"))) 
+		if(!("POST".equals(method) || "GET".equals(method)))
 			return null; // no irregular form sending methods
 		// Everything is allowed to / - updating the node, shutting it down, everything.
 		// Why? Becuase it's all protected by formPassword anyway.
 		// FIXME whitelist? Most things are okay if the user is prompted for a confirmation...
 		// FIXME what about /downloads/ /friends/ etc?
 		// Allow access to Library for searching, form passwords are used for actions such as adding bookmarks
-		if(action.equals("/") || action.equals("/library/"))
+		if("/".equals(action) || "/library/".equals(action)) {
 			return action;
+		}
 		try {
 			URI uri = URIPreEncoder.encodeURI(action);
-			if(uri.getScheme() != null || uri.getHost() != null || uri.getPort() != -1 || uri.getUserInfo() != null)
+			if(uri.getScheme() != null || uri.getHost() != null || uri.getPort() != -1 || uri.getUserInfo() != null) {
 				throw new CommentException(l10n("invalidFormURI"));
+			}
 			String path = uri.getPath();
 			if(path.startsWith(PLUGINS_PREFIX)) {
 				String after = path.substring(PLUGINS_PREFIX.length());
-				if(after.indexOf("../") > -1)
+				if(after.indexOf("../") > -1) {
 					throw new CommentException(l10n("invalidFormURIAttemptToEscape"));
-				if(after.matches("[A-Za-z0-9\\.]+"))
+				}
+				if(after.matches("[A-Za-z0-9\\.]+")) {
 					return uri.toASCIIString();
+				}
 			}
 		} catch (URISyntaxException e) {
 			throw new CommentException(l10n("couldNotParseFormURIWithError", "error", e.getLocalizedMessage()));

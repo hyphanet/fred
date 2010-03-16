@@ -19,77 +19,77 @@ import freenet.support.Logger;
  **/
 public class SimpleEventProducer implements ClientEventProducer {
 
-    private Vector<ClientEventListener> listeners;
+	private Vector<ClientEventListener> listeners;
 
-    /**
-     * Create a new SimpleEventProducer
-     *
-     **/
-    public SimpleEventProducer() {
+	/**
+	 * Create a new SimpleEventProducer
+	 *
+	 **/
+	public SimpleEventProducer() {
 	listeners = new Vector<ClientEventListener>();
-    }
-    
-    /** Create a new SimpleEventProducer with the given listeners. */
-    public SimpleEventProducer(ClientEventListener[] cela) {
+	}
+
+	/** Create a new SimpleEventProducer with the given listeners. */
+	public SimpleEventProducer(ClientEventListener[] cela) {
 	this();
 	for (int i = 0 ; i < cela.length ; i++)
-	    addEventListener(cela[i]);
-    }
-    
-    public void addEventListener(ClientEventListener cel) {
+		addEventListener(cela[i]);
+	}
+
+	public void addEventListener(ClientEventListener cel) {
 	if(cel != null)
-	    listeners.addElement(cel);
+		listeners.addElement(cel);
 	else
-	    throw new IllegalArgumentException("Adding a null listener!");
-    }
-    
-    public boolean removeEventListener(ClientEventListener cel) {
+		throw new IllegalArgumentException("Adding a null listener!");
+	}
+
+	public boolean removeEventListener(ClientEventListener cel) {
 	boolean b = listeners.removeElement(cel);
 	listeners.trimToSize();
 	return b;
-    }
+	}
 
-    /**
-     * Sends the ClientEvent to all registered listeners of this object.
-     **/
-    public void produceEvent(ClientEvent ce, ObjectContainer container, ClientContext context) {
-    	if(container != null)
-    		container.activate(listeners, 1);
-	for (Enumeration<ClientEventListener> e = listeners.elements() ; 
-	     e.hasMoreElements();) {
-            try {
-            	ClientEventListener cel = e.nextElement();
-            	if(container != null)
-            		container.activate(cel, 1);
-                cel.receive(ce, container, context);
-            } catch (NoSuchElementException ne) {
+	/**
+	 * Sends the ClientEvent to all registered listeners of this object.
+	 **/
+	public void produceEvent(ClientEvent ce, ObjectContainer container, ClientContext context) {
+		if(container != null)
+			container.activate(listeners, 1);
+	for (Enumeration<ClientEventListener> e = listeners.elements() ;
+		 e.hasMoreElements();) {
+			try {
+				ClientEventListener cel = e.nextElement();
+				if(container != null)
+					container.activate(cel, 1);
+				cel.receive(ce, container, context);
+			} catch (NoSuchElementException ne) {
 		Logger.normal(this, "Concurrent modification in "+
 				"produceEvent!: "+this);
-	    } catch (Exception ue) {
-                System.err.println("---Unexpected Exception------------------");
-                ue.printStackTrace();
-                System.err.println("-----------------------------------------");
-            }
+		} catch (Exception ue) {
+				System.err.println("---Unexpected Exception------------------");
+				ue.printStackTrace();
+				System.err.println("-----------------------------------------");
+			}
 	}
-    }
-    
-    /** Returns the listeners as an array. */
-    public ClientEventListener[] getEventListeners() {
+	}
+
+	/** Returns the listeners as an array. */
+	public ClientEventListener[] getEventListeners() {
 	ClientEventListener[] ret =
-	    new ClientEventListener[listeners.size()];
+		new ClientEventListener[listeners.size()];
 	listeners.copyInto(ret);
 	return ret;
-    }
+	}
 
-    /** Adds all listeners in the given array. */
-    public void addEventListeners(ClientEventListener[] cela) {
+	/** Adds all listeners in the given array. */
+	public void addEventListeners(ClientEventListener[] cela) {
 	for (int i = 0 ; i < cela.length ; i++)
-	    addEventListener(cela[i]);
-    }
+		addEventListener(cela[i]);
+	}
 
 	public void removeFrom(ObjectContainer container) {
-    	if(container != null)
-    		container.activate(listeners, 1);
+		if(container != null)
+			container.activate(listeners, 1);
 		ClientEventListener[] list = listeners.toArray(new ClientEventListener[listeners.size()]);
 		listeners.clear();
 		container.delete(listeners);

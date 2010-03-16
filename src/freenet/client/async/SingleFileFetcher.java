@@ -402,7 +402,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} else if(metaStrings.isEmpty()) {
 					FreenetURI u = uri;
 					String last = u.lastMetaString();
-					if(last == null || !last.equals(""))
+					if(last == null || !"".equals(last))
 						u = u.addMetaStrings(new String[] { "" });
 					else
 						u = null;

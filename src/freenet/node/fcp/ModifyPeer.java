@@ -55,7 +55,7 @@ public class ModifyPeer extends FCPMessage {
 		DarknetPeerNode dpn = (DarknetPeerNode) pn;
 		String isDisabledString = fs.get("IsDisabled");
 		if(isDisabledString != null) {
-			if(!isDisabledString.equals("")) {
+			if(!"".equals(isDisabledString)) {
 				if(Fields.stringToBool(isDisabledString, false)) {
 					dpn.disablePeer();
 				} else {
@@ -65,25 +65,25 @@ public class ModifyPeer extends FCPMessage {
 		}
 		String isListenOnlyString = fs.get("IsListenOnly");
 		if(isListenOnlyString != null) {
-			if(!isListenOnlyString.equals("")) {
+			if(!"".equals(isListenOnlyString)) {
 				dpn.setListenOnly(Fields.stringToBool(isListenOnlyString, false));
 			}
 		}
 		String isBurstOnlyString = fs.get("IsBurstOnly");
 		if(isBurstOnlyString != null) {
-			if(!isBurstOnlyString.equals("")) {
+			if(!"".equals(isBurstOnlyString)) {
 				dpn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
 			}
 		}
 		String ignoreSourcePortString = fs.get("IgnoreSourcePort");
 		if(ignoreSourcePortString != null) {
-			if(!ignoreSourcePortString.equals("")) {
+			if(!"".equals(ignoreSourcePortString)) {
 				dpn.setIgnoreSourcePort(Fields.stringToBool(ignoreSourcePortString, false));
 			}
 		}
 		String allowLocalAddressesString = fs.get("AllowLocalAddresses");
 		if(allowLocalAddressesString != null) {
-			if(!allowLocalAddressesString.equals("")) {
+			if(!"".equals(allowLocalAddressesString)) {
 				dpn.setAllowLocalAddresses(Fields.stringToBool(allowLocalAddressesString, false));
 			}
 		}

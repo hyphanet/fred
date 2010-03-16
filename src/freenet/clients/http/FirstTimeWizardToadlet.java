@@ -89,16 +89,18 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 			
-			if(incognito)
+			if(incognito) {
 				infoboxHeader.addChild("#", l10n("browserWarningIncognitoShort"));
-			else
+			} else {
 				infoboxHeader.addChild("#", l10n("browserWarningShort"));
+			}
 			NodeL10n.getBase().addL10nSubstitution(infoboxContent, incognito ? "FirstTimeWizardToadlet.browserWarningIncognito" : "FirstTimeWizardToadlet.browserWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			
-			if(incognito)
+			if(incognito) {
 				infoboxContent.addChild("p", l10n("browserWarningIncognitoSuggestion"));
-			else
+			} else {
 				infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
+			}
 			
 			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.MISC, NodeL10n.getBase().getString("FirstTimeWizardToadlet.clickContinue"));
 
@@ -231,18 +233,21 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if(!sizeOption.isDefault()) {
 				int current = sizeOption.getValue();
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
-			} else if(autodetectedLimit != -1)
+			} else if(autodetectedLimit != -1) {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedLimit), "on" }, l10n("autodetectedSuggestedLimit")+" "+SizeUtil.formatSize(autodetectedLimit)+"/s");
+			}
 
 			// don't forget to update handlePost too if you change that!
-			if(autodetectedLimit != 8192)
+			if(autodetectedLimit != 8192) {
 				result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
+			}
 			// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
 			result.addChild("option", "value", "12K", "512+/128 kbps (12KB/s)");
-			if(autodetectedLimit != -1 || !sizeOption.isDefault())
+			if(autodetectedLimit != -1 || !sizeOption.isDefault()) {
 				result.addChild("option", "value", "16K", "1024+/256 kbps (16KB/s)");
-			else
+			} else {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { "16K", "selected" }, "1024+/256 kbps (16KB/s)");
+			}
 			result.addChild("option", "value", "32K", "1024+/512 kbps (32K/s)");
 			result.addChild("option", "value", "64K", "1024+/1024 kbps (64K/s)");
 			result.addChild("option", "value", "1000K", l10n("bwlimitHigherSpeed"));
@@ -276,13 +281,15 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
 			} else if(autodetectedSize != -1)
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(autodetectedSize), "on" }, SizeUtil.formatSize(autodetectedSize));
-			if(autodetectedSize != 512*1024*1024)
+			if(autodetectedSize != 512*1024*1024) {
 				result.addChild("option", "value", "512M", "512 MiB");
+			}
 			result.addChild("option", "value", "1G", "1 GiB");
-			if(autodetectedSize != -1 || !sizeOption.isDefault())
+			if(autodetectedSize != -1 || !sizeOption.isDefault()) {
 				result.addChild("option", "value", "2G", "2 GiB");
-			else
+			} else {
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
+			}
 			result.addChild("option", "value", "3G", "3 GiB");
 			result.addChild("option", "value", "5G", "5 GiB");
 			result.addChild("option", "value", "10G", "10 GiB");
@@ -328,7 +335,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			miscInfoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", NodeL10n.getBase().getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		}else if(currentStep == WIZARD_STEP.CONGRATZ) {
+		} else if(currentStep == WIZARD_STEP.CONGRATZ) {
 			PageNode page = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
@@ -347,7 +354,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else if(currentStep == WIZARD_STEP.FINAL) {
 			try {
 				config.get("fproxy").set("hasCompletedWizard", true);
-                                config.store();
+				config.store();
 				this.writeTemporaryRedirect(ctx, "Return to home", "/");
 			} catch (ConfigException e) {
 				Logger.error(this, e.getMessage(), e);
@@ -505,10 +512,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				String pass = request.getPartAsString("masterPassword", SecurityLevelsToadlet.MAX_PASSWORD_LENGTH);
 				if(pass != null && pass.length() > 0) {
 					try {
-						if(oldThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldThreatLevel == PHYSICAL_THREAT_LEVEL.LOW)
+						if(oldThreatLevel == PHYSICAL_THREAT_LEVEL.NORMAL || oldThreatLevel == PHYSICAL_THREAT_LEVEL.LOW) {
 							core.node.changeMasterPassword("", pass, true);
-						else
+						} else {
 							core.node.setMasterPassword(pass, true);
+						}
 					} catch (AlreadySetPasswordException e) {
 						// Do nothing, already set a password.
 					} catch (MasterKeysWrongPasswordException e) {
@@ -686,10 +694,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						private final boolean enable = enableUPnP;
 						
 						public void run() {
-							if(enable)
+							if(enable) {
 								core.node.pluginManager.startPluginOfficial("UPnP", true, false, false);
-							else
+							} else {
 								core.node.pluginManager.killPluginByClass("plugins.UPnP.UPnP", 5000);
+							}
 						}
 						
 					});
@@ -702,10 +711,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 						public void run() {
 							// We can probably get connected without it, so don't force HTTPS.
 							// We'd have to ask the user anyway...
-							if(enable)
-							core.node.pluginManager.startPluginOfficial("JSTUN", true, false, false);
-							else
+							if(enable) {
+								core.node.pluginManager.startPluginOfficial("JSTUN", true, false, false);
+							} else {
 								core.node.pluginManager.killPluginByClass("plugins.JSTUN.JSTUN", 5000);
+							}
 						}
 					});
 			}
@@ -739,8 +749,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			int downstreamLimit = config.get("node").getInt("inputBandwidthLimit");
 			// is used for remote stuff, so go by the minimum of the two
 			int limit;
-			if(downstreamLimit <= 0) limit = upstreamLimit;
-			else limit = Math.min(downstreamLimit, upstreamLimit);
+			if(downstreamLimit <= 0) {
+				limit = upstreamLimit;
+			} else {
+				limit = Math.min(downstreamLimit, upstreamLimit);
+			}
 			// 35KB/sec limit has been seen to have 0.5 store writes per second.
 			// So saying we want to have space to cache everything is only doubling that ...
 			// OTOH most stuff is at low enough HTL to go to the datastore and thus not to 
@@ -753,16 +766,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			System.out.println("Setting datastore size to "+Fields.longToString(storeSize, true));
 			config.get("node").set("storeSize", Fields.longToString(storeSize, true));
-			if(config.get("node").getString("storeType").equals("ram"))
+			if("ram".equals(config.get("node").getString("storeType"))) {
 				config.get("node").set("storeType", "salt-hash");
+			}
 			System.out.println("Setting client cache size to "+Fields.longToString(clientCacheSize, true));
 			config.get("node").set("clientCacheSize", Fields.longToString(clientCacheSize, true));
-			if(config.get("node").getString("clientCacheType").equals("ram"))
+			if("ram".equals(config.get("node").getString("clientCacheType"))) {
 				config.get("node").set("clientCacheType", "salt-hash");
+			}
 			System.out.println("Setting slashdot/ULPR/recent requests cache size to "+Fields.longToString(slashdotCacheSize, true));
 			config.get("node").set("slashdotCacheSize", Fields.longToString(slashdotCacheSize, true));
-			
-			
+						
 			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
 		} catch(ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
@@ -788,11 +802,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	private int canAutoconfigureBandwidth() {
-		if(!config.get("node").getOption("outputBandwidthLimit").isDefault())
+		if(!config.get("node").getOption("outputBandwidthLimit").isDefault()) {
 			return -1;
+		}
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
-		if(bwIndicator == null)
+		if(bwIndicator == null) {
 			return -1;
+		}
 		
 		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
 		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
@@ -817,8 +833,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			int bytes = (upstreamBWLimit / 8) - 1;
 			if(bytes < 16384) return 8192;
 			return bytes / 2;
-		}else
+		} else {
 			return -1;
+		}
 	}
 	
 	private long canAutoconfigureDatastoreSize() {
@@ -827,22 +844,23 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		long freeSpace = FileUtil.getFreeSpace(core.node.getNodeDir());
 		
-		if(freeSpace <= 0)
+		if(freeSpace <= 0) {
 			return -1;
-		else {
+		} else {
 			long shortSize = -1;
 			if(freeSpace / 20 > 1024 * 1024 * 1024) { // 20GB+ => 5%, limit 256GB
 				// If 20GB+ free, 5% of available disk space.
 				// Maximum of 256GB. That's a 128MB bloom filter.
 				shortSize = Math.min(freeSpace / 20, 256*1024*1024*1024L);
-			}else if(freeSpace / 10 > 1024 * 1024 * 1024) { // 10GB+ => 10%
+			} else if(freeSpace / 10 > 1024 * 1024 * 1024) { // 10GB+ => 10%
 				// If 10GB+ free, 10% of available disk space.
 				shortSize = freeSpace / 10;
-			}else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
+			} else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
 				// If 5GB+ free, default to 512MB
 				shortSize = 512*1024*1024;
-			}else // <5GB => 256MB
+			} else { // <5GB => 256MB
 				shortSize = 256*1024*1024;
+			}
 			
 			return shortSize;
 		}

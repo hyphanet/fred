@@ -107,7 +107,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	
 		@Override
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
-			if(sortBy.equals("successTime")) {
+			if("successTime".equals(sortBy)) {
 				long t1 = ((OpennetPeerNodeStatus)firstNode).timeLastSuccess;
 				long t2 = ((OpennetPeerNodeStatus)secondNode).timeLastSuccess;
 				if(t1 > t2) return reversed ? 1 : -1;

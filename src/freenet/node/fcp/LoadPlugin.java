@@ -54,10 +54,10 @@ public class LoadPlugin extends FCPMessage {
 		}
 		String officialSource = fs.get("OfficialSource");
 		if(officialSource != null) {
-			if(officialSource.equalsIgnoreCase("https")) {
+			if("https".equalsIgnoreCase(officialSource)) {
 				force = true;
 				forceHTTPS = true;
-			} else if(officialSource.equalsIgnoreCase("freenet")) {
+			} else if("freenet".equalsIgnoreCase(officialSource)) {
 				force = true;
 				forceHTTPS = false;
 			} else {

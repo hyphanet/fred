@@ -43,22 +43,26 @@ public class FCPPluginMessage extends DataCarryingMessage {
 	
 	FCPPluginMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
-		if(identifier == null)
+		if(identifier == null) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "FCPPluginMessage must contain a Identifier field", null, false);
+		}
 		pluginname = fs.get("PluginName");
-		if(pluginname == null)
+		if(pluginname == null) {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "FCPPluginMessage must contain a PluginName field", identifier, false);
+		}
 		
 		boolean havedata = "Data".equals(fs.getEndMarker());
 		
 		String dataLengthString = fs.get("DataLength");
 		
-		if(!havedata && (dataLengthString != null))
+		if(!havedata && (dataLengthString != null)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "A nondata message can't have a DataLength field", identifier, false);
+		}
 
 		if(havedata) {
-			if (dataLengthString == null)
+			if (dataLengthString == null) {
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a Datamessage", identifier, false);
+			}
 		
 			try {
 				dataLength = Long.parseLong(dataLengthString, 10);

@@ -8,21 +8,21 @@ import java.util.BitSet;
 
 /**
  * Number in hexadecimal format are used throughout Freenet.
- * 
- * <p>Unless otherwise stated, the conventions follow the rules outlined in the 
+ *
+ * <p>Unless otherwise stated, the conventions follow the rules outlined in the
  * Java Language Specification.</p>
- * 
+ *
  * @author syoung
  */
 public class HexUtil {
 	private static boolean logDEBUG =Logger.logger.instanceShouldLog(Logger.DEBUG,HexUtil.class);
-	private HexUtil() {		
-	}	
-	
+	private HexUtil() {
+	}
+
 
 	/**
 	 * Converts a byte array into a string of lower case hex chars.
-	 * 
+	 *
 	 * @param bs
 	 *            A byte array
 	 * @param off
@@ -32,8 +32,9 @@ public class HexUtil {
 	 * @return the string of hex chars.
 	 */
 	public static final String bytesToHex(byte[] bs, int off, int length) {
-		if (bs.length <= off || bs.length < off+length)
+		if (bs.length <= off || bs.length < off+length) {
 			throw new IllegalArgumentException();
+		}
 		StringBuilder sb = new StringBuilder(length * 2);
 		bytesToHexAppend(bs, off, length, sb);
 		return sb.toString();
@@ -44,8 +45,9 @@ public class HexUtil {
 		int off,
 		int length,
 		StringBuilder sb) {
-		if (bs.length <= off || bs.length < off+length)
+		if (bs.length <= off || bs.length < off+length) {
 			throw new IllegalArgumentException();
+		}
 		sb.ensureCapacity(sb.length() + length * 2);
 		for (int i = off; i < (off + length); i++) {
 			sb.append(Character.forDigit((bs[i] >>> 4) & 0xf, 16));
@@ -69,7 +71,7 @@ public class HexUtil {
 
 	/**
 	 * Converts a String of hex characters into an array of bytes.
-	 * 
+	 *
 	 * @param s
 	 *            A string of hex characters (upper case or lower) of even
 	 *            length.
@@ -80,7 +82,7 @@ public class HexUtil {
 	 */
 	public static final void hexToBytes(String s, byte[] out, int off)
 		throws NumberFormatException, IndexOutOfBoundsException {
-		
+
 		int slen = s.length();
 		if ((slen % 2) != 0) {
 			s = '0' + s;
@@ -91,7 +93,7 @@ public class HexUtil {
 				"Output buffer too small for input ("
 					+ out.length
 					+ '<'
-                        + off
+						+ off
 					+ slen / 2
 					+ ')');
 		}
@@ -123,7 +125,7 @@ public class HexUtil {
 			short s = 0;
 			for(int j=0;j<8;j++) {
 				int idx = i*8+j;
-				boolean val = 
+				boolean val =
 					idx > size - 1 ? false :
 						ba.get(idx);
 				s |= val ? (1<<j) : 0;
@@ -180,50 +182,51 @@ public class HexUtil {
 	 * Read a hex string of bits and write it into a bitset
 	 * @param s hex string of the stored bits
 	 * @param ba the bitset to store the bits in
-	 * @param length the maximum number of bits to store 
+	 * @param length the maximum number of bits to store
 	 */
 	public static void hexToBits(String s, BitSet ba, int length) {
 		byte[] b = hexToBytes(s);
 		bytesToBits(b, ba, length);
 	}
-	
-	/**
-     * Write a (reasonably short) BigInteger to a stream.
-     * @param integer the BigInteger to write
-     * @param out the stream to write it to
-     */
-    public static void writeBigInteger(BigInteger integer, DataOutputStream out) throws IOException {
-        if(integer.signum() == -1) {
-            //dump("Negative BigInteger", Logger.ERROR, true);
-            throw new IllegalStateException("Negative BigInteger!");
-        }
-        byte[] buf = integer.toByteArray();
-        if(buf.length > Short.MAX_VALUE)
-            throw new IllegalStateException("Too long: "+buf.length);
-        out.writeShort((short)buf.length);
-        out.write(buf);
-    }
 
-    /**
+	/**
+	 * Write a (reasonably short) BigInteger to a stream.
+	 * @param integer the BigInteger to write
+	 * @param out the stream to write it to
+	 */
+	public static void writeBigInteger(BigInteger integer, DataOutputStream out) throws IOException {
+		if(integer.signum() == -1) {
+			//dump("Negative BigInteger", Logger.ERROR, true);
+			throw new IllegalStateException("Negative BigInteger!");
+		}
+		byte[] buf = integer.toByteArray();
+		if(buf.length > Short.MAX_VALUE) {
+			throw new IllegalStateException("Too long: "+buf.length);
+		}
+		out.writeShort((short)buf.length);
+		out.write(buf);
+	}
+
+	/**
 	 * Read a (reasonably short) BigInteger from a DataInputStream
 	 * @param dis the stream to read from
 	 * @return a BigInteger
 	 */
 	public static BigInteger readBigInteger(DataInputStream dis) throws IOException {
-	    short i = dis.readShort();
-	    if(i < 0) throw new IOException("Invalid BigInteger length: "+i);
-	    byte[] buf = new byte[i];
-	    dis.readFully(buf);
-	    return new BigInteger(1,buf);
+		short i = dis.readShort();
+		if(i < 0) throw new IOException("Invalid BigInteger length: "+i);
+		byte[] buf = new byte[i];
+		dis.readFully(buf);
+		return new BigInteger(1,buf);
 	}
 
 
-    /**
-     * Turn a BigInteger into a hex string.
-     * BigInteger.toString(16) NPEs on Sun JDK 1.4.2_05. :<
-     * The bugs in their Big* are getting seriously irritating...
-     */
-    public static String biToHex(BigInteger bi) {
-        return bytesToHex(bi.toByteArray());
-    }
+	/**
+	 * Turn a BigInteger into a hex string.
+	 * BigInteger.toString(16) NPEs on Sun JDK 1.4.2_05. :<
+	 * The bugs in their Big* are getting seriously irritating...
+	 */
+	public static String biToHex(BigInteger bi) {
+		return bytesToHex(bi.toByteArray());
+	}
 }

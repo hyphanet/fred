@@ -52,7 +52,7 @@ class Rijndael_Properties // implicit no-argument constructor
 		String it = ALGORITHM + ".properties";
 		InputStream is = Rijndael_Properties.class.getResourceAsStream(it);
 		boolean ok = is != null;
-		if (ok)
+		if (ok) {
 			try {
 				properties.load(is);
 				is.close();
@@ -64,11 +64,13 @@ class Rijndael_Properties // implicit no-argument constructor
 				if (GLOBAL_DEBUG) System.err.println(">>> " + NAME + ": WARNING: Unable to load \"" + it + "\" from CLASSPATH.");
 				if (GLOBAL_DEBUG) System.err.println(">>> " + NAME + ":          Will use default values instead...");
 				int n = DEFAULT_PROPERTIES.length;
-				for (int i = 0; i < n; i++)
+				for (int i = 0; i < n; i++) {
 					properties.put(
 							DEFAULT_PROPERTIES[i][0], DEFAULT_PROPERTIES[i][1]);
+				}
 				if (GLOBAL_DEBUG) System.err.println(">>> " + NAME + ": Default properties now set...");
 			}
+		}
 	}
 
 
@@ -135,8 +137,9 @@ class Rijndael_Properties // implicit no-argument constructor
 	 */
 	static boolean isTraceable (String label) {
 		String s = getProperty("Trace." + label);
-		if (s == null)
+		if (s == null) {
 			return false;
+		}
 		return Boolean.valueOf(s).booleanValue();
 	}
 
@@ -157,8 +160,9 @@ class Rijndael_Properties // implicit no-argument constructor
 		String s = getProperty("Debug.Level." + label);
 		if (s == null) {
 			s = getProperty("Debug.Level.*");
-			if (s == null)
+			if (s == null) {
 				return 0;
+			}
 		}
 		try {
 			return Integer.parseInt(s);
@@ -180,10 +184,11 @@ class Rijndael_Properties // implicit no-argument constructor
 	static PrintWriter getOutput() {
 		PrintWriter pw;
 		String name = getProperty("Output");
-		if ((name != null) && name.equals("out"))
+		if ((name != null) && "out".equals(name)) {
 			pw = new PrintWriter(System.out, true);
-		else
+		} else {
 			pw = new PrintWriter(System.err, true);
+		}
 		return pw;
 	}
 }

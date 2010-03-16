@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -37,13 +37,13 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class Peer implements WritableToDataOutputStream {
 
-    public static class LocalAddressException extends Exception {
-    	private static final long serialVersionUID = -1;
+	public static class LocalAddressException extends Exception {
+		private static final long serialVersionUID = -1;
 	}
 
 	public static final String VERSION = "$Id: Peer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
 
-    private final FreenetInetAddress addr;
+	private final FreenetInetAddress addr;
 	private final int _port;
 
 	// Create a null peer
@@ -76,34 +76,34 @@ public class Peer implements WritableToDataOutputStream {
 
 	/**
 	 * Create a Peer from a string. This may be an IP address or a domain name. If it
-	 * is the latter, the name is primary rather than the IP address; 
+	 * is the latter, the name is primary rather than the IP address;
 	 * getHandshakeAddress() will do a new lookup on the name, and change the IP address
 	 * if the domain name has changed.
 	 * @param physical The string to be parsed, in the format [ ip or domain name ]:[ port number].
 	 * @param allowUnknown If true, allow construction of the Peer even if the domain name
 	 * lookup fails.
-	 * @throws PeerParseException If the string is not valid e.g. if it doesn't contain a 
+	 * @throws PeerParseException If the string is not valid e.g. if it doesn't contain a
 	 * port.
 	 * @throws UnknownHostException If allowUnknown is not set, and a domain name which does
 	 * not exist was passed in.
 	 */
-    public Peer(String physical, boolean allowUnknown) throws PeerParseException, UnknownHostException {
-        int offset = physical.lastIndexOf(':'); // ipv6
-        if(offset < 0) throw new PeerParseException();
-        String host = physical.substring(0, offset);
-        addr = new FreenetInetAddress(host, allowUnknown);
-        String strport = physical.substring(offset+1);
-        try {
-            _port = Integer.parseInt(strport);
-            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
-        } catch (NumberFormatException e) {
-            throw new PeerParseException(e);
-        }
+	public Peer(String physical, boolean allowUnknown) throws PeerParseException, UnknownHostException {
+		int offset = physical.lastIndexOf(':'); // ipv6
+		if(offset < 0) throw new PeerParseException();
+		String host = physical.substring(0, offset);
+		addr = new FreenetInetAddress(host, allowUnknown);
+		String strport = physical.substring(offset+1);
+		try {
+			_port = Integer.parseInt(strport);
+			if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
+		} catch (NumberFormatException e) {
+			throw new PeerParseException(e);
+		}
 	}
 
 	/**
 	 * Create a Peer from a string. This may be an IP address or a domain name. If it
-	 * is the latter, the name is primary rather than the IP address; 
+	 * is the latter, the name is primary rather than the IP address;
 	 * getHandshakeAddress() will do a new lookup on the name, and change the IP address
 	 * if the domain name has changed.
 	 * @param physical The string to be parsed, in the format [ ip or domain name ]:[ port number].
@@ -113,29 +113,29 @@ public class Peer implements WritableToDataOutputStream {
 	 * IP address
 	 * @throws HostSyntaxException If the string is not formatted as a proper DNS hostname
 	 * or IPv4 IP address
-	 * @throws PeerParseException If the string is not valid e.g. if it doesn't contain a 
+	 * @throws PeerParseException If the string is not valid e.g. if it doesn't contain a
 	 * port.
 	 * @throws UnknownHostException If allowUnknown is not set, and a domain name which does
 	 * not exist was passed in.
 	 */
-    public Peer(String physical, boolean allowUnknown, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, PeerParseException, UnknownHostException {
-        int offset = physical.lastIndexOf(':'); // ipv6
-        if(offset < 0) throw new PeerParseException();
-        String host = physical.substring(0, offset);
-        addr = new FreenetInetAddress(host, allowUnknown, checkHostnameOrIPSyntax);
-        String strport = physical.substring(offset+1);
-        try {
-            _port = Integer.parseInt(strport);
-            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
-        } catch (NumberFormatException e) {
-            throw new PeerParseException(e);
-        }
-    }
-    
-    public Peer(FreenetInetAddress addr, int port) {
-    	this.addr = addr;
-    	if(addr == null) throw new NullPointerException();
-    	this._port = port;
+	public Peer(String physical, boolean allowUnknown, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, PeerParseException, UnknownHostException {
+		int offset = physical.lastIndexOf(':'); // ipv6
+		if(offset < 0) throw new PeerParseException();
+		String host = physical.substring(0, offset);
+		addr = new FreenetInetAddress(host, allowUnknown, checkHostnameOrIPSyntax);
+		String strport = physical.substring(offset+1);
+		try {
+			_port = Integer.parseInt(strport);
+			if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
+		} catch (NumberFormatException e) {
+			throw new PeerParseException(e);
+		}
+	}
+
+	public Peer(FreenetInetAddress addr, int port) {
+		this.addr = addr;
+		if(addr == null) throw new NullPointerException();
+		this._port = port;
 		if(_port > 65535 || _port < 0) throw new IllegalArgumentException("bogus port");
 	}
 
@@ -157,8 +157,9 @@ public class Peer implements WritableToDataOutputStream {
 		if (_port != peer._port) {
 			return false;
 		}
-		if(!addr.equals(peer.addr))
+		if(!addr.equals(peer.addr)) {
 			return false;
+		}
 		return true;
 	}
 
@@ -176,8 +177,9 @@ public class Peer implements WritableToDataOutputStream {
 		if (_port != peer._port) {
 			return false;
 		}
-		if(!addr.strictEquals(peer.addr))
+		if(!addr.strictEquals(peer.addr)) {
 			return false;
+		}
 		return true;
 	}
 
@@ -198,14 +200,14 @@ public class Peer implements WritableToDataOutputStream {
 	public InetAddress getAddress(boolean doDNSRequest) {
 		return addr.getAddress(doDNSRequest);
 	}
-	
+
 	public InetAddress getAddress(boolean doDNSRequest, boolean allowLocal) throws LocalAddressException {
 		InetAddress a = addr.getAddress(doDNSRequest);
 		if(a == null) return null;
 		if(allowLocal || IPUtil.isValidAddress(a, false)) return a;
 		throw new LocalAddressException();
 	}
-	
+
 	/**
 	 * Get the IP address, looking up the hostname if the hostname is primary, even if
 	 * it has been looked up before. Typically called on a reconnect attempt, when the
@@ -214,7 +216,7 @@ public class Peer implements WritableToDataOutputStream {
 	public InetAddress getHandshakeAddress() {
 		return addr.getHandshakeAddress();
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return addr.hashCode() + _port;

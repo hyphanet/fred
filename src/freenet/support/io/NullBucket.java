@@ -13,41 +13,41 @@ import freenet.support.api.Bucket;
 
 public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 
-    public final OutputStream nullOut = new NullOutputStream();
-    public final InputStream  nullIn  = new NullInputStream();
+	public final OutputStream nullOut = new NullOutputStream();
+	public final InputStream  nullIn  = new NullInputStream();
 
-    public final long length;
-    
-    public NullBucket() {
-        this(0);
-    }
+	public final long length;
 
-    public NullBucket(long length) {
-        this.length = length;
-    }
-    
-    /**
-     * Returns an OutputStream that is used to put data in this Bucket.
-     **/
-    public OutputStream getOutputStream() { return nullOut; }
+	public NullBucket() {
+		this(0);
+	}
 
-    /**
-     * Returns an InputStream that reads data from this Bucket. If there is
-     * no data in this bucket, null is returned.
-     **/
-    public InputStream getInputStream() { return nullIn; }
+	public NullBucket(long length) {
+		this.length = length;
+	}
 
-    /**
-     * Returns the amount of data currently in this bucket.
-     **/
-    public long size() {
-        return length;
-    }
+	/**
+	 * Returns an OutputStream that is used to put data in this Bucket.
+	 **/
+	public OutputStream getOutputStream() { return nullOut; }
 
-    /** Returns the name of this NullBucket. */
-    public String getName() {
-    	return "President George W. NullBucket";
-    }
+	/**
+	 * Returns an InputStream that reads data from this Bucket. If there is
+	 * no data in this bucket, null is returned.
+	 **/
+	public InputStream getInputStream() { return nullIn; }
+
+	/**
+	 * Returns the amount of data currently in this bucket.
+	 **/
+	public long size() {
+		return length;
+	}
+
+	/** Returns the name of this NullBucket. */
+	public String getName() {
+		return "President George W. NullBucket";
+	}
 
 	public boolean isReadOnly() {
 		return false;

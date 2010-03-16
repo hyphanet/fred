@@ -23,11 +23,11 @@ import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.Base64} class.
- * 
+ *
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
 public class Base64Test extends TestCase {
-	
+
 	/**
 	 * Test the encode(byte[]) method
 	 * against a well-known example
@@ -36,41 +36,42 @@ public class Base64Test extends TestCase {
 	 */
 	public void testEncode() {
 		String toEncode = "Man is distinguished, not only by his reason, but by this singular " +
-				"passion from other animals, which is a lust of the mind, that by a perseverance " +
-				"of delight in the continued and indefatigable generation of knowledge, exceeds " +
-				"the short vehemence of any carnal pleasure.";
+			"passion from other animals, which is a lust of the mind, that by a perseverance " +
+			"of delight in the continued and indefatigable generation of knowledge, exceeds " +
+			"the short vehemence of any carnal pleasure.";
 		String expectedResult = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ" +
-				"1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIG" +
-				"x1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY" +
-				"29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRz" +
-				"IHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4";
+			"1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIG" +
+			"x1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY" +
+			"29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRz" +
+			"IHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4";
 		byte[] aByteArrayToEncode = toEncode.getBytes();
 		assertEquals(Base64.encode(aByteArrayToEncode),expectedResult);
 	}
-	
+
 	/**
 	 * Test the decode(String) method
 	 * against a well-known example
 	 * (see http://en.wikipedia.org/wiki/Base_64 as reference)
 	 * to verify if it decode an already encoded string correctly.
-	 */	
+	 */
 	public void testDecode() {
 		String toDecode = "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ" +
-				"1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIG" +
-				"x1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY" +
-				"29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRz" +
-				"IHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
+			"1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIG" +
+			"x1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY" +
+			"29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRz" +
+			"IHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
 		String expectedResult = "Man is distinguished, not only by his reason, but by this singular " +
-				"passion from other animals, which is a lust of the mind, that by a perseverance " +
-				"of delight in the continued and indefatigable generation of knowledge, exceeds " +
-				"the short vehemence of any carnal pleasure.";
+			"passion from other animals, which is a lust of the mind, that by a perseverance " +
+			"of delight in the continued and indefatigable generation of knowledge, exceeds " +
+			"the short vehemence of any carnal pleasure.";
 		try {
 			String decodedString = new String(Base64.decode(toDecode));
 			assertEquals(decodedString,expectedResult);
 		} catch (IllegalBase64Exception aException) {
-			fail("Not expected exception thrown : " + aException.getMessage()); }
+			fail("Not expected exception thrown : " + aException.getMessage());
+		}
 	}
-	
+
 	/**
 	 * Test encode(byte[] in)
 	 * and decode(String inStr) methods,
@@ -81,24 +82,25 @@ public class Base64Test extends TestCase {
 	public void testEncodeDecode() {
 		byte[] bytesDecoded;
 		byte[] bytesToEncode = new byte[5];
-		
+
 		//byte upper bound
 		bytesToEncode[0] = 127;
 		bytesToEncode[1] = 64;
 		bytesToEncode[2] = 0;
 		bytesToEncode[3] = -64;
 		//byte lower bound
-		bytesToEncode[4] = -128;	
-		
+		bytesToEncode[4] = -128;
+
 		String aBase64EncodedString = Base64.encode(bytesToEncode);
-		
+
 		try {
 			bytesDecoded = Base64.decode(aBase64EncodedString);
-			assertTrue(Arrays.equals(bytesToEncode,bytesDecoded)); } 
-		catch (IllegalBase64Exception aException) {
-			fail("Not expected exception thrown : " + aException.getMessage()); }
+			assertTrue(Arrays.equals(bytesToEncode,bytesDecoded));
+		} catch (IllegalBase64Exception aException) {
+			fail("Not expected exception thrown : " + aException.getMessage());
+		}
 	}
-	
+
 	/**
 	 * Test the encode(String,boolean)
 	 * method to verify if the padding
@@ -107,23 +109,24 @@ public class Base64Test extends TestCase {
 	public void testEncodePadding() {
 		byte[][] methodBytesArray = {
 				//three byte Array -> no padding char expected
-				{4,4,4},		
+				{4,4,4},
 				//two byte Array -> one padding char expected
-				{4,4},		
-				//one byte Array -> two padding-chars expected	
-				{4}};		
+				{4,4},
+				//one byte Array -> two padding-chars expected
+				{4}};
 		String encoded;
-		
+
 		for (int i = 0; i<methodBytesArray.length; i++) {
 			encoded = Base64.encode(methodBytesArray[i],true);
-			if (i == 0)
+			if (i == 0) {
 				//no occurrences expected
 				assertEquals(encoded.indexOf('='),-1);
-			else
+			} else {
 				assertEquals(encoded.indexOf('='),encoded.length()-i);
+			}
 		}
 	}
-	
+
 	/**
 	 * Test if the decode(String) method
 	 * raise correctly an exception when
@@ -135,15 +138,16 @@ public class Base64Test extends TestCase {
 		String illegalCharString = "abcd=fghilmn";
 		try {
 			Base64.decode(illegalCharString);
-			fail("Expected IllegalBase64Exception not thrown"); }
-		catch (IllegalBase64Exception exception) {
-			assertSame("illegal Base64 character",exception.getMessage()); }
+			fail("Expected IllegalBase64Exception not thrown");
+		} catch (IllegalBase64Exception exception) {
+			assertSame("illegal Base64 character",exception.getMessage());
+		}
 	}
-	
+
 	/**
 	 * Test if the decode(String) method
 	 * raise correctly an exception when
-	 * providing a string with a 
+	 * providing a string with a
 	 * wrong Base64 length.
 	 * (as we can consider not-padded strings too,
 	 *  the only wrong lengths are the ones
@@ -154,14 +158,15 @@ public class Base64Test extends TestCase {
 		String illegalLengthString = "a";
 		try {
 			Base64.decode(illegalLengthString);
-			fail("Expected IllegalBase64Exception not thrown"); }
-		catch (IllegalBase64Exception exception) {
-			assertSame("illegal Base64 length",exception.getMessage()); }
+			fail("Expected IllegalBase64Exception not thrown");
+		} catch (IllegalBase64Exception exception) {
+			assertSame("illegal Base64 length",exception.getMessage());
+		}
 	}
-	
+
 	/**
 	 * Random test
-	 * 
+	 *
 	 * @throws IllegalBase64Exception
 	 */
 	public void testRandom() throws IllegalBase64Exception {
@@ -169,16 +174,18 @@ public class Base64Test extends TestCase {
 		Random r = new Random(1234);
 		for (iter = 0; iter < 1000; iter++) {
 			byte[] b = new byte[r.nextInt(64)];
-			for (int i = 0; i < b.length; i++)
+			for (int i = 0; i < b.length; i++) {
 				b[i] = (byte) (r.nextInt(256));
+			}
 			String encoded = Base64.encode(b);
 			byte[] decoded = Base64.decode(encoded);
 			assertEquals("length mismatch", decoded.length, b.length);
 
-			for (int i = 0; i < b.length; i++)
+			for (int i = 0; i < b.length; i++) {
 				assertEquals("data mismatch: index " + i + " of " + b.length + " should be 0x"
-				        + Integer.toHexString(b[i] & 0xFF) + " was 0x" + Integer.toHexString(decoded[i] & 0xFF), b[i],
-				        decoded[i]);
+					+ Integer.toHexString(b[i] & 0xFF) + " was 0x" + Integer.toHexString(decoded[i] & 0xFF), b[i],
+					decoded[i]);
+			}
 		}
 	}
 }

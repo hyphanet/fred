@@ -328,7 +328,7 @@ public class FilterUtils {
 				for(String s : shapeParts)
 				{
 					s = s.trim();
-					if(!(s.equalsIgnoreCase("auto") || isLength(s, false)))
+					if(!("auto".equalsIgnoreCase(s) || isLength(s, false)))
 						return false;
 				}
 				if(isValidShapeParts)

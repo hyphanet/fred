@@ -11,7 +11,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-class Persister implements Runnable {
+public class Persister implements Runnable {
 
 	Persister(Persistable t, File persistTemp, File persistTarget, PacketSender ps) {
 		this.persistable = t;
@@ -19,19 +19,19 @@ class Persister implements Runnable {
 		this.persistTarget = persistTarget;
 		this.ps = ps;
 	}
-	
+
 	// Subclass must set the others later
 	protected Persister(Persistable t, PacketSender ps) {
 		this.persistable = t;
 		this.ps = ps;
 	}
-	
+
 	final Persistable persistable;
 	private final PacketSender ps;
 	File persistTemp;
 	File persistTarget;
 	private boolean started;
-	
+
 	void interrupt() {
 		synchronized(this) {
 			notifyAll();
@@ -53,7 +53,7 @@ class Persister implements Runnable {
 		}
 		ps.queueTimedJob(this, 60*1000);
 	}
-	
+
 	private void persistThrottle() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Trying to persist throttles...");
@@ -72,7 +72,7 @@ class Persister implements Runnable {
 		} catch (FileNotFoundException e) {
 			Logger.error(this, "Could not store throttle data to disk: "+e, e);
 			return;
-                }
+				}
 	}
 
 	public SimpleFieldSet read() {
@@ -85,8 +85,9 @@ class Persister implements Runnable {
 			} catch (FileNotFoundException e1) {
 				// Ignore
 			} catch (IOException e1) {
-				if(persistTarget.length() > 0 || persistTemp.length() > 0)
+				if(persistTarget.length() > 0 || persistTemp.length() > 0) {
 					Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+ ')');
+				}
 			}
 		}
 		return throttleFS;

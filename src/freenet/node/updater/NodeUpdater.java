@@ -313,7 +313,7 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 					if(ze.isDirectory()) continue;
 					String name = ze.getName();
 					
-					if(name.equals("META-INF/MANIFEST.MF")) {
+					if("META-INF/MANIFEST.MF".equals(name)) {
 						if(logMINOR) Logger.minor(this, "Found manifest");
 						long size = ze.getSize();
 						if(logMINOR) Logger.minor(this, "Manifest size: "+size);

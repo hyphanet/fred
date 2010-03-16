@@ -155,7 +155,7 @@ public class Util {
 		return true;
 	}
 
-	private static Digest ctx = SHA1.getInstance();
+	private static final Digest ctx = SHA1.getInstance();
 
 	public static void makeKey(
 		byte[] entropy,
@@ -225,28 +225,28 @@ public class Util {
 	}
 
 	public static void main(String[] args) throws Exception {
-		if ((args.length == 0) || args[0].equals("write")) {
+		if ((args.length == 0) || "write".equals(args[0])) {
 			writeMPI(new BigInteger("9"), System.out);
 			writeMPI(new BigInteger("1234567890123456789"), System.out);
 			writeMPI(new BigInteger("100200300400500600700800900"), System.out);
-		} else if (args[0].equals("read")) {
+		} else if ("read".equals(args[0])) {
 			System.out.println("9");
 			System.out.println(readMPI(System.in));
 			System.out.println("1234567890123456789");
 			System.out.println(readMPI(System.in));
 			System.out.println("100200300400500600700800900");
 			System.out.println(readMPI(System.in));
-		} else if (args[0].equals("write-mpi")) {
+		} else if ("write-mpi".equals(args[0])) {
 			writeMPI(new BigInteger(args[1]), System.out);
-		} else if (args[0].equals("read-mpi")) {
+		} else if ("read-mpi".equals(args[0])) {
 			System.err.println(readMPI(System.in));
-		} else if (args[0].equals("keygen")) {
+		} else if ("keygen".equals(args[0])) {
 			byte[] entropy = readMPI(System.in).toByteArray();
 			byte[] key =
 				new byte[(args.length > 1 ? Integer.parseInt(args[1]) : 16)];
 			makeKey(entropy, key, 0, key.length);
 			System.err.println(HexUtil.bytesToHex(key, 0, key.length));
-		} else if (args[0].equals("shatest")) {
+		} else if ("shatest".equals(args[0])) {
 			synchronized (ctx) {
 				ctx.digest();
 				ctx.update((byte) 'a');

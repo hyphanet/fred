@@ -16,86 +16,87 @@ import freenet.support.Logger;
 
 /**
  * @author amphibian
- * 
+ *
  * Node-level CHK. Does not have enough information to decode the payload.
  * But can verify that it is intact. Just has the routingKey.
  */
 public class NodeCHK extends Key {
 
-    /** 32 bytes for hash, 2 bytes for type */
-    public static final short FULL_KEY_LENGTH = 34;
-	
-    public NodeCHK(byte[] routingKey2, byte cryptoAlgorithm) {
-    	super(routingKey2);
-        if(routingKey2.length != KEY_LENGTH)
-            throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
-        this.cryptoAlgorithm = cryptoAlgorithm;
-    }
-    
-    private NodeCHK(NodeCHK key) {
-    	super(key);
-    	this.cryptoAlgorithm = key.cryptoAlgorithm;
-    }
-    
-    @Override
-	public Key cloneKey() {
-    	return new NodeCHK(this);
-    }
+	/** 32 bytes for hash, 2 bytes for type */
+	public static final short FULL_KEY_LENGTH = 34;
 
-    public static final int KEY_LENGTH = 32;
-    
+	public NodeCHK(byte[] routingKey2, byte cryptoAlgorithm) {
+		super(routingKey2);
+		if(routingKey2.length != KEY_LENGTH) {
+			throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
+		}
+		this.cryptoAlgorithm = cryptoAlgorithm;
+	}
+
+	private NodeCHK(NodeCHK key) {
+		super(key);
+		this.cryptoAlgorithm = key.cryptoAlgorithm;
+	}
+
+	@Override
+	public Key cloneKey() {
+		return new NodeCHK(this);
+	}
+
+	public static final int KEY_LENGTH = 32;
+
 	/** Crypto algorithm */
 	final byte cryptoAlgorithm;
-    /** The size of the data */
+	/** The size of the data */
 	public static final int BLOCK_SIZE = 32768;
 
 	public static final byte BASE_TYPE = 1;
 
-    public final void writeToDataOutputStream(DataOutputStream stream) throws IOException {
-        write(stream);
-    }
+	public final void writeToDataOutputStream(DataOutputStream stream) throws IOException {
+		write(stream);
+	}
 
-    @Override
+	@Override
 	public String toString() {
-        return super.toString() + '@' +Base64.encode(routingKey)+ ':' +Integer.toHexString(hash);
-    }
+		return super.toString() + '@' +Base64.encode(routingKey)+ ':' +Integer.toHexString(hash);
+	}
 
-    @Override
+	@Override
 	public final void write(DataOutput _index) throws IOException {
-        _index.writeShort(getType());
-        _index.write(routingKey);
-    }
-    
-    public static Key readCHK(DataInput raf, byte algo) throws IOException {
-        byte[] buf = new byte[KEY_LENGTH];
-        raf.readFully(buf);
-        return new NodeCHK(buf, algo);
-    }
+		_index.writeShort(getType());
+		_index.write(routingKey);
+	}
 
-    @Override
+	public static Key readCHK(DataInput raf, byte algo) throws IOException {
+		byte[] buf = new byte[KEY_LENGTH];
+		raf.readFully(buf);
+		return new NodeCHK(buf, algo);
+	}
+
+	@Override
 	public boolean equals(Object key) {
-    	if(key == this) return true;
-        if(key instanceof NodeCHK) {
-            NodeCHK chk = (NodeCHK) key;
-            return java.util.Arrays.equals(chk.routingKey, routingKey) && (cryptoAlgorithm == chk.cryptoAlgorithm);
-        }
-        return false;
-    }
-    
-    @Override
+		if(key == this) return true;
+		if(key instanceof NodeCHK) {
+			NodeCHK chk = (NodeCHK) key;
+			return java.util.Arrays.equals(chk.routingKey, routingKey) && (cryptoAlgorithm == chk.cryptoAlgorithm);
+		}
+		return false;
+	}
+
+	@Override
 	public int hashCode(){
-    	return super.hashCode();
-    }
-    
+		return super.hashCode();
+	}
+
 	@Override
 	public short getType() {
 		return (short) ((BASE_TYPE << 8) + (cryptoAlgorithm & 0xFF));
 	}
-    
-    @Override
+
+	@Override
 	public byte[] getRoutingKey(){
-    	return routingKey;
-    }
+		return routingKey;
+	}
 
 	@Override
 	public byte[] getFullKey() {

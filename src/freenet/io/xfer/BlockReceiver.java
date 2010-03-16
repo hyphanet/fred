@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -70,7 +70,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 //	private final boolean _doTooLong;
 
 	boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
-	
+
 	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong) {
 		_sender = sender;
 		_prb = prb;
@@ -85,7 +85,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		_usm.send(_sender, DMT.createSendAborted(_uid, reason, desc), _ctr);
 		sentAborted=true;
 	}
-	
+
 	public byte[] receive() throws RetrievalException {
 		long startTime = System.currentTimeMillis();
 //		if(_doTooLong) {
@@ -115,20 +115,22 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			MessageFilter relevantMessages=mfPacketTransmit.or(mfAllSent.or(mfSendAborted));
 		while (!_prb.allReceived()) {
 			Message m1;
-            try {
-            	m1 = _usm.waitFor(relevantMessages, _ctr);
-                if(!_sender.isConnected()) throw new DisconnectedException();
-            } catch (DisconnectedException e1) {
-                Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
-                _prb.abort(RetrievalException.SENDER_DISCONNECTED, "Disconnected during receive");
-                throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
-            }
-            if(logMINOR)
-            	Logger.minor(this, "Received "+m1);
-            if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
+			try {
+				m1 = _usm.waitFor(relevantMessages, _ctr);
+				if(!_sender.isConnected()) throw new DisconnectedException();
+			} catch (DisconnectedException e1) {
+				Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
+				_prb.abort(RetrievalException.SENDER_DISCONNECTED, "Disconnected during receive");
+				throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
+			}
+			if(logMINOR) {
+				Logger.minor(this, "Received "+m1);
+			}
+			if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
 				String desc=m1.getString(DMT.DESCRIPTION);
-				if (desc.indexOf("Upstream")<0)
+				if (desc.indexOf("Upstream")<0) {
 					desc="Upstream transmit error: "+desc;
+				}
 				_prb.abort(m1.getInt(DMT.REASON), desc);
 				synchronized(this) {
 					senderAborted = true;
@@ -161,8 +163,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 						}
 					}
 				}
-				if(logMINOR)
+				if(logMINOR) {
 					Logger.minor(this, "Missing: "+missing.size());
+				}
 				if (missing.size() > 0) {
 					Message mn = DMT.createMissingPacketNotification(_uid, missing);
 					_usm.send(_sender, mn, _ctr);
@@ -205,10 +208,10 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken);
 			}
 		}
-		
+
 		return _prb.getBlock();
 		} catch(NotConnectedException e) {
-		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
+			throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
 		} catch(AbortedException e) {
 			// We didn't cause it?!
 			Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e);
@@ -223,9 +226,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 		}
 	}
-	
-	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
-	
+
+	private static final MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+
 	private void maybeResetDiscardFilter() {
 		long timeleft=discardEndTime-System.currentTimeMillis();
 		if (timeleft>0) {
@@ -237,7 +240,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 		}
 	}
-	
+
 	/**
 	 * Used to discard leftover messages, usually just packetTransmit and allSent.
 	 * allSent, is quite common, as the receive() routine usually quits immeadiately on receiving all packets.
@@ -246,13 +249,13 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public void onMatched(Message m) {
 		if (logMINOR)
 			Logger.minor(this, "discarding message post-receive: "+m);
-		maybeResetDiscardFilter();												   
+		maybeResetDiscardFilter();
 	}
-	
+
 	public boolean shouldTimeout() {
 		return false;
 	}
-	
+
 	public void onTimeout() {
 		//ignore
 	}

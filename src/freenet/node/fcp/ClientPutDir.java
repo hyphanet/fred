@@ -183,7 +183,7 @@ public class ClientPutDir extends ClientPutBase {
 		SimpleFieldSet files = fs.subset("Files");
 		defaultName = fs.get("DefaultName");
 		String type = fs.get("PutDirType");
-		if(type.equals("disk"))
+		if("disk".equals(type))
 			wasDiskPut = true;
 		else
 			wasDiskPut = false;
@@ -205,7 +205,7 @@ public class ClientPutDir extends ClientPutBase {
 			if(logMINOR) Logger.minor(this, "Parsing "+i);
 			if(logMINOR) Logger.minor(this, "UploadFrom="+uploadFrom);
 			ManifestElement me;
-			if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
+			if((uploadFrom == null) || "direct".equalsIgnoreCase(uploadFrom)) {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				if(!finished) {
 					try {
@@ -218,7 +218,7 @@ public class ClientPutDir extends ClientPutBase {
 				}
 				me = new ManifestElement(name, data, contentTypeOverride, sz);
 				fileCount++;
-			} else if(uploadFrom.equalsIgnoreCase("disk")) {
+			} else if("disk".equalsIgnoreCase(uploadFrom)) {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				// Disk
 				String f = subset.get("Filename");
@@ -232,7 +232,7 @@ public class ClientPutDir extends ClientPutBase {
 				data = new FileBucket(ff, true, false, false, false, false);
 				me = new ManifestElement(name, data, contentTypeOverride, sz);
 				fileCount++;
-			} else if(uploadFrom.equalsIgnoreCase("redirect")) {
+			} else if("redirect".equalsIgnoreCase(uploadFrom)) {
 				FreenetURI targetURI = new FreenetURI(subset.get("TargetURI"));
 				me = new ManifestElement(name, targetURI, contentTypeOverride);
 			} else

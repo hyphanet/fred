@@ -39,24 +39,24 @@ import freenet.support.Logger;
 /**
  * Replacement for {@link ServerSocket} that can handle multiple bind addresses
  * and allows IP address level filtering.
- * 
+ *
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
 public class NetworkInterface implements Closeable {
-    
+
 	private static volatile boolean logMINOR;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
-            @Override
+			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}
 		});
 	}
-        public static final String DEFAULT_BIND_TO = "127.0.0.1,0:0:0:0:0:0:0:1";
-        
+		public static final String DEFAULT_BIND_TO = "127.0.0.1,0:0:0:0:0:0:0:1";
+
 	/** Object for synchronisation purpose. */
 	protected final Object syncObject = new Object();
 
@@ -65,7 +65,7 @@ public class NetworkInterface implements Closeable {
 
 	/** Queue of accepted client connections. */
 	protected final List<Socket> acceptedSockets = new ArrayList<Socket>();
-	
+
 	/** AllowedHosts structure */
 	protected final AllowedHosts allowedHosts;
 
@@ -77,9 +77,9 @@ public class NetworkInterface implements Closeable {
 
 	/** The number of running acceptors. */
 	private int runningAcceptors = 0;
-	
+
 	private volatile boolean shutdown = false;
-	
+
 	private final Executor executor;
 
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
@@ -97,11 +97,11 @@ public class NetworkInterface implements Closeable {
 		}
 		return iface;
 	}
-	
+
 	/**
 	 * Creates a new network interface that can bind to several addresses and
 	 * allows connection filtering on IP address level.
-	 * 
+	 *
 	 * @param bindTo
 	 *            A comma-separated list of addresses to bind to
 	 * @param allowedHosts
@@ -116,15 +116,15 @@ public class NetworkInterface implements Closeable {
 	protected ServerSocket createServerSocket() throws IOException {
 		return new ServerSocket();
 	}
-	
+
 	/**
 	 * Sets the list of IP address this network interface binds to.
-	 * 
+	 *
 	 * @param bindTo
 	 *            A comma-separated list of IP address to bind to
 	 */
 	public void setBindTo(String bindTo, boolean ignoreUnbindableIP6) throws IOException {
-                if(bindTo == null || bindTo.equals("")) bindTo = NetworkInterface.DEFAULT_BIND_TO;
+				if(bindTo == null || "".equals(bindTo)) bindTo = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List<String> bindToTokenList = new ArrayList<String>();
 		while (bindToTokens.hasMoreTokens()) {
@@ -156,10 +156,11 @@ public class NetworkInterface implements Closeable {
 				serverSocket.setReuseAddress(true);
 				serverSocket.bind(addr);
 			} catch (SocketException e) {
-				if(ignoreUnbindableIP6 && addr != null && addr.getAddress() instanceof Inet6Address)
+				if(ignoreUnbindableIP6 && addr != null && addr.getAddress() instanceof Inet6Address) {
 					continue;
-				else
+				} else {
 					throw e;
+				}
 			}
 			Acceptor acceptor = new Acceptor(serverSocket);
 			acceptors.add(acceptor);
@@ -178,7 +179,7 @@ public class NetworkInterface implements Closeable {
 
 	/**
 	 * Sets the SO_TIMEOUT value on the server sockets.
-	 * 
+	 *
 	 * @param timeout
 	 *            The timeout in milliseconds, <code>0</code> to disable
 	 * @throws SocketException
@@ -198,17 +199,19 @@ public class NetworkInterface implements Closeable {
 	 * will return after the specified timeout has been expired, throwing a
 	 * {@link SocketTimeoutException}. If no timeout has been set this method
 	 * will wait until a connection has been established.
-	 * 
+	 *
 	 * @return The socket that is connected to the client or null
-     * if the timeout has expired waiting for a connection
+	 * if the timeout has expired waiting for a connection
 	 */
 	public Socket accept() {
 		synchronized (syncObject) {
 			while (acceptedSockets.size() == 0 ) {
-				if (shutdown)
+				if (shutdown) {
 					return null;
-				if (WrapperManager.hasShutdownHookBeenTriggered())
+				}
+				if (WrapperManager.hasShutdownHookBeenTriggered()) {
 					return null;
+				}
 				if (acceptors.size() == 0) {
 					return null;
 				}
@@ -226,7 +229,7 @@ public class NetworkInterface implements Closeable {
 
 	/**
 	 * Closes this interface and all underlying server sockets.
-	 * 
+	 *
 	 * @throws IOException
 	 *             if an I/O exception occurs
 	 * @see ServerSocket#close()
@@ -262,7 +265,7 @@ public class NetworkInterface implements Closeable {
 	/**
 	 * Wrapper around a {@link ServerSocket} that checks whether the incoming
 	 * connection is allowed.
-	 * 
+	 *
 	 * @author David Roden &lt;droden@gmail.com&gt;
 	 * @version $Id$
 	 */
@@ -276,7 +279,7 @@ public class NetworkInterface implements Closeable {
 
 		/**
 		 * Creates a new acceptor on the specified server socket.
-		 * 
+		 *
 		 * @param serverSocket
 		 *            The server socket to listen on
 		 */
@@ -286,7 +289,7 @@ public class NetworkInterface implements Closeable {
 
 		/**
 		 * Sets the SO_TIMEOUT value on this acceptor's server socket.
-		 * 
+		 *
 		 * @param timeout
 		 *            The timeout in milliseconds, or <code>0</code> to
 		 *            disable
@@ -300,7 +303,7 @@ public class NetworkInterface implements Closeable {
 
 		/**
 		 * Closes this acceptor and the underlying server socket.
-		 * 
+		 *
 		 * @throws IOException
 		 *             if an I/O exception occurs
 		 * @see ServerSocket#close()
@@ -313,18 +316,18 @@ public class NetworkInterface implements Closeable {
 		/**
 		 * Main method that accepts connections and checks the address against
 		 * the list of allowed hosts.
-		 * 
+		 *
 		 * @see NetworkInterface#allowedHosts
 		 */
 		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
+			freenet.support.Logger.OSThread.logPID(this);
 			while (!closed) {
 				try {
 					Socket clientSocket = serverSocket.accept();
 					InetAddress clientAddress = clientSocket.getInetAddress();
 					if(logMINOR)
 						Logger.minor(Acceptor.class, "Connection from " + clientAddress);
-					
+
 					AddressType clientAddressType = AddressIdentifier.getAddressType(clientAddress.getHostAddress());
 
 					/* check if the ip address is allowed */
@@ -341,11 +344,13 @@ public class NetworkInterface implements Closeable {
 						Logger.normal(Acceptor.class, "Denied connection to " + clientAddress);
 					}
 				} catch (SocketTimeoutException ste1) {
-					if(logMINOR)
+					if(logMINOR) {
 						Logger.minor(this, "Timeout");
+					}
 				} catch (IOException ioe1) {
-					if(logMINOR)
+					if(logMINOR) {
 						Logger.minor(this, "Caught " + ioe1);
+					}
 				}
 			}
 			NetworkInterface.this.acceptorStopped();

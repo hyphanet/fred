@@ -61,9 +61,11 @@ public class ArchiveManager {
 		}
 		
 		public static boolean isValidMetadataID(short id) {
-			for(ARCHIVE_TYPE current : values())
-				if(id == current.metadataID)
+			for(ARCHIVE_TYPE current : values()) {
+				if(id == current.metadataID) {
 					return true;
+				}
+			}
 			return false;
 		}
 
@@ -71,10 +73,13 @@ public class ArchiveManager {
 		 * Is the given MIME type an archive type that we can deal with?
 		 */
 		public static boolean isUsableArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values())
-				for(String ctype : current.mimeTypes)
-					if(ctype.equalsIgnoreCase(type))
+			for(ARCHIVE_TYPE current : values()) {
+				for(String ctype : current.mimeTypes) {
+					if(ctype.equalsIgnoreCase(type)) {
 						return true;
+					}
+				}
+			}
 			return false;
 		}
 
@@ -82,17 +87,22 @@ public class ArchiveManager {
 		 * get its archive type number (see the ARCHIVE_ constants in Metadata).
 		 */
 		public static ARCHIVE_TYPE getArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values())
-				for(String ctype : current.mimeTypes)
-					if(ctype.equalsIgnoreCase(type))
+			for(ARCHIVE_TYPE current : values()) {
+				for(String ctype : current.mimeTypes) {
+					if(ctype.equalsIgnoreCase(type)) {
 						return current;
+					}
+				}
+			}
 			return null;
 		}
 		
 		public static ARCHIVE_TYPE getArchiveType(short type) {
-			for(ARCHIVE_TYPE current : values())
-				if(current.metadataID == type)
+			for(ARCHIVE_TYPE current : values()) {
+				if(current.metadataID == type) {
 					return current;
+				}
+			}
 			return null;
 		}
 		
@@ -149,8 +159,9 @@ public class ArchiveManager {
 	private synchronized void putCached(FreenetURI key, ArchiveStoreContext zip) {
 		if(logMINOR) Logger.minor(this, "Put cached AH for "+key+" : "+zip);
 		archiveHandlers.push(key, zip);
-		while(archiveHandlers.size() > maxArchiveHandlers)
+		while(archiveHandlers.size() > maxArchiveHandlers) {
 			archiveHandlers.popKey(); // dump it
+		}
 	}
 
 	/** Get an ArchiveHandler by key */
@@ -275,17 +286,19 @@ public class ArchiveManager {
 			} catch (IOException e) {
 				throw new ArchiveFailureException("Error reading archive data: "+e, e);
 			}
-			if(!Arrays.equals(realHash, expectedHash))
+			if(!Arrays.equals(realHash, expectedHash)) {
 				throwAtExit = true;
+			}
 			ctx.setLastHash(realHash);
 		}
 		
-		if(archiveSize > archiveContext.maxArchiveSize)
+		if(archiveSize > archiveContext.maxArchiveSize) {
 			throw new ArchiveFailureException("Archive too big ("+archiveSize+" > "+archiveContext.maxArchiveSize+")!");
-		else if(archiveSize <= 0)
+		} else if(archiveSize <= 0) {
 			throw new ArchiveFailureException("Archive too small! ("+archiveSize+')');
-		else if(logMINOR)
+		} else if(logMINOR) {
 			Logger.minor(this, "Container size (possibly compressed): "+archiveSize+" for "+data);
+		}
 		
 		
 		InputStream is = null;
@@ -304,17 +317,18 @@ public class ArchiveManager {
 				is = new LzmaInputStream(data.getInputStream());
 			}
 			
-			if(ARCHIVE_TYPE.ZIP == archiveType)
+			if(ARCHIVE_TYPE.ZIP == archiveType) {
 				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
-			else if(ARCHIVE_TYPE.TAR == archiveType)
+			} else if(ARCHIVE_TYPE.TAR == archiveType) {
 				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
-		else
+			} else {
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+			}
 		} catch (IOException ioe) {
 			throw new ArchiveFailureException("An IOE occured: "+ioe.getMessage(), ioe);
-		}finally {
+		} finally {
 			Closer.close(is);
-	}
+		}
 	}
 	
 	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
@@ -329,8 +343,8 @@ public class ArchiveManager {
 			byte[] buf = new byte[32768];
 			HashSet<String> names = new HashSet<String>();
 			boolean gotMetadata = false;
-			
-outerTAR:		while(true) {
+
+outerTAR:	while(true) {
 				entry = tarIS.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
@@ -340,8 +354,9 @@ outerTAR:		while(true) {
 					continue;
 				}
 				long size = entry.getSize();
-				if(name.equals(".metadata"))
+				if(".metadata".equals(name)) {
 					gotMetadata = true;
+				}
 				if(size > maxArchivedFileSize && !name.equals(element)) {
 					addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
 				} else {
@@ -383,8 +398,9 @@ outerTAR:		while(true) {
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 			
-			if((!gotElement.value) && element != null)
+			if((!gotElement.value) && element != null) {
 				callback.notInArchive(container, context);
+			}
 			
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
@@ -405,8 +421,8 @@ outerTAR:		while(true) {
 			byte[] buf = new byte[32768];
 			HashSet<String> names = new HashSet<String>();
 			boolean gotMetadata = false;
-			
-outerZIP:		while(true) {
+
+outerZIP:	while(true) {
 				entry = zis.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
@@ -416,8 +432,9 @@ outerZIP:		while(true) {
 					continue;
 				}
 				long size = entry.getSize();
-				if(name.equals(".metadata"))
+				if(".metadata".equals(name)) {
 					gotMetadata = true;
+				}
 				if(size > maxArchivedFileSize && !name.equals(element)) {
 					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize, true);
 				} else {
@@ -459,8 +476,9 @@ outerZIP:		while(true) {
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 			
-			if((!gotElement.value) && element != null)
+			if((!gotElement.value) && element != null) {
 				callback.notInArchive(container, context);
+			}
 			
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
@@ -552,8 +570,9 @@ outerZIP:		while(true) {
 			if(x == name.length()-1) {
 				// Last char
 				after = "";
-			} else
+			} else {
 				after = name.substring(x+1, name.length());
+			}
 			Object o = dir.get(before);
 			HashMap<String, Object> map = (HashMap<String, Object>) o;
 			if(o == null) {
@@ -634,23 +653,24 @@ outerZIP:		while(true) {
 	 */
 	private void trimStoredData() {
 		synchronized(this) {
-		while(true) {
-			ArchiveStoreItem item;
-				if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
-				if(storedData.isEmpty()) {
-					// Race condition? cachedData out of sync?
-					Logger.error(this, "storedData is empty but still over limit: cachedData="+cachedData+" / "+maxCachedData);
-					return;
+			while(true) {
+				ArchiveStoreItem item;
+					if(cachedData <= maxCachedData && storedData.size() <= maxCachedElements) return;
+					if(storedData.isEmpty()) {
+						// Race condition? cachedData out of sync?
+						Logger.error(this, "storedData is empty but still over limit: cachedData="+cachedData+" / "+maxCachedData);
+						return;
+					}
+					item = storedData.popValue();
+					long space = item.spaceUsed();
+					cachedData -= space;
+					// Hard limits = delete file within lock, soft limits = delete outside of lock
+					// Here we use a hard limit
+				if(logMINOR) {
+					Logger.minor(this, "Dropping "+item+" : cachedData="+cachedData+" of "+maxCachedData+" stored items : "+storedData.size()+" of "+maxCachedElements);
 				}
-				item = storedData.popValue();
-				long space = item.spaceUsed();
-				cachedData -= space;
-				// Hard limits = delete file within lock, soft limits = delete outside of lock
-				// Here we use a hard limit
-			if(logMINOR)
-				Logger.minor(this, "Dropping "+item+" : cachedData="+cachedData+" of "+maxCachedData+" stored items : "+storedData.size()+" of "+maxCachedElements);
-			item.close();
-		}
+				item.close();
+			}
 		}
 	}
 	

@@ -30,7 +30,7 @@ public class GIFFilter implements ContentDataFilter {
 		
 	
 	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+		FilterCallback cb) throws DataFilterException, IOException {
 		if(data.size() < 6) {
 			throwHeaderError(l10n("tooShortTitle"), l10n("tooShort"));
 		}
@@ -59,14 +59,15 @@ public class GIFFilter implements ContentDataFilter {
 		// Throw an exception
 		String message = l10n("notGif");
 		if(reason != null) message += ' ' + reason;
-		if(shortReason != null)
+		if(shortReason != null) {
 			message += " - (" + shortReason + ')';
+		}
 		throw new DataFilterException(shortReason, shortReason,
 				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 	}
 
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+		FilterCallback cb) throws DataFilterException, IOException {
 		return null;
 	}
 
