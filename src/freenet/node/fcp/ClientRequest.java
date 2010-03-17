@@ -451,9 +451,9 @@ public abstract class ClientRequest {
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
 			ClientRequester r = getClientRequest();
-			container.activate(r, 1);
+			if(persistenceType == PERSIST_FOREVER) container.activate(r, 1);
 			r.setPriorityClass(priorityClass, server.core.clientContext, container);
-			container.deactivate(r, 1);
+			if(persistenceType == PERSIST_FOREVER) container.deactivate(r, 1);
 			priorityClassChanged = true;
 		}
 
