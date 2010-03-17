@@ -369,18 +369,10 @@ public class PeerMessageQueue {
 	 * messages but they don't fit.
 	 */
 	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		boolean gotEnough = false;
 		for(PrioQueue queue : queuesByPriority) {
 			size = queue.addUrgentMessages(size, minSize, maxSize, now, messages);
-			if(size < 0) {
-				size = -size;
-				gotEnough = true;
-			}
 		}
-		if(gotEnough)
-			return -size;
-		else
-			return size;
+		return size;
 	}
 
 	/**
@@ -394,18 +386,10 @@ public class PeerMessageQueue {
 	 * messages but they don't fit.
 	 */
 	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		boolean gotEnough = false;
 		for(PrioQueue queue : queuesByPriority) {
 			size = queue.addMessages(size, minSize, maxSize, now, messages);
-			if(size < 0) {
-				size = -size;
-				gotEnough = true;
-			}
 		}
-		if(gotEnough)
-			return -size;
-		else
-			return size;
+		return size;
 	}	
 	
 	
