@@ -197,7 +197,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		boolean receivedRejectedOverload = false;
 
 		while(true) {
-			synchronized(this) { //was sender -TheSeeker
+			synchronized(sender) {
 				try {
 					if(sender.getStatus() == CHKInsertSender.NOT_FINISHED) {
 						sender.wait(5000);
@@ -331,7 +331,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		if((sender != null) && (!sentCompletionWasSet)) {
 			//If there are downstream senders, our final success report depends on there being no timeouts in the chain.
 			while(true) {
-				synchronized(this) { //was sender -TheSeeker
+				synchronized(sender) {
 					if(sender.completed()) {
 						break;
 					}

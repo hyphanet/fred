@@ -223,7 +223,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		boolean receivedRejectedOverload = false;
 
 		while(true) {
-			synchronized(this) { //was sender -TheSeeker
+			synchronized(sender) {
 				try {
 					if(sender.getStatus() == SSKInsertSender.NOT_FINISHED)
 						sender.wait(5000);

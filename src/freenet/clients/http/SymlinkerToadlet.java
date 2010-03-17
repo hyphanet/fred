@@ -67,7 +67,7 @@ public class SymlinkerToadlet extends Toadlet {
 	public boolean addLink(String alias, String target, boolean store) {
 		boolean ret;
 		synchronized (linkMap) {
-			if (linkMap.put(alias, target).equals(alias)) {
+			if (alias.equals(linkMap.put(alias, target))) {
 				ret = true;
 			} else  {
 				ret = false;

@@ -96,7 +96,7 @@ public class TestnetHandler implements Runnable {
 	}
 
 	public void rebind(int port){
-		synchronized(this) { //was server -TheSeeker
+		synchronized(server) {
 			try {
 				if((!server.isClosed()) && server.isBound()) {
 					server.close();

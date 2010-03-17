@@ -1365,7 +1365,7 @@ public class PeerManager {
 		}
 		boolean darknetDefinitelyPortForwarded = node.darknetDefinitelyPortForwarded();
 		boolean darknetAssumeNAT = node.darknetCrypto.config.alwaysHandshakeAggressively();
-		synchronized(this) { //was ua -TheSeeker
+		synchronized(ua) {
 			ua.opennetDefinitelyPortForwarded = opennetDefinitelyPortForwarded;
 			ua.darknetDefinitelyPortForwarded = darknetDefinitelyPortForwarded;
 			ua.opennetAssumeNAT = opennetAssumeNAT;
