@@ -32,6 +32,7 @@ import freenet.io.xfer.BulkReceiver;
 import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.node.OpennetPeerNode.NOT_DROP_REASON;
+import freenet.support.HTMLNode;
 import freenet.support.LRUQueue;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -65,7 +66,13 @@ public class OpennetManager {
 	/** Maximum number of old peers */
 	static final int MAX_OLD_PEERS = 25;
 	/** Time at which last dropped a peer due to an incoming connection of each type. */
-	private EnumMap<ConnectionType,Long> timeLastDropped;
+	private final EnumMap<ConnectionType,Long> timeLastDropped;
+	// These only count stuff where we actually have a node to add.
+	private final EnumMap<ConnectionType,Long> connectionAttempts;
+	private final EnumMap<ConnectionType,Long> connectionAttemptsAdded;
+	private final EnumMap<ConnectionType,Long> connectionAttemptsAddedPlentySpace;
+	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedByPerTypeEnforcement;
+	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedNoPeersDroppable;
 	/** Number of successful CHK requests since last added a node */
 	private long successCount;
 	
@@ -147,6 +154,26 @@ public class OpennetManager {
 		timeLastDropped = new EnumMap<ConnectionType,Long>(ConnectionType.class);
 		for(ConnectionType c : ConnectionType.values())
 			timeLastDropped.put(c, 0L);
+		
+		connectionAttempts = new EnumMap<ConnectionType,Long>(ConnectionType.class);
+		for(ConnectionType c : ConnectionType.values())
+			connectionAttempts.put(c, 0L);
+		
+		connectionAttemptsAdded = new EnumMap<ConnectionType,Long>(ConnectionType.class);
+		for(ConnectionType c : ConnectionType.values())
+			connectionAttemptsAdded.put(c, 0L);
+		
+		connectionAttemptsAddedPlentySpace = new EnumMap<ConnectionType,Long>(ConnectionType.class);
+		for(ConnectionType c : ConnectionType.values())
+			connectionAttemptsAddedPlentySpace.put(c, 0L);
+		
+		connectionAttemptsRejectedByPerTypeEnforcement = new EnumMap<ConnectionType,Long>(ConnectionType.class);
+		for(ConnectionType c : ConnectionType.values())
+			connectionAttemptsRejectedByPerTypeEnforcement.put(c, 0L);
+		
+		connectionAttemptsRejectedNoPeersDroppable = new EnumMap<ConnectionType,Long>(ConnectionType.class);
+		for(ConnectionType c : ConnectionType.values())
+			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
 		
 		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
 		File backupNodeFile = new File("opennet-"+crypto.portNumber+".bak");
@@ -350,6 +377,8 @@ public class OpennetManager {
 					Logger.minor(this, "Opennet peer already present in LRU: "+nodeToAddNow);
 				return true;
 			}
+			if(nodeToAddNow != null)
+				connectionAttempts.put(connectionType, connectionAttempts.get(connectionType)+1);
 			if(getSize() < getNumberOfConnectedPeersToAim()) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
@@ -358,6 +387,8 @@ public class OpennetManager {
 					else
 						peersLRU.push(nodeToAddNow);
 					oldPeers.remove(nodeToAddNow);
+					if(nodeToAddNow != null)
+						connectionAttemptsAddedPlentySpace.put(connectionType, connectionAttemptsAddedPlentySpace.get(connectionType)+1);
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
@@ -398,11 +429,16 @@ public class OpennetManager {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop (in first bit), still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
+					if(nodeToAddNow != null)
+						connectionAttemptsRejectedNoPeersDroppable.put(connectionType, connectionAttemptsRejectedNoPeersDroppable.get(connectionType)+1);
 				} else {
 					// Only check per-type limits if we are throwing out connected peers.
 					// This is important for bootstrapping, given the low announcement limit.
-					if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null))
+					if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null)) {
+						if(nodeToAddNow != null)
+							connectionAttemptsRejectedByPerTypeEnforcement.put(connectionType, connectionAttemptsRejectedByPerTypeEnforcement.get(connectionType)+1);
 						return false;
+					}
 				}
 			} else while(canAdd && (size = getSize()) > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
@@ -412,12 +448,17 @@ public class OpennetManager {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
 					canAdd = false;
+					if(nodeToAddNow != null)
+						connectionAttemptsRejectedNoPeersDroppable.put(connectionType, connectionAttemptsRejectedNoPeersDroppable.get(connectionType)+1);
 					break;
 				}
 				// Only check per-type limits if we are throwing out connected peers.
 				// This is important for bootstrapping, given the low announcement limit.
-				if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null))
+				if(toDrop.isConnected() && enforcePerTypeGracePeriodLimits(maxPeers, connectionType, nodeToAddNow != null)) {
+					if(nodeToAddNow != null)
+						connectionAttemptsRejectedByPerTypeEnforcement.put(connectionType, connectionAttemptsRejectedByPerTypeEnforcement.get(connectionType)+1);
 					return false;
+				}
 				if(nodeToAddNow != null || size > maxPeers) {
 					if(logMINOR)
 						Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
@@ -440,6 +481,8 @@ public class OpennetManager {
 					}
 					if(oldOpennetPeer)
 						timeLastAddedOldOpennetPeer = now;
+					if(nodeToAddNow != null)
+						connectionAttemptsAdded.put(connectionType, connectionAttemptsAdded.get(connectionType)+1);
 				} else {
 					// Do not update timeLastDropped, anything dropped was over the limit so doesn't count (because nodeToAddNow == null).
 					if(!justChecking) {
@@ -606,7 +649,7 @@ public class OpennetManager {
 				}
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
-							connectionType == null ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType))+" ms since last dropped peer of type "+connectionType));
+							((connectionType == null) ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType))+" ms since last dropped peer of type "+connectionType)));
 				pn.setWasDropped();
 				return pn;
 			}
@@ -940,4 +983,46 @@ public class OpennetManager {
 	public void onDisconnect(PeerNode node2) {
 		announcer.maybeSendAnnouncementOffThread();
 	}
+
+	public void drawOpennetStatsBox(HTMLNode box) {
+		HTMLNode table = box.addChild("table", "border", "0");
+		HTMLNode row = table.addChild("tr");
+
+		row.addChild("th");
+		for(ConnectionType type : ConnectionType.values()) {
+			row.addChild("th", type.name());
+		}
+		
+		row = table.addChild("tr");
+		row.addChild("td", "Connection attempts");
+		for(ConnectionType type : ConnectionType.values()) {
+			row.addChild("td", Long.toString(connectionAttempts.get(type)));
+		}
+		
+		row = table.addChild("tr");
+		row.addChild("td", "Connections accepted");
+		for(ConnectionType type : ConnectionType.values()) {
+			row.addChild("td", Long.toString(connectionAttemptsAdded.get(type)));
+		}
+		
+		row = table.addChild("tr");
+		row.addChild("td", "Accepted (free slots)");
+		for(ConnectionType type : ConnectionType.values()) {
+			row.addChild("td", Long.toString(connectionAttemptsAddedPlentySpace.get(type)));
+		}
+		
+		row = table.addChild("tr");
+		row.addChild("td", "Rejected (per-type grace periods)");
+		for(ConnectionType type : ConnectionType.values()) {
+			row.addChild("td", Long.toString(connectionAttemptsRejectedByPerTypeEnforcement.get(type)));
+		}
+		
+		row = table.addChild("tr");
+		row.addChild("td", "Rejected (no droppable peers)");
+		for(ConnectionType type : ConnectionType.values()) {
+			row.addChild("td", Long.toString(connectionAttemptsRejectedNoPeersDroppable.get(type)));
+		}
+		
+	}
+	
 }

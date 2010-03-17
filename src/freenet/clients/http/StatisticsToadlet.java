@@ -300,7 +300,13 @@ public class StatisticsToadlet extends Toadlet {
 			
 			HTMLNode databaseJobsInfobox = nextTableCell.addChild("div", "class", "infobox");
 			drawDatabaseJobsBox(databaseJobsInfobox);
-			
+
+			OpennetManager om = node.getOpennet();
+			if(om != null) {
+				// opennet stats box
+				drawOpennetStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
+			}
+
 			// peer distribution box
 			overviewTableRow = overviewTable.addChild("tr");
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
@@ -450,6 +456,13 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", String.valueOf(i));
 			row.addChild("td", String.valueOf(jobsByPriority[i]));
 		}
+	}
+	
+	private void drawOpennetStatsBox(HTMLNode box, OpennetManager om) {
+		box.addChild("div", "class", "infobox-header", l10n("opennetStats"));
+		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
+		om.drawOpennetStatsBox(opennetStatsContent);
+		
 	}
 	
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
