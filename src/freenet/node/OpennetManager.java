@@ -463,11 +463,21 @@ public class OpennetManager {
 		if(type == null) {
 			if(logMINOR) Logger.minor(this, "No type set, not enforcing per type limits");
 		}
+		
+		// We do NOT want to have all our peers in grace periods!
+		// For opennet to work, we need LRU. For LRU to work it needs a choice.
+		// If everything is in a grace period, then we have no choice - we replace the one node that comes out of its grace period as soon as it does.
+		// So first calculate an overall limit on the number of peers in grace periods.
+		
+		// Heuristic: Half rounded down.
+		int maxGracePeriodPeers = maxPeers / 2;
+		
 		int announceMax;
 		int reconnectMax;
 		int pathFoldingMax;
-		announceMax = reconnectMax = Math.max(1, (maxPeers + 9) / 10); // 1 for <=10, 2 for <=20, 3 for <=30, 4 for <=40
-		pathFoldingMax = maxPeers - announceMax - reconnectMax;
+		// Same total global number of slots as 1242/1243.
+		announceMax = reconnectMax = (maxGracePeriodPeers / 5) + 1;
+		pathFoldingMax = maxGracePeriodPeers - announceMax - reconnectMax;
 		if(pathFoldingMax < 2) return false;
 		if(logMINOR) Logger.minor(this, "Per type grace period limits: total peers: "+maxPeers+" announce "+announceMax+" reconnect "+reconnectMax+" path folding "+pathFoldingMax);
 		int myLimit;
