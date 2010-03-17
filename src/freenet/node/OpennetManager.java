@@ -74,7 +74,7 @@ public class OpennetManager {
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedByPerTypeEnforcement;
 	private final EnumMap<ConnectionType,Long> connectionAttemptsRejectedNoPeersDroppable;
 	/** Number of successful CHK requests since last added a node */
-	private long successCount;
+	private final EnumMap<ConnectionType,Long> successCount;
 	
 	/** Only drop a connection after at least this many successful requests */
 	// FIXME should be a function of # opennet peers? max # opennet peers? ...
@@ -174,6 +174,10 @@ public class OpennetManager {
 		connectionAttemptsRejectedNoPeersDroppable = new EnumMap<ConnectionType,Long>(ConnectionType.class);
 		for(ConnectionType c : ConnectionType.values())
 			connectionAttemptsRejectedNoPeersDroppable.put(c, 0L);
+		
+		successCount = new EnumMap<ConnectionType,Long>(ConnectionType.class);
+		for(ConnectionType c : ConnectionType.values())
+			successCount.put(c, 0L);
 		
 		File nodeFile = new File(node.nodeDir, "opennet-"+crypto.portNumber);
 		File backupNodeFile = new File("opennet-"+crypto.portNumber+".bak");
@@ -402,7 +406,7 @@ public class OpennetManager {
 			// Old opennet peers should only replace free slots / disconnected droppable nodes.
 			// We can make offers regardless of timeLastOffered provided they are disconnected droppable peers.
 			// And we only allow a connection to be dropped every 10 successful fetches.
-			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS) || now - timeLastDropped.get(connectionType) < DROP_CONNECTED_TIME;
+			noDisconnect = successCount.get(connectionType) < MIN_SUCCESS_BETWEEN_DROP_CONNS || oldOpennetPeer || (nodeToAddNow == null && now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS) || now - timeLastDropped.get(connectionType) < DROP_CONNECTED_TIME;
 		}
 		if(nodeToAddNow != null)
 			nodeToAddNow.setAddedReason(connectionType);
@@ -468,7 +472,7 @@ public class OpennetManager {
 			}
 			if(canAdd && !justChecking) {
 				if(nodeToAddNow != null) {
-					successCount = 0;
+					successCount.put(connectionType, 0L);
 					if(addAtLRU)
 						peersLRU.pushLeast(nodeToAddNow);
 					else
@@ -666,7 +670,8 @@ public class OpennetManager {
 
 	public void onSuccess(OpennetPeerNode pn) {
 		synchronized(this) {
-			successCount++;
+			for(ConnectionType type : ConnectionType.values())
+				successCount.put(type, successCount.get(type)+1);
 			if(peersLRU.contains(pn)) {
 				peersLRU.push(pn);
 				if(logMINOR) Logger.minor(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
