@@ -88,11 +88,12 @@ public class OpennetManager {
 	public static final int DROP_DISCONNECT_DELAY = 5*60*1000;
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
 	public static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
-	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected */
-	public static final int DROP_CONNECTED_TIME = 5*60*1000;
+	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected.
+	 * This is really a sanity check, there are other mechanisms that limit churn. */
+	public static final int DROP_CONNECTED_TIME = 60*1000;
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
-	public static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
+	public static final int MIN_TIME_BETWEEN_OFFERS = 15*1000;
 	
 	private static volatile boolean logMINOR;
 
