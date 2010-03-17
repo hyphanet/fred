@@ -346,10 +346,6 @@ public class OpennetManager {
 		dropExcessPeers();
 	}
 	
-	private long timeLastAddedOldOpennetPeer = -1;
-	
-	private static final int OLD_OPENNET_PEER_INTERVAL = 30*1000;
-	
 	/**
 	 * Trim the peers list and possibly add a new node. Note that if we are not adding a new node,
 	 * we will only return true every MIN_TIME_BETWEEN_OFFERS, to prevent problems caused by many
@@ -401,8 +397,6 @@ public class OpennetManager {
 					timeLastOffered = System.currentTimeMillis();
 				notMany = true;
 				// Don't check timeLastAddedOldOpennetPeer, since we want it anyway. But do update it.
-				if(oldOpennetPeer)
-					timeLastAddedOldOpennetPeer = System.currentTimeMillis();
 			}
 			// Old opennet peers should only replace free slots / disconnected droppable nodes.
 			// We can make offers regardless of timeLastOffered provided they are disconnected droppable peers.
@@ -420,10 +414,6 @@ public class OpennetManager {
 		ArrayList<OpennetPeerNode> dropList = new ArrayList<OpennetPeerNode>();
 		synchronized(this) {
 			int maxPeers = getNumberOfConnectedPeersToAim();
-			if(oldOpennetPeer) {
-				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
-					canAdd = false;
-			}
 			int size = getSize();
 			if(size == maxPeers && nodeToAddNow == null && canAdd) {
 				// Allow an offer to be predicated on throwing out a connected node,
@@ -484,8 +474,6 @@ public class OpennetManager {
 						if(logMINOR) Logger.minor(this, "Dropped opennet peer: "+dropList.get(0));
 						timeLastDropped.put(connectionType, now);
 					}
-					if(oldOpennetPeer)
-						timeLastAddedOldOpennetPeer = now;
 					if(nodeToAddNow != null)
 						connectionAttemptsAdded.put(connectionType, connectionAttemptsAdded.get(connectionType)+1);
 				} else {
