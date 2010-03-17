@@ -101,7 +101,7 @@ public class OpennetManager {
 	public static final int DROP_CONNECTED_TIME = 5*60*1000;
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
-	public static final int MIN_TIME_BETWEEN_OFFERS = 15*1000;
+	public static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
 	
 	private static volatile boolean logMINOR;
 
