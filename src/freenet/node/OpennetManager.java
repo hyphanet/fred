@@ -76,7 +76,8 @@ public class OpennetManager {
 	/** Number of successful CHK requests since last added a node */
 	private final EnumMap<ConnectionType,Long> successCount;
 	
-	/** Only drop a connection after at least this many successful requests */
+	/** Only drop a connection after at least this many successful requests.
+	 * This is per connection type. */
 	// FIXME should be a function of # opennet peers? max # opennet peers? ...
 	public static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
@@ -96,7 +97,7 @@ public class OpennetManager {
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
 	public static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected.
-	 * This is really a sanity check, there are other mechanisms that limit churn. */
+	 * This is per connection type, we should consider whether to reduce it further. */
 	public static final int DROP_CONNECTED_TIME = 5*60*1000;
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
