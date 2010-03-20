@@ -2887,7 +2887,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	public boolean isDisconnected(PeerContext context) {
 		if(context == null) return false;
-		return !((PeerNode)context).isConnected();
+		return !context.isConnected();
 	}
 
 	public void resend(ResendPacketItem item, SessionKey tracker) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
