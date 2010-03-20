@@ -4254,17 +4254,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			
 			if(mustSend) {
 				int size = minSize;
-				boolean gotEnough = false;
 				size = messageQueue.addUrgentMessages(size, now, minSize, maxSize, messages);
-				if(size < 0) {
-					gotEnough = true;
-					size = -size;
-				}
 
 				// Now the not-so-urgent messages.
-				if(!gotEnough) {
+				if(size >= 0) {
 					size = messageQueue.addNonUrgentMessages(size, now, minSize, maxSize, messages);
-					if(size < 0) size = -size;
 				}
 			}
 			
