@@ -297,10 +297,14 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 				HashMap<String, Object> hm = putHandlersTransformMap.get(this);
 				perContainerPutHandlersWaitingForMetadata.get(parentPutHandler).remove(this);
 				hm.put(this.itemName, m);
-				container.ext().store(hm, 2);
+				if(persistent) {
+					container.ext().store(hm, 2);
+				}
 				putHandlersTransformMap.remove(this);
-				container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
-				container.ext().store(putHandlersTransformMap, 2);
+				if(persistent) {
+					container.ext().store(perContainerPutHandlersWaitingForMetadata, 2);
+					container.ext().store(putHandlersTransformMap, 2);
+				}
 				try {
 					tryStartParentContainer(parentPutHandler, container, context);
 				} catch (InsertException e) {
