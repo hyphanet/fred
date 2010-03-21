@@ -733,9 +733,7 @@ class SingleFileInserter implements ClientPutState {
 				metaBytes = meta.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
 				Logger.error(this, "Impossible: "+e1, e1);
-				InsertException ex = new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null);
-				ex.initCause(e1);
-				fail(ex, container, context);
+				fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null).initCause(e1), container, context);
 				return;
 			}
 			
@@ -752,9 +750,7 @@ class SingleFileInserter implements ClientPutState {
 						metaBytes = meta.writeToByteArray();
 					} catch (MetadataUnresolvedException e1) {
 						Logger.error(this, "Impossible (2): "+e1, e1);
-						InsertException ex = new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null);
-						ex.initCause(e1);
-						fail(ex, container, context);
+						fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null).initCause(e1), container, context);
 						return;
 					}
 				}

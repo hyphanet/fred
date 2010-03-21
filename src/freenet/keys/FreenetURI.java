@@ -340,9 +340,7 @@ public class FreenetURI implements Cloneable {
 			try {
 				s = URLDecoder.decode(URI.substring(slash2 + 1 /* "/".length() */), true);
 			} catch(URLEncodedFormatException e) {
-				MalformedURLException ue = new MalformedURLException(e.toString());
-				ue.initCause(e);
-				throw ue;
+				throw (MalformedURLException)new MalformedURLException(e.toString()).initCause(e);
 			}
 			if(s != null)
 				sv.add(s);
@@ -363,9 +361,7 @@ public class FreenetURI implements Cloneable {
 				try {
 					suggestedEdition = Long.parseLong(sv.remove(sv.size() - 1));
 				} catch(NumberFormatException e) {
-					MalformedURLException e1 = new MalformedURLException("Invalid suggested edition: " + e);
-					e1.initCause(e);
-					throw e1;
+					throw (MalformedURLException)new MalformedURLException("Invalid suggested edition: " + e).initCause(e);
 				}
 			} else
 				suggestedEdition = -1;

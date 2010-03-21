@@ -2380,9 +2380,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			return fs;
 		} catch(IOException e) {
-			FSParseException ex = new FSParseException("Impossible: " + e);
-			ex.initCause(e);
-			throw ex;
+			throw (FSParseException)new FSParseException("Impossible: " + e).initCause(e);
 		}
 	}
 

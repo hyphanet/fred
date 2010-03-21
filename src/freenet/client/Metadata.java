@@ -154,9 +154,7 @@ public class Metadata implements Cloneable {
 		try {
 			return new Metadata(data);
 		} catch (IOException e) {
-			MetadataParseException e1 = new MetadataParseException("Caught "+e);
-			e1.initCause(e);
-			throw e1;
+			throw (MetadataParseException)new MetadataParseException("Caught "+e).initCause(e);
 		}
 	}
 

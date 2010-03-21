@@ -814,9 +814,7 @@ public class Node implements TimeSkewDetectorCallback {
 					System.err.println("Invalid hostname or IP Address syntax error while parsing our darknet node reference: "+udpAddr);
 					continue;
 				} catch (PeerParseException e) {
-					IOException e1 = new IOException();
-					e1.initCause(e);
-					throw e1;
+					throw (IOException)new IOException().initCause(e);
 				}
 				if(p.getPort() == getDarknetPortNumber()) {
 					// DNSRequester doesn't deal with our own node

@@ -356,9 +356,7 @@ public class Version {
 		try {
 			return Integer.parseInt(v[3]);
 		} catch (NumberFormatException e) {
-			VersionParseException ve = new VersionParseException("Got NumberFormatException on "+v[3]+" : "+e+" for "+version);
-			ve.initCause(e);
-			throw ve;
+			throw (VersionParseException)new VersionParseException("Got NumberFormatException on "+v[3]+" : "+e+" for "+version).initCause(e);
 		}
 	}
 
