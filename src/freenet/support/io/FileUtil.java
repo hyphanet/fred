@@ -361,7 +361,7 @@ final public class FileUtil {
 			while(lastCharIndex >= 0) {
 				char lastChar = sb.charAt(lastCharIndex);
 				if(lastChar == ' ' ||  lastChar == '.')
-					sb.deleteCharAt(lastCharIndex);
+					sb.deleteCharAt(lastCharIndex--);
 				else
 					break;
 			}
