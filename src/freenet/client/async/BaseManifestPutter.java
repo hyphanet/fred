@@ -1677,11 +1677,24 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			currentDir = dirStack.pop();
 		}
 
+		/**
+		 * make 'name' the current subdir (cd into it).<br>
+		 * if it not exists, it is created.
+		 * 
+		 * @param name name of the subdir
+		 */
 		public void makeSubDirCD(String name) {
-			currentDir = makeSubDir(currentDir, name);
+			if (currentDir.containsKey(name)) {
+				currentDir = (HashMap<String, Object>) currentDir.get(name);
+			} else {
+				currentDir = makeSubDir(currentDir, name);
+			}
 		}
 
 		private HashMap<String, Object> makeSubDir(HashMap<String, Object> parentDir, String name) {
+			if (parentDir.containsKey(name)) {
+				throw new IllegalStateException("Item '"+name+"' already exist!");
+			}
 			HashMap<String, Object> newDir = new HashMap<String, Object>();
 			parentDir.put(name , newDir);
 			return newDir;
