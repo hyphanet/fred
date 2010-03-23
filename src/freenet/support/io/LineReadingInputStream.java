@@ -32,7 +32,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 
 		if(!markSupported())
 			return readLineWithoutMarking(maxLength, bufferSize, utf);
-		
+
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
 		mark(maxLength + 2); // in case we have both a \r and a \n
@@ -43,7 +43,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					return null;
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
-			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones. 
+			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones.
 			int end = ctr + x;
 			for(; ctr < end; ctr++) {
 				if(buf[ctr] == '\n') {
@@ -67,7 +67,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		}
 	}
 
-	public String readLineWithoutMarking(int maxLength, int bufferSize, boolean utf) throws IOException {
+	protected String readLineWithoutMarking(int maxLength, int bufferSize, boolean utf) throws IOException {
 		if(maxLength < bufferSize)
 			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
@@ -79,7 +79,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					return null;
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
-			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones. 
+			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones.
 			if(x == '\n') {
 				if(ctr == 0)
 					return "";

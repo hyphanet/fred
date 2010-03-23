@@ -26,6 +26,7 @@ import com.db4o.ObjectContainer;
 import freenet.node.FSParseException;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReader;
+import freenet.support.io.Readers;
 
 /**
  * @author amphibian
@@ -106,36 +107,11 @@ public class SimpleFieldSet {
     }
 
     /**
-     * Read from disk
-     * Format:
-     * blah=blah
-     * blah=blah
-     * End
-     * @param allowMultiple
+     * @see #read(LineReader, int, int, boolean, boolean)
      */
-    private void read(BufferedReader br, boolean allowMultiple) throws IOException {
-        boolean firstLine = true;
-        while(true) {
-            String line = br.readLine();
-            if(line == null) {
-                if(firstLine) throw new EOFException();
-                throw new IOException("No end Marker!");
-            }
-            firstLine = false;
-            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
-            if(index >= 0) {
-                // Mapping
-                String before = line.substring(0, index);
-                String after = line.substring(index+1);
-                if(!shortLived) after = after.intern();
-                put(before, after, allowMultiple, false);
-            } else {
-            	endMarker = line;
-            	return;
-            }
-
-        }
-    }
+	private void read(BufferedReader br, boolean allowMultiple) throws IOException {
+		read(Readers.LineReaderFrom(br), Integer.MAX_VALUE, 0x100, true, allowMultiple);
+	}
 
     /**
      * Read from disk
