@@ -20,6 +20,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
@@ -40,7 +42,7 @@ public class SimpleFieldSet {
     private Map<String, SimpleFieldSet> subsets;
     private String endMarker;
     private final boolean shortLived;
-    protected String header;
+    protected String[] header;
 
     public static final char MULTI_LEVEL_CHAR = '.';
     public static final char MULTI_VALUE_CHAR = ';';
@@ -80,7 +82,8 @@ public class SimpleFieldSet {
     	if(sfs.subsets != null)
     		subsets = new HashMap<String, SimpleFieldSet>(sfs.subsets);
     	this.shortLived = false; // it's been copied!
-    	endMarker = sfs.endMarker;
+    	this.header = sfs.header;
+    	this.endMarker = sfs.endMarker;
     }
 
     public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
@@ -113,39 +116,62 @@ public class SimpleFieldSet {
 		read(Readers.LineReaderFrom(br), Integer.MAX_VALUE, 0x100, true, allowMultiple);
 	}
 
-    /**
-     * Read from disk
-     * Format:
-     * blah=blah
-     * blah=blah
-     * End
-     * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
-     */
-    private void read(LineReader br, int maxLength, int bufferSize, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
-        boolean firstLine = true;
-        while(true) {
-            String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
-            if(line == null) {
-                if(firstLine) throw new EOFException();
-               	Logger.error(this, "No end marker");
-                return;
-            }
-            if((line.length() == 0)) continue; // ignore
-            firstLine = false;
-            int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
-            if(index >= 0) {
-                // Mapping
-                String before = line.substring(0, index);
-                String after = line.substring(index+1);
-                if(!shortLived) after = after.intern();
-                put(before, after, allowMultiple, false);
-            } else {
-            	endMarker = line;
-            	return;
-            }
+	/**
+	 * Read from stream. Format:
+	 *
+	 * # Header1
+	 * # Header2
+	 * key0=val0
+	 * key1=val1
+	 * # comment
+	 * key2=val2
+	 * End
+	 *
+	 * (headers and comments are optional)
+	 *
+	 * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
+	 */
+	private void read(LineReader br, int maxLength, int bufferSize, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
+		boolean firstLine = true;
+		boolean headerSection = true;
+		List<String> headers = new ArrayList<String>();
 
-        }
-    }
+		while (true) {
+			String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
+			if (line == null) {
+				if (firstLine) throw new EOFException();
+				Logger.error(this, "No end marker");
+				break;
+			}
+			if ((line.length() == 0)) continue; // ignore
+			firstLine = false;
+
+			char first = line.charAt(0);
+			if (first == '#') {
+				if (headerSection) {
+					headers.add(line.substring(1).trim());
+				}
+
+			} else {
+				if (headerSection) {
+					if (headers.size() > 0) { this.header = headers.toArray(new String[headers.size()]); }
+					headerSection = false;
+				}
+
+				int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
+				if(index >= 0) {
+					// Mapping
+					String before = line.substring(0, index);
+					String after = line.substring(index+1);
+					if(!shortLived) after = after.intern();
+					put(before, after, allowMultiple, false);
+				} else {
+					endMarker = line;
+					break;
+				}
+			}
+		}
+	}
 
     public synchronized String get(String key) {
    		int idx = key.indexOf(MULTI_LEVEL_CHAR);
@@ -351,8 +377,7 @@ public class SimpleFieldSet {
      * @warning keep in mind that a Writer is not necessarily UTF-8!!
      */
     synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
-		if (header != null) { w.write(header); }
-
+		writeHeader(w);
     	for (Iterator<Map.Entry<String, String>> i = values.entrySet().iterator(); i.hasNext();) {
             Map.Entry<String, String> entry = i.next();
 			String key = entry.getKey();
@@ -387,6 +412,7 @@ public class SimpleFieldSet {
 	}
 
     private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
+		writeHeader(w);
     	String[] keys = values.keySet().toArray(new String[values.size()]);
     	int i=0;
 
@@ -416,6 +442,14 @@ public class SimpleFieldSet {
     			w.write(endMarker+ '\n');
     	}
     }
+
+	private void writeHeader(Writer w) throws IOException {
+		if (header != null) {
+			for (String line: header) {
+				w.write("# " + line + "\n");
+			}
+		}
+	}
 
 	@Override
     public String toString() {
@@ -888,8 +922,13 @@ public class SimpleFieldSet {
 		container.delete(this);
 	}
 
-	public void setHeader(String header) {
-		this.header = header;
+	public void setHeader(String... headers) {
+		// FIXME LOW should really check that each line doesn't have a "\n" in it
+		this.header = headers;
+	}
+
+	public String[] getHeader() {
+		return this.header;
 	}
 
 }

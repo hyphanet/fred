@@ -30,7 +30,7 @@ public class FilePersistentConfig extends PersistentConfig {
 
 	final File filename;
 	final File tempFilename;
-	final String header;
+	final protected String header;
 	protected final Object storeSync = new Object();
 
 	public static FilePersistentConfig constructFilePersistentConfig(File f) throws IOException {

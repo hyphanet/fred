@@ -9,7 +9,7 @@ import freenet.support.SimpleFieldSet;
 
 public class FreenetFilePersistentConfig extends FilePersistentConfig {
 
-	final protected static String DEFAULT_HEADER = ""; // "# This file is overwritten by freenet whenever it shuts down, so only edit it when the node is not running.\n";
+	final protected static String DEFAULT_HEADER = "This file is overwritten whenever Freenet shuts down, so only edit it when the node is not running.";
 
 	private volatile boolean isWritingConfig = false;
 	private volatile boolean hasNodeStarted = false;
