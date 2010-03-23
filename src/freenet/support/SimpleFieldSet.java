@@ -82,9 +82,9 @@ public class SimpleFieldSet {
     	endMarker = sfs.endMarker;
     }
 
-    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean utf8OrIso88591, boolean allowMultiple, boolean shortLived) throws IOException {
     	this(shortLived);
-    	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591, allowMultiple);
+    	read(lis, maxLineLength, lineBufferSize, utf8OrIso88591, allowMultiple);
     }
 
     /**
@@ -145,19 +145,16 @@ public class SimpleFieldSet {
      * End
      * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
      */
-    private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
+    private void read(LineReader br, int maxLength, int bufferSize, boolean utfOrIso88591, boolean allowMultiple) throws IOException {
         boolean firstLine = true;
         while(true) {
             String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
             if(line == null) {
                 if(firstLine) throw new EOFException();
-                if(tolerant)
-                	Logger.error(this, "No end marker");
-                else
-                	throw new IOException("No end marker");
+               	Logger.error(this, "No end marker");
                 return;
             }
-            if((line.length() == 0) && tolerant) continue; // ignore
+            if((line.length() == 0)) continue; // ignore
             firstLine = false;
             int index = line.indexOf(KEYVALUE_SEPARATOR_CHAR);
             if(index >= 0) {

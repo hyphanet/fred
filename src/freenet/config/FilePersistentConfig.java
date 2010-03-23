@@ -104,7 +104,7 @@ public class FilePersistentConfig extends PersistentConfig {
 			bis = new BufferedInputStream(fis);
 			lis = new LineReadingInputStream(bis);
 			// Config file is UTF-8 too!
-			return new SimpleFieldSet(lis, 1024*1024, 128, true, true, true, true); // FIXME? advanced users may edit the config file, hence true?
+			return new SimpleFieldSet(lis, 1024*1024, 128, true, true, true); // FIXME? advanced users may edit the config file, hence true?
 		} finally {
 			Closer.close(lis);
 			Closer.close(bis);
