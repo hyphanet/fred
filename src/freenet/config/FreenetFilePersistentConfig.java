@@ -8,8 +8,12 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class FreenetFilePersistentConfig extends FilePersistentConfig {
+
+	final protected static String DEFAULT_HEADER = "# This file is overwritten by freenet whenever it shuts down, so only edit it when the node is not running.\n";
+
 	private volatile boolean isWritingConfig = false;
 	private volatile boolean hasNodeStarted = false;
+
 	private Ticker ticker;
 	public final Runnable thread = new Runnable() {
 		public void run() {
@@ -20,7 +24,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 					} catch (InterruptedException e) {}
 				}
 			}
-			
+
 			try {
 				innerStore();
 			} catch (IOException e) {
@@ -34,9 +38,9 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 			}
 		}
 	};
-	
+
 	public FreenetFilePersistentConfig(SimpleFieldSet set, File filename, File tempFilename) throws IOException {
-		super(set, filename, tempFilename);
+		super(set, filename, tempFilename, DEFAULT_HEADER);
 	}
 
 	public static FreenetFilePersistentConfig constructFreenetFilePersistentConfig(File f) throws IOException {
@@ -44,7 +48,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 		File tempFilename = new File(f.getPath()+".tmp");
 		return new FreenetFilePersistentConfig(load(filename, tempFilename), filename, tempFilename);
 	}
-	
+
 	@Override
 	public void store() {
 		synchronized(this) {
@@ -63,7 +67,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 			ticker.queueTimedJob(thread, 0);
 		}
 	}
-	
+
 	public void finishedInit(Ticker ticker) {
 		super.finishedInit();
 		this.ticker = ticker;
