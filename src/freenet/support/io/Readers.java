@@ -19,7 +19,7 @@ final public class Readers {
 	*/
 	public static LineReader LineReaderFrom(final BufferedReader br) {
 		return new LineReader() {
-			@Override public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
+			public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
 				return br.readLine();
 			}
 		};
