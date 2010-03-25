@@ -3563,10 +3563,12 @@ class CSSTokenizerFilter {
 						{
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
+							if(valueToPass.length == 0) {
+								// We have matched everything against the subset we have considered so far.
+								return true;
+							}
 							String pattern = ignoredParts+(((ignoredParts == "")||(secondPart == ""))?"":"a")+secondPart;
 							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
-							if(valueToPass.length == 0)
-								return true;
 							if((pattern == "")) return false;
 							result=recursiveDoubleBarVerifier(pattern,valueToPass, cb);
 							if(result)
