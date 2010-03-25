@@ -200,6 +200,10 @@
 			</batchtest>
 			<sysproperty key="benchmark" value="${benchmark}" />
 			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
+			<!-- It appears we need to specify this here explicitly -->
+			<assertions>
+				<enable />
+			</assertions>
 		</junit>
 	</target>
 
