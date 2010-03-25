@@ -254,7 +254,7 @@ public class FieldsTest extends TestCase {
 
 	private void doRoundTripIntsArrayToBytesArray(int[] ints) {
 		byte[] bytes = Fields.intsToBytes(ints);
-		assert(bytes.length == ints.length * 8);
+		assert(bytes.length == ints.length * 4);
 		
 		int[] outLongs = Fields.bytesToInts(bytes);
 		for(int i = 0; i < ints.length; i++) {
