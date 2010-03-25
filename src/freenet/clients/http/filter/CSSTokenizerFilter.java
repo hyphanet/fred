@@ -3565,6 +3565,7 @@ class CSSTokenizerFilter {
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
 							if(valueToPass.length == 0) {
 								// We have matched everything against the subset we have considered so far.
+								if(logDEBUG) log("14opt No more words to pass, have matched everything");
 								return true;
 							}
 							String pattern = ignoredParts+(((ignoredParts == "")||(secondPart == ""))?"":"a")+secondPart;
