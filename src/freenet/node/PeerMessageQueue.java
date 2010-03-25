@@ -435,7 +435,7 @@ public class PeerMessageQueue {
 	 */
 	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
 		for(PrioQueue queue : queuesByPriority) {
-			size = queue.addUrgentMessages(size, minSize, maxSize, now, messages);
+			size = queue.addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
 		}
 		return size;
 	}
@@ -457,7 +457,7 @@ public class PeerMessageQueue {
 	 */
 	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
 		for(PrioQueue queue : queuesByPriority) {
-			size = queue.addMessages(size, minSize, maxSize, now, messages);
+			size = queue.addMessages(Math.abs(size), minSize, maxSize, now, messages);
 		}
 		return size;
 	}	
