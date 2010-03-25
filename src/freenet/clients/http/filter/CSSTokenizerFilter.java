@@ -3534,9 +3534,9 @@ class CSSTokenizerFilter {
 			String secondPart = "";
 			int lastA = -1;
 			// Check for invalid patterns.
-			// FIXME is expression.length() == 0 allowed? If we are relying on it we should usually optimise it out at a higher level?
-			assert(expression.length() == 0 || expression.charAt(expression.length()-1) != 'a');
-			assert(expression.length() == 0 || expression.charAt(0) != 'a');
+			assert(expression.length() != 0);
+			assert(expression.charAt(expression.length()-1) != 'a');
+			assert(expression.charAt(0) != 'a');
 			for(int i=0;i<=expression.length();i++)
 			{
 				if(i == expression.length() || expression.charAt(i)=='a')
