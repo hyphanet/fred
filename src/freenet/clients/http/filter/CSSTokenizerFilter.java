@@ -3576,7 +3576,7 @@ class CSSTokenizerFilter {
 							}
 							// Against the rest of the pattern: the part that we've tried and failed plus the part that we haven't tried yet.
 							// NOT against the verifier we were just considering, because the double-bar operator expects no more than one match from each component of the pattern.
-							String pattern = ignoredParts+(((ignoredParts == "")||("".equals(secondPart)))?"":"a")+secondPart;
+							String pattern = ignoredParts+((("".equals(ignoredParts))||("".equals(secondPart)))?"":"a")+secondPart;
 							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
 							if((pattern == "")) return false;
 							result=recursiveDoubleBarVerifier(pattern,valueToPass, cb);
