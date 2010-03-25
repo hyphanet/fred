@@ -66,10 +66,11 @@ public class SymlinkerToadlet extends Toadlet {
 	public boolean addLink(String alias, String target, boolean store) {
 		boolean ret;
 		synchronized (linkMap) {
-			if (linkMap.put(alias, target) == alias)
+			if (alias.equals(linkMap.put(alias, target))) {
 				ret = true;
-			else 
+			} else  {
 				ret = false;
+			}
 			Logger.normal(this, "Adding link: " + alias + " => " + target);
 		}
 		if(store) node.clientCore.storeConfig();

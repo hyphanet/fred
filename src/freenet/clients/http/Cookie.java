@@ -100,12 +100,12 @@ public class Cookie {
 	public static URI validateDomain(URI domain) {
 		String scheme = domain.getScheme().toLowerCase();
 		
-		if(!scheme.equals("http") && !scheme.equals("https"))
+		if(!"http".equals(scheme) && !"https".equals(scheme))
 			throw new IllegalArgumentException("Illegal cookie domain, must be http or https: " + domain);
 		
 		String path = domain.getPath();
 		
-		if(!path.equals("") && !path.equals("/"))
+		if(!"".equals(path) && !"/".equals(path))
 			throw new IllegalArgumentException("Illegal cookie domain, contains a path: " + domain);
 		
 		return domain;
@@ -132,7 +132,7 @@ public class Cookie {
 	public static String validateName(String name) {
 		name = name.trim().toLowerCase(); // RFC2965: Name is case insensitive
 
-		if((name == ""))
+		if("".equals(name))
 			throw new IllegalArgumentException("Name is empty.");
 
 		// FIXME: This is more restrictive than the official allowed content of a cookie name because I was too lazy for finding out the exact requirements.
@@ -140,14 +140,14 @@ public class Cookie {
 			throw new IllegalArgumentException("Only letters and numbers are allowed as name, found: " + name);
 		
 		if(		name.startsWith("$")
-				|| name.equals("comment")
-				|| name.equals("discard")
-				|| name.equals("domain")
-				|| name.equals("expires")
-				|| name.equals("max-age")
-				|| name.equals("path")
-				|| name.equals("secure")
-				|| name.equals("version")
+				|| "comment".equals(name)
+				|| "discard".equals(name)
+				|| "domain".equals(name)
+				|| "expires".equals(name)
+				|| "max-age".equals(name)
+				|| "path".equals(name)
+				|| "secure".equals(name)
+				|| "version".equals(name)
 				)
 			throw new IllegalArgumentException("Name is reserved: " + name);
 		
