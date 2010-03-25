@@ -3305,8 +3305,12 @@ class CSSTokenizerFilter {
 						secondPart=expression.substring(endIndex+1,expression.length());
 					for(int j=1;j<=noOfa+1 && j<=words.length;j++)
 					{
-						if((secondPart == ""))
-							j = Math.min(noOfa+1, words.length); // Optimise
+						if((secondPart.equals(""))) {
+							// This is an optimisation: If no second part, there cannot be any words assigned to the second part, so the first part must match everything.
+							// It is equivalent to running the loop, because each time the second part will fail, because it is trying to match "" to a nonzero number of words.
+							// This happens every time we have "1a2a3" with nothing after it, so it is tested by the unit tests already.
+							j = Math.min(noOfa+1, words.length);
+						}
 						if(logDEBUG) log("2Making recursiveDoubleBarVerifier to consume "+j+" words");
 						ParsedWord[] partToPassToDB = new ParsedWord[j];
 						System.arraycopy(words, 0, partToPassToDB, 0, j);
