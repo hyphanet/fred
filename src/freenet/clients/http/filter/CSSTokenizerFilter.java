@@ -3557,10 +3557,12 @@ class CSSTokenizerFilter {
 					int index=Integer.parseInt(firstPart);
 					for(int j=0;j<words.length;j++)
 					{
+						// Check the first j+1 words against this verifier: A single verifier can consume more than one word.
 						result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(getSubArray(words, 0, j+1), cb);
 						if(logDEBUG) log("14in for loop result:"+result+" for "+toString(words)+" for "+firstPart);
 						if(result)
 						{
+							// Check the remaining words...
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
 							if(valueToPass.length == 0) {
@@ -3568,6 +3570,8 @@ class CSSTokenizerFilter {
 								if(logDEBUG) log("14opt No more words to pass, have matched everything");
 								return true;
 							}
+							// Against the rest of the pattern: the part that we've tried and failed plus the part that we haven't tried yet.
+							// NOT against the verifier we were just considering, because the double-bar operator expects no more than one match from each component of the pattern.
 							String pattern = ignoredParts+(((ignoredParts == "")||(secondPart == ""))?"":"a")+secondPart;
 							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
 							if((pattern == "")) return false;
