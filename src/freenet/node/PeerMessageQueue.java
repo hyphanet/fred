@@ -176,6 +176,9 @@ public class PeerMessageQueue {
 		 * messages that didn't fit
 		 */
 		private int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, boolean isUrgent) {
+			assert(size >= 0);
+			assert(minSize >= 0);
+			assert(maxSize >= minSize);
 			int lists = 0;
 			if(itemsNoID != null)
 				lists++;
