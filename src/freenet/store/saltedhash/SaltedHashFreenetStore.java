@@ -58,15 +58,15 @@ import freenet.support.io.NativeThread;
 
 /**
  * Index-less data store based on salted hash.
- * 
+ *
  * Provide a pseudo-random replacement based on a salt value generated on create. Keys are check
  * against a bloom filter before probing. Data are encrypted using the route key and the salt, so
  * there is no way to recover the data without holding the route key. (For debugging, you can set
  * OPTION_SAVE_PLAINKEY=true in source code)
- * 
+ *
  * @author sdiz
  */
-public class SaltedHashFreenetStore implements FreenetStore {
+public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
 	/** Option for saving plainkey */
 	private static final boolean OPTION_SAVE_PLAINKEY = false;
 	private static final int OPTION_MAX_PROBE = 5;
@@ -84,35 +84,35 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	private final File baseDir;
 	private final String name;
-	private final StoreCallback callback;
+	private final StoreCallback<T> callback;
 	private final boolean collisionPossible;
 	private final int headerBlockLength;
 	private final int fullKeyLength;
 	private final int dataBlockLength;
 	private final Random random;
 	private final File bloomFile;
-	
+
 	private long storeSize;
 	private int generation;
 	private int flags;
-	
+
 	private boolean preallocate = true;
-	
+
 	/** If we have no space in this store, try writing it to the alternate store,
 	 * with the wrong store flag set. Note that we do not *read from* it, the caller
 	 * must do that. IMPORTANT LOCKING NOTE: This must only happen in one direction!
-	 * If two stores have altStore set to each other, deadlock is likely! (Infinite 
-	 * recursion is also possible). However, fortunately we don't need to do it 
-	 * bidirectionally - the cache needs more space from the store, but the store 
+	 * If two stores have altStore set to each other, deadlock is likely! (Infinite
+	 * recursion is also possible). However, fortunately we don't need to do it
+	 * bidirectionally - the cache needs more space from the store, but the store
 	 * grows so slowly it will hardly ever need more space from the cache. */
 	private SaltedHashFreenetStore altStore;
-	
+
 	public void setAltStore(SaltedHashFreenetStore store) {
 		if(store.altStore != null) throw new IllegalStateException("Target must not have an altStore - deadlock can result");
 		altStore = store;
 	}
 
-	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
+	public static <T extends StorableBlock> SaltedHashFreenetStore<T> construct(File baseDir, String name, StoreCallback<T> callback, Random random,
 	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec, byte[] masterKey)
 	        throws IOException {
 		SaltedHashFreenetStore store = new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
@@ -120,7 +120,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return store;
 	}
 
-	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
+	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback<T> callback, Random random, long maxKeys,
 	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
@@ -133,7 +133,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		headerBlockLength = callback.headerLength();
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
-		
+
 		hdPadding = ((headerBlockLength + dataBlockLength) % 512 == 0 ? 0
 		        : 512 - (headerBlockLength + dataBlockLength) % 512);
 
@@ -162,7 +162,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		bloomFilter = BloomFilter.createFilter(bloomFile, bloomFilterSize, bloomFilterK, bloomCounting);
 
 		System.err.println("Bloomfilter (" + bloomFilter + ") for " + name + " is loaded.");
-		
+
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
 
@@ -184,7 +184,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cleanerGlobalLock.unlock();
 			}
 			writeConfigFile();
-		} 
+		}
 		if (bloomFilter.needRebuild() && !newStore) {
 			// Bloom filter resized?
 			flags |= FLAG_REBUILD_BLOOM;
@@ -207,27 +207,27 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	private boolean started = false;
-	
-	/** If start can be completed quickly, or longStart is true, then do it. 
-	 * If longStart is false and start cannot be completed quickly, return 
-	 * true. Don't start twice. 
+
+	/** If start can be completed quickly, or longStart is true, then do it.
+	 * If longStart is false and start cannot be completed quickly, return
+	 * true. Don't start twice.
 	 * @throws IOException */
 	public boolean start(Ticker ticker, boolean longStart) throws IOException {
-		
+
 		if(started) return true;
-		
+
 		long curStoreFileSize = hdRAF.length();
-		
+
 		long curMetaFileSize = metaRAF.length();
-		
+
 		// If prevStoreSize is nonzero, that means that we are either shrinking or
 		// growing. Either way, the file size should be between the old size and the
 		// new size. If it is not, we should pad it until it is.
-		
+
 		long smallerSize = storeSize;
 		if(prevStoreSize < storeSize && prevStoreSize > 0)
 			smallerSize = prevStoreSize;
-		
+
 		if((smallerSize * (headerBlockLength + dataBlockLength + hdPadding) > curStoreFileSize) ||
 				(smallerSize * Entry.METADATA_LENGTH > curMetaFileSize)) {
 			// Pad it up to the minimum size before proceeding.
@@ -236,12 +236,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			else
 				return true;
 		}
-		
+
 		// Otherwise the resize will be completed by the Cleaner thread.
 		// However, we do still need to set storeFileOffsetReady
-		
+
 		storeFileOffsetReady = Math.min(curStoreFileSize / (headerBlockLength + dataBlockLength + hdPadding), curMetaFileSize / Entry.METADATA_LENGTH);
-		
+
 		if(ticker == null) {
 			cleanerThread.start();
 		} else
@@ -250,15 +250,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				public void run() {
 					cleanerThread.start();
 				}
-				
+
 			}, "Start cleaner thread", 0, true, false);
-		
+
 		started = true;
-		
+
 		return false;
 	}
 
-	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
+	public T fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
@@ -289,9 +289,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				if(meta != null && ((entry.flag & Entry.ENTRY_NEW_BLOCK) == Entry.ENTRY_NEW_BLOCK))
 					meta.setOldBlock();
-				
+
 				try {
-					StorableBlock block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
+					T block = entry.getStorableBlock(routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, null);
 					if (block == null) {
 						misses.incrementAndGet();
 						return null;
@@ -314,7 +314,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	/**
 	 * Find and lock an entry with a specific routing key. This function would <strong>not</strong>
 	 * lock the entries.
-	 * 
+	 *
 	 * @param routingKey
 	 * @param withData
 	 * @return <code>Entry</code> object
@@ -358,14 +358,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return null;
 	}
 
-	public void put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
+	public void put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock) throws IOException, KeyCollisionException {
 		put(block, data, header, overwrite, isOldBlock, false);
 	}
-	
-	public boolean put(StorableBlock block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock, boolean wrongStore) throws IOException, KeyCollisionException {
+
+	public boolean put(T block, byte[] data, byte[] header, boolean overwrite, boolean isOldBlock, boolean wrongStore) throws IOException, KeyCollisionException {
 		byte[] routingKey = block.getRoutingKey();
 		byte[] fullKey = block.getFullKey();
-		
+
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
 
@@ -400,7 +400,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if (!collisionPossible)
 							return true;
 						oldEntry.setHD(readHD(oldOffset)); // read from disk
-						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, null, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
+						T oldBlock = oldEntry.getStorableBlock(routingKey, fullKey, false, false, null, (block instanceof SSKBlock) ? ((SSKBlock)block).getPubKey() : null);
 						if (block.equals(oldBlock)) {
 							if(logDEBUG) Logger.debug(this, "Block already stored");
 							return false; // already in store
@@ -425,7 +425,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				int firstWrongStoreIndex = -1;
 				int wrongStoreCount = 0;
-				
+
 				for (int i = 0; i < offset.length; i++) {
 					if(offset[i] < storeFileOffsetReady) {
 						long flag = getFlag(offset[i]);
@@ -444,7 +444,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						}
 					}
 				}
-				
+
 				if((!wrongStore) && altStore != null) {
 					if(altStore.put(block, data, header, overwrite, isOldBlock, true)) {
 						if(logMINOR) Logger.minor(this, "Successfully wrote block to wrong store "+altStore+" on "+this);
@@ -465,7 +465,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						clobberWrongStore = random.nextInt(a+b) > a;
 					}
 				}
-				
+
 				// No free slot
 				if(clobberWrongStore) {
 					// Use the first wrong-store slot.
@@ -486,7 +486,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					// We will not overwrite non-wrong-store slots with wrong-store ones.
 					return false;
 				}
-				
+
 				// no free blocks, overwrite the first one
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
@@ -520,7 +520,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Data entry
-	 * 
+	 *
 	 * <pre>
 	 *  META-DATA BLOCK
 	 *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -541,7 +541,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  +----+-------+-----------------------+
 	 *  |0070|            Reserved           |
 	 *  +----+-------------------------------+
-	 *  
+	 *
 	 *  Gen = Generation
 	 * </pre>
 	 */
@@ -601,7 +601,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		/**
 		 * Set header/data after construction.
-		 * 
+		 *
 		 * @param storeBuf
 		 * @param store
 		 */
@@ -618,7 +618,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		/**
 		 * Create a new entry
-		 * 
+		 *
 		 * @param plainRoutingKey
 		 * @param header
 		 * @param data
@@ -685,13 +685,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return out;
 		}
 
-		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta, DSAPublicKey knownKey) throws KeyVerifyException {
+		private T getStorableBlock(byte[] routingKey, byte[] fullKey, boolean canReadClientCache, boolean canReadSlashdotCache, BlockMetadata meta, DSAPublicKey knownKey) throws KeyVerifyException {
 			if (isFree() || header == null || data == null)
 				return null; // this is a free block
 			if (!cipherManager.decrypt(this, routingKey))
 				return null;
 
-			StorableBlock block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, knownKey);
+			T block = callback.construct(data, header, routingKey, fullKey, canReadClientCache, canReadSlashdotCache, meta, knownKey);
 			byte[] blockRoutingKey = block.getRoutingKey();
 
 			if (!Arrays.equals(blockRoutingKey, routingKey)) {
@@ -727,7 +727,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Open all store files
-	 * 
+	 *
 	 * @param baseDir
 	 * @param name
 	 * @throws IOException
@@ -738,11 +738,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		hdFile = new File(baseDir, name + ".hd");
 
 		boolean newStore = !metaFile.exists() || !hdFile.exists();
-		
+
 		metaRAF = new RandomAccessFile(metaFile, "rw");
 		metaFC = metaRAF.getChannel();
 		metaFC.lock();
-		
+
 		hdRAF = new RandomAccessFile(hdFile, "rw");
 		hdFC = hdRAF.getChannel();
 		hdFC.lock();
@@ -752,7 +752,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Read entry from disk. Before calling this function, you should acquire all required locks.
-	 * 
+	 *
 	 * @return <code>null</code> if and only if <code>routingKey</code> is not <code>null</code> and
 	 *         the key does not match the entry.
 	 */
@@ -791,7 +791,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Read header + data from disk
-	 * 
+	 *
 	 * @param offset
 	 * @throws IOException
 	 */
@@ -805,15 +805,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				throw new EOFException();
 		} while (buf.hasRemaining());
 		buf.flip();
-		
+
 		return buf;
 	}
-	
+
 	private long getFlag(long offset) throws IOException {
 		Entry entry = readEntry(offset, null, false);
 		return entry.flag;
 	}
-	
+
 	private boolean isFree(long offset) throws IOException {
 		Entry entry = readEntry(offset, null, false);
 		return entry.isFree();
@@ -826,7 +826,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Write entry to disk.
-	 * 
+	 *
 	 * Before calling this function, you should:
 	 * <ul>
 	 * <li>acquire all required locks</li>
@@ -881,10 +881,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	public void setPreallocate(boolean preallocate) {
 		this.preallocate = preallocate;
 	}
-	
+
 	/**
 	 * Change on disk store file size
-	 * 
+	 *
 	 * @param storeMaxEntries
 	 */
 	private void setStoreFileSize(long storeMaxEntries, boolean starting) {
@@ -899,16 +899,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				/*
 				 * Fill the store file with random data. This won't be compressed, unlike filling it with zeros.
 				 * So the disk space usage of the node will not change (apart from temp files).
-				 * 
+				 *
 				 * Note that MersenneTwister is *not* cryptographically secure, in fact from 2.4KB of output you
 				 * can predict the rest of the stream! This is okay because an attacker knows which blocks are
 				 * occupied anyway; it is essential to label them to get good data retention on resizing etc.
-				 * 
+				 *
 				 * On my test system (phenom 2.2GHz), this does approx 80MB/sec. If I reseed every 2kB from an
 				 * AES CTR, which is pointless as I just explained, it does 40MB/sec.
 				 */
 				byte[] b = new byte[4096];
-				ByteBuffer bf = ByteBuffer.wrap(b); 
+				ByteBuffer bf = ByteBuffer.wrap(b);
 
 				// start from next 4KB boundary => align to x86 page size
 				if (oldMetaLen % 4096 != 0)
@@ -917,7 +917,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					currentHdLen += 4096 - (currentHdLen % 4096);
 
 				storeFileOffsetReady = -1;
-				
+
 				// this may write excess the size, the setLength() would fix it
 				while (oldMetaLen < newMetaLen) {
 					// never write random byte to meta data!
@@ -959,7 +959,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	// ------------- Configuration
 	/**
 	 * Configuration File
-	 * 
+	 *
 	 * <pre>
 	 *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *       |0|1|2|3|4|5|6|7|8|9|A|B|C|D|E|F|
@@ -972,7 +972,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  +----+-------+-------+-------+-------+
 	 *  |0030|   K   |                       |
 	 *  +----+-------+-----------------------+
-	 *  
+	 *
 	 *  Gen = Generation
 	 *    K = K for bloom filter
 	 * </pre>
@@ -981,8 +981,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Load config file
-	 * @param masterKey 
-	 * 
+	 * @param masterKey
+	 *
 	 * @return <code>true</code> iff this is a new datastore
 	 */
 	private boolean loadConfigFile(byte[] masterKey) throws IOException {
@@ -1018,7 +1018,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				try {
 					byte[] salt = new byte[0x10];
 					raf.readFully(salt);
-					
+
 					byte[] diskSalt = salt;
 					if(masterKey != null) {
 						BlockCipher cipher;
@@ -1033,7 +1033,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if(logDEBUG)
 							Logger.debug(this, "Encrypting (new) with "+HexUtil.bytesToHex(salt)+" from "+HexUtil.bytesToHex(diskSalt));
 					}
-					
+
 					cipherManager = new CipherManager(salt, diskSalt);
 
 					storeSize = raf.readLong();
@@ -1116,10 +1116,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static Lock cleanerGlobalLock = new ReentrantLock(); // global across all datastore
 	private Cleaner cleanerThread;
 	private CleanerStatusUserAlert cleanerStatusUserAlert;
-	
+
 	private final Entry NOT_MODIFIED = new Entry();
 
-	private interface BatchProcessor {
+	private interface BatchProcessor<T extends StorableBlock> {
 		// initialize
 		void init();
 
@@ -1131,10 +1131,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		void abort();
 
 		void finish();
-		
+
 		// return <code>null</code> to free the entry
 		// return NOT_MODIFIED to keep the old entry
-		Entry process(Entry entry);
+		SaltedHashFreenetStore<T>.Entry process(SaltedHashFreenetStore<T>.Entry entry);
 	}
 
 	private class Cleaner extends NativeThread {
@@ -1142,7 +1142,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * How often the clean should run
 		 */
 		private static final int CLEANER_PERIOD = 5 * 60 * 1000; // 5 minutes
-		
+
 		private volatile boolean isRebuilding;
 		private volatile boolean isResizing;
 
@@ -1154,14 +1154,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		@Override
 		public void realRun() {
-			
+
 			try {
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
 			} catch (InterruptedException e){}
-			
+
 			if (shutdown)
 				return;
-			
+
 			int loop = 0;
 			while (!shutdown) {
 				loop++;
@@ -1231,7 +1231,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			Logger.normal(this, "Starting datastore resize");
 			System.out.println("Resizing datastore "+name);
 
-			BatchProcessor resizeProcesser = new BatchProcessor() {
+			BatchProcessor<T> resizeProcesser = new BatchProcessor<T>() {
 				List<Entry> oldEntryList = new LinkedList<Entry>();
 				int optimialK;
 
@@ -1344,7 +1344,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return;
 			Logger.normal(this, "Start rebuilding bloom filter (" + name + ")");
 
-			BatchProcessor rebuildBloomProcessor = new BatchProcessor() {
+			BatchProcessor<T> rebuildBloomProcessor = new BatchProcessor<T>() {
 				int optimialK;
 
 				public void init() {
@@ -1379,7 +1379,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 					if (i++ % 16 == 0)
 						writeConfigFile();
-					
+
 					return prevStoreSize == 0;
 				}
 
@@ -1407,10 +1407,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		private volatile long entriesLeft;
 		private volatile long entriesTotal;
-		
-		private void batchProcessEntries(BatchProcessor processor, long storeSize, boolean reverse, boolean sleep) {
+
+		private void batchProcessEntries(BatchProcessor<T> processor, long storeSize, boolean reverse, boolean sleep) {
 			entriesLeft = entriesTotal = storeSize;
-			
+
 			long startOffset, step;
 			if (!reverse) {
 				startOffset = 0;
@@ -1428,11 +1428,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						processor.abort();
 						return;
 					}
-					
+
 					if (i++ % 64 == 0)
 						System.err.println(name + " cleaner in progress: " + (entriesTotal - entriesLeft) + "/"
 						        + entriesTotal);
-						
+
 					batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, processor);
 					entriesLeft = reverse ? curOffset : Math.max(storeSize - curOffset - RESIZE_MEMORY_ENTRIES, 0);
 					if (!processor.batch(entriesLeft)) {
@@ -1441,7 +1441,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					try {
-						if (sleep) 
+						if (sleep)
 							Thread.sleep(100);
 					} catch (InterruptedException e) {
 						processor.abort();
@@ -1456,7 +1456,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		/**
 		 * Read a list of items from store.
-		 * 
+		 *
 		 * @param offset
 		 *            start offset, must be multiple of {@link FILE_SPLIT}
 		 * @param length
@@ -1467,7 +1467,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @return <code>true</code> if operation complete successfully; <code>false</code>
 		 *         otherwise (e.g. can't acquire locks, node shutting down)
 		 */
-		private boolean batchProcessEntries(long offset, int length, BatchProcessor processor) {
+		private boolean batchProcessEntries(long offset, int length, BatchProcessor<T> processor) {
 			Condition[] locked = new Condition[length];
 			try {
 				// acquire all locks in the region, will unlock in the finally block
@@ -1556,7 +1556,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		/**
 		 * Put back an old entry to store file
-		 * 
+		 *
 		 * @param entry
 		 * @return <code>true</code> if the entry have put back successfully.
 		 */
@@ -1627,12 +1627,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public String getShortText() {
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortResizeProgress", //
-				        new String[] { "name", "processed", "total" },// 
+				        new String[] { "name", "processed", "total" },//
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.shortRebuildProgress", //
-				        new String[] { "name", "processed", "total" },// 
+				        new String[] { "name", "processed", "total" },//
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 		}
@@ -1640,12 +1640,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public String getText() {
 			if (cleaner.isResizing)
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longResizeProgress", //
-				        new String[] { "name", "processed", "total" },// 
+				        new String[] { "name", "processed", "total" },//
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 			else
 				return NodeL10n.getBase().getString("SaltedHashFreenetStore.longRebuildProgress", //
-				        new String[] { "name", "processed", "total" },// 
+				        new String[] { "name", "processed", "total" },//
 				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
 				                cleaner.entriesTotal + "" });
 		}
@@ -1684,7 +1684,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return false;
 		}
 	}
-	
+
 	public void setUserAlertManager(UserAlertManager userAlertManager) {
 		if (cleanerStatusUserAlert != null)
 			userAlertManager.register(cleanerStatusUserAlert);
@@ -1724,7 +1724,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	/**
 	 * Lock all possible offsets of a key. This method would release the locks if any locking
 	 * operation failed.
-	 * 
+	 *
 	 * @param plainKey
 	 * @return <code>true</code> if all the offsets are locked.
 	 */
@@ -1739,7 +1739,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	/**
 	 * Lock all possible offsets of a key. This method would release the locks if any locking
 	 * operation failed.
-	 * 
+	 *
 	 * @param digestedKey
 	 * @return <code>true</code> if all the offsets are locked.
 	 */
@@ -1803,7 +1803,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Get offset in the hash table, given a plain routing key.
-	 * 
+	 *
 	 * @param plainKey
 	 * @param storeSize
 	 * @return
@@ -1838,7 +1838,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Get offset in the hash table, given a digested routing key.
-	 * 
+	 *
 	 * @param digestedKey
 	 * @param storeSize
 	 * @return
@@ -1906,7 +1906,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			for (int l = 0; l < maxKey; l++) {
 				if (l % 1024 == 0) {
 					System.out.println(" migrating key " + l + "/" + maxKey);
-					WrapperManager.signalStarting(10 * 60 * 1000); // max 10 minutes for every 1024 keys  
+					WrapperManager.signalStarting(10 * 60 * 1000); // max 10 minutes for every 1024 keys
 				}
 
 				boolean keyRead = false;
@@ -1921,7 +1921,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				try {
-					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null, false, false, null, null);
+					T b = callback.construct(data, header, null, keyRead ? key : null, false, false, null, null);
 					put(b, data, header, true, true);
 				} catch (KeyVerifyException e) {
 					System.out.println("kve at block " + l);
@@ -1953,7 +1953,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		configFile.delete();
 		bloomFile.delete();
 	}
-	
+
 	public String toString() {
 		return super.toString()+":"+name;
 	}
