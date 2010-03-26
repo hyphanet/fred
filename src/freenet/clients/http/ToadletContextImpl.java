@@ -479,7 +479,7 @@ public class ToadletContextImpl implements ToadletContext {
 
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 						try {
-							String methodName = "handleMethod" + method;
+							String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
 							try {
 								Class<? extends Toadlet> c = t.getClass();
 								Method m = c.getMethod(methodName, HANDLE_PARAMETERS);
