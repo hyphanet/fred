@@ -1,24 +1,25 @@
-/**
- * 
- */
 package freenet.client;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetCallback;
+import freenet.client.async.ClientPutCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
-public class NullClientCallback implements ClientCallback {
+/**
+ *
+ */
+public class NullClientCallback implements ClientGetCallback, ClientPutCallback {
     private static volatile boolean logMINOR;
     private static volatile boolean logDEBUG;
 
     static {
 		Logger.registerClass(NullClientCallback.class);
     }
-	
+
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if (logDEBUG) Logger.debug(this, "NullClientCallback#onFailure e=" + e + ", state=" + state + ", container=" + container, e);
 	}
@@ -47,5 +48,5 @@ public class NullClientCallback implements ClientCallback {
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		if (logDEBUG) Logger.debug(this, "NullClientCallback#onSuccess state=" + state + ", container=" + container);
 	}
-	
+
 }

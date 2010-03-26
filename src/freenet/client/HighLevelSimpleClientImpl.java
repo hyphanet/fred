@@ -9,7 +9,6 @@ import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -63,7 +62,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int USK_RETRIES = RequestScheduler.COOLDOWN_RETRIES - 1;
 	/** Whether to fetch splitfiles. Don't turn this off! */
 	static final boolean FETCH_SPLITFILES = true;
-	/** Whether to follow redirects etc. If false, we only fetch a plain block of data. 
+	/** Whether to follow redirects etc. If false, we only fetch a plain block of data.
 	 * Don't turn this off either! */
 	static final boolean FOLLOW_REDIRECTS = true;
 	/** If set, only check the local datastore, don't send an actual request out.
@@ -84,7 +83,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 0;
 	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
-	
+
 	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;
 		this.priorityClass = priorityClass;
@@ -98,7 +97,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		curMaxMetadataLength = 1024 * 1024;
 		this.persistentBucketFactory = node.persistentTempBucketFactory;
 	}
-	
+
 	public HighLevelSimpleClientImpl(HighLevelSimpleClientImpl hlsc) {
 		this.eventProducer = new SimpleEventProducer();
 		this.priorityClass = hlsc.priorityClass;
@@ -111,11 +110,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.curMaxTempLength = hlsc.curMaxTempLength;
 		this.random = hlsc.random;
 	}
-	
+
 	public HighLevelSimpleClientImpl clone() {
 		return new HighLevelSimpleClientImpl(this);
 	}
-	
+
 	public void setMaxLength(long maxLength) {
 		curMaxLength = maxLength;
 	}
@@ -156,16 +155,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		}
 		return fw.waitForCompletion();
 	}
-	
-	@Deprecated
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientCallback callback, FetchContext fctx) throws FetchException {
-		return fetch(uri, maxSize, clientContext, (ClientGetCallback)callback,  fctx);
-	}
-		
+
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
 		return fetch(uri, maxSize, clientContext, callback, fctx, priorityClass);
 	}
-	
+
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, uri, fctx, prio, clientContext, null, null);
@@ -176,11 +170,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		}
 		return get;
 	}
-	
+
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException {
 		return insert(insert, getCHKOnly, filenameHint, false);
 	}
-	
+
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata) throws InsertException {
 		InsertContext context = getInsertContext(true);
 		PutWaiter pw = new PutWaiter();
@@ -193,11 +187,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			// Impossible
 		}
 		return pw.waitForCompletion();
-	}
-
-	@Deprecated
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, ctx, (ClientPutCallback) cb);
 	}
 
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
@@ -224,7 +213,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			Logger.error(this, "Impossible error: "+e, e);
 			throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
 		}
-		
+
 		InsertBlock block = new InsertBlock(b, null, insertURI);
 		return insert(block, false, null, true);
 	}
@@ -240,13 +229,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		}
 		return pw.waitForCompletion();
 	}
-	
-	/**
-     * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
-     */
-    public void addGlobalHook(ClientEventListener listener) {
-        addEventHook(listener);
-    }
 
 	public void addEventHook(ClientEventListener listener) {
 		eventProducer.addEventListener(listener);
@@ -262,21 +244,21 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		if(overrideMaxSize >= 0) {
 			maxLength = overrideMaxSize;
 			maxTempLength = overrideMaxSize;
-		} 
-		return 			
-			new FetchContext(maxLength, maxTempLength, curMaxMetadataLength, 
-				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES, 
+		}
+		return
+			new FetchContext(maxLength, maxTempLength, curMaxMetadataLength,
+				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES,
 				SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				bucketFactory, eventProducer, 
+				bucketFactory, eventProducer,
 				false, CAN_WRITE_CLIENT_CACHE);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
 		return new InsertContext(
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
-				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
+				SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				eventProducer, CAN_WRITE_CLIENT_CACHE_INSERTS, Node.FORK_ON_CACHEABLE_DEFAULT, Compressor.DEFAULT_COMPRESSORDESCRIPTOR, EXTRA_INSERTS_SINGLE_BLOCK, EXTRA_INSERTS_SPLITFILE_HEADER);
 	}
 
@@ -286,11 +268,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 
 	private final ClientGetCallback nullCallback = new NullClientCallback();
-	
+
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
 		prefetch(uri, timeout, maxSize, allowedTypes, RequestStarter.PREFETCH_PRIORITY_CLASS);
 	}
-	
+
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio) {
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
@@ -299,7 +281,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			public void run() {
 				get.cancel(null, core.clientContext);
 			}
-			
+
 		}, timeout);
 		try {
 			core.clientContext.start(get);
