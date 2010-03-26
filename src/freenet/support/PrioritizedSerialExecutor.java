@@ -153,9 +153,11 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback) {
-		jobs = new LinkedList[internalPriorityCount];
-		for(int i=0;i<jobs.length;i++)
+		@SuppressWarnings("unchecked") LinkedList<Runnable>[] jobs = (LinkedList<Runnable>[])new LinkedList[internalPriorityCount];
+		for (int i=0;i<jobs.length;i++) {
 			jobs[i] = new LinkedList<Runnable>();
+		}
+		this.jobs = jobs;
 		this.priority = priority;
 		this.defaultPriority = defaultPriority;
 		this.invertOrder = invertOrder;
@@ -225,10 +227,10 @@ public class PrioritizedSerialExecutor implements Executor {
 					Logger.minor(this, "Not queueing job: Job already queued: "+job);
 				return;
 			}
-			
+
 			if(logMINOR)
 				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+", executor state: running="+running+" waiting="+waiting);
-			
+
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {

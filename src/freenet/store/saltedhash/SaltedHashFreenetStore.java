@@ -105,9 +105,9 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	 * recursion is also possible). However, fortunately we don't need to do it
 	 * bidirectionally - the cache needs more space from the store, but the store
 	 * grows so slowly it will hardly ever need more space from the cache. */
-	private SaltedHashFreenetStore altStore;
+	private SaltedHashFreenetStore<T> altStore;
 
-	public void setAltStore(SaltedHashFreenetStore store) {
+	public void setAltStore(SaltedHashFreenetStore<T> store) {
 		if(store.altStore != null) throw new IllegalStateException("Target must not have an altStore - deadlock can result");
 		altStore = store;
 	}
@@ -115,9 +115,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 	public static <T extends StorableBlock> SaltedHashFreenetStore<T> construct(File baseDir, String name, StoreCallback<T> callback, Random random,
 	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, Ticker exec, byte[] masterKey)
 	        throws IOException {
-		SaltedHashFreenetStore store = new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
+		return new SaltedHashFreenetStore<T>(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
 		        shutdownHook, preallocate, resizeOnStart, masterKey);
-		return store;
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback<T> callback, Random random, long maxKeys,

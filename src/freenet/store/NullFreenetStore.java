@@ -6,7 +6,7 @@ import com.sleepycat.je.DatabaseException;
 
 public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
 
-	public NullFreenetStore(StoreCallback callback) {
+	public NullFreenetStore(StoreCallback<T> callback) {
 		callback.setStore(this);
 	}
 
