@@ -27,6 +27,7 @@ freenet.support.api
 freenet.support.compress
 freenet.support.io
 freenet.support.math
+freenet.support.plugins.helpers1
 freenet.support.transport.ip
 freenet.tools
 net.i2p.util
