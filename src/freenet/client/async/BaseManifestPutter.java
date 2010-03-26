@@ -51,14 +51,14 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
-	
+
 	static {
 		Logger.registerClass(BaseManifestPutter.class);
 	}
 
 	/**
 	 * ArchivePutHandler - wrapper for ContainerInserter
-	 * 
+	 *
 	 * Archives are not part of the site structure, they are used to group files that
 	 * not fit into a container (for example a directory with brazilion files it)
 	 * Archives are always inserted as CHK, references to items in it
@@ -76,7 +76,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "onEncode(" + key + ") for " + this);
 			System.out.println("Got a URI: " + key.getURI().toString(false, false) + " for " + this);
-			
+
 			if(persistent) {
 				container.activate(key, 5);
 				container.activate(BaseManifestPutter.this, 2);
@@ -129,11 +129,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	/**
 	 * ContainerPutHandler - wrapper for ContainerInserter
-	 * 
-	 * Containers are an integral part of the site structure, they are 
+	 *
+	 * Containers are an integral part of the site structure, they are
 	 * inserted as CHK, the root container is inserted at targetURI.
 	 * references to items in it are ARCHIVE_INTERNAL_REDIRECT
-	 * 
+	 *
 	 */
 	private final class ContainerPutHandler extends PutHandler {
 
@@ -337,7 +337,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			this.origSFI = new SingleFileInserter(this, this, insertBlock, true, ctx, false, getCHKOnly, false, null, null, true, null, earlyEncode, true);
 			if(logMINOR) Logger.minor(this, "Inserting root metadata: "+origSFI);
 		}
-		
+
 		// resolver
 		private MetaPutHandler(BaseManifestPutter smp, PutHandler parent, Metadata toResolve, boolean getCHKOnly, BucketFactory bf, ObjectContainer container) throws MetadataUnresolvedException, IOException {
 			super(smp, parent, null, null, runningPutHandlers, container);
@@ -348,7 +348,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			this.origSFI = new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, toResolve, null, true, null, earlyEncode, true);
 			if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+origSFI+" for "+toResolve);
 		}
-		
+
 		@Override
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if (logMINOR) Logger.minor(this, "onEncode(" + key + ") for " + this);
@@ -382,7 +382,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 			if (!wasRoot)
 				resolveAndStartBase(container, context);
 			super.onSuccess(state, container, context);
-			
+
 		}
 	}
 
@@ -445,7 +445,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 					}
 				}
 			}
-			
+
 			synchronized (putHandlersWaitingForFetchable) {
 				if (putHandlersWaitingForFetchable.contains(this)) {
 					Logger.error(this, "PutHandler already in 'waitingForFetchable'!", new Error("error"));
@@ -941,7 +941,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	private boolean hasResolvedBase; // if this is true, the final block is ready for insert
 	private boolean fetchable;
 	private final boolean earlyEncode;
-	
+
 	public BaseManifestPutter(ClientPutCallback cb,
 			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, String defaultName,
 			InsertContext ctx, boolean getCHKOnly2, RequestClient clientContext, boolean earlyEncode) {
@@ -1043,7 +1043,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 		for (PutHandler ph: maybeStartPH) {
 			if (perContainerPutHandlersWaitingForMetadata.get(ph).isEmpty()) {
-				phToStart.add(ph); 
+				phToStart.add(ph);
 			}
 		}
 		if ((!excludeRoot) && (maybeStartPH.length == 0)) {
@@ -1051,7 +1051,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		}
 		return phToStart.toArray(new PutHandler[phToStart.size()]);
 	}
-	
+
 	private synchronized void debugDecompose(String title) {
 		System.out.println("=== BEGIN: "+title);
 		System.out.println("Running PutHandlers: "+ runningPutHandlers.size());
@@ -1079,7 +1079,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	/**
 	 * Implement the pack logic
-	 * 
+	 *
 	 * @param manifestElements
 	 */
 	protected abstract void makePutHandlers(HashMap<String, Object> manifestElements, String defaultName);
@@ -1181,7 +1181,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	/**
 	 * Attempt to insert the base metadata and the container. If the base metadata cannot be resolved,
 	 * try to resolve it: start inserts for each part that cannot be resolved, and wait for them to generate
-	 * URIs that can be incorporated into the metadata. This method will then be called again, and will 
+	 * URIs that can be incorporated into the metadata. This method will then be called again, and will
 	 * complete, or do more resolutions as necessary.
 	 * @param container
 	 * @param context
@@ -1237,7 +1237,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		block = new InsertBlock(bucket, null, persistent() ? targetURI.clone() : targetURI);
 		try {
 			rootMetaPutHandler = new MetaPutHandler(this, null, block, getCHKOnly, container);
-				
+
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+rootMetaPutHandler+" for "+baseMetadata);
 			if(persistent()) {
 				container.deactivate(baseMetadata, 1);
@@ -1254,7 +1254,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 	/**
 	 * Start inserts for unresolved (too big) Metadata's. Eventually these will call back with an onEncode(),
-	 * meaning they have the CHK, and we can progress to resolveAndStartBase(). 
+	 * meaning they have the CHK, and we can progress to resolveAndStartBase().
 	 * @param e
 	 * @param container
 	 * @param context
@@ -1329,7 +1329,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		new Error("TraceME complete()").printStackTrace();
 		// FIXME we could remove the put handlers after inserting all files but not having finished the insert of the manifest
 		// However it would complicate matters for no real gain in most cases...
-		// Also doing it this way means we don't need to worry about 
+		// Also doing it this way means we don't need to worry about
 		if(persistent()) removePutHandlers(container, context);
 		boolean deactivateCB = false;
 		if(persistent()) {
@@ -1354,7 +1354,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		}
 		cancelAndFinish(container, context);
 		if(persistent()) removePutHandlers(container, context);
-		
+
 		if(persistent())
 			container.activate(cb, 1);
 		cb.onFailure(e, this, container);
@@ -1617,7 +1617,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		return guessMime(name, me.mimeOverride);
 	}
 
-	protected final ClientMetadata guessMime(String name, String mimetype) {	
+	protected final ClientMetadata guessMime(String name, String mimetype) {
 		String mimeType = mimetype;
 		if((mimeType == null) && (name != null))
 			mimeType = DefaultMIMETypes.guessMIMEType(name, true);
@@ -1655,7 +1655,7 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 
 		private final Stack<HashMap<String, Object>> dirStack;
 		protected HashMap<String, Object> currentDir;
-		
+
 		private ClientMetadata makeClientMetadata(String mime) {
 			if (mime == null)
 				return null;
@@ -1680,12 +1680,12 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		/**
 		 * make 'name' the current subdir (cd into it).<br>
 		 * if it not exists, it is created.
-		 * 
+		 *
 		 * @param name name of the subdir
 		 */
 		public void makeSubDirCD(String name) {
 			if (currentDir.containsKey(name)) {
-				currentDir = (HashMap<String, Object>) currentDir.get(name);
+				currentDir = Metadata.forceMap(currentDir.get(name));
 			} else {
 				currentDir = makeSubDir(currentDir, name);
 			}
@@ -1708,11 +1708,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 		 */
 		public final void addElement(String name, ManifestElement element, boolean isDefaultDoc) {
 			ClientMetadata cm = makeClientMetadata(element.mimeOverride);
-			
+
 			if (element.data != null) {
 				addExternal(name, element.data, cm, isDefaultDoc);
 				return;
-			} 
+			}
 			if (element.targetURI != null) {
 				addRedirect(name, element.targetURI, cm, isDefaultDoc);
 				return;

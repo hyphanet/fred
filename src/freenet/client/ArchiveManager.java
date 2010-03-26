@@ -39,7 +39,7 @@ import freenet.support.io.Closer;
  * files open due to the limitations of the java.util.zip API)
  * - Keep up to Y bytes (after padding and overheads) of decoded data on disk
  * (the OS is quite capable of determining what to keep in actual RAM)
- * 
+ *
  * Always take the lock on ArchiveStoreContext before the lock on ArchiveManager, NOT the other way around.
  */
 public class ArchiveManager {
@@ -51,15 +51,15 @@ public class ArchiveManager {
 		// WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 		ZIP((short)0, new String[] { "application/zip", "application/x-zip" }), 	/* eventually get rid of ZIP support at some point */
 		TAR((short)1, new String[] { "application/x-tar" });
-		
+
 		public final short metadataID;
 		public final String[] mimeTypes;
-		
+
 		private ARCHIVE_TYPE(short metadataID, String[] mimeTypes) {
 			this.metadataID = metadataID;
 			this.mimeTypes = mimeTypes;
 		}
-		
+
 		public static boolean isValidMetadataID(short id) {
 			for(ARCHIVE_TYPE current : values())
 				if(id == current.metadataID)
@@ -88,25 +88,25 @@ public class ArchiveManager {
 						return current;
 			return null;
 		}
-		
+
 		public static ARCHIVE_TYPE getArchiveType(short type) {
 			for(ARCHIVE_TYPE current : values())
 				if(current.metadataID == type)
 					return current;
 			return null;
 		}
-		
+
 		public final static ARCHIVE_TYPE getDefault() {
 			return TAR;
 		}
 	}
-	
+
 	final long maxArchivedFileSize;
-	
+
 	// ArchiveHandler's
 	final int maxArchiveHandlers;
 	private final LRUHashtable<FreenetURI, ArchiveStoreContext> archiveHandlers;
-	
+
 	// Data cache
 	/** Maximum number of cached ArchiveStoreItems */
 	final int maxCachedElements;
@@ -169,7 +169,7 @@ public class ArchiveManager {
 	 * re-fetch.
 	 * @param key The key of the archive that we are extracting data from.
 	 * @param archiveType The archive type, defined in Metadata.
-	 * @return An archive handler. 
+	 * @return An archive handler.
 	 */
 	synchronized ArchiveStoreContext makeContext(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean returnNullIfNotFound) {
 		ArchiveStoreContext handler = null;
@@ -188,7 +188,7 @@ public class ArchiveManager {
 	 * re-fetch.
 	 * @param key The key of the archive that we are extracting data from.
 	 * @param archiveType The archive type, defined in Metadata.
-	 * @return An archive handler. 
+	 * @return An archive handler.
 	 */
 	public ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetch, boolean persistent) {
 		return new ArchiveHandlerImpl(persistent ? key.clone() : key, archiveType, ctype, forceRefetch);
@@ -199,14 +199,14 @@ public class ArchiveManager {
 	 * @param key The key used to fetch the archive.
 	 * @param filename The name of the file within the archive.
 	 * @return A Bucket containing the data requested, or null.
-	 * @throws ArchiveFailureException 
+	 * @throws ArchiveFailureException
 	 */
 	public Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
 		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+ ' ' +filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = null;
 		synchronized (this) {
-			asi = storedData.get(k);	
+			asi = storedData.get(k);
 			if(asi == null) return null;
 			// Promote to top of LRU
 			storedData.push(k, asi);
@@ -214,9 +214,9 @@ public class ArchiveManager {
 		if(logMINOR) Logger.minor(this, "Found data");
 		return asi.getReaderBucket();
 	}
-	
+
 	/**
-	 * Remove a file from the cache. Called after it has been removed from its 
+	 * Remove a file from the cache. Called after it has been removed from its
 	 * ArchiveHandler.
 	 * @param item The ArchiveStoreItem to remove.
 	 */
@@ -231,7 +231,7 @@ public class ArchiveManager {
 		if(logMINOR) Logger.minor(this, "removeCachedItem: "+item);
 		item.close();
 	}
-	
+
 	/**
 	 * Extract data to cache. Call synchronized on ctx.
 	 * @param key The key the data was fetched from.
@@ -242,19 +242,19 @@ public class ArchiveManager {
 	 * @param element A particular element that the caller is especially interested in, or null.
 	 * @param callback A callback to be called if we find that element, or if we don't.
 	 * @throws ArchiveFailureException If we could not extract the data, or it was too big, etc.
-	 * @throws ArchiveRestartException 
+	 * @throws ArchiveRestartException
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
-	 * 
+	 *
 	 * FIXME: This method *can* be called from the database thread, however it isn't at
 	 * present (check the call stack). Maybe we should get rid of the ObjectContainer?
 	 * OTOH maybe extracting inline on the database thread for small containers would be useful?
 	 */
 	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		
+
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
-		
+
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		ctx.removeAllCachedItems(this); // flush cache anyway
 		final long expectedSize = ctx.getLastSize();
@@ -279,15 +279,15 @@ public class ArchiveManager {
 				throwAtExit = true;
 			ctx.setLastHash(realHash);
 		}
-		
+
 		if(archiveSize > archiveContext.maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big ("+archiveSize+" > "+archiveContext.maxArchiveSize+")!");
 		else if(archiveSize <= 0)
 			throw new ArchiveFailureException("Archive too small! ("+archiveSize+')');
 		else if(logMINOR)
 			Logger.minor(this, "Container size (possibly compressed): "+archiveSize+" for "+data);
-		
-		
+
+
 		InputStream is = null;
 		try {
 			if((ctype == null) || (ARCHIVE_TYPE.ZIP == archiveType)) {
@@ -303,7 +303,7 @@ public class ArchiveManager {
 				if(logMINOR) Logger.minor(this, "dealing with LZMA");
 				is = new LzmaInputStream(data.getInputStream());
 			}
-			
+
 			if(ARCHIVE_TYPE.ZIP == archiveType)
 				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit, container, context);
 			else if(ARCHIVE_TYPE.TAR == archiveType)
@@ -316,20 +316,20 @@ public class ArchiveManager {
 			Closer.close(is);
 	}
 	}
-	
+
 	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
 		TarInputStream tarIS = null;
 		try {
 			tarIS = new TarInputStream(data);
-			
-			// MINOR: Assumes the first entry in the tarball is a directory. 
+
+			// MINOR: Assumes the first entry in the tarball is a directory.
 			TarEntry entry;
-			
+
 			byte[] buf = new byte[32768];
 			HashSet<String> names = new HashSet<String>();
 			boolean gotMetadata = false;
-			
+
 outerTAR:		while(true) {
 				entry = tarIS.getNextEntry();
 				if(entry == null) break;
@@ -368,7 +368,7 @@ outerTAR:		while(true) {
 						names.add(name);
 						trimStoredData();
 					} else {
-						// We are here because they asked for this file. 
+						// We are here because they asked for this file.
 						callback.gotBucket(output, container, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
@@ -382,30 +382,30 @@ outerTAR:		while(true) {
 				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
-			
+
 			if((!gotElement.value) && element != null)
 				callback.notInArchive(container, context);
-			
+
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 		} finally {
 			Closer.close(tarIS);
 		}
 	}
-	
+
 	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a ZIP Archive");
 		ZipInputStream zis = null;
 		try {
 			zis = new ZipInputStream(data);
-			
-			// MINOR: Assumes the first entry in the zip is a directory. 
+
+			// MINOR: Assumes the first entry in the zip is a directory.
 			ZipEntry entry;
-			
+
 			byte[] buf = new byte[32768];
 			HashSet<String> names = new HashSet<String>();
 			boolean gotMetadata = false;
-			
+
 outerZIP:		while(true) {
 				entry = zis.getNextEntry();
 				if(entry == null) break;
@@ -444,7 +444,7 @@ outerZIP:		while(true) {
 						names.add(name);
 						trimStoredData();
 					} else {
-						// We are here because they asked for this file. 
+						// We are here because they asked for this file.
 						callback.gotBucket(output, container, context);
 						gotElement.value = true;
 						addErrorElement(ctx, key, name, "File too big: "+size+" greater than current archived file size limit "+maxArchivedFileSize, true);
@@ -458,10 +458,10 @@ outerZIP:		while(true) {
 				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
-			
+
 			if((!gotElement.value) && element != null)
 				callback.notInArchive(container, context);
-			
+
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 		} finally {
@@ -480,10 +480,10 @@ outerZIP:		while(true) {
 	 * @param ctx The context object.
 	 * @param key The key from which the archive we are unpacking was fetched.
 	 * @param names Set of names in the archive.
-	 * @param element2 
-	 * @param gotElement 
-	 * @param callbackName If we generate a 
-	 * @throws ArchiveFailureException 
+	 * @param element2
+	 * @param gotElement
+	 * @param callbackName If we generate a
+	 * @throws ArchiveFailureException
 	 */
 	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, Set<String> names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException {
 		/* What we have to do is to:
@@ -522,7 +522,7 @@ outerZIP:		while(true) {
 			}
 		}
 	}
-	
+
 	private int resolve(MetadataUnresolvedException e, int x, Bucket bucket, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws IOException, ArchiveFailureException {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
@@ -555,15 +555,13 @@ outerZIP:		while(true) {
 			} else
 				after = name.substring(x+1, name.length());
 			Object o = dir.get(before);
-			HashMap<String, Object> map = (HashMap<String, Object>) o;
-			if(o == null) {
-				map = new HashMap<String, Object>();
-				dir.put(before, map);
+			if (o == null) {
+				dir.put(before, new HashMap<String, Object>());
 			}
-			if(o instanceof String) {
+			if (o instanceof String) {
 				throw new ArchiveFailureException("Invalid archive: contains "+name+" as both file and dir");
 			}
-			addToDirectory(map, after, prefix + before + '/');
+			addToDirectory(Metadata.forceMap(o), after, prefix + before + '/');
 		}
 	}
 
@@ -582,7 +580,7 @@ outerZIP:		while(true) {
 		ArchiveStoreItem oldItem;
 		synchronized (this) {
 			oldItem = storedData.get(element.key);
-			storedData.push(element.key, element);	
+			storedData.push(element.key, element);
 			if(oldItem != null) {
 				oldItem.close();
 				cachedData -= oldItem.spaceUsed();
@@ -597,7 +595,7 @@ outerZIP:		while(true) {
 	 * match.
 	 * @param gotElement Flag indicating whether we've already found the file for the callback. If so we must not call
 	 * it again.
-	 * @param callback Callback to be called if we do find it. We must getReaderBucket() before adding the data to the 
+	 * @param callback Callback to be called if we do find it. We must getReaderBucket() before adding the data to the
 	 * LRU, otherwise it may be deleted before it reaches the client.
 	 * @throws ArchiveFailureException If a failure occurred resulting in the data not being readable. Only happens if
 	 * callback != null.
@@ -653,14 +651,14 @@ outerZIP:		while(true) {
 		}
 		}
 	}
-	
+
 	public static void init(ObjectContainer container, ClientContext context, final long nodeDBHandle) {
 		ArchiveHandlerImpl.init(container, context, nodeDBHandle);
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing ArchiveManager in database", new Exception("error"));
 		return false;
 	}
-	
+
 }

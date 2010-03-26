@@ -84,12 +84,12 @@ public class Metadata implements Cloneable {
 //	static final short FLAGS_SPLIT_USE_LENGTHS = 64; FIXME not supported, reassign to something else if we need a new flag
 	static final short FLAGS_COMPRESSED = 128;
 
-	/** Container archive type 
+	/** Container archive type
 	 * @see ARCHIVE_TYPE
 	 */
 	ARCHIVE_TYPE archiveType;
 
-	/** Compressed splitfile codec 
+	/** Compressed splitfile codec
 	 * @see COMPRESSOR_TYPE
 	 */
 	COMPRESSOR_TYPE compressionCodec;
@@ -131,7 +131,7 @@ public class Metadata implements Cloneable {
 	/** Manifest entries by name */
 	HashMap<String, Metadata> manifestEntries;
 
-	/** Archive internal redirect: name of file in archive 
+	/** Archive internal redirect: name of file in archive
 	 *  SympolicShortLink: Target name*/
 	String targetName;
 
@@ -176,8 +176,8 @@ public class Metadata implements Cloneable {
 		return m;
 	}
 
-	/** Parse some metadata from a byte[]. 
-	 * @throws IOException If the data is incomplete, or something wierd happens. 
+	/** Parse some metadata from a byte[].
+	 * @throws IOException If the data is incomplete, or something wierd happens.
 	 * @throws MetadataParseException */
 	private Metadata(byte[] data) throws IOException, MetadataParseException {
 		this(new DataInputStream(new ByteArrayInputStream(data)), data.length);
@@ -202,7 +202,7 @@ public class Metadata implements Cloneable {
 		if((documentType < 0) || (documentType > 6))
 			throw new MetadataParseException("Unsupported document type: "+documentType);
 		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
-		
+
 		boolean compressed = false;
 		if(haveFlags()) {
 			short flags = dis.readShort();
@@ -238,7 +238,7 @@ public class Metadata implements Cloneable {
 			compressionCodec = COMPRESSOR_TYPE.getCompressorByMetadataID(dis.readShort());
 			if(compressionCodec == null)
 				throw new MetadataParseException("Unrecognized splitfile compression codec "+compressionCodec);
-			
+
 			decompressedLength = dis.readLong();
 		}
 
@@ -377,7 +377,7 @@ public class Metadata implements Cloneable {
 	}
 
 	/**
-	 * Create an empty Metadata object 
+	 * Create an empty Metadata object
 	 */
 	private Metadata() {
 		hashCode = super.hashCode();
@@ -386,7 +386,7 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Create a Metadata object and add data for redirection to it.
-	 * 
+	 *
 	 * @param dir A map of names (string) to either files (same string) or
 	 * directories (more HashMap's)
 	 * @throws MalformedURLException One of the URI:s were malformed
@@ -412,7 +412,7 @@ public class Metadata implements Cloneable {
 				target = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
 			} else if(o instanceof HashMap) {
 				target = new Metadata();
-				target.addRedirectionManifest((HashMap<String, Object>)o);
+				target.addRedirectionManifest(Metadata.forceMap(o));
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
@@ -420,7 +420,7 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Create a Metadata object and add data for redirection to it.
-	 * 
+	 *
 	 * @param dir A map of names (string) to either files (same string) or
 	 * directories (more HashMap's)
 	 * @throws MalformedURLException One of the URI:s were malformed
@@ -434,7 +434,7 @@ public class Metadata implements Cloneable {
 	/**
 	 * Create a Metadata object and add manifest entries from the given map.
 	 * The map can contain either string -> Metadata, or string -> map, the latter
-	 * indicating subdirs. 
+	 * indicating subdirs.
 	 */
 	public static Metadata mkRedirectionManifestWithMetadata(HashMap<String, Object> dir) {
 		Metadata ret = new Metadata();
@@ -468,7 +468,7 @@ public class Metadata implements Cloneable {
 				if(key.equals("")) {
 					Logger.error(this, "Creating a subdirectory called \"\" - it will not be possible to access this through fproxy!", new Exception("error"));
 				}
-				HashMap<String, Object> hm = (HashMap<String, Object>)o;
+				HashMap<String, Object> hm = Metadata.forceMap(o);
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Making metadata map for "+key);
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
@@ -505,7 +505,7 @@ public class Metadata implements Cloneable {
 				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
 					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
-				target = new Metadata((HashMap<String, Object>)o, prefix+key+"/");
+				target = new Metadata(Metadata.forceMap(o), prefix+key+"/");
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
@@ -575,7 +575,7 @@ public class Metadata implements Cloneable {
 			throw new IllegalArgumentException();
 	}
 
-	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, 
+	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize,
 			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata) {
 		hashCode = super.hashCode();
 		if(isMetadata)
@@ -629,7 +629,7 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Write the data to a byte array.
-	 * @throws MetadataUnresolvedException 
+	 * @throws MetadataUnresolvedException
 	 */
 	public byte[] writeToByteArray() throws MetadataUnresolvedException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -648,10 +648,10 @@ public class Metadata implements Cloneable {
 		}
 		return ClientCHK.readRawBinaryKey(dis);
 	}
-	
+
 	/**
 	 * Read a key using the current settings.
-	 * @throws IOException 
+	 * @throws IOException
 	 * @throws MalformedURLException If the key could not be read due to an error in parsing the key.
 	 * REDFLAG: May want to recover from these in future, hence the short length.
 	 */
@@ -666,7 +666,7 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Write a key using the current settings.
-	 * @throws IOException 
+	 * @throws IOException
 	 * @throws MalformedURLException If an error in the key itself prevented it from being written.
 	 */
 	private void writeKey(DataOutputStream dos, FreenetURI freenetURI) throws IOException {
@@ -682,7 +682,7 @@ public class Metadata implements Cloneable {
 			} else throw new IllegalArgumentException("Full keys must be enabled to write non-CHKs");
 		}
 	}
-	
+
 	private void writeCHK(DataOutputStream dos, ClientCHK chk) throws IOException {
 		if(fullKeys) {
 			throw new UnsupportedOperationException("Full keys not supported on splitfiles");
@@ -690,7 +690,7 @@ public class Metadata implements Cloneable {
 			chk.writeRawBinaryKey(dos);
 		}
 	}
-	
+
 	/** Is a manifest? */
 	public boolean isSimpleManifest() {
 		return documentType == SIMPLE_MANIFEST;
@@ -698,15 +698,15 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Get the sub-document in a manifest file with the given name.
-	 * @throws MetadataParseException 
+	 * @throws MetadataParseException
 	 */
 	public Metadata getDocument(String name) {
 		return manifestEntries.get(name);
 	}
-	
+
 	/**
 	 * Return and remove a specific document. Used in persistent requests
-	 * so that when removeFrom() is called, the default document won't be 
+	 * so that when removeFrom() is called, the default document won't be
 	 * removed, since it is being processed.
 	 */
 	public Metadata grabDocument(String name) {
@@ -715,21 +715,21 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * The default document is the one which has an empty name.
-	 * @throws MetadataParseException 
+	 * @throws MetadataParseException
 	 */
 	public Metadata getDefaultDocument() {
 		return getDocument("");
 	}
-	
+
 	/**
 	 * Return and remove the default document. Used in persistent requests
-	 * so that when removeFrom() is called, the default document won't be 
+	 * so that when removeFrom() is called, the default document won't be
 	 * removed, since it is being processed.
 	 */
 	public Metadata grabDefaultDocument() {
 		return grabDocument("");
 	}
-	
+
 	/**
      * Get all documents in the manifest (ignores default doc).
      * @throws MetadataParseException
@@ -863,8 +863,8 @@ public class Metadata implements Cloneable {
 		return documentType == SYMBOLIC_SHORTLINK;
 	}
 
-	/** Write the metadata as binary. 
-	 * @throws IOException If an I/O error occurred while writing the data. 
+	/** Write the metadata as binary.
+	 * @throws IOException If an I/O error occurred while writing the data.
 	 * @throws MetadataUnresolvedException */
 	public void writeTo(DataOutputStream dos) throws IOException, MetadataUnresolvedException {
 		dos.writeLong(FREENET_METADATA_MAGIC);
@@ -976,7 +976,7 @@ public class Metadata implements Cloneable {
 				}
 			}
 			if(kill) {
-				Metadata[] meta = 
+				Metadata[] meta =
 					unresolvedMetadata.toArray(new Metadata[unresolvedMetadata.size()]);
 				throw new MetadataUnresolvedException(meta, "Manifest data too long and not resolved");
 			}
@@ -1130,7 +1130,7 @@ public class Metadata implements Cloneable {
 	 * Metadata manifest = smc.getMetadata();
 	 * // manifest contains now a structure like returned from mkRedirectionManifestWithMetadata
 	 * </PRE>
-	 * 
+	 *
 	 * @see BaseManifestPutter
 	 */
 	public static class SimpleManifestComposer {
@@ -1176,7 +1176,7 @@ public class Metadata implements Cloneable {
 		dump(0, sb);
 		return sb.toString();
 	}
-	
+
 	public void dump(int indent, StringBuffer sb) {
 		dumpline(indent, sb, "");
 		dumpline(indent, sb, "Document type: "+documentType);
@@ -1194,7 +1194,7 @@ public class Metadata implements Cloneable {
 		}
 		if(targetName != null)
 			dumpline(indent, sb, "Target name: "+targetName);
-		
+
 		if(manifestEntries != null) {
 			for(Map.Entry<String, Metadata> entry : manifestEntries.entrySet()) {
 				dumpline(indent, sb, "Entry: "+entry.getKey()+":");
@@ -1208,4 +1208,14 @@ public class Metadata implements Cloneable {
 		sb.append(string);
 		sb.append("\n");
 	}
+
+	/**
+	** Casts the given object to {@code HashMap<String, Object>}, for dismissing
+	** compiler warnings. Use only when you are sure the object matches this type!
+	*/
+	@SuppressWarnings("unchecked")
+	final public static HashMap<String, Object> forceMap(Object o) {
+		return (HashMap<String, Object>)o;
+	}
+
 }
