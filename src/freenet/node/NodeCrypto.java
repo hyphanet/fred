@@ -43,7 +43,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 
 /**
- * Cryptographic and transport level node identity. 
+ * Cryptographic and transport level node identity.
  * @author toad
  */
 public class NodeCrypto {
@@ -79,7 +79,7 @@ public class NodeCrypto {
 	final NodeCryptoConfig config;
 	final NodeIPPortDetector detector;
 	final BlockCipher anonSetupCipher;
-	
+
 	// Noderef related
 	/** An ordered version of the noderef FieldSet, without the signature */
 	private String mySignedReference = null;
@@ -87,10 +87,10 @@ public class NodeCrypto {
 	private DSASignature myReferenceSignature = null;
 	/** A synchronization object used while signing the reference fieldset */
 	private volatile Object referenceSync = new Object();
-	
+
 	/**
 	 * Get port number from a config, create socket and packet mangler
-	 * @throws NodeInitException 
+	 * @throws NodeInitException
 	 */
 	public NodeCrypto(final Node node, final boolean isOpennet, NodeCryptoConfig config, long startupTime, boolean enableARKs) throws NodeInitException {
 
@@ -99,17 +99,17 @@ public class NodeCrypto {
 		random = node.random;
 		this.isOpennet = isOpennet;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		
+
 		config.starting(this);
-		
+
 		try {
-		
+
 		int port = config.getPort();
-		
+
 		FreenetInetAddress bindto = config.getBindTo();
-		
+
 		UdpSocketHandler u = null;
-		
+
 		if(port > 65535) {
 			throw new NodeInitException(NodeInitException.EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
 		} else if(port == -1) {
@@ -145,15 +145,15 @@ public class NodeCrypto {
 		System.out.println("FNP port created on "+bindto+ ':' +port);
 		portNumber = port;
 		config.setPort(port);
-		
+
 		socket.setDropProbability(config.getDropProbability());
-		
+
 		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
-		
+
 		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 
 		anonSetupCipher = new Rijndael(256,256);
-		
+
 		} catch (NodeInitException e) {
 			config.stopping(this);
 			throw e;
@@ -170,7 +170,7 @@ public class NodeCrypto {
 			config.maybeStarted(this);
 		}
 	}
-	
+
 	private String getTitle(int port) {
 		// FIXME l10n
 		return "UDP " + (isOpennet ? "Opennet " : "Darknet ") + "port " + port;
@@ -179,7 +179,7 @@ public class NodeCrypto {
 	/**
 	 * Read the cryptographic keys etc from a SimpleFieldSet
 	 * @param fs
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void readCrypto(SimpleFieldSet fs) throws IOException {
 		String identity = fs.get("identity");
@@ -193,7 +193,7 @@ public class NodeCrypto {
 		identityHash = SHA256.digest(myIdentity);
 		anonSetupCipher.initialize(identityHash);
 		identityHashHash = SHA256.digest(identityHash);
-		
+
 		try {
 			cryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
 			privKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), cryptoGroup);
@@ -206,11 +206,11 @@ public class NodeCrypto {
 			throw new IOException(e.toString());
 		}
 		InsertableClientSSK ark = null;
-		
+
 		// ARK
-		
+
 		String s = fs.get("ark.number");
-		
+
 		String privARK = fs.get("ark.privURI");
 		try {
 			if(privARK != null) {
@@ -237,7 +237,7 @@ public class NodeCrypto {
 			myARKNumber = 0;
 		}
 		myARK = ark;
-		
+
 		String cn = fs.get("clientNonce");
 		if(cn != null) {
 			try {
@@ -249,7 +249,7 @@ public class NodeCrypto {
 			clientNonce = new byte[32];
 			node.random.nextBytes(clientNonce);
 		}
-		
+
 	}
 
 	/**
@@ -276,13 +276,13 @@ public class NodeCrypto {
 		packetMangler.start();
 		socket.start();
 	}
-	
+
 	public SimpleFieldSet exportPrivateFieldSet() {
 		SimpleFieldSet fs = exportPublicFieldSet(false, false, false);
 		addPrivateFields(fs);
 		return fs;
 	}
-	
+
 	/**
 	 * Export my node reference so that another node can connect to me.
 	 * Public version, includes everything apart from private keys.
@@ -291,7 +291,7 @@ public class NodeCrypto {
 	public SimpleFieldSet exportPublicFieldSet() {
 		return exportPublicFieldSet(false, false, false);
 	}
-	
+
 	/**
 	 * Export my reference so that another node can connect to me.
 	 * @param forSetup If true, strip out everything that isn't needed for the references
@@ -321,7 +321,7 @@ public class NodeCrypto {
 		}
 		if((!isOpennet) && (!forSetup) && (!forARK))
 			fs.putSingle("myName", node.getMyName());
-		
+
 		if(!forAnonInitiator) {
 			// Anonymous initiator setup type specifies whether the node is opennet or not.
 			fs.put("opennet", isOpennet);
@@ -337,7 +337,7 @@ public class NodeCrypto {
 				fs.putSingle("sig", myReferenceSignature.toLongString());
 			}
 		}
-		
+
 		if(logMINOR) Logger.minor(this, "My reference: "+fs.toOrderedString());
 		return fs;
 	}
@@ -390,7 +390,7 @@ public class NodeCrypto {
 		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
 		if(shouldStripGroup)
 			fs.removeSubset("dsaGroup");
-		
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
@@ -402,7 +402,7 @@ public class NodeCrypto {
 			Closer.close(gis);
                         Closer.close(baos);
 		}
-		
+
 		byte[] buf = baos.toByteArray();
 		if(buf.length >= 4096)
 			throw new IllegalStateException("We are attempting to send a "+buf.length+" bytes big reference!");
@@ -417,11 +417,11 @@ public class NodeCrypto {
 		} else
 			obuf[offset++] = 0x01; // compressed noderef
 		System.arraycopy(buf, 0, obuf, offset, buf.length);
-		if(logMINOR) 
+		if(logMINOR)
 			Logger.minor(this, "myCompressedRef("+setup+","+heavySetup+") returning "+obuf.length+" bytes");
 		return obuf;
 	}
-	
+
 	/**
 	 * The part of our node reference which is exchanged in the connection setup, compressed.
 	 * @see exportSetupFieldSet()
@@ -446,7 +446,7 @@ public class NodeCrypto {
 	public byte[] myCompressedFullRef() {
 		return myCompressedRef(false, false, false);
 	}
-	
+
 	void addPrivateFields(SimpleFieldSet fs) {
 		fs.put("dsaPrivKey", privKey.asFieldSet());
 		fs.putSingle("ark.privURI", myARK.getInsertURI().toString(false, false));
@@ -455,7 +455,7 @@ public class NodeCrypto {
 		if(fs.get("location") == null)
 			fs.put("location", node.lm.getLocation());
 		fs.putSingle("clientNonce", Base64.encode(clientNonce));
-		
+
 	}
 
 	public int getIdentityHash(){
@@ -519,7 +519,7 @@ public class NodeCrypto {
 		}
 		return v.toArray(new PeerNode[v.size()]);
 	}
-	
+
 	void setPortForwardingBroken() {
 		this.socket.getAddressTracker().setBroken();
 	}
@@ -539,7 +539,7 @@ public class NodeCrypto {
 	public boolean definitelyPortForwarded() {
 		return socket.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
 	}
-	
+
 	public int getDetectedConnectivityStatus() {
 		return socket.getDetectedConnectivityStatus();
 	}
@@ -552,6 +552,7 @@ public class NodeCrypto {
 		if(setupContainer == null) return random.nextLong();
 		// Ignore warnings, this is db4o magic.
 		ObjectSet<HandlePortTuple> result = setupContainer.query(new Predicate<HandlePortTuple>() {
+			final private static long serialVersionUID = -5442250371745036389L;
 			@Override
 			public boolean match(HandlePortTuple tuple) {
 				return tuple.portNumber == portNumber;

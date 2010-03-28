@@ -75,6 +75,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 //		query.descend("client").constrain(client);
 //		query.descend("parent").constrain(this);
 		Evaluation eval = new Evaluation() {
+			final private static long serialVersionUID = 1537102695504880276L;
 
 			public void evaluate(Candidate candidate) {
 				PersistentCooldownQueueItem item = (PersistentCooldownQueueItem) candidate.getObject();

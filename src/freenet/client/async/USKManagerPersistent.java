@@ -13,6 +13,7 @@ public class USKManagerPersistent {
 
 	static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
 		ObjectSet<USKFetcherTag> set = container.query(new Predicate<USKFetcherTag>() {
+			final private static long serialVersionUID = 9150637337019063048L;
 			@Override
 			public boolean match(USKFetcherTag tag) {
 				if(tag.nodeDBHandle != context.nodeDBHandle) return false;
