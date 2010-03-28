@@ -4,6 +4,8 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
 
@@ -16,14 +18,14 @@ import freenet.support.LogThresholdCallback;
 /**
  * Queue of keys which have been recently requested, which we have unregistered for a fixed period.
  * They won't be requested for a while, although we still have ULPR subscriptions set up for them.
- * 
+ *
  * We add to the end, remove from the beginning, and occasionally remove from the middle. It's a
  * circular buffer, we expand it if necessary.
  * @author toad
  */
 public class RequestCooldownQueue implements CooldownQueue {
 
-	/** keys which have been put onto the cooldown queue */ 
+	/** keys which have been put onto the cooldown queue */
 	private Key[] keys;
 	/** times at which keys will be valid again */
 	private long[] times;
@@ -47,9 +49,9 @@ public class RequestCooldownQueue implements CooldownQueue {
 			}
 		});
 	}
-	
+
 	static final int MIN_SIZE = 128;
-	
+
 	final long cooldownTime;
 
 	RequestCooldownQueue(long cooldownTime) {
@@ -61,7 +63,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 		endPtr = 0;
 		this.cooldownTime = cooldownTime;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#add(freenet.keys.Key, freenet.node.SendableGet)
 	 */
@@ -74,7 +76,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 		add(key, client, removeTime);
 		return removeTime;
 	}
-	
+
 	private synchronized long getLastTime() {
 		if(startPtr == endPtr) return -1;
 		if(endPtr > 0) return times[endPtr-1];
@@ -162,7 +164,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 					if(logMINOR) Logger.minor(this, "First key is later at time "+time);
 					if(!v.isEmpty())
 						return v.toArray(new Key[v.size()]);
-					else if(time < (now + dontCareAfterMillis)) 
+					else if(time < (now + dontCareAfterMillis))
 						return Long.valueOf(time);
 					else
 						return null;
@@ -179,9 +181,9 @@ public class RequestCooldownQueue implements CooldownQueue {
 				return v.toArray(new Key[v.size()]);
 		}
 	}
-	
+
 	private static String DEBUG_TARGET_URI = "CHK@.../chaosradio_131.mp3";
-	
+
 	/**
 	 * Heavy logging and debugging point.
 	 * Very useful when debugging certain classes of problems.
@@ -199,8 +201,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 				}
 			}
 		}
-		
-		java.util.HashMap countsByShortURI = new java.util.HashMap();
+
+		Map<String, Integer> countsByShortURI = new HashMap<String, Integer>();
 		int nulls = 0;
 		int nullClients = 0;
 		int notGetter = 0;
@@ -218,7 +220,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			ClientRequester cr = clients[i].parent;
 			if(cr instanceof ClientGetter) {
 				String shortURI = ((ClientGetter)cr).getURI().toShortString();
-				Integer ctr = (Integer) countsByShortURI.get(shortURI);
+				Integer ctr = countsByShortURI.get(shortURI);
 				if(ctr == null) ctr = Integer.valueOf(1);
 				else ctr = Integer.valueOf(ctr.intValue()+1);
 				countsByShortURI.put(shortURI, ctr);
@@ -229,9 +231,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 		System.err.println("COOLDOWN QUEUE DUMP:");
 		System.err.println();
 		System.err.println("BY CLIENTS:");
-		for(java.util.Iterator it = countsByShortURI.keySet().iterator();it.hasNext();) {
-			String shortKey = (String) it.next();
-			System.err.println(shortKey+" : "+countsByShortURI.get(shortKey));
+		for (Map.Entry<String, Integer> en: countsByShortURI.entrySet()) {
+			System.err.println(en.getKey()+" : "+en.getValue());
 		}
 		System.err.println();
 		System.err.println("Nulls:"+nulls);

@@ -36,7 +36,7 @@ public class BookmarkManager implements RequestClient {
 	private final NodeClientCore node;
 	private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
 	public static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");
-	private final HashMap bookmarks = new HashMap();
+	private final HashMap<String, Bookmark> bookmarks = new HashMap<String, Bookmark>();
 	private final File bookmarksFile = new File("bookmarks.dat").getAbsoluteFile();
 	private final File backupBookmarksFile = new File(bookmarksFile.getParentFile(), bookmarksFile.getName() + ".bak");
 	private boolean isSavingBookmarks = false;
@@ -145,7 +145,7 @@ public class BookmarkManager implements RequestClient {
 
 	public Bookmark getBookmarkByPath(String path) {
 		synchronized(bookmarks) {
-			return (Bookmark) bookmarks.get(path);
+			return bookmarks.get(path);
 		}
 	}
 
@@ -181,7 +181,7 @@ public class BookmarkManager implements RequestClient {
 		String oldName = bookmark.getName();
 		String oldPath = '/' + oldName;
 		String newPath = path.substring(0, path.indexOf(oldPath)) + '/' + newName + (bookmark instanceof BookmarkCategory ? "/" : "");
-		
+
 		bookmark.setName(newName);
 		synchronized(bookmarks) {
 			bookmarks.remove(path);
@@ -298,10 +298,10 @@ public class BookmarkManager implements RequestClient {
 	private void readBookmarks(BookmarkCategory category, SimpleFieldSet sfs) {
 		_innerReadBookmarks("", category, sfs);
 	}
-	
+
 	static final short PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
 	static final short PRIORITY_PROGRESS = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
-	
+
 	private void subscribeToUSK(BookmarkItem item) {
 		if("USK".equals(item.getKeyType()))
 			try {

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.Map;
 import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
@@ -22,8 +23,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	final int maxRunning;
 	int counter;
 	InsertContext ctx;
-	final HashMap runningInserters;
-	
+	final Map<Bucket, SingleBlockInserter> runningInserters;
+
 	public SimpleHealingQueue(InsertContext context, short prio, int maxRunning) {
 		super(prio, new RequestClient() {
 			public boolean persistent() {
@@ -33,7 +34,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 				throw new UnsupportedOperationException();
 			} });
 		this.ctx = context;
-		this.runningInserters = new HashMap();
+		this.runningInserters = new HashMap<Bucket, SingleBlockInserter>();
 		this.maxRunning = maxRunning;
 	}
 
@@ -44,8 +45,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			ctr = counter++;
 			if(runningInserters.size() > maxRunning) return false;
 			try {
-				sbi = new SingleBlockInserter(this, data, (short)-1, 
-							FreenetURI.EMPTY_CHK_URI, ctx, this, false, 
+				sbi = new SingleBlockInserter(this, data, (short)-1,
+							FreenetURI.EMPTY_CHK_URI, ctx, this, false,
 							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context, false, true, 0);
 			} catch (Throwable e) {
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
@@ -68,7 +69,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		if(!innerQueue(data, context))
 			data.free();
 	}
-	
+
 	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
@@ -137,7 +138,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
-	
+
 	@Override
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		// Ignore
