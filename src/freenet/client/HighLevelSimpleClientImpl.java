@@ -287,11 +287,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	private final ClientGetCallback nullCallback = new NullClientCallback();
 
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes) {
 		prefetch(uri, timeout, maxSize, allowedTypes, RequestStarter.PREFETCH_PRIORITY_CLASS);
 	}
 
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio) {
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes, short prio) {
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
 		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, prio, this, new NullBucket(), null);

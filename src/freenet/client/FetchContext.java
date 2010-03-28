@@ -29,25 +29,25 @@ public class FetchContext implements Cloneable {
 	/** Maximum number of containers to fetch during a request */
 	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
-	/** Maximum number of retries (after the original attempt) for a 
-	 * splitfile block. -1 = try forever or until success or a fatal error. 
+	/** Maximum number of retries (after the original attempt) for a
+	 * splitfile block. -1 = try forever or until success or a fatal error.
 	 * A fatal error is either an internal error (problem with the node) or
 	 * something resulting from the original data being corrupt as inserted.
 	 * So with retries = -1 we will not report Data not found, Route not
 	 * found, All data not found, etc, because these are nonfatal errors and
-	 * we will retry. Note that after every 3 attempts the request is put 
-	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is 
+	 * we will retry. Note that after every 3 attempts the request is put
+	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is
 	 * really not that high. */
 	public int maxSplitfileBlockRetries;
-	/** Maximum number of retries (after the original attempt) for a 
-	 * non-splitfile block. -1 = try forever or until success or a fatal 
-	 * error.. -1 = try forever or until success or a fatal error. 
+	/** Maximum number of retries (after the original attempt) for a
+	 * non-splitfile block. -1 = try forever or until success or a fatal
+	 * error.. -1 = try forever or until success or a fatal error.
 	 * A fatal error is either an internal error (problem with the node) or
 	 * something resulting from the original data being corrupt as inserted.
 	 * So with retries = -1 we will not report Data not found, Route not
 	 * found, All data not found, etc, because these are nonfatal errors and
-	 * we will retry. Note that after every 3 attempts the request is put 
-	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is 
+	 * we will retry. Note that after every 3 attempts the request is put
+	 * on the cooldown queue for 30 minutes, so the cost of retries = -1 is
 	 * really not that high. */
 	public int maxNonSplitfileRetries;
 	public final int maxUSKRetries;
@@ -72,23 +72,23 @@ public class FetchContext implements Cloneable {
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public final BlockSet blocks;
-	/** If non-null, the request will be stopped if it has a MIME type that is not one of these, 
+	/** If non-null, the request will be stopped if it has a MIME type that is not one of these,
 	 * or has no MIME type. */
-	public Set allowedMIMETypes;
+	public Set<String> allowedMIMETypes;
 	/** Do we have responsibility for removing the ClientEventProducer from the database? */
 	private final boolean hasOwnEventProducer;
 	/** Can this request write to the client-cache? We don't store all requests in the client cache,
 	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
 	public boolean canWriteClientCache;
-	
-	public FetchContext(long curMaxLength, 
+
+	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
-			boolean dontEnterImplicitArchives, 
+			boolean dontEnterImplicitArchives,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
-			ClientEventProducer producer, 
+			ClientEventProducer producer,
 			boolean ignoreTooManyPathComponents, boolean canWriteClientCache) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
@@ -186,5 +186,5 @@ public class FetchContext implements Cloneable {
 		// allowedMIMETypes is passed in, whoever passes it in is responsible for deleting it.
 		container.delete(this);
 	}
-	
+
 }

@@ -147,14 +147,14 @@ public interface HighLevelSimpleClient {
 	 * kill the fetch.
 	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null.
 	 */
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes);
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes);
 
 	/**
 	 * Prefetch a key at the given priority. If it hasn't been fetched within the timeout,
 	 * kill the fetch.
 	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null.
 	 */
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio);
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes, short prio);
 
 	public HighLevelSimpleClient clone();
 
