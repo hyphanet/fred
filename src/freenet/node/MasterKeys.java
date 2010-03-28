@@ -24,15 +24,15 @@ import freenet.support.io.FileUtil;
 
 /** Keys read from the master keys file */
 public class MasterKeys {
-	
+
 	// Currently we only encrypt the client cache
-	
+
 	final byte[] clientCacheMasterKey;
 	final byte[] databaseKey;
 	final long flags;
-	
+
 	final static long FLAG_ENCRYPT_DATABASE = 2;
-	
+
 	public MasterKeys(byte[] clientCacheKey, byte[] databaseKey, long flags) {
 		this.clientCacheMasterKey = clientCacheKey;
 		this.databaseKey = databaseKey;
@@ -44,8 +44,8 @@ public class MasterKeys {
 	}
 
 	static final int HASH_LENGTH = 4;
-	
-	public static MasterKeys read(File masterKeysFile, RandomSource hardRandom, String password) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+
+	public static MasterKeys read(File masterKeysFile, RandomSource hardRandom, String password) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		System.err.println("Trying to read master keys file...");
 		if(masterKeysFile != null) {
 			// Try to read the keys
@@ -59,8 +59,8 @@ public class MasterKeys {
 				byte[] iv = new byte[32];
 				dis.readFully(iv);
 				int length = (int)Math.min(Integer.MAX_VALUE, masterKeysFile.length());
-				if(masterKeysFile.length() > 1024) throw new MasterKeysFileTooBigException();
-				if(masterKeysFile.length() < (32 + 32 + 8 + 32)) throw new MasterKeysFileTooShortException();
+				if(masterKeysFile.length() > 1024) throw new MasterKeysFileSizeException(true);
+				if(masterKeysFile.length() < (32 + 32 + 8 + 32)) throw new MasterKeysFileSizeException(false);
 				byte[] dataAndHash = new byte[length - salt.length - iv.length];
 				dis.readFully(dataAndHash);
 //				System.err.println("Data and hash: "+HexUtil.bytesToHex(dataAndHash));
@@ -95,7 +95,7 @@ public class MasterKeys {
 					clear(hash);
 					throw new MasterKeysWrongPasswordException();
 				}
-				
+
 				// It matches. Now decode it.
 				ByteArrayInputStream bais = new ByteArrayInputStream(data);
 				dis = new DataInputStream(bais);
@@ -123,7 +123,7 @@ public class MasterKeys {
 				System.err.println("JVM doesn't support UTF-8, this should be impossible!");
 				throw new Error(e);
 			} catch (EOFException e) {
-				throw new MasterKeysFileTooShortException();
+				throw new MasterKeysFileSizeException(false);
 			} finally {
 				Closer.close(fis);
 			}
@@ -150,12 +150,12 @@ public class MasterKeys {
 		md.update(data, 0, flagBytes.length + clientCacheKey.length + databaseKey.length);
 		byte[] hash = md.digest();
 		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheKey.length + databaseKey.length, HASH_LENGTH);
-		
+
 //		System.err.println("Flag bytes: "+HexUtil.bytesToHex(flagBytes));
 //		System.err.println("Client cache key: "+HexUtil.bytesToHex(clientCacheKey));
 //		System.err.println("Hash: "+HexUtil.bytesToHex(clientCacheKey));
 //		System.err.println("Data: "+HexUtil.bytesToHex(data));
-		
+
 		byte[] pwd = password.getBytes("UTF-8");
 		md.update(pwd);
 		md.update(salt);
@@ -197,9 +197,9 @@ public class MasterKeys {
 	public void changePassword(File masterKeysFile, String newPassword, RandomSource hardRandom) throws IOException {
 		System.err.println("Writing new master.keys file");
 		// Write it to a byte[], check size, then replace in-place atomically
-		
+
 		// New IV, new salt, same client cache key, same database key
-		
+
 		byte[] iv = new byte[32];
 		hardRandom.nextBytes(iv);
 		byte[] salt = new byte[32];
@@ -211,7 +211,7 @@ public class MasterKeys {
 
 		System.arraycopy(salt, 0, data, 0, salt.length);
 		System.arraycopy(iv, 0, data, salt.length, iv.length);
-		
+
 		System.arraycopy(flagBytes, 0, data, salt.length + iv.length, flagBytes.length);
 		System.arraycopy(clientCacheMasterKey, 0, data, flagBytes.length + salt.length + iv.length, clientCacheMasterKey.length);
 		System.arraycopy(databaseKey, 0, data, flagBytes.length + salt.length + iv.length + clientCacheMasterKey.length, databaseKey.length);
@@ -219,7 +219,7 @@ public class MasterKeys {
 		md.update(data, salt.length + iv.length, flagBytes.length + clientCacheMasterKey.length + databaseKey.length);
 		byte[] hash = md.digest();
 		System.arraycopy(hash, 0, data, flagBytes.length + clientCacheMasterKey.length + databaseKey.length + iv.length + salt.length, HASH_LENGTH);
-		
+
 		byte[] pwd;
 		try {
 			pwd = newPassword.getBytes("UTF-8");
@@ -241,9 +241,9 @@ public class MasterKeys {
 		cipher.initialize(outerKey);
 		PCFBMode pcfb = PCFBMode.create(cipher, iv);
 		pcfb.blockEncipher(data, iv.length + salt.length, data.length - iv.length - salt.length);
-		
+
 		RandomAccessFile raf = new RandomAccessFile(masterKeysFile, "rw");
-		
+
 		raf.seek(0);
 		raf.write(data);
 		long len = raf.length();

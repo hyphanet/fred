@@ -412,10 +412,8 @@ public class Node implements TimeSkewDetectorCallback {
 									clientCacheType = val;
 								}
 								throw new InvalidConfigValueException("You must enter the password");
-							} catch (MasterKeysFileTooBigException e1) {
-								throw new InvalidConfigValueException("Master keys file corrupted (too big)");
-							} catch (MasterKeysFileTooShortException e1) {
-								throw new InvalidConfigValueException("Master keys file corrupted (too small)");
+							} catch (MasterKeysFileSizeException e1) {
+								throw new InvalidConfigValueException("Master keys file corrupted (too " + e1.sizeToString() + ")");
 							} catch (IOException e1) {
 								throw new InvalidConfigValueException("Master keys file cannot be accessed: "+e1);
 							}
@@ -1250,10 +1248,8 @@ public class Node implements TimeSkewDetectorCallback {
 			} catch (MasterKeysWrongPasswordException e2) {
 				System.out.println("Client database node.db4o is encrypted!");
 				databaseAwaitingPassword = true;
-			} catch (MasterKeysFileTooBigException e2) {
-				System.err.println("Unable to decrypt database: master.keys file too big!");
-			} catch (MasterKeysFileTooShortException e2) {
-				System.err.println("Unable to decrypt database: master.keys file too small!");
+			} catch (MasterKeysFileSizeException e2) {
+				System.err.println("Unable to decrypt database: master.keys file too " + e2.sizeToString() + "!");
 			} catch (IOException e2) {
 				System.err.println("Unable to access master.keys file to decrypt database: "+e2);
 				e2.printStackTrace();
@@ -2315,11 +2311,8 @@ public class Node implements TimeSkewDetectorCallback {
 				System.err.println("Cannot open client-cache, it is passworded");
 				setClientCacheAwaitingPassword();
 				break;
-			} catch (MasterKeysFileTooBigException e) {
-				System.err.println("Impossible: master keys file "+masterKeysFile+" too big! Deleting to enable startup, but you will lose your client cache.");
-				masterKeysFile.delete();
-			} catch (MasterKeysFileTooShortException e) {
-				System.err.println("Impossible: master keys file "+masterKeysFile+" too small! Deleting to enable startup, but you will lose your client cache.");
+			} catch (MasterKeysFileSizeException e) {
+				System.err.println("Impossible: master keys file "+masterKeysFile+" too " + e.sizeToString() + "! Deleting to enable startup, but you will lose your client cache.");
 				masterKeysFile.delete();
 			} catch (IOException e) {
 				break;
@@ -2345,10 +2338,7 @@ public class Node implements TimeSkewDetectorCallback {
 			} catch (MasterKeysWrongPasswordException e2) {
 				System.err.println("Impossible: "+e2);
 				e2.printStackTrace();
-			} catch (MasterKeysFileTooBigException e2) {
-				System.err.println("Impossible: "+e2);
-				e2.printStackTrace();
-			} catch (MasterKeysFileTooShortException e2) {
+			} catch (MasterKeysFileSizeException e2) {
 				System.err.println("Impossible: "+e2);
 				e2.printStackTrace();
 			} catch (IOException e2) {
@@ -2555,7 +2545,7 @@ public class Node implements TimeSkewDetectorCallback {
 		System.out.println("Node constructor completed");
 	}
 
-	public void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+	public void lateSetupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		if(db != null) return;
 		System.out.println("Starting late database initialisation");
 		setupDatabase(databaseKey);
@@ -2581,7 +2571,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean databaseEncrypted;
 
-	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+	private void setupDatabase(byte[] databaseKey) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		/* FIXME: Backup the database! */
 		Configuration dbConfig = Db4o.newConfiguration();
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
@@ -5437,7 +5427,7 @@ public class Node implements TimeSkewDetectorCallback {
 
 	private boolean enteredPassword;
 
-	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+	public void setMasterPassword(String password, boolean inFirstTimeWizard) throws AlreadySetPasswordException, MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		synchronized(this) {
 			if(enteredPassword)
 				throw new AlreadySetPasswordException();
@@ -5452,7 +5442,7 @@ public class Node implements TimeSkewDetectorCallback {
 		}
 	}
 
-	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException {
+	private void setPasswordInner(MasterKeys keys, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException {
 		boolean wantClientCache = false;
 		boolean wantDatabase = false;
 		synchronized(this) {
@@ -5512,7 +5502,7 @@ public class Node implements TimeSkewDetectorCallback {
 		executor.execute(migrate, "Migrate data from previous store");
 	}
 
-	public void changeMasterPassword(String oldPassword, String newPassword, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileTooBigException, MasterKeysFileTooShortException, IOException, AlreadySetPasswordException {
+	public void changeMasterPassword(String oldPassword, String newPassword, boolean inFirstTimeWizard) throws MasterKeysWrongPasswordException, MasterKeysFileSizeException, IOException, AlreadySetPasswordException {
 		if(securityLevels.getPhysicalThreatLevel() == PHYSICAL_THREAT_LEVEL.MAXIMUM)
 			Logger.error(this, "Changing password while physical threat level is at MAXIMUM???");
 		if(masterKeysFile.exists()) {
