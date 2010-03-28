@@ -5527,6 +5527,8 @@ public class Node implements TimeSkewDetectorCallback {
 
 	public static class AlreadySetPasswordException extends Exception {
 
+	   final private static long serialVersionUID = -7328456475029374032L;
+
 	}
 
 	public synchronized File getMasterPasswordFile() {

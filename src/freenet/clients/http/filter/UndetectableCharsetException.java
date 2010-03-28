@@ -7,8 +7,10 @@ import freenet.support.HTMLNode;
 // in some encoding, but the declaration is invalid.
 public class UndetectableCharsetException extends UnsafeContentTypeException {
 
+	final private static long serialVersionUID = -7663468693283975543L;
+
 	final String charset;
-	
+
 	public UndetectableCharsetException(String string) {
 		charset = string;
 	}
@@ -32,7 +34,7 @@ public class UndetectableCharsetException extends UnsafeContentTypeException {
 	public String getRawTitle() {
 		return l10n("title", "charset", charset);
 	}
-	
+
 	public String l10n(String message) {
 		return NodeL10n.getBase().getString("UndetectableCharsetException."+message);
 	}

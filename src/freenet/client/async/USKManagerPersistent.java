@@ -10,7 +10,7 @@ import com.db4o.query.Predicate;
  *
  */
 public class USKManagerPersistent {
-	
+
 	static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
 		ObjectSet<USKFetcherTag> set = container.query(new Predicate<USKFetcherTag>() {
 			@Override
