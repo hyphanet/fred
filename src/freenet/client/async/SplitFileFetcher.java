@@ -6,7 +6,6 @@ package freenet.client.async;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,7 +53,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	final FetchContext blockFetchContext;
 	final boolean deleteFetchContext;
 	final ArchiveContext archiveContext;
-	final List<Compressor> decompressors;
+	final List<? extends Compressor> decompressors;
 	final ClientMetadata clientMetadata;
 	final ClientRequester parent;
 	final GetCompletionCallback cb;
@@ -144,7 +143,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(newCtx == null)
 			throw new NullPointerException();
 		this.archiveContext = actx;
-		this.decompressors = persistent ? new ArrayList<Compressor>(decompressors2) : Collections.unmodifiableList(decompressors2);
+		this.decompressors = persistent ? new ArrayList<Compressor>(decompressors2) : decompressors2;
 		if(decompressors.size() > 1) {
 			Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
 		}
