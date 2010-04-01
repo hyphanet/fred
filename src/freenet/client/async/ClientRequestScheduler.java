@@ -625,7 +625,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return false;
 		}
 		public String toString() {
-			return super.toString()+"(fillRequestStarterQueue)";
+			return "fillRequestStarterQueue";
 		}
 	};
 	

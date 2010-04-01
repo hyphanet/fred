@@ -300,6 +300,10 @@ public class FECQueue implements OOMHook {
 
 	private void initCacheFillerJob() {
 		cacheFillerJob = new DBJob() {
+			
+		public String toString() {
+			return "FECQueueCacheFiller";
+		}
 
 		public boolean run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
