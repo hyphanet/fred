@@ -3,6 +3,9 @@ package freenet.node;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Map;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -13,8 +16,8 @@ import freenet.io.comm.DMT;
 import freenet.l10n.NodeL10n;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
@@ -206,6 +209,9 @@ public class NodeStats implements Persistable {
 	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
+	
+	// Database stats
+	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes; 
 	
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
 		this.node = node;
@@ -419,6 +425,8 @@ public class NodeStats implements Persistable {
 		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
 		
 		hourlyStats = new HourlyStats(node);
+		
+		avgDatabaseJobExecutionTimes = new Hashtable<String, TrivialRunningAverage>();
 	}
 	
 	protected String l10n(String key) {
@@ -2053,4 +2061,67 @@ public class NodeStats implements Persistable {
 		hourlyStats.fillRemoteRequestHTLsBox(html);
 	}
 
+	
+	public void reportDatabaseJob(String jobType, long executionTimeMiliSeconds) {
+		int typeBeginIndex = jobType.lastIndexOf('.'); // Only use the actual class name, exclude the packages
+		int typeEndIndex = jobType.indexOf('@');
+		
+		if(typeBeginIndex < 0)
+			typeBeginIndex = jobType.lastIndexOf(':'); // Strip "DBJobWrapper:" prefix
+		
+		if(typeBeginIndex < 0)
+			typeBeginIndex = 0;
+		else
+			++typeBeginIndex;
+		
+		if(typeEndIndex < 0)
+			typeEndIndex = jobType.length();
+		
+		jobType = jobType.substring(typeBeginIndex, typeEndIndex);
+		
+		
+		TrivialRunningAverage avg;
+		
+		synchronized(avgDatabaseJobExecutionTimes) {
+			avg = avgDatabaseJobExecutionTimes.get(jobType);
+			
+			if(avg == null) {
+				avg = new TrivialRunningAverage();
+				avgDatabaseJobExecutionTimes.put(jobType, avg);
+			}
+		}
+		
+		avg.report(executionTimeMiliSeconds);
+	}
+	
+	public static class DatabaseJobStats implements Comparable<DatabaseJobStats> {
+		public final String jobType;
+		public final long count;
+		public final long avgTime;
+		
+		public DatabaseJobStats(String myJobType, long myCount, long myAvgTime) {
+			jobType = myJobType;
+			count = myCount;
+			avgTime = myAvgTime;
+		}
+
+		public int compareTo(DatabaseJobStats o) {
+			return jobType.compareTo(o.jobType);
+		}
+	}
+	
+	public DatabaseJobStats[] getDatabaseJobExecutionStatistics() {
+		DatabaseJobStats[] entries = new DatabaseJobStats[avgDatabaseJobExecutionTimes.size()];
+		int i = 0;
+		
+		synchronized(avgDatabaseJobExecutionTimes) {
+			for(Map.Entry<String, TrivialRunningAverage> entry : avgDatabaseJobExecutionTimes.entrySet()) {
+				TrivialRunningAverage avg = entry.getValue();
+				entries[i++] = new DatabaseJobStats(entry.getKey(), avg.countReports(), (long)avg.currentValue());
+			}
+		}
+		
+		Arrays.sort(entries);
+		return entries;
+	}
 }

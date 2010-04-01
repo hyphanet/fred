@@ -28,6 +28,7 @@ import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.math.TrivialRunningAverage;
 
 public class StatisticsToadlet extends Toadlet {
 
@@ -441,6 +442,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	private void drawDatabaseJobsBox(HTMLNode node) {
+		// Job count by priority
 		node.addChild("div", "class", "infobox-header", l10n("databaseJobsByPriority"));
 		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
 		int[] jobsByPriority = core.clientDatabaseExecutor.queuedJobs();
@@ -456,8 +458,24 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", String.valueOf(i));
 			row.addChild("td", String.valueOf(jobsByPriority[i]));
 		}
+
+		// Per job-type execution count and avg execution time
+		
+		HTMLNode executionTimeStatisticsTable = threadsInfoboxContent.addChild("table", "border", "0");
+		row = executionTimeStatisticsTable .addChild("tr");
+		row.addChild("th", l10n("jobType"));
+		row.addChild("th", l10n("count"));
+		row.addChild("th", l10n("avgTime"));
+		
+		
+		for(NodeStats.DatabaseJobStats entry : stats.getDatabaseJobExecutionStatistics()) {
+			row = executionTimeStatisticsTable.addChild("tr");
+			row.addChild("td", entry.jobType);
+			row.addChild("td", Long.toString(entry.count));
+			row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
+		}
 	}
-	
+
 	private void drawOpennetStatsBox(HTMLNode box, OpennetManager om) {
 		box.addChild("div", "class", "infobox-header", l10n("opennetStats"));
 		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
