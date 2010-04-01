@@ -19,7 +19,7 @@ public abstract class LoggerHook extends Logger {
 		}
 	}
 
-	LoggerHook(int thresh){
+	protected LoggerHook(int thresh){
 		this.threshold = thresh;
 	}
 
