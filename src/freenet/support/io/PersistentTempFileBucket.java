@@ -14,7 +14,7 @@ public class PersistentTempFileBucket extends TempFileBucket {
 	}
 	
 	protected PersistentTempFileBucket(long id, FilenameGenerator generator, boolean deleteOnFree) {
-		super(id, generator, false, deleteOnFree);
+		super(id, generator, deleteOnFree);
 	}
 
 	@Override
