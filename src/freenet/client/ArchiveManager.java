@@ -556,9 +556,8 @@ outerZIP:		while(true) {
 				after = name.substring(x+1, name.length());
 			Object o = dir.get(before);
 			if (o == null) {
-				dir.put(before, new HashMap<String, Object>());
-			}
-			if (o instanceof String) {
+				dir.put(before, o = new HashMap<String, Object>());
+			} else if (o instanceof String) {
 				throw new ArchiveFailureException("Invalid archive: contains "+name+" as both file and dir");
 			}
 			addToDirectory(Metadata.forceMap(o), after, prefix + before + '/');
