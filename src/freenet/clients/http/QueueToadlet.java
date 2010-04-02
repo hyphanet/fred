@@ -1136,8 +1136,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				NodeL10n.getBase().getString("QueueToadlet.priority3"),
 				NodeL10n.getBase().getString("QueueToadlet.priority4"),
 				NodeL10n.getBase().getString("QueueToadlet.priority5"),
-				NodeL10n.getBase().getString("QueueToadlet.priority6"),
-				NodeL10n.getBase().getString("QueueToadlet.priority7")
+				NodeL10n.getBase().getString("QueueToadlet.priority6")
 		};
 
 		boolean advancedModeEnabled = (mode >= PageMaker.MODE_ADVANCED);

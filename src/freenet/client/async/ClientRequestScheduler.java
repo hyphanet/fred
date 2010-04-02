@@ -467,15 +467,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * Called by RequestStarter to find a request to run.
 	 */
 	public ChosenBlock grabRequest() {
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		while(true) {
 			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
 				short bestPriority = Short.MAX_VALUE;
 				int bestRetryCount = Integer.MAX_VALUE;
 				for(PersistentChosenRequest req : starterQueue) {
-					//Paused requests should never be selected
-					if(req.prio == RequestStarter.PAUSED_PRIORITY_CLASS) continue;
-					//The best unpaused request should then be found
+					if(req.prio == RequestStarter.MINIMUM_PRIORITY_CLASS) {
+					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: "+req+" prio: "+req.prio+" retryCount: "+req.retryCount);
+					     continue; //Ignore paused requests
+					}
 					if(req.prio < bestPriority || 
 							(req.prio == bestPriority && req.retryCount < bestRetryCount)) {
 						bestPriority = req.prio;
@@ -489,7 +491,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR) Logger.minor(this, "Persistent request: "+reqGroup+" prio "+reqGroup.prio+" retryCount "+reqGroup.retryCount);
 				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio, reqGroup.retryCount);
 				if(better != null) {
-					Logger.minor(this, "Selected better "+better);
 					if(better.getPriority() > reqGroup.prio) {
 						Logger.error(this, "Selected "+better+" as better than "+reqGroup+" but isn't better!");
 					}
