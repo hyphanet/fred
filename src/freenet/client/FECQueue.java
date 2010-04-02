@@ -201,6 +201,10 @@ public class FECQueue implements OOMHook {
 					// Get a job
 					synchronized (FECQueue.this) {
 						job = getFECJobBlockingNoDBAccess();
+						if(job == null) {
+							// Too many jobs running.
+							return;
+						}
 						job.running = true;
 					}
 
