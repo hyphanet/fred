@@ -759,6 +759,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			clientContext.jobRunner.queue(new DBJob() {
 				
+				public String toString() {
+					return "Init ArchiveManager";
+				}
+				
 				public boolean run(ObjectContainer container, ClientContext context) {
 					ArchiveManager.init(container, context, context.nodeDBHandle);
 					return false;
@@ -809,6 +813,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private int startupDatabaseJobsDone = 0;
 	
 	private DBJob startupJobRunner = new DBJob() {
+		
+		public String toString() {
+			return "Run startup jobs";
+		}
 
 		public boolean run(ObjectContainer container, ClientContext context) {
 			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
