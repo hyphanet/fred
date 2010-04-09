@@ -2106,7 +2106,12 @@ public class NodeStats implements Persistable {
 		}
 
 		public int compareTo(DatabaseJobStats o) {
-			return jobType.compareTo(o.jobType);
+			if(avgTime < o.avgTime)
+				return 1;
+			else if(avgTime == o.avgTime)
+				return 0;
+			else
+				return -1;
 		}
 	}
 	
