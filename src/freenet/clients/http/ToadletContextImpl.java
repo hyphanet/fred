@@ -152,6 +152,9 @@ public class ToadletContextImpl implements ToadletContext {
 		sentReplyHeaders = true;
 		
 		if(replyCookies != null) {
+			if (mvt == null) {
+				mvt = new MultiValueTable<String,String>();
+			}
 			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
 			
 			final boolean logMINOR = Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class);
