@@ -334,24 +334,13 @@ public class DatastoreChecker implements PrioRunnable {
 		// that we can check the datastore faster than we can handle the resulting
 		// blocks, this will cause OOM.
 		int queueSize = context.jobRunner.getQueueSize(ClientRequestScheduler.TRIP_PENDING_PRIORITY);
-		if(queueSize > 500) {
-			// If the queue is over 500, don't run the datastore checker at all.
-			// It's entirely possible that looking up blocks in the store will
-			// make the situation first, because a key which is queued for a
-			// non-persistent request may also be used by a persistent one.
-
-			// FIXME consider setting a flag to not only only check transient
-			// requests, but also check whether the keys are in the persistent
-			// bloom filters first, and if they are not check them.
-			try {
-				Thread.sleep(10*1000);
-			} catch (InterruptedException e) {
-				// Ignore
-			}
-			return;
-		}
 		// If it's over 100, don't check blocks from persistent requests.
 		boolean notPersistent = queueSize > 100;
+		// FIXME: Ideally, for really big queues, we wouldn't datastore check transient keys that are also wanted by persistent requests.
+		// Looking it up in the bloom filters is trivial. But I am not sure it is safe to take the CRSBase lock inside the DatastoreChecker lock,
+		// especially given that sometimes SendableGet methods get called within it, and sometimes those call back here.
+		// Maybe we can separate the lock for the Bloom filters from that for everything else?
+		// Checking whether keys are wanted by persistent requests outside the lock would likely result in busy-looping.
 		synchronized(this) {
 			while(true) {
 				for(short prio = 0;prio<transientKeys.length;prio++) {
