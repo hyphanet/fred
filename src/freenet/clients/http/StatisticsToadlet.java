@@ -479,8 +479,8 @@ public class StatisticsToadlet extends Toadlet {
 		
 		HTMLNode jobQueueStatistics = threadsInfoboxContent.addChild("table", "border", "0");
 		row = jobQueueStatistics .addChild("tr");
-		row.addChild("th", l10n("jobType"));
 		row.addChild("th", l10n("queuedCount"));
+		row.addChild("th", l10n("jobType"));
 		stats.getDatabaseJobQueueStatistics().toTableRows(jobQueueStatistics);
 	}
 
