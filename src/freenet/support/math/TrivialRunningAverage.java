@@ -26,6 +26,10 @@ public class TrivialRunningAverage implements RunningAverage {
 	public synchronized long countReports() {
 		return reports;
 	}
+	
+	public synchronized double totalValue() {
+		return total;
+	}
 
         /**
          *

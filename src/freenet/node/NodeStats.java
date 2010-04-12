@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.LinkedList;
 import java.util.Map;
 
 import freenet.config.InvalidConfigValueException;
@@ -2061,8 +2062,7 @@ public class NodeStats implements Persistable {
 		hourlyStats.fillRemoteRequestHTLsBox(html);
 	}
 
-	
-	public void reportDatabaseJob(String jobType, long executionTimeMiliSeconds) {
+	private String sanitizeDBJobType(String jobType) {
 		int typeBeginIndex = jobType.lastIndexOf('.'); // Only use the actual class name, exclude the packages
 		int typeEndIndex = jobType.indexOf('@');
 		
@@ -2077,8 +2077,11 @@ public class NodeStats implements Persistable {
 		if(typeEndIndex < 0)
 			typeEndIndex = jobType.length();
 		
-		jobType = jobType.substring(typeBeginIndex, typeEndIndex);
-		
+		return jobType.substring(typeBeginIndex, typeEndIndex);
+	}
+	
+	public void reportDatabaseJob(String jobType, long executionTimeMiliSeconds) {
+		jobType = sanitizeDBJobType(jobType);
 		
 		TrivialRunningAverage avg;
 		
@@ -2098,11 +2101,13 @@ public class NodeStats implements Persistable {
 		public final String jobType;
 		public final long count;
 		public final long avgTime;
+		public final long totalTime;
 		
-		public DatabaseJobStats(String myJobType, long myCount, long myAvgTime) {
+		public DatabaseJobStats(String myJobType, long myCount, long myAvgTime, long myTotalTime) {
 			jobType = myJobType;
 			count = myCount;
 			avgTime = myAvgTime;
+			totalTime = myTotalTime;
 		}
 
 		public int compareTo(DatabaseJobStats o) {
@@ -2122,11 +2127,25 @@ public class NodeStats implements Persistable {
 		synchronized(avgDatabaseJobExecutionTimes) {
 			for(Map.Entry<String, TrivialRunningAverage> entry : avgDatabaseJobExecutionTimes.entrySet()) {
 				TrivialRunningAverage avg = entry.getValue();
-				entries[i++] = new DatabaseJobStats(entry.getKey(), avg.countReports(), (long)avg.currentValue());
+				entries[i++] = new DatabaseJobStats(entry.getKey(), avg.countReports(), (long)avg.currentValue(), (long)avg.totalValue());
 			}
 		}
 		
 		Arrays.sort(entries);
 		return entries;
+	}
+	
+	public StringCounter getDatabaseJobQueueStatistics() {
+		final StringCounter result = new StringCounter();
+		
+		final LinkedList<Runnable>[] dbJobs = node.clientCore.clientDatabaseExecutor.getQueuedJobsByPriority();
+		
+		for(LinkedList<Runnable> list : dbJobs) {
+			for(Runnable job : list) {
+				result.inc(sanitizeDBJobType(job.toString()));
+			}
+		}
+		
+		return result;
 	}
 }

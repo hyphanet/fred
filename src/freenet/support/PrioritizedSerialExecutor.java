@@ -251,13 +251,26 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
-	public int[] queuedJobs() {
+	public int[] getQueuedJobsCountByPriority() {
 		int[] retval = new int[jobs.length];
 		synchronized(jobs) {
 			for(int i=0;i<retval.length;i++)
 				retval[i] = jobs[i].size();
 		}
 		return retval;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public LinkedList<Runnable>[] getQueuedJobsByPriority() {
+		final LinkedList<Runnable>[] jobsClone = (LinkedList<Runnable>[])new LinkedList[jobs.length];
+		
+		synchronized(jobs) {
+			for(int i=0; i < jobs.length; ++i) {
+				jobsClone[i] = (LinkedList<Runnable>) jobs[i].clone();
+			}
+		}
+		
+		return jobsClone;
 	}
 
 	public int getQueueSize(int priority) {
