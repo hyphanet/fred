@@ -13,6 +13,7 @@ import java.util.Vector;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BulkCallFailureItem;
 import freenet.node.LowLevelGetException;
@@ -218,11 +219,16 @@ public class PersistentChosenRequest {
 		} else /*if(request instanceof SendableInsert)*/ {
 			container.activate(request, 1);
 			for(PersistentChosenBlock block : finishedBlocks) {
+				// FIXME aggregate these like we aggregate for requests.
 				container.activate(block, 1);
 				if(block.insertSucceeded()) {
 					((SendableInsert)request).onSuccess(block.token, container, context);
 				} else {
 					((SendableInsert)request).onFailure(block.failedPut(), block.token, container, context);
+				}
+				ClientKey key = block.getGeneratedKey();
+				if(key != null) {
+					((SendableInsert)request).onEncode(block.token, key, container, context);
 				}
 			}
 		}

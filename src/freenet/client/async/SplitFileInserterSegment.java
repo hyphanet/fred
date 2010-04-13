@@ -1335,17 +1335,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					final ClientCHK key = b.getClientKey();
 					final int num = block.blockNum;
 					if(block.persistent) {
-					context.jobRunner.queue(new DBJob() {
-
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(SplitFileInserterSegment.this)) return false;
-							container.activate(SplitFileInserterSegment.this, 1);
-							boolean retval = onEncode(num, key, container, context);
-							container.deactivate(SplitFileInserterSegment.this, 1);
-							return retval;
-						}
-
-					}, NativeThread.NORM_PRIORITY+1, false);
+						req.setGeneratedKey(key);
 					} else {
 						context.mainExecutor.execute(new Runnable() {
 
@@ -1361,9 +1351,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
 					return true;
-				} catch (DatabaseDisabledException e) {
-					// Impossible, and nothing to do.
-					Logger.error(this, "Running persistent insert but database is disabled!");
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded: "+SplitFileInserterSegment.this);
 				req.onInsertSuccess(context);
@@ -1659,6 +1646,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	public boolean isStarted() {
 		return started;
+	}
+
+	@Override
+	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
+		onEncode(((BlockItem)token).blockNum, (ClientCHK)key, container, context);
 	}
 
 }
