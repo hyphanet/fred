@@ -221,14 +221,14 @@ public class PersistentChosenRequest {
 			for(PersistentChosenBlock block : finishedBlocks) {
 				// FIXME aggregate these like we aggregate for requests.
 				container.activate(block, 1);
+				ClientKey key = block.getGeneratedKey();
+				if(key != null) {
+					((SendableInsert)request).onEncode(block.token, key, container, context);
+				}
 				if(block.insertSucceeded()) {
 					((SendableInsert)request).onSuccess(block.token, container, context);
 				} else {
 					((SendableInsert)request).onFailure(block.failedPut(), block.token, container, context);
-				}
-				ClientKey key = block.getGeneratedKey();
-				if(key != null) {
-					((SendableInsert)request).onEncode(block.token, key, container, context);
 				}
 			}
 		}
