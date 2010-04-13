@@ -1453,10 +1453,6 @@ public class PeerManager {
 			}
 			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
-			
-			int numberOfAvailablePeers = numberOfConnected + numberOfRoutingBackedOff;
-			
-			node.displayClockProblemUserAlert(numberOfClockProblem > (numberOfAvailablePeers / 4));
 		}
 	}
 
