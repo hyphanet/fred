@@ -1475,17 +1475,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		for(int i=0;i<dataURIs.length;i++) {
 			ClientCHK chk = dataURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "dataURI "+i+" is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
+			} else {
+				if(logMINOR) Logger.minor(this, "dataURI "+i+" is null on "+this);
 			}
 		}
 		for(int i=0;i<checkURIs.length;i++) {
 			ClientCHK chk = checkURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "checkURI "+i+" is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
+			} else {
+				if(logMINOR) Logger.minor(this, "checkURI "+i+" is null on "+this);
 			}
 		}
 		container.activate(blocks, 5);
