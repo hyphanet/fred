@@ -1472,16 +1472,18 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		// parent, putter can deal with themselves
 		freeBucketsArray(container, dataBlocks);
 		freeBucketsArray(container, checkBlocks);
-		for(ClientCHK chk : dataURIs) {
+		for(int i=0;i<dataURIs.length;i++) {
+			ClientCHK chk = dataURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "dataURI is null on "+this);
+				if(logMINOR) Logger.minor(this, "dataURI "+i+" is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
 			}
 		}
-		for(ClientCHK chk : checkURIs) {
+		for(int i=0;i<checkURIs.length;i++) {
+			ClientCHK chk = checkURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "checkURI is null on "+this);
+				if(logMINOR) Logger.minor(this, "checkURI "+i+" is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
 			}
