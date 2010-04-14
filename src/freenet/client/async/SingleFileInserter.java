@@ -968,6 +968,8 @@ class SingleFileInserter implements ClientPutState {
 					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
 				} else {
 					// Get all the URIs ASAP so we can start to insert the metadata.
+					// Unless earlyEncode is enabled, this is an error or at least a rare case, indicating e.g. we've lost a URI.
+					Logger.error(this, "startMetadata() calling forceEncode() on "+splitInserter+" for "+this);
 					if(persistent)
 						container.activate(splitInserter, 1);
 					((SplitFileInserter)splitInserter).forceEncode(container, context);
