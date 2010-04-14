@@ -219,8 +219,6 @@ public class PersistentChosenRequest {
 		} else /*if(request instanceof SendableInsert)*/ {
 			container.activate(request, 1);
 			for(PersistentChosenBlock block : finishedBlocks) {
-				// FIXME aggregate these like we aggregate for requests.
-				container.activate(block, 1);
 				ClientKey key = block.getGeneratedKey();
 				if(key != null) {
 					((SendableInsert)request).onEncode(block.token, key, container, context);
