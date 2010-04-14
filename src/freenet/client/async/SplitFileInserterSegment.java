@@ -682,15 +682,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	private boolean onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Encoded block "+x+" on "+this);
 		synchronized (this) {
-			if (finished)
+			if (finished) {
+				if(logMINOR) Logger.minor(this, "Already finished");
 				return false;
+			}
 			if (x >= dataBlocks.length) {
 				if (checkURIs[x - dataBlocks.length] != null) {
+					if(logMINOR) Logger.minor(this, "Already encoded check block");
 					return false;
 				}
 				checkURIs[x - dataBlocks.length] = key;
 			} else {
 				if (dataURIs[x] != null) {
+					if(logMINOR) Logger.minor(this, "Already encoded data block");
 					return false;
 				}
 				dataURIs[x] = key;
