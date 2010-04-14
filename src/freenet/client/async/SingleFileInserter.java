@@ -615,10 +615,11 @@ class SingleFileInserter implements ClientPutState {
 					splitInsertSuccess = true;
 					if(!metaInsertSuccess && !metaInsertStarted) {
 						lateStart = true;
+						// Cannot remove yet because not created metadata inserter yet.
 					} else {
+						sfi = null;
 						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
 					}
-					sfi = null;
 					toRemove = state;
 				} else if(state == metadataPutter) {
 					if(logMINOR) Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
@@ -640,13 +641,17 @@ class SingleFileInserter implements ClientPutState {
 					}
 				}
 			}
+			if(lateStart) {
+				startMetadata(container, context);
+				synchronized(this) {
+					sfi = null;
+				}
+			}
 			if(toRemove != null && persistent)
 				toRemove.removeFrom(container, context);
 			if(persistent)
 				container.store(this);
-			if(lateStart)
-				startMetadata(container, context);
-			else if(finished) {
+			if(finished) {
 				if(persistent)
 					container.activate(cb, 1);
 				cb.onSuccess(this, container, context);
