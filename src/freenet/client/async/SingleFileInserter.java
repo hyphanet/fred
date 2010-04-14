@@ -667,6 +667,8 @@ class SingleFileInserter implements ClientPutState {
 			boolean toFail = true;
 			boolean toRemove = false;
 			synchronized(this) {
+				if(logMINOR)
+					Logger.minor(this, "onFailure(): "+e+" on "+state+" on "+this+" sfi = "+sfi+" metadataPutter = "+metadataPutter);
 				if(state == sfi) {
 					toRemove = true;
 					sfi = null;
@@ -700,6 +702,7 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(block, 2);
 			}
 			InsertException e = null;
+			if(logMINOR) Logger.minor(this, "Got metadata for "+this+" from "+state);
 			synchronized(this) {
 				if(finished) return;
 				if(reportMetadataOnly) {
