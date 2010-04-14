@@ -665,8 +665,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if (finished)
 				return;
 			finished = true;
-			if(blocksSucceeded < blocksCompleted)
+			if(blocksSucceeded < blocksCompleted) {
 				toThrow = InsertException.construct(errors);
+				if(logMINOR) Logger.minor(this, "Blocks succeeded "+blocksSucceeded+" blocks completed "+blocksCompleted+" gives error "+toThrow+" on "+this);
+			} else if(!hasURIs) {
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "Completed but not encoded?!", null), container, context);
+				return;
+			}
 		}
 		if(persistent) {
 			container.store(this);
