@@ -310,4 +310,25 @@ public class PersistentChosenRequest {
 			}
 		}
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanActivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
 }
