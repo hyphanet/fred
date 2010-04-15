@@ -156,6 +156,7 @@ public class StatisticsToadlet extends Toadlet {
 		double noSwaps = node.getNoSwaps();
 
 		HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
+
 		HTMLNode overviewTableRow = overviewTable.addChild("tr");
 		HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
 
@@ -184,9 +185,11 @@ public class StatisticsToadlet extends Toadlet {
 		
 		if(mode >= PageMaker.MODE_ADVANCED) {
 			// store size box
-			HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
+			//HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
+             HTMLNode storeSizeInfobox = contentNode.addChild("div","class", "infobox");
 			
 			drawStoreSizeBox(storeSizeInfobox, myLocation, nodeUptimeSeconds);
+           
 			
 			if(numberOfConnected + numberOfRoutingBackedOff > 0) {
 				// Load balancing box
@@ -495,13 +498,18 @@ public class StatisticsToadlet extends Toadlet {
 		
 		storeSizeInfobox.addChild("div", "class", "infobox-header", l10n("datastore"));
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode storeSizeTable = storeSizeInfoboxContent.addChild("table", "border", "0");
+        storeSizeInfoboxContent.addChild("div", "Hello, Tanik!");
+        HTMLNode scrollDiv = storeSizeInfoboxContent.addChild("div","style","overflow:scr");
+
+		HTMLNode storeSizeTable = scrollDiv.addChild("table", "border", "0");
 		HTMLNode row=storeSizeTable.addChild("tr");
 
 		//FIXME - Non-breaking space? "Stat-name"?
 		row.addChild("th", "");
 		row.addChild("th", l10n("chkStore"));
 		row.addChild("th", l10n("chkCache"));
+        row.addChild("th", l10n("chkUlprCache"));
+		row.addChild("th", l10n("chkClientCache"));
 		
 		final long fix32kb = 32 * 1024;
 
@@ -532,7 +540,7 @@ public class StatisticsToadlet extends Toadlet {
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", l10n("capacity"));
 		row.addChild("td", thousandPoint.format(maxStoreKeys));
-		row.addChild("td", thousandPoint.format(maxCachedKeys));
+ 		row.addChild("td", thousandPoint.format(maxCachedKeys) + "fdhsafhewluirhfielurwhfalieunfleiurbfaleiurbvrubgvaeliurghlaeiurvbdliufvb aeliurgbfvlieurb vl");
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", l10n("datasize"));
