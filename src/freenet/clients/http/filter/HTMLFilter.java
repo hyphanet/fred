@@ -461,19 +461,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return;
 		}
 		
-		String style = s.toString();
-		if (pc.inStyle || pc.inScript) {
-			pc.currentStyleScriptChunk += style;
-			return; // is parsed and written elsewhere
-		}
 		StringBuilder out = new StringBuilder(s.length()*2);
 		
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
-			if(c == '<') {
+			if(c == '<' && !(pc.inStyle || pc.inScript)) {
+				//Scripts and styles parsed elsewhere
 				out.append("&lt;");
 			}
-			else if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r') ) {
+			else if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r')) {
 				// Not a real character
 				// STRONGLY suggests somebody is using a bogus charset.
 				// This could be in order to break the filter.
@@ -485,6 +481,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 		String sout = out.toString();
+		
+		if (pc.inStyle || pc.inScript) {
+			pc.currentStyleScriptChunk += sout;
+			return; // is parsed and written elsewhere
+		}
 		if(pc.cb != null)
 			pc.cb.onText(HTMLDecoder.decode(sout), tagName); /* Tag name is given as type for the text */
 		
