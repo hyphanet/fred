@@ -460,18 +460,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if (pc.killText) {
 			return;
 		}
-
-		for(int i=0;i<s.length();i++) {
-			char c = s.charAt(i);
-			if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r') ) {
-				// Not a real character
-				// STRONGLY suggests somebody is using a bogus charset.
-				// This could be in order to break the filter.
-				
-				s.deleteCharAt(i);
-				if(logDEBUG) Logger.debug(this, "Removing '"+c+"' from the output stream");
-			}
-		}
 		
 		String style = s.toString();
 		if (pc.inStyle || pc.inScript) {
@@ -484,7 +472,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			char c = s.charAt(i);
 			if(c == '<') {
 				out.append("&lt;");
-			} else {
+			}
+			else if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r') ) {
+				// Not a real character
+				// STRONGLY suggests somebody is using a bogus charset.
+				// This could be in order to break the filter.
+				if(logDEBUG) Logger.debug(this, "Removing '"+c+"' from the output stream");
+				continue;
+			}
+			else {
 				out.append(c);
 			}
 		}
