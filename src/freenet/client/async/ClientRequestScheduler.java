@@ -230,7 +230,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							}
 							
 							public String toString() {
-								return super.toString() + "(registerInsert)";
+								return "registerInsert";
 							}
 							
 						}, NativeThread.NORM_PRIORITY, false);
@@ -898,7 +898,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(succeeded)";
+						return "BaseSendableGet succeeded";
 					}
 					
 				}, TRIP_PENDING_PRIORITY, false);
@@ -929,7 +929,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(tripkey)";
+						return "tripPendingKey";
 					}
 				}, TRIP_PENDING_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
@@ -1073,7 +1073,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(callfailureget)";
+						return "SendableGet onFailure";
 					}
 					
 				}, prio, false);
@@ -1099,7 +1099,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(callfailureput)";
+						return "SendableInsert onFailure";
 					}
 					
 				}, prio, false);
