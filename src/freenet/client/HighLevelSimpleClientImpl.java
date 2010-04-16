@@ -9,7 +9,6 @@ import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -157,11 +156,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return fw.waitForCompletion();
 	}
 
-	@Deprecated
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientCallback callback, FetchContext fctx) throws FetchException {
-		return fetch(uri, maxSize, clientContext, (ClientGetCallback)callback,  fctx);
-	}
-
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx) throws FetchException {
 		return fetch(uri, maxSize, clientContext, callback, fctx, priorityClass);
 	}
@@ -193,11 +187,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			// Impossible
 		}
 		return pw.waitForCompletion();
-	}
-
-	@Deprecated
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
-		return insert(insert, getCHKOnly, filenameHint, isMetadata, ctx, (ClientPutCallback) cb);
 	}
 
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException {
@@ -240,13 +229,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		}
 		return pw.waitForCompletion();
 	}
-
-	/**
-     * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
-     */
-    public void addGlobalHook(ClientEventListener listener) {
-        addEventHook(listener);
-    }
 
 	public void addEventHook(ClientEventListener listener) {
 		eventProducer.addEventListener(listener);
