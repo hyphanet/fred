@@ -15,18 +15,9 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.Random;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.Vector;
+import java.util.*;
 
+import freenet.node.stats.*;
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -49,16 +40,13 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentMutableConfig;
-import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.SplitFileInserterSegment;
-import freenet.clients.http.ConfigToadlet;
 import freenet.clients.http.SecurityLevelsToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.clients.http.PageMaker;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -107,7 +95,6 @@ import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FeedMessage;
 import freenet.node.updater.NodeUpdateManager;
-import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ClockProblemDetectedUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
@@ -133,11 +120,9 @@ import freenet.store.StoreCallback;
 import freenet.store.BlockMetadata;
 import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
-import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.LRUQueue;
@@ -159,6 +144,11 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
+
+import static freenet.node.stats.DataStoreKeyType.CHK;
+import static freenet.node.stats.DataStoreKeyType.PUB_KEY;
+import static freenet.node.stats.DataStoreKeyType.SSK;
+import static freenet.node.stats.DataStoreType.*;
 
 /**
  * @author amphibian
@@ -4080,6 +4070,32 @@ public class Node implements TimeSkewDetectorCallback {
 	public SSKStore getSskDatastore() {
 		return sskDatastore;
 	}
+
+
+    /**
+     * This method returns all statistics info for our data store stats table
+     * @return map that has an entry for each data store instance type and corresponding stats
+     */
+    public Map<DataStoreInstanceType, DataStoreStats> getDataStoreStats() {
+        Map<DataStoreInstanceType, DataStoreStats> map = new LinkedHashMap<DataStoreInstanceType, DataStoreStats>();
+
+        map.put(new DataStoreInstanceType(CHK, STORE), new StoreCallbackStats(chkDatastore, nodeStats.chkStoreStats()));
+        map.put(new DataStoreInstanceType(CHK, CACHE), new StoreCallbackStats(chkDatacache, nodeStats.chkCacheStats()));
+        map.put(new DataStoreInstanceType(CHK, SLASHDOT), new StoreCallbackStats(chkSlashdotcache, new NotAvailNodeStoreStats()));
+        map.put(new DataStoreInstanceType(CHK, CLIENT), new StoreCallbackStats(chkClientcache, new NotAvailNodeStoreStats()));
+
+        map.put(new DataStoreInstanceType(SSK, STORE), new StoreCallbackStats(sskDatastore, new NotAvailNodeStoreStats()));
+        map.put(new DataStoreInstanceType(SSK, CACHE), new StoreCallbackStats(sskDatacache, new NotAvailNodeStoreStats()));
+        map.put(new DataStoreInstanceType(SSK, SLASHDOT), new StoreCallbackStats(sskSlashdotcache, new NotAvailNodeStoreStats()));
+        map.put(new DataStoreInstanceType(SSK, CLIENT), new StoreCallbackStats(sskClientcache, new NotAvailNodeStoreStats()));
+
+        map.put(new DataStoreInstanceType(PUB_KEY, STORE), new StoreCallbackStats(pubKeyDatastore, new NotAvailNodeStoreStats()));
+        map.put(new DataStoreInstanceType(PUB_KEY, CACHE), new StoreCallbackStats(pubKeyDatacache, new NotAvailNodeStoreStats()));
+        map.put(new DataStoreInstanceType(PUB_KEY, SLASHDOT), new StoreCallbackStats(pubKeySlashdotcache, new NotAvailNodeStoreStats()));
+        map.put(new DataStoreInstanceType(PUB_KEY, CLIENT), new StoreCallbackStats(pubKeyClientcache, new NotAvailNodeStoreStats()));
+
+        return map;
+    }
 
 	public long getMaxTotalKeys() {
 		return maxTotalKeys;

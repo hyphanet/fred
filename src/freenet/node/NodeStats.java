@@ -16,6 +16,9 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.l10n.NodeL10n;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.stats.NodeStoreStats;
+import freenet.node.stats.StatsNotAvailableException;
+import freenet.store.CHKStore;
 import freenet.support.HTMLNode;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
@@ -69,6 +72,7 @@ public class NodeStats implements Persistable {
 	private int outgoingRequestsAccounted = 0;
 	private volatile long subMaxPingTime;
 	private volatile long maxPingTime;
+    private final double nodeLoc=0.0;
 	
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -2096,8 +2100,74 @@ public class NodeStats implements Persistable {
 		
 		avg.report(executionTimeMiliSeconds);
 	}
-	
-	public static class DatabaseJobStats implements Comparable<DatabaseJobStats> {
+
+    /**
+     * View of stats for CHK Store
+     * @return stats for CHK Store
+     */
+    public NodeStoreStats chkStoreStats() {
+        return new NodeStoreStats() {
+            public double avgLocation() {
+                return avgStoreLocation.currentValue();
+            }
+
+            public double avgSuccess() {
+                return avgStoreSuccess.currentValue();
+            }
+
+            public double furthestSuccess() throws StatsNotAvailableException {
+                return furthestStoreSuccess;
+            }
+
+            public double avgDist() throws StatsNotAvailableException {
+                return Location.distance(nodeLoc,avgLocation());
+            }
+
+            public double distanceStats() throws StatsNotAvailableException {
+                return cappedDistance(avgStoreLocation, node.getChkDatastore());
+            }
+        };
+    }
+
+    /**
+     * View of stats for CHK Cache
+     * @return CHK cache stats
+     */
+    public NodeStoreStats chkCacheStats() {
+        return new NodeStoreStats() {
+            public double avgLocation() {
+                return avgCacheLocation.currentValue();
+            }
+
+            public double avgSuccess() {
+               return avgCacheSuccess.currentValue();
+            }
+
+            public double furthestSuccess() throws StatsNotAvailableException {
+                return furthestCacheSuccess;
+            }
+
+            public double avgDist() throws StatsNotAvailableException {
+                return Location.distance(nodeLoc,avgLocation());
+            }
+
+            public double distanceStats() throws StatsNotAvailableException {
+                return cappedDistance(avgCacheLocation, node.getChkDatacache());
+            }
+        };
+    }
+
+    private double cappedDistance(DecayingKeyspaceAverage avgLocation, CHKStore store) {
+        double cachePercent = 1.0 * avgLocation.countReports() / store.keyCount();
+        //Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
+        if(cachePercent > 1.0){
+            cachePercent = 1.0;
+        }
+        return cachePercent;
+    }
+
+
+    public static class DatabaseJobStats implements Comparable<DatabaseJobStats> {
 		public final String jobType;
 		public final long count;
 		public final long avgTime;

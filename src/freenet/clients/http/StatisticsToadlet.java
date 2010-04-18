@@ -24,6 +24,9 @@ import freenet.node.PeerManager;
 import freenet.node.PeerNodeStatus;
 import freenet.node.RequestStarterGroup;
 import freenet.node.Version;
+import freenet.node.stats.DataStoreInstanceType;
+import freenet.node.stats.DataStoreStats;
+import freenet.node.stats.StatsNotAvailableException;
 import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
 import freenet.support.StringCounter;
@@ -498,7 +501,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 		storeSizeInfobox.addChild("div", "class", "infobox-header", l10n("datastore"));
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
-        storeSizeInfoboxContent.addChild("div", "Hello, Tanik!");
+        
         HTMLNode scrollDiv = storeSizeInfoboxContent.addChild("div","style","overflow:scr");
 
 		HTMLNode storeSizeTable = scrollDiv.addChild("table", "border", "0");
@@ -506,162 +509,78 @@ public class StatisticsToadlet extends Toadlet {
 
 		//FIXME - Non-breaking space? "Stat-name"?
 		row.addChild("th", "");
-		row.addChild("th", l10n("chkStore"));
-		row.addChild("th", l10n("chkCache"));
-        row.addChild("th", l10n("chkUlprCache"));
-		row.addChild("th", l10n("chkClientCache"));
-		
-		final long fix32kb = 32 * 1024;
 
-		long cachedKeys = node.getChkDatacache().keyCount();
-		long cachedSize = cachedKeys * fix32kb;
-		long storeKeys = node.getChkDatastore().keyCount();
-		long storeSize = storeKeys * fix32kb;
-		long maxCachedKeys = node.getChkDatacache().getMaxKeys();
-		long maxStoreKeys = node.getChkDatastore().getMaxKeys();
-		long cacheHits = node.getChkDatacache().hits();
-		long cacheMisses = node.getChkDatacache().misses();
-		long cacheAccesses = cacheHits + cacheMisses;
-		long storeHits = node.getChkDatastore().hits();
-		long storeMisses = node.getChkDatastore().misses();
-		long storeAccesses = storeHits + storeMisses;
-		long cacheWrites=node.getChkDatacache().writes();
-		long storeWrites=node.getChkDatastore().writes();
-		long cacheFalsePos = node.getChkDatacache().getBloomFalsePositive();
-		long storeFalsePos = node.getChkDatastore().getBloomFalsePositive();
+		row.addChild("th", l10n("keys"));
+		row.addChild("th", l10n("capacity"));
+        row.addChild("th", l10n("datasize"));
+        row.addChild("th", l10n("utilization"));
+        row.addChild("th", l10n("readRequests"));
+        row.addChild("th", l10n("successfulReads"));
+        row.addChild("th", l10n("successRate"));
+        row.addChild("th", l10n("writes"));
+        row.addChild("th", l10n("accessRate"));
+        row.addChild("th", l10n("writeRate"));
+        row.addChild("th", l10n("falsePos"));
+        row.addChild("th", l10n("avgLocation"));
+        row.addChild("th", l10n("avgSuccessLoc"));
+        row.addChild("th", l10n("furthestSuccess"));
+        row.addChild("th", l10n("avgDist"));
+        row.addChild("th", l10n("distanceStats"));
 
-		// REDFLAG Don't show database version because it's not possible to get it accurately.
-		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("keys"));
-		row.addChild("td", thousandPoint.format(storeKeys));
-		row.addChild("td", thousandPoint.format(cachedKeys));
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("capacity"));
-		row.addChild("td", thousandPoint.format(maxStoreKeys));
- 		row.addChild("td", thousandPoint.format(maxCachedKeys) + "fdhsafhewluirhfielurwhfalieunfleiurbfaleiurbvrubgvaeliurghlaeiurvbdliufvb aeliurgbfvlieurb vl");
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("datasize"));
-		row.addChild("td", SizeUtil.formatSize(storeSize, true));
-		row.addChild("td", SizeUtil.formatSize(cachedSize, true));
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("utilization"));
-		row.addChild("td", fix3p1pct.format(1.0*storeKeys/maxStoreKeys));
-		row.addChild("td", fix3p1pct.format(1.0*cachedKeys/maxCachedKeys));
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("readRequests"));
-		row.addChild("td", thousandPoint.format(storeAccesses));
-		row.addChild("td", thousandPoint.format(cacheAccesses));
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("successfulReads"));
-		if (storeAccesses > 0)
-			row.addChild("td", thousandPoint.format(storeHits));
-		else
-			row.addChild("td", "0");
-		if (cacheAccesses > 0)
-			row.addChild("td", thousandPoint.format(cacheHits));
-		else
-			row.addChild("td", "0");
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("successRate"));
-		if (storeAccesses > 0)
-			row.addChild("td", fix1p4.format(100.0 * storeHits / storeAccesses) + "%");
-		else
-			row.addChild("td", "N/A");
-		if (cacheAccesses > 0)
-			row.addChild("td", fix1p4.format(100.0 * cacheHits / cacheAccesses) + "%");
-		else
-			row.addChild("td", "N/A");
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("writes"));
-		row.addChild("td", thousandPoint.format(storeWrites));
-		row.addChild("td", thousandPoint.format(cacheWrites));
-				
-		/* Overall utilization is not preserved in the new table layout :(
-		storeSizeList.addChild("li", 
-				"Overall size:\u00a0" + thousandPoint.format(overallKeys) + 
-				"\u00a0/\u00a0" + thousandPoint.format(maxOverallKeys) +
-				"\u00a0(" + SizeUtil.formatSize(overallSize, true) + 
-				"\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize, true) + 
-				")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
-		 */
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("accessRate"));
-		row.addChild("td", fix1p2.format(1.0*storeAccesses/nodeUptimeSeconds)+" /s");
-		row.addChild("td", fix1p2.format(1.0*cacheAccesses/nodeUptimeSeconds)+" /s");
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("writeRate"));
-		row.addChild("td", fix1p2.format(1.0*storeWrites/nodeUptimeSeconds)+" /s");
-		row.addChild("td", fix1p2.format(1.0*cacheWrites/nodeUptimeSeconds)+" /s");
-		
-		if (storeFalsePos != -1 || cacheFalsePos != -1) {
-			row = storeSizeTable.addChild("tr");
-			row.addChild("td", l10n("falsePos"));
-			row.addChild("td", thousandPoint.format(storeFalsePos));
-			row.addChild("td", thousandPoint.format(cacheFalsePos));
-		}
-		
-		// location-based stats
-		double nodeLoc=0.0;
-		
-		double avgCacheLocation=node.nodeStats.avgCacheLocation.currentValue();
-		double avgStoreLocation=node.nodeStats.avgStoreLocation.currentValue();
-		double avgCacheSuccess=node.nodeStats.avgCacheSuccess.currentValue();
-		double avgStoreSuccess=node.nodeStats.avgStoreSuccess.currentValue();
-		double furthestCacheSuccess=node.nodeStats.furthestCacheSuccess;
-		double furthestStoreSuccess=node.nodeStats.furthestStoreSuccess;
-		double storeDist=Location.distance(nodeLoc, avgStoreLocation);
-		double cacheDist=Location.distance(nodeLoc, avgCacheLocation);
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("avgLocation"));
-		row.addChild("td", fix1p4.format(avgStoreLocation));
-		row.addChild("td", fix1p4.format(avgCacheLocation));
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("avgSuccessLoc"));
-		row.addChild("td", fix1p4.format(avgStoreSuccess));
-		row.addChild("td", fix1p4.format(avgCacheSuccess));
-		
-		row=storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("furthestSuccess"));
-		row.addChild("td", fix1p4.format(furthestStoreSuccess));
-		row.addChild("td", fix1p4.format(furthestCacheSuccess));
-		
-		row = storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("avgDist"));
-		row.addChild("td", fix1p4.format(storeDist));
-		row.addChild("td", fix1p4.format(cacheDist));
 
-		long cacheLocationReports = node.nodeStats.avgCacheLocation.countReports();
-		long storeLocationReports = node.nodeStats.avgStoreLocation.countReports();
+        Map<DataStoreInstanceType, DataStoreStats> storeStats = node.getDataStoreStats();
+        for (Map.Entry<DataStoreInstanceType, DataStoreStats> entry : storeStats.entrySet()) {
+            DataStoreInstanceType instance = entry.getKey();
+            DataStoreStats stats = entry.getValue();
+            row=storeSizeTable.addChild("tr");
+            row.addChild("th", l10n(instance.store.name()) +"\n"+ " (" + l10n(instance.key.name()) + ")" );
 
-		double storePercent = 1.0 * storeLocationReports / storeKeys;
-		double cachePercent = 1.0 * cacheLocationReports / cachedKeys;
+            row.addChild("td", thousandPoint.format(stats.keys()));
+            row.addChild("td", thousandPoint.format(stats.capacity()));
+            row.addChild("td",SizeUtil.formatSize(stats.dataSize()));
+            row.addChild("td", fix3p1pct.format(stats.utilization()));
+            row.addChild("td",thousandPoint.format(stats.readRequests()));
+            row.addChild("td",thousandPoint.format(stats.successfulReads()));
+            try {
+                row.addChild("td", fix1p4.format(stats.successRate()) + "%");
+            } catch (StatsNotAvailableException e) {
+                row.addChild("td","N/A");
+            }
+            row.addChild("td",thousandPoint.format(stats.writes()));
+            row.addChild("td",fix1p2.format(stats.accessRate(nodeUptimeSeconds))+" /s");
+            row.addChild("td",fix1p2.format(stats.writeRate(nodeUptimeSeconds))+" /s");
+            row.addChild("td",thousandPoint.format(stats.falsePos()));
+            try {
+                row.addChild("td", fix1p4.format(stats.avgLocation()));
+            } catch (StatsNotAvailableException e) {
+                row.addChild("td","N/A");
+            }
 
-		//Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
-		if(storePercent > 1.0)
-			storePercent = 1.0;
-		if(cachePercent > 1.0)
-			cachePercent = 1.0;
+            try {
+                row.addChild("td", fix1p4.format(stats.avgSuccess()));
+            } catch (StatsNotAvailableException e) {
+                row.addChild("td","N/A");
+            }
 
-		row = storeSizeTable.addChild("tr");
-		row.addChild("td", l10n("distanceStats"));
-		row.addChild("td", fix3p1pct.format(storePercent));
-		row.addChild("td", fix3p1pct.format(cachePercent));
-		
-		node.drawClientCacheBox(storeSizeInfobox);
-		node.drawSlashdotCacheBox(storeSizeInfobox);
-		node.drawStoreStats(storeSizeInfobox);
+            try {
+                row.addChild("td", fix1p4.format(stats.furthestSuccess()));
+            } catch (StatsNotAvailableException e) {
+                row.addChild("td","N/A");
+            }
+
+            try {
+                row.addChild("td", fix1p4.format(stats.avgDist()));
+            } catch (StatsNotAvailableException e) {
+                row.addChild("td","N/A");
+            }
+
+            try {
+                row.addChild("td", fix3p1pct.format(stats.distanceStats()));
+            } catch (StatsNotAvailableException e) {
+                row.addChild("td","N/A");
+            }
+        }
+
 	}
 
 	private void drawUnclaimedFIFOMessageCountsBox(HTMLNode unclaimedFIFOMessageCountsInfobox) {
