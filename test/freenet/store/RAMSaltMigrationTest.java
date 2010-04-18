@@ -46,84 +46,84 @@ public class RAMSaltMigrationTest extends TestCase {
 		tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false);
 		exec.start();
 	}
-	
+
 	protected void tearDown() {
 		FileUtil.removeAll(tempDir);
 	}
-	
+
 	public void testRAMStore() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		RAMFreenetStore ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
-		
+		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
+
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
 		store.put(block, false);
-		
+
 		ClientCHK key = block.getClientKey();
-		
+
 		CHKBlock verify = store.fetch(key.getNodeCHK(), false, null);
 		String data = decodeBlock(verify, key);
 		assertEquals(test, data);
 	}
-	
+
 	public void testMigrate() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		RAMFreenetStore ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
-		
+		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
+
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
 		store.put(block, false);
-		
+
 		ClientCHK key = block.getClientKey();
-		
+
 		CHKBlock verify = store.fetch(key.getNodeCHK(), false, null);
 		String data = decodeBlock(verify, key);
 		assertEquals(test, data);
-		
+
 		CHKStore newStore = new CHKStore();
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, new SemiOrderedShutdownHook(), true, true, ticker, null);
 		saltStore.start(null, true);
-		
+
 		ramStore.migrateTo(newStore, false);
-		
+
 		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false, null);
 		String newData = decodeBlock(newVerify, key);
 		assertEquals(test, newData);
 		saltStore.close();
 	}
-	
+
 	public void testMigrateKeyed() throws IOException, CHKEncodeException, CHKVerifyException, CHKDecodeException {
 		CHKStore store = new CHKStore();
-		RAMFreenetStore ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
-		
+		RAMFreenetStore<CHKBlock> ramStore = new RAMFreenetStore<CHKBlock>(store, 10);
+
 		// Encode a block
 		String test = "test";
 		ClientCHKBlock block = encodeBlock(test);
 		store.put(block, false);
-		
+
 		ClientCHK key = block.getClientKey();
-		
+
 		CHKBlock verify = store.fetch(key.getNodeCHK(), false, null);
 		String data = decodeBlock(verify, key);
 		assertEquals(test, data);
-		
+
 		byte[] storeKey = new byte[32];
 		strongPRNG.nextBytes(storeKey);
-		
+
 		CHKStore newStore = new CHKStore();
 		SaltedHashFreenetStore saltStore = SaltedHashFreenetStore.construct(new File(tempDir, "saltstore"), "teststore", newStore, weakPRNG, 10, 0, false, new SemiOrderedShutdownHook(), true, true, ticker, storeKey);
 		saltStore.start(null, true);
-		
+
 		ramStore.migrateTo(newStore, false);
-		
+
 		CHKBlock newVerify = store.fetch(key.getNodeCHK(), false, null);
 		String newData = decodeBlock(newVerify, key);
 		assertEquals(test, newData);
 		saltStore.close();
 	}
-	
+
 	private String decodeBlock(CHKBlock verify, ClientCHK key) throws CHKVerifyException, CHKDecodeException, IOException {
 		ClientCHKBlock cb = new ClientCHKBlock(verify, key);
 		Bucket output = cb.decode(new ArrayBucketFactory(), 32768, false);
@@ -138,5 +138,5 @@ public class RAMSaltMigrationTest extends TestCase {
 	}
 
 
-	
+
 }

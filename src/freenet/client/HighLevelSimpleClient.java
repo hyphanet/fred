@@ -6,7 +6,6 @@ package freenet.client;
 import java.util.HashMap;
 import java.util.Set;
 
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -68,9 +67,6 @@ public interface HighLevelSimpleClient {
 	 */
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx, short priorityClass) throws FetchException;
 
-	@Deprecated
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientCallback callback, FetchContext fctx) throws FetchException;
-
 	/**
 	 * Blocking insert.
 	 * @param filenameHint If set, insert a single-file manifest containing only this file, under the given filename.
@@ -86,9 +82,6 @@ public interface HighLevelSimpleClient {
 	 * @param ctx Insert context so you can customise the insertion process.
 	 */
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException;
-
-	@Deprecated
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException;
 
 	/**
 	 * Blocking insert of a redirect.
@@ -117,15 +110,6 @@ public interface HighLevelSimpleClient {
 	 * bucket pool.
 	 */
 	public InsertContext getInsertContext(boolean forceNonPersistent);
-
-	/**
-     * Add a ClientEventListener.
-     * This name is misleading -- this hook not for the global queue.
-     * Use {@link NodeClientCore#getFCPServer()} for the global queue.
-     *
-     * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
-     */
-    public void addGlobalHook(ClientEventListener listener);
 
 	/**
 	 * Add a ClientEventListener.

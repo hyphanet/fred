@@ -13,6 +13,7 @@ import java.util.Vector;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BulkCallFailureItem;
 import freenet.node.LowLevelGetException;
@@ -218,7 +219,10 @@ public class PersistentChosenRequest {
 		} else /*if(request instanceof SendableInsert)*/ {
 			container.activate(request, 1);
 			for(PersistentChosenBlock block : finishedBlocks) {
-				container.activate(block, 1);
+				ClientKey key = block.getGeneratedKey();
+				if(key != null) {
+					((SendableInsert)request).onEncode(block.token, key, container, context);
+				}
 				if(block.insertSucceeded()) {
 					((SendableInsert)request).onSuccess(block.token, container, context);
 				} else {
@@ -304,4 +308,25 @@ public class PersistentChosenRequest {
 			}
 		}
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanActivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
 }

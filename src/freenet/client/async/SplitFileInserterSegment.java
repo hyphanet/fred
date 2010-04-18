@@ -665,8 +665,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if (finished)
 				return;
 			finished = true;
-			if(blocksSucceeded < blocksCompleted)
+			if(blocksSucceeded < blocksCompleted) {
 				toThrow = InsertException.construct(errors);
+				if(logMINOR) Logger.minor(this, "Blocks succeeded "+blocksSucceeded+" blocks completed "+blocksCompleted+" gives error "+toThrow+" on "+this);
+			} else if(!hasURIs) {
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "Completed but not encoded?!", null), container, context);
+				return;
+			}
 		}
 		if(persistent) {
 			container.store(this);
@@ -682,15 +687,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	private boolean onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Encoded block "+x+" on "+this);
 		synchronized (this) {
-			if (finished)
+			if (finished) {
+				if(logMINOR) Logger.minor(this, "Already finished");
 				return false;
+			}
 			if (x >= dataBlocks.length) {
 				if (checkURIs[x - dataBlocks.length] != null) {
+					if(logMINOR) Logger.minor(this, "Already encoded check block");
 					return false;
 				}
 				checkURIs[x - dataBlocks.length] = key;
 			} else {
 				if (dataURIs[x] != null) {
+					if(logMINOR) Logger.minor(this, "Already encoded data block");
 					return false;
 				}
 				dataURIs[x] = key;
@@ -1335,17 +1344,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					final ClientCHK key = b.getClientKey();
 					final int num = block.blockNum;
 					if(block.persistent) {
-					context.jobRunner.queue(new DBJob() {
-
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(SplitFileInserterSegment.this)) return false;
-							container.activate(SplitFileInserterSegment.this, 1);
-							boolean retval = onEncode(num, key, container, context);
-							container.deactivate(SplitFileInserterSegment.this, 1);
-							return retval;
-						}
-
-					}, NativeThread.NORM_PRIORITY+1, false);
+						req.setGeneratedKey(key);
 					} else {
 						context.mainExecutor.execute(new Runnable() {
 
@@ -1361,9 +1360,6 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
 					return true;
-				} catch (DatabaseDisabledException e) {
-					// Impossible, and nothing to do.
-					Logger.error(this, "Running persistent insert but database is disabled!");
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded: "+SplitFileInserterSegment.this);
 				req.onInsertSuccess(context);
@@ -1485,18 +1481,22 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		// parent, putter can deal with themselves
 		freeBucketsArray(container, dataBlocks);
 		freeBucketsArray(container, checkBlocks);
-		for(ClientCHK chk : dataURIs) {
+		for(int i=0;i<dataURIs.length;i++) {
+			ClientCHK chk = dataURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "dataURI is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
+			} else {
+				if(logMINOR) Logger.minor(this, "dataURI "+i+" is null on "+this);
 			}
 		}
-		for(ClientCHK chk : checkURIs) {
+		for(int i=0;i<checkURIs.length;i++) {
+			ClientCHK chk = checkURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "checkURI is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
+			} else {
+				if(logMINOR) Logger.minor(this, "checkURI "+i+" is null on "+this);
 			}
 		}
 		container.activate(blocks, 5);
@@ -1659,6 +1659,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	public boolean isStarted() {
 		return started;
+	}
+
+	@Override
+	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
+		onEncode(((BlockItem)token).blockNum, (ClientCHK)key, container, context);
 	}
 
 }
