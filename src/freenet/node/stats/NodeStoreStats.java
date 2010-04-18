@@ -6,14 +6,14 @@ package freenet.node.stats;
  * Date: Apr 16, 2010
  */
 public interface NodeStoreStats {
-    double avgLocation() throws StatsNotAvailableException;
+	double avgLocation() throws StatsNotAvailableException;
 
-    double avgSuccess() throws StatsNotAvailableException;
+	double avgSuccess() throws StatsNotAvailableException;
 
-    double furthestSuccess() throws StatsNotAvailableException;
+	double furthestSuccess() throws StatsNotAvailableException;
 
-    double avgDist() throws StatsNotAvailableException;
+	double avgDist() throws StatsNotAvailableException;
 
-    double distanceStats() throws StatsNotAvailableException;
-    
+	double distanceStats() throws StatsNotAvailableException;
+
 }

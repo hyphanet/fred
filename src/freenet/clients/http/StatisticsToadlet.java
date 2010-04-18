@@ -496,90 +496,89 @@ public class StatisticsToadlet extends Toadlet {
 		om.drawOpennetStatsBox(opennetStatsContent);
 		
 	}
-	
+
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
-		
 		storeSizeInfobox.addChild("div", "class", "infobox-header", l10n("datastore"));
 		HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
-        
-        HTMLNode scrollDiv = storeSizeInfoboxContent.addChild("div","style","overflow:scr");
+
+		HTMLNode scrollDiv = storeSizeInfoboxContent.addChild("div", "style", "overflow:scr");
 
 		HTMLNode storeSizeTable = scrollDiv.addChild("table", "border", "0");
-		HTMLNode row=storeSizeTable.addChild("tr");
+		HTMLNode row = storeSizeTable.addChild("tr");
 
 		//FIXME - Non-breaking space? "Stat-name"?
 		row.addChild("th", "");
 
 		row.addChild("th", l10n("keys"));
 		row.addChild("th", l10n("capacity"));
-        row.addChild("th", l10n("datasize"));
-        row.addChild("th", l10n("utilization"));
-        row.addChild("th", l10n("readRequests"));
-        row.addChild("th", l10n("successfulReads"));
-        row.addChild("th", l10n("successRate"));
-        row.addChild("th", l10n("writes"));
-        row.addChild("th", l10n("accessRate"));
-        row.addChild("th", l10n("writeRate"));
-        row.addChild("th", l10n("falsePos"));
-        row.addChild("th", l10n("avgLocation"));
-        row.addChild("th", l10n("avgSuccessLoc"));
-        row.addChild("th", l10n("furthestSuccess"));
-        row.addChild("th", l10n("avgDist"));
-        row.addChild("th", l10n("distanceStats"));
+		row.addChild("th", l10n("datasize"));
+		row.addChild("th", l10n("utilization"));
+		row.addChild("th", l10n("readRequests"));
+		row.addChild("th", l10n("successfulReads"));
+		row.addChild("th", l10n("successRate"));
+		row.addChild("th", l10n("writes"));
+		row.addChild("th", l10n("accessRate"));
+		row.addChild("th", l10n("writeRate"));
+		row.addChild("th", l10n("falsePos"));
+		row.addChild("th", l10n("avgLocation"));
+		row.addChild("th", l10n("avgSuccessLoc"));
+		row.addChild("th", l10n("furthestSuccess"));
+		row.addChild("th", l10n("avgDist"));
+		row.addChild("th", l10n("distanceStats"));
 
 
-        Map<DataStoreInstanceType, DataStoreStats> storeStats = node.getDataStoreStats();
-        for (Map.Entry<DataStoreInstanceType, DataStoreStats> entry : storeStats.entrySet()) {
-            DataStoreInstanceType instance = entry.getKey();
-            DataStoreStats stats = entry.getValue();
-            row=storeSizeTable.addChild("tr");
-            row.addChild("th", l10n(instance.store.name()) +"\n"+ " (" + l10n(instance.key.name()) + ")" );
+		Map<DataStoreInstanceType, DataStoreStats> storeStats = node.getDataStoreStats();
+		for (Map.Entry<DataStoreInstanceType, DataStoreStats> entry : storeStats.entrySet()) {
+			DataStoreInstanceType instance = entry.getKey();
+			DataStoreStats stats = entry.getValue();
+			row = storeSizeTable.addChild("tr");
+			row.addChild("th", l10n(instance.store.name()) + "\n" + " (" + l10n(instance.key.name()) + ")");
 
-            row.addChild("td", thousandPoint.format(stats.keys()));
-            row.addChild("td", thousandPoint.format(stats.capacity()));
-            row.addChild("td",SizeUtil.formatSize(stats.dataSize()));
-            row.addChild("td", fix3p1pct.format(stats.utilization()));
-            row.addChild("td",thousandPoint.format(stats.readRequests()));
-            row.addChild("td",thousandPoint.format(stats.successfulReads()));
-            try {
-                row.addChild("td", fix1p4.format(stats.successRate()) + "%");
-            } catch (StatsNotAvailableException e) {
-                row.addChild("td","N/A");
-            }
-            row.addChild("td",thousandPoint.format(stats.writes()));
-            row.addChild("td",fix1p2.format(stats.accessRate(nodeUptimeSeconds))+" /s");
-            row.addChild("td",fix1p2.format(stats.writeRate(nodeUptimeSeconds))+" /s");
-            row.addChild("td",thousandPoint.format(stats.falsePos()));
-            try {
-                row.addChild("td", fix1p4.format(stats.avgLocation()));
-            } catch (StatsNotAvailableException e) {
-                row.addChild("td","N/A");
-            }
+			row.addChild("td", thousandPoint.format(stats.keys()));
+			row.addChild("td", thousandPoint.format(stats.capacity()));
+			row.addChild("td", SizeUtil.formatSize(stats.dataSize()));
+			row.addChild("td", fix3p1pct.format(stats.utilization()));
+			row.addChild("td", thousandPoint.format(stats.readRequests()));
+			row.addChild("td", thousandPoint.format(stats.successfulReads()));
+			try {
+				row.addChild("td", fix1p4.format(stats.successRate()) + "%");
+			} catch (StatsNotAvailableException e) {
+				row.addChild("td", "N/A");
+			}
+			row.addChild("td", thousandPoint.format(stats.writes()));
+			row.addChild("td", fix1p2.format(stats.accessRate(nodeUptimeSeconds)) + " /s");
+			row.addChild("td", fix1p2.format(stats.writeRate(nodeUptimeSeconds)) + " /s");
+			row.addChild("td", thousandPoint.format(stats.falsePos()));
+			try {
+				row.addChild("td", fix1p4.format(stats.avgLocation()));
+			} catch (StatsNotAvailableException e) {
+				row.addChild("td", "N/A");
+			}
 
-            try {
-                row.addChild("td", fix1p4.format(stats.avgSuccess()));
-            } catch (StatsNotAvailableException e) {
-                row.addChild("td","N/A");
-            }
+			try {
+				row.addChild("td", fix1p4.format(stats.avgSuccess()));
+			} catch (StatsNotAvailableException e) {
+				row.addChild("td", "N/A");
+			}
 
-            try {
-                row.addChild("td", fix1p4.format(stats.furthestSuccess()));
-            } catch (StatsNotAvailableException e) {
-                row.addChild("td","N/A");
-            }
+			try {
+				row.addChild("td", fix1p4.format(stats.furthestSuccess()));
+			} catch (StatsNotAvailableException e) {
+				row.addChild("td", "N/A");
+			}
 
-            try {
-                row.addChild("td", fix1p4.format(stats.avgDist()));
-            } catch (StatsNotAvailableException e) {
-                row.addChild("td","N/A");
-            }
+			try {
+				row.addChild("td", fix1p4.format(stats.avgDist()));
+			} catch (StatsNotAvailableException e) {
+				row.addChild("td", "N/A");
+			}
 
-            try {
-                row.addChild("td", fix3p1pct.format(stats.distanceStats()));
-            } catch (StatsNotAvailableException e) {
-                row.addChild("td","N/A");
-            }
-        }
+			try {
+				row.addChild("td", fix3p1pct.format(stats.distanceStats()));
+			} catch (StatsNotAvailableException e) {
+				row.addChild("td", "N/A");
+			}
+		}
 
 	}
 

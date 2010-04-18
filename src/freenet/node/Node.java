@@ -4070,30 +4070,31 @@ public class Node implements TimeSkewDetectorCallback {
 	}
 
 
-    /**
-     * This method returns all statistics info for our data store stats table
-     * @return map that has an entry for each data store instance type and corresponding stats
-     */
-    public Map<DataStoreInstanceType, DataStoreStats> getDataStoreStats() {
-        Map<DataStoreInstanceType, DataStoreStats> map = new LinkedHashMap<DataStoreInstanceType, DataStoreStats>();
+	/**
+	 * This method returns all statistics info for our data store stats table
+	 *
+	 * @return map that has an entry for each data store instance type and corresponding stats
+	 */
+	public Map<DataStoreInstanceType, DataStoreStats> getDataStoreStats() {
+		Map<DataStoreInstanceType, DataStoreStats> map = new LinkedHashMap<DataStoreInstanceType, DataStoreStats>();
 
-        map.put(new DataStoreInstanceType(CHK, STORE), new StoreCallbackStats(chkDatastore, nodeStats.chkStoreStats()));
-        map.put(new DataStoreInstanceType(CHK, CACHE), new StoreCallbackStats(chkDatacache, nodeStats.chkCacheStats()));
-        map.put(new DataStoreInstanceType(CHK, SLASHDOT), new StoreCallbackStats(chkSlashdotcache, new NotAvailNodeStoreStats()));
-        map.put(new DataStoreInstanceType(CHK, CLIENT), new StoreCallbackStats(chkClientcache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(CHK, STORE), new StoreCallbackStats(chkDatastore, nodeStats.chkStoreStats()));
+		map.put(new DataStoreInstanceType(CHK, CACHE), new StoreCallbackStats(chkDatacache, nodeStats.chkCacheStats()));
+		map.put(new DataStoreInstanceType(CHK, SLASHDOT), new StoreCallbackStats(chkSlashdotcache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(CHK, CLIENT), new StoreCallbackStats(chkClientcache, new NotAvailNodeStoreStats()));
 
-        map.put(new DataStoreInstanceType(SSK, STORE), new StoreCallbackStats(sskDatastore, new NotAvailNodeStoreStats()));
-        map.put(new DataStoreInstanceType(SSK, CACHE), new StoreCallbackStats(sskDatacache, new NotAvailNodeStoreStats()));
-        map.put(new DataStoreInstanceType(SSK, SLASHDOT), new StoreCallbackStats(sskSlashdotcache, new NotAvailNodeStoreStats()));
-        map.put(new DataStoreInstanceType(SSK, CLIENT), new StoreCallbackStats(sskClientcache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(SSK, STORE), new StoreCallbackStats(sskDatastore, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(SSK, CACHE), new StoreCallbackStats(sskDatacache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(SSK, SLASHDOT), new StoreCallbackStats(sskSlashdotcache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(SSK, CLIENT), new StoreCallbackStats(sskClientcache, new NotAvailNodeStoreStats()));
 
-        map.put(new DataStoreInstanceType(PUB_KEY, STORE), new StoreCallbackStats(pubKeyDatastore, new NotAvailNodeStoreStats()));
-        map.put(new DataStoreInstanceType(PUB_KEY, CACHE), new StoreCallbackStats(pubKeyDatacache, new NotAvailNodeStoreStats()));
-        map.put(new DataStoreInstanceType(PUB_KEY, SLASHDOT), new StoreCallbackStats(pubKeySlashdotcache, new NotAvailNodeStoreStats()));
-        map.put(new DataStoreInstanceType(PUB_KEY, CLIENT), new StoreCallbackStats(pubKeyClientcache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(PUB_KEY, STORE), new StoreCallbackStats(pubKeyDatastore, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(PUB_KEY, CACHE), new StoreCallbackStats(pubKeyDatacache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(PUB_KEY, SLASHDOT), new StoreCallbackStats(pubKeySlashdotcache, new NotAvailNodeStoreStats()));
+		map.put(new DataStoreInstanceType(PUB_KEY, CLIENT), new StoreCallbackStats(pubKeyClientcache, new NotAvailNodeStoreStats()));
 
-        return map;
-    }
+		return map;
+	}
 
 	public long getMaxTotalKeys() {
 		return maxTotalKeys;

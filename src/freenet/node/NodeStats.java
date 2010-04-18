@@ -2101,73 +2101,75 @@ public class NodeStats implements Persistable {
 		avg.report(executionTimeMiliSeconds);
 	}
 
-    /**
-     * View of stats for CHK Store
-     * @return stats for CHK Store
-     */
-    public NodeStoreStats chkStoreStats() {
-        return new NodeStoreStats() {
-            public double avgLocation() {
-                return avgStoreLocation.currentValue();
-            }
+	/**
+	 * View of stats for CHK Store
+	 *
+	 * @return stats for CHK Store
+	 */
+	public NodeStoreStats chkStoreStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgStoreLocation.currentValue();
+			}
 
-            public double avgSuccess() {
-                return avgStoreSuccess.currentValue();
-            }
+			public double avgSuccess() {
+				return avgStoreSuccess.currentValue();
+			}
 
-            public double furthestSuccess() throws StatsNotAvailableException {
-                return furthestStoreSuccess;
-            }
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestStoreSuccess;
+			}
 
-            public double avgDist() throws StatsNotAvailableException {
-                return Location.distance(nodeLoc,avgLocation());
-            }
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
 
-            public double distanceStats() throws StatsNotAvailableException {
-                return cappedDistance(avgStoreLocation, node.getChkDatastore());
-            }
-        };
-    }
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgStoreLocation, node.getChkDatastore());
+			}
+		};
+	}
 
-    /**
-     * View of stats for CHK Cache
-     * @return CHK cache stats
-     */
-    public NodeStoreStats chkCacheStats() {
-        return new NodeStoreStats() {
-            public double avgLocation() {
-                return avgCacheLocation.currentValue();
-            }
+	/**
+	 * View of stats for CHK Cache
+	 *
+	 * @return CHK cache stats
+	 */
+	public NodeStoreStats chkCacheStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgCacheLocation.currentValue();
+			}
 
-            public double avgSuccess() {
-               return avgCacheSuccess.currentValue();
-            }
+			public double avgSuccess() {
+				return avgCacheSuccess.currentValue();
+			}
 
-            public double furthestSuccess() throws StatsNotAvailableException {
-                return furthestCacheSuccess;
-            }
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestCacheSuccess;
+			}
 
-            public double avgDist() throws StatsNotAvailableException {
-                return Location.distance(nodeLoc,avgLocation());
-            }
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
 
-            public double distanceStats() throws StatsNotAvailableException {
-                return cappedDistance(avgCacheLocation, node.getChkDatacache());
-            }
-        };
-    }
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgCacheLocation, node.getChkDatacache());
+			}
+		};
+	}
 
-    private double cappedDistance(DecayingKeyspaceAverage avgLocation, CHKStore store) {
-        double cachePercent = 1.0 * avgLocation.countReports() / store.keyCount();
-        //Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
-        if(cachePercent > 1.0){
-            cachePercent = 1.0;
-        }
-        return cachePercent;
-    }
+	private double cappedDistance(DecayingKeyspaceAverage avgLocation, CHKStore store) {
+		double cachePercent = 1.0 * avgLocation.countReports() / store.keyCount();
+		//Cap the reported value at 100%, as the decaying average does not account beyond that anyway.
+		if (cachePercent > 1.0) {
+			cachePercent = 1.0;
+		}
+		return cachePercent;
+	}
 
 
-    public static class DatabaseJobStats implements Comparable<DatabaseJobStats> {
+	public static class DatabaseJobStats implements Comparable<DatabaseJobStats> {
 		public final String jobType;
 		public final long count;
 		public final long avgTime;

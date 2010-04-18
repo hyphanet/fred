@@ -6,5 +6,5 @@ package freenet.node.stats;
  * Date: Apr 16, 2010
  */
 public enum DataStoreKeyType {
-    CHK, SSK, PUB_KEY
+	CHK, SSK, PUB_KEY
 }
