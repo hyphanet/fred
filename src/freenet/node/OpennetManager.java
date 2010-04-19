@@ -830,12 +830,14 @@ public class OpennetManager {
 	public byte[] waitForOpennetNoderef(boolean isReply, PeerNode source, long uid, ByteCounter ctr) {
 		// FIXME remove back compat code
 		MessageFilter mf =
-			MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).
+			MessageFilter.create().setSource(source).setField(DMT.UID, uid).
+			setTimeout(RequestSender.OPENNET_TIMEOUT).
 			setType(isReply ? DMT.FNPOpennetConnectReplyNew : DMT.FNPOpennetConnectDestinationNew);
-		if(!isReply) {
+		if (!isReply) {
 			// Also waiting for an ack
 			MessageFilter mfAck = 
-				MessageFilter.create().setSource(source).setField(DMT.UID, uid).setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
+				MessageFilter.create().setSource(source).setField(DMT.UID, uid).
+				setTimeout(RequestSender.OPENNET_TIMEOUT).setType(DMT.FNPOpennetCompletedAck);
 			mf = mfAck.or(mf);
 		}
 		Message msg;
@@ -847,53 +849,61 @@ public class OpennetManager {
 			return null; // Lost connection with request source
 		}
 		
-		if(msg == null) {
+		if (msg == null) {
 			// Timeout
 			Logger.normal(this, "Timeout waiting for opennet peer on "+this);
 			return null;
 		}
 		
-		if(msg.getSpec() == DMT.FNPOpennetCompletedAck)
+		if (msg.getSpec() == DMT.FNPOpennetCompletedAck) {
 			return null; // Acked (only possible if !isReply)
+		}
 		
 		// Noderef bulk transfer
-    	long xferUID = msg.getLong(DMT.TRANSFER_UID);
-    	int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
-    	int realLength = msg.getInt(DMT.NODEREF_LENGTH);
-    	return innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr);
+		long xferUID = msg.getLong(DMT.TRANSFER_UID);
+		int paddedLength = msg.getInt(DMT.PADDED_LENGTH);
+		int realLength = msg.getInt(DMT.NODEREF_LENGTH);
+		return innerWaitForOpennetNoderef(xferUID, paddedLength, realLength, source, isReply, uid, false, ctr);
 	}
 
 	byte[] innerWaitForOpennetNoderef(long xferUID, int paddedLength, int realLength, PeerNode source, boolean isReply, long uid, boolean sendReject, ByteCounter ctr) {
-    	if(paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH) {
-    		Logger.error(this, "Noderef too big: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
-    		if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TOO_BIG, ctr);
-    		return null;
-    	}
-    	if(realLength > paddedLength) {
-    		Logger.error(this, "Real length larger than padded length: "+SizeUtil.formatSize(paddedLength)+" real length "+SizeUtil.formatSize(realLength));
-    		if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED, ctr);
-    		return null;
-    	}
-    	byte[] buf = new byte[paddedLength];
-    	ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
-    	PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
-    	BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
-    	if(logMINOR)
-    		Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
-    	if(!br.receive()) {
-    		if(source.isConnected()) {
-    			String msg = "Failed to receive noderef bulk transfer for "+this+" : "+RetrievalException.getErrString(prb.getAbortReason())+" : "+prb.getAbortDescription()+" from "+source;
-    			if(prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED)
-    				Logger.warning(this, msg);
-    			else
-    				Logger.normal(this, msg);
-    			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TRANSFER_FAILED, ctr);
-    		}
-   			return null;
-    	}
-    	byte[] noderef = new byte[realLength];
-    	System.arraycopy(buf, 0, noderef, 0, realLength);
-    	return noderef;
+		if (paddedLength > OpennetManager.MAX_OPENNET_NODEREF_LENGTH) {
+			Logger.error(this, "Noderef too big: "+SizeUtil.formatSize(paddedLength)
+					+" real length "+SizeUtil.formatSize(realLength));
+			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TOO_BIG, ctr);
+			return null;
+		}
+		if (realLength > paddedLength) {
+			Logger.error(this, "Real length larger than padded length: "
+					+ SizeUtil.formatSize(paddedLength)
+					+ " real length "+SizeUtil.formatSize(realLength));
+			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_REAL_BIGGER_THAN_PADDED, ctr);
+			return null;
+		}
+		byte[] buf = new byte[paddedLength];
+		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
+		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
+		BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
+		if (logMINOR) {
+			Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
+		}
+		if (!br.receive()) {
+			if (source.isConnected()) {
+				String msg = "Failed to receive noderef bulk transfer for "+this+" : " 
+					+RetrievalException.getErrString(prb.getAbortReason())+" : "
+					+prb.getAbortDescription()+" from "+source;
+				if (prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED) {
+					Logger.warning(this, msg);
+				} else {
+					Logger.normal(this, msg);
+				}
+				if (sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TRANSFER_FAILED, ctr);
+			}
+			return null;
+		}
+		byte[] noderef = new byte[realLength];
+		System.arraycopy(buf, 0, noderef, 0, realLength);
+		return noderef;
 	}
 
 	public void rejectRef(long uid, PeerNode source, int reason, ByteCounter ctr) {
