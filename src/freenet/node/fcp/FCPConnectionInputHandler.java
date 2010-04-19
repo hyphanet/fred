@@ -22,7 +22,7 @@ import freenet.support.io.TooLongException;
 public class FCPConnectionInputHandler implements Runnable {
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
@@ -32,17 +32,19 @@ public class FCPConnectionInputHandler implements Runnable {
 			}
 		});
 	}
-	
+
 	final FCPConnectionHandler handler;
-	
+
 	FCPConnectionInputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
 	}
 
 	void start() {
+		if (handler.sock == null)
+			return;
 		handler.server.node.executor.execute(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
 	}
-	
+
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		try {
@@ -61,13 +63,13 @@ public class FCPConnectionInputHandler implements Runnable {
 		handler.close();
 		handler.closedInput();
 	}
-	
+
 	public void realRun() throws IOException {
 		InputStream is = new BufferedInputStream(handler.sock.getInputStream(), 4096);
 		LineReadingInputStream lis = new LineReadingInputStream(is);
-		
+
 		boolean firstMessage = true;
-		
+
 		while(true) {
 			SimpleFieldSet fs;
 			if(WrapperManager.hasShutdownHookBeenTriggered()) {
@@ -84,15 +86,15 @@ public class FCPConnectionInputHandler implements Runnable {
 			}
 			if(messageType.equals(""))
 				continue;
-			fs = new SimpleFieldSet(lis, 4096, 128, true, true, true, true);
-			
+			fs = new SimpleFieldSet(lis, 4096, 128, true, true, true);
+
 			// check for valid endmarker
 			if (!firstMessage && fs.getEndMarker() != null && (!fs.getEndMarker().startsWith("End")) && (!"Data".equals(fs.getEndMarker()))) {
 				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "Invalid end marker: "+fs.getEndMarker(), fs.get("Identifer"), fs.getBoolean("Global", false));
 				handler.outputHandler.queue(err);
 				continue;
 			}
-			
+
 			FCPMessage msg;
 			try {
 				if(logDEBUG)
@@ -150,9 +152,9 @@ public class FCPConnectionInputHandler implements Runnable {
 			}
 		}
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		throw new UnsupportedOperationException("FCPConnectionInputHandler storage in database not supported");
 	}
-	
+
 }

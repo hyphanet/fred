@@ -161,10 +161,8 @@ public class ClientSSK extends ClientKey {
 			}
 			return cloneKey ? nodeKey.cloneKey() : nodeKey;
 		} catch (SSKVerifyException e) {
-			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
 			Logger.error(this, "Have already verified and yet it fails!: "+e);
-			x.initCause(e);
-			throw x;
+			throw (AssertionError)new AssertionError("Have already verified and yet it fails!").initCause(e);
 		}
 	}
 

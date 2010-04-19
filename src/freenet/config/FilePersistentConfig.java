@@ -19,7 +19,7 @@ import freenet.support.io.LineReadingInputStream;
 
 /**
  * Global Config object which persists to a file.
- * 
+ *
  * Reads the config file into a SimpleFieldSet when created.
  * During init, SubConfig's are registered, and fed the relevant parts of the SFS.
  * Once initialization has finished, we check whether there are any options remaining.
@@ -30,6 +30,7 @@ public class FilePersistentConfig extends PersistentConfig {
 
 	final File filename;
 	final File tempFilename;
+	final protected String header;
 	protected final Object storeSync = new Object();
 
 	public static FilePersistentConfig constructFilePersistentConfig(File f) throws IOException {
@@ -37,7 +38,7 @@ public class FilePersistentConfig extends PersistentConfig {
 		File tempFilename = new File(f.getPath()+".tmp");
 		return new FilePersistentConfig(load(filename, tempFilename), filename, tempFilename);
 	}
-	
+
 	static SimpleFieldSet load(File filename, File tempFilename) throws IOException {
 		boolean filenameExists = filename.exists();
 		boolean tempFilenameExists = tempFilename.exists();
@@ -79,14 +80,19 @@ public class FilePersistentConfig extends PersistentConfig {
 		System.err.println("No config file found, creating new: "+filename);
 		return null;
 	}
-	
+
 	protected FilePersistentConfig(SimpleFieldSet origFS, File fnam, File temp) throws IOException {
+		this(origFS, fnam, temp, null);
+	}
+
+	protected FilePersistentConfig(SimpleFieldSet origFS, File fnam, File temp, String header) throws IOException {
 		super(origFS);
 		this.filename = fnam;
 		this.tempFilename = temp;
+		this.header = header;
 	}
 
-	/** Load the config file into a SimpleFieldSet. 
+	/** Load the config file into a SimpleFieldSet.
 	 * @throws IOException */
 	private static SimpleFieldSet initialLoad(File toRead) throws IOException {
 		if(toRead == null) return null;
@@ -98,19 +104,19 @@ public class FilePersistentConfig extends PersistentConfig {
 			bis = new BufferedInputStream(fis);
 			lis = new LineReadingInputStream(bis);
 			// Config file is UTF-8 too!
-			return new SimpleFieldSet(lis, 1024*1024, 128, true, true, true, true); // FIXME? advanced users may edit the config file, hence true?
+			return new SimpleFieldSet(lis, 1024*1024, 128, true, true, true); // FIXME? advanced users may edit the config file, hence true?
 		} finally {
 			Closer.close(lis);
 			Closer.close(bis);
 			Closer.close(fis);
 		}
 	}
-	
+
 	@Override
 	public void register(SubConfig sc) {
 		super.register(sc);
 	}
-	
+
 	@Override
 	public void store() {
 		if(!finishedInit) {
@@ -128,12 +134,12 @@ public class FilePersistentConfig extends PersistentConfig {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/** Don't call without taking storeSync first */
 	protected final void innerStore() throws IOException {
 		if(!finishedInit)
 			throw new IllegalStateException("SHOULD NOT HAPPEN!!");
-		
+
 		SimpleFieldSet fs = exportFieldSet();
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "fs = " + fs);
@@ -141,6 +147,8 @@ public class FilePersistentConfig extends PersistentConfig {
 		try {
 			fos = new FileOutputStream(tempFilename);
 			synchronized(this) {
+				//fs.setHeader(header); // TODO put this back in the next stable build (after 1245)
+				// ie. after the lenient parser is more widely deployed
 				fs.writeTo(fos);
 			}
 			FileUtil.renameTo(tempFilename, filename);

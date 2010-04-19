@@ -209,7 +209,7 @@ public class BookmarkItem extends Bookmark {
                 return false;
             }
             if (!b.key.equals(key)) {
-                if (b.key.getKeyType().equals("USK")) {
+				if ("USK".equals(b.key.getKeyType())) {
                     if (!b.key.setSuggestedEdition(key.getSuggestedEdition()).equals(key)) {
                         return false;
                     }
@@ -223,7 +223,7 @@ public class BookmarkItem extends Bookmark {
             if (b.hasAnActivelink != hasAnActivelink) {
                 return false;
             }
-            if (b.desc == desc)
+			if (b.desc.equals(desc))
 				return true;
 			if (b.desc == null || desc == null)
 				return false;

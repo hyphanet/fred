@@ -3,11 +3,12 @@ package freenet.clients.http.filter;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 
-public class UnsupportedCharsetInFilterException extends
-		UnsafeContentTypeException {
+public class UnsupportedCharsetInFilterException extends UnsafeContentTypeException {
+
+    final private static long serialVersionUID = 3775454822229213420L;
 
 	final String charset;
-	
+
 	public UnsupportedCharsetInFilterException(String string) {
 		charset = string;
 	}
@@ -31,7 +32,7 @@ public class UnsupportedCharsetInFilterException extends
 	public String getRawTitle() {
 		return l10n("title", "charset", charset);
 	}
-	
+
 	public String l10n(String message) {
 		return NodeL10n.getBase().getString("UnsupportedCharsetInFilterException."+message);
 	}

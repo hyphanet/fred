@@ -44,10 +44,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
+
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -55,7 +55,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 		});
 	}
-	
+
 	final SplitFileInserter parent;
 	final BaseClientPutter putter;
 
@@ -71,31 +71,31 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	final int[] dataRetries;
 	final int[] checkRetries;
-	
+
 	final int[] dataConsecutiveRNFs;
 	final int[] checkConsecutiveRNFs;
-	
+
 	/** Block numbers not finished */
 	final ArrayList<Integer> blocks;
-	
+
 	final boolean[] dataFinished;
 	final boolean[] checkFinished;
-	
+
 	final boolean[] dataFailed;
 	final boolean[] checkFailed;
-	
+
 	final int maxRetries;
-	
+
 	final InsertContext blockInsertContext;
 
 	final int segNo;
 
 	private volatile boolean encoded;
-	
+
 	private volatile boolean started;
-	
+
 	private volatile boolean finished;
-	
+
 	private volatile boolean hasURIs;
 
 	private final boolean getCHKOnly;
@@ -107,11 +107,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	private int blocksGotURI;
 	private int blocksSucceeded;
 	private int blocksCompleted;
-	
+
 	private final boolean persistent;
-	
+
 	private FECJob encodeJob;
-	
+
 
 	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
 			short splitfileAlgo, int checkBlockCount, Bucket[] origDataBlocks,
@@ -142,12 +142,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		if(persistent) container.activate(blockInsertContext, 1);
 		maxRetries = blockInsertContext.maxInsertRetries;
 		this.putter = putter;
-		
+
 	}
 
 	/**
 	 * Resume an insert segment
-	 * 
+	 *
 	 * @throws ResumeException
 	 */
 	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
@@ -291,7 +291,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				}
 				checkFS.removeSubset(index);
 			}
-			
+
 			if(checkBlocks.length > dataBlocks.length) {
 				// Work around 1135 bug.
 				// FIXME remove
@@ -433,7 +433,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						}
 						job = encodeJob = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, persistent ? context.persistentBucketFactory : context.tempBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
 					}
-				}				
+				}
 				fin = false;
 		} else {
 			for (int i = 0; i < checkBlocks.length; i++) {
@@ -506,7 +506,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						deactivate = !container.ext().isActive(dataBlocks[i]);
 						if(deactivate) container.activate(dataBlocks[i], 1);
 					}
-					ClientCHK key = (ClientCHK) encodeBucket(dataBlocks[i], compressorDescriptor).getClientKey();
+					ClientCHK key = encodeBucket(dataBlocks[i], compressorDescriptor).getClientKey();
 					if(deactivate) container.deactivate(dataBlocks[i], 1);
 					onEncode(i, key, container, context);
 				} catch (CHKEncodeException e) {
@@ -527,16 +527,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 							deactivate = !container.ext().isActive(checkBlocks[i]);
 							if(deactivate) container.activate(checkBlocks[i], 1);
 						}
-						ClientCHK key = (ClientCHK) encodeBucket(checkBlocks[i], compressorDescriptor).getClientKey();
+						ClientCHK key = encodeBucket(checkBlocks[i], compressorDescriptor).getClientKey();
 						if(deactivate) container.deactivate(checkBlocks[i], 1);
 						onEncode(i+dataBlocks.length, key, container, context);
 					} catch (CHKEncodeException e) {
-						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);	
+						fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container, context);
 					} catch (IOException e) {
 						fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container, context);
 					}
 				} else if(checkURIs[i] == null && checkBlocks[i] == null) {
-					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);	
+					fail(new InsertException(InsertException.INTERNAL_ERROR, "Data block "+i+" cannot be encoded: no data", null), container, context);
 				}
 			}
 		}
@@ -604,7 +604,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		synchronized (this) {
 			encoded = true;
 		}
-		
+
 		if(persistent) {
 			container.store(this);
 			container.activate(parent, 1);
@@ -617,12 +617,12 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		synchronized (this) {
 			freeFinishedDataBlocks(container);
 		}
-		
+
 		if(persistent) {
 			container.store(this);
 			container.deactivate(parent, 1);
 		}
-		
+
 		schedule(container, context);
 	}
 
@@ -665,8 +665,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if (finished)
 				return;
 			finished = true;
-			if(blocksSucceeded < blocksCompleted)
+			if(blocksSucceeded < blocksCompleted) {
 				toThrow = InsertException.construct(errors);
+				if(logMINOR) Logger.minor(this, "Blocks succeeded "+blocksSucceeded+" blocks completed "+blocksCompleted+" gives error "+toThrow+" on "+this);
+			} else if(!hasURIs) {
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "Completed but not encoded?!", null), container, context);
+				return;
+			}
 		}
 		if(persistent) {
 			container.store(this);
@@ -682,15 +687,19 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	private boolean onEncode(int x, ClientCHK key, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Encoded block "+x+" on "+this);
 		synchronized (this) {
-			if (finished)
+			if (finished) {
+				if(logMINOR) Logger.minor(this, "Already finished");
 				return false;
+			}
 			if (x >= dataBlocks.length) {
 				if (checkURIs[x - dataBlocks.length] != null) {
+					if(logMINOR) Logger.minor(this, "Already encoded check block");
 					return false;
 				}
 				checkURIs[x - dataBlocks.length] = key;
 			} else {
 				if (dataURIs[x] != null) {
+					if(logMINOR) Logger.minor(this, "Already encoded data block");
 					return false;
 				}
 				dataURIs[x] = key;
@@ -752,7 +761,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	/** Get the InsertException for this segment.
-	 * NOTE: This will be deleted when the segment is deleted! Do not store it or pass 
+	 * NOTE: This will be deleted when the segment is deleted! Do not store it or pass
 	 * it on!
 	 */
 	InsertException getException(ObjectContainer container) {
@@ -833,7 +842,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 		cancelInner(container, context);
 	}
-	
+
 	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) {
@@ -853,7 +862,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		else
 			return dataBlocks[blockNum];
 	}
-	
+
 	private BlockItem getBlockItem(ObjectContainer container, ClientContext context, int blockNum) throws IOException {
 		Bucket sourceData = getBucket(blockNum);
 		if(sourceData == null) {
@@ -878,22 +887,22 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 		return new BlockItem(this, blockNum, data, persistent);
 	}
-	
+
 	private int hashCodeForBlock(int blockNum) {
 		// FIXME: Standard hashCode() pattern assumes both inputs are evenly
 		// distributed ... this is not true here.
 		return hashCode() * (blockNum + 1);
 	}
-	
+
 	private static class BlockItem implements SendableRequestItem {
-		
+
 		private final boolean persistent;
 		private final Bucket copyBucket;
 		private final int hashCode;
 		/** STRICTLY for purposes of equals() !!! */
 		private final SplitFileInserterSegment parent;
 		private final int blockNum;
-		
+
 		BlockItem(SplitFileInserterSegment parent, int blockNum, Bucket bucket, boolean persistent) throws IOException {
 			this.parent = parent;
 			this.blockNum = blockNum;
@@ -901,16 +910,16 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			this.hashCode = parent.hashCodeForBlock(blockNum);
 			this.persistent = persistent;
 		}
-		
+
 		public void dump() {
 			copyBucket.free();
 		}
-		
+
 		@Override
 		public int hashCode() {
 			return hashCode;
 		}
-		
+
 		@Override
 		public boolean equals(Object o) {
 			if(o instanceof BlockItem) {
@@ -920,25 +929,25 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 			return false;
 		}
-		
+
 	}
-	
+
 	// Used for testing whether a block is already queued.
 	private class FakeBlockItem implements SendableRequestItem {
-		
+
 		private final int blockNum;
 		private final int hashCode;
-		
+
 		FakeBlockItem(int blockNum) {
 			this.blockNum = blockNum;
 			this.hashCode = hashCodeForBlock(blockNum);
-			
+
 		}
-		
+
 		public void dump() {
 			// Do nothing
 		}
-		
+
 		public SplitFileInserterSegment getParent() {
 			return SplitFileInserterSegment.this;
 		}
@@ -958,7 +967,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			return false;
 		}
 	}
-	
+
 	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		BlockItem block = (BlockItem) keyNum;
@@ -1263,7 +1272,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 				x = context.random.nextInt(blocks.size());
 				ret = blocks.get(x);
 				int num = ret;
-				
+
 				// Check whether it is already running
 				if(!persistent) {
 					if(keys.hasTransientInsert(this, new FakeBlockItem(num)))
@@ -1332,47 +1341,34 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 						Logger.error(this, "Asked to send empty block on "+SplitFileInserterSegment.this, new Exception("error"));
 						return false;
 					}
-					final ClientCHK key = (ClientCHK) b.getClientKey();
+					final ClientCHK key = b.getClientKey();
 					final int num = block.blockNum;
 					if(block.persistent) {
-					context.jobRunner.queue(new DBJob() {
-
-						public boolean run(ObjectContainer container, ClientContext context) {
-							if(!container.ext().isStored(SplitFileInserterSegment.this)) return false;
-							container.activate(SplitFileInserterSegment.this, 1);
-							boolean retval = onEncode(num, key, container, context);
-							container.deactivate(SplitFileInserterSegment.this, 1);
-							return retval;
-						}
-
-					}, NativeThread.NORM_PRIORITY+1, false);
+						req.setGeneratedKey(key);
 					} else {
 						context.mainExecutor.execute(new Runnable() {
 
 							public void run() {
 								onEncode(num, key, null, context);
 							}
-							
+
 						}, "Got URI");
-						
+
 					}
 					core.realPut(b, req.canWriteClientCache, req.forkOnCacheable);
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
 					if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request failed: "+SplitFileInserterSegment.this+" for "+e);
 					return true;
-				} catch (DatabaseDisabledException e) {
-					// Impossible, and nothing to do.
-					Logger.error(this, "Running persistent insert but database is disabled!");
 				}
 				if(SplitFileInserterSegment.logMINOR) Logger.minor(this, "Request succeeded: "+SplitFileInserterSegment.this);
 				req.onInsertSuccess(context);
 				return true;
 			}
-			
-		
+
+
 	}
-	
+
 	@Override
 	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
 		SendableRequestSender result;
@@ -1468,7 +1464,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 	}
 
 	private boolean removeOnEncode;
-	
+
 	public void removeFrom(ObjectContainer container, ClientContext context) {
 		container.activate(encodeJob, 1);
 		if(encodeJob != null) {
@@ -1485,18 +1481,22 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		// parent, putter can deal with themselves
 		freeBucketsArray(container, dataBlocks);
 		freeBucketsArray(container, checkBlocks);
-		for(ClientCHK chk : dataURIs) {
+		for(int i=0;i<dataURIs.length;i++) {
+			ClientCHK chk = dataURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "dataURI is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
+			} else {
+				if(logMINOR) Logger.minor(this, "dataURI "+i+" is null on "+this);
 			}
 		}
-		for(ClientCHK chk : checkURIs) {
+		for(int i=0;i<checkURIs.length;i++) {
+			ClientCHK chk = checkURIs[i];
 			if(chk != null) {
-				if(logMINOR) Logger.minor(this, "checkURI is null on "+this);
 				container.activate(chk, 5);
 				chk.removeFrom(container);
+			} else {
+				if(logMINOR) Logger.minor(this, "checkURI "+i+" is null on "+this);
 			}
 		}
 		container.activate(blocks, 5);
@@ -1515,7 +1515,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 		}
 		container.delete(this);
 	}
-	
+
 	@Override
 	public boolean canWriteClientCache(ObjectContainer container) {
 		boolean deactivate = false;
@@ -1529,7 +1529,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.deactivate(blockInsertContext, 1);
 		return retval;
 	}
-	
+
 	@Override
 	public boolean forkOnCacheable(ObjectContainer container) {
 		boolean deactivate = false;
@@ -1543,7 +1543,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			container.deactivate(blockInsertContext, 1);
 		return retval;
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished) {
 			Logger.error(this, "Storing "+this+" when already finished!", new Exception("error"));
@@ -1564,10 +1564,10 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			buckets[i] = null;
 		}
 	}
-	
+
 	/**
 	 * Free only those data blocks which have finished already, because they were
-	 * not freed when they finished because we hadn't completed FEC encoding and 
+	 * not freed when they finished because we hadn't completed FEC encoding and
 	 * thus needed to keep them until we encoded.
 	 * @param container
 	 */
@@ -1583,7 +1583,7 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			}
 		}
 	}
-	
+
 	public boolean isStorageBroken(ObjectContainer container) {
 		if(putter == null) return true;
 		if(parent == null) return true;
@@ -1659,6 +1659,11 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 
 	public boolean isStarted() {
 		return started;
+	}
+
+	@Override
+	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
+		onEncode(((BlockItem)token).blockNum, (ClientCHK)key, container, context);
 	}
 
 }

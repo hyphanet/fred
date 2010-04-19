@@ -19,7 +19,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	static boolean noNative;
 
-	private static final LRUHashtable recentlyUsedCodecs = new LRUHashtable();
+	private static final LRUHashtable<MyKey, StandardOnionFECCodec> recentlyUsedCodecs = new LRUHashtable<MyKey, StandardOnionFECCodec>();
 
 	private static class MyKey {
 		/** Number of input blocks */
@@ -48,7 +48,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
-		StandardOnionFECCodec codec = (StandardOnionFECCodec) recentlyUsedCodecs.get(key);
+		StandardOnionFECCodec codec = recentlyUsedCodecs.get(key);
 		if(codec != null) {
 			recentlyUsedCodecs.push(key, codec);
 			return codec;

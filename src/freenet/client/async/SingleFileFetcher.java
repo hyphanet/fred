@@ -133,8 +133,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.isFinal = false;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
-		if(persistent && ah != null) ah = ah.cloneHandler();
 		this.ah = fetcher.ah;
+		if(persistent && ah != null) ah = ah.cloneHandler();
 		this.archiveMetadata = null;
 		this.clientMetadata = (fetcher.clientMetadata != null ? fetcher.clientMetadata.clone() : new ClientMetadata());
 		this.metadata = newMeta;

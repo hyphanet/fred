@@ -21,7 +21,7 @@ public class FCPPersistentRoot {
 
 	final long nodeDBHandle;
 	final FCPClient globalForeverClient;
-	
+
 	public FCPPersistentRoot(long nodeDBHandle, ObjectContainer container) {
 		this.nodeDBHandle = nodeDBHandle;
 		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, container);
@@ -29,6 +29,7 @@ public class FCPPersistentRoot {
 
 	public static FCPPersistentRoot create(final long nodeDBHandle, ObjectContainer container) {
 		ObjectSet<FCPPersistentRoot> set = container.query(new Predicate<FCPPersistentRoot>() {
+			final private static long serialVersionUID = -8615907687034212486L;
 			@Override
 			public boolean match(FCPPersistentRoot root) {
 				return root.nodeDBHandle == nodeDBHandle;
@@ -59,7 +60,7 @@ public class FCPPersistentRoot {
 		/**
 		 * FIXME DB4O:
 		 * Native queries involving strings seem to do wierd things. I was getting
-		 * the global queue returned here even though I compared with the passed-in 
+		 * the global queue returned here even though I compared with the passed-in
 		 * name! :<
 		 * FIXME reproduce and file a bug for db4o.
 		 */

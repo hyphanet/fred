@@ -152,12 +152,21 @@ public class ToadletContextImpl implements ToadletContext {
 		sentReplyHeaders = true;
 		
 		if(replyCookies != null) {
+			if (mvt == null) {
+				mvt = new MultiValueTable<String,String>();
+			}
 			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
+			
+			final boolean logMINOR = Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class);
 
 			// We do NOT use "set-cookie2" even though we should according though RFC2965 - Firefox 3.0.14 ignores it for me!
 			
-			for(Cookie cookie : replyCookies)
-				mvt.put("set-cookie", cookie.encodeToHeaderValue());
+			for(Cookie cookie : replyCookies) {
+				final String cookieHeader = cookie.encodeToHeaderValue();
+				mvt.put("set-cookie", cookieHeader);
+				if(logMINOR)
+					Logger.minor(this, "set-cookie: " + cookieHeader);
+			}
 		}
 		
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
@@ -235,6 +244,7 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
+		
 		// Construct headers
 		if(mvt == null)
 			mvt = new MultiValueTable<String,String>();
@@ -479,7 +489,7 @@ public class ToadletContextImpl implements ToadletContext {
 
 						HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx, method);
 						try {
-							String methodName = "handleMethod" + method;
+							String methodName = Toadlet.HANDLE_METHOD_PREFIX + method;
 							try {
 								Class<? extends Toadlet> c = t.getClass();
 								Method m = c.getMethod(methodName, HANDLE_PARAMETERS);

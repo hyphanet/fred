@@ -99,7 +99,7 @@ class SingleFileInserter implements ClientPutState {
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InsertContext ctx, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ARCHIVE_TYPE archiveType,
-			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile) {
+			boolean freeData, String targetFilename, boolean earlyEncode, boolean forSplitfile, boolean persistent) {
 		hashCode = super.hashCode();
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
@@ -113,7 +113,7 @@ class SingleFileInserter implements ClientPutState {
 		this.archiveType = archiveType;
 		this.freeData = freeData;
 		this.targetFilename = targetFilename;
-		this.persistent = parent.persistent();
+		this.persistent = persistent;
 		this.forSplitfile = forSplitfile;
 		if(logMINOR) Logger.minor(this, "Created "+this+" persistent="+persistent+" freeData="+freeData);
 	}
@@ -615,10 +615,11 @@ class SingleFileInserter implements ClientPutState {
 					splitInsertSuccess = true;
 					if(!metaInsertSuccess && !metaInsertStarted) {
 						lateStart = true;
+						// Cannot remove yet because not created metadata inserter yet.
 					} else {
+						sfi = null;
 						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
 					}
-					sfi = null;
 					toRemove = state;
 				} else if(state == metadataPutter) {
 					if(logMINOR) Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
@@ -640,13 +641,17 @@ class SingleFileInserter implements ClientPutState {
 					}
 				}
 			}
+			if(lateStart) {
+				startMetadata(container, context);
+				synchronized(this) {
+					sfi = null;
+				}
+			}
 			if(toRemove != null && persistent)
 				toRemove.removeFrom(container, context);
 			if(persistent)
 				container.store(this);
-			if(lateStart)
-				startMetadata(container, context);
-			else if(finished) {
+			if(finished) {
 				if(persistent)
 					container.activate(cb, 1);
 				cb.onSuccess(this, container, context);
@@ -662,6 +667,8 @@ class SingleFileInserter implements ClientPutState {
 			boolean toFail = true;
 			boolean toRemove = false;
 			synchronized(this) {
+				if(logMINOR)
+					Logger.minor(this, "onFailure(): "+e+" on "+state+" on "+this+" sfi = "+sfi+" metadataPutter = "+metadataPutter);
 				if(state == sfi) {
 					toRemove = true;
 					sfi = null;
@@ -695,6 +702,7 @@ class SingleFileInserter implements ClientPutState {
 				container.activate(block, 2);
 			}
 			InsertException e = null;
+			if(logMINOR) Logger.minor(this, "Got metadata for "+this+" from "+state);
 			synchronized(this) {
 				if(finished) return;
 				if(reportMetadataOnly) {
@@ -733,9 +741,7 @@ class SingleFileInserter implements ClientPutState {
 				metaBytes = meta.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
 				Logger.error(this, "Impossible: "+e1, e1);
-				InsertException ex = new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null);
-				ex.initCause(e1);
-				fail(ex, container, context);
+				fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null).initCause(e1), container, context);
 				return;
 			}
 			
@@ -752,9 +758,7 @@ class SingleFileInserter implements ClientPutState {
 						metaBytes = meta.writeToByteArray();
 					} catch (MetadataUnresolvedException e1) {
 						Logger.error(this, "Impossible (2): "+e1, e1);
-						InsertException ex = new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null);
-						ex.initCause(e1);
-						fail(ex, container, context);
+						fail((InsertException)new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null).initCause(e1), container, context);
 						return;
 					}
 				}
@@ -770,7 +774,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 				synchronized(this) {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode, true, persistent);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
 					// Otherwise, wait until the data is fetchable (to improve persistence).
 					if(logMINOR)
@@ -964,6 +968,8 @@ class SingleFileInserter implements ClientPutState {
 					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
 				} else {
 					// Get all the URIs ASAP so we can start to insert the metadata.
+					// Unless earlyEncode is enabled, this is an error or at least a rare case, indicating e.g. we've lost a URI.
+					Logger.error(this, "startMetadata() calling forceEncode() on "+splitInserter+" for "+this);
 					if(persistent)
 						container.activate(splitInserter, 1);
 					((SplitFileInserter)splitInserter).forceEncode(container, context);

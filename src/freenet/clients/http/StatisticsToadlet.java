@@ -26,6 +26,7 @@ import freenet.node.RequestStarterGroup;
 import freenet.node.Version;
 import freenet.support.HTMLNode;
 import freenet.support.SizeUtil;
+import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 
@@ -300,7 +301,13 @@ public class StatisticsToadlet extends Toadlet {
 			
 			HTMLNode databaseJobsInfobox = nextTableCell.addChild("div", "class", "infobox");
 			drawDatabaseJobsBox(databaseJobsInfobox);
-			
+
+			OpennetManager om = node.getOpennet();
+			if(om != null) {
+				// opennet stats box
+				drawOpennetStatsBox(nextTableCell.addChild("div", "class", "infobox"), om);
+			}
+
 			// peer distribution box
 			overviewTableRow = overviewTable.addChild("tr");
 			nextTableCell = overviewTableRow.addChild("td", "class", "first");
@@ -435,9 +442,10 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	private void drawDatabaseJobsBox(HTMLNode node) {
+		// Job count by priority
 		node.addChild("div", "class", "infobox-header", l10n("databaseJobsByPriority"));
 		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
-		int[] jobsByPriority = core.clientDatabaseExecutor.queuedJobs();
+		int[] jobsByPriority = core.clientDatabaseExecutor.getQueuedJobsCountByPriority();
 		
 		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
 		HTMLNode row = threadsByPriorityTable.addChild("tr");
@@ -450,6 +458,37 @@ public class StatisticsToadlet extends Toadlet {
 			row.addChild("td", String.valueOf(i));
 			row.addChild("td", String.valueOf(jobsByPriority[i]));
 		}
+
+		// Per job-type execution count and avg execution time
+		
+		HTMLNode executionTimeStatisticsTable = threadsInfoboxContent.addChild("table", "border", "0");
+		row = executionTimeStatisticsTable .addChild("tr");
+		row.addChild("th", l10n("jobType"));
+		row.addChild("th", l10n("count"));
+		row.addChild("th", l10n("avgTime"));
+		row.addChild("th", l10n("totalTime"));
+		
+		
+		for(NodeStats.DatabaseJobStats entry : stats.getDatabaseJobExecutionStatistics()) {
+			row = executionTimeStatisticsTable.addChild("tr");
+			row.addChild("td", entry.jobType);
+			row.addChild("td", Long.toString(entry.count));
+			row.addChild("td", TimeUtil.formatTime(entry.avgTime, 2, true));
+			row.addChild("td", TimeUtil.formatTime(entry.totalTime, 2, true));
+		}
+		
+		HTMLNode jobQueueStatistics = threadsInfoboxContent.addChild("table", "border", "0");
+		row = jobQueueStatistics .addChild("tr");
+		row.addChild("th", l10n("queuedCount"));
+		row.addChild("th", l10n("jobType"));
+		stats.getDatabaseJobQueueStatistics().toTableRows(jobQueueStatistics);
+	}
+
+	private void drawOpennetStatsBox(HTMLNode box, OpennetManager om) {
+		box.addChild("div", "class", "infobox-header", l10n("opennetStats"));
+		HTMLNode opennetStatsContent = box.addChild("div", "class", "infobox-content");
+		om.drawOpennetStatsBox(opennetStatsContent);
+		
 	}
 	
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, double loc, long nodeUptimeSeconds) {
@@ -890,6 +929,7 @@ public class StatisticsToadlet extends Toadlet {
 			long totalBytesSentResends = node.nodeStats.getResendBytesSent();
 			long totalBytesSentUOM = node.nodeStats.getUOMBytesSent();
 			long totalBytesSentAnnounce = node.nodeStats.getAnnounceBytesSent();
+			long totalBytesSentAnnouncePayload = node.nodeStats.getAnnounceBytesPayloadSent();
 			long totalBytesSentRoutingStatus = node.nodeStats.getRoutingStatusBytes();
 			long totalBytesSentNetworkColoring = node.nodeStats.getNetworkColoringSentBytes();
 			long totalBytesSentPing = node.nodeStats.getPingSentBytes();
@@ -916,7 +956,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("ackOnlyBytes", "total", SizeUtil.formatSize(totalBytesSentAckOnly, true)));
 			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(totalBytesSentResends, true)));
 			activityList.addChild("li", l10n("uomBytes", "total",  SizeUtil.formatSize(totalBytesSentUOM, true)));
-			activityList.addChild("li", l10n("announceBytes", "total", SizeUtil.formatSize(totalBytesSentAnnounce, true)));
+			activityList.addChild("li", l10n("announceBytes", new String[] { "total", "payload" }, new String[] { SizeUtil.formatSize(totalBytesSentAnnounce, true), SizeUtil.formatSize(totalBytesSentAnnouncePayload, true) }));
 			activityList.addChild("li", l10n("adminBytes", new String[] { "routingStatus", "disconn", "initial", "changedIP" }, new String[] { SizeUtil.formatSize(totalBytesSentRoutingStatus, true), SizeUtil.formatSize(totalBytesSentDisconn, true), SizeUtil.formatSize(totalBytesSentInitial, true), SizeUtil.formatSize(totalBytesSentChangedIP, true) }));
 			activityList.addChild("li", l10n("debuggingBytes", new String[] { "netColoring", "ping", "probe", "routed" }, new String[] { SizeUtil.formatSize(totalBytesSentNetworkColoring, true), SizeUtil.formatSize(totalBytesSentPing, true), SizeUtil.formatSize(totalBytesSentProbeRequest, true), SizeUtil.formatSize(totalBytesSentRouted, true) } ));
 			activityList.addChild("li", l10n("nodeToNodeBytes", "total", SizeUtil.formatSize(totalBytesSentNodeToNode, true)));

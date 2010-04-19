@@ -168,7 +168,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 			System.err.println("Database corrupted (before entering NodeClientCore)!");
 		fecQueue = initFECQueue(node.nodeDBHandle, container, null);
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, 30*1000, this);
+		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true, 30*1000, this, node.nodeStats);
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
@@ -759,6 +759,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 		try {
 			clientContext.jobRunner.queue(new DBJob() {
 				
+				public String toString() {
+					return "Init ArchiveManager";
+				}
+				
 				public boolean run(ObjectContainer container, ClientContext context) {
 					ArchiveManager.init(container, context, context.nodeDBHandle);
 					return false;
@@ -809,6 +813,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 	private int startupDatabaseJobsDone = 0;
 	
 	private DBJob startupJobRunner = new DBJob() {
+		
+		public String toString() {
+			return "Run startup jobs";
+		}
 
 		public boolean run(ObjectContainer container, ClientContext context) {
 			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];

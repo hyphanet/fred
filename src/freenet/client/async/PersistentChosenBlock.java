@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.LowLevelGetException;
@@ -157,6 +159,26 @@ public class PersistentChosenBlock extends ChosenBlock {
 	@Override
 	public SendableRequestSender getSender(ClientContext context) {
 		return parent.sender;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanActivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store a PersistentChosenRequest!", new Exception("error"));
+		return false;
 	}
 	
 }

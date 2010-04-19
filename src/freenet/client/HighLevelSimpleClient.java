@@ -6,7 +6,6 @@ package freenet.client;
 import java.util.HashMap;
 import java.util.Set;
 
-import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -21,7 +20,7 @@ public interface HighLevelSimpleClient {
 	 * Set the maximum length of the fetched data.
 	 */
 	public void setMaxLength(long maxLength);
-	
+
 	/**
 	 * Set the maximum length of any intermediate data, e.g. ZIP manifests.
 	 */
@@ -39,14 +38,14 @@ public interface HighLevelSimpleClient {
 	 * to obtain the final output (e.g. containers).
 	 */
 	public FetchResult fetch(FreenetURI uri, long maxSize) throws FetchException;
-	
+
 	/**
 	 * Blocking fetch of a URI with a configurable max-size and context object.
 	 * @param context Used mainly for scheduling, we round-robin between request clients within a given
 	 * priority and retry count. Also indicates whether the request is persistent, and if so, can remove it.
 	 */
 	public FetchResult fetch(FreenetURI uri, long maxSize, RequestClient context) throws FetchException;
-	
+
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
 	 * Will return immediately, the callback will be called later.
@@ -56,7 +55,7 @@ public interface HighLevelSimpleClient {
 	 * @return The ClientGetter object, which will have been started already.
 	 */
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
-	
+
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
 	 * Will return immediately, the callback will be called later.
@@ -67,10 +66,7 @@ public interface HighLevelSimpleClient {
 	 * @return The ClientGetter object, which will have been started already.
 	 */
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx, short priorityClass) throws FetchException;
-	
-	@Deprecated
-	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientCallback callback, FetchContext fctx) throws FetchException;
-	
+
 	/**
 	 * Blocking insert.
 	 * @param filenameHint If set, insert a single-file manifest containing only this file, under the given filename.
@@ -82,26 +78,23 @@ public interface HighLevelSimpleClient {
 	 * Non-blocking insert.
 	 * @param isMetadata If true, insert metadata.
 	 * @param cb Will be called when the insert completes. If the request is persistent
-	 * this will be called on the database thread with a container parameter. 
+	 * this will be called on the database thread with a container parameter.
 	 * @param ctx Insert context so you can customise the insertion process.
 	 */
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException;
 
-	@Deprecated
-	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException;
-	
 	/**
 	 * Blocking insert of a redirect.
 	 */
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI target) throws InsertException;
-	
+
 	/**
 	 * Blocking insert of multiple files as a manifest (or zip manifest, etc).
 	 * The map can contain either string -> bucket, string -> manifestitem or string -> map, the latter
 	 * indicating subdirs.
 	 */
-	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException;
-	
+	public FreenetURI insertManifest(FreenetURI insertURI, HashMap<String, Object> bucketsByName, String defaultName) throws InsertException;
+
 	/**
 	 * Get the FetchContext so you can customise the search process. Has settings for all sorts of things
 	 * such as how many times to retry each block, whether to follow redirects, whether to open containers,
@@ -117,15 +110,6 @@ public interface HighLevelSimpleClient {
 	 * bucket pool.
 	 */
 	public InsertContext getInsertContext(boolean forceNonPersistent);
-	
-	/**
-     * Add a ClientEventListener.
-     * This name is misleading -- this hook not for the global queue.
-     * Use {@link NodeClientCore#getFCPServer()} for the global queue.
-     * 
-     * @deprecated Use {@link #addEventHook(ClientEventListener)} instead
-     */
-    public void addGlobalHook(ClientEventListener listener);
 
 	/**
 	 * Add a ClientEventListener.
@@ -135,7 +119,7 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Generates a new key pair, consisting of the insert URI at index 0 and the
 	 * request URI at index 1.
-	 * 
+	 *
 	 * @param docName
 	 *            The document name
 	 * @return An array containing the insert and request URI
@@ -143,19 +127,19 @@ public interface HighLevelSimpleClient {
 	public FreenetURI[] generateKeyPair(String docName);
 
 	/**
-	 * Prefetch a key at a very low priority. If it hasn't been fetched within the timeout, 
+	 * Prefetch a key at a very low priority. If it hasn't been fetched within the timeout,
 	 * kill the fetch.
-	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null. 
+	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null.
 	 */
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes);
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes);
 
 	/**
-	 * Prefetch a key at the given priority. If it hasn't been fetched within the timeout, 
+	 * Prefetch a key at the given priority. If it hasn't been fetched within the timeout,
 	 * kill the fetch.
-	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null. 
+	 * @param allowedTypes Kill the request if the MIME type is not one of these types. Normally null.
 	 */
-	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes, short prio);
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set<String> allowedTypes, short prio);
 
 	public HighLevelSimpleClient clone();
-	
+
 }

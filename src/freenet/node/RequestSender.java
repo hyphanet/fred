@@ -29,6 +29,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
+import freenet.node.OpennetManager.ConnectionType;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
@@ -1220,7 +1221,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	
         	if(ref == null) return;
         	
-			if(node.addNewOpennetNode(ref) == null) {
+			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null) {
 				// If we don't want it let somebody else have it
 				synchronized(this) {
 					opennetNoderef = noderef;

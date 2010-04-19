@@ -230,7 +230,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							}
 							
 							public String toString() {
-								return super.toString() + "(registerInsert)";
+								return "registerInsert";
 							}
 							
 						}, NativeThread.NORM_PRIORITY, false);
@@ -467,12 +467,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * Called by RequestStarter to find a request to run.
 	 */
 	public ChosenBlock grabRequest() {
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		while(true) {
 			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
 				short bestPriority = Short.MAX_VALUE;
 				int bestRetryCount = Integer.MAX_VALUE;
 				for(PersistentChosenRequest req : starterQueue) {
+					if(req.prio == RequestStarter.MINIMUM_PRIORITY_CLASS) {
+					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: "+req+" prio: "+req.prio+" retryCount: "+req.retryCount);
+					     continue; //Ignore paused requests
+					}
 					if(req.prio < bestPriority || 
 							(req.prio == bestPriority && req.retryCount < bestRetryCount)) {
 						bestPriority = req.prio;
@@ -625,7 +630,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return false;
 		}
 		public String toString() {
-			return super.toString()+"(fillRequestStarterQueue)";
+			return "fillRequestStarterQueue";
 		}
 	};
 	
@@ -893,7 +898,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(succeeded)";
+						return "BaseSendableGet succeeded";
 					}
 					
 				}, TRIP_PENDING_PRIORITY, false);
@@ -924,7 +929,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(tripkey)";
+						return "tripPendingKey";
 					}
 				}, TRIP_PENDING_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
@@ -1068,7 +1073,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(callfailureget)";
+						return "SendableGet onFailure";
 					}
 					
 				}, prio, false);
@@ -1094,7 +1099,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(callfailureput)";
+						return "SendableInsert onFailure";
 					}
 					
 				}, prio, false);

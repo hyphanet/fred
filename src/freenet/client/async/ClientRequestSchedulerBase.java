@@ -214,6 +214,8 @@ abstract class ClientRequestSchedulerBase {
 			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context, oldPrio);
+			//Remove from the starterQueue
+			if(persistent()) sched.removeFromStarterQueue(req, container, true);
 			// Then can do innerRegister() (not register()).
 			innerRegister(req, random, container, null);
 			if(persistent())

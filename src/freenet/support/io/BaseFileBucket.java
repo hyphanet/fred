@@ -46,6 +46,15 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	protected static String tempDir = null;
 
+	/**
+	 * Constructor.
+	 * @param file
+	 * @param deleteOnExit If true, call File.deleteOnExit() on the file. 
+	 * WARNING: Delete on exit is a memory leak: The filenames are kept until the JVM exits, and 
+	 * cannot be removed even when the file has been deleted! It should only be used where it is 
+	 * ESSENTIAL! Note that if you want temp files to be deleted on exit, you also need to override
+	 * deleteOnExit().
+	 */
 	public BaseFileBucket(File file, boolean deleteOnExit) {
 		if(file == null) throw new NullPointerException();
 		this.length = file.length();

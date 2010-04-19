@@ -442,7 +442,7 @@ public abstract class Fields {
 	public static String commaList(Object[] addr) {
 		return commaList(addr, ',');
 	}
-	
+
 	/**
 	 * @param addr
 	 * @return
@@ -801,7 +801,7 @@ public abstract class Fields {
 	**         {@code arr.length}.
 	*/
 	public static <T> int binarySearch(T[] arr, int li, int ri, T key, Comparator<? super T> cmp) {
-		int l = li, r = ri, m = 0, c = 0;
+		int l = li, r = ri, m = 0;
 
 		if (li > ri) {
 			throw new IllegalArgumentException("L-index must not be greater than R-index");
@@ -814,7 +814,7 @@ public abstract class Fields {
 			// natural ordering
 			while (l<=r) {
 				m = (l+r)>>>1;
-				c = ((Comparable<T>)arr[m]).compareTo(key);
+				@SuppressWarnings("unchecked") int c = ((Comparable<T>)arr[m]).compareTo(key);
 
 				if (c == 0) {
 					return m;
@@ -830,7 +830,7 @@ public abstract class Fields {
 			// comparator
 			while (l<=r) {
 				m = (l+r)>>>1;
-				c = cmp.compare(arr[m], key);
+				int c = cmp.compare(arr[m], key);
 
 				if (c == 0) {
 					return m;

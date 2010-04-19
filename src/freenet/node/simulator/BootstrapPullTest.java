@@ -35,23 +35,23 @@ import freenet.support.io.LineReadingInputStream;
 public class BootstrapPullTest {
 
 	public static int TEST_SIZE = 1024*1024;
-	
+
 	public static int EXIT_NO_SEEDNODES = 257;
 	public static int EXIT_FAILED_TARGET = 258;
 	public static int EXIT_INSERT_FAILED = 259;
 	public static int EXIT_FETCH_FAILED = 260;
 	public static int EXIT_INSERTER_PROBLEM = 261;
 	public static int EXIT_THREW_SOMETHING = 262;
-	
+
 	public static int DARKNET_PORT = 5000;
 	public static int OPENNET_PORT = 5001;
-	
+
 	/**
 	 * @param args
-	 * @throws InvalidThresholdException 
-	 * @throws IOException 
-	 * @throws NodeInitException 
-	 * @throws InterruptedException 
+	 * @throws InvalidThresholdException
+	 * @throws IOException
+	 * @throws NodeInitException
+	 * @throws InterruptedException
 	 */
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
 		Node secondNode = null;
@@ -75,7 +75,7 @@ public class BootstrapPullTest {
         FileInputStream fis = new FileInputStream(seednodes);
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
-        
+
         // Create the test data
         System.out.println("Creating test data.");
         File dataFile = File.createTempFile("testdata", ".tmp", dir);
@@ -88,11 +88,11 @@ public class BootstrapPullTest {
         	written += toWrite;
         }
         os.close();
-        
+
         // Insert it to the established node.
         System.out.println("Inserting test data to an established node.");
         FreenetURI uri = insertData(dataFile);
-        
+
         // Bootstrap a second node.
         secondInnerDir.mkdir();
         fis = new FileInputStream(seednodes);
@@ -106,7 +106,7 @@ public class BootstrapPullTest {
 			secondNode.park();
 			System.exit(EXIT_FAILED_TARGET);
 		}
-        
+
         // Fetch the data
         long startFetchTime = System.currentTimeMillis();
         HighLevelSimpleClient client = secondNode.clientCore.makeClient((short)0);
@@ -145,7 +145,7 @@ public class BootstrapPullTest {
         osw.write("ClientHello\nExpectedVersion=0.7\nName=BootstrapPullTest-"+System.currentTimeMillis()+"\nEnd\n");
         osw.flush();
        	String name = lis.readLine(65536, 128, true);
-       	SimpleFieldSet fs = new SimpleFieldSet(lis, 65536, 128, true, true, false, true);
+       	SimpleFieldSet fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
        	if(!name.equals("NodeHello")) {
        		System.err.println("No NodeHello from insertor node!");
        		System.exit(EXIT_INSERTER_PROBLEM);
@@ -158,7 +158,7 @@ public class BootstrapPullTest {
        	System.out.println("Sent data");
        	while(true) {
            	name = lis.readLine(65536, 128, true);
-           	fs = new SimpleFieldSet(lis, 65536, 128, true, true, false, true);
+           	fs = new SimpleFieldSet(lis, 65536, 128, true, false, true);
        		System.out.println("Got FCP message: \n"+name);
        		System.out.print(fs.toOrderedString());
        		if(name.equals("ProtocolError")) {

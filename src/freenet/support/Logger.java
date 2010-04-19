@@ -530,7 +530,7 @@ public abstract class Logger {
 	}
 
 	/** Remove a logger hook from the global logger hook chain. */
-	public synchronized static void globalRemoveHook(FileLoggerHook hook) {
+	public synchronized static void globalRemoveHook(LoggerHook hook) {
 		if(logger instanceof LoggerHookChain)
 			((LoggerHookChain)logger).removeHook(hook);
 		else

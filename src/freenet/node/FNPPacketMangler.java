@@ -41,6 +41,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.l10n.NodeL10n;
+import freenet.node.OpennetManager.ConnectionType;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
@@ -312,7 +313,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
-			if(opennet.wantPeer(null, false, true, true)) {
+			if(opennet.wantPeer(null, false, true, true, ConnectionType.RECONNECT)) {
 				// We want a peer.
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
@@ -1213,7 +1214,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			 * immediately dropped when there is no droppable peer to drop. If it was dropped 
 			 * from the bottom of the LRU list, we would not have added it to the LRU; so it was
 			 * somewhere in the middle. */
-			if(!opennet.wantPeer(pn, false, false, true)) {
+			if(!opennet.wantPeer(pn, false, false, true, ConnectionType.RECONNECT)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 				opennet.purgeOldOpennetPeer(pn);
@@ -1429,7 +1430,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			 * immediately dropped when there is no droppable peer to drop. If it was dropped 
 			 * from the bottom of the LRU list, we would not have added it to the LRU; so it was
 			 * somewhere in the middle. */
-			if(!opennet.wantPeer(pn, false, false, true)) {
+			if(!opennet.wantPeer(pn, false, false, true, ConnectionType.RECONNECT)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 				opennet.purgeOldOpennetPeer(pn);
@@ -1494,9 +1495,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ptr = 0;
 		if(negType >= 4) {
 			long trackerID;
-			if(pn == null)
-				trackerID = -1;
-			else trackerID = pn.getReusableTrackerID();
+			trackerID = pn.getReusableTrackerID();
 			System.arraycopy(Fields.longToBytes(trackerID), 0, data, ptr, 8);
 			ptr += 8;
 			if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
@@ -2888,7 +2887,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	public boolean isDisconnected(PeerContext context) {
 		if(context == null) return false;
-		return !((PeerNode)context).isConnected();
+		return !context.isConnected();
 	}
 
 	public void resend(ResendPacketItem item, SessionKey tracker) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {

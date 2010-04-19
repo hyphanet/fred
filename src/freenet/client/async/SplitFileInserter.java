@@ -5,7 +5,7 @@ package freenet.client.async;
 
 import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import java.io.IOException;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
@@ -29,10 +29,10 @@ public class SplitFileInserter implements ClientPutState {
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
+
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -40,7 +40,7 @@ public class SplitFileInserter implements ClientPutState {
 			}
 		});
 	}
-	
+
 	final BaseClientPutter parent;
 	final InsertContext ctx;
 	final PutCompletionCallback cb;
@@ -63,12 +63,12 @@ public class SplitFileInserter implements ClientPutState {
 	private boolean forceEncode;
 	private final long decompressedLength;
 	final boolean persistent;
-	
+
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
-	
+
 	private final int hashCode;
-	
+
 	@Override
 	public int hashCode() {
 		return hashCode;
@@ -110,12 +110,12 @@ public class SplitFileInserter implements ClientPutState {
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
 		segmentSize = ctx.splitfileSegmentDataBlocks;
 		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
-		
+
 		this.persistent = persistent;
 		if(persistent) {
 			container.activate(parent, 1);
 		}
-		
+
 		// Create segments
 		segments = splitIntoSegments(segmentSize, dataBuckets, context.mainExecutor, container, context, persistent, put);
 		if(persistent) {
@@ -221,10 +221,10 @@ public class SplitFileInserter implements ClientPutState {
 			throw new ResumeException("Corrupt segment count: "+e+" : "+segc);
 		}
 		segments = new SplitFileInserterSegment[segmentCount];
-		
+
 		int dataBlocks = 0;
 		int checkBlocks = 0;
-		
+
 		for(int i=0;i<segments.length;i++) {
 			String index = Integer.toString(i);
 			SimpleFieldSet segment = segFS.subset(index);
@@ -234,7 +234,7 @@ public class SplitFileInserter implements ClientPutState {
 			dataBlocks += segments[i].countDataBlocks();
 			checkBlocks += segments[i].countCheckBlocks();
 		}
-		
+
 		this.countDataBlocks = dataBlocks;
 		this.countCheckBlocks = checkBlocks;
 	}
@@ -245,8 +245,8 @@ public class SplitFileInserter implements ClientPutState {
 	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context, boolean persistent, BaseClientPutter putter) {
 		int dataBlocks = origDataBlocks.length;
 
-		Vector segs = new Vector();
-		
+		ArrayList<SplitFileInserterSegment> segs = new ArrayList<SplitFileInserterSegment>();
+
 		// First split the data up
 		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
 			// Single segment
@@ -264,7 +264,7 @@ public class SplitFileInserter implements ClientPutState {
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
 				SplitFileInserterSegment s = new SplitFileInserterSegment(this, persistent, putter, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, seg.length), seg, ctx, getCHKOnly, segNo, container);
 				segs.add(s);
-				
+
 				if(i == dataBlocks) break;
 				segNo++;
 			}
@@ -272,9 +272,9 @@ public class SplitFileInserter implements ClientPutState {
 		if(persistent)
 			container.activate(parent, 1);
 		parent.notifyClients(container, context);
-		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
+		return segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
-	
+
 	public void start(ObjectContainer container, final ClientContext context) throws InsertException {
 		for(int i=0;i<segments.length;i++) {
 			if(persistent)
@@ -285,11 +285,11 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		if(persistent)
 			container.activate(parent, 1);
-		
+
 		if(countDataBlocks > 32)
 			parent.onMajorProgress(container);
 		parent.notifyClients(container, context);
-		
+
 	}
 
 	public void encodedSegment(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
@@ -326,14 +326,14 @@ public class SplitFileInserter implements ClientPutState {
 			parent.onMajorProgress(container);
 		}
 	}
-	
+
 	public boolean segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
 				return false;
 			}
-			
+
 			for(int i=0;i<segments.length;i++) {
 				if(persistent)
 					container.activate(segments[i], 1);
@@ -346,12 +346,12 @@ public class SplitFileInserter implements ClientPutState {
 				}
 			}
 		}
-		
+
 		if(logMINOR) Logger.minor(this, "Have URIs from all segments");
 		encodeMetadata(container, context, segment);
 		return true;
 	}
-	
+
 	private void encodeMetadata(ObjectContainer container, ClientContext context, SplitFileInserterSegment dontDeactivateSegment) {
 		context.jobRunner.setCommitThisTransaction();
 		boolean missingURIs;
@@ -374,11 +374,11 @@ public class SplitFileInserter implements ClientPutState {
 					container.deactivate(segments[i], 1);
 			}
 			// Create metadata
-			
+
 			if(logMINOR) Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
-			
+
 			missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
-			
+
 			if(persistent) {
 				// Copy the URIs. We don't know what the callee wants the metadata for:
 				// he might well ignore it, as in SimpleManifestPutter.onMetadata().
@@ -392,7 +392,7 @@ public class SplitFileInserter implements ClientPutState {
 					checkURIs[i] = checkURIs[i].cloneKey();
 				}
 			}
-			
+
 			if(!missingURIs) {
 				// Create Metadata
 				if(persistent) container.activate(cm, 5);
@@ -415,7 +415,7 @@ public class SplitFileInserter implements ClientPutState {
 				container.deactivate(cb, 1);
 		}
 	}
-	
+
 	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
@@ -468,7 +468,7 @@ public class SplitFileInserter implements ClientPutState {
 				if(persistent && segments[i] != segment)
 					container.deactivate(segments[i], 1);
 			}
-			
+
 			InsertException e = segment.getException(container);
 			if((e != null) && e.isFatal()) {
 				cancel(container, context);
@@ -481,7 +481,7 @@ public class SplitFileInserter implements ClientPutState {
 			container.store(this);
 		onAllFinished(container, context);
 	}
-	
+
 	public void segmentFetchable(SplitFileInserterSegment segment, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Segment fetchable: "+segment);
 		synchronized(this) {
@@ -607,7 +607,7 @@ public class SplitFileInserter implements ClientPutState {
 			Logger.debug(this, "objectCanUpdate() on "+this, new Exception("debug"));
 		return true;
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		if(finished)
 			Logger.error(this, "objectCanNew but finished on "+this, new Exception("error"));
@@ -628,5 +628,5 @@ public class SplitFileInserter implements ClientPutState {
 		parent.dump(container);
 		container.deactivate(parent, 1);
 	}
-	
+
 }

@@ -201,6 +201,10 @@ public class FECQueue implements OOMHook {
 					// Get a job
 					synchronized (FECQueue.this) {
 						job = getFECJobBlockingNoDBAccess();
+						if(job == null) {
+							// Too many jobs running.
+							return;
+						}
 						job.running = true;
 					}
 
@@ -300,6 +304,10 @@ public class FECQueue implements OOMHook {
 
 	private void initCacheFillerJob() {
 		cacheFillerJob = new DBJob() {
+			
+		public String toString() {
+			return "FECQueueCacheFiller";
+		}
 
 		public boolean run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
