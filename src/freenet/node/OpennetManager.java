@@ -884,7 +884,7 @@ public class OpennetManager {
     		if(source.isConnected()) {
     			String msg = "Failed to receive noderef bulk transfer for "+this+" : "+RetrievalException.getErrString(prb.getAbortReason())+" : "+prb.getAbortDescription()+" from "+source;
     			if(prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED)
-    				Logger.error(this, msg);
+    				Logger.warning(this, msg);
     			else
     				Logger.normal(this, msg);
     			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TRANSFER_FAILED, ctr);
