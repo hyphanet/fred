@@ -31,7 +31,7 @@ public abstract class Logger {
 		 * Get the thread's process ID or return -1 if it's unavailable for some reason
 		 */
 		public synchronized static int getPID(Object o) {
-			if(!getPIDEnabled) {
+			if (!getPIDEnabled) {
 				return -1;
 			}
 			return getPIDFromProcSelfStat(o);
@@ -41,7 +41,7 @@ public abstract class Logger {
 		 * Get the thread's parent process ID or return -1 if it's unavailable for some reason
 		 */
 		public synchronized static int getPPID(Object o) {
-			if(!getPPIDEnabled) {
+			if (!getPPIDEnabled) {
 				return -1;
 			}
 			return getPPIDFromProcSelfStat(o);
@@ -54,7 +54,7 @@ public abstract class Logger {
 		public synchronized static String getFieldFromProcSelfStat(int fieldNumber, Object o) {
 			String readLine = null;
 	
-			if(!procSelfStatEnabled) {
+			if (!procSelfStatEnabled) {
 				return null;
 			}
 	
@@ -62,7 +62,7 @@ public abstract class Logger {
 			BufferedReader br = null;
 			FileReader fr = null;
 			File procFile = new File("/proc/self/stat");
-			if(procFile.exists()) {
+			if (procFile.exists()) {
 				try {
 					fr = new FileReader(procFile);
 					br = new BufferedReader(fr);
@@ -71,7 +71,7 @@ public abstract class Logger {
 					procSelfStatEnabled = false;
 					fr = null;
 				}
-				if(null != br) {
+				if (null != br) {
 					try {
 						readLine = br.readLine();
 					} catch (IOException e) {
@@ -80,10 +80,10 @@ public abstract class Logger {
 					} finally {
 						Closer.close(br);
 					}
-					if(null != readLine) {
+					if (null != readLine) {
 						try {
 							String[] procFields = readLine.trim().split(" ");
-							if(4 <= procFields.length) {
+							if (4 <= procFields.length) {
 								return procFields[ fieldNumber ];
 							}
 						} catch (PatternSyntaxException e) {
@@ -105,14 +105,14 @@ public abstract class Logger {
 		public synchronized static int getPIDFromProcSelfStat(Object o) {
 			int pid = -1;
 	
-			if(!getPIDEnabled) {
+			if (!getPIDEnabled) {
 				return -1;
 			}
-			if(!procSelfStatEnabled) {
+			if (!procSelfStatEnabled) {
 				return -1;
 			}
 			String pidString = getFieldFromProcSelfStat(0, o);
-			if(null == pidString) {
+			if (null == pidString) {
 				return -1;
 			}
 			try {
@@ -132,14 +132,14 @@ public abstract class Logger {
 		public synchronized static int getPPIDFromProcSelfStat(Object o) {
 			int ppid = -1;
 	
-			if(!getPPIDEnabled) {
+			if (!getPPIDEnabled) {
 				return -1;
 			}
-			if(!procSelfStatEnabled) {
+			if (!procSelfStatEnabled) {
 				return -1;
 			}
 			String ppidString = getFieldFromProcSelfStat(3, o);
-			if(null == ppidString) {
+			if (null == ppidString) {
 				return -1;
 			}
 			try {
@@ -154,20 +154,20 @@ public abstract class Logger {
 		 * Log the thread's process ID or return -1 if it's unavailable for some reason
 		 */
 		public synchronized static int logPID(Object o) {
-			if(!getPIDEnabled) {
+			if (!getPIDEnabled) {
 				return -1;
 			}
 			int pid = getPID(o);
 			String msg;
-			if(-1 != pid) {
+			if (-1 != pid) {
 				msg = "This thread's OS PID is " + pid;
 			} else {
 				msg = "This thread's OS PID could not be determined";
 			}
-			if(logToStdOutEnabled) {
+			if (logToStdOutEnabled) {
 				System.out.println(msg + ": " + o);
 			}
-			if(logToFileEnabled) {
+			if (logToFileEnabled) {
 				logStatic(o, msg, logToFileVerbosity);
 			}
 			return pid;
@@ -177,20 +177,20 @@ public abstract class Logger {
 		 * Log the thread's process ID or return -1 if it's unavailable for some reason
 		 */
 		public synchronized static int logPPID(Object o) {
-			if(!getPPIDEnabled) {
+			if (!getPPIDEnabled) {
 				return -1;
 			}
 			int ppid = getPPID(o);
 			String msg;
-			if(-1 != ppid) {
+			if (-1 != ppid) {
 				msg = "This thread's OS PPID is " + ppid;
 			} else {
 				msg = "This thread's OS PPID could not be determined";
 			}
-			if(logToStdOutEnabled) {
+			if (logToStdOutEnabled) {
 				System.out.println(msg + ": " + o);
 			}
-			if(logToFileEnabled) {
+			if (logToFileEnabled) {
 				logStatic(o, msg, logToFileVerbosity);
 			}
 			return ppid;
@@ -229,8 +229,7 @@ public abstract class Logger {
 		logger.setDetailedThresholds(detail);
 		FileLoggerHook fh;
 		fh = new FileLoggerHook(System.out, "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", level);
-		if(detail != null)
-			fh.setDetailedThresholds(detail);
+		if (detail != null) fh.setDetailedThresholds(detail);
 		((LoggerHookChain) logger).addHook(fh);
 		fh.start();
 		return fh;
@@ -474,8 +473,8 @@ public abstract class Logger {
 				} catch (SecurityException e) {
 				} catch (NoSuchFieldException e) { 
 				} catch (IllegalArgumentException e) {
-                } catch (IllegalAccessException e) {
-                }
+				} catch (IllegalAccessException e) {
+				}
 
 				try {
 					Field logDEBUG_Field = clazz.getDeclaredField("logDEBUG");
@@ -487,11 +486,10 @@ public abstract class Logger {
 				} catch (SecurityException e) {
 				} catch (NoSuchFieldException e) { 
 				} catch (IllegalArgumentException e) {
-                } catch (IllegalAccessException e) {
-                }
+				} catch (IllegalAccessException e) {
+				}
                 
-                if (!done)
-                	Logger.error(this,	"No log level field for " + clazz);
+				if (!done) Logger.error(this, "No log level field for " + clazz);
 			}
 		};
 
@@ -513,8 +511,7 @@ public abstract class Logger {
 	 * are not filtered out by the global logger hook chain's thresholds
 	 * will be passed to this logger. */
 	public synchronized static void globalAddHook(LoggerHook logger2) {
-		if(logger instanceof VoidLogger)
-			setupChain();
+		if (logger instanceof VoidLogger) setupChain();
 		((LoggerHookChain)logger).addHook(logger2);
 	}
 
@@ -531,34 +528,36 @@ public abstract class Logger {
 
 	/** Remove a logger hook from the global logger hook chain. */
 	public synchronized static void globalRemoveHook(LoggerHook hook) {
-		if(logger instanceof LoggerHookChain)
+		if (logger instanceof LoggerHookChain) {
 			((LoggerHookChain)logger).removeHook(hook);
-		else
+		} else {
 			System.err.println("Cannot remove hook: "+hook+" global logger is "+logger);
+		}
 	}
 
 	/** If no logger hooks are registered, destroy the global logger hook
 	 * chain by replacing it with a VoidLogger, which simply ignores 
 	 * everything logged. */
 	public synchronized static void destroyChainIfEmpty() {
-		if(logger instanceof VoidLogger) return;
-		if((logger instanceof LoggerHookChain) && (((LoggerHookChain)logger).getHooks().length == 0)) {
+		if (logger instanceof VoidLogger) return;
+		if ((logger instanceof LoggerHookChain) && (((LoggerHookChain)logger).getHooks().length == 0)) {
 			logger = new VoidLogger();
 		}
 	}
 
 	/** Get the global logger hook chain, creating it if necessary. */
 	public synchronized static LoggerHookChain getChain() {
-		if(logger instanceof LoggerHookChain)
+		if (logger instanceof LoggerHookChain) {
 			return (LoggerHookChain) logger;
-		else {
+		} else {
 			Logger oldLogger = logger;
-			if(!(oldLogger instanceof VoidLogger)) {
-				if(!(oldLogger instanceof LoggerHook))
+			if (!(oldLogger instanceof VoidLogger)) {
+				if (!(oldLogger instanceof LoggerHook)) {
 					throw new IllegalStateException("The old logger is not a VoidLogger and is not a LoggerHook either!");
+				}
 			}
 			setupChain();
-			if(!(oldLogger instanceof VoidLogger)) {
+			if (!(oldLogger instanceof VoidLogger)) {
 				((LoggerHookChain)logger).addHook((LoggerHook)oldLogger);
 			}
 			return (LoggerHookChain) logger;
