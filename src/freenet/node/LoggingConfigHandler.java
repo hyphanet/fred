@@ -60,28 +60,30 @@ public class LoggingConfigHandler {
 	public LoggingConfigHandler(SubConfig loggingConfig, Executor executor) throws InvalidConfigValueException {
 		this.config = loggingConfig;
 		this.executor = executor;
-    	
-    	loggingConfig.register("enabled", true, 1, true, false, "LogConfigHandler.enabled", "LogConfigHandler.enabledLong",
-    			new BooleanCallback() {
+
+		loggingConfig.register("enabled", true, 1, true, false, "LogConfigHandler.enabled",
+				"LogConfigHandler.enabledLong",
+				new BooleanCallback() {
 					@Override
 					public Boolean get() {
 						return fileLoggerHook != null;
 					}
 					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
-						if(val == (fileLoggerHook != null)) return;
-						if(!val) {
+						if (val == (fileLoggerHook != null)) return;
+						if (!val) {
 							disableLogger();
-						} else 
+						} else {
 							enableLogger();
+						}
 					}
-    	});
+				});
     	
-    	boolean loggingEnabled = loggingConfig.getBoolean("enabled");
+		boolean loggingEnabled = loggingConfig.getBoolean("enabled");
     	
-    	loggingConfig.register("dirname", "logs", 2, true, false, "LogConfigHandler.dirName", "LogConfigHandler.dirNameLong", 
-    			new StringCallback() {
-
+		loggingConfig.register("dirname", "logs", 2, true, false, "LogConfigHandler.dirName",
+				"LogConfigHandler.dirNameLong",
+				new StringCallback() {
 					@Override
 					public String get() {
 						return logDir.getPath();
@@ -90,7 +92,7 @@ public class LoggingConfigHandler {
 					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						File f = new File(val);
-						if(f.equals(logDir)) return;
+						if (f.equals(logDir)) return;
 						preSetLogDir(f);
 						// Still here
 						if(fileLoggerHook == null) {
@@ -102,17 +104,19 @@ public class LoggingConfigHandler {
 							new Deleter(logDir).start();
 						}
 					}
-    	});
+				});
     	
-    	logDir = new File(config.getString("dirname"));
-    	if(loggingEnabled)
+		logDir = new File(config.getString("dirname"));
+		if (loggingEnabled) {
 			preSetLogDir(logDir);
-    	// => enableLogger must run preSetLogDir
+		}
+		// => enableLogger must run preSetLogDir
+		
+		// max space used by zipped logs
     	
-    	// max space used by zipped logs
-    	
-    	config.register("maxZippedLogsSize", "128M", 3, true, true, "LogConfigHandler.maxZippedLogsSize", "LogConfigHandler.maxZippedLogsSizeLong",
-    			new LongCallback() {
+		config.register("maxZippedLogsSize", "128M", 3, true, true, "LogConfigHandler.maxZippedLogsSize",
+				"LogConfigHandler.maxZippedLogsSizeLong",
+				new LongCallback() {
 					@Override
 					public Long get() {
 						return maxZippedLogsSize;
@@ -122,27 +126,28 @@ public class LoggingConfigHandler {
 						if (val < 0)
 					        val = 0L;
 						maxZippedLogsSize = val;
-						if(fileLoggerHook != null) {
+						if (fileLoggerHook != null) {
 							fileLoggerHook.setMaxOldLogsSize(val);
 						}
 					}
-    	}, true);
+				}, true);
     	
-    	maxZippedLogsSize = config.getLong("maxZippedLogsSize");
+		maxZippedLogsSize = config.getLong("maxZippedLogsSize");
     	
-    	// These two are forced below so we don't need to check them now
+		// These two are forced below so we don't need to check them now
     	
-    	// priority
+		// priority
     	
-    	// Node must override this to minor on testnet.
-    	config.register("priority", "normal", 4, false, false, "LogConfigHandler.minLoggingPriority", "LogConfigHandler.minLoggingPriorityLong",
-    			new PriorityCallback());
+		// Node must override this to minor on testnet.
+		config.register("priority", "normal", 4, false, false, "LogConfigHandler.minLoggingPriority",
+				"LogConfigHandler.minLoggingPriorityLong",
+				new PriorityCallback());
     	
-    	// detailed priority
+		// detailed priority
     	
-    	config.register("priorityDetail", "", 5, true, false, "LogConfigHandler.detaildPriorityThreshold", "LogConfigHandler.detaildPriorityThresholdLong",
-    			new StringCallback() {
-
+		config.register("priorityDetail", "", 5, true, false, "LogConfigHandler.detaildPriorityThreshold",
+				"LogConfigHandler.detaildPriorityThresholdLong",
+				new StringCallback() {
 					@Override
 					public String get() {
 						LoggerHookChain chain = Logger.getChain();
@@ -158,13 +163,13 @@ public class LoggingConfigHandler {
 							throw new InvalidConfigValueException(e.getMessage());
 						}
 					}
-    		
-    	});
+				});
     	
-    	// interval
+		// interval
     	
-    	config.register("interval", "10MINUTE", 5, true, false, "LogConfigHandler.rotationInterval", "LogConfigHandler.rotationIntervalLong",
-    			new StringCallback() {
+		config.register("interval", "10MINUTE", 5, true, false, "LogConfigHandler.rotationInterval",
+				"LogConfigHandler.rotationIntervalLong",
+				new StringCallback() {
 					@Override
 					public String get() {
 						return logRotateInterval;
@@ -172,8 +177,8 @@ public class LoggingConfigHandler {
 
 					@Override
 					public void set(String val) throws InvalidConfigValueException {
-						if(val.equals(logRotateInterval)) return;
-						if(fileLoggerHook != null) {
+						if (val.equals(logRotateInterval)) return;
+						if (fileLoggerHook != null) {
 							try {
 								fileLoggerHook.setInterval(val);
 							} catch (FileLoggerHook.IntervalParseException e) {
@@ -182,33 +187,33 @@ public class LoggingConfigHandler {
 						}
 						logRotateInterval = val;
 					}
-    	});
+				});
     	
-    	logRotateInterval = config.getString("interval");
+		logRotateInterval = config.getString("interval");
     	
-    	// max cached bytes in RAM
-    	config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes", "LogConfigHandler.maxCachedBytesLong", 
-    			new LongCallback() {
+		// max cached bytes in RAM
+		config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes",
+				"LogConfigHandler.maxCachedBytesLong",
+				new LongCallback() {
 					@Override
 					public Long get() {
 						return maxCachedLogBytes;
 					}
 					@Override
 					public void set(Long val) throws InvalidConfigValueException {
-						if (val < 0)
-					        val = 0L;
-						if(val == maxCachedLogBytes) return;
+						if (val < 0) val = 0L;
+						if (val == maxCachedLogBytes) return;
 						maxCachedLogBytes = val;
-						if(fileLoggerHook != null)
-							fileLoggerHook.setMaxListBytes(val);
+						if (fileLoggerHook != null) fileLoggerHook.setMaxListBytes(val);
 					}
-    	}, true);
+				}, true);
     	
-    	maxCachedLogBytes = config.getLong("maxCachedBytes");
+		maxCachedLogBytes = config.getLong("maxCachedBytes");
     	
-    	// max cached lines in RAM
-    	config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines", "LogConfigHandler.maxCachedLinesLong",
-    			new IntCallback() {
+		// max cached lines in RAM
+		config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines",
+				"LogConfigHandler.maxCachedLinesLong",
+				new IntCallback() {
 					@Override
 					public Integer get() {
 						return maxCachedLogLines;
@@ -218,17 +223,14 @@ public class LoggingConfigHandler {
 						if(val < 0) val = 0;
 						if(val == maxCachedLogLines) return;
 						maxCachedLogLines = val;
-						if(fileLoggerHook != null)
-							fileLoggerHook.setMaxListLength(val);
+						if(fileLoggerHook != null) fileLoggerHook.setMaxListLength(val);
 					}
-    	}, false);
+				}, false);
     	
-    	maxCachedLogLines = config.getInt("maxCachedLines");
+		maxCachedLogLines = config.getInt("maxCachedLines");
     	
-    	if(loggingEnabled)
-    		enableLogger();
-    	
-    	config.finishedInitialization();
+		if (loggingEnabled) enableLogger();
+		config.finishedInitialization();
 	}
 
 	private final Object enableLoggerLock = new Object();
