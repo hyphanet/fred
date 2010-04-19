@@ -1779,7 +1779,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		try {
 			sendPacket(data, replyTo, pn);
 		} catch (LocalAddressException e) {
-			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
+			Logger.warning(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn+" - maybe you should set allowLocalAddresses for this peer??");
 		}
 	}
 
