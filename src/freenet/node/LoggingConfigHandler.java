@@ -25,7 +25,7 @@ import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
 	private static class PriorityCallback extends StringCallback implements EnumerableOptionCallback {
-		private final String[] possibleValues = new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" };
+		private final String[] possibleValues = new String[]{ "ERROR", "WARNING", "NORMAL", "MINOR", "DEBUG" };
 
 		@Override
 		public String get() {
