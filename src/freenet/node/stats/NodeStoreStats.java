@@ -1,11 +1,15 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.stats;
 
 /**
  * This interface represents aggregated stats for data store
- * User: nikotyan
- * Date: Apr 16, 2010
+ *
+ * @author nikotyan
  */
 public interface NodeStoreStats {
+
 	double avgLocation() throws StatsNotAvailableException;
 
 	double avgSuccess() throws StatsNotAvailableException;

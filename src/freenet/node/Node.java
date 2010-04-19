@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 /* Freenet 0.7 node. */
 package freenet.node;
 
@@ -15,9 +18,23 @@ import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.Random;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.Vector;
 
-import freenet.node.stats.*;
+import freenet.node.stats.DataStoreInstanceType;
+import freenet.node.stats.DataStoreStats;
+import freenet.node.stats.NotAvailNodeStoreStats;
+import freenet.node.stats.StoreCallbackStats;
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
