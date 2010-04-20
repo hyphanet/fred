@@ -272,6 +272,10 @@ public class FECQueue implements OOMHook {
 									return true;
 								}
 								
+								public String toString() {
+									return "FECQueueJobCompletedCallback";
+								}
+								
 							}, prio, false);
 							if(Logger.shouldLog(Logger.MINOR, this))
 								Logger.minor(this, "Scheduled callback for "+job+"...");
