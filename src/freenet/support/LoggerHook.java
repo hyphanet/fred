@@ -177,6 +177,8 @@ public abstract class LoggerHook extends Logger {
 	public static int priorityOf(String s) throws InvalidThresholdException {
 		if (s.equalsIgnoreCase("error"))
 			return Logger.ERROR;
+		else if (s.equalsIgnoreCase("warning"))
+			return Logger.WARNING;
 		else if (s.equalsIgnoreCase("normal"))
 			return Logger.NORMAL;
 		else if (s.equalsIgnoreCase("minor"))
@@ -205,6 +207,7 @@ public abstract class LoggerHook extends Logger {
 	public static String priorityOf(int priority) {
 		switch (priority) {
 			case ERROR:     return "ERROR";
+			case WARNING:	return "WARNING";
 			case NORMAL:    return "NORMAL";
 			case MINOR:     return "MINOR";
 			case DEBUG:     return "DEBUG";

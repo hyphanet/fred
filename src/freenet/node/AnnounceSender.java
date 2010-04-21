@@ -297,7 +297,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
         						try {
         							sendNotWanted();
         						} catch (NotConnectedException e) {
-        							Logger.error(this, "Lost connection to source");
+        							Logger.warning(this, "Lost connection to source (announce completed)");
         							return;
         						}
                     		}
@@ -336,7 +336,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 						try {
 							sendNotWanted();
 						} catch (NotConnectedException e) {
-							Logger.error(this, "Lost connection to source");
+							Logger.warning(this, "Lost connection to source (announce not wanted)");
 							return;
 						}
             		}
