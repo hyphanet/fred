@@ -354,6 +354,10 @@ public class PersistentBlobTempBucketFactory {
 		}
 		}
 		
+		public String toString() {
+			return "PersistentBlobTempBucketFactory.SlotFinder";
+		}
+		
 	};
 	}
 	
@@ -731,6 +735,10 @@ public class PersistentBlobTempBucketFactory {
 						return true;
 					}
 					
+					public String toString() {
+						return "PersistentBlobTempBucketFactory.PostShrinkCheck";
+					}
+					
 				}, NativeThread.LOW_PRIORITY, true);
 			} catch (DatabaseDisabledException e) {
 				// :(
@@ -778,6 +786,10 @@ public class PersistentBlobTempBucketFactory {
 
 						public boolean run(ObjectContainer container, ClientContext context) {
 							return maybeShrink(container);
+						}
+						
+						public String toString() {
+							return "PersistentBlobTempBucketFactory.MaybeShrink";
 						}
 						
 					}, NativeThread.NORM_PRIORITY-1, true);

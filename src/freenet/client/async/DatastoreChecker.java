@@ -99,6 +99,10 @@ public class DatastoreChecker implements PrioRunnable {
 			loadPersistentRequests(container, context);
 			return false;
 		}
+		
+		public String toString() {
+			return "DatastoreCheckerPersistentRequestLoader";
+		}
 
 	};
 
@@ -435,6 +439,10 @@ public class DatastoreChecker implements PrioRunnable {
 						container.deactivate(get, 1);
 						loader.run(container, context);
 						return false;
+					}
+					
+					public String toString() {
+						return "DatastoreCheckerFinishRegister";
 					}
 
 				}, NativeThread.NORM_PRIORITY, false);

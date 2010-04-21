@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.FetchException;
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -642,9 +643,12 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 			if(lateStart) {
-				startMetadata(container, context);
-				synchronized(this) {
-					sfi = null;
+				if(!startMetadata(container, context))
+					toRemove = null;
+				else {
+					synchronized(this) {
+						sfi = null;
+					}
 				}
 			}
 			if(toRemove != null && persistent)
@@ -784,7 +788,21 @@ class SingleFileInserter implements ClientPutState {
 					if(!(earlyEncode || splitInsertSuccess)) return;
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
-			startMetadata(container, context);
+			if(!startMetadata(container, context)) {
+				Logger.error(this, "onMetadata() yet unable to start metadata due to not having all URIs?!?!");
+				fail(new InsertException(InsertException.INTERNAL_ERROR, "onMetadata() yet unable to start metadata due to not having all URIs", null), container, context);
+				return;
+			}
+			ClientPutState toRemove = null;
+			synchronized(this) {
+				if(splitInsertSuccess && sfi != null) {
+					toRemove = sfi;
+					sfi = null;
+				}
+			}
+			if(toRemove != null && persistent)
+				toRemove.removeFrom(container, context);
+				
 		}
 
 		private void fail(InsertException e, ObjectContainer container, ClientContext context) {
@@ -943,14 +961,21 @@ class SingleFileInserter implements ClientPutState {
 			}
 		}
 		
-		private void startMetadata(ObjectContainer container, ClientContext context) {
+		/**
+		 * Start fetching metadata. There is an exceptional case where we don't have all the URIs yet; if so,
+		 * we force encode, and don't start fetching.
+		 * @param container
+		 * @param context
+		 * @return True unless we don't have all URI's and so can't remove sfi.
+		 */
+		private boolean startMetadata(ObjectContainer container, ClientContext context) {
 			if(persistent) // FIXME debug-point
 				if(logMINOR) Logger.minor(this, "startMetadata() on "+this);
 			try {
 				ClientPutState putter;
 				ClientPutState splitInserter;
 				synchronized(this) {
-					if(metaInsertStarted) return;
+					if(metaInsertStarted) return true;
 					if(persistent && metadataPutter != null)
 						container.activate(metadataPutter, 1);
 					putter = metadataPutter;
@@ -966,18 +991,20 @@ class SingleFileInserter implements ClientPutState {
 					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
 					putter.schedule(container, context);
 					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
+					return true;
 				} else {
 					// Get all the URIs ASAP so we can start to insert the metadata.
 					// Unless earlyEncode is enabled, this is an error or at least a rare case, indicating e.g. we've lost a URI.
-					Logger.error(this, "startMetadata() calling forceEncode() on "+splitInserter+" for "+this);
+					Logger.error(this, "startMetadata() calling forceEncode() on "+splitInserter+" for "+this, new Exception("error"));
 					if(persistent)
 						container.activate(splitInserter, 1);
 					((SplitFileInserter)splitInserter).forceEncode(container, context);
+					return false;
 				}
 			} catch (InsertException e1) {
 				Logger.error(this, "Failing "+this+" : "+e1, e1);
 				fail(e1, container, context);
-				return;
+				return true;
 			}
 		}
 		

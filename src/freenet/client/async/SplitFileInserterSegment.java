@@ -491,6 +491,13 @@ public class SplitFileInserterSegment extends SendableInsert implements FECCallb
 			if (deactivateParentCtx)
 				container.activate(parent.ctx, 1);
 		}
+		if(parent == null) {
+			Logger.error(this, "tryEncode() but parent is null!", new Exception("error"));
+			return;
+		} else if(parent.ctx == null) {
+			Logger.error(this, "tryEncode() but parent.ctx is null!", new Exception("error"));
+			return;
+		}
 		String compressorDescriptor = parent.ctx.compressorDescriptor;
 		if(persistent) {
 			if (deactivateParent)
