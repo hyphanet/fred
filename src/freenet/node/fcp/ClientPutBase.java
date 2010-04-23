@@ -449,38 +449,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			trySendFinalMessage(handler, container);
 	}
 
-	@Override
-	public synchronized SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
-		fs.putSingle("Type", getTypeName());
-		fs.putSingle("URI", uri.toString(false, false));
-		fs.putSingle("Identifier", identifier);
-		fs.putSingle("Verbosity", Integer.toString(verbosity));
-		fs.putSingle("PriorityClass", Short.toString(priorityClass));
-		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
-		fs.putSingle("ClientName", client.name);
-		fs.putSingle("ClientToken", clientToken);
-		fs.putSingle("DontCompress", Boolean.toString(ctx.dontCompress));
-		if (ctx.compressorDescriptor != null)
-			fs.putSingle("Codecs", ctx.compressorDescriptor);
-		fs.putSingle("MaxRetries", Integer.toString(ctx.maxInsertRetries));
-		fs.putSingle("Finished", Boolean.toString(finished));
-		fs.putSingle("Succeeded", Boolean.toString(succeeded));
-		fs.putSingle("GetCHKOnly", Boolean.toString(getCHKOnly));
-		if(generatedURI != null)
-			fs.putSingle("GeneratedURI", generatedURI.toString(false, false));
-		if(finished && (!succeeded))
-			// Should have a putFailedMessage... unless there is a race condition.
-			fs.put("PutFailed", putFailedMessage.getFieldSet(false));
-		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
-		fs.put("StartupTime", startupTime);
-		if(finished)
-			fs.put("CompletionTime", completionTime);
-		fs.put("LastActivity", lastActivity);
-
-		return fs;
-	}
-
 	protected abstract String getTypeName();
 
 	@Override
