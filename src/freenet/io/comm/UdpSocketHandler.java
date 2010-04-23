@@ -39,7 +39,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private final String title;
 	private boolean _started;
 	private long startTime;
-	private Thread _thread;
 	private final IOStatisticCollector collector;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
@@ -86,9 +85,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	}
 	
 	public void run() { // Listen for packets
-		synchronized(this) {
-			_thread = Thread.currentThread();
-		}
 		tracker.startReceive(System.currentTimeMillis());
 		try {
 			runLoop();
@@ -124,7 +120,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			Logger.error(this, "run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
 			synchronized (this) {
 				_isDone = true;
-				_thread = null;
 				notifyAll();
 			}
 		}

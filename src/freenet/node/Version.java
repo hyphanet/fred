@@ -48,17 +48,17 @@ public class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 1240;
+	private static final int buildNumber = 1245;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 1239;
-	private static final int newLastGoodBuild = 1240;
+	private static final int oldLastGoodBuild = 1243;
+	private static final int newLastGoodBuild = 1244;
 	static final long transitionTime;
 
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2010, Calendar.FEBRUARY, 10, 0, 0, 0 );
+		_cal.set( 2010, Calendar.MARCH, 22, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
 	}
 
@@ -356,9 +356,7 @@ public class Version {
 		try {
 			return Integer.parseInt(v[3]);
 		} catch (NumberFormatException e) {
-			VersionParseException ve = new VersionParseException("Got NumberFormatException on "+v[3]+" : "+e+" for "+version);
-			ve.initCause(e);
-			throw ve;
+			throw (VersionParseException)new VersionParseException("Got NumberFormatException on "+v[3]+" : "+e+" for "+version).initCause(e);
 		}
 	}
 

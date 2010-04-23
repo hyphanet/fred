@@ -142,4 +142,21 @@ public class SeedServerPeerNode extends PeerNode {
 		// Drop the connection once we have consistently had enough opennet peers for 5 minutes.
 		return System.currentTimeMillis() - om.announcer.timeGotEnoughPeers() > 5*60*1000;
 	}
+
+	@Override
+	protected void maybeClearPeerAddedTimeOnConnect() {
+		// Do nothing.
+	}
+
+	@Override
+	protected boolean shouldExportPeerAddedTime() {
+		// For diagnostic purposes only.
+		return true;
+	}
+
+	@Override
+	protected void maybeClearPeerAddedTimeOnRestart(long now) {
+		// Do nothing.
+	}
+
 }

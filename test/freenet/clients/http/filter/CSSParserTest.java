@@ -272,11 +272,20 @@ public class CSSParserTest extends TestCase {
 		
 		propertyTests.put("td { background-position:bottom;}\n", "td { background-position:bottom;}\n");
 		propertyTests.put("td { background:repeat-x;}\n", "td { background:repeat-x;}\n");
+		propertyTests.put("td { background: scroll transparent url(\"something.png\") }\n", "td { background: scroll transparent url(\"something.png\") }\n");
+		propertyTests.put("td { background: scroll transparent url(\"something.png\") right }\n", "td { background: scroll transparent url(\"something.png\") right }\n");
+		propertyTests.put("td { background: scroll transparent url(\"something.png\") right top }\n", "td { background: scroll transparent url(\"something.png\") right top }\n");
+		propertyTests.put("td { background: scroll transparent url(\"something.png\") right top repeat }\n", "td { background: scroll transparent url(\"something.png\") right top repeat }\n");
+		// Broken - extra slot at end, double bar only matches one element for each.
+		propertyTests.put("td { background: scroll transparent url(\"something.png\") right top repeat url(\"something-else.png\") }\n", "td { }\n");
 		
 		// Double bar: recurse after recognising last element
 		propertyTests.put("td { background:repeat-x none;}\n", "td { background:repeat-x none;}\n");
 		propertyTests.put("td { background:repeat-x none transparent;}\n", "td { background:repeat-x none transparent;}\n");
 		propertyTests.put("td { background:repeat-x none transparent scroll;}\n", "td { background:repeat-x none transparent scroll;}\n");
+		
+		propertyTests.put("td { background-position: bottom right }\n", "td { background-position: bottom right }\n");
+		propertyTests.put("td { background-position: bottom right center }\n", "td { }\n");
 		
 		// Typo should not cause it to throw!
 		propertyTests.put("td { background:no;}\n", "td {}\n");

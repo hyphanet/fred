@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import freenet.node.NodeStats;
 import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
 
@@ -25,7 +26,6 @@ public class PrioritizedSerialExecutor implements Executor {
 	private final int defaultPriority;
 	private boolean waiting;
 	private final boolean invertOrder;
-	private final Map<String, Long> timeByJobClasses = new HashMap<String, Long>();
 
 	private String name;
 	private Executor realExecutor;
@@ -36,6 +36,8 @@ public class PrioritizedSerialExecutor implements Executor {
 	private final int jobTimeout;
 
 	private final Runner runner = new Runner();
+	
+	private final NodeStats statistics;
 
 	class Runner implements PrioRunnable {
 
@@ -85,29 +87,10 @@ public class PrioritizedSerialExecutor implements Executor {
 					long end = System.currentTimeMillis();
 					if(logMINOR) {
 						Logger.minor(this, "Job "+job+" took "+(end-start)+"ms");
-					synchronized(timeByJobClasses) {
-						String name = job.toString();
-						if(name.indexOf('@') > 0)
-							name = name.substring(0, name.indexOf('@'));
-						Long l = timeByJobClasses.get(name);
-						if(l != null) {
-							l = Long.valueOf(l.longValue() + (end-start));
-						} else {
-							l = Long.valueOf(end-start);
-						}
-						timeByJobClasses.put(name, l);
-						if(logMINOR) {
-							Logger.minor(this, "Total for class "+name+" : "+l);
-							if(System.currentTimeMillis() > (lastDumped + 60*1000)) {
-								Iterator i = timeByJobClasses.entrySet().iterator();
-								while(i.hasNext()) {
-									Map.Entry e = (Map.Entry) i.next();
-									Logger.minor(this, "Class "+e.getKey()+" : total time "+e.getValue());
-								}
-								lastDumped = System.currentTimeMillis();
-							}
-						}
 					}
+				
+					if(statistics != null) {
+						statistics.reportDatabaseJob(job.toString(), end-start);
 					}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
@@ -152,19 +135,22 @@ public class PrioritizedSerialExecutor implements Executor {
 	 * @param defaultPriority
 	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
 	 */
-	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback) {
-		jobs = new LinkedList[internalPriorityCount];
-		for(int i=0;i<jobs.length;i++)
+	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder, int jobTimeout, ExecutorIdleCallback callback, NodeStats statistics) {
+		@SuppressWarnings("unchecked") LinkedList<Runnable>[] jobs = (LinkedList<Runnable>[])new LinkedList[internalPriorityCount];
+		for (int i=0;i<jobs.length;i++) {
 			jobs[i] = new LinkedList<Runnable>();
+		}
+		this.jobs = jobs;
 		this.priority = priority;
 		this.defaultPriority = defaultPriority;
 		this.invertOrder = invertOrder;
 		this.jobTimeout = jobTimeout;
 		this.callback = callback;
+		this.statistics = statistics;
 	}
 
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder) {
-		this(priority, internalPriorityCount, defaultPriority, invertOrder, DEFAULT_JOB_TIMEOUT, null);
+		this(priority, internalPriorityCount, defaultPriority, invertOrder, DEFAULT_JOB_TIMEOUT, null, null);
 	}
 
 	public void start(Executor realExecutor, String name) {
@@ -225,10 +211,10 @@ public class PrioritizedSerialExecutor implements Executor {
 					Logger.minor(this, "Not queueing job: Job already queued: "+job);
 				return;
 			}
-			
+
 			if(logMINOR)
 				Logger.minor(this, "Queueing "+jobName+" : "+job+" priority "+prio+", executor state: running="+running+" waiting="+waiting);
-			
+
 			jobs[prio].addLast(job);
 			jobs.notifyAll();
 			if(!running && realExecutor != null) {
@@ -265,13 +251,26 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
-	public int[] queuedJobs() {
+	public int[] getQueuedJobsCountByPriority() {
 		int[] retval = new int[jobs.length];
 		synchronized(jobs) {
 			for(int i=0;i<retval.length;i++)
 				retval[i] = jobs[i].size();
 		}
 		return retval;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public LinkedList<Runnable>[] getQueuedJobsByPriority() {
+		final LinkedList<Runnable>[] jobsClone = (LinkedList<Runnable>[])new LinkedList[jobs.length];
+		
+		synchronized(jobs) {
+			for(int i=0; i < jobs.length; ++i) {
+				jobsClone[i] = (LinkedList<Runnable>) jobs[i].clone();
+			}
+		}
+		
+		return jobsClone;
 	}
 
 	public int getQueueSize(int priority) {

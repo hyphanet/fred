@@ -142,7 +142,8 @@ public class TempBucketTest extends TestSuite {
 		
 	}
 
-	public static class RealTempBucketTest_ extends BucketTestBase {
+	// Private because we only use it as a base class for the actual tests.
+	private static class RealTempBucketTest_ extends BucketTestBase {
 		private RandomSource strongPRNG = new DummyRandomSource(12345);
 		private Random weakPRNG = new DummyRandomSource(54321);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);

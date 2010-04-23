@@ -29,6 +29,15 @@ public class URLEncoderDecoderTest extends TestCase {
 
 	public static final String prtblAscii = new String(UTFUtil.PRINTABLE_ASCII);
 	public static final String stressedUTF_8Chars = new String(UTFUtil.STRESSED_UTF);
+	public static final String allCharsExceptNull = new String(UTFUtil.ALL_CHARACTERS).replace("\u0000", "");
+	
+	/**
+	 * Encodes a string of ALL unicode characters except the 0-character and tests whether it is decoded correctly. 
+	 */
+	public void testEncodeDecodeString_allChars() throws URLEncodedFormatException {
+		assertTrue(areCorrectlyEncodedDecoded(new String[] { allCharsExceptNull }, true));
+		assertTrue(areCorrectlyEncodedDecoded(new String[] { allCharsExceptNull }, false));
+	}
 			
 	/**
 	 * Tests if URLEncode.encode(String) and
@@ -76,15 +85,26 @@ public class URLEncoderDecoderTest extends TestCase {
 	 * @throws URLEncodedFormatException
 	 */
 	private boolean areCorrectlyEncodedDecoded(String[] toEncode, boolean withLetters) throws URLEncodedFormatException {
-		boolean retValue = true;
 		String[] encoded = new String[toEncode.length];
 		//encoding
 		for (int i = 0; i < encoded.length; i++)
 			encoded[i] = URLEncoder.encode(toEncode[i],withLetters);
 		//decoding
-		for (int i = 0; i < encoded.length; i++)
-			retValue &= (URLDecoder.decode(encoded[i],withLetters)).equals(toEncode[i]);
-		return retValue;
+		for (int i = 0; i < encoded.length; i++) {
+			final String orig = toEncode[i];
+			final String coded = encoded[i];
+			final String decoded = URLDecoder.decode(coded,withLetters);
+			if(orig.equals(decoded) == false) {
+				for(int c = 0; c < orig.length(); ++c) {
+					final char origChar = orig.charAt(c);
+					final char decodedChar = decoded.charAt(c);
+					if(c > decoded.length() || origChar != decodedChar)
+						return false; // Set your debugger breakpoint here
+				}
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	/**

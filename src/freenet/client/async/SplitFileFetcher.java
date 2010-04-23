@@ -38,22 +38,22 @@ import freenet.support.compress.Compressor;
 public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	private static volatile boolean logMINOR;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
+
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}
 		});
 	}
-	
+
 	final FetchContext fetchContext;
 	final FetchContext blockFetchContext;
 	final boolean deleteFetchContext;
 	final ArchiveContext archiveContext;
-	final List decompressors;
+	final List<? extends Compressor> decompressors;
 	final ClientMetadata clientMetadata;
 	final ClientRequester parent;
 	final GetCompletionCallback cb;
@@ -80,17 +80,17 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	private long token;
 	final boolean persistent;
 	private FetchException otherFailure;
-	
+
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
-	
+
 	private final int hashCode;
-	
+
 	@Override
 	public int hashCode() {
 		return hashCode;
 	}
-	
+
 	// Bloom filter stuff
 	/** The main bloom filter, which includes every key in the segment, is stored
 	 * in this file. It is a counting filter and is updated when a key is found. */
@@ -100,7 +100,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	File altBloomFile;
 	/** Size of the main Bloom filter in bytes. */
 	final int mainBloomFilterSizeBytes;
-	/** Default mainBloomElementsPerKey. False positives is approx 
+	/** Default mainBloomElementsPerKey. False positives is approx
 	 * 0.6185^[this number], so 19 gives us 0.01% false positives, which should
 	 * be acceptable even if there are thousands of splitfiles on the queue. */
 	static final int DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY = 19;
@@ -108,7 +108,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	final int mainBloomK;
 	/** What proportion of false positives is acceptable for the per-segment
 	 * Bloom filters? This is divided by the number of segments, so it is (roughly)
-	 * an overall probability of any false positive given that we reach the 
+	 * an overall probability of any false positive given that we reach the
 	 * per-segment filters. IMHO 1 in 100 is adequate. */
 	static final double ACCEPTABLE_BLOOM_FALSE_POSITIVES_ALL_SEGMENTS = 0.01;
 	/** Size of per-segment bloom filter in bytes. This is calculated from the
@@ -117,7 +117,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	/** Number of hashes for the per-segment bloom filters. */
 	final int perSegmentK;
 	private int keyCount;
-	/** Salt used in the secondary Bloom filters if the primary matches. 
+	/** Salt used in the secondary Bloom filters if the primary matches.
 	 * The primary Bloom filters use the already-salted saltedKey. */
 	private final byte[] localSalt;
 	/** Reference set on the first call to makeKeyListener().
@@ -126,9 +126,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	 * KeyListener), it will remain valid, once it is set by the first call
 	 * during resuming. */
 	private transient SplitFileFetcherKeyListener tempListener;
-	
+
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
-			FetchContext newCtx, boolean deleteFetchContext, List decompressors2, ClientMetadata clientMetadata, 
+			FetchContext newCtx, boolean deleteFetchContext, List<? extends Compressor> decompressors2, ClientMetadata clientMetadata,
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
 		this.deleteFetchContext = deleteFetchContext;
@@ -143,7 +143,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(newCtx == null)
 			throw new NullPointerException();
 		this.archiveContext = actx;
-		this.decompressors = persistent ? new ArrayList(decompressors2) : decompressors2;
+		this.decompressors = persistent ? new ArrayList<Compressor>(decompressors2) : decompressors2;
 		if(decompressors.size() > 1) {
 			Logger.error(this, "Multiple decompressors: "+decompressors.size()+" - this is almost certainly a bug", new Exception("debug"));
 		}
@@ -191,9 +191,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			container.deactivate(cb, 1);
 		if(eventualLength > 0 && newCtx.maxOutputLength > 0 && eventualLength > newCtx.maxOutputLength)
 			throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
-		
+
 		this.token = token2;
-		
+
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
 			blocksPerSegment = -1;
@@ -209,7 +209,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				throw new MetadataParseException("No splitfile params");
 			blocksPerSegment = Fields.bytesToInt(params, 0);
 			int checkBlocks = Fields.bytesToInt(params, 4);
-			
+
 			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
 			// Work around a bug around build 1135.
 			// We were splitting as (128,255), but we were then setting the checkBlocksPerSegment to 64.
@@ -220,7 +220,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				checkBlocks = 127;
 			}
 			checkBlocksPerSegment = checkBlocks;
-			
+
 			if((blocksPerSegment > fetchContext.maxDataBlocksPerSegment)
 					|| (checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
@@ -235,7 +235,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount+
 					", data blocks: "+splitfileDataBlocks.length+", check blocks: "+splitfileCheckBlocks.length);
 		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
-		
+
 		// Setup bloom parameters.
 		if(persistent) {
 			// FIXME: Should this be encrypted? It's protected to some degree by the salt...
@@ -282,10 +282,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
 		}
-		
+
 		if(persistent)
 			container.store(this);
-		
+
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
@@ -295,7 +295,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			System.arraycopy(splitfileDataBlocks, 0, newSplitfileDataBlocks, 0, splitfileDataBlocks.length);
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
-			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks, 
+			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks,
 					this, archiveContext, blockFetchContext, maxTempLength, recursionLevel, parent, 0, true);
 			for(int i=0;i<newSplitfileDataBlocks.length;i++) {
 				if(logMINOR) Logger.minor(this, "Added data block "+i+" : "+newSplitfileDataBlocks[i].getNodeKey(false));
@@ -323,7 +323,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					System.arraycopy(splitfileDataBlocks, dataBlocksPtr, dataBlocks, 0, copyDataBlocks);
 				if(copyCheckBlocks > 0)
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
-				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, 
+				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext,
 						blockFetchContext, maxTempLength, recursionLevel+1, parent, i, i == segments.length-1);
 				for(int j=0;j<dataBlocks.length;j++)
 					tempListener.addKey(dataBlocks[j].getNodeKey(true), i, context);
@@ -349,7 +349,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length, container);
 		parent.addMustSucceedBlocks(splitfileDataBlocks.length, container);
 		parent.notifyClients(container, context);
-		
+
 		try {
 			tempListener.writeFilters();
 		} catch (IOException e) {
@@ -357,7 +357,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 	}
 
-	/** Return the final status of the fetch. Throws an exception, or returns a 
+	/** Return the final status of the fetch. Throws an exception, or returns a
 	 * Bucket containing the fetched data.
 	 * @throws FetchException If the fetch failed for some reason.
 	 */
@@ -383,7 +383,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
 			finalLength = overrideLength;
 		}
-		
+
 		long bytesWritten = 0;
 		OutputStream os = null;
 		Bucket output;
@@ -502,7 +502,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			}
 			int count = 0;
 			while(!decompressors.isEmpty()) {
-				Compressor c = (Compressor) decompressors.remove(decompressors.size()-1);
+				Compressor c = decompressors.remove(decompressors.size()-1);
 				if(logMINOR)
 					Logger.minor(this, "Decompressing with "+c);
 				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
@@ -599,7 +599,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	 * Make our SplitFileFetcherKeyListener. Returns the one we created in the
 	 * constructor if possible, otherwise makes a new one. We must have already
 	 * constructed one at some point, maybe before a restart.
-	 * @throws FetchException 
+	 * @throws FetchException
 	 */
 	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
 		synchronized(this) {
@@ -644,7 +644,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				}
 
 				try {
-					tempListener = 
+					tempListener =
 						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
 				} catch (IOException e1) {
 					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to reconstruct Bloom filters: "+e1, e1));
@@ -725,7 +725,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 		return true;
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		if(hashCode == 0) {
 			Logger.error(this, "Trying to write with hash 0 => already deleted! active="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("error"));
@@ -733,6 +733,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		}
 		return true;
 	}
-	
-	
+
+
 }

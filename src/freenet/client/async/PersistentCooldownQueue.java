@@ -22,14 +22,14 @@ import freenet.support.LogThresholdCallback;
 /**
  * Persistable implementation of CooldownQueue. Much simpler than RequestCooldownQueue,
  * and would use much more memory if it wasn't for the database!
- * 
- * Creator must call setContainer() and setCooldownTime() before use, after pulling it 
+ *
+ * Creator must call setContainer() and setCooldownTime() before use, after pulling it
  * out of the database.
  * @author toad
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class PersistentCooldownQueue implements CooldownQueue {
-	
+
 	private transient static volatile boolean logMINOR;
 
 	static {
@@ -43,13 +43,13 @@ public class PersistentCooldownQueue implements CooldownQueue {
 
 	private long cooldownTime;
 
-	/** Cache of items found by removeKeyBefore() that could not be returned. 
-	 * Kept deactivated to minimise memory usage, but if we have a big 
+	/** Cache of items found by removeKeyBefore() that could not be returned.
+	 * Kept deactivated to minimise memory usage, but if we have a big
 	 * backlog, this can avoid having to re-run the query. */
 	private transient LinkedList<PersistentCooldownQueueItem> itemsFromLastTime;
-	
+
 	private static final int KEEP_ITEMS_FROM_LAST_TIME = 1024;
-	
+
 	void setCooldownTime(long time) {
 		cooldownTime = time;
 		itemsFromLastTime = new LinkedList<PersistentCooldownQueueItem>();
@@ -75,6 +75,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 //		query.descend("client").constrain(client);
 //		query.descend("parent").constrain(this);
 		Evaluation eval = new Evaluation() {
+			final private static long serialVersionUID = 1537102695504880276L;
 
 			public void evaluate(Candidate candidate) {
 				PersistentCooldownQueueItem item = (PersistentCooldownQueueItem) candidate.getObject();
@@ -95,7 +96,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 					candidate.objectContainer().deactivate(k, 5);
 				}
 			}
-			
+
 		};
 		query.constrain(eval);
 		ObjectSet results = query.execute();
@@ -112,11 +113,11 @@ public class PersistentCooldownQueue implements CooldownQueue {
 	public Object removeKeyBefore(final long now, long dontCareAfterMillis, ObjectContainer container, int maxCount) {
 		return removeKeyBefore(now, dontCareAfterMillis, container, maxCount, null);
 	}
-	
+
 	public Object removeKeyBefore(final long now, long dontCareAfterMillis, ObjectContainer container, int maxCount, PersistentCooldownQueue altQueue) {
 		// Will be called repeatedly until no more keys are returned, so it doesn't
 		// matter very much if they're not in order.
-		
+
 		// This query returns bogus results (cooldown items with times in the future).
 //		ObjectSet results = container.query(new Predicate() {
 //			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
@@ -126,10 +127,10 @@ public class PersistentCooldownQueue implements CooldownQueue {
 //			}
 //		});
 
-		ArrayList v = null;
+		ArrayList<Key> v = null;
 		if(!itemsFromLastTime.isEmpty()) {
 			if(v == null)
-				v = new ArrayList(Math.min(maxCount, itemsFromLastTime.size()));
+				v = new ArrayList<Key>(Math.min(maxCount, itemsFromLastTime.size()));
 			Logger.normal(this, "Overflow handling in cooldown queue: reusing items from last time, now "+itemsFromLastTime.size());
 			for(ListIterator<PersistentCooldownQueueItem> it = itemsFromLastTime.listIterator();it.hasNext() && v.size() < maxCount;) {
 				PersistentCooldownQueueItem i = it.next();
@@ -160,7 +161,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		}
 		if(v != null && v.size() == maxCount)
 			return v.toArray(new Key[v.size()]);
-		
+
 		// Lets re-code it in SODA.
 		long tStart = System.currentTimeMillis();
 		Query query = container.query();
@@ -178,7 +179,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 				if(logMINOR)
 					Logger.minor(this, "Query took "+(tEnd-tStart));
 			if(v == null)
-				v = new ArrayList(Math.min(maxCount, results.size()));
+				v = new ArrayList<Key>(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
 				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
 				if(i.parent != this && i.parent != altQueue) {

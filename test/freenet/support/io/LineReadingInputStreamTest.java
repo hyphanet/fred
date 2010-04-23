@@ -3,11 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+
 import junit.framework.TestCase;
 
 public class LineReadingInputStreamTest extends TestCase {
@@ -111,12 +109,8 @@ public class LineReadingInputStreamTest extends TestCase {
 	}
 
 	public void testBothImplementation() throws Exception {
-		// CWD is either the node's or the build tree
-		File f = new File("freenet.ini");
-		if(!f.exists())
-			f = new File("build.xml");
-		BufferedInputStream bis1 =  new BufferedInputStream(new FileInputStream(f));
-		BufferedInputStream bis2 =  new BufferedInputStream(new FileInputStream(f));
+		ByteArrayInputStream bis1 =  new ByteArrayInputStream(BLOCK.getBytes("ISO-8859-1"));
+		ByteArrayInputStream bis2 =  new ByteArrayInputStream(BLOCK.getBytes("ISO-8859-1"));
 		LineReadingInputStream lris1 = new LineReadingInputStream(bis1);
 		LineReadingInputStream lris2 = new LineReadingInputStream(bis2);
 		

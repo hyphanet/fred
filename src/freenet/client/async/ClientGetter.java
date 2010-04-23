@@ -32,16 +32,16 @@ import freenet.support.io.BucketTools;
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
  * and is used internally to implement FCP. Also used by fproxy, and plugins, and so on. The current state
  * of the request is stored in currentState. The ClientGetState's do most of the work. SingleFileFetcher for
- * example fetches a key, parses the metadata, and if necessary creates other states to e.g. fetch splitfiles. 
+ * example fetches a key, parses the metadata, and if necessary creates other states to e.g. fetch splitfiles.
  */
 public class ClientGetter extends BaseClientGetter {
 
 	private static volatile boolean logMINOR;
-	
+
 	static {
 		Logger.registerClass(ClientGetter.class);
 	}
-	
+
 	/** Will be called when the request completes */
 	final ClientGetCallback clientCallback;
 	/** The initial Freenet URI being fetched. */
@@ -67,7 +67,7 @@ public class ClientGetter extends BaseClientGetter {
 	private DataOutputStream binaryBlobStream;
 	/** The expected MIME type, if we know it. Should not change. */
 	private String expectedMIME;
-	/** The expected size of the file, if we know it. */ 
+	/** The expected size of the file, if we know it. */
 	private long expectedSize;
 	/** If true, the metadata (mostly the expected size) shouldn't change further. */
 	private boolean finalizedMetadata;
@@ -75,12 +75,6 @@ public class ClientGetter extends BaseClientGetter {
 	private SnoopMetadata snoopMeta;
 	/** Callback to spy on the data at each stage of the request */
 	private SnoopBucket snoopBucket;
-	
-	@Deprecated
-	public ClientGetter(ClientCallback client,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
-		this((ClientGetCallback) client, uri, ctx, priorityClass, clientContext, returnBucket, binaryBlobBucket);
-	}
 
 	/**
 	 * Fetch a key.
@@ -93,7 +87,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * @param returnBucket The bucket to return the data in. Can be null. If not null, the ClientGetter must either
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
-	 * @param binaryBlobBucket If non-null, we will write all the keys accessed (or that could have been 
+	 * @param binaryBlobBucket If non-null, we will write all the keys accessed (or that could have been
 	 * accessed in the case of redundant structures such as splitfiles) in the binary blob format to this bucket.
 	 */
 	public ClientGetter(ClientGetCallback client,
@@ -120,7 +114,7 @@ public class ClientGetter extends BaseClientGetter {
 	/** Start the request.
 	 * @param restart If true, restart a finished request.
 	 * @param overrideURI If non-null, change the URI we are fetching (usually when restarting).
-	 * @param container The database, null if this is a non-persistent request; if this is a persistent 
+	 * @param container The database, null if this is a non-persistent request; if this is a persistent
 	 * request, we must be on the database thread, and we will pass the database handle around as needed.
 	 * @param context The client context, contains important mostly non-persistent global objects.
 	 * @return True if we restarted, false if we didn't (but only in a few cases).
@@ -143,7 +137,7 @@ public class ClientGetter extends BaseClientGetter {
 					cancelled = false;
 					finished = false;
 				}
-				currentState = SingleFileFetcher.create(this, this, 
+				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
 						returnBucket, true, container, context);
 			}
@@ -177,7 +171,7 @@ public class ClientGetter extends BaseClientGetter {
 		return true;
 	}
 
-	/** 
+	/**
 	 * Called when the request succeeds.
 	 * @param result The final data.
 	 * @param state The ClientGetState which retrieved the data.
@@ -347,7 +341,7 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	/**
-	 * Notify clients listening to our ClientEventProducer of the current progress, in the form of a 
+	 * Notify clients listening to our ClientEventProducer of the current progress, in the form of a
 	 * SplitfileProgressEvent.
 	 */
 	@Override
@@ -358,9 +352,9 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
-	
+
 	/**
-	 * Notify clients that some part of the request has been sent to the network i.e. we have finished 
+	 * Notify clients that some part of the request has been sent to the network i.e. we have finished
 	 * checking the datastore for at least some part of the request. Sent once only for any given request.
 	 */
 	@Override
@@ -371,9 +365,9 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		ctx.eventProducer.produceEvent(new SendingToNetworkEvent(), container, context);
 	}
-	
+
 	/**
-	 * Called when no more blocks will be added to the total, and therefore we can confidently display a 
+	 * Called when no more blocks will be added to the total, and therefore we can confidently display a
 	 * percentage for the overall progress. Will notify clients with a SplitfileProgressEvent.
 	 */
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
@@ -383,9 +377,9 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	/**
-	 * Called when the current state creates a new state and we switch to that. For example, a 
+	 * Called when the current state creates a new state and we switch to that. For example, a
 	 * SingleFileFetcher might switch to a SplitFileFetcher. Sometimes this will be called with oldState
-	 * not equal to our currentState; this means that a subsidiary request has changed state, so we 
+	 * not equal to our currentState; this means that a subsidiary request has changed state, so we
 	 * ignore it.
 	 */
 	@Override
@@ -440,9 +434,9 @@ public class ClientGetter extends BaseClientGetter {
 	public String toString() {
 		return super.toString();
 	}
-	
+
 	// FIXME not persisting binary blob stuff - any stream won't survive shutdown...
-	
+
 	/**
 	 * Add a block to the binary blob.
 	 */
@@ -452,7 +446,7 @@ public class ClientGetter extends BaseClientGetter {
 			container.activate(binaryBlobStream, 1);
 			container.activate(binaryBlobKeysAddedAlready, 1);
 		}
-		if(logMINOR) 
+		if(logMINOR)
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		Key key = block.getKey();
 		synchronized(binaryBlobKeysAddedAlready) {
@@ -469,7 +463,7 @@ public class ClientGetter extends BaseClientGetter {
 			}
 		}
 	}
-	
+
 	/**
 	 * Close the binary blob stream.
 	 * @return True unless a failure occurred, in which case we will have already
@@ -544,17 +538,17 @@ public class ClientGetter extends BaseClientGetter {
 		if(persistent())
 			container.store(this);
 	}
-	
+
 	/** Are we sure the expected MIME and size won't change? */
 	public boolean finalizedMetadata() {
 		return finalizedMetadata;
 	}
-	
+
 	/** @return The expected MIME type, if we know it. */
 	public String expectedMIME() {
 		return expectedMIME;
 	}
-	
+
 	/** @return The expected size of the returned data, if we know it. Could change. */
 	public long expectedSize() {
 		return expectedSize;
@@ -564,7 +558,7 @@ public class ClientGetter extends BaseClientGetter {
 	public ClientGetCallback getClientCallback() {
 		return clientCallback;
 	}
-	
+
 	/** Remove the ClientGetter from the database. You must call this on the database thread, and it must
 	 * be a persistent request. We do not remove anything we are not responsible for. */
 	@Override
@@ -586,8 +580,8 @@ public class ClientGetter extends BaseClientGetter {
 	public SnoopMetadata getMetaSnoop() {
 		return snoopMeta;
 	}
-	
-	/** Set a callback to snoop on metadata during fetches. Call this before 
+
+	/** Set a callback to snoop on metadata during fetches. Call this before
 	 * starting the request. */
 	public SnoopMetadata setMetaSnoop(SnoopMetadata newSnoop) {
 		SnoopMetadata old = snoopMeta;
@@ -600,7 +594,7 @@ public class ClientGetter extends BaseClientGetter {
 		return snoopBucket;
 	}
 
-	/** Set a callback to snoop on buckets (all intermediary data - metadata, containers) during fetches. 
+	/** Set a callback to snoop on buckets (all intermediary data - metadata, containers) during fetches.
 	 * Call this before starting the request. */
 	public SnoopBucket setBucketSnoop(SnoopBucket newSnoop) {
 		SnoopBucket old = snoopBucket;

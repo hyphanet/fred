@@ -815,5 +815,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(ctx == null) return true;
 		return false;
 	}
+
+	@Override
+	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
+		onEncode(key, container, context);
+	}
 	
 }

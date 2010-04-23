@@ -46,9 +46,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.get() != 0;
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -56,9 +54,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.get();
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -66,9 +62,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getChar();
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -76,9 +70,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getDouble();
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -86,9 +78,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getFloat();
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -96,9 +86,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			buf.get(b);
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -106,9 +94,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			buf.get(b, off, len);
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -116,9 +102,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getInt();
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -126,9 +110,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getLong();
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -136,9 +118,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getShort();
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -147,9 +127,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.get() & 0xFF;
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -157,9 +135,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		try {
 			return buf.getShort() & 0xFFFF;
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 
@@ -198,9 +174,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 			
 			return new ByteBufferInputStream(bf2);
 		} catch (BufferUnderflowException e) {
-			EOFException ioe = new EOFException();
-			ioe.initCause(e);
-			throw ioe;
+			throw (EOFException)new EOFException().initCause(e);
 		}
 	}
 

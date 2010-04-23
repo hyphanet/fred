@@ -244,6 +244,7 @@ public abstract class ClientRequester {
 			oldPrio = priorityClass;
 			this.priorityClass = newPriorityClass;
 		}
+		if(logMINOR) Logger.minor(this, "Changing priority class of "+this+" from "+oldPrio+" to "+newPriorityClass);
 		ctx.getChkFetchScheduler().reregisterAll(this, container, oldPrio);
 		ctx.getChkInsertScheduler().reregisterAll(this, container, oldPrio);
 		ctx.getSskFetchScheduler().reregisterAll(this, container, oldPrio);

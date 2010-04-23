@@ -23,42 +23,42 @@ import freenet.support.io.NativeThread;
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class DatastoreChecker implements PrioRunnable {
-	
+
 	private static volatile boolean logMINOR;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
+
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}
 		});
 	}
-	
+
 	static final int MAX_PERSISTENT_KEYS = 1024;
-	
-	/** List of arrays of keys to check for persistent requests. PARTIAL: 
+
+	/** List of arrays of keys to check for persistent requests. PARTIAL:
 	 * When we run out we will look up some more DatastoreCheckerItem's. */
 	private final ArrayList<Key[]>[] persistentKeys;
-	/** List of persistent requests which we will call finishRegister() for 
-	 * when we have checked the keys lists. PARTIAL: When we run out we 
+	/** List of persistent requests which we will call finishRegister() for
+	 * when we have checked the keys lists. PARTIAL: When we run out we
 	 * will look up some more DatastoreCheckerItem's. Deactivated. */
 	private final ArrayList<SendableGet>[] persistentGetters;
 	private final ArrayList<ClientRequestScheduler>[] persistentSchedulers;
 	private final ArrayList<DatastoreCheckerItem>[] persistentCheckerItems;
 	private final ArrayList<BlockSet>[] persistentBlockSets;
-	
+
 	/** List of arrays of keys to check for transient requests. */
 	private final ArrayList<Key[]>[] transientKeys;
 	/** List of transient requests which we will call finishRegister() for
 	 * when we have checked the keys lists. */
 	private final ArrayList<SendableGet>[] transientGetters;
 	private final ArrayList<BlockSet>[] transientBlockSets;
-	
+
 	private ClientContext context;
 	private final Node node;
-	
+
 	public synchronized void setContext(ClientContext context) {
 		this.context = context;
 	}
@@ -92,7 +92,7 @@ public class DatastoreChecker implements PrioRunnable {
 		for(int i=0;i<priorities;i++)
 			transientBlockSets[i] = new ArrayList<BlockSet>();
 	}
-	
+
 	private final DBJob loader =  new DBJob() {
 
 		public boolean run(ObjectContainer container, ClientContext context) {
@@ -100,8 +100,12 @@ public class DatastoreChecker implements PrioRunnable {
 			return false;
 		}
 		
+		public String toString() {
+			return "DatastoreCheckerPersistentRequestLoader";
+		}
+
 	};
-	
+
     public void loadPersistentRequests(ObjectContainer container, final ClientContext context) {
 		int totalSize = 0;
 		synchronized(this) {
@@ -184,7 +188,7 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 		}
 	}
-	
+
 	/**
 	 * Trim the queue of persistent requests until it is just over the limit.
 	 * @param minPrio Only drop from priorities lower than this one.
@@ -239,13 +243,16 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 		}
 	}
-	
+
 	public void queueTransientRequest(SendableGet getter, BlockSet blocks) {
-		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter);
 		Key[] checkKeys = getter.listKeys(null);
 		short prio = getter.getPriorityClass(null);
+		if(logMINOR) Logger.minor(this, "Queueing transient request "+getter+" priority "+prio+" keys "+checkKeys.length);
 		// FIXME check using store.probablyInStore
 		ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
+		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
+		ClientRequester requestor = getter.getClientRequest();
+		requestor.addToRequests(getter, null);
 		synchronized(this) {
 			for(Key key : checkKeys) {
 				finalKeysToCheck.add(key);
@@ -260,21 +267,29 @@ public class DatastoreChecker implements PrioRunnable {
 			notifyAll();
 		}
 	}
-	
+
 	/**
-	 * Queue a persistent request. We will store a DatastoreCheckerItem, then 
-	 * check the datastore (on the datastore checker thread), and then call 
-	 * finishRegister() (on the database thread). Caller must have already 
+	 * Queue a persistent request. We will store a DatastoreCheckerItem, then
+	 * check the datastore (on the datastore checker thread), and then call
+	 * finishRegister() (on the database thread). Caller must have already
 	 * stored and registered the HasKeyListener if any.
 	 * @param getter
 	 */
 	public void queuePersistentRequest(SendableGet getter, BlockSet blocks, ObjectContainer container) {
+		if(getter.isEmpty(container)) {
+			if(logMINOR) Logger.minor(this, "Request is empty, not checking store: "+getter);
+			return;
+		}
 		Key[] checkKeys = getter.listKeys(container);
 		short prio = getter.getPriorityClass(container);
 		ClientRequestScheduler sched = getter.getScheduler(context);
 		DatastoreCheckerItem item = new DatastoreCheckerItem(getter, context.nodeDBHandle, prio, blocks);
 		container.store(item);
 		container.activate(blocks, 5);
+		// Add it to the list of requests running here, so that priority changes while the data is on the store checker queue will work.
+		ClientRequester requestor = getter.getClientRequest();
+		container.activate(requestor, 1);
+		requestor.addToRequests(getter, container);
 		synchronized(this) {
 			// FIXME only add if queue not full.
 			int queueSize = 0;
@@ -323,24 +338,13 @@ public class DatastoreChecker implements PrioRunnable {
 		// that we can check the datastore faster than we can handle the resulting
 		// blocks, this will cause OOM.
 		int queueSize = context.jobRunner.getQueueSize(ClientRequestScheduler.TRIP_PENDING_PRIORITY);
-		if(queueSize > 500) {
-			// If the queue is over 500, don't run the datastore checker at all.
-			// It's entirely possible that looking up blocks in the store will
-			// make the situation first, because a key which is queued for a
-			// non-persistent request may also be used by a persistent one.
-			
-			// FIXME consider setting a flag to not only only check transient
-			// requests, but also check whether the keys are in the persistent
-			// bloom filters first, and if they are not check them.
-			try {
-				Thread.sleep(10*1000);
-			} catch (InterruptedException e) {
-				// Ignore
-			}
-			return;
-		}
 		// If it's over 100, don't check blocks from persistent requests.
 		boolean notPersistent = queueSize > 100;
+		// FIXME: Ideally, for really big queues, we wouldn't datastore check transient keys that are also wanted by persistent requests.
+		// Looking it up in the bloom filters is trivial. But I am not sure it is safe to take the CRSBase lock inside the DatastoreChecker lock,
+		// especially given that sometimes SendableGet methods get called within it, and sometimes those call back here.
+		// Maybe we can separate the lock for the Bloom filters from that for everything else?
+		// Checking whether keys are wanted by persistent requests outside the lock would likely result in busy-looping.
 		synchronized(this) {
 			while(true) {
 				for(short prio = 0;prio<transientKeys.length;prio++) {
@@ -351,7 +355,7 @@ public class DatastoreChecker implements PrioRunnable {
 						item = null;
 						blocks = transientBlockSets[prio].remove(0);
 						if(logMINOR)
-							Logger.minor(this, "Checking transient request "+getter+" prio "+prio);
+							Logger.minor(this, "Checking transient request "+getter+" prio "+prio+" of "+transientKeys[prio].size());
 						break;
 					} else if((!notPersistent) && (!persistentGetters[prio].isEmpty())) {
 						keys = persistentKeys[prio].remove(0);
@@ -360,16 +364,18 @@ public class DatastoreChecker implements PrioRunnable {
 						sched = persistentSchedulers[prio].remove(0);
 						item = persistentCheckerItems[prio].remove(0);
 						blocks = persistentBlockSets[prio].remove(0);
+						if(logMINOR)
+							Logger.minor(this, "Checking persistent request at prio "+prio);
 						break;
 					}
 				}
 				if(keys == null) {
-					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
 					try {
 						context.jobRunner.queue(loader, NativeThread.HIGH_PRIORITY, true);
 					} catch (DatabaseDisabledException e1) {
 						// Ignore
 					}
+					if(logMINOR) Logger.minor(this, "Waiting for more persistent requests");
 					try {
 						wait(100*1000);
 					} catch (InterruptedException e) {
@@ -423,7 +429,7 @@ public class DatastoreChecker implements PrioRunnable {
 						}
 						if(!container.ext().isStored(get)) {
 							// Completed and deleted already.
-							if(logMINOR) 
+							if(logMINOR)
 								Logger.minor(this, "Already deleted from database");
 							container.delete(it);
 							return false;
@@ -435,6 +441,10 @@ public class DatastoreChecker implements PrioRunnable {
 						return false;
 					}
 					
+					public String toString() {
+						return "DatastoreCheckerFinishRegister";
+					}
+
 				}, NativeThread.NORM_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
 				// Impossible
@@ -443,7 +453,7 @@ public class DatastoreChecker implements PrioRunnable {
 			sched.finishRegister(new SendableGet[] { getter }, false, null, anyValid, item);
 		}
 	}
-	
+
 	synchronized void wakeUp() {
 		notifyAll();
 	}
@@ -460,7 +470,7 @@ public class DatastoreChecker implements PrioRunnable {
 	public int getPriority() {
 		return NativeThread.NORM_PRIORITY;
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		Logger.error(this, "Not storing DatastoreChecker in database", new Exception("error"));
 		return false;
@@ -488,7 +498,7 @@ public class DatastoreChecker implements PrioRunnable {
 					persistentBlockSets[prio].remove(index);
 				}
 			}
-			Query query = 
+			Query query =
 				container.query();
 			query.constrain(DatastoreCheckerItem.class);
 			query.descend("getter").constrain(request).identity();
@@ -508,5 +518,5 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 		}
 	}
-	
+
 }

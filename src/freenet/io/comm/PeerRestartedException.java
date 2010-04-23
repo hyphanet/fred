@@ -4,4 +4,6 @@ package freenet.io.comm;
  * for an incoming packet from a peer, etc. */ 
 public class PeerRestartedException extends DisconnectedException {
 
+   final private static long serialVersionUID = 616182042289792833L;
+
 }

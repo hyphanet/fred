@@ -131,10 +131,7 @@ public class NodeSSK extends Key {
         try {
 			return new NodeSSK(buf2, buf, null, cryptoAlgorithm);
 		} catch (SSKVerifyException e) {
-			IllegalStateException impossible = 
-				new IllegalStateException("Impossible: "+e);
-			impossible.initCause(e);
-			throw impossible;
+			throw (AssertionError)new AssertionError("Impossible").initCause(e);
 		}
     }
 

@@ -16,15 +16,84 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Method;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.Random;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
+import freenet.support.StringValidityChecker;
 
 final public class FileUtil {
 	
-	private static final int BUFFER_SIZE = 4096;
+	private static final int BUFFER_SIZE = 32*1024;
+	
+	public static enum OperatingSystem {
+		All,
+		MacOS,
+		Unix,
+		Windows
+	};
+	
+	private static final OperatingSystem detectedOS;
+	
+	private static final Charset fileNameCharset;
+
+	
+	static {
+		detectedOS = detectOperatingSystem();
+		
+		// I did not find any way to detect the Charset of the file system so I'm using the file encoding charset. 
+		// On Windows and Linux this is set based on the users configured system language which is probably equal to the filename charset.
+		// The worst thing which can happen if we misdetect the filename charset is that downloads fail because the filenames are invalid:
+		// We disallow path and file separator characters anyway so its not possible to cause files to be stored in arbitrary places.
+		fileNameCharset = getFileEncodingCharset();
+	}
+	
+	/**
+	 * Detects the operating system in which the JVM is running. Returns OperatingSystem.All if the OS is unknown or an error occured.
+	 * Therefore this function should never throw.
+	 */
+	private static final OperatingSystem detectOperatingSystem() { // TODO: Move to the proper class
+		try {
+			final String name =  System.getProperty("os.name").toLowerCase();
+			
+			// Order the if() by probability instead alphabetically to decrease the false-positive rate in case they decide to call it "Windows Mac" or whatever 
+			
+			// Please adapt sanitizeFileName when adding new OS.
+			
+			if(name.indexOf("win") >= 0)
+				return OperatingSystem.Windows;
+			
+			if(name.indexOf("mac") >= 0)
+				return OperatingSystem.MacOS;
+			
+			if(name.indexOf("unix") >= 0 || name.indexOf("linux") >= 0)
+				return OperatingSystem.Unix;
+			
+			Logger.error(FileUtil.class, "Unknown operating system:" + name);
+		} catch(Throwable t) {
+			Logger.error(FileUtil.class, "Operating system detection failed", t);
+		}
+		
+		return OperatingSystem.All;
+	}
+	
+	/**
+	 * Returns the Charset which is equal to the "file.encoding" property. 
+	 * This property is set to the users configured system language on windows for example.
+	 * 
+	 * If any error occurs, the default Charset is returned. Therefore this function should never throw. 
+	 */
+	public static final Charset getFileEncodingCharset() {
+		try { 
+			return Charset.forName(System.getProperty("file.encoding"));
+		} catch(Throwable t) {
+			return Charset.defaultCharset();
+		}
+	}
+	
 
 	/** Round up a value to the next multiple of a power of 2 */
 	private static final long roundup_2n (long val, int blocksize) {
@@ -236,26 +305,85 @@ final public class FileUtil {
     			}
     		} else return true;
     	}
+    
+    /**
+     * Sanitizes the given filename to be valid on the given operating system.
+     * If OperatingSystem.All is specified this function will generate a filename which fullfils the restrictions of all known OS, currently
+     * this is MacOS, Unix and Windows.
+     */
+	public static String sanitizeFileName(final String fileName, OperatingSystem targetOS) {
+		// Filter out any characters which do not exist in the charset.
+		final CharBuffer buffer = fileNameCharset.decode(fileNameCharset.encode(fileName)); // Charset are thread-safe
 
-
-        
-	public static String sanitize(String s) {
-		StringBuilder sb = new StringBuilder(s.length());
-		for(int i=0;i<s.length();i++) {
-			char c = s.charAt(i);
-			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"') || (c == '|'))
-				continue;
-			if(Character.isDigit(c))
-				sb.append(c);
-			else if(Character.isLetter(c))
-				sb.append(c);
-			else if(Character.isWhitespace(c))
-				sb.append(' ');
-			else if((c == '-') || (c == '_') || (c == '.'))
-				sb.append(c);
+		final StringBuilder sb = new StringBuilder(fileName.length() + 1);
+		
+		switch(targetOS) {
+			case All: break;
+			case MacOS: break;
+			case Unix: break;
+			case Windows: break;
+			default:
+				Logger.error(FileUtil.class, "Unsupported operating system: " + targetOS);
+				targetOS = OperatingSystem.All;
+				break;
 		}
+
+		for(char c : buffer.array()) {
+			// Control characters and whitespace are converted to space for all OS.
+			// We do not check for the file separator character because it is included in each OS list of reserved characters.
+			if(Character.getType(c) == Character.CONTROL || Character.isWhitespace(c)) {
+				sb.append(' ');
+				continue;
+			}
+			
+			
+			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
+				if(StringValidityChecker.isWindowsReservedPrintableFilenameCharacter(c)) {
+					sb.append(' ');
+					continue;
+				}
+			}
+			
+			if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.MacOS) {
+				if(StringValidityChecker.isMacOSReservedPrintableFilenameCharacter(c)) {
+					sb.append(' ');
+					continue;
+				}
+			}
+			
+			// Nothing did continue; so the character is okay
+			sb.append(c);
+		}
+
+		// In windows, the last character of a filename may not be space or dot. We cut them off
+		if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
+			int lastCharIndex = sb.length() - 1;
+			while(lastCharIndex >= 0) {
+				char lastChar = sb.charAt(lastCharIndex);
+				if(lastChar == ' ' ||  lastChar == '.')
+					sb.deleteCharAt(lastCharIndex--);
+				else
+					break;
+			}
+		}
+		
+		// Now the filename might be one of the reserved filenames in Windows (CON etc.) and we must replace it if it is...
+		if(targetOS == OperatingSystem.All || targetOS == OperatingSystem.Windows) {
+			if(StringValidityChecker.isWindowsReservedFilename(sb.toString()))
+				sb.insert(0, '_');
+		}
+	
+		if(sb.length() == 0) {
+			sb.append("Invalid filename"); // TODO: L10n
+		}
+		
 		return sb.toString();
 	}
+    	
+	public static String sanitize(String fileName) {
+		return sanitizeFileName(fileName, detectedOS);
+	}
+
 
 	public static String sanitize(String filename, String mimeType) {
 		filename = sanitize(filename);

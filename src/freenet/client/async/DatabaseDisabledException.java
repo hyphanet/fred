@@ -5,4 +5,6 @@ package freenet.client.async;
  * back.*/
 public class DatabaseDisabledException extends Exception {
 
+   final private static long serialVersionUID = -1212132974191190363L;
+
 }

@@ -43,9 +43,7 @@ public class InetAddressAddressTrackerItem extends AddressTrackerItem {
 		try {
 			addr = InetAddress.getByName(fs.getString("Address"));
 		} catch (UnknownHostException e) {
-			FSParseException ex = new FSParseException("Unknown domain name in Address: "+e);
-			ex.initCause(e);
-			throw ex;
+			throw (FSParseException)new FSParseException("Unknown domain name in Address: "+e).initCause(e);
 		}
 	}
 

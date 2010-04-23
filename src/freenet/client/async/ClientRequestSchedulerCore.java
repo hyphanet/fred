@@ -36,36 +36,36 @@ import freenet.support.io.NativeThread;
 /**
  * @author toad
  * A persistent class that functions as the core of the ClientRequestScheduler.
- * Does not refer to any non-persistable classes as member variables: Node must always 
+ * Does not refer to any non-persistable classes as member variables: Node must always
  * be passed in if we need to use it!
  */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
-	
+
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
 	final PersistentCooldownQueue persistentCooldownQueue;
 	private transient long initTime;
-	
+
 	private static volatile boolean logMINOR;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
+
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}
 		});
 	}
-	
+
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
 	 * @param node
 	 * @param forInserts
 	 * @param forSSKs
 	 * @param selectorContainer
-	 * @param executor 
+	 * @param executor
 	 * @return
 	 */
 	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, final long nodeDBHandle, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
@@ -73,6 +73,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			return null;
 		}
 		ObjectSet<ClientRequestSchedulerCore> results = selectorContainer.query(new Predicate<ClientRequestSchedulerCore>() {
+			final private static long serialVersionUID = -7517827015509774396L;
 			@Override
 			public boolean match(ClientRequestSchedulerCore core) {
 				if(core.nodeDBHandle != nodeDBHandle) return false;
@@ -110,7 +111,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	}
 
 	private final byte[] globalSalt;
-	
+
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		super.onStarted();
 		System.err.println("insert scheduler: "+isInsertScheduler);
@@ -148,7 +149,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 //						RegisterMeSortKey key1 = reg1.key;
 //						return key0.compareTo(key1);
 //					}
-//					
+//
 //				});
 				ObjectSet results = null;
 				for(int i=RequestStarter.MAXIMUM_PRIORITY_CLASS;i<=RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
@@ -184,7 +185,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 //							candidate.include(true);
 //						}
 //					}
-//					
+//
 //				};
 //				query.constrain(eval);
 //				query.descend("key").descend("priority").orderAscending();
@@ -210,13 +211,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		registerMeRunner = new RegisterMeRunner();
 		}
 	}
-	
+
 	private transient DBJob preRegisterMeRunner;
-	
+
 	void start(DBJobRunner runner) {
 		startRegisterMeRunner(runner);
 	}
-	
+
 	private final void startRegisterMeRunner(DBJobRunner runner) {
 		if(isInsertScheduler)
 			try {
@@ -225,16 +226,16 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				// Persistence is disabled
 			}
 	}
-	
+
 	@Override
 	boolean persistent() {
 		return true;
 	}
 
 	private transient ObjectSet registerMeSet;
-	
+
 	private transient RegisterMeRunner registerMeRunner;
-	
+
 	class RegisterMeRunner implements DBJob {
 
 		public boolean run(ObjectContainer container, ClientContext context) {
@@ -321,7 +322,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 						String toString = "(throws)";
 						try {
 							toString = reg.nonGetRequest.toString();
-						} catch (Throwable t) { 
+						} catch (Throwable t) {
 							// It throws :|
 						};
 						Logger.error(this, "Stored SingleBlockInserter is broken, maybe leftover from database leakage?: "+toString);
@@ -359,16 +360,16 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			}
 			return true;
 		}
-		
+
 	}
-		
+
 	public void rerunRegisterMeRunner(DBJobRunner runner) {
 		synchronized(this) {
 			if(registerMeSet != null) return;
 		}
 		startRegisterMeRunner(runner);
 	}
-	
+
 	@Override
 	public synchronized long countQueuedRequests(ObjectContainer container, ClientContext context) {
 		long ret = super.countQueuedRequests(container, context);

@@ -13,6 +13,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.node.OpennetManager.ConnectionType;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
@@ -296,7 +297,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
         						try {
         							sendNotWanted();
         						} catch (NotConnectedException e) {
-        							Logger.error(this, "Lost connection to source");
+        							Logger.warning(this, "Lost connection to source (announce completed)");
         							return;
         						}
                     		}
@@ -335,7 +336,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 						try {
 							sendNotWanted();
 						} catch (NotConnectedException e) {
-							Logger.error(this, "Lost connection to source");
+							Logger.warning(this, "Lost connection to source (announce not wanted)");
 							return;
 						}
             		}
@@ -376,7 +377,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		} else {
 			// Add it
 			try {
-				OpennetPeerNode pn = node.addNewOpennetNode(fs);
+				OpennetPeerNode pn = node.addNewOpennetNode(fs, ConnectionType.ANNOUNCE);
 				if(pn != null)
 					cb.addedNode(pn);
 				else
@@ -475,7 +476,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		}
 		// If we want it, add it and send it.
 		try {
-			if(om.addNewOpennetNode(fs) != null) {
+			if(om.addNewOpennetNode(fs, ConnectionType.ANNOUNCE) != null) {
 				sendOurRef(source, om.crypto.myCompressedFullRef());
 			} else {
 				if(logMINOR)
@@ -520,6 +521,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	}
 	
 	public void sentPayload(int x) {
+		node.nodeStats.announceByteCounter.sentPayload(x);
 		// Doesn't count.
 	}
 

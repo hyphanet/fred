@@ -133,8 +133,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.isFinal = false;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
-		if(persistent && ah != null) ah = ah.cloneHandler();
 		this.ah = fetcher.ah;
+		if(persistent && ah != null) ah = ah.cloneHandler();
 		this.archiveMetadata = null;
 		this.clientMetadata = (fetcher.clientMetadata != null ? fetcher.clientMetadata.clone() : new ClientMetadata());
 		this.metadata = newMeta;
@@ -171,13 +171,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			Logger.error(this, "block is null! fromStore="+fromStore+", token="+token, new Exception("error"));
 			return;
 		}
+		Bucket data = extract(block, container, context);
 		if(key instanceof ClientSSK) {
 			try {
 				if(uri.isSSK() && uri.isSSKForUSK()) {
 					if(persistent) container.activate(uri, 5);
 					FreenetURI uu = uri.setMetaString(null).uskForSSK();
 					USK usk = USK.create(uu);
-					context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
+					if(data != null && !block.isMetadata())
+						context.uskManager.updateKnownGood(usk, uu.getSuggestedEdition(), context);
+					else
+						// We don't know whether the metadata is fetchable.
+						// FIXME add a callback so if the rest of the request completes we updateKnownGood().
+						context.uskManager.updateSlot(usk, uu.getSuggestedEdition(), context);
 				}
 			} catch (MalformedURLException e) {
 				Logger.error(this, "Caught "+e, e);
@@ -186,7 +192,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Logger.error(this, "Caught "+t, t);
 			}
 		}
-		Bucket data = extract(block, container, context);
 		if(data == null) {
 			if(logMINOR)
 				Logger.minor(this, "No data");

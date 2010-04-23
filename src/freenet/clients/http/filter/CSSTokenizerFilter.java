@@ -1,6 +1,6 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
- * http://www.gnu.org/ for further details of the GPL. */ 
+ * http://www.gnu.org/ for further details of the GPL. */
 
 package freenet.clients.http.filter;
 import java.io.IOException;
@@ -14,15 +14,15 @@ import java.util.Map;
 
 import freenet.support.Logger;
 
-/** Comprehensive CSS2.1 filter. The old jflex-based filter was very far 
+/** Comprehensive CSS2.1 filter. The old jflex-based filter was very far
  * from comprehensive.
  * @author kurmiashish
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
- * 
+ *
  * FIXME: Rewrite to parse properly. This works but is rather spaghettified.
- * JFlex on its own obviously won't work, but JFlex plus a proper grammar 
+ * JFlex on its own obviously won't work, but JFlex plus a proper grammar
  * should work fine.
- * 
+ *
  * According to the CSS2.1 spec, in some cases spaces between tokens are
  * optional. We do NOT support this! A grammar-based parser might, although
  * really it's horrible, we shouldn't support it if it's not widely used...
@@ -39,17 +39,17 @@ class CSSTokenizerFilter {
 	private String detectedCharset;
 	private final boolean stopAtDetectedCharset;
 	private final boolean isInline;
-	
+
 	static {
 		Logger.registerClass(CSSTokenizerFilter.class);
 	}
-	
+
 	CSSTokenizerFilter(){
 		passedCharset = "UTF-8";
 		stopAtDetectedCharset = false;
 		isInline = false;
 	}
-	
+
 //	private static PrintStream log;
 
 	public static void log(String s)
@@ -95,8 +95,7 @@ class CSSTokenizerFilter {
 		if (blen == 0) {
 			return a;
 		}
-		final T[] result = (T[]) java.lang.reflect.Array.
-		newInstance(a.getClass().getComponentType(), alen + blen);
+		@SuppressWarnings("unchecked") final T[] result = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), alen + blen);
 		System.arraycopy(a, 0, result, 0, alen);
 		System.arraycopy(b, 0, result, alen, blen);
 		return result;
@@ -108,12 +107,12 @@ class CSSTokenizerFilter {
 	 * When retrieving a Verifier object, first it is searched in elementVerifiers to see if it is already loaded.
 	 * If it is not loaded then allelementVerifiers is checked to see if the property name is valid. If it is valid, then the desired Verifier object is loaded in allelemntVerifiers.
 	 */
-	
+
 	// FIXME this is probably overkill, initialising all of them on startup would probably be cleaner code, less synchronization, at very little memory cost.
 	// FIXME check how many bytes we save by lazy init here.
-	
+
 	static Map<String, CSSPropertyVerifier> elementVerifiers = new HashMap<String, CSSPropertyVerifier>();
-	static HashSet<String> allelementVerifiers=new HashSet<String>(); 
+	static HashSet<String> allelementVerifiers=new HashSet<String>();
 	//Reference http://www.w3.org/TR/CSS2/propidx.html
 	static {
 		allelementVerifiers.add("azimuth");
@@ -260,13 +259,13 @@ class CSSTokenizerFilter {
 	private static void addVerifier(String element)
 	{
 		if("azimuth".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[0]=new CSSPropertyVerifier(new String[]{"left-side","far-left","left","center-left","center","center-right","right","far-right","right-side"},null,null,true);
 			auxilaryVerifiers[1]=new CSSPropertyVerifier(new String[]{"behind"},null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"leftwards","rightwards","inherit"},ElementInfo.AURALMEDIA,new String[]{"an"},new String[]{"0a1"}));
 			allelementVerifiers.remove(element);
 		}
-		else if("background-attachment".equalsIgnoreCase(element)){ 
+		else if("background-attachment".equalsIgnoreCase(element)){
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"scroll","fixed","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
@@ -280,7 +279,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("background-position".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"2 3?","4a5"}));
 			allelementVerifiers.remove(element);
 		}
@@ -290,7 +289,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("background".equalsIgnoreCase(element))
-		{      
+		{
 
 			//background-attachment
 			auxilaryVerifiers[6]=new CSSPropertyVerifier(new String[] {"scroll","fixed","inherit"},null,null,true);
@@ -307,31 +306,31 @@ class CSSTokenizerFilter {
 		}
 
 		else if("border-collapse".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"collapse","separate","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("border-color".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[11]=new CSSPropertyVerifier(new String[] {"transparent"},new String[]{"co"},null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"},new String[]{"11<1,4>"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("border-spacing".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[12]=new CSSPropertyVerifier(null,new String[]{"le"},null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"12 12?"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-style".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"13<1,4>"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-left".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"13a14a15"}));
 			allelementVerifiers.remove(element);
 		}
@@ -341,7 +340,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("border-right".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"13a14a15"}));
 			allelementVerifiers.remove(element);
 		}
@@ -351,33 +350,33 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("border-top-color".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"transparent","inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("border-right-color".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"transparent","inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-bottom-color".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"transparent","inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-left-color".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"transparent","inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-top-style".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset", "inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-right-style".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset", "inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
@@ -392,12 +391,12 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("border-top-width".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"thin","medium","thick","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border-right-width".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"thin","medium","thick","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
 			allelementVerifiers.remove(element);
 		}
@@ -412,51 +411,51 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("border-width".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"14<1,4>"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("border".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"13a14a15"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("bottom".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("caption-side".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"top","bottom","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("clear".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","left","right","both","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("clip".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"sh"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("color".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("content".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[16]=new contentPropertyVerifier(new String[]{"open-quote","close-quote","no-open-quote", "no-close-quote" });
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","none","inherit"},ElementInfo.MEDIAARRAY,null,new String[]{"16<1,"+ ElementInfo.UPPERLIMIT+">"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("counter-increment".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[17]=new CSSPropertyVerifier(null,new String[]{"id"},null,true);
 			auxilaryVerifiers[18]=new CSSPropertyVerifier(null,new String[]{"in"},null,true);
 			auxilaryVerifiers[19]=new CSSPropertyVerifier(null,null,new String[]{"17 18?"},true);
@@ -464,7 +463,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("counter-reset".equalsIgnoreCase(element))
-		{     
+		{
 			auxilaryVerifiers[20]=new CSSPropertyVerifier(null,new String[]{"id"},null,true);
 			auxilaryVerifiers[21]=new CSSPropertyVerifier(null,new String[]{"in"},null,true);
 			auxilaryVerifiers[22]=new CSSPropertyVerifier(null,null,new String[]{"20 21?"},true);
@@ -478,12 +477,12 @@ class CSSTokenizerFilter {
 
 		}
 		else if("cue-before".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.AURALMEDIA,new String[]{"ur"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("cue".equalsIgnoreCase(element))
-		{      
+		{
 			//cue-before
 			auxilaryVerifiers[23]=new CSSPropertyVerifier(new String[] {"none","inherit"},new String[]{"ur"},null,true);
 			//cue-after
@@ -493,7 +492,7 @@ class CSSTokenizerFilter {
 
 		}
 		else if("cursor".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[25]=new CSSPropertyVerifier(null,new String[]{"ur"},null,true);
 			auxilaryVerifiers[26]=new CSSPropertyVerifier(new String[]{"auto","crosshair","default","pointer","move","e-resize","ne-resize","nw-resize","n-resize","se-resize","sw-resize","s-resize","w-resize","text","wait","help","progress"},null,null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALINTERACTIVEMEDIA,null,new String[]{"25<0,"+ElementInfo.UPPERLIMIT+"> 26"},false,true));
@@ -501,32 +500,32 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("direction".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"ltr","rtl","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("display".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inline","block","list-item","run-in","inline-block","table","inline-table","table-row-group","table-header-group","table-footer-group","table-row","table-column-group","table-column","table-cell","table-caption","none","inherit"},ElementInfo.MEDIAARRAY));
 			allelementVerifiers.remove(element);
 		}
 		else if("elevation".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"below","level","above","higher","lower", "inherit"},ElementInfo.AURALMEDIA,new String[]{"an"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("empty-cells".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"show","hide","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("float".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"left","right","none","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("font-family".equalsIgnoreCase(element))
-		{      
+		{
 
 			elementVerifiers.put(element,new FontPropertyVerifier(false));
 			allelementVerifiers.remove(element);
@@ -537,22 +536,22 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("font-style".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","italic","oblique","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("font-variant".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","small-caps","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("font-weight".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","bold","bolder","lighter","100","200","300","400","500","600","700","800","900","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("font".equalsIgnoreCase(element))
-		{      
+		{
 
 			//font-style
 			auxilaryVerifiers[27]=new CSSPropertyVerifier(new String[] {"normal","italic","oblique","inherit"},null,null,true);
@@ -586,42 +585,42 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("height".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("left".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("letter-spacing".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("line-height".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe","re","in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("list-style-image".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"ur"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("list-style-position".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inside","outside","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("list-style-type".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"disc","circle","square","decimal","decimal-leading-zero","lower-roman","upper-roman","lower-greek","lower-latin","upper-latin","armenian","georgian","lower-alpha","upper-alpha","none","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("list-style".equalsIgnoreCase(element))
-		{      
+		{
 			//list-style-image
 			auxilaryVerifiers[33]=new CSSPropertyVerifier(new String[] {"none","inherit"},new String[]{"ur"},null,true);
 			//list-style-position
@@ -632,75 +631,75 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-right".equalsIgnoreCase(element))
-		{      
+		{
 			//margin-width=Length|Percentage|Auto
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-left".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-top".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin-bottom".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("margin".equalsIgnoreCase(element))
-		{      
+		{
 			//margin-width
 			auxilaryVerifiers[36]=new CSSPropertyVerifier(new String[] {"auto","inherit"},new String[]{"le","pe"},null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"36<1,4>"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("max-height".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("max-width".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("min-height".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("min-width".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("orphans".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALPAGEDMEDIA,new String[]{"in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("outline-color".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"invert", "inherit"},ElementInfo.VISUALINTERACTIVEMEDIA,new String[]{"co"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("outline-style".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","hidden","dotted","dashed","solid","double","groove","ridge","inset","outset", "inherit"},ElementInfo.VISUALINTERACTIVEMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("outline-width".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"thin","medium","thick","inherit"},ElementInfo.VISUALINTERACTIVEMEDIA,new String[]{"le"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("outline".equalsIgnoreCase(element))
-		{      
+		{
 			//outline-color
 			auxilaryVerifiers[37]=new CSSPropertyVerifier(new String[] {"invert", "inherit"},new String[]{"co"},null,true);
 			//outline-style
@@ -711,83 +710,83 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("overflow".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"visible","hidden","scroll","auto","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-top".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("padding-right".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-bottom".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding-left".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("padding".equalsIgnoreCase(element))
-		{      
+		{
 			//padding-width
 			auxilaryVerifiers[40]=new CSSPropertyVerifier(new String[] {"inherit"},new String[]{"le","pe"},null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,null,new String[]{"40<1,4>"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("page-break-after".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right","inherit"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("page-break-before".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","always","avoid","left","right","inherit"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("page-break-inside".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","avoid","inherit"},ElementInfo.VISUALPAGEDMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("pause-after".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.AURALMEDIA,new String[]{"ti","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("pause-before".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.AURALMEDIA,new String[]{"ti","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("pause".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[41]=new CSSPropertyVerifier(new String[] {"inherit"},new String[]{"ti","pe"},null,true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},null,null,new String[]{"41<1,2>"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("pitch-range".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.AURALMEDIA,new String[]{"in","re"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("pitch".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"x-low","low","medium","high","x-high","inherit"},ElementInfo.AURALMEDIA,new String[]{"fr"}));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("play-during".equalsIgnoreCase(element))
-		{      
+		{
 
 			auxilaryVerifiers[42]=new CSSPropertyVerifier(null,new String[]{"ur"},null,true);
 			auxilaryVerifiers[43]=new CSSPropertyVerifier(new String[]{"mix"},null,null,true);
@@ -799,61 +798,61 @@ class CSSTokenizerFilter {
 
 		}
 		else if("position".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"static","relative","absolute","fixed","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("quotes".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[46]=new CSSPropertyVerifier(null,new String[]{"st"},null,true);
 			auxilaryVerifiers[47]=new CSSPropertyVerifier(null,null,new String[]{"46 46"},true);
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"none","inherit"},null,ElementInfo.VISUALMEDIA,new String[]{"47<1,"+ ElementInfo.UPPERLIMIT+">[2,2]"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("richness".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.AURALMEDIA,new String[]{"re","in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("right".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("speak-header".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"once","always","inherit"},ElementInfo.AURALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("speak-numeral".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"digits","continuous","inherit"},ElementInfo.AURALMEDIA));
 			allelementVerifiers.remove(element);
 
 		}
 		else if("speak-punctuation".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"code", "none","inherit"},ElementInfo.AURALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("speak".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","none","spell-out","inherit"},ElementInfo.AURALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("speech-rate".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"x-slow","slow","medium","fast","x-fast","faster","slower","inherit"},ElementInfo.AURALMEDIA,new String[]{"re","in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("stress".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.AURALMEDIA,new String[]{"re","in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("table-layout".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"auto","fixed","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
@@ -863,7 +862,7 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("text-decoration".equalsIgnoreCase(element))
-		{      
+		{
 			auxilaryVerifiers[48]=new CSSPropertyVerifier(new String[]{"underline"},null,null,true);
 			auxilaryVerifiers[49]=new CSSPropertyVerifier(new String[]{"overline"},null,null,true);
 			auxilaryVerifiers[50]=new CSSPropertyVerifier(new String[]{"line-through"},null,null,true);
@@ -873,32 +872,32 @@ class CSSTokenizerFilter {
 
 		}
 		else if("text-indent".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("text-transform".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"capitalize","uppercase","lowercase","none","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("top".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("unicode-bidi".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier( new String[] {"normal", "embed", "bidi-override","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("vertical-align".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"baseline","sub","super","top","text-top","middle","bottom","text-bottom","inherit"},ElementInfo.VISUALMEDIA,new String[]{"pe","le"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("visibility".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"visible","hidden","collapse","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
@@ -908,32 +907,32 @@ class CSSTokenizerFilter {
 			allelementVerifiers.remove(element);
 		}
 		else if("volume".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"silent","x-soft","soft","medium","loud","x-loud","inherit"},ElementInfo.AURALMEDIA,new String[]{"re","le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("white-space".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","pre","nowrap","pre-wrap","pre-line","inherit"},ElementInfo.VISUALMEDIA));
 			allelementVerifiers.remove(element);
 		}
 		else if("widows".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"inherit"},ElementInfo.VISUALMEDIA,new String[]{"in"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("width".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le","pe"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("word-spacing".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"normal","inherit"},ElementInfo.VISUALMEDIA,new String[]{"le"}));
 			allelementVerifiers.remove(element);
 		}
 		else if("z-index".equalsIgnoreCase(element))
-		{      
+		{
 			elementVerifiers.put(element,new CSSPropertyVerifier(new String[] {"auto","inherit"},ElementInfo.VISUALMEDIA,new String[]{"in"}));
 			allelementVerifiers.remove(element);
 		}
@@ -989,7 +988,7 @@ class CSSTokenizerFilter {
 		return obj.checkValidity(media, elements, words, cb);
 
 	}
-	
+
 	private int checkImportant(ParsedWord[] words) {
 		if(words.length == 0) return 0;
 		if(words.length >= 1 && words[words.length-1] instanceof SimpleParsedWord) {
@@ -1086,7 +1085,7 @@ class CSSTokenizerFilter {
 			if(isValid && attSelections!=null)
 			{
 				String[] attSelectionParts;
-				
+
 				for(String attSelection : attSelections) {
 					if(attSelection.indexOf("|=")!=-1)
 					{
@@ -1105,10 +1104,10 @@ class CSSTokenizerFilter {
 					} else {
 						attSelectionParts=new String[] { attSelection };
 					}
-					
+
 					//Verifying whether each character is alphanumeric or _
 					if(logDEBUG) log("HTMLelementVerifier length of attSelectionParts="+attSelectionParts.length);
-					
+
 					if(attSelectionParts[0].length()==0)
 						isValid=false;
 					else
@@ -1122,7 +1121,7 @@ class CSSTokenizerFilter {
 								isValid=false;
 						}
 					}
-					
+
 					if(attSelectionParts.length > 1) {
 						// What about the right hand side?
 						// The grammar says it's an IDENT.
@@ -1161,16 +1160,16 @@ class CSSTokenizerFilter {
 	{
 		if(logDEBUG) log("selector: \""+selectorString+"\"");
 		selectorString=selectorString.trim();
-		
+
 		// Parse but don't tokenise.
-		
+
 		int plusIndex,gtIndex,spaceIndex;
 		plusIndex = Integer.MAX_VALUE;
 		gtIndex = Integer.MAX_VALUE;
 		spaceIndex = Integer.MAX_VALUE;
 		int index = -1;
 		char selector = 0;
-		
+
 		char c;
 		char quoting = 0;
 		boolean escaping = false;
@@ -1240,14 +1239,14 @@ class CSSTokenizerFilter {
 			}
 			eatLF = false;
 		}
-		
+
 		if(logDEBUG) log("index="+index+" quoting="+quoting+" selector="+selector+" for \""+selectorString+"\"");
-		
+
 		if(quoting != 0) return null; // Mismatched quotes
-		
+
 		if(index == -1)
 			return HTMLelementVerifier(selectorString);
-		
+
 		String[] parts=new String[2];
 
 		parts[0]=selectorString.substring(0,index).trim();
@@ -1301,16 +1300,16 @@ class CSSTokenizerFilter {
 
 		String whitespaceAfterColon = "";
 		String whitespaceBeforeProperty = "";
-		
+
 		boolean charsetPossible = true;
 		boolean bomPossible = true;
 		int openBracesStartingS3 = 0;
 		boolean forPage = false;
-		
+
 		if(isInline) {
 			currentState = STATE3;
 		}
-		
+
 		while(true)
 		{
 			try
@@ -1352,7 +1351,7 @@ class CSSTokenizerFilter {
 				continue; // Strip nulls
 			switch(currentState)
 			{
-			case STATE1: 
+			case STATE1:
 				switch(c){
 				case '\n':
 				case ' ':
@@ -1380,7 +1379,7 @@ class CSSTokenizerFilter {
 					}
 					openBraces++;
 					isState1Present=false;
-					
+
 					int i = 0;
 					for(i=0;i<buffer.length();i++) {
 						char c1 = buffer.charAt(i);
@@ -1524,7 +1523,7 @@ class CSSTokenizerFilter {
 					}
 					w.write(buffer.substring(0, i));
 					buffer.delete(0, i);
-					
+
 					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
 						w.write(buffer.substring(0, 4));
 						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
@@ -1541,12 +1540,12 @@ class CSSTokenizerFilter {
 						w.write(buffer.substring(0, i));
 						buffer.delete(0, i);
 					}
-					
+
 					// If ignoreElementsS1, then just delete everything up to the semicolon. After that, fresh start.
 					if(canImport && !ignoreElementsS1 && buffer.toString().contains("@import"))
 					{
 						if(logDEBUG) log("STATE1 CASE ;statement="+buffer.toString());
-						
+
 						String strbuffer=buffer.toString().trim();
 						int importIndex=strbuffer.toLowerCase().indexOf("@import");
 						if("".equals(strbuffer.substring(0,importIndex).trim()))
@@ -1563,7 +1562,7 @@ class CSSTokenizerFilter {
 									uri = ((ParsedURL)strparts[0]).getDecoded();
 								}
 								ArrayList<String> medias = commaListFromIdentifiers(strparts, 1);
-									
+
 								if(medias != null) { // None gives [0], broke gives null
 									StringBuffer output = new StringBuffer();
 									output.append("@import url(\"");
@@ -1636,7 +1635,7 @@ class CSSTokenizerFilter {
 				{
 					String s = buffer.toString().trim();
 					if(!(s.equals("") || s.equals("<") || s.equals("<!") || s.equals("<!-") || s.equals("<!--")))
-						currentState=STATE2;	
+						currentState=STATE2;
 				}
 				if(logDEBUG) log("STATE1 default CASE: "+c);
 				break;
@@ -1695,7 +1694,7 @@ class CSSTokenizerFilter {
 						buffer.append(c);
 						break;
 					}
-					
+
 					int i = 0;
 					for(i=0;i<buffer.length();i++) {
 						char c1 = buffer.charAt(i);
@@ -1706,7 +1705,7 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("Appending whitespace in state2: \""+buffer.substring(0,i)+"\"");
 					String ws = buffer.substring(0, i);
 					buffer.delete(0, i);
-					
+
 					if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
 						ws+=buffer.substring(0, 4);
 						if(" \t\r\n".indexOf(buffer.charAt(4))==-1) {
@@ -1723,7 +1722,7 @@ class CSSTokenizerFilter {
 						ws+=buffer.substring(0, i);
 						buffer.delete(0, i);
 					}
-					
+
 					openBraces++;
 					if(buffer.toString().trim()!="")
 					{
@@ -1744,7 +1743,7 @@ class CSSTokenizerFilter {
 							ignoreElementsS2=true;
 							// If there was a comma, filteredTokens may contain some tokens.
 							// These are invalid, as per the spec: we wipe the whole selector out.
-							// Also, not wiping filteredTokens here does bad things: 
+							// Also, not wiping filteredTokens here does bad things:
 							// we would write the filtered tokens, without the { or }, so we end up prepending it to the next rule, which is not what we want as it changes the next rule's meaning.
 							filteredTokens.setLength(0);
 						}
@@ -1771,7 +1770,7 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("Appending whitespace in state2: \""+buffer.substring(0,i)+"\"");
 					ws = buffer.substring(0, i);
 					buffer.delete(0, i);
-					
+
 					if(!s2Comma) {
 						if(buffer.length() > 4 && buffer.substring(0, 4).equals("<!--")) {
 							filteredTokens.append(buffer.substring(0, 4));
@@ -1790,8 +1789,8 @@ class CSSTokenizerFilter {
 							buffer.delete(0, i);
 						}
 					}
-					
-					
+
+
 					String filtered=recursiveSelectorVerifier(buffer.toString().trim());
 					if(logDEBUG) log("STATE2 CASE , filtered elements"+filtered);
 					if(filtered!=null)
@@ -1804,7 +1803,7 @@ class CSSTokenizerFilter {
 						filteredTokens.append(filtered);
 					}
 					buffer.setLength(0);
-					break;	
+					break;
 
 
 				case '}':
@@ -1939,7 +1938,7 @@ class CSSTokenizerFilter {
 						if(logDEBUG) log("openBraces now "+openBraces+" not moving on because openBracesStartingS3="+openBracesStartingS3+" in S3");
 						break;
 					}
-					
+
 					i = 0;
 					for(i=0;i<buffer.length();i++) {
 						char c1 = buffer.charAt(i);
@@ -2002,7 +2001,7 @@ class CSSTokenizerFilter {
 					// This (string!=) is okay as we set it directly by propertyName="" to indicate there is no property name.
 					if(propertyName!="")
 					{
-						
+
 						i = 0;
 						for(i=0;i<buffer.length();i++) {
 							char c1 = buffer.charAt(i);
@@ -2013,7 +2012,7 @@ class CSSTokenizerFilter {
 						if(logDEBUG) log("Appending whitespace after colon (}): "+buffer.substring(0,i));
 						whitespaceAfterColon = buffer.substring(0, i);
 						buffer.delete(0, i);
-						
+
 						propertyValue=buffer.toString().trim();
 						if(logDEBUG) log("Property value: "+propertyValue);
 						buffer.setLength(0);
@@ -2047,7 +2046,7 @@ class CSSTokenizerFilter {
 						if(logDEBUG) log("Appending whitespace after colon (}): "+buffer.substring(0,i));
 						filteredTokens.append(buffer.substring(0, i));
 						buffer.delete(0, i);
-						
+
 					}
 					ignoreElementsS3 = false;
 					if((!ignoreElementsS2) || closeIgnoredS2) {
@@ -2161,14 +2160,14 @@ class CSSTokenizerFilter {
 			}
 
 		}
-		
+
 		if(logDEBUG) log("Filtered tokens: \""+filteredTokens+"\"");
 		w.write(filteredTokens.toString());
 		for(int i=0;i<openBraces;i++)
 			w.write('}');
 
 		if(logDEBUG) log("Remaining buffer: \""+buffer+"\"");
-		
+
 		int i = 0;
 		for(i=0;i<buffer.length();i++) {
 			char c1 = buffer.charAt(i);
@@ -2178,7 +2177,7 @@ class CSSTokenizerFilter {
 		}
 		w.write(buffer.substring(0, i));
 		buffer.delete(0, i);
-		
+
 		while(buffer.toString().trim().equals("-->")) {
 			w.write("-->");
 			buffer.delete(0, 3);
@@ -2195,7 +2194,7 @@ class CSSTokenizerFilter {
 		// FIXME CSS2.1 section 4.2 "Unexpected end of style sheet".
 		// We do NOT auto-close at the end.
 		// It might be worth implementing this one day.
-		
+
 	}
 
 	private String reconstruct(ParsedWord[] words) {
@@ -2255,12 +2254,12 @@ class CSSTokenizerFilter {
 	}
 
 	static abstract class ParsedWord {
-		
+
 		final String original;
 		/** Has decoded changed? If not we can use the original. */
 		protected boolean changed;
 		public boolean postComma;
-		
+
 		public ParsedWord(String original, boolean changed) {
 			this.original = original;
 			this.changed = changed;
@@ -2275,23 +2274,23 @@ class CSSTokenizerFilter {
 				return out.toString();
 			}
 		}
-		
+
 		public String toString() {
 			return super.toString()+":\""+original+"\"";
 		}
-		
+
 		abstract protected void innerEncode(boolean unicode, StringBuffer out);
-		
+
 	}
-	
-	/** Note that this does not represent functionThingy's. 
-	 * counter() for example can contain a string, it is difficult to 
+
+	/** Note that this does not represent functionThingy's.
+	 * counter() for example can contain a string, it is difficult to
 	 * determine whether to encode strings if we don't know they are strings!
 	 * This only handles keywords and strings.
 	 */
 	static abstract class BaseParsedWord extends ParsedWord {
 		private String decoded;
-		
+
 		/**
 		 * @param original
 		 * @param decoded
@@ -2302,7 +2301,7 @@ class CSSTokenizerFilter {
 			super(original, changed);
 			this.decoded = decoded;
 		}
-		
+
 		protected void innerEncode(boolean unicode, StringBuffer out) {
 			char prevc = 0;
 			char c = 0;
@@ -2318,7 +2317,7 @@ class CSSTokenizerFilter {
 		}
 
 		abstract protected boolean mustEncode(char c, int i, char prevc, boolean unicode);
-		
+
 		private void encodeChar(char c, StringBuffer sb) {
 			String s = Integer.toHexString(c);
 			sb.append('\\');
@@ -2333,7 +2332,7 @@ class CSSTokenizerFilter {
 				sb.append(s);
 			}
 		}
-		
+
 		public String getDecoded() {
 			return decoded;
 		}
@@ -2344,13 +2343,13 @@ class CSSTokenizerFilter {
 		}
 
 	}
-	
+
 	static class ParsedIdentifier extends BaseParsedWord {
-		
+
 		ParsedIdentifier(String original, String decoded, boolean changed) {
 			super(original, decoded, changed);
 		}
-		
+
 		protected boolean mustEncode(char c, int i, char prevc, boolean unicode) {
 			// It is an identifier.
 			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
@@ -2361,24 +2360,24 @@ class CSSTokenizerFilter {
 						(i == 1 && prevc == '-' &&
 								(c >= '0' && c <= '9'))))
 					return false;
-			} 
+			}
 			return true;
 		}
-		
+
 	}
-	
+
 	static class ParsedString extends BaseParsedWord {
-		
+
 		ParsedString(String original, String decoded, boolean changed, char stringChar) {
 			super(original, decoded, changed);
 			this.stringChar = stringChar;
 		}
-		
-		/** Is the word quoted? If true, the word is completely enclosed 
-		 * by the given string character (either ' or "), which are not 
+
+		/** Is the word quoted? If true, the word is completely enclosed
+		 * by the given string character (either ' or "), which are not
 		 * included in the decoded string. */
 		final char stringChar;
-		
+
 		protected boolean mustEncode(char c, int i, char prevc, boolean unicode) {
 			// It is a string.
 			// Anything is allowed in a string...
@@ -2393,21 +2392,21 @@ class CSSTokenizerFilter {
 				return true;
 			return false;
 		}
-		
+
 		protected void innerEncode(boolean unicode, StringBuffer out) {
 			out.append(stringChar);
 			super.innerEncode(unicode, out);
 			out.append(stringChar);
 		}
-		
+
 	}
-	
+
 	static class ParsedURL extends ParsedString {
-		
+
 		ParsedURL(String original, String decoded, boolean changed, char stringChar) {
 			super(original, decoded, changed || stringChar == 0, stringChar == 0 ? '"' : stringChar);
 		}
-		
+
 		protected void innerEncode(boolean unicode, StringBuffer out) {
 			out.append("url(");
 			super.innerEncode(unicode, out);
@@ -2417,27 +2416,27 @@ class CSSTokenizerFilter {
 		public void setNewURL(String s) {
 			super.setNewValue(s);
 		}
-		
+
 	}
-	
+
 	static class ParsedAttr extends ParsedIdentifier {
 
 		ParsedAttr(String original, String decoded, boolean changed) {
 			super(original, decoded, changed);
 		}
-		
+
 		protected void innerEncode(boolean unicode, StringBuffer out) {
 			out.append("attr(");
 			super.innerEncode(unicode, out);
 			out.append(')');
 		}
-		
+
 	}
-	
-	/** Simple parsed word, doesn't need encoding, won't be changed. Used 
+
+	/** Simple parsed word, doesn't need encoding, won't be changed. Used
 	 * for lengths, percentages, angles, etc. All characters must be safe
 	 * and non-problematic. This is used for everything from lengths and
-	 * percentages to rgb(...) with spaces in it. Anything we don't 
+	 * percentages to rgb(...) with spaces in it. Anything we don't
 	 * understand gets a SimpleParsedWord.
 	 * */
 	static class SimpleParsedWord extends ParsedWord {
@@ -2450,10 +2449,10 @@ class CSSTokenizerFilter {
 		protected void innerEncode(boolean unicode, StringBuffer out) {
 			out.append(original);
 		}
-		
+
 	}
-	
-	/** Counters need special handling, partly because they contain 
+
+	/** Counters need special handling, partly because they contain
 	 * attributes and strings. */
 	static class ParsedCounter extends ParsedWord {
 		public ParsedCounter(String original, ParsedIdentifier identifier, ParsedIdentifier listType, ParsedString separatorString) {
@@ -2466,7 +2465,7 @@ class CSSTokenizerFilter {
 		private final ParsedIdentifier identifier;
 		private final ParsedIdentifier listType;
 		private final ParsedString separatorString;
-		
+
 		@Override
 		protected void innerEncode(boolean unicode, StringBuffer out) {
 			if(separatorString != null)
@@ -2485,13 +2484,13 @@ class CSSTokenizerFilter {
 			out.append(')');
 			if(postComma) out.append(',');
 		}
-		
+
 		protected boolean addComma() {
 			return false;
 		}
-		
+
 	}
-	
+
 	/** Split up a string, taking into account CSS rules for escaping,
 	 * strings, identifiers.
 	 * @param str1
@@ -2647,7 +2646,7 @@ class CSSTokenizerFilter {
 				}
 			} else {
 				// We are in a string.
-				
+
 				if(eatLF && c == '\n') {
 					// Slightly different meaning here.
 					// Here we do want to include it in the string.
@@ -2657,7 +2656,7 @@ class CSSTokenizerFilter {
 					continue;
 				} else
 					eatLF = false;
-				
+
 				if(c == stringchar && !escaping) {
 					origToken.append(c);
 					decodedToken.append(c);
@@ -2720,7 +2719,7 @@ class CSSTokenizerFilter {
 					decodedToken.append(c);
 				}
 			}
-			
+
 		}
 		if(escaping && escape.length() > 0) {
 			origToken.append(escape);
@@ -2757,20 +2756,20 @@ class CSSTokenizerFilter {
 				}
 			}
 		}
-		
+
 		String s = origToken.toString();
 		if(couldBeIdentifier)
 			return new ParsedIdentifier(s, decodedToken.toString(), dontLikeOrigToken);
-		
+
 		String sl = s.toLowerCase();
 		if(sl.startsWith("url(")) {
 			if(s.endsWith(")")) {
 				decodedToken.delete(0, 4);
 				decodedToken.setLength(decodedToken.length()-1);
 				if(logDEBUG) log("stripped: "+decodedToken);
-				
+
 				// Trim whitespace from both ends
-				
+
 				String strippedOrig = s.substring(4, s.length()-1);
 				int i;
 				for(i=0;i<strippedOrig.length();i++) {
@@ -2786,11 +2785,11 @@ class CSSTokenizerFilter {
 				}
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
-				
+
 				if(logDEBUG) log("whitespace stripped: "+strippedOrig+" decoded "+decodedToken);
-				
+
 				if(strippedOrig.length() == 0) return null;
-				
+
 				if(strippedOrig.length() > 2) {
 					char c = strippedOrig.charAt(0);
 					if(c == '\'' || c == '\"') {
@@ -2808,14 +2807,14 @@ class CSSTokenizerFilter {
 				return new ParsedURL(origToken.toString(), decodedToken.toString(), dontLikeOrigToken, (char)0);
 			} else return null;
 		}
-		
+
 		if(sl.startsWith("attr(")) {
 			if(s.endsWith(")")) {
 				decodedToken.delete(0, 5);
 				decodedToken.setLength(decodedToken.length()-1);
-				
+
 				// Trim whitespace from both ends
-				
+
 				String strippedOrig = s.substring(4, s.length()-1);
 				int i;
 				for(i=0;i<strippedOrig.length();i++) {
@@ -2831,9 +2830,9 @@ class CSSTokenizerFilter {
 				}
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
-				
+
 				if(strippedOrig.length() == 0) return null;
-				
+
 				return new ParsedAttr(origToken.toString(), decodedToken.toString(), dontLikeOrigToken);
 			} else return null;
 		}
@@ -2844,9 +2843,9 @@ class CSSTokenizerFilter {
 				int len = plural ? "counters(".length() : "counter(".length();
 				decodedToken.delete(0, len);
 				decodedToken.setLength(decodedToken.length()-1);
-				
+
 				// Trim whitespace from both ends
-				
+
 				String strippedOrig = s.substring(len, s.length()-1);
 				int i;
 				for(i=0;i<strippedOrig.length();i++) {
@@ -2862,13 +2861,13 @@ class CSSTokenizerFilter {
 				}
 				decodedToken.setLength(decodedToken.length()-(strippedOrig.length()-i-1));
 				strippedOrig = strippedOrig.substring(0, i+1);
-				
+
 				if(strippedOrig.length() == 0) return null;
-				
+
 				String[] split = FilterUtils.removeWhiteSpace(strippedOrig.split(","),false);
 				if(split.length == 0 || (plural && split.length > 3) || ((!plural) && split.length > 2) || (plural && split.length < 2))
 					return null;
-				
+
 				ParsedIdentifier ident = makeParsedIdentifier(split[0]);
 				if(ident == null) return null;
 				ParsedString separator = null;
@@ -2884,7 +2883,7 @@ class CSSTokenizerFilter {
 				return new ParsedCounter(origToken.toString(), ident, listType, separator);
 			} else return null;
 		}
-		
+
 		return new SimpleParsedWord(origToken.toString());
 	}
 
@@ -2923,17 +2922,17 @@ class CSSTokenizerFilter {
 		public boolean isReal=false;	//re
 		public boolean isPercentage=false;	//pe
 		public boolean isLength=false;	//le
-		public boolean isAngle=false;	//an	
-		public boolean isColor=false; //co	
+		public boolean isAngle=false;	//an
+		public boolean isColor=false; //co
 		public boolean isURI=false;	//ur
-		public boolean isShape=false;	//sh	
+		public boolean isShape=false;	//sh
 		public boolean isString=false;//st
 		public boolean isCounter=false; //co
 		public boolean isIdentifier=false; //id
 		public boolean isTime=false; //ti
 		public boolean isFrequency=false; //fr
 		public boolean onlyValueVerifier=false;
-		public String[] cssPropertyList=null; 
+		public String[] cssPropertyList=null;
 		public String[] parserExpressions=null;
 		CSSPropertyVerifier(boolean allowCommaDelimiters)
 		{
@@ -2961,8 +2960,8 @@ class CSSTokenizerFilter {
 		CSSPropertyVerifier(String[] allowedValues,String[] allowedMedia,String[] possibleValues,String[] parseExpression)
 		{
 			this(allowedValues,allowedMedia,possibleValues,parseExpression,false,false);
-		}		
-		
+		}
+
 		CSSPropertyVerifier(String[] allowedValues,String[] allowedMedia,String[] possibleValues,String[] parseExpression,boolean onlyValueVerifier,boolean allowCommaDelimiters)
 		{
 			this.onlyValueVerifier = onlyValueVerifier;
@@ -3083,12 +3082,12 @@ class CSSTokenizerFilter {
 		{
 			return this.checkValidity(null,null, words, cb);
 		}
-		
+
 		public boolean checkValidity(ParsedWord word, FilterCallback cb)
 		{
 			return this.checkValidity(null,null, new ParsedWord[] { word }, cb);
 		}
-		
+
 		// Verifies whether this CSS property can have a value under given media and HTML elements
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] words, FilterCallback cb)
 		{
@@ -3105,24 +3104,24 @@ class CSSTokenizerFilter {
 						}
 					if(!allowed) {
 						if(logDEBUG) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
-						
+
 						return false;
 					}
 				}
 				// CONFORMANCE: ELEMENT CHECKING DISABLED:
 				// We do NOT check whether a property is allowed for a specific element.
-				// According to the spec, all properties are defined for all elements, 
+				// According to the spec, all properties are defined for all elements,
 				// and in many cases they will be set on one element to which they do
 				// not apply, and then be inherited to other elements for which they do apply.
 				// FOR EXAMPLE, IN THE SPEC:
 				// 17.6.1.1 empty-cells Applies to: 'table-cell' elements
 				// In 17.2, 'table-cell' is explicitly defined:
-				// table-cell (In HTML: TD, TH)     Specifies that an element represents a table cell. 
+				// table-cell (In HTML: TD, TH)     Specifies that an element represents a table cell.
 				// Yet the example for empty-cells is:
-				// The following rule causes borders and backgrounds to be drawn around all cells: 
+				// The following rule causes borders and backgrounds to be drawn around all cells:
 				// table { empty-cells: show }
 				// Hence it is not appropriate to check which property is valid for which element.
-				
+
 				// In security terms, there is no danger in allowing every property on every element.
 			}
 
@@ -3133,35 +3132,35 @@ class CSSTokenizerFilter {
 				return true;
 
 			if(words[0] instanceof SimpleParsedWord) {
-				
+
 				String word = ((SimpleParsedWord)words[0]).original;
-				
+
 				// Numeric explicitly defined value is possible
 				if(allowedValues != null && allowedValues.contains(word))
 					return true;
-				
+
 				// These are all numeric so they will have parsed as a SimpleParsedWord.
-				
+
 				if(isInteger && isIntegerChecker(word))
 				{
 					return true;
 				}
-				
+
 				if(isReal && isRealChecker(word))
 				{
 					return true;
 				}
-				
+
 				if(isPercentage && FilterUtils.isPercentage(word)) //Valid percentage X%
 				{
 					return true;
 				}
-				
+
 				if(isLength && FilterUtils.isLength(word,false)) //Valid unit Vxx where xx is unit or V
 				{
 					return true;
 				}
-				
+
 				if(isAngle && FilterUtils.isAngle(word))
 				{
 					return true;
@@ -3172,7 +3171,7 @@ class CSSTokenizerFilter {
 					if(FilterUtils.isColor(word, false))
 						return true;
 				}
-				
+
 				if(isShape)
 				{
 					if(FilterUtils.isValidCSSShape(word))
@@ -3190,14 +3189,14 @@ class CSSTokenizerFilter {
 						return true;
 				}
 			}
-			
+
 			if(words[0] instanceof ParsedIdentifier && isColor) {
 				if(FilterUtils.isColor(((ParsedIdentifier)words[0]).original, false))
 					return true;
-				
-			}			
+
+			}
 			if(isURI && words[0] instanceof ParsedURL)
-			
+
 			{
 				return isValidURI((ParsedURL)words[0], cb);
 			}
@@ -3214,7 +3213,7 @@ class CSSTokenizerFilter {
 				else
 					return false;
 			}
-			
+
 			}
 
 			/*
@@ -3224,8 +3223,8 @@ class CSSTokenizerFilter {
 			 * 1<1,4> => 1<1,4>
 			 * 1* => 1<0,65536>
 			 * 1? => 1o
-			 * 
-			 */  
+			 *
+			 */
 			/*
 			 * For each parserExpression, recursiveParserExpressionVerifier() would be called with parserExpression and value.
 			 */
@@ -3276,10 +3275,10 @@ class CSSTokenizerFilter {
 			{
 				if(words==null || words.length == 0)
 					return true;
-				else 
+				else
 					return false;
 			}
-			
+
 			int tokensCanBeGivenLowerLimit=1,tokensCanBeGivenUpperLimit=1;
 			for(int i=0;i<expression.length();i++)
 			{
@@ -3303,10 +3302,15 @@ class CSSTokenizerFilter {
 					String secondPart="";
 					if(endIndex!=expression.length())
 						secondPart=expression.substring(endIndex+1,expression.length());
-					for(int j=1;j<=noOfa+1 && j<=words.length;j++)
+					int j = 1;
+					if((secondPart.equals(""))) {
+						// This is an optimisation: If no second part, there cannot be any words assigned to the second part, so the first part must match everything.
+						// It is equivalent to running the loop, because each time the second part will fail, because it is trying to match "" to a nonzero number of words.
+						// This happens every time we have "1a2a3" with nothing after it, so it is tested by the unit tests already.
+						j = words.length;
+					}
+					for(;j<=words.length;j++)
 					{
-						if((secondPart == ""))
-							j = Math.min(noOfa+1, words.length); // Optimise
 						if(logDEBUG) log("2Making recursiveDoubleBarVerifier to consume "+j+" words");
 						ParsedWord[] partToPassToDB = new ParsedWord[j];
 						System.arraycopy(words, 0, partToPassToDB, 0, j);
@@ -3393,7 +3397,7 @@ class CSSTokenizerFilter {
 						{
 							int lowerLimit=Integer.parseInt(strLimits[0]);
 							int upperLimit=Integer.parseInt(strLimits[1]);
-							
+
 							if(recursiveVariableOccuranceVerifier(index, words, lowerLimit,upperLimit,tokensCanBeGivenLowerLimit,tokensCanBeGivenUpperLimit, secondPart, cb))
 								return true;
 						}
@@ -3439,7 +3443,7 @@ class CSSTokenizerFilter {
 			if(array!=null && lowerIndex<array.length)
 			{
 				for(int i=lowerIndex;i<upperIndex && i<array.length;i++)
-				{	
+				{
 					arrayToReturn[i-lowerIndex]=array[i];
 				}
 				return arrayToReturn;
@@ -3456,7 +3460,7 @@ class CSSTokenizerFilter {
 			if(logDEBUG) log("recursiveVariableOccurranceVerifier("+verifierIndex+","+toString(valueParts)+","+lowerLimit+","+upperLimit+","+tokensCanBeGivenLowerLimit+","+tokensCanBeGivenUpperLimit+","+secondPart+")");
 			if((valueParts==null || valueParts.length==0) && lowerLimit == 0)
 				return true;
-			
+
 			if(lowerLimit <= 0) {
 				// There could be secondPart.
 				if(recursiveParserExpressionVerifier(secondPart, valueParts, cb)) {
@@ -3464,13 +3468,13 @@ class CSSTokenizerFilter {
 					return true;
 				}
 			}
-			
+
 			// There can be no more parts.
 			if(upperLimit == 0) {
 				if(logDEBUG) log("recursiveVariableOccurranceVerifier: no more parts");
 				return false;
 			}
-			
+
 			for(int i=tokensCanBeGivenLowerLimit; i<=tokensCanBeGivenUpperLimit && i <= valueParts.length;i++) {
 				ParsedWord[] before = new ParsedWord[i];
 				System.arraycopy(valueParts, 0, before, 0, i);
@@ -3493,7 +3497,7 @@ class CSSTokenizerFilter {
 						return true;
 				}
 			}
-			
+
 			return false;
 		}
 
@@ -3528,6 +3532,10 @@ class CSSTokenizerFilter {
 			String firstPart = "";
 			String secondPart = "";
 			int lastA = -1;
+			// Check for invalid patterns.
+			assert(expression.length() != 0);
+			assert(expression.charAt(expression.length()-1) != 'a');
+			assert(expression.charAt(0) != 'a');
 			for(int i=0;i<=expression.length();i++)
 			{
 				if(i == expression.length() || expression.charAt(i)=='a')
@@ -3552,17 +3560,24 @@ class CSSTokenizerFilter {
 					int index=Integer.parseInt(firstPart);
 					for(int j=0;j<words.length;j++)
 					{
+						// Check the first j+1 words against this verifier: A single verifier can consume more than one word.
 						result=CSSTokenizerFilter.auxilaryVerifiers[index].checkValidity(getSubArray(words, 0, j+1), cb);
 						if(logDEBUG) log("14in for loop result:"+result+" for "+toString(words)+" for "+firstPart);
 						if(result)
 						{
+							// Check the remaining words...
 							ParsedWord[] valueToPass = new ParsedWord[words.length-j-1];
 							System.arraycopy(words, j+1, valueToPass, 0, words.length-j-1);
-							String pattern = ignoredParts+(((ignoredParts == "")||(secondPart == ""))?"":"a")+secondPart;
-							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
-							if(valueToPass.length == 0)
+							if(valueToPass.length == 0) {
+								// We have matched everything against the subset we have considered so far.
+								if(logDEBUG) log("14opt No more words to pass, have matched everything");
 								return true;
-							if((pattern == "")) return false;
+							}
+							// Against the rest of the pattern: the part that we've tried and failed plus the part that we haven't tried yet.
+							// NOT against the verifier we were just considering, because the double-bar operator expects no more than one match from each component of the pattern.
+							String pattern = ignoredParts+((("".equals(ignoredParts))||("".equals(secondPart)))?"":"a")+secondPart;
+							if(logDEBUG) log("14a "+toString(getSubArray(words, 0, j+1))+" can be consumed by "+index+ " passing on expression="+pattern+ " value="+toString(valueToPass));
+							if(pattern.equals("")) return false;
 							result=recursiveDoubleBarVerifier(pattern,valueToPass, cb);
 							if(result)
 							{
@@ -3573,7 +3588,7 @@ class CSSTokenizerFilter {
 					}
 				}
 			}
-			
+
 			if(lastA != -1) return false;
 			//Single token
 			int index=Integer.parseInt(expression);
@@ -3603,7 +3618,7 @@ class CSSTokenizerFilter {
 			if(logDEBUG) log("contentPropertyVerifier checkValidity called: "+toString(value));
 
 			if(value.length != 1) return false;
-			
+
 			if(value[0] instanceof ParsedIdentifier && allowedValues!=null && allowedValues.contains(((ParsedIdentifier)value[0]).getDecoded()))
 				return true;
 
@@ -3640,12 +3655,12 @@ class CSSTokenizerFilter {
 					return false;
 				return true;
 			}
-			
+
 			if(value[0] instanceof ParsedAttr) {
 				ParsedAttr attr = (ParsedAttr) value[0];
 				return true;
 			}
-			
+
 			if(value[0] instanceof ParsedURL) {
 				// CONFORMANCE: This is required by the spec, and quite useful in practice.
 				// Browsers in practice only support images here.
@@ -3653,7 +3668,7 @@ class CSSTokenizerFilter {
 				// Note also that generated content cannot alter the parse tree, so what can be done is presumably severely limited.
 				return isValidURI((ParsedURL)value[0], cb);
 			}
-			
+
 			return false;
 
 		}
@@ -3669,7 +3684,7 @@ class CSSTokenizerFilter {
 		FontPartPropertyVerifier() {
 			super(false);
 		}
-		
+
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
 		{
@@ -3677,7 +3692,7 @@ class CSSTokenizerFilter {
 			if(logDEBUG) log("FontPartPropertyVerifier called with "+toString(value));
 			CSSPropertyVerifier fontSize=new CSSPropertyVerifier(new String[] {"xx-small","x-small","small","medium","large","x-large","xx-large","larger","smaller","inherit"},new String[]{"le","pe"},null,true);
 			if(fontSize.checkValidity(value, cb)) return true;
-			
+
 			for(ParsedWord word : value) {
 				// Token by token
 				if(fontSize.checkValidity(word, cb)) continue;
@@ -3698,25 +3713,25 @@ class CSSTokenizerFilter {
 					}
 				}
 				return false;
-			
+
 			}
 			return true;
 
 		}
-		
+
 	}
 
 	static abstract class FamilyPropertyVerifier extends CSSPropertyVerifier {
-		
+
 		FamilyPropertyVerifier(boolean valueOnly, String[] mediaTypes) {
 			super(null, mediaTypes, null, null, valueOnly, true);
 		}
-		
+
 		// FIXME: We do not change the tokens.
 		// We probably should put in quotes around unquoted font family names, put spaces after commas etc, but
 		// this may be a bit tricky: we'd have to put spaces etc inside some words, and delete some words...
 		// Quite possible, but not a high priority, "verdana,arial,times new roman,sans-serif" is not dangerous, it's just hard to parse.
-		
+
 		@Override
 		public boolean checkValidity(String[] media,String[] elements,ParsedWord[] value,FilterCallback cb)
 		{
@@ -3727,7 +3742,7 @@ class CSSTokenizerFilter {
 					if(logDEBUG) log("font: inherit");
 					return true;
 				}
-			}			
+			}
 			if(allowedMedia!=null && !onlyValueVerifier) {
 				boolean allowed = false;
 				for(String m : media)
@@ -3737,7 +3752,7 @@ class CSSTokenizerFilter {
 					}
 				if(!allowed) {
 					if(logDEBUG) log("checkValidity Media of the element is not allowed.Media="+media+" allowed Media="+allowedMedia.toString());
-					
+
 					return false;
 				}
 			}
@@ -3851,7 +3866,7 @@ outer:		for(int i=0;i<value.length;i++) {
 
 		private boolean validFontWords(ArrayList<String> fontWords) {
 			for(String s : fontWords) {
-				if(s == null) throw new NullPointerException(); 
+				if(s == null) throw new NullPointerException();
 			}
 			if(fontWords.size() == 1) {
 				if(isGenericFamily(fontWords.get(0).toLowerCase()))
@@ -3866,43 +3881,43 @@ outer:		for(int i=0;i<value.length;i++) {
 			}
 			return isSpecificFamily(sb.toString().toLowerCase());
 		}
-		
+
 		abstract boolean isSpecificFamily(String s);
-		
+
 		abstract boolean isGenericFamily(String s);
-		
+
 	}
-	
+
 	static class FontPropertyVerifier extends FamilyPropertyVerifier {
-		
+
 		FontPropertyVerifier(boolean valueOnly) {
 			super(valueOnly, ElementInfo.VISUALMEDIA);
 		}
-		
+
 		boolean isSpecificFamily(String s) {
 			return ElementInfo.isSpecificFontFamily(s);
 		}
-		
+
 		boolean isGenericFamily(String s) {
 			return ElementInfo.isGenericFontFamily(s);
 		}
-		
+
 	}
 
 	static class VoiceFamilyPropertyVerifier extends FamilyPropertyVerifier {
-		
+
 		VoiceFamilyPropertyVerifier(boolean valueOnly) {
 			super(valueOnly, ElementInfo.AURALMEDIA);
 		}
-		
+
 		boolean isSpecificFamily(String s) {
 			return ElementInfo.isSpecificVoiceFamily(s);
 		}
-		
+
 		boolean isGenericFamily(String s) {
 			return ElementInfo.isGenericVoiceFamily(s);
 		}
-		
+
 	}
 
 	public static String removeOuterQuotes(String decoded) {

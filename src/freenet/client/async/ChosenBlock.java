@@ -26,6 +26,7 @@ public abstract class ChosenBlock {
 	public transient final boolean ignoreStore;
 	public transient final boolean canWriteClientCache;
 	public transient final boolean forkOnCacheable;
+	private transient ClientKey generatedKey;
 	
 	public ChosenBlock(SendableRequestItem token, Key key, ClientKey ckey, boolean localRequestOnly, boolean ignoreStore, boolean canWriteClientCache, boolean forkOnCacheable, RequestScheduler sched) {
 		this.token = token;
@@ -67,5 +68,13 @@ public abstract class ChosenBlock {
 	
 	public void onDumped() {
 		token.dump();
+	}
+	
+	public ClientKey getGeneratedKey() {
+		return generatedKey;
+	}
+	
+	public void setGeneratedKey(ClientKey key) {
+		generatedKey = key;
 	}
 }

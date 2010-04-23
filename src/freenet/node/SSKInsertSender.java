@@ -170,7 +170,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
                 return;
             }
             
-            if( node.canWriteDatastoreInsert(htl) && !canWriteStorePrev) {
+            if( node.canWriteDatastoreInsert(htl) && (!canWriteStorePrev) && forkOnCacheable) {
             	// FORK! We are now cacheable, and it is quite possible that we have already gone over the ideal sink nodes,
             	// in which case if we don't fork we will miss them, and greatly reduce the insert's reachability.
             	// So we fork: Create a new UID so we can go over the previous hops again if they happen to be good places to store the data.
@@ -179,8 +179,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             	
             	forkedRequestTag = new InsertTag(true, InsertTag.START.REMOTE);
             	uid = node.random.nextLong();
-            	System.err.println("FORKING SSK INSERT "+origUID+" to "+uid);
-            	Logger.error(this, "FORKING SSK INSERT "+origUID+" to "+uid);
+            	Logger.normal(this, "FORKING SSK INSERT "+origUID+" to "+uid);
             	nodesRoutedTo.clear();
             	node.lockUID(uid, true, true, false, false, forkedRequestTag);
             }

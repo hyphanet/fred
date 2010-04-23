@@ -4,11 +4,15 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DatabaseDisabledException;
+
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.DBJob;
 import freenet.clients.http.PageMaker;
+import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.filter.FilterCallback;
 import freenet.node.Node;
@@ -18,6 +22,8 @@ import freenet.support.URIPreEncoder;
 import freenet.support.io.NativeThread;
 
 public class PluginRespirator {
+	private static final HashMap<URI, SessionManager> sessionManagers = new HashMap<URI, SessionManager>();
+	
 	/** For accessing Freenet: simple fetches and inserts, and the data you
 	 * need (FetchContext etc) to start more complex ones. */
 	private final HighLevelSimpleClient hlsc;
@@ -155,5 +161,16 @@ public class PluginRespirator {
 				return true;
 			}
 		}, NativeThread.NORM_PRIORITY, false);
+	}
+	
+	public SessionManager getSessionManager(URI cookiePath) {
+		SessionManager session = sessionManagers.get(cookiePath);
+		
+		if (session == null) {
+			session = new SessionManager(cookiePath);
+			sessionManagers.put(cookiePath, session);
+		}
+		
+		return session;
 	}
 }

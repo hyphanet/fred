@@ -171,6 +171,13 @@ public class FCPServer implements Runnable {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
+				synchronized(networkInterface) {
+					while (!networkInterface.isBound()) {
+						Logger.error(this, "Network interface isn't bound, waiting");
+						networkInterface.wait();
+					}
+					Logger.error(this, "Finished waiting, network interface is now bound");
+				}
 				realRun();
 			} catch (IOException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e, e);
@@ -291,8 +298,13 @@ public class FCPServer implements Runnable {
 		public void set(String val) throws InvalidConfigValueException {
 			if(!val.equals(get())) {
 				try {
-					node.getFCPServer().networkInterface.setBindTo(val, true);
-					node.getFCPServer().bindTo = val;
+					FCPServer server = node.getFCPServer();
+					server.networkInterface.setBindTo(val, true);
+					server.bindTo = val;
+					
+					synchronized(server.networkInterface) {
+						server.networkInterface.notifyAll();
+					}
 				} catch (IOException e) {
 					// This is an advanced option for reasons of reducing clutter,
 					// but it is expected to be used by regular users, not devs.

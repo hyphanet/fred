@@ -51,14 +51,14 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
     static final boolean ENABLE_PACKET_COALESCING = true;
     static final boolean ENABLE_FOAF = true;
     static final boolean FORK_ON_CACHEABLE = false;
-    
+
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
-    
+
     static final int DARKNET_PORT_BASE = 5008;
     static final int DARKNET_PORT_END = DARKNET_PORT_BASE + NUMBER_OF_NODES;
-    
+
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, InterruptedException, UnsupportedEncodingException, CHKVerifyException, CHKDecodeException, InvalidCompressionCodecException {
         String name = "realNodeRequestInsertTest";
         File wd = new File(name);
@@ -80,38 +80,38 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = 
-            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH)*100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, null);
+            nodes[i] =
+            	NodeStarter.createTestNode(DARKNET_PORT_BASE+i, 0, name, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, (CHKBlock.DATA_LENGTH+CHKBlock.TOTAL_HEADERS_LENGTH)*100, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 8000, ENABLE_FOAF, false, true, false, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
-        
+
         // Now link them up
         makeKleinbergNetwork(nodes, START_WITH_IDEAL_LOCATIONS, DEGREE, FORCE_NEIGHBOUR_CONNECTIONS, random);
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
-        
+
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i].start(false);
             System.err.println("Started node "+i+"/"+nodes.length);
         }
-        
+
         waitForAllConnected(nodes);
-        
+
         waitForPingAverage(0.95, nodes, random, MAX_PINGS, 1000);
-        
+
         System.out.println();
         System.out.println("Ping average > 95%, lets do some inserts/requests");
         System.out.println();
-        
+
         HighLevelSimpleClient[] clients = new HighLevelSimpleClient[nodes.length];
         for(int i=0;i<clients.length;i++) {
         	clients[i] = nodes[i].clientCore.makeClient(RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS);
         }
-        
+
         // Insert 100 keys into random nodes
-        
+
         ClientCHK[] keys = new ClientCHK[INSERT_KEYS];
-        
+
         String baseString = System.currentTimeMillis() + " ";
         for(int i=0;i<INSERT_KEYS;i++) {
         	System.err.println("Inserting "+i+" of "+INSERT_KEYS);
@@ -121,7 +121,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
             byte[] data = dataString.getBytes("UTF-8");
             ClientCHKBlock block;
             block = ClientCHKBlock.encode(data, false, false, (short)-1, 0, COMPRESSOR_TYPE.DEFAULT_COMPRESSORDESCRIPTOR);
-            ClientCHK chk = (ClientCHK) block.getClientKey();
+            ClientCHK chk = block.getClientKey();
             byte[] encData = block.getData();
             byte[] encHeaders = block.getHeaders();
             ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
@@ -140,7 +140,7 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
 				System.exit(EXIT_INSERT_FAILED);
 			}
         }
-        
+
         // Now queue requests for each key on every node.
         for(int i=0;i<INSERT_KEYS;i++) {
         	ClientCHK key = keys[i];
@@ -154,9 +154,9 @@ public class RealNodeBusyNetworkTest extends RealNodeRoutingTest {
         	}
         	System.err.println("Running requests: "+totalRunningRequests);
         }
-	
+
         // Now wait until finished. How???
-        
+
         while(true) {
         	long totalRunningRequests = 0;
         	for(int i=0;i<nodes.length;i++) {

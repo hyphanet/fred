@@ -127,6 +127,8 @@ abstract class ClientRequestSchedulerBase {
 				deactivate = !container.ext().isActive(clientRequest);
 				if(deactivate) container.activate(clientRequest, 1);
 			}
+			// If the request goes through the datastore checker (SendableGet's unless they have the don't check store flag) it will have already been registered.
+			// That does not matter.
 			clientRequest.addToRequests(req, container);
 			if(deactivate) container.deactivate(clientRequest, 1);
 		}
@@ -212,6 +214,8 @@ abstract class ClientRequestSchedulerBase {
 			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context, oldPrio);
+			//Remove from the starterQueue
+			if(persistent()) sched.removeFromStarterQueue(req, container, true);
 			// Then can do innerRegister() (not register()).
 			innerRegister(req, random, container, null);
 			if(persistent())
@@ -226,6 +230,9 @@ abstract class ClientRequestSchedulerBase {
 	public void addPendingKeys(KeyListener listener) {
 		if(listener == null) throw new NullPointerException();
 		synchronized (this) {
+			// We have to register before checking the disk, so it may well get registered twice.
+			if(keyListeners.contains(listener))
+				return;
 			keyListeners.add(listener);
 		}
 		if (logMINOR)
@@ -236,6 +243,8 @@ abstract class ClientRequestSchedulerBase {
 		boolean ret;
 		synchronized (this) {
 			ret = keyListeners.remove(listener);
+			while(logMINOR && keyListeners.remove(listener))
+				Logger.error(this, "Still in pending keys after removal, must be in twice or more: "+listener, new Exception("error"));
 			listener.onRemove();
 		}
 		if (logMINOR)

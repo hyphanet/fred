@@ -184,11 +184,7 @@ public class InsertableClientSSK extends ClientSSK {
 			try {
 				return new ClientSSKBlock(data, headers, this, true);
 			} catch (SSKVerifyException e) {
-				IllegalStateException exception = new IllegalStateException("Impossible encoding error: "
-						+ e.getMessage());
-				exception.initCause(e);
-
-				throw exception;
+				throw (AssertionError)new AssertionError("Impossible encoding error").initCause(e);
 			}
 		} finally {
 			SHA256.returnMessageDigest(md256);

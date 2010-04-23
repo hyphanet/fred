@@ -79,8 +79,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	/**
 	 * Create one for a global-queued request not made by FCP.
 	 * @throws IdentifierCollisionException
-	 * @throws NotAllowedException 
-	 * @throws IOException 
+	 * @throws NotAllowedException
+	 * @throws IOException
 	 */
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
@@ -125,7 +125,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 					lowLevelClient,
 					returnBucket, null);
 	}
-	
+
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global, container);
@@ -146,7 +146,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();
-			for(String mime : message.allowedMIMETypes) 
+			for(String mime : message.allowedMIMETypes)
 				fctx.allowedMIMETypes.add(mime);
 		}
 
@@ -184,9 +184,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		if(ret == null)
 			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
-			getter = new ClientGetter(this,  
-					uri, fctx, priorityClass, 
-					lowLevelClient, 
+			getter = new ClientGetter(this,
+					uri, fctx, priorityClass,
+					lowLevelClient,
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 	}
 
@@ -195,7 +195,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * Can throw, and does minimal verification, as is dealing with data
 	 * supposedly serialized out by the node.
 	 * @throws IOException
-	 * @throws FetchException 
+	 * @throws FetchException
 	 */
 	public ClientGet(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws IOException, FetchException {
 		super(fs, client2);
@@ -282,11 +282,11 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				fctx.allowedMIMETypes.add(a);
 		}
 
-		getter = new ClientGetter(this,  
-				uri, 
-				fctx, priorityClass, 
+		getter = new ClientGetter(this,
+				uri,
+				fctx, priorityClass,
 				lowLevelClient,
-				binaryBlob ? new NullBucket() : returnBucket, 
+				binaryBlob ? new NullBucket() : returnBucket,
 						binaryBlob ? returnBucket : null);
 
 		if(finished && succeeded)
@@ -420,7 +420,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
-				/* 
+				/*
 				 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 				// Do nothing
 				 */
@@ -622,7 +622,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 
 		freeData(container);
-		
+
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(fctx, 1);
 			if(fctx.allowedMIMETypes != null) {
@@ -680,7 +680,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 						trySendProgress(progress, null, container);
 						return false;
 					}
-					
+
 				}, NativeThread.HIGH_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
 				// Not much we can do
@@ -688,60 +688,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		} else {
 			trySendProgress(progress, null, container);
 		}
-	}
-
-	// This is distinct from the ClientGetMessage code, as later on it will be radically
-	// different (it can store detailed state).
-	@Override
-	public synchronized SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
-		fs.putSingle("Type", "GET");
-		fs.putSingle("URI", uri.toString(false, false));
-		fs.putSingle("Identifier", identifier);
-		fs.putSingle("Verbosity", Integer.toString(verbosity));
-		fs.putSingle("PriorityClass", Short.toString(priorityClass));
-		fs.putSingle("ReturnType", ClientGetMessage.returnTypeString(returnType));
-		fs.putSingle("Persistence", persistenceTypeString(persistenceType));
-		fs.putSingle("ClientName", client.name);
-		if(targetFile != null)
-			fs.putSingle("Filename", targetFile.getPath());
-		if(tempFile != null)
-			fs.putSingle("TempFilename", tempFile.getPath());
-		if(clientToken != null)
-			fs.putSingle("ClientToken", clientToken);
-		fs.putSingle("IgnoreDS", Boolean.toString(fctx.ignoreStore));
-		fs.putSingle("DSOnly", Boolean.toString(fctx.localRequestOnly));
-		fs.putSingle("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
-		fs.putSingle("Finished", Boolean.toString(finished));
-		fs.putSingle("Succeeded", Boolean.toString(succeeded));
-		if(fctx.allowedMIMETypes != null)
-			fs.putOverwrite("AllowedMIMETypes", (String[]) 
-					fctx.allowedMIMETypes.toArray(new String[fctx.allowedMIMETypes.size()]));
-		if(finished) {
-			if(succeeded) {
-				fs.putSingle("FoundDataLength", Long.toString(foundDataLength));
-				fs.putSingle("FoundDataMimeType", foundDataMimeType);
-				if(postFetchProtocolErrorMessage != null) {
-					fs.put("PostFetchProtocolError", postFetchProtocolErrorMessage.getFieldSet());
-				}
-			} else {
-				if(getFailedMessage != null) {
-					fs.put("GetFailed", getFailedMessage.getFieldSet(false));
-				}
-			}
-		}
-		// Return bucket
-		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && !(succeeded == false && returnBucket == null)) {
-			bucketToFS(fs, "ReturnBucket", false, returnBucket);
-		}
-		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
-		fs.put("BinaryBlob", binaryBlob);
-		fs.put("StartupTime", startupTime);
-		if(finished)
-			fs.put("CompletionTime", completionTime);
-		fs.put("LastActivity", lastActivity);
-
-		return fs;
 	}
 
 	@Override
@@ -937,7 +883,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		FreenetURI redirect;
 		synchronized(this) {
 			finished = false;
-			redirect = 
+			redirect =
 				getFailedMessage == null ? null : getFailedMessage.redirectURI;
 			if(persistenceType == PERSIST_FOREVER && getFailedMessage != null)
 				getFailedMessage.removeFrom(container);

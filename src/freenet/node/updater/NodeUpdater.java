@@ -89,11 +89,15 @@ public abstract class NodeUpdater implements ClientGetCallback, USKCallback, Req
 		try {
 			// because of UoM, this version is actually worth having as well
 			USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
-			core.uskManager.subscribe(myUsk, this, true, this);
+			core.uskManager.subscribe(myUsk, this, true, getRequestClient());
 		} catch(MalformedURLException e) {
 			Logger.error(this, "The auto-update URI isn't valid and can't be used");
 			manager.blow("The auto-update URI isn't valid and can't be used", true);
 		}
+	}
+	
+	protected RequestClient getRequestClient() {
+		return this;
 	}
 	
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {

@@ -357,4 +357,8 @@ public class NetworkInterface implements Closeable {
 		return allowedHosts.getAllowedHosts();
 	}
 
+	public boolean isBound() {
+		return this.acceptors.size() != 0;
+	}
+
 }

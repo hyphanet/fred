@@ -30,16 +30,14 @@ public final class SessionManager {
 	public static final String SESSION_COOKIE_NAME = "SessionID"; 
 	
 	private final URI mCookiePath;
-	
-	private final URI mLogInRedirectURI;
+	private URI mLogInRedirectURI;
 
 	/**
 	 * Constructs a new session manager.
 	 * 
 	 * @param myCookiePath The path in which the cookies should be valid 
-	 * @param myLogInRedirectURI The URI to which a RedirectException should be thrown if the specified session ID is not valid anymore.
 	 */
-	public SessionManager(URI myCookiePath, URI myLogInRedirectURI) {
+	public SessionManager(URI myCookiePath) {
 		if(myCookiePath.isAbsolute())
 			throw new IllegalArgumentException("Illegal cookie path, must be relative: " + myCookiePath);
 		
@@ -50,6 +48,20 @@ public final class SessionManager {
 		
 		//mCookieDomain = myCookieDomain;
 		mCookiePath = myCookiePath;
+		mLogInRedirectURI = null;
+	}
+	
+	/**
+	 * Constructs a new session manager.
+	 * @param myCookiePath The path in which the cookies should be valid
+	 * @param myLogInRedirectURI the URI to which we should redirect if the session is invalid
+	 * @deprecated PluginRespirator stores SessionManagers that can be used for
+	 * 	setting common sessions. Using this with the same myCookiePath will overwrite
+	 * 	other sessions.
+	 */
+	@Deprecated
+	public SessionManager(URI myCookiePath, URI myLogInRedirectURI) {
+		this(myCookiePath);
 		mLogInRedirectURI = myLogInRedirectURI;
 	}
 	
@@ -146,12 +158,17 @@ public final class SessionManager {
 	 * 
 	 * If the session was valid, then its validity is extended by {@link MAX_SESSION_IDLE_TIME}.
 	 * 
-	 * If the session is not valid anymore, a {@link RedirectException} to the log-in page of this SessionManager is thrown.
+	 * If the session is not valid anymore, <code>null</code> is returned if the
+	 * new constructor was used (for example by PluginRespirator). If the deprecated
+	 * constructor was used, a RedirectException to the login URI is thrown.
+	 * @throws RedirectException if login redirect URI was set
 	 */
 	public synchronized Session useSession(ToadletContext context) throws RedirectException {
 		UUID sessionID = getSessionID(context);
-		if(sessionID == null)
+		if(sessionID == null) {
+			if (mLogInRedirectURI == null) return null;
 			throw new RedirectException(mLogInRedirectURI);
+		}
 		
 		// We must synchronize around the fetching of the time and mSessionsByID.push() because mSessionsByID is no sorting data structure: It's a plain
 		// LRUHashtable so to ensure that it stays sorted the operation "getTime(); push();" must be atomic.
@@ -161,11 +178,15 @@ public final class SessionManager {
 		
 		Session session = mSessionsByID.get(sessionID);
 		
-		if(session == null)
+		if(session == null) {
+			if (mLogInRedirectURI == null) return null;
 			throw new RedirectException(mLogInRedirectURI);
+		}
 		
 		session.updateExpiresAtTime(time);
 		mSessionsByID.push(session.getID(), session);
+		
+		setSessionCookie(session, context);
 		
 		return session;
 	}

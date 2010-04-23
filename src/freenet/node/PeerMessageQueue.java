@@ -130,6 +130,14 @@ public class PeerMessageQueue {
 			return t;
 		}
 
+		/**
+		 * Add the size of messages in this queue to <code>length</code> until
+		 * length is larger than <code>maxSize</code>, or all messages have
+		 * been added.
+		 * @param length the starting length
+		 * @param maxSize the size at which to stop
+		 * @return the resulting length after adding messages
+		 */
 		public int addSize(int length, int maxSize) {
 			if(itemsNoID != null) {
 				for(MessageItem item : itemsNoID) {
@@ -150,7 +158,27 @@ public class PeerMessageQueue {
 			return length;
 		}
 
+		/**
+		 * Add messages to <code>messages</code> until there are no more
+		 * messages to add or <code>size</code> would exceed
+		 * <code>maxSize</code>. If <code>size == maxSize</code>, a
+		 * message in the queue will be added even if it makes <code>size</code>
+		 * exceed <code>maxSize</code>. If <code>isUrgent</code> is set, only
+		 * messages that are considered urgent are added.
+		 *
+		 * @param size the current size of <code>messages</code>
+		 * @param minSize the size when <code>messages</code> is empty
+		 * @param maxSize the maximum size of <code>messages</code>
+		 * @param now the current time
+		 * @param messages the list that messages will be added to
+		 * @param isUrgent <code>true</code> if only urgent messages should be added
+		 * @return the size of <code>messages</code>, multiplied by -1 if there were
+		 * messages that didn't fit
+		 */
 		private int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages, boolean isUrgent) {
+			assert(size >= 0);
+			assert(minSize >= 0);
+			assert(maxSize >= minSize);
 			int lists = 0;
 			if(itemsNoID != null)
 				lists++;
@@ -223,26 +251,38 @@ public class PeerMessageQueue {
 		}
 		
 		/**
-		 * @param size
-		 * @param minSize
-		 * @param maxSize
-		 * @param now
-		 * @param messages
-		 * @return The new size of the packet, multiplied by -1 iff there are more
-		 * messages but they don't fit.
+		 * Add urgent messages to <code>messages</code> until there are no more
+		 * messages to add or <code>size</code> would exceed
+		 * <code>maxSize</code>. If <code>size == maxSize</code>, a message in
+		 * the queue will be added even if it makes <code>size</code> exceed
+		 * <code>maxSize</code>.
+		 *
+		 * @param size the current size of <code>messages</code>
+		 * @param minSize the size when <code>messages</code> is empty
+		 * @param maxSize the maximum size of <code>messages</code>
+		 * @param now the current time
+		 * @param messages the list that messages will be added to
+		 * @return the size of <code>messages</code>, multiplied by -1 if there were
+		 * messages that didn't fit
 		 */
 		public int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
 			return addMessages(size, minSize, maxSize, now, messages, true);
 		}
 		
 		/**
-		 * @param size
-		 * @param minSize
-		 * @param maxSize
-		 * @param now
-		 * @param messages
-		 * @return The new size of the packet, multiplied by -1 iff there are more
-		 * messages but they don't fit.
+		 * Add messages to <code>messages</code> until there are no more
+		 * messages to add or <code>size</code> would exceed
+		 * <code>maxSize</code>. If <code>size == maxSize</code>, a message in
+		 * the queue will be added even if it makes <code>size</code> exceed
+		 * <code>maxSize</code>.
+		 *
+		 * @param size the current size of <code>messages</code>
+		 * @param minSize the size when <code>messages</code> is empty
+		 * @param maxSize the maximum size of <code>messages</code>
+		 * @param now the current time
+		 * @param messages the list that messages will be added to
+		 * @return the size of <code>messages</code>, multiplied by -1 if there were
+		 * messages that didn't fit
 		 */
 		public int addMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
 			return addMessages(size, minSize, maxSize, now, messages, false);
@@ -265,6 +305,14 @@ public class PeerMessageQueue {
 			queuesByPriority[i] = new PrioQueue();
 	}
 
+	/**
+	 * Queue a <code>MessageItem</code> and return an estimate of the size of
+	 * this queue. The value returned is the estimated number of bytes
+	 * needed for sending the all messages in this queue. Note that if the
+	 * returned estimate is higher than 1024, it might not cover all messages.
+	 * @param item the <code>MessageItem</code> to queue
+	 * @return an estimate of the size of this queue
+	 */
 	public synchronized int queueAndEstimateSize(MessageItem item) {
 		enqueuePrioritizedMessageItem(item);
 		int x = 0;
@@ -345,10 +393,25 @@ public class PeerMessageQueue {
 		return t;
 	}
 
+	/**
+	 * Returns <code>true</code> if there are messages that will timeout before
+	 * <code>now</code>.
+	 * @param now the timeout for messages waiting to be sent
+	 * @return <code>true</code> if there are messages that will timeout before
+	 * <code>now</code>
+	 */
 	public boolean mustSendNow(long now) {
 		return getNextUrgentTime(Long.MAX_VALUE, now) <= now;
 	}
 
+	/**
+	 * Returns <code>true</code> if <code>minSize</code> + the length of all
+	 * messages in this queue is greater than <code>maxSize</code>.
+	 * @param minSize the starting size
+	 * @param maxSize the maximum size
+	 * @return <code>true</code> if <code>minSize</code> + the length of all
+	 * messages in this queue is greater than <code>maxSize</code>
+	 */
 	public synchronized boolean mustSendSize(int minSize, int maxSize) {
 		int length = minSize;
 		for(PrioQueue items : queuesByPriority) {
@@ -359,53 +422,47 @@ public class PeerMessageQueue {
 	}
 
 	/**
-	 * Add urgent messages to the queue.
-	 * @param size
-	 * @param now
-	 * @param minSize
-	 * @param maxSize
-	 * @param messages
-	 * @return The new size of the packet, multiplied by -1 iff there are more
-	 * messages but they don't fit.
+	 * Add urgent messages to <code>messages</code> until there are no more
+	 * messages to add or <code>size</code> would exceed
+	 * <code>maxSize</code>. If <code>size == maxSize</code>, the first
+	 * message in the queue will be added even if it makes <code>size</code>
+	 * exceed <code>maxSize</code>. Messages are urgent if the message has been
+	 * waiting for more than <code>PacketSender.MAX_COALESCING_DELAY</code>.
+	 * @param size the current size of the messages
+	 * @param now the current time
+	 * @param minSize the starting size with no messages
+	 * @param maxSize the maximum size of messages
+	 * @param messages the list that messages will be added to
+	 * @return the size of the messages, multiplied by -1 if there were
+	 * messages that didn't fit
 	 */
 	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		boolean gotEnough = false;
 		for(PrioQueue queue : queuesByPriority) {
-			size = queue.addUrgentMessages(size, minSize, maxSize, now, messages);
-			if(size < 0) {
-				size = -size;
-				gotEnough = true;
-			}
+			size = queue.addUrgentMessages(Math.abs(size), minSize, maxSize, now, messages);
 		}
-		if(gotEnough)
-			return -size;
-		else
-			return size;
+		return size;
 	}
 
 	/**
-	 * Add non-urgent messages to the queue.
-	 * @param size
-	 * @param now
-	 * @param minSize
-	 * @param maxSize
-	 * @param messages
-	 * @return The new size of the packet, multiplied by -1 iff there are more
-	 * messages but they don't fit.
+	 * Add non-urgent messages to <code>messages</code> until there are no more
+	 * messages to add or <code>size</code> would exceed
+	 * <code>maxSize</code>. If <code>size == maxSize</code>, the first
+	 * message in the queue will be added even if it makes <code>size</code>
+	 * exceed <code>maxSize</code>. Non-urgent messages are messages that
+	 * are still waiting because of coalescing.
+	 * @param size the current size of the messages
+	 * @param now the current time
+	 * @param minSize the starting size with no messages
+	 * @param maxSize the maximum size of messages
+	 * @param messages the list that messages will be added to
+	 * @return the size of the messages, multiplied by -1 if there were
+	 * messages that didn't fit
 	 */
 	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
-		boolean gotEnough = false;
 		for(PrioQueue queue : queuesByPriority) {
-			size = queue.addMessages(size, minSize, maxSize, now, messages);
-			if(size < 0) {
-				size = -size;
-				gotEnough = true;
-			}
+			size = queue.addMessages(Math.abs(size), minSize, maxSize, now, messages);
 		}
-		if(gotEnough)
-			return -size;
-		else
-			return size;
+		return size;
 	}	
 	
 	

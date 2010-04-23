@@ -37,9 +37,7 @@ public class PeerAddressTrackerItem extends AddressTrackerItem {
 		try {
 			peer = new Peer(fs.getString("Address"), false);
 		} catch (UnknownHostException e) {
-			FSParseException ex = new FSParseException("Unknown domain name in Address: "+e);
-			ex.initCause(e);
-			throw ex;
+			throw (FSParseException)new FSParseException("Unknown domain name in Address: "+e).initCause(e);
 		} catch (PeerParseException e) {
 			throw new FSParseException(e);
 		}

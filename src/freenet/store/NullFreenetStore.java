@@ -4,13 +4,13 @@ import java.io.IOException;
 
 import com.sleepycat.je.DatabaseException;
 
-public class NullFreenetStore implements FreenetStore {
+public class NullFreenetStore<T extends StorableBlock> implements FreenetStore<T> {
 
-	public NullFreenetStore(StoreCallback callback) {
+	public NullFreenetStore(StoreCallback<T> callback) {
 		callback.setStore(this);
 	}
 
-	public StorableBlock fetch(byte[] routingKey, byte[] fullKey,
+	public T fetch(byte[] routingKey, byte[] fullKey,
 			boolean dontPromote, boolean canReadClientCache,
 			boolean canReadSlashdotCache, BlockMetadata meta) throws IOException {
 		// No block returned so don't set meta.
@@ -41,7 +41,7 @@ public class NullFreenetStore implements FreenetStore {
 		return false;
 	}
 
-	public void put(StorableBlock block, byte[] data, byte[] header,
+	public void put(T block, byte[] data, byte[] header,
 			boolean overwrite, boolean oldBlock) throws IOException,
 			KeyCollisionException {
 		// Do nothing

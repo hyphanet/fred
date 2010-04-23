@@ -21,6 +21,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
+import freenet.node.OpennetManager.ConnectionType;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
@@ -605,7 +606,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private boolean finishOpennetNoRelayInner(OpennetManager om) {
 		if(logMINOR)
 			Logger.minor(this, "Finishing opennet: sending own reference");
-		if(!om.wantPeer(null, false, false, false))
+		if(!om.wantPeer(null, false, false, false, ConnectionType.PATH_FOLDING))
 			return false; // Don't want a reference
 
 		try {
@@ -629,7 +630,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			return false;
 
 		try {
-			if(node.addNewOpennetNode(ref) == null)
+			if(node.addNewOpennetNode(ref, ConnectionType.PATH_FOLDING) == null)
 				Logger.normal(this, "Asked for opennet ref but didn't want it for " + this + " :\n" + ref);
 			else
 				Logger.normal(this, "Added opennet noderef in " + this);

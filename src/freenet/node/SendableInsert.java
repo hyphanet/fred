@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.keys.ClientKey;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
@@ -50,5 +51,8 @@ public abstract class SendableInsert extends SendableRequest {
 	public abstract boolean canWriteClientCache(ObjectContainer container);
 
 	public abstract boolean forkOnCacheable(ObjectContainer container);
+
+	/** Encoded a key */
+	public abstract void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context);
 	
 }

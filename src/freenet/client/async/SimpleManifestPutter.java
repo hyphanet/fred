@@ -40,10 +40,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
-	
+
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
-			
+
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -51,19 +51,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		});
 	}
-	
+
 	// Only implements PutCompletionCallback for the final metadata insert
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
-		
+
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly, boolean persistent) {
 			super(smp.priorityClass, smp.client);
 			this.persistent = persistent;
 			this.cm = cm;
 			this.data = data;
-			InsertBlock block = 
+			InsertBlock block =
 				new InsertBlock(data, cm, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode, false);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode, false, persistent);
 			metadata = null;
 			containerHandle = null;
 		}
@@ -79,7 +79,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			origSFI = null;
 			containerHandle = null;
 		}
-		
+
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data, boolean persistent) {
 			super(smp.getPriorityClass(), smp.client);
 			this.persistent = persistent;
@@ -92,7 +92,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			origSFI = null;
 			containerHandle = null;
 		}
-		
+
 		private ClientPutState origSFI;
 		private ClientPutState currentState;
 		private ClientMetadata cm;
@@ -101,7 +101,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private final Bucket data;
 		private final boolean persistent;
 		private final PutHandler containerHandle;
-		
+
 		public void start(ObjectContainer container, ClientContext context) throws InsertException {
 			if (origSFI == null) {
 				 Logger.error(this, "origSFI is null on start(), should be impossible", new Exception("debug"));
@@ -126,7 +126,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.deactivate(sfi, 1);
 			}
 		}
-		
+
 		@Override
 		public void cancel(ObjectContainer container, ClientContext context) {
 			if(Logger.shouldLog(Logger.MINOR, this))
@@ -145,7 +145,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(oldState != null) oldState.cancel(container, context);
 			onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 		}
-		
+
 		@Override
 		public FreenetURI getURI() {
 			return null;
@@ -181,7 +181,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.ext().store(putHandlersWaitingForMetadata, 2);
 					Logger.error(this, "PutHandler was in waitingForMetadata in onSuccess() on "+this+" for "+SimpleManifestPutter.this);
 				}
-				
+
 				if(persistent) {
 					container.deactivate(putHandlersWaitingForMetadata, 1);
 					container.activate(waitingForBlockSets, 2);
@@ -204,7 +204,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 				if(persistent)
 					container.deactivate(putHandlersWaitingForFetchable, 1);
-				
+
 				if(!runningPutHandlers.isEmpty()) {
 					if(logMINOR) {
 						Logger.minor(this, "Running put handlers: "+runningPutHandlers.size());
@@ -281,7 +281,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		 */
 		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(newState == null) throw new NullPointerException();
-			
+
 			// onTransition is *not* responsible for removing the old state, the caller is.
 			synchronized (this) {
 				if (currentState == oldState) {
@@ -308,9 +308,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(SimpleManifestPutter.this, 1);
 				container.activate(putHandlersWaitingForMetadata, 2);
 			}
-			
+
 			boolean allMetadatas = false;
-			
+
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
 				if(persistent) {
@@ -358,7 +358,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-		
+
 		@Override
 		public void addBlocks(int num, ObjectContainer container) {
 			if(persistent)
@@ -367,7 +367,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-		
+
 		@Override
 		public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -376,7 +376,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-		
+
 		@Override
 		public void failedBlock(ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -385,7 +385,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-		
+
 		@Override
 		public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -394,7 +394,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-		
+
 		@Override
 		public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 			if(persistent)
@@ -403,7 +403,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.deactivate(SimpleManifestPutter.this, 1);
 		}
-		
+
 		@Override
 		public void notifyClients(ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -459,7 +459,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadata = null;
 			if(persistent) container.store(this);
 		}
-		
+
 		@Override
 		public void removeFrom(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Removing "+this);
@@ -497,7 +497,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// Data is responsibility of original caller (usually ClientPutDir), we don't support freeData atm
 			super.removeFrom(container, context);
 		}
-		
+
 		public boolean objectCanNew(ObjectContainer container) {
 			if(cancelled) {
 				Logger.error(this, "Storing "+this+" when already cancelled!", new Exception("error"));
@@ -541,9 +541,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private ArrayList<PutHandler> elementsToPutInArchive;
 	private boolean fetchable;
 	private final boolean earlyEncode;
-	
+
 	public SimpleManifestPutter(ClientPutCallback cb,
-			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target, 
+			HashMap<String, Object> manifestElements, short prioClass, FreenetURI target,
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) {
 		super(prioClass, clientContext);
 		this.defaultName = defaultName;
@@ -614,20 +614,20 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			throw e;
 		}
 	}
-	
+
 	protected void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, boolean persistent) {
 		makePutHandlers(manifestElements, putHandlersByName, "/", persistent);
 	}
-	
+
 	private void makePutHandlers(HashMap<String, Object> manifestElements, HashMap<String,Object> putHandlersByName, String ZipPrefix, boolean persistent) {
 		Iterator<String> it = manifestElements.keySet().iterator();
 		while(it.hasNext()) {
 			String name = it.next();
 			Object o = manifestElements.get(name);
-			if(o instanceof HashMap) {
+			if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				putHandlersByName.put(name, subMap);
-				makePutHandlers((HashMap<String, Object>)o, subMap, ZipPrefix+name+ '/', persistent);
+				makePutHandlers(Metadata.forceMap(o), subMap, ZipPrefix+name+ '/', persistent);
 				if(Logger.shouldLog(Logger.DEBUG, this))
 					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
 			} else {
@@ -710,9 +710,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.deactivate(SimpleManifestPutter.this, 1);
 			return true;
 		}
-		
+
 	};
-	
+
 	/**
 	 * Called when we have metadata for all the PutHandler's.
 	 * This does *not* necessarily mean we can immediately insert the final metadata, since
@@ -737,7 +737,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			innerGotAllMetadata(null, context);
 		}
 	}
-	
+
 	/**
 	 * Generate the global metadata, and then call resolveAndStartBase.
 	 * @param container
@@ -778,13 +778,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.store(this);
 		}
 		resolveAndStartBase(container, context);
-		
+
 	}
-	
+
 	/**
 	 * Attempt to insert the base metadata and the container. If the base metadata cannot be resolved,
 	 * try to resolve it: start inserts for each part that cannot be resolved, and wait for them to generate
-	 * URIs that can be incorporated into the metadata. This method will then be called again, and will 
+	 * URIs that can be incorporated into the metadata. This method will then be called again, and will
 	 * complete, or do more resolutions as necessary.
 	 * @param container
 	 * @param context
@@ -845,7 +845,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// We want to include the metadata.
 			// We have the metadata, fortunately enough, because everything has been resolve()d.
 			// So all we need to do is create the actual archive.
-			try {				
+			try {
 				Bucket outputBucket = context.getBucketFactory(persistent()).makeBucket(baseMetadata.dataLength());
 				// TODO: try both ? - maybe not worth it
 				archiveType = ARCHIVE_TYPE.getDefault();
@@ -854,11 +854,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					createZipBucket(bucket, outputBucket, container));
 				bucket.free();
 				if(persistent()) bucket.removeFrom(container);
-				
+
 				if(logMINOR) Logger.minor(this, "We are using "+archiveType);
-				
+
 				// Now we have to insert the Archive we have generated.
-				
+
 				// Can we just insert it, and not bother with a redirect to it?
 				// Thereby exploiting implicit manifest support, which will pick up on .metadata??
 				// We ought to be able to !!
@@ -877,8 +877,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		SingleFileInserter metadataInserter;
 		try {
 			// Treat it as a splitfile for purposes of determining reinserts.
-			metadataInserter = 
-				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true);
+			metadataInserter =
+				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode, true, persistent());
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter+" for "+baseMetadata);
 			if(persistent()) {
 				container.activate(metadataPuttersByMetadata, 2);
@@ -907,7 +907,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	private String createTarBucket(Bucket inputBucket, Bucket outputBucket, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
-		
+
 		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
 		TarOutputStream tarOS = new TarOutputStream(os);
 		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
@@ -944,16 +944,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		tarOS.finish();
 		tarOS.flush();
 		tarOS.close();
-		
+
 		if(logMINOR)
 			Logger.minor(this, "Archive size is "+outputBucket.size());
-		
+
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
-	
+
 	private String createZipBucket(Bucket inputBucket, Bucket outputBucket, ObjectContainer container) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
-		
+
 		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
 		ZipOutputStream zos = new ZipOutputStream(os);
 		ZipEntry ze;
@@ -982,13 +982,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		zos.finish();
 		zos.flush();
 		zos.close();
-		
+
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
 
 	/**
 	 * Start inserts for unresolved (too big) Metadata's. Eventually these will call back with an onEncode(),
-	 * meaning they have the CHK, and we can progress to resolveAndStartBase(). 
+	 * meaning they have the CHK, and we can progress to resolveAndStartBase().
 	 * @param e
 	 * @param container
 	 * @param context
@@ -1017,10 +1017,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			try {
 				Bucket b = m.toBucket(context.getBucketFactory(persistent()));
-				
+
 				InsertBlock ib = new InsertBlock(b, null, persistent() ? FreenetURI.EMPTY_CHK_URI.clone() : FreenetURI.EMPTY_CHK_URI);
-				SingleFileInserter metadataInserter = 
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode, false);
+				SingleFileInserter metadataInserter =
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode, false, persistent());
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
@@ -1063,16 +1063,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					if(logMINOR)
 						Logger.minor(this, "Putting PutHandler into base metadata: "+ph+" name "+name);
 				}
-			} else if(o instanceof HashMap) {
+			} else if (o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
-				if(persistent())
+				if (persistent()) {
 					container.activate(o, 2); // Depth 1 doesn't load the elements...
+				}
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR) {
 					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+(container == null ? "null" : Boolean.toString(container.ext().isActive(o))));
 					Logger.minor(this, "Putting directory: "+name);
 				}
-				namesToByteArrays((HashMap<String, Object>)o, subMap, container);
+				namesToByteArrays(Metadata.forceMap(o), subMap, container);
 			} else
 				throw new IllegalStateException();
 		}
@@ -1100,11 +1101,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.store(this);
 		complete(container, context);
 	}
-	
+
 	private void complete(ObjectContainer container, ClientContext context) {
 		// FIXME we could remove the put handlers after inserting all files but not having finished the insert of the manifest
 		// However it would complicate matters for no real gain in most cases...
-		// Also doing it this way means we don't need to worry about 
+		// Also doing it this way means we don't need to worry about
 		if(persistent()) removePutHandlers(container, context);
 		boolean deactivateCB = false;
 		if(persistent()) {
@@ -1125,12 +1126,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent()) container.store(this);
 		cancelAndFinish(container, context);
 		if(persistent()) removePutHandlers(container, context);
-		
+
 		if(persistent())
 			container.activate(cb, 1);
 		cb.onFailure(e, this, container);
 	}
-	
+
 	private void removePutHandlers(ObjectContainer container, ClientContext context) {
 		container.activate(putHandlersByName, 2);
 		container.activate(runningPutHandlers, 2);
@@ -1140,7 +1141,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		container.activate(elementsToPutInArchive, 2);
 		removePutHandlersByName(container, context, putHandlersByName);
 		putHandlersByName = null;
-		
+
 		if(!runningPutHandlers.isEmpty()) {
 			Logger.error(this, "Running put handlers not part of putHandlersByName: "+runningPutHandlers.size()+" in removePutHandlers() on "+this, new Exception("error"));
 			PutHandler[] handlers = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
@@ -1212,7 +1213,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	/**
 	 * Remove all PutHandler's from the given putHandlersByName sub-map.
 	 * Remove the PutHandler's themselves also, remove them from and complain about
-	 * runningPutHandlers, putHandlersWaitingForMetadata, waitingForBlockSets, 
+	 * runningPutHandlers, putHandlersWaitingForMetadata, waitingForBlockSets,
 	 * putHandlersWaitingForFetchable, which must have been activated by the caller.
 	 * @param container
 	 * @param putHandlersByName
@@ -1237,7 +1238,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.ext().store(elementsToPutInArchive, 2);
 				handler.removeFrom(container, context);
 			} else {
-				HashMap<String, Object> subMap = (HashMap<String, Object>) value;
+				HashMap<String, Object> subMap = Metadata.forceMap(value);
 				container.activate(subMap, 2);
 				removePutHandlersByName(container, context, subMap);
 			}
@@ -1258,7 +1259,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		synchronized(this) {
 			running = runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
-		
+
 		if(logMINOR) Logger.minor(this, "PutHandler's to cancel: "+running.length);
 		for(PutHandler putter : running) {
 			boolean active = true;
@@ -1270,14 +1271,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!active) container.deactivate(putter, 1);
 			if(persistent) container.activate(this, 1);
 		}
-		
+
 		ClientPutState[] runningMeta;
 		if(persistent())
 			container.activate(metadataPuttersByMetadata, 2);
 		synchronized(this) {
 			runningMeta = metadataPuttersByMetadata.values().toArray(new ClientPutState[metadataPuttersByMetadata.size()]);
 		}
-		
+
 		if(logMINOR) Logger.minor(this, "Metadata putters to cancel: "+runningMeta.length);
 		for(ClientPutState putter : runningMeta) {
 			boolean active = true;
@@ -1289,9 +1290,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!active) container.deactivate(putter, 1);
 			if(persistent) container.activate(this, 1);
 		}
-		
+
 	}
-	
+
 	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
@@ -1302,7 +1303,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.store(this);
 		fail(new InsertException(InsertException.CANCELLED), container, context);
 	}
-	
+
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(metadataPuttersByMetadata, 2);
@@ -1357,7 +1358,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(fin)
 			complete(container, context);
 	}
-	
+
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(metadataPuttersByMetadata, 2);
@@ -1373,7 +1374,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.activate(metadataPuttersUnfetchable, 2);
 				if(metadataPuttersUnfetchable.containsKey(token)) {
 					metadataPuttersUnfetchable.remove(token);
-					
+
 					if(persistent())
 						container.ext().store(metadataPuttersUnfetchable, 2);
 				}
@@ -1392,7 +1393,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		fail(e, container, context);
 	}
-	
+
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
@@ -1416,7 +1417,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			resolveAndStartBase(container, context);
 		}
 	}
-	
+
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		Metadata m = (Metadata) oldState.getToken();
 		if(persistent()) {
@@ -1454,7 +1455,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.deactivate(metadataPuttersByMetadata, 2);
 		}
 	}
-	
+
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
@@ -1506,7 +1507,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent())
 			container.store(this);
 	}
-	
+
 	/**
 	 * Convert a HashMap of name -> bucket to a HashSet of ManifestEntry's.
 	 * All are to have mimeOverride=null, i.e. we use the auto-detected mime type
@@ -1524,7 +1525,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Bucket data = (Bucket) bucketsByName.get(name);
 				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
 			} else if(o instanceof HashMap) {
-				manifestEntries.put(name, bucketsByNameToManifestEntries((HashMap<String, Object>)o));
+				manifestEntries.put(name, bucketsByNameToManifestEntries(Metadata.forceMap(o)));
 			} else
 				throw new IllegalArgumentException(String.valueOf(o));
 		}
@@ -1532,7 +1533,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	/**
-	 * Convert a hierarchy of HashMap's of ManifestEntries into a series of 
+	 * Convert a hierarchy of HashMap's of ManifestEntries into a series of
 	 * ManifestElement's, each of which has a full path.
 	 */
 	public static ManifestElement[] flatten(HashMap<String,Object> manifestElements) {
@@ -1548,7 +1549,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			String fullName = prefix.length() == 0 ? name : prefix+ '/' +name;
 			Object o = manifestElements.get(name);
 			if(o instanceof HashMap) {
-				flatten((HashMap<String, Object>)o, v, fullName);
+				flatten(Metadata.forceMap(o), v, fullName);
 			} else if(o instanceof ManifestElement) {
 				ManifestElement me = (ManifestElement) o;
 				v.add(new ManifestElement(me, fullName));
@@ -1569,7 +1570,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		return manifestElements;
 	}
-	
+
 	private static void add(ManifestElement e, String namePart, Map<String, Object> target) {
 		int idx = namePart.indexOf('/');
 		if(idx < 0) {
@@ -1577,8 +1578,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		} else {
 			String before = namePart.substring(0, idx);
 			String after = namePart.substring(idx+1);
-			@SuppressWarnings("unchecked")
-			HashMap<String, Object> hm = (HashMap<String, Object>) target.get(before);
+			HashMap<String, Object> hm = Metadata.forceMap(target.get(before));
 			if(hm == null) {
 				hm = new HashMap<String, Object>();
 				target.put(before.intern(), hm);
@@ -1742,7 +1742,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		container.delete(runGotAllMetadata);
 		super.removeFrom(container, context);
 	}
-	
+
 	public void objectOnUpdate(ObjectContainer container) {
 		if(logDEBUG) Logger.debug(this, "Updating "+this+" activated="+container.ext().isActive(this)+" stored="+container.ext().isStored(this), new Exception("debug"));
 	}
@@ -1796,7 +1796,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		putHandlersByName2.put(name, ph);
 	}
-	
+
 	@Override
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		// Ignore

@@ -98,12 +98,51 @@ public final class StringValidityChecker {
 					0xFFFD, /* REPLACEMENT CHARACTER */
 			}));
 	
-	private static final HashSet<Character> windowsReservedFilenameCharacters = new HashSet<Character>(Arrays.asList(
-			new Character[] { '/', '\\', '?', '%', '*', ':', '|', '\"', '<', '>'}));
+	/**
+	 * Taken from http://en.wikipedia.org/w/index.php?title=Filename&oldid=344618757
+	 */
+	private static final HashSet<Character> windowsReservedPrintableFilenameCharacters = new HashSet<Character>(Arrays.asList(
+			new Character[] { '/', '\\', '?', '*', ':', '|', '\"', '<', '>'}));
+
+	/**
+	 * Taken from http://en.wikipedia.org/w/index.php?title=Filename&oldid=344618757
+	 */
+	private static final HashSet<String> windowsReservedFilenames = new HashSet<String>(Arrays.asList(
+			new String[] { "aux", "clock$", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9", "con",
+					"lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9", "nul", "prn"}));
+	
+	/**
+	 * Taken from http://en.wikipedia.org/w/index.php?title=Filename&oldid=344618757
+	 */
+	private static final HashSet<Character> macOSReservedPrintableFilenameCharacters = new HashSet<Character>(Arrays.asList(
+			new Character[] { ':', '/'}));
 
 	
-	public static boolean isWindowsReservedFilenameCharacter(Character c) {
-		return windowsReservedFilenameCharacters.contains(c);
+	/**
+	 * Returns true if the given character is one of the reserved printable character in filenames on Windows.
+	 * ATTENTION: This function does NOT check whether the given character is a control character, those are also forbidden!
+	 * (Control characters are usually disallowed for all operating systems in filenames by our validity checker so it checks them separately)   
+	 */
+	public static boolean isWindowsReservedPrintableFilenameCharacter(Character c) {
+		return windowsReservedPrintableFilenameCharacters.contains(c);
+	}
+	
+	public static boolean isWindowsReservedFilename(String filename) {
+		filename = filename.toLowerCase();
+		int nameEnd = filename.indexOf('.'); // For files with multiple dots, the part before the first dot counts as the filename. E.g. "con.blah.txt" is reserved.
+		if(nameEnd == -1)
+			nameEnd = filename.length();
+		
+		return windowsReservedFilenames.contains(filename.substring(0, nameEnd));
+	}
+
+	/**
+	 * Returns true if the given character is one of the reserved printable character in filenames on Mac OS.
+	 * ATTENTION: This function does NOT check whether the given character is a control character, those are also forbidden!
+	 * (Control characters are usually disallowed for all operating systems in filenames by our validity checker so it checks them separately)
+	 */
+	public static boolean isMacOSReservedPrintableFilenameCharacter(Character c) {
+		return macOSReservedPrintableFilenameCharacters.contains(c);
 	}
 	
 	public static boolean containsNoIDNBlacklistCharacters(String text) {

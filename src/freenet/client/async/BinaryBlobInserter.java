@@ -3,7 +3,7 @@ package freenet.client.async;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
@@ -33,8 +33,8 @@ public class BinaryBlobInserter implements ClientPutState {
 	private int succeededBlocks;
 	private boolean fatal;
 	final InsertContext ctx;
-	
-	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container) 
+
+	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container)
 	throws IOException, BinaryBlobFormatException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.ctx = ctx;
@@ -44,16 +44,16 @@ public class BinaryBlobInserter implements ClientPutState {
 		this.clientContext = clientContext;
 		this.errors = new FailureCodeTracker(true);
 		DataInputStream dis = new DataInputStream(blob.getInputStream());
-		
+
 		BlockSet blocks = new SimpleBlockSet();
-		
+
 		BinaryBlob.readBinaryBlob(dis, blocks, tolerant);
-		
+
 		dis.close();
-		
-		Vector myInserters = new Vector();
+
+		ArrayList<MySendableInsert> myInserters = new ArrayList<MySendableInsert>();
 		Iterator i = blocks.keys().iterator();
-		
+
 		int x=0;
 		while(i.hasNext()) {
 			Key key = (Key) i.next();
@@ -62,12 +62,12 @@ public class BinaryBlobInserter implements ClientPutState {
 				new MySendableInsert(x++, block, prioClass, getScheduler(block, context), clientContext);
 			myInserters.add(inserter);
 		}
-		
-		inserters = (MySendableInsert[]) myInserters.toArray(new MySendableInsert[myInserters.size()]);
+
+		inserters = myInserters.toArray(new MySendableInsert[myInserters.size()]);
 		parent.addMustSucceedBlocks(inserters.length, container);
 		parent.notifyClients(container, context);
 	}
-	
+
 	private ClientRequestScheduler getScheduler(KeyBlock block, ClientContext context) {
 		if(block instanceof CHKBlock)
 			return context.getChkInsertScheduler();
@@ -97,18 +97,18 @@ public class BinaryBlobInserter implements ClientPutState {
 			inserters[i].schedule();
 		}
 	}
-	
+
 	class MySendableInsert extends SimpleSendableInsert {
 
 		final int blockNum;
 		private int consecutiveRNFs;
 		private int retries;
-		
+
 		public MySendableInsert(int i, KeyBlock block, short prioClass, ClientRequestScheduler scheduler, RequestClient client) {
 			super(block, prioClass, client, scheduler);
 			this.blockNum = i;
 		}
-		
+
 		public void onSuccess(ObjectContainer container, ClientContext context) {
 			synchronized(this) {
 				if(inserters[blockNum] == null) return;
@@ -185,7 +185,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				parent.failedBlock(container, context);
 			maybeFinish(container, context);
 		}
-		
+
 	}
 
 	public void maybeFinish(ObjectContainer container, ClientContext context) {
@@ -209,5 +209,5 @@ public class BinaryBlobInserter implements ClientPutState {
 		// FIXME: Persistent blob inserts are not supported.
 		throw new UnsupportedOperationException();
 	}
-	
+
 }

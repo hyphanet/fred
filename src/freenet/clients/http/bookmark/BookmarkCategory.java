@@ -1,7 +1,7 @@
 package freenet.clients.http.bookmark;
 
 import java.util.List;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
@@ -9,12 +9,12 @@ import freenet.support.SimpleFieldSet;
 public class BookmarkCategory extends Bookmark {
     public static final String NAME = "BookmarkCategory";
 
-    private final Vector bookmarks = new Vector();
+    private final List<Bookmark> bookmarks = new ArrayList<Bookmark>();
 
     public BookmarkCategory(String name) {
         setName(name);
     }
-    
+
     public BookmarkCategory(SimpleFieldSet sfs) throws FSParseException {
 	String aName = sfs.get("Name");
 	if(aName == null) throw new FSParseException("No Name!");
@@ -28,7 +28,7 @@ public class BookmarkCategory extends Bookmark {
 	// Overwrite any existing bookmark
         int x = bookmarks.indexOf(b);
         if (x >= 0) {
-            return (Bookmark) bookmarks.get(x);
+            return bookmarks.get(x);
         }
         bookmarks.add(b);
         return b;
@@ -38,11 +38,11 @@ public class BookmarkCategory extends Bookmark {
         bookmarks.remove(b);
     }
 
-    public Bookmark get(int i) {
-        return (Bookmark) bookmarks.get(i);
+    public synchronized Bookmark get(int i) {
+        return bookmarks.get(i);
     }
 
-    protected void moveBookmarkUp(Bookmark b) {
+    protected synchronized void moveBookmarkUp(Bookmark b) {
         int index = bookmarks.indexOf(b);
         if (index == -1) {
             return;
@@ -53,7 +53,7 @@ public class BookmarkCategory extends Bookmark {
         bookmarks.add((--index < 0) ? 0 : index, bk);
     }
 
-    protected void moveBookmarkDown(Bookmark b) {
+    protected synchronized void moveBookmarkDown(Bookmark b) {
         int index = bookmarks.indexOf(b);
         if (index == -1) {
             return;
@@ -64,50 +64,43 @@ public class BookmarkCategory extends Bookmark {
         bookmarks.add((++index > size()) ? size() : index, bk);
     }
 
-    public int size() {
+    public synchronized int size() {
         return bookmarks.size();
     }
 
-    public List<BookmarkItem> getItems() {
-    	List<BookmarkItem>  items = new Vector<BookmarkItem>();
-        for (int i = 0; i < size(); i++) {
-            if (get(i) instanceof BookmarkItem) {
-                items.add((BookmarkItem) get(i));
+    public synchronized List<BookmarkItem> getItems() {
+        List<BookmarkItem> items = new ArrayList<BookmarkItem>();
+        for (Bookmark b: bookmarks) {
+            if (b instanceof BookmarkItem) {
+                items.add((BookmarkItem)b);
             }
-        }
-
-        return items;
-    }
-
-    public List<BookmarkItem> getAllItems() {
-    	List<BookmarkItem> items = getItems();
-        List<BookmarkCategory> subCategories = getSubCategories();
-
-        for (int i = 0; i < subCategories.size(); i++) {
-            items.addAll(subCategories.get(i).getAllItems());
         }
         return items;
     }
 
-    public List<BookmarkCategory> getSubCategories() {
-    	List<BookmarkCategory> categories = new Vector<BookmarkCategory>();
-        for (int i = 0; i < size(); i++) {
-            if (get(i) instanceof BookmarkCategory) {
-                categories.add((BookmarkCategory) get(i));
+    public synchronized List<BookmarkItem> getAllItems() {
+        List<BookmarkItem> items = getItems();
+        for (BookmarkCategory cat : getSubCategories()) {
+            items.addAll(cat.getAllItems());
+        }
+        return items;
+    }
+
+    public synchronized List<BookmarkCategory> getSubCategories() {
+        List<BookmarkCategory> categories = new ArrayList<BookmarkCategory>();
+        for (Bookmark b: bookmarks) {
+            if (b instanceof BookmarkCategory) {
+                categories.add((BookmarkCategory)b);
             }
         }
-
         return categories;
     }
 
-    public List<BookmarkCategory> getAllSubCategories() {
+    public synchronized List<BookmarkCategory> getAllSubCategories() {
     	List<BookmarkCategory> categories = getSubCategories();
-    	List<BookmarkCategory> subCategories = getSubCategories();
-
-        for (int i = 0; i < subCategories.size(); i++) {
-            categories.addAll(subCategories.get(i).getAllSubCategories());
+        for (BookmarkCategory cat: getSubCategories()) {
+            categories.addAll(cat.getAllSubCategories());
         }
-
         return categories;
     }
 
@@ -117,8 +110,8 @@ public class BookmarkCategory extends Bookmark {
 
     // Internal use only
 
-    private Vector<String> toStrings(String prefix) {
-        Vector<String> strings = new Vector<String>();
+    private List<String> toStrings(String prefix) {
+        List<String> strings = new ArrayList<String>();
         List<BookmarkItem> items = getItems();
         List<BookmarkCategory> subCategories = getSubCategories();
         prefix += this.name + "/";
@@ -136,7 +129,7 @@ public class BookmarkCategory extends Bookmark {
     }
 
     @Override
-	public SimpleFieldSet getSimpleFieldSet() {
+	public synchronized SimpleFieldSet getSimpleFieldSet() {
         SimpleFieldSet sfs = new SimpleFieldSet(true);
 	sfs.putSingle("Name", name);
 	sfs.put("Content", BookmarkManager.toSimpleFieldSet(this));

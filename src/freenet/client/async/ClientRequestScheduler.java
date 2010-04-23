@@ -230,7 +230,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							}
 							
 							public String toString() {
-								return super.toString() + "(registerInsert)";
+								return "registerInsert";
 							}
 							
 						}, NativeThread.NORM_PRIORITY, false);
@@ -300,6 +300,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private void innerRegister(final HasKeyListener hasListener, final SendableGet[] getters, final BlockSet blocks, boolean noCheckStore, ObjectContainer container) throws KeyListenerConstructionException {
 		final KeyListener listener;
 		if(hasListener != null) {
+			if(hasListener.isCancelled(container)) {
+				if(logMINOR) Logger.minor(this, "Key listener is cancelled, not registering: "+hasListener);
+				return;
+			}
 			listener = hasListener.makeKeyListener(container, clientContext);
 			schedCore.addPendingKeys(listener);
 			container.store(hasListener);
@@ -384,7 +388,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					continue;
 				} else
 					getters[i].preRegister(container, clientContext, true);
-				schedTransient.innerRegister(getters[i], random, null, getters);
+				if(!getters[i].isEmpty(null))
+					schedTransient.innerRegister(getters[i], random, null, getters);
 			}
 			starter.wakeUp();
 		}
@@ -462,12 +467,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * Called by RequestStarter to find a request to run.
 	 */
 	public ChosenBlock grabRequest() {
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		while(true) {
 			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
 				short bestPriority = Short.MAX_VALUE;
 				int bestRetryCount = Integer.MAX_VALUE;
 				for(PersistentChosenRequest req : starterQueue) {
+					if(req.prio == RequestStarter.MINIMUM_PRIORITY_CLASS) {
+					    if(logDEBUG) Logger.debug(this, "Ignoring paused persistent request: "+req+" prio: "+req.prio+" retryCount: "+req.retryCount);
+					     continue; //Ignore paused requests
+					}
 					if(req.prio < bestPriority || 
 							(req.prio == bestPriority && req.retryCount < bestRetryCount)) {
 						bestPriority = req.prio;
@@ -620,7 +630,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return false;
 		}
 		public String toString() {
-			return super.toString()+"(fillRequestStarterQueue)";
+			return "fillRequestStarterQueue";
 		}
 	};
 	
@@ -888,7 +898,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(succeeded)";
+						return "BaseSendableGet succeeded";
 					}
 					
 				}, TRIP_PENDING_PRIORITY, false);
@@ -919,7 +929,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(tripkey)";
+						return "tripPendingKey";
 					}
 				}, TRIP_PENDING_PRIORITY, false);
 			} catch (DatabaseDisabledException e) {
@@ -1063,7 +1073,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(callfailureget)";
+						return "SendableGet onFailure";
 					}
 					
 				}, prio, false);
@@ -1089,7 +1099,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						return false;
 					}
 					public String toString() {
-						return super.toString()+"(callfailureput)";
+						return "SendableInsert onFailure";
 					}
 					
 				}, prio, false);

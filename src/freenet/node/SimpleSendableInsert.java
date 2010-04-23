@@ -14,6 +14,7 @@ import freenet.client.async.ClientRequester;
 import freenet.client.async.PersistentChosenBlock;
 import freenet.client.async.PersistentChosenRequest;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
@@ -179,5 +180,10 @@ public class SimpleSendableInsert extends SendableInsert {
 	@Override
 	public boolean forkOnCacheable(ObjectContainer container) {
 		return Node.FORK_ON_CACHEABLE_DEFAULT;
+	}
+
+	@Override
+	public void onEncode(SendableRequestItem token, ClientKey key, ObjectContainer container, ClientContext context) {
+		// Ignore.
 	}
 }

@@ -23,46 +23,46 @@ import freenet.support.io.NativeThread;
 class ArchiveHandlerImpl implements ArchiveHandler {
 
 	private static volatile boolean logMINOR;
-	
+
 	static {
 		Logger.registerClass(ArchiveHandlerImpl.class);
 	}
-	
+
 	private final FreenetURI key;
 	private boolean forceRefetchArchive;
 	ARCHIVE_TYPE archiveType;
 	COMPRESSOR_TYPE compressorType;
-	
+
 	ArchiveHandlerImpl(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetchArchive) {
 		this.key = key;
 		this.archiveType = archiveType;
 		this.compressorType = ctype;
 		this.forceRefetchArchive = forceRefetchArchive;
 	}
-	
+
 	public Bucket get(String internalName, ArchiveContext archiveContext,
 			ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException {
-		
+
 		// Do loop detection on the archive that we are about to fetch.
 		archiveContext.doLoopDetection(key);
-		
+
 		if(forceRefetchArchive) return null;
-		
+
 		Bucket data;
-		
+
 		// Fetch from cache
 		if(logMINOR)
 			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
-		}	
-		
+		}
+
 		return null;
 	}
 
-	public Bucket getMetadata(ArchiveContext archiveContext, 
+	public Bucket getMetadata(ArchiveContext archiveContext,
 			ArchiveManager manager) throws ArchiveFailureException,
 			ArchiveRestartException, MetadataParseException, FetchException {
 		return get(".metadata", archiveContext, manager);
@@ -80,7 +80,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	public ARCHIVE_TYPE getArchiveType() {
 		return archiveType;
 	}
-	
+
 	public COMPRESSOR_TYPE getCompressorType() {
 		return compressorType;
 	}
@@ -114,10 +114,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 	private static void runPersistentOffThread(final ArchiveExtractTag tag, final ClientContext context, final ArchiveManager manager, final BucketFactory bf) {
 		final ProxyCallback proxyCallback = new ProxyCallback();
-		
+
 		if(logMINOR)
 			Logger.minor(ArchiveHandlerImpl.class, "Scheduling off-thread extraction: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback, new Exception("debug"));
-		
+
 		context.mainExecutor.execute(new Runnable() {
 
 			public void run() {
@@ -162,11 +162,11 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 							container.delete(tag);
 							return false;
 						}
-						
+
 					}, NativeThread.NORM_PRIORITY, false);
-					
+
 				} catch (final ArchiveFailureException e) {
-					
+
 					try {
 						context.jobRunner.queue(new DBJob() {
 
@@ -181,14 +181,14 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 								container.delete(tag);
 								return false;
 							}
-							
+
 						}, NativeThread.NORM_PRIORITY, false);
 					} catch (DatabaseDisabledException e1) {
 						Logger.error(this, "Extracting off thread but persistence is disabled");
 					}
-					
+
 				} catch (final ArchiveRestartException e) {
-					
+
 					try {
 						context.jobRunner.queue(new DBJob() {
 
@@ -203,23 +203,24 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 								container.delete(tag);
 								return false;
 							}
-							
+
 						}, NativeThread.NORM_PRIORITY, false);
 					} catch (DatabaseDisabledException e1) {
 						Logger.error(this, "Extracting off thread but persistence is disabled");
 					}
-					
+
 				} catch (DatabaseDisabledException e) {
 					Logger.error(this, "Extracting off thread but persistence is disabled");
 				}
 			}
-			
+
 		}, "Off-thread extract");
 	}
 
 	/** Called from ArchiveManager.init() */
 	static void init(ObjectContainer container, ClientContext context, final long nodeDBHandle) {
 		ObjectSet<ArchiveExtractTag> set = container.query(new Predicate<ArchiveExtractTag>() {
+			final private static long serialVersionUID = 5769839072558476040L;
 			@Override
 			public boolean match(ArchiveExtractTag tag) {
 				return tag.nodeDBHandle == nodeDBHandle;
@@ -231,11 +232,11 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 			runPersistentOffThread(tag, context, context.archiveManager, context.persistentBucketFactory);
 		}
 	}
-	
+
 	private static class ProxyCallback implements ArchiveExtractCallback {
 
 		Bucket data;
-		
+
 		public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 			this.data = data;
 		}
@@ -257,7 +258,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		public void removeFrom(ObjectContainer container) {
 			container.delete(this);
 		}
-		
+
 	}
 
 	public void activateForExecution(ObjectContainer container) {
@@ -276,5 +277,5 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 			key.removeFrom(container);
 		container.delete(this);
 	}
-	
+
 }
