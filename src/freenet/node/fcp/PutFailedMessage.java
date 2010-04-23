@@ -83,6 +83,8 @@ public class PutFailedMessage extends FCPMessage {
 	
 	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
+		if(identifier == null)
+			throw new NullPointerException();
 		fs.putSingle("Identifier", identifier);
 		if(global) fs.putSingle("Global", "true");
 		fs.put("Code", code);

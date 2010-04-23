@@ -331,6 +331,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientPutCa
 			if(succeeded) {
 				msg = new PutSuccessfulMessage(identifier, global, uri, startupTime, completionTime);
 			} else {
+				if(persistenceType == PERSIST_FOREVER)
+					container.activate(putFailedMessage, 5);
 				msg = putFailedMessage;
 			}
 		}
