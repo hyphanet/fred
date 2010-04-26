@@ -41,6 +41,7 @@ public class ImageElement extends BaseUpdateableElement {
 
 	private ParsedTag				originalImg;
 
+	// FIXME get this from global weakFastRandom ???
 	private int						randomNumber	= new Random().nextInt();
 
 	private boolean					wasError		= false;
