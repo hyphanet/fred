@@ -139,9 +139,10 @@ public class SharedConnectionManager implements IConnectionManager, IUpdateManag
 	@Override
 	public void updated(String message) {
 		// The requestId that is notified
-		String requestId = Base64.decode(message.substring(0, message.indexOf(UpdaterConstants.SEPARATOR)));
+		int idx = message.indexOf(UpdaterConstants.SEPARATOR);
+		String requestId = Base64.decode(message.substring(0, idx));
 		// The message
-		String msg = message.substring(message.indexOf(UpdaterConstants.SEPARATOR) + 1);
+		String msg = message.substring(idx + 1);
 		FreenetJs.log("SharedConnectionManagaer updated:requestId:" + requestId);
 		// Checks if this tab is the destination of the message
 		if (requestId.compareTo(FreenetJs.requestId) == 0) {
