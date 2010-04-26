@@ -17,7 +17,7 @@ import freenet.support.SizeUtil;
 public class ProgressInfoElement extends BaseUpdateableElement {
 
 	private FProxyFetchTracker		tracker;
-	private FreenetURI				key;
+	private final FreenetURI		key;
 	private long					maxSize;
 	private NotifierFetchListener	fetchListener;
 	/** It displays more info on advanced mode */

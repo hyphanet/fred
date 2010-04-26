@@ -19,7 +19,7 @@ public class TesterElement extends BaseUpdateableElement {
 
 	Timer			t;
 
-	String			id;
+	final String	id;
 
 	public TesterElement(ToadletContext ctx, String id, int max) {
 		super("div","style","float:left;", ctx);
