@@ -70,9 +70,9 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 							// We need absolute URI
 							src = uriProcessor.makeURIAbsolute(uriProcessor.processURI(value, null, false, false));
 						} catch (CommentException ce) {
-							src = value;
+							return null;
 						} catch (URISyntaxException use) {
-							src = value;
+							return null;
 						}
 						if (src.startsWith("/")) {
 							src = src.substring(1);
