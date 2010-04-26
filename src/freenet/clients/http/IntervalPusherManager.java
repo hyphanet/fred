@@ -20,21 +20,22 @@ public class IntervalPusherManager {
 	private final Ticker				ticker;
 
 	/** The job, that will refresh the elements */
-	private Runnable					refresherJob	= new Runnable() {
-
-															public void run() {
-																// Updating
-																for (BaseUpdateableElement element : elements) {
-																	pushDataManager.updateElement(element.getUpdaterId(null));
-																}
-
-																// If there are more elements, it reschedules
-																if (elements.size() > 0) {
-																	ticker.queueTimedJob(this, "Stats refresher", REFRESH_PERIOD, false, true);
-																}
-															}
-														};
-
+	private Runnable					refresherJob	= 
+		new Runnable() {
+		
+		public void run() {
+			// Updating
+			for (BaseUpdateableElement element : elements) {
+				pushDataManager.updateElement(element.getUpdaterId(null));
+			}
+			
+			// If there are more elements, it reschedules
+			if (elements.size() > 0) {
+				ticker.queueTimedJob(this, "Stats refresher", REFRESH_PERIOD, false, true);
+			}
+		}
+	};
+	
 	/** The elements that are pushed at a fixed interval */
 	private List<BaseUpdateableElement>	elements		= new CopyOnWriteArrayList<BaseUpdateableElement>();
 
