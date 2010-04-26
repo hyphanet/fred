@@ -253,7 +253,7 @@ public class PushDataManager {
 	 *            - The id of the request
 	 * @return Was a request deleted?
 	 */
-	private boolean deleteRequest(String requestId) {
+	private synchronized boolean deleteRequest(String requestId) {
 		if (logMINOR) {
 			Logger.minor(this, "DeleteRequest with requestId:" + requestId);
 		}
