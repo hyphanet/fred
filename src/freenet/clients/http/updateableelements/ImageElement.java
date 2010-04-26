@@ -32,6 +32,8 @@ public class ImageElement extends BaseUpdateableElement {
 
 	/** The tracker that the Fetcher can be acquired */
 	public FProxyFetchTracker		tracker;
+	/** The original URI */
+	public final FreenetURI			origKey;
 	/** The URI of the download this progress bar shows */
 	public FreenetURI				key;
 	/** The maxSize */
@@ -74,7 +76,7 @@ public class ImageElement extends BaseUpdateableElement {
 		}
 		this.originalImg = originalImg;
 		this.tracker = tracker;
-		this.key = key;
+		this.key = this.origKey = key;
 		this.maxSize = maxSize;
 		init();
 		// Creates and registers the FetchListener
@@ -127,7 +129,7 @@ public class ImageElement extends BaseUpdateableElement {
 
 	@Override
 	public String getUpdaterId(String requestId) {
-		return getId(key, randomNumber);
+		return getId(origKey, randomNumber);
 	}
 
 	public static String getId(FreenetURI uri, int randomNumber) {
@@ -142,7 +144,7 @@ public class ImageElement extends BaseUpdateableElement {
 	@Override
 	public void updateState(boolean initial) {
 		if (logMINOR) {
-			Logger.minor(this, "Updating ImageElement for url:" + key);
+			Logger.minor(this, "Updating ImageElement for url:" + key + (origKey == key ? (" originally " + origKey) : ""));
 		}
 		children.clear();
 		HTMLNode whenJsEnabled = new HTMLNode("span", "class", "jsonly ImageElement");
