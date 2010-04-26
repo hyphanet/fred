@@ -18,16 +18,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Set;
 import java.util.Vector;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
-
-import com.db4o.foundation.Collections4;
-import com.sun.corba.se.impl.ior.OldPOAObjectKeyTemplate;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.client.FetchResult;
@@ -67,8 +61,8 @@ import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
-import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
