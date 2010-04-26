@@ -311,6 +311,7 @@ public class PushDataManager {
 
 		@Override
 		public boolean equals(Object obj) {
+			if (obj == this) return true;
 			if (obj instanceof UpdateEvent) {
 				UpdateEvent o = (UpdateEvent) obj;
 				if (o.getRequestId().compareTo(requestId) == 0 && o.getElementId().compareTo(elementId) == 0) {
