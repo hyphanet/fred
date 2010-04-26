@@ -268,6 +268,7 @@ public class PushDataManager {
 		// Iterate over all the pushed elements present on the page
 		for (BaseUpdateableElement element : new ArrayList<BaseUpdateableElement>(pages.get(requestId))) {
 			pages.get(requestId).remove(element);
+			// FIXME why can't we just unconditionally remove(requestId) at the end?
 			if (pages.get(requestId).size() == 0) {
 				pages.remove(requestId);
 			}
