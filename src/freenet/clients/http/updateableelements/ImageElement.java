@@ -216,6 +216,7 @@ public class ImageElement extends BaseUpdateableElement {
 		}
 	}
 
+	// FIXME move this to some global utilities class.
 	private HTMLNode makeHtmlNodeForParsedTag(ParsedTag pt) {
 		List<String> attributeNames = new ArrayList<String>();
 		List<String> attributeValues = new ArrayList<String>();
