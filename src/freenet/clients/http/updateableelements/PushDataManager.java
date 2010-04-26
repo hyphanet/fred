@@ -107,10 +107,11 @@ public class PushDataManager {
 		}
 		pages.get(requestUniqueId).add(element);
 		// Add to the elements
-		if (elements.containsKey(element.getUpdaterId(requestUniqueId)) == false) {
-			elements.put(element.getUpdaterId(requestUniqueId), new ArrayList<String>());
+		String id = element.getUpdaterId(requestUniqueId);
+		if (elements.containsKey(id) == false) {
+			elements.put(id, new ArrayList<String>());
 		}
-		elements.get(element.getUpdaterId(requestUniqueId)).add(requestUniqueId);
+		elements.get(id).add(requestUniqueId);
 		// The request needs to be tracked
 		isKeepaliveReceived.put(requestUniqueId, true);
 
