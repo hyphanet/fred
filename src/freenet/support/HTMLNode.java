@@ -16,6 +16,9 @@ public class HTMLNode implements XMLCharacterClasses {
 
 	protected final String name;
 
+	/** Text to be inserted between tags, or possibly raw HTML. Only non-null if name
+	 * is "#" (= text) or "%" (= raw HTML). Otherwise the constructor will allocate a
+	 * separate child node to contain it. */
 	private String content;
 
 	private final Map<String, String> attributes = new HashMap<String, String>();
