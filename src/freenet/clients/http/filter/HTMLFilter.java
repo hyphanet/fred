@@ -29,7 +29,6 @@ import java.util.StringTokenizer;
 import java.util.Map.Entry;
 import java.util.Stack;
 
-import freenet.l10n.L10n;
 import java.io.FileReader;
 import java.io.FileWriter;
 import freenet.l10n.NodeL10n;

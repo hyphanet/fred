@@ -9,7 +9,6 @@ import freenet.clients.http.FProxyFetchWaiter;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;

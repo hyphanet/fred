@@ -8,7 +8,6 @@ import freenet.clients.http.ToadletContext;
 import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.updateableelements.ImageElement;
 import freenet.keys.FreenetURI;
-import freenet.l10n.L10n;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
 
@@ -47,7 +46,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 		StringBuilder l10nBuilder = new StringBuilder("var l10n={\n");
 		boolean isNamePresentAtLeastOnce=false;
 		for (String key : NodeL10n.getBase().getAllNamesWithPrefix("fproxy.push")) {
-			l10nBuilder.append(key.substring("fproxy.push".length() + 1) + ": \"" + HTMLEncoder.encode(L10n.getString(key)) + "\",\n");
+			l10nBuilder.append(key.substring("fproxy.push".length() + 1) + ": \"" + HTMLEncoder.encode(NodeL10n.getBase().getString(key)) + "\",\n");
 			isNamePresentAtLeastOnce=true;
 		}
 		String l10n = isNamePresentAtLeastOnce?l10nBuilder.substring(0, l10nBuilder.length() - 2):l10nBuilder.toString();
