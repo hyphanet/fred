@@ -41,7 +41,8 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 	 */
 	public abstract void updateState(boolean initial);
 
-	/** Returns the id, that identifies the element. It can depend on the request, but it might not use it. */
+	/** Returns the id, that identifies the element. It can depend on the request, but it might not use it. 
+	 * It should not change e.g. when we follow a redirect as it is used in internal structures to identify the element. */
 	public abstract String getUpdaterId(String requestId);
 
 	/** Returns the type of the client-side updater. */
