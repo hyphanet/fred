@@ -238,6 +238,10 @@ public class HTMLNode implements XMLCharacterClasses {
 		return tagBuffer.toString();
 	}
 	
+	public void setContent(String newContent){
+		content=newContent;
+	}
+	
 	public List<HTMLNode> getChildren(){
 		return children;
 	}
