@@ -613,6 +613,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
 						// If pushing is disabled, but js is enabled, then we add the original progresspage.js
 						if (ctx.getContainer().isFProxyWebPushingEnabled() == false) {
+							headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
 							HTMLNode scriptNode = headNode.addChild("script", "//abc");
 							scriptNode.addAttribute("type", "text/javascript");
 							scriptNode.addAttribute("src", "/static/js/progresspage.js");
