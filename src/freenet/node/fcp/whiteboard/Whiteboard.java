@@ -8,6 +8,10 @@ import java.util.Map;
 /**
  * This class implements a generic whiteboard. A whiteboard is an object that event listeners can register themselves, and event producers can broadcast their events. With this,
  * the producers can come and go, they aren't needed to be present for the event system to work.
+ * 
+ * LOCKING WARNING: THIS CLASS IS NOT SYNCHRONIZED! 
+ * If addListener() is only called during initialisation, and event is only called from one thread, this is okay.
+ * But it's not very generic!
  */
 public class Whiteboard {
 
