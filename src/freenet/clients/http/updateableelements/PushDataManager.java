@@ -271,9 +271,10 @@ public class PushDataManager {
 			if (pages.get(requestId).size() == 0) {
 				pages.remove(requestId);
 			}
-			elements.get(element.getUpdaterId(requestId)).remove(requestId);
-			if (elements.get(element.getUpdaterId(requestId)).size() == 0) {
-				elements.remove(element.getUpdaterId(requestId));
+			String id = element.getUpdaterId(requestId);
+			elements.get(id).remove(requestId);
+			if (elements.get(id).size() == 0) {
+				elements.remove(id);
 			}
 			element.dispose();
 			// Delete all notification originated from the deleted element
