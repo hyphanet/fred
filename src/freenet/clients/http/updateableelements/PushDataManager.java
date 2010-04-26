@@ -224,7 +224,8 @@ public class PushDataManager {
 		if (logMINOR) {
 			Logger.minor(this, "Polling for notification:" + requestId);
 		}
-		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0 || (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() != 0 && isFirstKeepaliveReceived.containsKey(awaitingNotifications.get(requestId).get(0).requestId)==false)) {
+		while (awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() == 0 || // No notifications 
+				(awaitingNotifications.get(requestId) != null && awaitingNotifications.get(requestId).size() != 0 && isFirstKeepaliveReceived.containsKey(awaitingNotifications.get(requestId).get(0).requestId)==false)) { // Not asked us yet
 			try {
 				wait();
 			} catch (InterruptedException ie) {
