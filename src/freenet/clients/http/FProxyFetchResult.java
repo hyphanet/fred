@@ -10,40 +10,40 @@ import freenet.support.api.Bucket;
 public class FProxyFetchResult {
 
 	/** If we have fetched the data, we know this. If we haven't, we might know it. */
-	final String mimeType;
+	public final String mimeType;
 	
 	/** If we have fetched the data, we know this. If we haven't, we might know it. */
-	final long size;
+	public final long size;
 	
 	/** If we have fetched the data */
 	final Bucket data;
 	
 	/** If we have not fetched the data */
 	/** Creation time */
-	final long timeStarted;
+	public final long timeStarted;
 	/** Gone to network? */
-	final boolean goneToNetwork;
+	public final boolean goneToNetwork;
 	/** Total blocks */
-	final int totalBlocks;
+	public final int totalBlocks;
 	/** Required blocks */
-	final int requiredBlocks;
+	public final int requiredBlocks;
 	/** Fetched blocks */
-	final int fetchedBlocks;
+	public final int fetchedBlocks;
 	/** Failed blocks */
-	final int failedBlocks;
+	public final int failedBlocks;
 	/** Fatally failed blocks */
-	final int fatallyFailedBlocks;
+	public final int fatallyFailedBlocks;
 	/** Finalized blocks? */
-	final boolean finalizedBlocks;
+	public final boolean finalizedBlocks;
 	
 	
 	/** Failed */
-	final FetchException failed;
+	public final FetchException failed;
 	
 	final FProxyFetchInProgress progress;
 	final boolean hasWaited;
 
-	final long eta;
+	public final long eta;
 
 	/** Constructor when we are returning the data */
 	FProxyFetchResult(FProxyFetchInProgress parent, Bucket data, String mimeType, long timeStarted, boolean goneToNetwork, long eta, boolean hasWaited) {
@@ -90,6 +90,10 @@ public class FProxyFetchResult {
 
 	public boolean hasWaited() {
 		return hasWaited;
+	}
+	
+	public boolean isFinished(){
+		return progress.finished();
 	}
 	
 }

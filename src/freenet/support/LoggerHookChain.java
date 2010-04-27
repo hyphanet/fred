@@ -51,7 +51,7 @@ public class LoggerHookChain extends LoggerHook {
      */
     public synchronized void addHook(LoggerHook lh) {
         LoggerHook[] newHooks = new LoggerHook[hooks.length+1];
-        System.arraycopy(newHooks, 0, hooks, 0, hooks.length);
+        System.arraycopy(hooks, 0, newHooks, 0, hooks.length);
         newHooks[hooks.length] = lh;
         hooks = newHooks;
     }

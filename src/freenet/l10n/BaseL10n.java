@@ -14,6 +14,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.MissingResourceException;
 
 /**
@@ -51,6 +54,7 @@ public class BaseL10n {
 		// simplified chinese, used on mainland, Singapore and Malaysia
 		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw", new String[] { "WINDOWS0404", "WINDOWS0C04", "WINDOWS1404" }), 
 		// traditional chinese, used in Taiwan, Hong Kong and Macau
+		RUSSIAN("ru", "русский", "rus", new String[] { "WINDOWS0419" }), // Just one variant for russian. Belorussian is separate, code page 423, speakers may or may not speak russian, I'm not including it.
 		UNLISTED("unlisted", "unlisted", "unlisted", new String[] {});
 		/** The identifier we use internally : MUST BE UNIQUE! */
 		public final String shortCode;
@@ -488,5 +492,20 @@ public class BaseL10n {
 			result = result.replaceAll("\\$\\{" + patterns[i] + "\\}", quoteReplacement(values[i]));
 		}
 		node.addChild("%", result);
+	}
+	
+	public String[] getAllNamesWithPrefix(String prefix){
+		if(fallbackTranslation==null){
+			return new String[]{};
+		}
+		List<String> toReturn=new ArrayList<String>();
+		Iterator<String> it= fallbackTranslation.keyIterator();
+		while(it.hasNext()){
+			String key=it.next();
+			if(key.startsWith(prefix)){
+				toReturn.add(key);
+			}
+		}
+		return toReturn.toArray(new String[toReturn.size()]);
 	}
 }

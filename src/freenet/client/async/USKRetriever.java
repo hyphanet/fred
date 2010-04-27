@@ -71,7 +71,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 			context.uskManager.updateKnownGood(origUSK, state.getToken(), context);
 			return;
 		}
-		Logger.error(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
+		Logger.warning(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
 	}
 
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {

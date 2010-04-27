@@ -3,26 +3,25 @@ package freenet.support;
 import junit.framework.TestCase;
 
 public class UpdatableSortedLinkedListTest extends TestCase {
-	private static class T extends UpdatableSortedLinkedListItemImpl {
-		private DoublyLinkedList parent;
+	private static class T extends UpdatableSortedLinkedListItemImpl<T> {
+		private DoublyLinkedList<? super T> parent;
 		private int value;
 
 		public T(int v) {
 			this.value = v;
 		}
 
-		public DoublyLinkedList getParent() {
+		public DoublyLinkedList<? super T> getParent() {
 			return parent;
 		}
 
-		public DoublyLinkedList setParent(DoublyLinkedList l) {
-			DoublyLinkedList old = parent;
+		public DoublyLinkedList<? super T> setParent(DoublyLinkedList<? super T> l) {
+			DoublyLinkedList<? super T> old = parent;
 			parent = l;
 			return old;
 		}
 
-		public int compareTo(Object o) {
-			T t = (T) o;
+		public int compareTo(T t) {
 			return t.value == value ? 0 : t.value > value ? -1 : 1;
 		}
 
@@ -51,7 +50,7 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 	}
 
 	public void testAdd1() throws UpdatableSortedLinkedListKilledException {
-		UpdatableSortedLinkedList l = new UpdatableSortedLinkedList();
+		UpdatableSortedLinkedList<T> l = new UpdatableSortedLinkedList<T>();
 		l.debug = true;
 
 		assertTrue("isEmpty()", l.isEmpty());
@@ -69,7 +68,7 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 		l.add(new T(4));
 		l.add(new T(-4));
 		assertEquals("size()", 11, l.size());
-		
+
 		UpdatableSortedLinkedListItem[] a = l.toArray();
 		assertEquals(((T)a[0]).value , -5);
 		assertEquals(((T)a[1]).value , -4);
@@ -82,31 +81,31 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 		assertEquals(((T)a[8]).value , 3);
 		assertEquals(((T)a[9]).value , 4);
 		assertEquals(((T)a[10]).value , 5);
-		
 
-		((T) l.getLowest()).assertV(-5);
-		((T) l.removeLowest()).assertV(-5);
+
+		(l.getLowest()).assertV(-5);
+		(l.removeLowest()).assertV(-5);
 		assertFalse("isEmpty()", l.isEmpty());
 		assertEquals("size()", 10, l.size());
-		((T) l.removeLowest()).assertV(-4);
-		((T) l.removeLowest()).assertV(-3);
-		((T) l.getLowest()).assertV(-2);
-		((T) l.removeLowest()).assertV(-2);
-		((T) l.removeLowest()).assertV(-1);
-		((T) l.removeLowest()).assertV(0);
-		((T) l.removeLowest()).assertV(1);
-		((T) l.removeLowest()).assertV(2);
-		((T) l.removeLowest()).assertV(3);
-		((T) l.removeLowest()).assertV(4);
-		((T) l.removeLowest()).assertV(5);
+		(l.removeLowest()).assertV(-4);
+		(l.removeLowest()).assertV(-3);
+		(l.getLowest()).assertV(-2);
+		(l.removeLowest()).assertV(-2);
+		(l.removeLowest()).assertV(-1);
+		(l.removeLowest()).assertV(0);
+		(l.removeLowest()).assertV(1);
+		(l.removeLowest()).assertV(2);
+		(l.removeLowest()).assertV(3);
+		(l.removeLowest()).assertV(4);
+		(l.removeLowest()).assertV(5);
 		assertTrue("isEmpty()", l.isEmpty());
 		assertEquals("size()", 0, l.size());
 	}
 
 	public void testUpdate() throws UpdatableSortedLinkedListKilledException {
-		UpdatableSortedLinkedList l = new UpdatableSortedLinkedList();
+		UpdatableSortedLinkedList<T> l = new UpdatableSortedLinkedList<T>();
 		l.debug = true;
-		
+
 		T[] t = new T[] { new T(0), new T(1), new T(2), new T(3), new T(4) };
 
 		l.add(t[0]);
@@ -134,19 +133,19 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 		assertSame(t[2], l.removeLowest());
 		assertSame(t[0], l.removeLowest());
 	}
-	
+
 	public void testClearKill() throws UpdatableSortedLinkedListKilledException {
-		UpdatableSortedLinkedList l = new UpdatableSortedLinkedList();
+		UpdatableSortedLinkedList<T> l = new UpdatableSortedLinkedList<T>();
 		l.debug = true;
-		
+
 		l.add(new T(2));
 		l.add(new T(5));
 		l.add(new T(-1));
 		l.add(new T(-5));
-		
+
 		l.clear();
 		assertEquals(l.size(), 0);
-		
+
 		l.add(new T(3));
 		l.add(new T(0));
 		l.add(new T(1));
@@ -162,7 +161,7 @@ public class UpdatableSortedLinkedListTest extends TestCase {
 		assertEquals(((T)a[3]).value , 1);
 		assertEquals(((T)a[4]).value ,3);
 		assertEquals(((T)a[5]).value , 4);
-		
+
 		l.kill();
 		assertEquals(l.size(), 0);
 		try {

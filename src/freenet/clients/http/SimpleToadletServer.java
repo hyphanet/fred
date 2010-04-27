@@ -17,6 +17,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
+import freenet.clients.http.updateableelements.PushDataManager;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -30,6 +31,7 @@ import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevelListener;
+import freenet.node.Ticker;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.Executor;
@@ -96,8 +98,15 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	volatile static boolean noConfirmPanic;
 	public BookmarkManager bookmarkManager;				// move to WelcomeToadlet / BookmarkEditorToadlet ?
 	private volatile boolean fProxyJavascriptEnabled;	// ugh?
+	private volatile boolean fProxyWebPushingEnabled;	// ugh?
 	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	private volatile boolean disableProgressPage;
+	
+	/** The PushDataManager handles all the pushing tasks*/
+	public PushDataManager pushDataManager; 
+	
+	/** The IntervalPusherManager handles interval pushing*/
+	public IntervalPusherManager intervalPushManager;
 	
 	// Config Callbacks
 	private class FProxySSLCallback extends BooleanCallback  {
@@ -295,6 +304,27 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	private static class FProxyWebPushingEnabledCallback extends BooleanCallback{
+		
+		private final SimpleToadletServer ts;
+		
+		FProxyWebPushingEnabledCallback(SimpleToadletServer ts){
+			this.ts=ts;
+		}
+		
+		@Override
+		public Boolean get() {
+			return ts.isFProxyWebPushingEnabled();
+		}
+		
+		@Override
+		public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+			if (get().equals(val))
+				return;
+				ts.enableFProxyWebPushing(val);
+		}
+	}
+	
 	private boolean haveCalledFProxy = false;
 	
 	public void createFproxy() {
@@ -302,6 +332,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			if(haveCalledFProxy) return;
 			haveCalledFProxy = true;
 		}
+		
+		pushDataManager=new PushDataManager(getTicker());
+		intervalPushManager=new IntervalPusherManager(getTicker(), pushDataManager);
 		bookmarkManager = new BookmarkManager(core);
 		try {
 			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
@@ -361,6 +394,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		fproxyConfig.register("javascriptEnabled", true, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
+		fproxyConfig.register("webPushingEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.enableWP", "SimpleToadletServer.enableWPLong", new FProxyWebPushingEnabledCallback(this));
 		fproxyConfig.register("hasCompletedWizard", false, configItemOrder++, true, false, "SimpleToadletServer.hasCompletedWizard", "SimpleToadletServer.hasCompletedWizardLong",
 				new BooleanCallback() {
 					@Override
@@ -390,6 +424,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		fproxyHasCompletedWizard = fproxyConfig.getBoolean("hasCompletedWizard");
 		fProxyJavascriptEnabled = fproxyConfig.getBoolean("javascriptEnabled");
+		fProxyWebPushingEnabled = fproxyConfig.getBoolean("webPushingEnabled");
 		disableProgressPage = fproxyConfig.getBoolean("disableProgressPage");
 		enableExtendedMethodHandling = fproxyConfig.getBoolean("enableExtendedMethodHandling");
 
@@ -575,6 +610,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		StaticToadlet statictoadlet = new StaticToadlet();
 		register(statictoadlet, null, "/static/", false, false);
+
 		
 		// "Freenet is starting up..." page, to be removed at #removeStartupToadlet()
 		startupToadlet = new StartupToadlet(statictoadlet);
@@ -798,6 +834,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	public synchronized void enableFProxyJavascript(boolean b){
 		fProxyJavascriptEnabled = b;
 	}
+	
+	public synchronized boolean isFProxyWebPushingEnabled() {
+		return this.fProxyWebPushingEnabled;
+	}
+	
+	public synchronized void enableFProxyWebPushing(boolean b){
+		fProxyWebPushingEnabled = b;
+	}
 
 	public String getFormPassword() {
 		if(core == null) return "";
@@ -880,6 +924,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public PageMaker getPageMaker() {
 		return pageMaker;
+	}
+	
+	public Ticker getTicker(){
+		return core.node.ps;
+	}
+	
+	public NodeClientCore getCore(){
+		return core;
 	}
 
 }

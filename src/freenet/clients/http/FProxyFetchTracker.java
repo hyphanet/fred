@@ -42,20 +42,16 @@ public class FProxyFetchTracker implements Runnable {
 		this.rc = rc;
 	}
 	
-	FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) throws FetchException {
+	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) throws FetchException {
 		FProxyFetchInProgress progress;
 		/* LOCKING:
 		 * Call getWaiter() inside the fetchers lock, since we will purge old 
 		 * fetchers inside that lock, hence avoid a race condition. FetchInProgress 
 		 * lock is always taken last. */
 		synchronized(fetchers) {
-			if(fetchers.containsKey(key)) {
-				Object[] check = fetchers.getArray(key);
-				for(int i=0;i<check.length;i++) {
-					progress = (FProxyFetchInProgress) check[i];
-					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
-							|| progress.hasData()) return progress.getWaiter();
-				}
+			FProxyFetchWaiter waiter=makeWaiterForFetchInProgress(key, maxSize);
+			if(waiter!=null){
+				return waiter;
 			}
 			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx, rc);
 			fetchers.put(key, progress);
@@ -72,6 +68,35 @@ public class FProxyFetchTracker implements Runnable {
 		return progress.getWaiter();
 		// FIXME promote a fetcher when it is re-used
 		// FIXME get rid of fetchers over some age
+	}
+	
+	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key,long maxSize){
+		FProxyFetchInProgress progress=getFetchInProgress(key, maxSize);
+		if(progress!=null){
+			return progress.getWaiter();
+		}
+		return null;
+	}
+	
+	/** Gets an FProxyFetchInProgress identified by the URI and the maxsize. If no such FetchInProgress exists, then returns null.
+	 * @param key - The URI of the fetch
+	 * @param maxSize - The maxSize of the fetch
+	 * @return The FetchInProgress if found, null otherwise*/
+	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize){
+		FProxyFetchInProgress progress;
+		synchronized (fetchers) {
+			if(fetchers.containsKey(key)) {
+				Object[] check = fetchers.getArray(key);
+				for(int i=0;i<check.length;i++) {
+					progress = (FProxyFetchInProgress) check[i];
+					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
+							|| progress.hasData()){
+						return progress;
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	public void queueCancel(FProxyFetchInProgress progress) {
@@ -103,21 +128,28 @@ public class FProxyFetchTracker implements Runnable {
 				FreenetURI uri = (FreenetURI) e.nextElement();
 				// Really horrible hack, FIXME
 				Vector<FProxyFetchInProgress> list = (Vector<FProxyFetchInProgress>) fetchers.iterateAll(uri);
-				for(FProxyFetchInProgress f : list)
+				for(FProxyFetchInProgress f : list){
 					// FIXME remove on the fly, although cancel must wait
 					if(f.canCancel()) {
 						if(toRemove == null) toRemove = new ArrayList<FProxyFetchInProgress>();
 						toRemove.add(f);
 					}
+				}
 			}
 			if(toRemove != null)
 			for(FProxyFetchInProgress r : toRemove) {
+				if(logMINOR){
+					Logger.minor(this,"Removed fetchinprogress:"+r);
+				}
 				fetchers.removeElement(r.uri, r);
 			}
 		}
 		if(toRemove != null)
-		for(FProxyFetchInProgress r : toRemove)
+		for(FProxyFetchInProgress r : toRemove) {
+			if(logMINOR)
+				Logger.minor(this, "Cancelling for "+r);
 			r.finishCancel();
+		}
 		if(needRequeue)
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
 	}

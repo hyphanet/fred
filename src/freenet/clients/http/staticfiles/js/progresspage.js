@@ -37,7 +37,7 @@ function substringTillClosing(str,fromIndex){
 			opentags--;
 		}else if(str.charAt(i)=="<"){
 			opentags++;
-		}else if(str.charAt(i)=="/" && str.charAt(i)==">"){
+		}else if(str.charAt(i)=="/" && str.charAt(i+1)==">"){
 			opentags--;
 		}
 		if(opentags==-1){

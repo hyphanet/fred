@@ -1,6 +1,5 @@
 package freenet.clients.http;
 
-import freenet.node.SecurityLevels;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -9,9 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import freenet.clients.http.filter.PushingTagReplacerCallback;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
+import freenet.node.SecurityLevels;
 import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -235,6 +236,8 @@ public final class PageMaker {
 		HTMLNode headNode = htmlNode.addChild("head");
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
 		headNode.addChild("title", title + " - Freenet");
+		//To make something only rendered when javascript is on, then add the jsonly class to it
+		headNode.addChild("noscript").addChild("style"," .jsonly {display:none;}");
 		if(override == null)
 			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
 		else
@@ -243,6 +246,10 @@ public final class PageMaker {
 			String themeName = t.code;
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
+		
+		// Add the generated javascript, if it and pushing is enabled
+		if (ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled()) headNode.addChild("script", new String[] { "type", "language", "src" }, new String[] {
+				"text/javascript", "javascript", "/static/freenetjs/freenetjs.nocache.js" });
 		
 		Toadlet t;
 		if (ctx != null) {
@@ -253,18 +260,27 @@ public final class PageMaker {
 		String activePath = "";
 		if(t != null) activePath = t.path();
 		HTMLNode bodyNode = htmlNode.addChild("body");
+		//Add a hidden input that has the request's id
+		bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
+		
+		// Add the client-side localization only when pushing is enabled
+		if (ctx.getContainer().isFProxyWebPushingEnabled()) {
+			bodyNode.addChild("script", new String[] { "type", "language" }, new String[] { "text/javascript", "javascript" }).addChild("%", PushingTagReplacerCallback.getClientSideLocalizationScript());
+		}
+		
 		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
 		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
 
 		final HTMLNode statusBarDiv = pageDiv.addChild("div", "id", "statusbar-container").addChild("div", "id", "statusbar");
 
-		if (node != null && node.clientCore != null) {
-			final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
-			if (alerts != null) {
-				statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
-				statusBarDiv.addChild("div", "class", "separator", "\u00a0");
-			}
-		}
+		 if (node != null && node.clientCore != null) {
+			 final HTMLNode alerts = node.clientCore.alerts.createSummary(true);
+			 if (alerts != null) {
+				 statusBarDiv.addChild(alerts).addAttribute("id", "statusbar-alerts");
+				 statusBarDiv.addChild("div", "class", "separator", "\u00a0");
+			 }
+		 }
+	
 
 		statusBarDiv.addChild("div", "id", "statusbar-language").addChild("a", "href", "/config/node#l10n", NodeL10n.getBase().getSelectedLanguage().fullName);
 

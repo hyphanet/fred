@@ -14,9 +14,11 @@ import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -60,6 +62,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
 import freenet.node.OpennetManager.ConnectionType;
+import freenet.node.PeerManager.PeerStatusChangeListener;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -68,6 +71,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.WeakHashSet;
 import freenet.support.WouldBlockException;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
@@ -343,6 +347,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int listeningHandshakeBurstCount;
 	/** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
 	private int listeningHandshakeBurstSize;
+	
+	/** The set of the listeners that needs to be notified when status changes. It uses WeakReference, so there is no need to deregister*/
+	private Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
 	
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
 	protected NodeCrypto crypto;
@@ -3247,8 +3254,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public int setPeerNodeStatus(long now, boolean noLog) {
 		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
+		int oldPeerNodeStatus;
 		synchronized(this) {
-			int oldPeerNodeStatus = peerNodeStatus;
+			oldPeerNodeStatus = peerNodeStatus;
 			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntil);
 
 			if(peerNodeStatus != oldPeerNodeStatus && recordStatus()) {
@@ -3256,6 +3264,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				peers.addPeerNodeStatus(peerNodeStatus, this, noLog);
 			}
 
+		}
+		if(peerNodeStatus!=oldPeerNodeStatus){
+			notifyPeerNodeStatusChangeListeners();
 		}
 		return peerNodeStatus;
 	}
@@ -4369,6 +4380,22 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public int countFailedRevocationTransfers() {
 		return countFailedRevocationTransfers;
 	}
+	
+	/** Registers a listener that will be notified when status changes. Only the WeakReference of it is stored, so there is no need for deregistering
+	 * @param listener - The listener to be registered*/
+	public void registerPeerNodeStatusChangeListener(PeerManager.PeerStatusChangeListener listener){
+		listeners.add(listener);
+	}
+	
+	/** Notifies the listeners that status has been changed*/
+	private void notifyPeerNodeStatusChangeListeners(){
+		synchronized (listeners) {
+			for(PeerManager.PeerStatusChangeListener l:listeners){
+				l.onPeerStatusChange();
+			}
+		}
+	}
+	
 
 	public boolean isLowUptime() {
 		return getUptime() < Node.MIN_UPTIME_STORE_KEY;

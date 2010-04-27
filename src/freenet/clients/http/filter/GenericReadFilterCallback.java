@@ -13,6 +13,7 @@ import java.util.HashSet;
 
 import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
+import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
@@ -22,7 +23,7 @@ import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.api.HTTPRequest;
 
-public class GenericReadFilterCallback implements FilterCallback {
+public class GenericReadFilterCallback implements FilterCallback, URIProcessor {
 	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 	public static final HashSet<String> allowedProtocols;
 	
@@ -43,18 +44,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 	private URI baseURI;
 	private URI strippedBaseURI;
 	private final FoundURICallback cb;
+	private final TagReplacerCallback trc;
 	
-	public GenericReadFilterCallback(URI uri, FoundURICallback cb) {
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb,TagReplacerCallback trc) {
 		this.baseURI = uri;
 		this.cb = cb;
+		this.trc=trc;
 		setStrippedURI(uri.toString());
 	}
 	
-	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb) {
+	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb,TagReplacerCallback trc) {
 		try {
 			this.baseURI = uri.toRelativeURI();
 			setStrippedURI(baseURI.toString());
 			this.cb = cb;
+			this.trc=trc;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
@@ -230,6 +234,10 @@ public class GenericReadFilterCallback implements FilterCallback {
 			throw new CommentException(l10n("protocolNotEscaped", "protocol", uri.getScheme()));
 		}
 	}
+	
+	public String makeURIAbsolute(String uri) throws URISyntaxException{
+		return baseURI.resolve(URIPreEncoder.encodeURI(uri).normalize()).toASCIIString();
+	}
 
 	private static String l10n(String key, String pattern, String value) {
 		return NodeL10n.getBase().getString("GenericReadFilterCallback."+key, pattern, value);
@@ -397,6 +405,17 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		// Otherwise disallow.
 		return null;
+	}
+	
+	/** Processes a tag. It calls the TagReplacerCallback if present.
+	 * @param pt - The tag, that needs to be processed
+	 * @return The replacement for the tag, or null, if no replacement needed*/
+	public String processTag(ParsedTag pt) {
+		if(trc!=null){
+			return trc.processTag(pt,this);
+		}else{
+			return null;
+		}
 	}
 
 	public static String escapeURL(String uri) {

@@ -416,7 +416,7 @@ public class TextModeClientInterface implements Runnable {
     	final String content = readLines(reader, false);
     	final Bucket data = new ArrayBucket(content.getBytes("UTF-8"));
     	try {
-    		FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "text/html", new URI("http://127.0.0.1:8888/"), null, null);
+    		FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
     		
     		BufferedInputStream bis = new BufferedInputStream(output.data.getInputStream());
     		while(bis.available() > 0){

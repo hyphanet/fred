@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
@@ -109,6 +110,9 @@ public class PeerManager {
 	public static final int PEER_NODE_STATUS_CONN_ERROR = 12;
 	public static final int PEER_NODE_STATUS_DISCONNECTING = 13;
 	public static final int PEER_NODE_STATUS_ROUTING_DISABLED = 14;
+	
+	/** The list of listeners that needs to be notified when peers' statuses changed*/
+	private List<PeerStatusChangeListener> listeners=new CopyOnWriteArrayList<PeerStatusChangeListener>();
 
 	/**
 	 * Create a PeerManager by reading a list of peers from
@@ -280,6 +284,7 @@ public class PeerManager {
 			}
 		}
 
+		notifyPeerStatusChangeListeners();
 		return true;
 	}
 
@@ -338,6 +343,7 @@ public class PeerManager {
 		pn.onRemove();
 		if(isInPeers)
 			updatePMUserAlert();
+		notifyPeerStatusChangeListeners();
 		return true;
 	}
 
@@ -351,6 +357,7 @@ public class PeerManager {
 		}
 		for(int i = 0; i < oldPeers.length; i++)
 			oldPeers[i].onRemove();
+		notifyPeerStatusChangeListeners();
 		return true;
 	}
 
@@ -1453,10 +1460,6 @@ public class PeerManager {
 			}
 			Logger.normal(this, "Connected: " + numberOfConnected + "  Routing Backed Off: " + numberOfRoutingBackedOff + "  Too New: " + numberOfTooNew + "  Too Old: " + numberOfTooOld + "  Disconnected: " + numberOfDisconnected + "  Never Connected: " + numberOfNeverConnected + "  Disabled: " + numberOfDisabled + "  Bursting: " + numberOfBursting + "  Listening: " + numberOfListening + "  Listen Only: " + numberOfListenOnly + "  Clock Problem: " + numberOfClockProblem + "  Connection Problem: " + numberOfConnError + "  Disconnecting: " + numberOfDisconnecting);
 			nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
-			
-			int numberOfAvailablePeers = numberOfConnected + numberOfRoutingBackedOff;
-			
-			node.displayClockProblemUserAlert(numberOfClockProblem > (numberOfAvailablePeers / 4));
 		}
 	}
 
@@ -1768,6 +1771,7 @@ public class PeerManager {
 			connectedPeers = keep.toArray(new PeerNode[conn.size()]);
 		}
 		updatePMUserAlert();
+		notifyPeerStatusChangeListeners();
 	}
 
 	public PeerNode containsPeer(PeerNode pn) {
@@ -1921,5 +1925,36 @@ public class PeerManager {
 	private void incrementSelectionSamples(long now, PeerNode pn) {
 		// TODO: reimplement with a bit field to spare memory
 		pn.incrementNumberOfSelections(now);
+	}
+	
+	/** Notifies the listeners about status change*/
+	private void notifyPeerStatusChangeListeners(){
+		for(PeerStatusChangeListener l:listeners){
+			l.onPeerStatusChange();
+			for(PeerNode pn:myPeers){
+				pn.registerPeerNodeStatusChangeListener(l);
+			}
+		}
+	}
+	
+	/** Registers a listener to be notified when peers' statuses changes
+	 * @param listener - the listener to be registered*/
+	public void addPeerStatusChangeListener(PeerStatusChangeListener listener){
+		listeners.add(listener);
+		for(PeerNode pn:myPeers){
+			pn.registerPeerNodeStatusChangeListener(listener);
+		}
+	}
+	
+	/** Removes a listener
+	 * @param listener - The listener to be removed*/
+	public void removePeerStatusChangeListener(PeerStatusChangeListener listener){
+		listeners.remove(listener);
+	}
+	
+	/** A listener interface that can be used to be notified about peer status change events*/
+	public static interface PeerStatusChangeListener{
+		/** Peers status have changed*/
+		public void onPeerStatusChange();
 	}
 }

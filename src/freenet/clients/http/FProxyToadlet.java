@@ -8,7 +8,6 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,11 +19,22 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.ClientContext;
+import freenet.clients.http.ajaxpush.DismissAlertToadlet;
+import freenet.clients.http.ajaxpush.LogWritebackToadlet;
+import freenet.clients.http.ajaxpush.PushDataToadlet;
+import freenet.clients.http.ajaxpush.PushFailoverToadlet;
+import freenet.clients.http.ajaxpush.PushKeepaliveToadlet;
+import freenet.clients.http.ajaxpush.PushLeavingToadlet;
+import freenet.clients.http.ajaxpush.PushNotificationToadlet;
+import freenet.clients.http.ajaxpush.PushTesterToadlet;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
+import freenet.clients.http.filter.PushingTagReplacerCallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
+import freenet.clients.http.updateableelements.ProgressBarElement;
+import freenet.clients.http.updateableelements.ProgressInfoElement;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
@@ -42,12 +52,12 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
-import freenet.support.TimeUtil;
 import freenet.support.URIPreEncoder;
 import freenet.support.URLEncoder;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -82,7 +92,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 	
-	public FProxyToadlet(final HighLevelSimpleClient client, NodeClientCore core) {
+	public FProxyToadlet(final HighLevelSimpleClient client, NodeClientCore core, FProxyFetchTracker tracker) {
 		super(client);
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
@@ -105,7 +115,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				}
 				
 			};
-		fetchTracker = new FProxyFetchTracker(context, getClientImpl().getFetchContext(), this);
+		fetchTracker = tracker;
 	}
 
 	public void handleMethodPOST(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -146,7 +156,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		Bucket tmpRange = null;
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null, maybeCharset);
+				//Horrible hack needed for GWT as it relies on document.write() which is not supported in xhtml
+				if(mimeType.compareTo("application/xhtml+xml")==0){
+					mimeType="text/html";
+				}
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null,new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx), maybeCharset);
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;
@@ -356,7 +370,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		}
 	}
 	
-	private static String l10n(String msg) {
+	public static String l10n(String msg) {
 		return NodeL10n.getBase().getString("FProxyToadlet."+msg);
 	}
 
@@ -596,11 +610,14 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				HTMLNode headNode=page.headNode;
 				if(isJsEnabled){
 					//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
-					//And the script file
 					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
-					HTMLNode scriptNode=headNode.addChild("script","//abc");
-					scriptNode.addAttribute("type", "text/javascript");
-					scriptNode.addAttribute("src", "/static/js/progresspage.js");
+						// If pushing is disabled, but js is enabled, then we add the original progresspage.js
+						if (ctx.getContainer().isFProxyWebPushingEnabled() == false) {
+							headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
+							HTMLNode scriptNode = headNode.addChild("script", "//abc");
+							scriptNode.addAttribute("type", "text/javascript");
+							scriptNode.addAttribute("src", "/static/js/progresspage.js");
+						}
 				}else{
 					//If he disabled it, we just put the http refresh meta, without the noscript
 					headNode.addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
@@ -610,55 +627,15 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
-				infoboxContent.addChild("#", l10n("filenameLabel")+ " ");
-				infoboxContent.addChild("a", "href", "/"+key.toString(false, false), key.getPreferredFilename());
-				if(fr.mimeType != null) infoboxContent.addChild("br", l10n("contentTypeLabel")+" "+fr.mimeType);
-				if(fr.size > 0) infoboxContent.addChild("br", "Size: "+SizeUtil.formatSize(fr.size));
-				if(core.isAdvancedModeEnabled()) {
-					infoboxContent.addChild("br", l10n("blocksDetail", 
-							new String[] { "fetched", "required", "total", "failed", "fatallyfailed" },
-							new String[] { Integer.toString(fr.fetchedBlocks), Integer.toString(fr.requiredBlocks), Integer.toString(fr.totalBlocks), Integer.toString(fr.failedBlocks), Integer.toString(fr.fatallyFailedBlocks) }));
-				}
-				long elapsed = System.currentTimeMillis() - fr.timeStarted;
-				infoboxContent.addChild("br", l10n("timeElapsedLabel")+" "+TimeUtil.formatTime(elapsed));
-				long eta = fr.eta - elapsed;
-				if(eta > 0)
-					infoboxContent.addChild("br", "ETA: "+TimeUtil.formatTime(eta));
-				if(fr.goneToNetwork)
-					infoboxContent.addChild("p", l10n("progressDownloading"));
-				else
-					infoboxContent.addChild("p", l10n("progressCheckingStore"));
-				if(!fr.finalizedBlocks)
-					infoboxContent.addChild("p", l10n("progressNotFinalized"));
+				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, maxSize, core.isAdvancedModeEnabled(), ctx));
+
 				
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
 				HTMLNode progressCell = table.addChild("tr").addChild("td", "class", "request-progress");
 				if(fr.totalBlocks <= 0)
 					progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 				else {
-					int total = fr.requiredBlocks;
-					int fetchedPercent = (int) (fr.fetchedBlocks / (double) total * 100);
-					int failedPercent = (int) (fr.failedBlocks / (double) total * 100);
-					int fatallyFailedPercent = (int) (fr.fatallyFailedBlocks / (double) total * 100);
-					HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
-					progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
-
-					if (fr.failedBlocks > 0)
-						progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
-					if (fr.fatallyFailedBlocks > 0)
-						progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
-					
-					NumberFormat nf = NumberFormat.getInstance();
-					nf.setMaximumFractionDigits(1);
-					String prefix = '('+Integer.toString(fr.fetchedBlocks) + "/ " + Integer.toString(total)+"): ";
-					if (fr.finalizedBlocks) {
-						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + NodeL10n.getBase().getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0) + '%');
-					} else {
-						String text = nf.format((int) ((fr.fetchedBlocks / (double) total) * 1000) / 10.0)+ '%';
-						text = "" + fr.fetchedBlocks + " ("+text+"??)";
-						progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + NodeL10n.getBase().getString("QueueToadlet.progressbarNotAccurate") }, text);
-					}
-
+					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,ctx));
 				}
 				
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
@@ -688,18 +665,47 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
 			if(data == null && fe == null) {
-			FetchResult result = fetch(key, maxSize, new RequestClient() {
-				public boolean persistent() {
-					return false;
+				boolean needsFetch=true;
+				//If we don't have the data, then check if an FProxyFetchInProgress has. It can happen when one FetchInProgress downloaded an image
+				//asynchronously, then loads it. This way a FetchInprogress will have the full image, and no need to block.
+				FProxyFetchInProgress progress=fetchTracker.getFetchInProgress(key, maxSize);
+				if(progress!=null){
+					FProxyFetchWaiter waiter=null;
+					FProxyFetchResult result=null;
+					try{
+						waiter=progress.getWaiter();
+						result=waiter.getResult();
+						if(result.failed==null && result.data!=null){
+							mimeType=result.mimeType;
+							data=result.data;
+							data=ctx.getBucketFactory().makeBucket(result.data.size());
+							BucketTools.copy(result.data, data);
+							needsFetch=false;
+						}
+					}finally{
+						if(waiter!=null){
+							progress.close(waiter);
+						}
+						if(result!=null){
+							progress.close(result);
+						}
+					}
 				}
-				public void removeFrom(ObjectContainer container) {
-					throw new UnsupportedOperationException();
-				} }); 
-			
-			// Now, is it safe?
-			
-			data = result.asBucket();
-			mimeType = result.getMimeType();
+				if(needsFetch){
+					//If we don't have the data, then we need to fetch it and block until it is available
+					FetchResult result = fetch(key, maxSize, new RequestClient() {
+						public boolean persistent() {
+							return false;
+						}
+						public void removeFrom(ObjectContainer container) {
+							throw new UnsupportedOperationException();
+						} }); 
+					
+					// Now, is it safe?
+					
+					data = result.asBucket();
+					mimeType = result.getMimeType();
+				}
 			} else if(fe != null) throw fe;
 			
 			
@@ -873,7 +879,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		return NodeL10n.getBase().getString("FProxyToadlet."+key, new String[] { pattern }, new String[] { value });
 	}
 	
-	private String l10n(String key, String[] pattern, String[] value) {
+	public static String l10n(String key, String[] pattern, String[] value) {
 		return NodeL10n.getBase().getString("FProxyToadlet."+key, pattern, value);
 	}
 
@@ -947,7 +953,21 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		
 		random = new byte[32];
 		core.random.nextBytes(random);
-		FProxyToadlet fproxy = new FProxyToadlet(client, core);
+		
+		FProxyFetchTracker fetchTracker = new FProxyFetchTracker(core.clientContext, client.getFetchContext(), new RequestClient() {
+
+			public boolean persistent() {
+				return false;
+			}
+
+			public void removeFrom(ObjectContainer container) {
+				// Do nothing.
+			}
+			
+		});
+
+		
+		FProxyToadlet fproxy = new FProxyToadlet(client, core, fetchTracker);
 		core.setFProxy(fproxy);
 		
 		server.registerMenu("/", "FProxyToadlet.categoryBrowsing", "FProxyToadlet.categoryTitleBrowsing", null);
@@ -1033,6 +1053,32 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		SimpleHelpToadlet simpleHelpToadlet = new SimpleHelpToadlet(client, core);
 		server.register(simpleHelpToadlet, null, "/help/", true, false);
 		
+		PushDataToadlet pushDataToadlet = new PushDataToadlet(client);
+		server.register(pushDataToadlet, null, pushDataToadlet.path(), true, false);
+		
+		PushNotificationToadlet pushNotificationToadlet = new PushNotificationToadlet(client);
+		server.register(pushNotificationToadlet, null, pushNotificationToadlet.path(), true, false);
+		
+		PushKeepaliveToadlet pushKeepaliveToadlet = new PushKeepaliveToadlet(client);
+		server.register(pushKeepaliveToadlet, null, pushKeepaliveToadlet.path(), true, false);
+		
+		PushFailoverToadlet pushFailoverToadlet = new PushFailoverToadlet(client);
+		server.register(pushFailoverToadlet, null, pushFailoverToadlet.path(), true, false);
+		
+		PushTesterToadlet pushTesterToadlet = new PushTesterToadlet(client);
+		server.register(pushTesterToadlet, null, pushTesterToadlet.path(), true, false);
+		
+		PushLeavingToadlet pushLeavingToadlet = new PushLeavingToadlet(client);
+		server.register(pushLeavingToadlet, null, pushLeavingToadlet.path(), true, false);
+		
+		ImageCreatorToadlet imageCreatorToadlet = new ImageCreatorToadlet(client);
+		server.register(imageCreatorToadlet, null, imageCreatorToadlet.path(), true, false);
+		
+		LogWritebackToadlet logWritebackToadlet = new LogWritebackToadlet(client);
+		server.register(logWritebackToadlet, null, logWritebackToadlet.path(), true, false);
+		
+		DismissAlertToadlet dismissAlertToadlet = new DismissAlertToadlet(client);
+		server.register(dismissAlertToadlet, null, dismissAlertToadlet.path(), true, false);
 	}
 	
 	/**

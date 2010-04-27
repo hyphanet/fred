@@ -5,6 +5,9 @@
 /javadoc
 /junitvmwatcher*
 /lib
+/generator/js/lib
+/generator/js/tests/lib
+/generator/js/tests/bin
 .classpath
 *.swp
 *.iml

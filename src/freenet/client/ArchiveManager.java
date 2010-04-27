@@ -556,9 +556,8 @@ outerZIP:		while(true) {
 				after = name.substring(x+1, name.length());
 			Object o = dir.get(before);
 			if (o == null) {
-				dir.put(before, new HashMap<String, Object>());
-			}
-			if (o instanceof String) {
+				dir.put(before, o = new HashMap<String, Object>());
+			} else if (o instanceof String) {
 				throw new ArchiveFailureException("Invalid archive: contains "+name+" as both file and dir");
 			}
 			addToDirectory(Metadata.forceMap(o), after, prefix + before + '/');
@@ -660,5 +659,22 @@ outerZIP:		while(true) {
 		Logger.error(this, "Not storing ArchiveManager in database", new Exception("error"));
 		return false;
 	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanActivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
+		return false;
+	}
+	
+	public boolean objectCanDeactivate(ObjectContainer container) {
+		Logger.error(this, "Trying to store an ArchiveManager!", new Exception("error"));
+		return false;
+	}
+	
+
 
 }

@@ -13,9 +13,13 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Random;
+import java.util.TimeZone;
 
 import freenet.clients.http.annotation.AllowData;
 import freenet.l10n.NodeL10n;
@@ -61,17 +65,23 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean sentReplyHeaders;
 	private volatile Toadlet activeToadlet;
 	
+	/** The unique id of the request*/
+	private final String uniqueId;
+	
+	private URI uri;
+	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
 	 */
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container,URI uri) throws IOException {
 		this.headers = headers;
 		this.cookies = null;
 		this.replyCookies = null;
 		this.closed = false;
+		this.uri=uri;
 		sockOutputStream = sock.getOutputStream();
 		remoteAddr = sock.getInetAddress();
 		if(Logger.shouldLog(Logger.DEBUG, this))
@@ -79,6 +89,8 @@ public class ToadletContextImpl implements ToadletContext {
 		this.bf = bf;
 		this.pagemaker = pageMaker;
 		this.container = container;
+		//Generate an unique id
+		uniqueId=String.valueOf(new Random().nextLong());
 	}
 	
 	private void close() {
@@ -152,6 +164,9 @@ public class ToadletContextImpl implements ToadletContext {
 		sentReplyHeaders = true;
 		
 		if(replyCookies != null) {
+			if (mvt == null) {
+				mvt = new MultiValueTable<String,String>();
+			}
 			mvt.put("cache-control:", "no-cache=\"set-cookie\"");
 			
 			final boolean logMINOR = Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class);
@@ -303,6 +318,14 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
 	}
 	
+	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+	
+	public static Date parseHTTPDate(String httpDate) throws java.text.ParseException{
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",Locale.US);
+		sdf.setTimeZone(TZ_UTC);
+		return sdf.parse(httpDate);
+	}
+	
 	/** Fix key case to be conformant to HTTP expectations.
 	 * Note that HTTP is case insensitive on header names, but we may as well
 	 * send something as close to the spec as possible in case of broken clients... 
@@ -361,7 +384,6 @@ public class ToadletContextImpl implements ToadletContext {
 					sendURIParseError(sock.getOutputStream(), true, e);
 					return;
 				}
-				
 				String method = split[0];
 				
 				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
@@ -389,7 +411,7 @@ public class ToadletContextImpl implements ToadletContext {
 				boolean allowPost = container.allowPosts();
 				BucketFactory bf = container.getBucketFactory();
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container);
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container,uri);
 				ctx.shouldDisconnect = disconnect;
 				
 				/*
@@ -638,5 +660,13 @@ public class ToadletContextImpl implements ToadletContext {
 
 	public boolean disableProgressPage() {
 		return container.disableProgressPage();
+	}
+	
+	public String getUniqueId(){
+		return uniqueId;
+	}
+	
+	public URI getUri() {
+		return uri;
 	}
 }

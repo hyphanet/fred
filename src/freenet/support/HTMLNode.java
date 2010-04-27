@@ -16,7 +16,10 @@ public class HTMLNode implements XMLCharacterClasses {
 
 	protected final String name;
 
-	private final String content;
+	/** Text to be inserted between tags, or possibly raw HTML. Only non-null if name
+	 * is "#" (= text) or "%" (= raw HTML). Otherwise the constructor will allocate a
+	 * separate child node to contain it. */
+	private String content;
 
 	private final Map<String, String> attributes = new HashMap<String, String>();
 
@@ -192,13 +195,18 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append('"');
 		}
 		if (children.size() == 0) {
-			if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name)) {
-				tagBuffer.append("></");
-				tagBuffer.append(name);
-				tagBuffer.append('>');
-			} else {
-				tagBuffer.append(" />");
+			if(content==null){
+				if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name) || ("script").equals(name)) {
+					tagBuffer.append("></");
+					tagBuffer.append(name);
+					tagBuffer.append('>');
+				} else {
+					tagBuffer.append(" />");
+				}
+			}else{
+				tagBuffer.append(">"+content+"</"+name+">");
 			}
+			
 		} else {
 			if(("div").equals(name) || ("form").equals(name) || ("input").equals(name) || ("script").equals(name) || ("table").equals(name) || ("tr").equals(name) || ("td").equals(name)) {
 				tagBuffer.append('\n');
@@ -216,6 +224,26 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append('>');
 		}
 		return tagBuffer;
+	}
+	
+	public String generateChildren(){
+		if(content!=null){
+			return content;
+		}
+		StringBuilder tagBuffer=new StringBuilder();
+		for(int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
+			HTMLNode childNode = children.get(childIndex);
+			childNode.generate(tagBuffer);
+		}
+		return tagBuffer.toString();
+	}
+	
+	public void setContent(String newContent){
+		content=newContent;
+	}
+	
+	public List<HTMLNode> getChildren(){
+		return children;
 	}
 
 	/**

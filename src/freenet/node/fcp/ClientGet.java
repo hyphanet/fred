@@ -690,59 +690,6 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		}
 	}
 
-	// This is distinct from the ClientGetMessage code, as later on it will be radically
-	// different (it can store detailed state).
-	@Override
-	public synchronized SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
-		fs.putSingle("Type", "GET");
-		fs.putSingle("URI", uri.toString(false, false));
-		fs.putSingle("Identifier", identifier);
-		fs.putSingle("Verbosity", Integer.toString(verbosity));
-		fs.putSingle("PriorityClass", Short.toString(priorityClass));
-		fs.putSingle("ReturnType", ClientGetMessage.returnTypeString(returnType));
-		fs.putSingle("Persistence", persistenceTypeString(persistenceType));
-		fs.putSingle("ClientName", client.name);
-		if(targetFile != null)
-			fs.putSingle("Filename", targetFile.getPath());
-		if(tempFile != null)
-			fs.putSingle("TempFilename", tempFile.getPath());
-		if(clientToken != null)
-			fs.putSingle("ClientToken", clientToken);
-		fs.putSingle("IgnoreDS", Boolean.toString(fctx.ignoreStore));
-		fs.putSingle("DSOnly", Boolean.toString(fctx.localRequestOnly));
-		fs.putSingle("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
-		fs.putSingle("Finished", Boolean.toString(finished));
-		fs.putSingle("Succeeded", Boolean.toString(succeeded));
-		if(fctx.allowedMIMETypes != null)
-			fs.putOverwrite("AllowedMIMETypes", fctx.allowedMIMETypes.toArray(new String[fctx.allowedMIMETypes.size()]));
-		if(finished) {
-			if(succeeded) {
-				fs.putSingle("FoundDataLength", Long.toString(foundDataLength));
-				fs.putSingle("FoundDataMimeType", foundDataMimeType);
-				if(postFetchProtocolErrorMessage != null) {
-					fs.put("PostFetchProtocolError", postFetchProtocolErrorMessage.getFieldSet());
-				}
-			} else {
-				if(getFailedMessage != null) {
-					fs.put("GetFailed", getFailedMessage.getFieldSet(false));
-				}
-			}
-		}
-		// Return bucket
-		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && !(succeeded == false && returnBucket == null)) {
-			bucketToFS(fs, "ReturnBucket", false, returnBucket);
-		}
-		fs.putSingle("Global", Boolean.toString(client.isGlobalQueue));
-		fs.put("BinaryBlob", binaryBlob);
-		fs.put("StartupTime", startupTime);
-		if(finished)
-			fs.put("CompletionTime", completionTime);
-		fs.put("LastActivity", lastActivity);
-
-		return fs;
-	}
-
 	@Override
 	protected ClientRequester getClientRequest() {
 		return getter;

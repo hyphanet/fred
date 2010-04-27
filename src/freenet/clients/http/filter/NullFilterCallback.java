@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
+import freenet.clients.http.filter.HTMLFilter.ParsedTag;
+
 public class NullFilterCallback implements FilterCallback {
 
 	public String processURI(String uri, String overrideType) {
@@ -22,6 +24,10 @@ public class NullFilterCallback implements FilterCallback {
 	}
 
 	public String processURI(String uri, String overrideType, boolean noRelative, boolean inline) throws CommentException {
+		return null;
+	}
+	
+	public String processTag(ParsedTag pt) {
 		return null;
 	}
 

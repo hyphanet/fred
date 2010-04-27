@@ -186,6 +186,8 @@ public final class SessionManager {
 		session.updateExpiresAtTime(time);
 		mSessionsByID.push(session.getID(), session);
 		
+		setSessionCookie(session, context);
+		
 		return session;
 	}
 

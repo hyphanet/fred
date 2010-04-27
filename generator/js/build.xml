@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<project name="FreenetJs" default="build" basedir=".">
+  <!-- Configure path to GWT SDK -->
+  <property name="staticfiles.dir" location="../../src/freenet/clients/http/staticfiles/freenetjs" />
+  <property name="UpdaterConstants.location" location="../../src/freenet/clients/http/updateableelements/UpdaterConstants.java"/>
+
+  <path id="project.class.path">
+    <pathelement location="war/WEB-INF/classes"/>
+    <fileset dir="lib" includes="*.jar"/>
+    <!-- Add any additional non-server libs (such as JUnit) -->
+  </path>
+
+  <target name="gwtc" description="GWT compile to JavaScript">
+    <mkdir dir="war"/>
+    <copy file="${UpdaterConstants.location}" tofile="src/freenet/client/UpdaterConstants.java" overwrite="true"/>
+    <replace file="src/freenet/client/UpdaterConstants.java" token="freenet.clients.http.updateableelements;">
+	<replacevalue><![CDATA[freenet.client;
+/** This file is generated. Do not modify.*/]]></replacevalue>
+    </replace>
+    
+    <java failonerror="true" fork="true" classname="com.google.gwt.dev.Compiler">
+      <classpath>
+        <pathelement location="src"/>
+        <path refid="project.class.path"/>
+      </classpath>
+      <!-- add jvmarg -Xss16M or similar if you see a StackOverflowError -->
+      <jvmarg value="-Xmx256M"/>
+      <!-- Additional arguments like -style PRETTY or -logLevel DEBUG -->
+      <arg value="-style"/>
+      <arg value="PRETTY"/>
+      <arg value="freenet.FreenetJs"/>
+    </java>
+  </target>
+
+  <target name="build" depends="gwtc" description="Build this project" >
+    <antcall target="deleteGenerated"/>
+    <copy todir="${staticfiles.dir}">
+      <fileset dir="war/freenetjs"/>
+    </copy>
+    <antcall target="clean"/>
+  </target>
+  
+  <target name="deleteGenerated" description="Deletes the generated js">
+    <delete dir="${staticfiles.dir}"/>
+  </target>
+
+  <target name="clean" description="Cleans this project">
+    <delete dir="war" failonerror="false" />
+  </target>
+
+</project>

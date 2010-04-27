@@ -331,53 +331,6 @@ public class ClientPutDir extends ClientPutBase {
 	}
 
 	@Override
-	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = super.getFieldSet();
-		// Translate manifestElements directly into a fieldset
-		SimpleFieldSet files = new SimpleFieldSet(false);
-		// Flatten the hierarchy, it can be reconstructed on restarting.
-		// Storing it directly would be a PITA.
-		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
-		fs.putSingle("DefaultName", defaultName);
-		fs.putSingle("PutDirType", wasDiskPut ? "disk" : "complex");
-		for(int i=0;i<elements.length;i++) {
-			String num = Integer.toString(i);
-			ManifestElement e = elements[i];
-			String name = e.getName();
-			String mimeOverride = e.getMimeTypeOverride();
-			SimpleFieldSet subset = new SimpleFieldSet(false);
-			subset.putSingle("Name", name);
-			if(mimeOverride != null)
-				subset.putSingle("Metadata.ContentType", mimeOverride);
-			FreenetURI target = e.getTargetURI();
-			if(target != null) {
-				subset.putSingle("UploadFrom", "redirect");
-				subset.putSingle("TargetURI", target.toString());
-			} else {
-				Bucket data = e.getData();
-				// What to do with the bucket?
-				// It is either a persistent encrypted bucket or a file bucket ...
-				subset.putSingle("DataLength", Long.toString(e.getSize()));
-				if(data instanceof FileBucket) {
-					subset.putSingle("UploadFrom", "disk");
-					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
-				} else if(finished) {
-					subset.putSingle("UploadFrom", "direct");
-				} else if(data instanceof PaddedEphemerallyEncryptedBucket) {
-					subset.putSingle("UploadFrom", "direct");
-					// the bucket is a persistent encrypted temp bucket
-					bucketToFS(fs, "TempBucket", false, data);
-				} else {
-					throw new IllegalStateException("Don't know what to do with bucket: "+data);
-				}
-			}
-			files.put(num, subset);
-		}
-		fs.put("Files", files);
-		return fs;
-	}
-
-	@Override
 	protected FCPMessage persistentTagMessage(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(publicURI, 5);

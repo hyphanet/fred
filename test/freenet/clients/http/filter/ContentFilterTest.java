@@ -173,6 +173,6 @@ public class ContentFilterTest extends TestCase {
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
 		
-		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null, null).data.toString();
+		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null, null, null).data.toString();
 	}
 }

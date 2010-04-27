@@ -30,7 +30,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		// deleteOnExit -> files get stuck in a big HashSet, whether or not
 		// they are deleted. This grows without bound, it's a major memory
 		// leak.
-		this(id, generator, false, true);
+		this(id, generator, true);
 	}
 	
 	/**
@@ -43,8 +43,8 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	 */
 	protected TempFileBucket(
 		long id,
-		FilenameGenerator generator, boolean deleteOnExit, boolean deleteOnFree) {
-		super(generator.getFilename(id), deleteOnExit);
+		FilenameGenerator generator, boolean deleteOnFree) {
+		super(generator.getFilename(id), false);
 		this.filenameID = id;
 		this.generator = generator;
 		this.deleteOnFree = deleteOnFree;
@@ -58,7 +58,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 			if (logDebug)
 				Logger.debug(
 					this,
-					"Initializing TempFileBucket(" + getFile()+" deleteOnExit="+deleteOnExit);
+					"Initializing TempFileBucket(" + getFile());
 		}
 	}
 
@@ -102,7 +102,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	@Override
 	protected boolean deleteOnExit() {
-		return true;
+		// Temp files will be cleaned up on next restart.
+		// File.deleteOnExit() is a hideous memory leak.
+		// It should NOT be used for temp files.
+		return false;
 	}
 
 	public void storeTo(ObjectContainer container) {
@@ -118,7 +121,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public Bucket createShadow() throws IOException {
-		TempFileBucket ret = new TempFileBucket(filenameID, generator, true, false);
+		TempFileBucket ret = new TempFileBucket(filenameID, generator, false);
 		ret.setReadOnly();
 		if(!getFile().exists()) Logger.error(this, "File does not exist when creating shadow: "+getFile());
 		return ret;

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Hashtable;
@@ -27,6 +28,9 @@ import freenet.support.io.Closer;
 public class ContentFilter {
 
 	static final Hashtable<String, MIMEType> mimeTypesByName = new Hashtable<String, MIMEType>();
+	
+	/** The HTML mime types are defined here, to allow other modules to identify it*/
+	public static String[] HTML_MIME_TYPES=new String[]{"text/html", "text/xhtml", "text/xml+xhtml", "application/xhtml+xml"};
 	
 	static {
 		init();
@@ -85,7 +89,7 @@ public class ContentFilter {
 				false, null, null, false));
 		
 		// HTML - dangerous if not filtered
-		register(new MIMEType("text/html", "html", new String[] { "text/xhtml", "text/xml+xhtml", "application/xhtml+xml" }, new String[] { "htm" },
+		register(new MIMEType(HTML_MIME_TYPES[0], "html", Arrays.asList(HTML_MIME_TYPES).subList(1, HTML_MIME_TYPES.length).toArray(new String[HTML_MIME_TYPES.length-1]), new String[] { "htm" },
 				false, false /* maybe? */, new HTMLFilter(), null /* FIXME */, 
 				true, true, true, true, true, true, 
 				l10n("textHtmlReadAdvice"),
@@ -150,8 +154,8 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb, String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(data, bf, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb));
+	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(data, bf, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
 	}
 
 	/**

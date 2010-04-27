@@ -375,11 +375,6 @@ public abstract class ClientRequest {
 			container.store(this);
 	}
 
-	/**
-	 * Get a SimpleFieldSet representing this request.
-	 */
-	public abstract SimpleFieldSet getFieldSet() throws IOException;
-
 	public abstract double getSuccessFraction(ObjectContainer container);
 
 	public abstract double getTotalBlocks(ObjectContainer container);
@@ -564,5 +559,8 @@ public abstract class ClientRequest {
 		container.store(this);
 	}
 	
+	public FCPClient getClient(){
+		return client;
+	}
 	
 }

@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.Map.Entry;
 import java.util.Stack;
 
 import java.io.FileReader;
@@ -134,6 +135,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		final boolean noOutput;
 		boolean isXHTML=false;
 		Stack<String> openElements;
+		
+		/** If <head> is found, then it is true. It is needed that if <title> or <meta> is found outside <head> or if a <body> is found first, then insert a <head> too*/
+		boolean wasHeadElementFound=false;
 	
 		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean noOutput) {
 			this.r = r;
@@ -460,35 +464,32 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if (pc.killText) {
 			return;
 		}
-
-		for(int i=0;i<s.length();i++) {
-			char c = s.charAt(i);
-			if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r') ) {
-				// Not a real character
-				// STRONGLY suggests somebody is using a bogus charset.
-				// This could be in order to break the filter.
-				
-				s.deleteCharAt(i);
-				if(logDEBUG) Logger.debug(this, "Removing '"+c+"' from the output stream");
-			}
-		}
 		
-		String style = s.toString();
-		if (pc.inStyle || pc.inScript) {
-			pc.currentStyleScriptChunk += style;
-			return; // is parsed and written elsewhere
-		}
 		StringBuilder out = new StringBuilder(s.length()*2);
 		
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
-			if(c == '<') {
+			if(c == '<' && !(pc.inStyle || pc.inScript)) {
+				//Scripts and styles parsed elsewhere
 				out.append("&lt;");
-			} else {
+			}
+			else if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r')) {
+				// Not a real character
+				// STRONGLY suggests somebody is using a bogus charset.
+				// This could be in order to break the filter.
+				if(logDEBUG) Logger.debug(this, "Removing '"+c+"' from the output stream");
+				continue;
+			}
+			else {
 				out.append(c);
 			}
 		}
 		String sout = out.toString();
+		
+		if (pc.inStyle || pc.inScript) {
+			pc.currentStyleScriptChunk += sout;
+			return; // is parsed and written elsewhere
+		}
 		if(pc.cb != null)
 			pc.cb.onText(HTMLDecoder.decode(sout), tagName); /* Tag name is given as type for the text */
 		
@@ -507,20 +508,55 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			t = t.sanitize(pc);
 			if(pc.noOutput) return; // sanitize has done all the work we are interested in
 			if (t != null) {
-				if (pc.writeStyleScriptWithTag) {
-					pc.writeStyleScriptWithTag = false;
-					String style = pc.currentStyleScriptChunk;
-					if ((style == null) || (style.length() == 0))
-						pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
-					else
-						w.write(style);
-					pc.currentStyleScriptChunk = "";
+				
+				//We need to make sure that <head> is present in the document. If it is not, then GWT javascript won't get loaded.
+				//To achieve this, we keep track whether we processed the <head>
+				if(t.element.compareTo("head")==0){
+					pc.wasHeadElementFound=true;
+				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
+				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.wasHeadElementFound==false){
+					pc.openElements.push("head");
+					pc.wasHeadElementFound=true;
+					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
+					if(headContent!=null){
+						w.write(headContent);
+					}
+				//If we found a <body> and haven't closed <head> already, then we do
+				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
+					w.write("</head>");
+					pc.openElements.pop();
+				//If we found a <body> and no <head> before it, then we insert it 
+				}else if(t.element.compareTo("body")==0 && pc.wasHeadElementFound==false){
+					pc.wasHeadElementFound=true;
+					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
+					if(headContent!=null){
+						w.write(headContent+"</head>");
+					}
 				}
 				
-				t.write(w,pc);
-				if (pc.writeAfterTag.length() > 0) {
-					w.write(pc.writeAfterTag.toString());
-					pc.writeAfterTag = new StringBuilder(1024);
+				//If the tag needs replacement, then replace it
+				String newContent=pc.cb.processTag(t);
+				if(newContent!=null){
+					w.write(newContent);
+					if(t.endSlash==false){
+						pc.openElements.push(t.element);
+					}
+				}else{
+					if (pc.writeStyleScriptWithTag) {
+						pc.writeStyleScriptWithTag = false;
+						String style = pc.currentStyleScriptChunk;
+						if ((style == null) || (style.length() == 0))
+							pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
+						else
+							w.write(style);
+						pc.currentStyleScriptChunk = "";
+					}
+					
+					t.write(w,pc);
+					if (pc.writeAfterTag.length() > 0) {
+						w.write(pc.writeAfterTag.toString());
+						pc.writeAfterTag = new StringBuilder(1024);
+					}
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
@@ -575,9 +611,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		throw new DataFilterException(longer, longer, msg, new HTMLNode("div", msg));
 	}
 
-	static class ParsedTag {
-		final String element;
-		final String[] unparsedAttrs;
+	public static class ParsedTag {
+		public final String element;
+		public final String[] unparsedAttrs;
 		final boolean startSlash;
 		final boolean endSlash;
 		/*
@@ -585,9 +621,34 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		 * this.unparsedAttrs = (String[]) t.unparsedAttrs.clone();
 		 * this.startSlash = t.startSlash; this.endSlash = t.endSlash; }
 		 */
+		
+		public ParsedTag(String elementName,Map<String,String> attributes){
+			this.element=elementName;
+			startSlash=false;
+			endSlash=true;
+			String[] attrs=new String[attributes.size()];
+			int pos=0;
+			for(Entry<String,String> entry:attributes.entrySet()){
+				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+			}
+			this.unparsedAttrs = attrs;
+		}
+		
 		public ParsedTag(ParsedTag t, String[] outAttrs) {
 			this.element = t.element;
 			this.unparsedAttrs = outAttrs;
+			this.startSlash = t.startSlash;
+			this.endSlash = t.endSlash;
+		}
+		
+		public ParsedTag(ParsedTag t, Map<String,String> attributes){
+			String[] attrs=new String[attributes.size()];
+			int pos=0;
+			for(Entry<String,String> entry:attributes.entrySet()){
+				attrs[pos++]=entry.getKey()+"=\""+entry.getValue()+"\"";
+			}
+			this.element = t.element;
+			this.unparsedAttrs = attrs;
 			this.startSlash = t.startSlash;
 			this.endSlash = t.endSlash;
 		}
@@ -662,6 +723,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return sb.toString();
 		}
 		
+		public Map<String,String> getAttributesAsMap(){
+			Map<String,String> map=new HashMap<String, String>();
+			for(int i=0;i<unparsedAttrs.length;i++){
+				String attr=unparsedAttrs[i];
+				String name=attr.substring(0,attr.indexOf("="));
+				String value=attr.substring(attr.indexOf("=")+2,attr.length()-1);
+				map.put(name, value);
+			}
+			return map;
+		}
+
 		public void htmlwrite(Writer w,HTMLParseContext pc) throws IOException {
 			String s = toString();
 			if(pc.getisXHTLM())
@@ -1330,7 +1402,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (h == null)
 				return null;
 			if (t.startSlash)
-				return new ParsedTag(t, null);
+				return new ParsedTag(t, (String[])null);
 			String[] outAttrs = new String[h.size()];
 			int i = 0;
 			for (Map.Entry<String, Object> entry : h.entrySet()) {

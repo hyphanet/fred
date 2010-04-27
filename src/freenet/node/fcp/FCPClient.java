@@ -13,6 +13,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Logger;
 import freenet.support.NullObject;
 
@@ -27,7 +28,7 @@ import freenet.support.NullObject;
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
 public class FCPClient {
 	
-	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, ObjectContainer container) {
+	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, Whiteboard whiteboard,ObjectContainer container) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -53,6 +54,7 @@ public class FCPClient {
 		};
 		completionCallbacks = new ArrayList<RequestCompletionCallback>();
 		if(cb != null) completionCallbacks.add(cb);
+		this.whiteboard=whiteboard;
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			assert(root != null);
 			this.root = root;
@@ -82,6 +84,8 @@ public class FCPClient {
 	private final NullObject clientsWatchingLock = new NullObject();
 	final RequestClient lowLevelClient;
 	private transient List<RequestCompletionCallback> completionCallbacks;
+	/** The whiteboard where ClientRequests report their progress*/
+	private transient Whiteboard whiteboard;
 	/** Connection mode */
 	final short persistenceType;
 	
@@ -450,6 +454,10 @@ public class FCPClient {
 		if(completionCallbacks == null) completionCallbacks = new ArrayList<RequestCompletionCallback>(); // it is transient so it might be null
 		completionCallbacks.add(cb);
 	}
+	
+	public synchronized void removeRequestCompletionCallback(RequestCompletionCallback cb){
+		if(completionCallbacks!=null) completionCallbacks.remove(cb);
+	}
 
 	public void removeFromDatabase(ObjectContainer container) {
 		container.activate(runningPersistentRequests, 2);
@@ -531,5 +539,12 @@ public class FCPClient {
 		return true;
 	}
 
+	public Whiteboard getWhiteboard(){
+		return whiteboard;
+	}
+	
+	public void setWhiteboard(Whiteboard whiteboard){
+		this.whiteboard=whiteboard;
+	}
 
 }
