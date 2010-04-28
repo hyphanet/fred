@@ -237,6 +237,65 @@ public class PluginManager {
 			toStart = null;
 		}
 	}
+	
+	public void stop(int maxWaitTime) {
+		// Stop loading plugins.
+		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
+		synchronized(this) {
+			for(Iterator<PluginProgress> i = startingPlugins.iterator();i.hasNext();) {
+				PluginProgress progress = i.next();
+				if(matches == null) matches = new ArrayList<PluginProgress>();
+				matches.add(progress);
+				i.remove();
+			}
+		}
+		if(matches == null) return;
+		for(PluginProgress progress : matches) {
+			progress.kill();
+		}
+		// Stop already loaded plugins.
+		ArrayList<PluginInfoWrapper> wrappers;
+		synchronized(pluginWrappers) {
+			wrappers = new ArrayList<PluginInfoWrapper>(pluginWrappers);
+		}
+		for(PluginInfoWrapper pi : wrappers)
+			pi.startShutdownPlugin(this, false);
+		long now = System.currentTimeMillis();
+		long deadline = now + maxWaitTime;
+		while(true) {
+			int delta = (int) (deadline - now);
+			if(delta <= 0) {
+				String list = pluginList(wrappers);
+				Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
+				System.err.println("Plugins still shutting down at timeout:\n"+list);
+			} else {
+				for(Iterator<PluginInfoWrapper> it = wrappers.listIterator();it.hasNext();) {
+					PluginInfoWrapper pi = it.next();
+					System.out.println("Waiting for plugin to finish shutting down: "+pi.getFilename());
+					if(pi.finishShutdownPlugin(this, delta, false)) {
+						it.remove();
+					}
+				}
+				if(wrappers.isEmpty()) {
+					Logger.normal(this, "All plugins unloaded");
+					System.out.println("All plugins unloaded");
+					return;
+				}
+				String list = pluginList(wrappers);
+				Logger.error(this, "Plugins still shutting down:\n"+list);
+				System.err.println("Plugins still shutting down:\n"+list);
+			}
+		}
+	}
+
+	private static String pluginList(ArrayList<PluginInfoWrapper> wrappers) {
+		StringBuffer sb = new StringBuffer();
+		for(PluginInfoWrapper pi : wrappers) {
+			sb.append(pi.getFilename());
+			sb.append('\n');
+		}
+		return sb.toString();
+	}
 
 	private String[] getConfigLoadString() {
 		Vector<String> v = new Vector<String>();
