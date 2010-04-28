@@ -1426,57 +1426,39 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = new LinkedHashMap<String, Object>();
 			for (Map.Entry<String, Object> entry : h.entrySet()) {
+				if(logDEBUG) Logger.debug(this, "HTML Filter is sanitizing the of attribute: "+entry.getKey()+"=  "+entry.getValue());
 				String x = entry.getKey();
 				Object o = entry.getValue();
-				// Straight attribs
-				if (allowedAttrs.contains(x)) {
-					hn.put(x, o);
-					continue;
-				}
-				if (uriAttrs.contains(x)) {
-					if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
+
+				//URI attributes require additional processing
+				if (uriAttrs.contains(x) || inlineURIAttrs.contains(x)) {
+					if(uriAttrs.contains(x))
+						if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
+					else
+						if(logMINOR) Logger.minor(this, "Inline URI attribute: "+x);
 					// URI
 					if (o instanceof String) {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
 						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, false);
-						if (uri != null) {
-							uri = HTMLEncoder.encode(uri);
-							hn.put(x, uri);
+						if (uri == null) {
+							continue;
 						}
+						uri = HTMLEncoder.encode(uri);
+						o = uri;
 					}
 					// FIXME: rewrite absolute URLs, handle ?date= etc
 				}
-				if (inlineURIAttrs.contains(x)) {
-					if(logMINOR) Logger.minor(this, "Inline URI attribute: "+x);
-					// URI
-					if (o instanceof String) {
-						// Java's URL handling doesn't seem suitable
-						String uri = (String) o;
-						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, true);
-						if (uri != null) {
-							uri = HTMLEncoder.encode(uri);
-							hn.put(x, uri);
-						}
-					}
-					// FIXME: rewrite absolute URLs, handle ?date= etc
+
+				// lang, xml:lang and dir can go on anything
+				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
+				// The variant can be just about anything; no way to test (avian)
+				if (uriAttrs.contains(x) || inlineURIAttrs.contains(x) || x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (x.equalsIgnoreCase("ltr") || x.equalsIgnoreCase("rtl")))) {
+					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
+					hn.put(x, o);
 				}
 			}
-			// lang, xml:lang and dir can go on anything
-			// lang or xml:lang = language [ "-" country [ "-" variant ] ]
-			// The variant can be just about anything; no way to test (avian)
-			String s = getHashString(h, "lang");
-			if (s != null)
-				hn.put("lang", s);
-			s = getHashString(h, "xml:lang");
-			if (s != null)
-				hn.put("xml:lang", s);
-			s = getHashString(h, "dir");
-			if ((s != null)
-				&& (s.equalsIgnoreCase("ltr") || s.equalsIgnoreCase("rtl")))
-				hn.put("dir", s);
 			return hn;
 		}
 	}
