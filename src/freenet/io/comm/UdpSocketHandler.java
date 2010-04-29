@@ -34,7 +34,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private static boolean logMINOR; 
 	private static boolean logDEBUG;
 	private boolean _isDone;
-	private boolean _active = true;
+	private volatile boolean _active = true;
 	private final int listenPort;
 	private final String title;
 	private boolean _started;
@@ -129,10 +129,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private void runLoop() {
 		byte[] buf = new byte[MAX_RECEIVE_SIZE];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
-		while (/*_active*/true) {
-			synchronized(this) {
-				if(!_active) return; // Finished
-			}
+		while (_active) {
 			try {
 				realRun(packet);
 			} catch (OutOfMemoryError e) {
