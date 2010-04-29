@@ -54,8 +54,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		this.listenPort = listenPort;
 		_sock = new DatagramSocket(listenPort, bindto);
 		int sz = _sock.getReceiveBufferSize();
-		if(sz < 65536)
+		if(sz < 65536) {
 			_sock.setReceiveBufferSize(65536);
+		}
 		try {
 			// Exit reasonably quickly
 			_sock.setReuseAddress(true);
@@ -155,10 +156,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			tracker.receivedPacketFrom(peer);
 			long endTime = System.currentTimeMillis();
 			if(endTime - startTime > 50) {
-				if(endTime-startTime > 3000)
+				if(endTime-startTime > 3000) {
 					Logger.error(this, "packet creation took "+(endTime-startTime)+"ms");
-				else
+				} else {
 					if(logMINOR) Logger.minor(this, "packet creation took "+(endTime-startTime)+"ms");
+				}
 			}
 			byte[] data = packet.getData();
 			int offset = packet.getOffset();
@@ -169,10 +171,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				lowLevelFilter.process(data, offset, length, peer, now);
 				endTime = System.currentTimeMillis();
 				if(endTime - startTime > 50) {
-					if(endTime-startTime > 3000)
+					if(endTime-startTime > 3000) {
 						Logger.error(this, "processing packet took "+(endTime-startTime)+"ms");
-					else
+					} else {
 						if(logMINOR) Logger.minor(this, "processing packet took "+(endTime-startTime)+"ms");
+					}
 				}
 				if(logMINOR) Logger.minor(this,
 						"Successfully handled packet length " + length);
@@ -180,7 +183,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				Logger.error(this, "Caught " + t + " from "
 						+ lowLevelFilter, t);
 			}
-		} else if(logDEBUG) Logger.debug(this, "No packet received");
+		} else {
+			if(logDEBUG) Logger.debug(this, "No packet received");
+		}
 	}
 
 	private static final int MAX_RECEIVE_SIZE = 1500;
@@ -193,10 +198,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
-			if (!_active)	// closed, just return silently
+			if (!_active) { // closed, just return silently
 				return false;
-			else
+			} else {
 				throw new RuntimeException(e2);
+			}
 		}
 		if(logMINOR) Logger.minor(this, "Received packet");
 		return true;
@@ -243,10 +249,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
-			if(packet.getAddress() instanceof Inet6Address)
+			if(packet.getAddress() instanceof Inet6Address) {
 				Logger.normal(this, "Error while sending packet to IPv6 address: "+destination+": "+e, e);
-			else
+			} else {
 				Logger.error(this, "Error while sending packet to " + destination+": "+e, e);
+			}
 		}
 	}
 
@@ -276,8 +283,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				disableMTUDetection = true;
 			}
 			return MAX_ALLOWED_MTU - UDP_HEADERS_LENGTH;
-		} else
+		} else {
 			return Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;
+		}
 		// UDP/IP header is 28 bytes.
 	}
 
