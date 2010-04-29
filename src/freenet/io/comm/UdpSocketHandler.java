@@ -291,8 +291,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	}
 
 	public void start() {
+		if(!_active) return;
 		synchronized(this) {
-			if(!_active) return;
 			_started = true;
 			startTime = System.currentTimeMillis();
 		}
