@@ -700,8 +700,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(packetType<0 || packetType>3) {
 				Logger.error(this,"Unknown PacketType" + packetType + "from" + replyTo + "from" +pn); 
 				return ;
-			}
-			else if(packetType==0) {
+			} else if(packetType==0) {
 				/*
 				 * Initiator- This is a straightforward DiffieHellman exponential.
 				 * The Initiator Nonce serves two purposes;it allows the initiator to use the same
@@ -711,24 +710,21 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 */
 				processJFKMessage1(payload,3,pn,replyTo,false,-1,negType);
 
-			}
-			else if(packetType==1) {
+			} else if(packetType==1) {
 				/*
 				 * Responder replies with a signed copy of his own exponential, a random
 				 * nonce and an authenticator calculated from a transient hash key private
 				 * to the responder.
 				 */
 				processJFKMessage2(payload,3,pn,replyTo,false,-1,negType);
-			}
-			else if(packetType==2) {
+			} else if(packetType==2) {
 				/*
 				 * Initiator echoes the data sent by the responder.These messages are
 				 * cached by the Responder.Receiving a duplicate message simply causes
 				 * the responder to Re-transmit the corresponding message4
 				 */
 				processJFKMessage3(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, negType);
-			}
-			else if(packetType==3) {
+			} else if(packetType==3) {
 				/*
 				 * Encrypted message of the signature on both nonces, both exponentials 
 				 * using the same keys as in the previous message.
@@ -2008,8 +2004,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			realSeqNumber = seqNumber + (decrypted[ptr++] & 0xff);
 		}
-		if(logMINOR)
-			Logger.minor(this, "Real sequence number: "+realSeqNumber);
+		if(logMINOR) Logger.minor(this, "Real sequence number: "+realSeqNumber);
 
 		//Logger.minor(this, "Reference seq number: "+HexUtil.bytesToHex(decrypted, ptr, 4));
 
@@ -2283,11 +2278,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			length += packets.countAcks() + packets.countAckRequests() + packets.countResendRequests();
 			int count = 0;
 			int lastIndex = 0;
-			if(logMINOR)
-				Logger.minor(this, "Sending "+messageData.length+" messages");
+			if(logMINOR) Logger.minor(this, "Sending "+messageData.length+" messages");
 			for(int i=0;i<=messageData.length;i++) {
-				if(logMINOR)
-					Logger.minor(this, "Sending message "+i);
+				if(logMINOR) Logger.minor(this, "Sending message "+i);
 				int thisLength;
 				if(i == messages.length) thisLength = 0;
 				else thisLength = (messageData[i].length + 2);
