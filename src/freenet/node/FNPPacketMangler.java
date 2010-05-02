@@ -69,9 +69,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private static volatile boolean logDEBUG;
 
 	static {
-		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
-			public void shouldUpdate(){
+			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 			}
@@ -134,12 +134,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** The key used to authenticate the hmac */
 	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];
 	public static final int TRANSIENT_KEY_REKEYING_MIN_INTERVAL = 30*60*1000;
-        /** The rekeying interval for the session key (keytrackers) */
-        public static final int SESSION_KEY_REKEYING_INTERVAL = 60*60*1000;
+	/** The rekeying interval for the session key (keytrackers) */
+	public static final int SESSION_KEY_REKEYING_INTERVAL = 60*60*1000;
 	/** The max amount of time we will accept to use the current tracker when it should have been replaced */
 	public static final int MAX_SESSION_KEY_REKEYING_DELAY = 5*60*1000;
-        /** The amount of data sent before we ask for a rekey */
-        public static final int AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY = 1024 * 1024 * 1024;
+	/** The amount of data sent before we ask for a rekey */
+	public static final int AMOUNT_OF_BYTES_ALLOWED_BEFORE_WE_REKEY = 1024 * 1024 * 1024;
 	/** The Runnable in charge of rekeying on a regular basis */
 	private final Runnable transientKeyRekeyer = new Runnable() {
 		public void run() {
@@ -673,7 +673,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 4){
+		} else if (negType==2 || negType == 4) {
 			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			/*
@@ -694,11 +694,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			 * M4:
 			 * Encrypted message of the signature on both nonces, both exponentials using the same keys as in the previous message
 			 */ 
-			if(packetType<0 || packetType>3){
+			if(packetType<0 || packetType>3) {
 				Logger.error(this,"Unknown PacketType" + packetType + "from" + replyTo + "from" +pn); 
 				return ;
 			}
-			else if(packetType==0){
+			else if(packetType==0) {
 				/*
 				 * Initiator- This is a straightforward DiffieHellman exponential.
 				 * The Initiator Nonce serves two purposes;it allows the initiator to use the same
@@ -709,7 +709,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				processJFKMessage1(payload,3,pn,replyTo,false,-1,negType);
 
 			}
-			else if(packetType==1){
+			else if(packetType==1) {
 				/*
 				 * Responder replies with a signed copy of his own exponential, a random
 				 * nonce and an authenticator calculated from a transient hash key private
@@ -717,7 +717,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 */
 				processJFKMessage2(payload,3,pn,replyTo,false,-1,negType);
 			}
-			else if(packetType==2){
+			else if(packetType==2) {
 				/*
 				 * Initiator echoes the data sent by the responder.These messages are
 				 * cached by the Responder.Receiving a duplicate message simply causes
@@ -725,7 +725,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 */
 				processJFKMessage3(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, negType);
 			}
-			else if(packetType==3){
+			else if(packetType==3) {
 				/*
 				 * Encrypted message of the signature on both nonces, both exponentials 
 				 * using the same keys as in the previous message.
@@ -794,7 +794,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		NativeBigInteger _hisExponential = new NativeBigInteger(1,hisExponential);
 		if(DiffieHellman.checkDHExponentialValidity(this.getClass(), _hisExponential)) {
 			sendJFKMessage2(nonceInitiator, hisExponential, pn, replyTo, unknownInitiator, setupType, negType);
-		}else
+		} else
 			Logger.error(this, "We can't accept the exponential "+pn+" sent us!! REDFLAG: IT CAN'T HAPPEN UNLESS AGAINST AN ACTIVE ATTACKER!!");
 
 		long t2=System.currentTimeMillis();
@@ -986,7 +986,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(shouldLogErrorInHandshake(t1))
 				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer()+" (time since added: "+pn.timeSinceAddedOrRestarted()+" time last receive:"+pn.lastReceivedPacketTime()+')');
 			return;
-		} else if(!Arrays.equals(myNi, nonceInitiator)){
+		} else if(!Arrays.equals(myNi, nonceInitiator)) {
 			if(shouldLogErrorInHandshake(t1))
 				Logger.normal(this, "Ignoring old JFK(2) (different nonce to the one we sent - either a timing artefact or an attempt to change the nonce)");
 			return;
@@ -1450,7 +1450,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// cleanup
-                // FIXME: maybe we should copy zeros/garbage into it before leaving it to the GC
+		// FIXME: maybe we should copy zeros/garbage into it before leaving it to the GC
 		pn.setJFKBuffer(null);
 		pn.jfkKa = null;
 		pn.jfkKe = null;
@@ -2099,7 +2099,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				usm.checkFilters(m, sock);
 			}
 		}
-                
+
 		tracker.pn.maybeRekey();
 		if(logMINOR) Logger.minor(this, "Done");
 	}
