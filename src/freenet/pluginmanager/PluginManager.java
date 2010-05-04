@@ -186,13 +186,10 @@ public class PluginManager {
 		}
 
 		if(contains(toStart, "KeyExplorer")) {
-			String[] newToStart = new String[toStart.length+1];
-			System.arraycopy(toStart, 0, newToStart, 0, toStart.length);
-			for(int i=0;i<newToStart.length;i++) {
-				if("KeyExplorer".equals(newToStart[i]))
-					newToStart[i] = "KeyUtils";
+			for(int i=0;i<toStart.length;i++) {
+				if("KeyExplorer".equals(toStart[i]))
+					toStart[i] = "KeyUtils";
 			}
-			toStart = newToStart;
 			System.err.println("KeyExplorer plugin renamed to KeyUtils");
 		}
 
