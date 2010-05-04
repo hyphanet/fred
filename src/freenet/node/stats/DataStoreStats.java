@@ -7,8 +7,6 @@ package freenet.node.stats;
  * Date: Apr 16, 2010
  */
 public interface DataStoreStats {
-	final long FIX_32_KB = 32 * 1024;
-
 	long keys();
 
 	long capacity();

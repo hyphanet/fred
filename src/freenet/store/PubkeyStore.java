@@ -74,5 +74,4 @@ public class PubkeyStore extends StoreCallback<DSAPublicKey> {
 	public byte[] routingKeyFromFullKey(byte[] keyBuf) {
 		return keyBuf;
 	}
-
 }

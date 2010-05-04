@@ -44,7 +44,6 @@ public class CHKStore extends StoreCallback<CHKBlock> {
 	public int fullKeyLength() {
 		return NodeCHK.FULL_KEY_LENGTH;
 	}
-
 	@Override
 	public int headerLength() {
 		return CHKBlock.TOTAL_HEADERS_LENGTH;
