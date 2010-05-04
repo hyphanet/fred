@@ -25,13 +25,14 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	/** The FetchListener that gets notified when the download progresses */
 	private NotifierFetchListener	fetchListener;
 
-	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx) {
+	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, boolean pushed) {
 		// This is a <div>
 		super("div", "class", "progressbar", ctx);
 		this.tracker = tracker;
 		this.key = key;
 		this.maxSize = maxSize;
-		init();
+		init(pushed);
+		if(!pushed) return;
 		// Creates and registers the FetchListener
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
 		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);

@@ -23,13 +23,14 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 	/** It displays more info on advanced mode */
 	private boolean					isAdvancedMode;
 
-	public ProgressInfoElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, boolean isAdvancedMode, ToadletContext ctx) {
+	public ProgressInfoElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, boolean isAdvancedMode, ToadletContext ctx, boolean pushed) {
 		super("span", ctx);
 		this.tracker = tracker;
 		this.key = key;
 		this.maxSize = maxSize;
 		this.isAdvancedMode = isAdvancedMode;
-		init();
+		init(pushed);
+		if(!pushed) return;
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
 		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
 	}
