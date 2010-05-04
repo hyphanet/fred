@@ -248,7 +248,7 @@ public final class PageMaker {
 		}
 		
 		// Add the generated javascript, if it and pushing is enabled
-		if (ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled()) headNode.addChild("script", new String[] { "type", "language", "src" }, new String[] {
+		if (ctx != null && ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled()) headNode.addChild("script", new String[] { "type", "language", "src" }, new String[] {
 				"text/javascript", "javascript", "/static/freenetjs/freenetjs.nocache.js" });
 		
 		Toadlet t;
