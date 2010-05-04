@@ -261,7 +261,8 @@ public final class PageMaker {
 		if(t != null) activePath = t.path();
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		//Add a hidden input that has the request's id
-		bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
+		if(ctx != null)
+			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
 		
 		// Add the client-side localization only when pushing is enabled
 		if (ctx.getContainer().isFProxyWebPushingEnabled()) {
