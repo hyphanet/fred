@@ -247,8 +247,11 @@ public final class PageMaker {
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
 		
+		boolean webPushingEnabled = 
+			ctx != null && ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled();
+		
 		// Add the generated javascript, if it and pushing is enabled
-		if (ctx != null && ctx.getContainer().isFProxyJavascriptEnabled() && ctx.getContainer().isFProxyWebPushingEnabled()) headNode.addChild("script", new String[] { "type", "language", "src" }, new String[] {
+		if (webPushingEnabled) headNode.addChild("script", new String[] { "type", "language", "src" }, new String[] {
 				"text/javascript", "javascript", "/static/freenetjs/freenetjs.nocache.js" });
 		
 		Toadlet t;
@@ -261,11 +264,11 @@ public final class PageMaker {
 		if(t != null) activePath = t.path();
 		HTMLNode bodyNode = htmlNode.addChild("body");
 		//Add a hidden input that has the request's id
-		if(ctx != null)
+		if(webPushingEnabled)
 			bodyNode.addChild("input",new String[]{"type","name","value","id"},new String[]{"hidden","requestId",ctx.getUniqueId(),"requestId"});
 		
 		// Add the client-side localization only when pushing is enabled
-		if (ctx.getContainer().isFProxyWebPushingEnabled()) {
+		if (webPushingEnabled) {
 			bodyNode.addChild("script", new String[] { "type", "language" }, new String[] { "text/javascript", "javascript" }).addChild("%", PushingTagReplacerCallback.getClientSideLocalizationScript());
 		}
 		
