@@ -234,6 +234,7 @@ public class PluginManager {
 	}
 
 	private boolean started;
+	private boolean stopping;
 	private String[] toStart;
 
 	public void start(Config config) {
@@ -250,6 +251,7 @@ public class PluginManager {
 		// Stop loading plugins.
 		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
 		synchronized(this) {
+			stopping = true;
 			for(Iterator<PluginProgress> i = startingPlugins.iterator();i.hasNext();) {
 				PluginProgress progress = i.next();
 				if(matches == null) matches = new ArrayList<PluginProgress>();
@@ -707,7 +709,7 @@ public class PluginManager {
 	 */
 	public void removePlugin(PluginInfoWrapper pi) {
 		synchronized(pluginWrappers) {
-			if(!pluginWrappers.remove(pi))
+			if((!stopping) && !pluginWrappers.remove(pi))
 				return;
 		}
 		core.storeConfig();
