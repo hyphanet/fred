@@ -1432,16 +1432,22 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 				//URI attributes require additional processing
 				if (uriAttrs.contains(x) || inlineURIAttrs.contains(x)) {
-					if(uriAttrs.contains(x))
+					boolean inline;
+					if(uriAttrs.contains(x)) {
 						if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
-					else
+						inline = false;
+					}
+					else {
 						if(logMINOR) Logger.minor(this, "Inline URI attribute: "+x);
+						inline = true;
+
+					}
 					// URI
 					if (o instanceof String) {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, false);
+						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, inline);
 						if (uri == null) {
 							continue;
 						}
@@ -1451,6 +1457,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					// FIXME: rewrite absolute URLs, handle ?date= etc
 				}
 
+				if(allowedAttrs.contains(x)) {
+					/*We create a placeholder in the sanitized output.
+					 * This ensures the order of the attributes Subclasses
+					 * will take care of parsing and replacing these values*/
+					if(allowedAttrs.contains(x)) {
+							hn.put(x, null);
+							continue;
+					}
+				}
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
