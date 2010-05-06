@@ -1499,11 +1499,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	//	static String[] titleString = new String[] {"title"};
 
 	static abstract class ScriptStyleTagVerifier extends TagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] {"type"};
+
 		ScriptStyleTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs) {
 			super(tag, allowedAttrs, uriAttrs, null);
+			for(String attr : locallyVerifiedAttrs) {
+				this.allowedAttrs.add(attr);
+			}
 		}
 
 		abstract void setStyle(boolean b, HTMLParseContext pc);
