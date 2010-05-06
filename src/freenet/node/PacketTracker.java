@@ -168,10 +168,11 @@ public class PacketTracker {
 	public void queueForgotten(int seqNumber, boolean log) {
 		if(log && ((!isDeprecated) || logMINOR)) {
 			String msg = "Queueing forgotten for " + seqNumber + " for " + this;
-			if(!isDeprecated)
+			if(!isDeprecated) {
 				Logger.error(this, msg);
-			else
+			} else {
 				Logger.minor(this, msg);
+			}
 		}
 		QueuedForgotten qf = new QueuedForgotten(seqNumber);
 		synchronized(forgottenQueue) {
