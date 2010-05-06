@@ -1655,12 +1655,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class BaseCoreTagVerifier extends TagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"id",
+			"class",
+			"style"
+		};
+
 		BaseCoreTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] inlineURIAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
+			for(String attr : locallyVerifiedAttrs) {
+				this.allowedAttrs.add(attr);
+			}
 		}
 
 		@Override
