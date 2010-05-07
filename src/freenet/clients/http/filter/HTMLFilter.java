@@ -2301,9 +2301,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class BaseHrefTagVerifier extends TagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"href"};
 
 		BaseHrefTagVerifier(String string, String[] strings, String[] strings2) {
 			super(string, strings, strings2, null);
+			for(String attr : locallyVerifiedAttrs) {
+				this.allowedAttrs.add(attr);
+			}
 		}
 		
 		@Override
