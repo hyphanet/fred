@@ -2283,7 +2283,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	static class HtmlTagVerifier extends TagVerifier {
 		HtmlTagVerifier() {
-			super("html", new String[] { "id", "version" });
+			super("html", new String[] { "id", "version", "xmlns" });
 		}
 
 		@Override
