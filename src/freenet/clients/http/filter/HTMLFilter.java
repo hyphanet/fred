@@ -2011,12 +2011,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	// We do not allow forms to act anywhere else than on / 
 	static class FormTagVerifier extends CoreTagVerifier{
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"method",
+			"action"
+		};
 		FormTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, null, eventAttrs);
+			for(String attr : locallyVerifiedAttrs) {
+				this.allowedAttrs.add(attr);
+			}
 		}
 
 		@Override
