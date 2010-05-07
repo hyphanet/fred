@@ -1789,6 +1789,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class LinkTagVerifier extends CoreTagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"type",
+			"charset",
+			"rel",
+			"rev",
+			"media",
+			"hreflang",
+			"href"
+		};
 		LinkTagVerifier(
 			String tag,
 			String[] allowedAttrs,
@@ -1796,6 +1805,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] inlineURIAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
+			for(String attr : locallyVerifiedAttrs) {
+				this.allowedAttrs.add(attr);
+			}
 		}
 
 		@Override
