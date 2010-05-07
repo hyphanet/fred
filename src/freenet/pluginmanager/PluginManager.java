@@ -1024,7 +1024,7 @@ public class PluginManager {
 		addOfficialPlugin("XMLLibrarian", false, 25, true, new FreenetURI("CHK@PzdgNIKIzYKet2x6rk2i9TMA8R3RTKf7~H7NBB-D1m4,8rfAK29Z8LkAcmwfVgF0RBGtTxaZZBmc7qcX5AoQUEo,AAIC--8/XMLLibrarian.jar"));
 		addOfficialPlugin("XMLSpider", false, 44, true, new FreenetURI("http://127.0.0.1:8888/CHK@lMQuZPmHNzyO2FxQ5s5K76jnx3R1Axei48LEgblX-zo,NInQiry56ePVwC0z8wZxPMy6ZO915R8lhLNm1pZwo8I,AAIC--8/XMLSpider.jar"));
 		addOfficialPlugin("Freereader", false, 4, true, new FreenetURI("CHK@4PuSjXk4Z0Hdu04JLhdPHLyOVLljj8qVbjRn3rHVzvg,bDGYnuYj67Q4uzroPBEWAYWRk26bPzf-iQ4~Uo3S7mg,AAIC--8/Freereader.jar"));
-		addOfficialPlugin("Library", false, 7, true, new FreenetURI("CHK@c2J-92JqdznhTP2ZLz-Rhi8ZUhG9tsZzxthSsqJq~CM,stzV0o2kYcktA1vc3PIQ3F~pdPupAqzyyA8eLlqJHiE,AAIC--8/Library.jar"));
+		addOfficialPlugin("Library", false, 9, true, new FreenetURI("CHK@y56~LPDrifHVP1MeMKPdWFLKs2Ch7hQl181jhgBYKl4,41Ig57QJnAD6npm596cM1865IAVugCsErGNIoE171x8,AAIC--8/Library.jar"));
 		} catch (MalformedURLException e) {
 			throw new Error("Malformed hardcoded URL: "+e, e);
 		}
