@@ -252,7 +252,7 @@ public class PacketTracker {
 		}
 
 		@SuppressWarnings("unchecked")
-        public final T setNext(Item<?> i) {
+		public final T setNext(Item<?> i) {
 			T old = next;
 			next = (T)i;
 			return old;
@@ -263,7 +263,7 @@ public class PacketTracker {
 		}
 
 		@SuppressWarnings("unchecked")
-        public T setPrev(Item<?> i) {
+		public T setPrev(Item<?> i) {
 			T old = prev;
 			prev = (T)i;
 			return old;
