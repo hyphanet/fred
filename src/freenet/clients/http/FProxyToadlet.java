@@ -160,7 +160,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(mimeType.compareTo("application/xhtml+xml")==0){
 					mimeType="text/html";
 				}
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null,new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx), maybeCharset);
+				
+				PushingTagReplacerCallback tagReplacer = 
+					container.isFProxyWebPushingEnabled() ? new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx) : null;
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null, tagReplacer, maybeCharset);
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;
@@ -604,6 +607,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(logMINOR) Logger.minor(this, "Still in progress");
 				// Still in progress
 				boolean isJsEnabled=ctx.getContainer().isFProxyJavascriptEnabled() && ua != null && !ua.contains("AppleWebKit/");
+				boolean isWebPushingEnabled = false;
 				PageNode page = ctx.getPageMaker().getPageNode(l10n("fetchingPageTitle"), ctx);
 				HTMLNode pageNode = page.outer;
 				String location = getLink(key, requestedMimeType, maxSize, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"));
@@ -612,8 +616,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					//If the user has enabled javascript, we add a <noscript> http refresh(if he has disabled it in the browser)
 					headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
 						// If pushing is disabled, but js is enabled, then we add the original progresspage.js
-						if (ctx.getContainer().isFProxyWebPushingEnabled() == false) {
-							headNode.addChild("noscript").addChild("meta", "http-equiv", "Refresh").addAttribute("content", "2;URL=" + location);
+						if ((isWebPushingEnabled = ctx.getContainer().isFProxyWebPushingEnabled()) == false) {
 							HTMLNode scriptNode = headNode.addChild("script", "//abc");
 							scriptNode.addAttribute("type", "text/javascript");
 							scriptNode.addAttribute("src", "/static/js/progresspage.js");
@@ -627,7 +630,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
-				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, maxSize, core.isAdvancedModeEnabled(), ctx));
+				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
 
 				
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
@@ -635,7 +638,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(fr.totalBlocks <= 0)
 					progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 				else {
-					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,ctx));
+					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,ctx,isWebPushingEnabled));
 				}
 				
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");

@@ -228,18 +228,18 @@ public class RequestCooldownQueue implements CooldownQueue {
 				notGetter++;
 			}
 		}
-		System.err.println("COOLDOWN QUEUE DUMP:");
-		System.err.println();
-		System.err.println("BY CLIENTS:");
-		for (Map.Entry<String, Integer> en: countsByShortURI.entrySet()) {
-			System.err.println(en.getKey()+" : "+en.getValue());
-		}
-		System.err.println();
-		System.err.println("Nulls:"+nulls);
-		System.err.println("Null clients: "+nullClients);
-		System.err.println("Not a getter: "+notGetter);
-		System.err.println("Valid: "+valid);
-		System.err.println();
+//		System.err.println("COOLDOWN QUEUE DUMP:");
+//		System.err.println();
+//		System.err.println("BY CLIENTS:");
+//		for (Map.Entry<String, Integer> en: countsByShortURI.entrySet()) {
+//			System.err.println(en.getKey()+" : "+en.getValue());
+//		}
+//		System.err.println();
+//		System.err.println("Nulls:"+nulls);
+//		System.err.println("Null clients: "+nullClients);
+//		System.err.println("Not a getter: "+notGetter);
+//		System.err.println("Valid: "+valid);
+//		System.err.println();
 		return foundIT;
 	}
 

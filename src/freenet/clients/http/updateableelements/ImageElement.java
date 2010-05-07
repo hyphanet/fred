@@ -48,11 +48,11 @@ public class ImageElement extends BaseUpdateableElement {
 
 	private boolean					wasError		= false;
 
-	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx){
-		return createImageElement(tracker,key,maxSize,ctx,-1,-1, null);
+	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx, boolean pushed){
+		return createImageElement(tracker,key,maxSize,ctx,-1,-1, null, pushed);
 	}
 	
-	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx,int width,int height, String name){
+	public static ImageElement createImageElement(FProxyFetchTracker tracker,FreenetURI key,long maxSize,ToadletContext ctx,int width,int height, String name, boolean pushed){
 		Map<String,String> attributes=new HashMap<String, String>();
 		attributes.put("src", key.toString());
 		if(width!=-1){
@@ -65,10 +65,10 @@ public class ImageElement extends BaseUpdateableElement {
 			attributes.put("alt", name);
 			attributes.put("title", name);
 		}
-		return new ImageElement(tracker,key,maxSize,ctx,new ParsedTag("img", attributes));
+		return new ImageElement(tracker,key,maxSize,ctx,new ParsedTag("img", attributes), pushed);
 	}
 	
-	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg) {
+	public ImageElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, ParsedTag originalImg, boolean pushed) {
 		super("span", ctx);
 		long now = System.currentTimeMillis();
 		if (logMINOR) {
@@ -78,7 +78,8 @@ public class ImageElement extends BaseUpdateableElement {
 		this.tracker = tracker;
 		this.key = this.origKey = key;
 		this.maxSize = maxSize;
-		init();
+		init(pushed);
+		if(!pushed) return;
 		// Creates and registers the FetchListener
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
 		((SimpleToadletServer) ctx.getContainer()).getTicker().queueTimedJob(new Runnable() {

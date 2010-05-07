@@ -185,6 +185,14 @@ public class PluginManager {
 			System.err.println("Loading Library plugin, replaces XMLLibrarian, when upgrading from pre-1237");
 		}
 
+		if(contains(toStart, "KeyExplorer")) {
+			for(int i=0;i<toStart.length;i++) {
+				if("KeyExplorer".equals(toStart[i]))
+					toStart[i] = "KeyUtils";
+			}
+			System.err.println("KeyExplorer plugin renamed to KeyUtils");
+		}
+
 		pmconfig.register("alwaysLoadOfficialPluginsFromCentralServer", false, 0, false, false, "PluginManager.alwaysLoadPluginsFromHTTPS", "PluginManager.alwaysLoadPluginsFromCentralServerLong", new BooleanCallback() {
 
 			@Override
@@ -226,6 +234,7 @@ public class PluginManager {
 	}
 
 	private boolean started;
+	private boolean stopping;
 	private String[] toStart;
 
 	public void start(Config config) {
@@ -236,6 +245,66 @@ public class PluginManager {
 			started = true;
 			toStart = null;
 		}
+	}
+	
+	public void stop(int maxWaitTime) {
+		// Stop loading plugins.
+		ArrayList<PluginProgress> matches = new ArrayList<PluginProgress>();
+		synchronized(this) {
+			stopping = true;
+			for(Iterator<PluginProgress> i = startingPlugins.iterator();i.hasNext();) {
+				PluginProgress progress = i.next();
+				if(matches == null) matches = new ArrayList<PluginProgress>();
+				matches.add(progress);
+				i.remove();
+			}
+		}
+		if(matches == null) return;
+		for(PluginProgress progress : matches) {
+			progress.kill();
+		}
+		// Stop already loaded plugins.
+		ArrayList<PluginInfoWrapper> wrappers;
+		synchronized(pluginWrappers) {
+			wrappers = new ArrayList<PluginInfoWrapper>(pluginWrappers);
+		}
+		for(PluginInfoWrapper pi : wrappers)
+			pi.startShutdownPlugin(this, false);
+		long now = System.currentTimeMillis();
+		long deadline = now + maxWaitTime;
+		while(true) {
+			int delta = (int) (deadline - now);
+			if(delta <= 0) {
+				String list = pluginList(wrappers);
+				Logger.error(this, "Plugins still shutting down at timeout:\n"+list);
+				System.err.println("Plugins still shutting down at timeout:\n"+list);
+			} else {
+				for(Iterator<PluginInfoWrapper> it = wrappers.listIterator();it.hasNext();) {
+					PluginInfoWrapper pi = it.next();
+					System.out.println("Waiting for plugin to finish shutting down: "+pi.getFilename());
+					if(pi.finishShutdownPlugin(this, delta, false)) {
+						it.remove();
+					}
+				}
+				if(wrappers.isEmpty()) {
+					Logger.normal(this, "All plugins unloaded");
+					System.out.println("All plugins unloaded");
+					return;
+				}
+				String list = pluginList(wrappers);
+				Logger.error(this, "Plugins still shutting down:\n"+list);
+				System.err.println("Plugins still shutting down:\n"+list);
+			}
+		}
+	}
+
+	private static String pluginList(ArrayList<PluginInfoWrapper> wrappers) {
+		StringBuffer sb = new StringBuffer();
+		for(PluginInfoWrapper pi : wrappers) {
+			sb.append(pi.getFilename());
+			sb.append('\n');
+		}
+		return sb.toString();
 	}
 
 	private String[] getConfigLoadString() {
@@ -640,7 +709,7 @@ public class PluginManager {
 	 */
 	public void removePlugin(PluginInfoWrapper pi) {
 		synchronized(pluginWrappers) {
-			if(!pluginWrappers.remove(pi))
+			if((!stopping) && !pluginWrappers.remove(pi))
 				return;
 		}
 		core.storeConfig();
@@ -946,7 +1015,7 @@ public class PluginManager {
 		addOfficialPlugin("HelloWorld", false, new FreenetURI("CHK@ZdTXnWV-ikkt25-y8jmhlHjCY-nikDMQwcYlWHww5eg,Usq3uRHpHuIRmMRRlNQE7BNveO1NwNI7oNKdb7cowFM,AAIC--8/HelloWorld.jar"));
 		addOfficialPlugin("HelloFCP", false, new FreenetURI("CHK@0gtXJpw1QUJCmFOhoPRNqhsNbMtVw1CGVe46FUv7-e0,X8QqhtPkHoaFCUd89bgNaKxX1AV0WNBVf3sRgSF51-g,AAIC--8/HelloFCP.jar"));
 		addOfficialPlugin("JSTUN", true, 2, false, new FreenetURI("CHK@STQEzqyYLPtd4mCMIXO2HV38J6jG492hyPcEjTdc1oI,ojl4TCcJpJbo1OcO8nwPjycNCt1mn6zJq3lxCNExIHI,AAIC--8/JSTUN.jar"));
-		addOfficialPlugin("KeyExplorer", false, 4011, false, new FreenetURI("CHK@OzqvGdCum44k4HGg5rWVtIFUchfSPcLikiIiAKCzhB8,KaxZW1yYzQFCIV0P43WPyDPgTxkV5pyWTbfOtrH-ll0,AAIC--8/KeyExplorer.jar"));
+		addOfficialPlugin("KeyUtils", false, 5003, false, new FreenetURI("CHK@dF9Lg7Q7Bbt4uZ4OANVaSlgrUmHmV0Pj03Y1SCaN1Fw,H5Wj5VCgI4JSusMGonUiPlAwSVAahN0Bzw2v1C6QvcA,AAIC--8/KeyUtils.jar"));
 		addOfficialPlugin("MDNSDiscovery", false, 2, false, new FreenetURI("CHK@wPyhY61bsDM3OW6arFlxYX8~mBKjo~XtOTIAbT0dk88,Vr3MTAzkW5J28SJs2dTxkj6D4GVNm3u8GFsxJgzTL1M,AAIC--8/MDNSDiscovery.jar"));
 		addOfficialPlugin("SNMP", false, new FreenetURI("CHK@EykJIv83UE291zONVzfXqyJYX5t66uCQJHkzQrB61MI,-npuolPZj1fcAWane2~qzRNEjKDERx52aQ5bC6NBQgw,AAIC--8/SNMP.jar"));
 		addOfficialPlugin("TestGallery", false, 1, false, new FreenetURI("CHK@LfJVh1EkCr4ry0yDW74vwxkX-3nkr~ztW2z0SUZHfC0,-mz7l39dC6n0RTUiSokjC~pUDO7PWZ89miYesKH0-WA,AAIC--8/TestGallery.jar"));

@@ -78,7 +78,7 @@ public class PushingTagReplacerCallback implements TagReplacerCallback {
 						}
 						try {
 							// Create the ImageElement
-							return new ImageElement(tracker, new FreenetURI(src), maxSize, ctx, pt).generate();
+							return new ImageElement(tracker, new FreenetURI(src), maxSize, ctx, pt, true).generate();
 						} catch (MalformedURLException mue) {
 							return null;
 						}

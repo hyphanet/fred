@@ -24,7 +24,7 @@ public abstract class BaseUpdateableElement extends HTMLNode {
 	}
 
 	/** Initializes the Node. It needs to be invoked from the constructor */
-	protected void init() {
+	protected void init(boolean pushed) {
 		// We set the id to easily find the element
 		addAttribute("id", getUpdaterId(ctx.getUniqueId()));
 		// Updates the state, so the resulting page will have the actual state and content

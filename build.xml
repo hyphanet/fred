@@ -256,7 +256,8 @@
 		<delete dir="${lib}"/>
 		<delete dir="${javadoc}"/>
 		<ant antfile="build.xml" target="deleteGenerated" dir="generator/js"/>
-		<delete dir="${GWT.lib}"/>
+		<!--<delete dir="${GWT.lib}"/>
+		Don't delete GWT dir -->
 	</target>
 
 

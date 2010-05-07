@@ -26,7 +26,7 @@ public class TesterElement extends BaseUpdateableElement {
 		this.id = id;
 		this.ctx = ctx;
 		this.maxStatus = max;
-		init();
+		init(true);
 		t = new Timer(true);
 		t.scheduleAtFixedRate(new TimerTask() {
 
