@@ -1399,6 +1399,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				}
 			h = sanitizeHash(h, t, pc);
+			//Remove any blank entries
+			Stack<String> emptyAttributes = new Stack<String>();
+			for(Map.Entry<String, Object> entry : h.entrySet()) {
+				if(entry.getValue() == null) emptyAttributes.add(entry.getKey());
+			}
+			for(String remove : emptyAttributes) {
+				h.remove(remove);
+			}
+
 			if (h == null)
 				return null;
 			if (t.startSlash)
