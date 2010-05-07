@@ -22,11 +22,11 @@ public class PeerMessageQueue {
 		ArrayList<Long> itemsIDs;
 		Map<Long, LinkedList<MessageItem>> itemsByID;
 		// Construct structures lazily, we're protected by the overall synchronized.
-		
+
 		/** 0 = itemsNoID, else 1-N = in itemsWithID[0-(N-1)].
 		 * Set when a packet is sent. */
 		private int roundRobinCounter;
-		
+
 		public void addLast(MessageItem item) {
 			if(item.msg == null) {
 				if(itemsNoID == null) itemsNoID = new LinkedList<MessageItem>();
@@ -60,7 +60,7 @@ public class PeerMessageQueue {
 			}
 			list.addLast(item);
 		}
-		
+
 		public void addFirst(MessageItem item) {
 			if(item.msg == null) {
 				if(itemsNoID == null) itemsNoID = new LinkedList<MessageItem>();
@@ -203,7 +203,7 @@ public class PeerMessageQueue {
 					if(list.isEmpty()) break;
 					MessageItem item = list.getFirst();
 					if(isUrgent && item.submitted + PacketSender.MAX_COALESCING_DELAY > now) break;
-					
+
 					int thisSize = item.getLength();
 					if(size + 2 + thisSize > maxSize) {
 						if(size == minSize) {
@@ -249,7 +249,7 @@ public class PeerMessageQueue {
 			}
 			return size;
 		}
-		
+
 		/**
 		 * Add urgent messages to <code>messages</code> until there are no more
 		 * messages to add or <code>size</code> would exceed
@@ -268,7 +268,7 @@ public class PeerMessageQueue {
 		public int addUrgentMessages(int size, int minSize, int maxSize, long now, ArrayList<MessageItem> messages) {
 			return addMessages(size, minSize, maxSize, now, messages, true);
 		}
-		
+
 		/**
 		 * Add messages to <code>messages</code> until there are no more
 		 * messages to add or <code>size</code> would exceed
@@ -294,11 +294,11 @@ public class PeerMessageQueue {
 			itemsIDs = null;
 			itemsByID = null;
 		}
-		
-		
-		
+
+
+
 	}
-	
+
 	PeerMessageQueue() {
 		queuesByPriority = new PrioQueue[DMT.NUM_PRIORITIES];
 		for(int i=0;i<queuesByPriority.length;i++)
@@ -348,13 +348,13 @@ public class PeerMessageQueue {
 		}
 		return x;
 	}
-	
+
 	private synchronized void enqueuePrioritizedMessageItem(MessageItem addMe) {
 		//Assume it goes on the end, both the common case
 		short prio = addMe.getPriority();
 		queuesByPriority[prio].addLast(addMe);
 	}
-	
+
 	/**
 	 * like enqueuePrioritizedMessageItem, but adds it to the front of those in the same priority.
 	 */
@@ -378,8 +378,8 @@ public class PeerMessageQueue {
 	}
 
 	/**
-	 * Get the time at which the next message must be sent. If any message is 
-	 * overdue, we will return a value less than now, which may not be completely 
+	 * Get the time at which the next message must be sent. If any message is
+	 * overdue, we will return a value less than now, which may not be completely
 	 * accurate.
 	 * @param t
 	 * @param now
@@ -463,8 +463,8 @@ public class PeerMessageQueue {
 			size = queue.addMessages(Math.abs(size), minSize, maxSize, now, messages);
 		}
 		return size;
-	}	
-	
-	
+	}
+
+
 }
 
