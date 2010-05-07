@@ -2078,8 +2078,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
 			this.allowedTypes = new HashSet<String>();
 			if (types != null) {
-				for (int x = 0; x < types.length; x++)
+				for (int x = 0; x < types.length; x++) {
 					this.allowedTypes.add(types[x]);
+					this.allowedAttrs.add(types[x]);
+				}
 			}
 		}
 
