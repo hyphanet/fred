@@ -2102,7 +2102,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	
 	static class MetaTagVerifier extends TagVerifier {
 		MetaTagVerifier() {
-			super("meta", new String[] { "id" });
+			super("meta", new String[] {
+					"id",
+					"http-equiv",
+					"name",
+					"content",
+					});
 		}
 
 		@Override
