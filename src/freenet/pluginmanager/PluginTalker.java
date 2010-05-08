@@ -57,23 +57,27 @@ public class PluginTalker {
 		node.executor.execute(new Runnable() {
 
 			public void run() {
-				try {
-					FredPluginFCP plug = pluginRef.get();
-					if (plug==null) {
-						// FIXME How to get this out to surrounding send(..)?
-						// throw new PluginNotFoundException(How to get this out to surrounding send(..)?);
-						Logger.error(this, "Connection to plugin '"+pluginName+"' lost.", new Exception("FIXME"));
-						return;
-					}
-					plug.handle(replysender, plugparams, data2, access);
-				} catch (ThreadDeath td) {
-					throw td;  // Fatal, thread is stop()'ed
-				} catch (VirtualMachineError vme) {
-					throw vme; // OOM is included here
-				} catch (Throwable t) {
-					Logger.error(this, "Cought error while execute fcp plugin handler for '"+pluginName+"', report it to the plugin author: " + t.getMessage(), t);
-				}
+				sendSyncInternalOnly(plugparams, data2);
 			}
 		}, "FCPPlugin talk runner for " + this);
+	}
+	
+	public void sendSyncInternalOnly(final SimpleFieldSet plugparams, final Bucket data2) {
+		try {
+			FredPluginFCP plug = pluginRef.get();
+			if (plug==null) {
+				// FIXME How to get this out to surrounding send(..)?
+				// throw new PluginNotFoundException(How to get this out to surrounding send(..)?);
+				Logger.error(this, "Connection to plugin '"+pluginName+"' lost.", new Exception("FIXME"));
+				return;
+			}
+			plug.handle(replysender, plugparams, data2, access);
+		} catch (ThreadDeath td) {
+			throw td;  // Fatal, thread is stop()'ed
+		} catch (VirtualMachineError vme) {
+			throw vme; // OOM is included here
+		} catch (Throwable t) {
+			Logger.error(this, "Cought error while execute fcp plugin handler for '"+pluginName+"', report it to the plugin author: " + t.getMessage(), t);
+		}
 	}
 }
