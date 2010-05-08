@@ -75,6 +75,13 @@ public interface HighLevelSimpleClient {
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException;
 
 	/**
+	 * Blocking insert.
+	 * @param filenameHint If set, insert a single-file manifest containing only this file, under the given filename.
+	 * @throws InsertException If there is an error inserting the data
+	 */
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, short priority) throws InsertException;
+
+	/**
 	 * Non-blocking insert.
 	 * @param isMetadata If true, insert metadata.
 	 * @param cb Will be called when the insert completes. If the request is persistent
@@ -82,6 +89,15 @@ public interface HighLevelSimpleClient {
 	 * @param ctx Insert context so you can customise the insertion process.
 	 */
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb) throws InsertException;
+
+	/**
+	 * Non-blocking insert.
+	 * @param isMetadata If true, insert metadata.
+	 * @param cb Will be called when the insert completes. If the request is persistent
+	 * this will be called on the database thread with a container parameter.
+	 * @param ctx Insert context so you can customise the insertion process.
+	 */
+	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientPutCallback cb, short priority) throws InsertException;
 
 	/**
 	 * Blocking insert of a redirect.
