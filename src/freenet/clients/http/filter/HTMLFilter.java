@@ -1402,7 +1402,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			//Remove any blank entries
 			Stack<String> emptyAttributes = new Stack<String>();
 			for(Map.Entry<String, Object> entry : h.entrySet()) {
-				if(entry.getValue() == null) emptyAttributes.add(entry.getKey());
+				if(entry.getValue() == null || entry.getValue() == "" && pc.isXHTML){
+					emptyAttributes.add(entry.getKey());
+				}
 			}
 			for(String remove : emptyAttributes) {
 				h.remove(remove);
