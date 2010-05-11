@@ -2104,6 +2104,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class MetaTagVerifier extends TagVerifier {
+		final String[] allowedContentTypes = {
+				"text/html",
+				"application/xhtml+xml"
+		};
 		MetaTagVerifier() {
 			super("meta", new String[] {
 					"id",
@@ -2168,16 +2172,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							for(int i=0;i<typesplit.length;i++)
 								Logger.debug(this, "["+i+"] = "+typesplit[i]);
 						}
-						if (typesplit[0].equalsIgnoreCase("text/html")
-							&& ((typesplit[1] == null)
-								|| typesplit[1].equalsIgnoreCase(pc.charset))) {
-							hn.put("http-equiv", http_equiv);
-							hn.put(
-								"content",
-								typesplit[0]
-									+ (typesplit[1] != null
-										? "; charset=" + typesplit[1]
-										: ""));
+						for (int i = 0; i < allowedContentTypes.length; i++) {
+							if (typesplit[0].equalsIgnoreCase(allowedContentTypes[i])
+									&& ((typesplit[1] == null) || typesplit[1]
+											.equalsIgnoreCase(pc.charset))) {
+								hn.put("http-equiv", http_equiv);
+								hn.put("content", typesplit[0]
+										+ (typesplit[1] != null ? "; charset="
+												+ typesplit[1] : ""));
+							}
 						}
 						if(typesplit[1] != null)
 							pc.detectedCharset = typesplit[1].trim();
