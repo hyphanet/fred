@@ -1399,6 +1399,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				}
 			h = sanitizeHash(h, t, pc);
+			if (h == null) return null;
 			//Remove any blank entries
 			Stack<String> emptyAttributes = new Stack<String>();
 			for(Map.Entry<String, Object> entry : h.entrySet()) {
@@ -1409,9 +1410,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			for(String remove : emptyAttributes) {
 				h.remove(remove);
 			}
-
-			if (h == null)
-				return null;
+			//If the tag has no attributes, and this is not allowable, remove it
+            if(h.isEmpty() && expungeTagIfNoAttributes()) return null;
 			if (t.startSlash)
 				return new ParsedTag(t, (String[])null);
 			String[] outAttrs = new String[h.size()];
@@ -1487,6 +1487,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			return hn;
 		}
+
+		/*If this function returns true, this tag will be removed from  
+		 * the sanitized output if it has no attributes*/               
+		protected boolean expungeTagIfNoAttributes() {                  
+			return false;                                           
+		}  
 	}
 
 	static String stripQuotes(String s) {
@@ -2187,6 +2193,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			return hn;
 		}
+
+		@Override                                                       
+		protected boolean expungeTagIfNoAttributes() {                  
+			return true;                                            
+		} 
 	}
 
 	static class DocTypeTagVerifier extends TagVerifier {
