@@ -1401,14 +1401,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			h = sanitizeHash(h, t, pc);
 			if (h == null) return null;
 			//Remove any blank entries
-			Stack<String> emptyAttributes = new Stack<String>();
-			for(Map.Entry<String, Object> entry : h.entrySet()) {
+			for(Iterator<Entry<String, Object>> it = h.entrySet().iterator(); it.hasNext();){
+				Map.Entry<String, Object> entry = it.next();
 				if(entry.getValue() == null || entry.getValue() == "" && pc.isXHTML){
-					emptyAttributes.add(entry.getKey());
+					it.remove();
 				}
-			}
-			for(String remove : emptyAttributes) {
-				h.remove(remove);
 			}
 			//If the tag has no attributes, and this is not allowable, remove it
             if(h.isEmpty() && expungeTagIfNoAttributes()) return null;
