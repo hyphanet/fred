@@ -2104,7 +2104,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class MetaTagVerifier extends TagVerifier {
-		final String[] allowedContentTypes = {
+		static final String[] allowedContentTypes = {
 				"text/html",
 				"application/xhtml+xml"
 		};
