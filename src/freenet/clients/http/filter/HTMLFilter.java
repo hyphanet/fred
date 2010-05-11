@@ -1434,7 +1434,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = new LinkedHashMap<String, Object>();
 			for (Map.Entry<String, Object> entry : h.entrySet()) {
-				if(logDEBUG) Logger.debug(this, "HTML Filter is sanitizing the of attribute: "+entry.getKey()+"=  "+entry.getValue());
+				if(logDEBUG) Logger.debug(this, "HTML Filter is sanitizing: "+entry.getKey()+" = "+entry.getValue());
 				String x = entry.getKey();
 				Object o = entry.getValue();
 
