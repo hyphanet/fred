@@ -54,7 +54,7 @@ public interface HighLevelSimpleClient {
 	 * @param fctx Fetch context so you can customise the search process.
 	 * @return The ClientGetter object, which will have been started already.
 	 */
-	public ClientGetter fetch(FreenetURI uri, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
+	public ClientGetter fetch(FreenetURI uri, RequestClient context, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException;
 
 	/**
 	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
