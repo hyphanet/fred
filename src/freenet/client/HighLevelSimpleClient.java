@@ -54,6 +54,17 @@ public interface HighLevelSimpleClient {
 	 * @param fctx Fetch context so you can customise the search process.
 	 * @return The ClientGetter object, which will have been started already.
 	 */
+	public ClientGetter fetch(FreenetURI uri, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
+
+	/**
+	 * Non-blocking fetch of a URI with a configurable max-size (in bytes), context object, callback and context.
+	 * Will return immediately, the callback will be called later.
+	 * @param callback Will be called when the request completes, fails, etc. If the request is persistent
+	 * this will be called on the database thread with a container parameter.
+	 * @param fctx Fetch context so you can customise the search process.
+	 * @param maxSize IGNORED. FIXME DEPRECATE
+	 * @return The ClientGetter object, which will have been started already.
+	 */
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient context, ClientGetCallback callback, FetchContext fctx) throws FetchException;
 
 	/**
