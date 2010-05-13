@@ -161,7 +161,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
-		return fetch(uri, -1, clientContext, callback, fctx, prio);
+		return fetch(uri, clientContext, callback, fctx, prio);
 	}
 	
 	public ClientGetter fetch(FreenetURI uri, RequestClient clientContext, ClientGetCallback callback, FetchContext fctx, short prio) throws FetchException {
