@@ -472,7 +472,12 @@ public class NativeBigInteger extends BigInteger {
 	}
 
 	private static final String getResourceName(boolean optimized) {
-		String pname = NativeBigInteger.class.getPackage().getName().replace('.', '/');
+		String name = NativeBigInteger.class.getName();
+		int i = name.lastIndexOf('.');
+		if (i != -1) {
+			name = name.substring(0, i);
+		}
+		String pname = name.replace('.', '/');
 		String pref = getLibraryPrefix();
 		String middle = getMiddleName(optimized);
 		String suff = getLibrarySuffix();
