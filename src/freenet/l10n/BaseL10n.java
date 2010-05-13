@@ -126,7 +126,7 @@ public class BaseL10n {
 	}
 
 	public BaseL10n(String l10nFilesBasePath, String l10nFilesMask, String l10nOverrideFilesMask, final LANGUAGE lang) {
-		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, lang, ClassLoader.getSystemClassLoader());
+		this(l10nFilesBasePath, l10nFilesMask, l10nOverrideFilesMask, lang, BaseL10n.class.getClassLoader());
 	}
 
 	/**
