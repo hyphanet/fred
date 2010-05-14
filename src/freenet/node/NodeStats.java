@@ -183,13 +183,22 @@ public class NodeStats implements Persistable {
 	// various metrics
 	public final RunningAverage routingMissDistance;
 	public final RunningAverage backedOffPercent;
-	public final DecayingKeyspaceAverage avgCacheLocation;
-	public final DecayingKeyspaceAverage avgStoreLocation;
-	public final DecayingKeyspaceAverage avgCacheSuccess;
-	public final DecayingKeyspaceAverage avgStoreSuccess;
+	public final DecayingKeyspaceAverage avgCacheCHKLocation;
+	public final DecayingKeyspaceAverage avgSlashdotCacheCHKLocation;
+	//public final DecayingKeyspaceAverage avgSlashdotCacheLocation;
+	public final DecayingKeyspaceAverage avgStoreCHKLocation;
+	//public final DecayingKeyspaceAverage avgStoreLocation;
+	public final DecayingKeyspaceAverage avgStoreCHKSuccess;
+
 	// FIXME: does furthest{Store,Cache}Success need to be synchronized?
-	public double furthestCacheSuccess=0.0;
-	public double furthestStoreSuccess=0.0;
+	public double furthestCacheCHKSuccess=0.0;
+	public double furthestClientCacheCHKSuccess=0.0;
+	public double furthestSlashdotCacheCHKSuccess=0.0;
+	public double furthestStoreCHKSuccess=0.0;
+	public double furthestStoreSSKSuccess=0.0;
+	public double furthestCacheSSKSuccess=0.0;
+	public double furthestClientCacheSSKSuccess=0.0;
+	public double furthestSlashdotCacheSSKSuccess=0.0;
 	protected final Persister persister;
 	
 	protected final DecayingKeyspaceAverage avgRequestLocation;
@@ -216,8 +225,24 @@ public class NodeStats implements Persistable {
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 	
 	// Database stats
-	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes; 
+	final Hashtable<String, TrivialRunningAverage> avgDatabaseJobExecutionTimes;
+	public final DecayingKeyspaceAverage avgClientCacheCHKLocation;
+	public final DecayingKeyspaceAverage avgCacheCHKSuccess;
+	public final DecayingKeyspaceAverage avgSlashdotCacheCHKSucess;
+	public final DecayingKeyspaceAverage avgClientCacheCHKSuccess;
+
+	public final DecayingKeyspaceAverage avgStoreSSKLocation;
+	public final DecayingKeyspaceAverage avgCacheSSKLocation;
+	public final DecayingKeyspaceAverage avgSlashdotCacheSSKLocation;
+	public final DecayingKeyspaceAverage avgClientCacheSSKLocation;
+
+	public final DecayingKeyspaceAverage avgCacheSSKSuccess;
+	public final DecayingKeyspaceAverage avgSlashdotCacheSSKSuccess;
+	public final DecayingKeyspaceAverage avgClientCacheSSKSuccess;
+	public final DecayingKeyspaceAverage avgStoreSSKSuccess;
 	
+
+
 	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
 		this.node = node;
 		this.peers = node.peers;
@@ -423,11 +448,29 @@ public class NodeStats implements Persistable {
 		double nodeLoc=node.lm.getLocation();
 		// FIXME PLEASE; (int) casts; (maxCacheKeys>MAXINT?)
 		//Note: If changing the size of avgCacheLocation or avgStoreLocation, this value is updated in Node.java on changing the store size.
-		this.avgCacheLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageCacheLocation"));
-		this.avgStoreLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, throttleFS == null ? null : throttleFS.subset("AverageStoreLocation"));
-		this.avgCacheSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSuccessLocation"));
-		this.avgStoreSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSuccessLocation"));
+		this.avgCacheCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKLocation"));
+		this.avgStoreCHKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKLocation"));
+		this.avgSlashdotCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKLocation"));
+		this.avgClientCacheCHKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageClientCacheCHKLocation"));
+		
+		this.avgCacheCHKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheCHKSuccessLocation"));
+		this.avgSlashdotCacheCHKSucess =  new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheCHKSuccessLocation"));
+		this.avgClientCacheCHKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageClientCacheCHKSuccessLocation"));
+		this.avgStoreCHKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreCHKSuccessLocation"));
 		this.avgRequestLocation = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageRequestLocation"));
+
+		this.avgCacheSSKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageCacheSSKLocation"));
+		this.avgStoreSSKLocation   = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxStoreKeys, throttleFS == null ? null : throttleFS.subset("AverageStoreSSKLocation"));
+		this.avgSlashdotCacheSSKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheSSKLocation"));
+		this.avgClientCacheSSKLocation = new DecayingKeyspaceAverage(nodeLoc, (int)node.maxCacheKeys, throttleFS == null ? null : throttleFS.subset("AverageClientCacheSSKLocation"));
+
+		this.avgCacheSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageCacheSSKSuccessLocation"));
+		this.avgSlashdotCacheSSKSuccess =  new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageSlashdotCacheSSKSuccessLocation"));
+		this.avgClientCacheSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageClientCacheSSKSuccessLocation"));
+		this.avgStoreSSKSuccess    = new DecayingKeyspaceAverage(nodeLoc, 10000, throttleFS == null ? null : throttleFS.subset("AverageStoreSSKSuccessLocation"));
+
+
+
 		
 		hourlyStats = new HourlyStats(node);
 		
@@ -1034,11 +1077,28 @@ public class NodeStats implements Persistable {
 		fs.put("SuccessfulSskOfferReplyBytesReceivedAverage", successfulSskOfferReplyBytesReceivedAverage.exportFieldSet(true));		
 		
 		//These are not really part of the 'throttling' data, but are also running averages which should be persisted
-		fs.put("AverageCacheLocation", avgCacheLocation.exportFieldSet(true));
-		fs.put("AverageStoreLocation", avgStoreLocation.exportFieldSet(true));
-		fs.put("AverageCacheSuccessLocation", avgCacheSuccess.exportFieldSet(true));
-		fs.put("AverageStoreSuccessLocation", avgStoreSuccess.exportFieldSet(true));
+		fs.put("AverageCacheCHKLocation", avgCacheCHKLocation.exportFieldSet(true));
+		fs.put("AverageStoreCHKLocation", avgStoreCHKLocation.exportFieldSet(true));
+		fs.put("AverageSlashdotCacheCHKLocation",avgSlashdotCacheCHKLocation.exportFieldSet(true));
+		fs.put("AverageClientCacheCHKLocation",avgClientCacheCHKLocation.exportFieldSet(true));
+
+		fs.put("AverageCacheCHKSuccessLocation", avgCacheCHKSuccess.exportFieldSet(true));
+		fs.put("AverageSlashdotCacheCHKSuccessLocation", avgSlashdotCacheCHKSucess.exportFieldSet(true));
+		fs.put("AverageClientCacheCHKSuccessLocation", avgClientCacheCHKSuccess.exportFieldSet(true));
+		fs.put("AverageStoreCHKSuccessLocation", avgStoreCHKSuccess.exportFieldSet(true));
+
+		fs.put("AverageCacheSSKLocation", avgCacheSSKLocation.exportFieldSet(true));
+		fs.put("AverageStoreSSKLocation", avgStoreSSKLocation.exportFieldSet(true));
+		fs.put("AverageSlashdotCacheSSKLocation",avgSlashdotCacheSSKLocation.exportFieldSet(true));
+		fs.put("AverageClientCacheSSKLocation",avgClientCacheSSKLocation.exportFieldSet(true));
+
+		fs.put("AverageCacheSSKSuccessLocation", avgCacheSSKSuccess.exportFieldSet(true));
+		fs.put("AverageSlashdotCacheSSKSuccessLocation", avgSlashdotCacheSSKSuccess.exportFieldSet(true));
+		fs.put("AverageClientCacheSSKSuccessLocation", avgClientCacheSSKSuccess.exportFieldSet(true));
+		fs.put("AverageStoreSSKSuccessLocation", avgStoreSSKSuccess.exportFieldSet(true));
+
 		fs.put("AverageRequestLocation", avgRequestLocation.exportFieldSet(true));
+
 		return fs;
 	}
 
@@ -2109,15 +2169,15 @@ public class NodeStats implements Persistable {
 	public NodeStoreStats chkStoreStats() {
 		return new NodeStoreStats() {
 			public double avgLocation() {
-				return avgStoreLocation.currentValue();
+				return avgStoreCHKLocation.currentValue();
 			}
 
 			public double avgSuccess() {
-				return avgStoreSuccess.currentValue();
+				return avgStoreCHKSuccess.currentValue();
 			}
 
 			public double furthestSuccess() throws StatsNotAvailableException {
-				return furthestStoreSuccess;
+				return furthestStoreCHKSuccess;
 			}
 
 			public double avgDist() throws StatsNotAvailableException {
@@ -2125,7 +2185,7 @@ public class NodeStats implements Persistable {
 			}
 
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgStoreLocation, node.getChkDatastore());
+				return cappedDistance(avgStoreCHKLocation, node.getChkDatastore());
 			}
 		};
 	}
@@ -2138,15 +2198,15 @@ public class NodeStats implements Persistable {
 	public NodeStoreStats chkCacheStats() {
 		return new NodeStoreStats() {
 			public double avgLocation() {
-				return avgCacheLocation.currentValue();
+				return avgCacheCHKLocation.currentValue();
 			}
 
 			public double avgSuccess() {
-				return avgCacheSuccess.currentValue();
+				return avgCacheCHKSuccess.currentValue();
 			}
 
 			public double furthestSuccess() throws StatsNotAvailableException {
-				return furthestCacheSuccess;
+				return furthestCacheCHKSuccess;
 			}
 
 			public double avgDist() throws StatsNotAvailableException {
@@ -2154,10 +2214,187 @@ public class NodeStats implements Persistable {
 			}
 
 			public double distanceStats() throws StatsNotAvailableException {
-				return cappedDistance(avgCacheLocation, node.getChkDatacache());
+				return cappedDistance(avgCacheCHKLocation, node.getChkDatacache());
 			}
 		};
 	}
+
+	/**
+	 * View of stats for CHK SlashdotCache
+	 *
+	 * @return CHK Slashdotcache stats
+	 */
+	public NodeStoreStats chkSlashDotCacheStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgSlashdotCacheCHKLocation.currentValue();
+			}
+
+			public double avgSuccess() {
+				return avgSlashdotCacheCHKSucess.currentValue();
+			}
+
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestSlashdotCacheCHKSuccess;
+			}
+
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
+
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgSlashdotCacheCHKLocation, node.getChkDatacache());
+			}
+		};
+	}
+
+		/**
+	 * View of stats for CHK ClientCache
+	 *
+	 * @return CHK ClientCache stats
+	 */
+	public NodeStoreStats chkClientCacheStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgClientCacheCHKLocation.currentValue();
+			}
+
+			public double avgSuccess() {
+				return avgClientCacheCHKSuccess.currentValue();
+			}
+
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestClientCacheCHKSuccess;
+			}
+
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
+
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgClientCacheCHKLocation, node.getChkDatacache());
+			}
+		};
+	}
+
+	/**
+	 * View of stats for SSK Store
+	 *
+	 * @return stats for SSK Store
+	 */
+	public NodeStoreStats sskStoreStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgStoreSSKLocation.currentValue();
+			}
+
+			public double avgSuccess() {
+				return avgStoreSSKSuccess.currentValue();
+			}
+
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestStoreSSKSuccess;
+			}
+
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
+
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgStoreSSKLocation, node.getChkDatastore());
+			}
+		};
+	}
+
+	/**
+	 * View of stats for SSK Cache
+	 *
+	 * @return SSK cache stats
+	 */
+	public NodeStoreStats sskCacheStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgCacheSSKLocation.currentValue();
+			}
+
+			public double avgSuccess() {
+				return avgCacheSSKSuccess.currentValue();
+			}
+
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestCacheSSKSuccess;
+			}
+
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
+
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgCacheSSKLocation, node.getChkDatacache());
+			}
+		};
+	}
+
+	/**
+	 * View of stats for SSK SlashdotCache
+	 *
+	 * @return SSK Slashdotcache stats
+	 */
+	public NodeStoreStats sskSlashDotCacheStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgSlashdotCacheSSKLocation.currentValue();
+			}
+
+			public double avgSuccess() {
+				return avgSlashdotCacheSSKSuccess.currentValue();
+			}
+
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestSlashdotCacheSSKSuccess;
+			}
+
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
+
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgSlashdotCacheSSKLocation, node.getChkDatacache());
+			}
+		};
+	}
+
+		/**
+	 * View of stats for SSK ClientCache
+	 *
+	 * @return SSK ClientCache stats
+	 */
+	public NodeStoreStats sskClientCacheStats() {
+		return new NodeStoreStats() {
+			public double avgLocation() {
+				return avgClientCacheSSKLocation.currentValue();
+			}
+
+			public double avgSuccess() {
+				return avgClientCacheSSKSuccess.currentValue();
+			}
+
+			public double furthestSuccess() throws StatsNotAvailableException {
+				return furthestClientCacheSSKSuccess;
+			}
+
+			public double avgDist() throws StatsNotAvailableException {
+				return Location.distance(nodeLoc, avgLocation());
+			}
+
+			public double distanceStats() throws StatsNotAvailableException {
+				return cappedDistance(avgClientCacheSSKLocation, node.getChkDatacache());
+			}
+		};
+	}
+
+
+
 
 	private double cappedDistance(DecayingKeyspaceAverage avgLocation, CHKStore store) {
 		double cachePercent = 1.0 * avgLocation.countReports() / store.keyCount();

@@ -37,6 +37,8 @@ public abstract class StoreCallback<T extends StorableBlock> {
 	public abstract boolean collisionPossible();
 	
 	protected FreenetStore<T> store;
+
+
 	
 	/** Called once when first connecting to a FreenetStore. Package-local. */
 	public void setStore(FreenetStore<T> store) {

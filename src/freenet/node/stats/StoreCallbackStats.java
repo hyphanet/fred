@@ -29,7 +29,7 @@ public class StoreCallbackStats implements DataStoreStats {
 	}
 
 	public long dataSize() {
-		return keys() * FIX_32_KB;
+		return keys() * storeStats.dataLength();
 	}
 
 	private long Hits() {
