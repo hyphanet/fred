@@ -1764,6 +1764,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook, Execut
 					}
 				}
 				
+				public String toString() {
+					return job.toString();
+				}
+				
 			}, priority, false);
 			synchronized(finished) {
 				while(!finished.value) {
