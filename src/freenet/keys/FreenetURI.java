@@ -219,23 +219,24 @@ public class FreenetURI implements Cloneable {
 	/** Optimise for memory. */
 	public FreenetURI intern() {
 		boolean changedAnything = false;
-		String[] newMetaStr = new String[metaStr.length];
 		byte[] x = extra;
 		if(keyType.equals("CHK"))
 			x = ClientCHK.internExtra(x);
 		else
 			x = ClientSSK.internExtra(x);
 		if(x != extra) changedAnything = true;
+		String[] newMetaStr = null;
 		if(metaStr != null) {
+			newMetaStr = new String[metaStr.length];
 			for(int i=0;i<metaStr.length;i++) {
 				newMetaStr[i] = metaStr[i].intern();
 				if(metaStr[i] != newMetaStr[i]) changedAnything = true;
 			}
 		}
-		String dn = docName.intern();
+		String dn = docName == null ? null : docName.intern();
 		if(dn != docName) changedAnything = true;
 		if(!changedAnything) return this;
-		FreenetURI u = new FreenetURI(keyType, dn, routingKey, cryptoKey, extra);
+		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra);
 		u.noCacheURI = true;
 		return u;
 	}
