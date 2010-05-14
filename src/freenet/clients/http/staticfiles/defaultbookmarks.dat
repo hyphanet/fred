@@ -1,4 +1,4 @@
-BookmarkCategory=2
+BookmarkCategory=3
 Version=1
 Bookmark=0
 BookmarkCategory0.Name=Indexes of freesites (in-Freenet web sites)
@@ -47,4 +47,19 @@ BookmarkCategory1.Content.Bookmark5.URI=USK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25R
 BookmarkCategory1.Content.Bookmark5.hasAnActivelink=true
 BookmarkCategory1.Content.Bookmark5.Name=The Freenet Applications Freesite (old)
 BookmarkCategory1.Content.Bookmark5.Description=Links to Freenet tools, and instructions for using them (no longer updated but still lots of information)
+BookmarkCategory2.Name=Freenet team's flogs
+BookmarkCategory2.Content.BookmarkCategory=0
+BookmarkCategory2.Content.Bookmark=3
+BookmarkCategory2.Content.Bookmark2.Name=Evanbd
+BookmarkCategory2.Content.Bookmark2.Description=Evanbd's flog
+BookmarkCategory2.Content.Bookmark2.hasAnActivelink=true
+BookmarkCategory2.Content.Bookmark2.URI=USK@gjw6StjZOZ4OAG-pqOxIp5Nk11udQZOrozD4jld42Ac,BYyqgAtc9p0JGbJ~18XU6mtO9ChnBZdf~ttCn48FV7s,AQACAAE/flog/25/
+BookmarkCategory2.Content.Bookmark1.Name=Bombe
+BookmarkCategory2.Content.Bookmark1.Description=Bombe's flog
+BookmarkCategory2.Content.Bookmark1.hasAnActivelink=true
+BookmarkCategory2.Content.Bookmark1.URI=USK@e3myoFyp5avg6WYN16ImHri6J7Nj8980Fm~aQe4EX1U,QvbWT0ImE0TwLODTl7EoJx2NBnwDxTbLTE6zkB-eGPs,AQACAAE/bombe/42/
+BookmarkCategory2.Content.Bookmark0.Name=Toad
+BookmarkCategory2.Content.Bookmark0.Description=Toad's flog
+BookmarkCategory2.Content.Bookmark0.hasAnActivelink=true
+BookmarkCategory2.Content.Bookmark0.URI=USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/12/
 End
