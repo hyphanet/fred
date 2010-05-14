@@ -8,11 +8,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
+import java.util.HashSet;
 
 import com.db4o.ObjectContainer;
 
 import freenet.support.Base64;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 /**
  * Client level CHK. Can be converted into a FreenetURI, can be used to decrypt
@@ -131,6 +134,10 @@ public class ClientCHK extends ClientKey {
 	static byte[] lastExtra;
 	
 	public byte[] getExtra() {
+		return getExtra(cryptoAlgorithm, compressionAlgorithm, controlDocument);
+	}
+	
+	public static byte[] getExtra(byte cryptoAlgorithm, short compressionAlgorithm, boolean controlDocument) {
 		byte[] extra = new byte[EXTRA_LENGTH];
 		extra[0] = (byte) (cryptoAlgorithm >> 8);
 		extra[1] = cryptoAlgorithm;
@@ -141,6 +148,22 @@ public class ClientCHK extends ClientKey {
 		// No synchronization required IMHO
 		if(Arrays.equals(last, extra)) return last;
 		lastExtra = extra;
+		return extra;
+	}
+	
+	static HashSet<ByteArrayWrapper> standardExtras = new HashSet<ByteArrayWrapper>();
+	static {
+		for(short compressionAlgorithm = -1; compressionAlgorithm <= (short)(COMPRESSOR_TYPE.countCompressors()); compressionAlgorithm++) {
+			byte cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
+			standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, true)));
+			standardExtras.add(new ByteArrayWrapper(getExtra(cryptoAlgorithm, compressionAlgorithm, false)));
+		}
+	}
+	
+	public static byte[] internExtra(byte[] extra) {
+		for(ByteArrayWrapper baw : standardExtras) {
+			if(Arrays.equals(baw.get(), extra)) return baw.get();
+		}
 		return extra;
 	}
 	
