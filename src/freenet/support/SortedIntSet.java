@@ -164,7 +164,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		// Move the data
 		if(length == data.length) {
 			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
-			int[] newData = new int[length*2];
+			int[] newData = new int[Math.max(length*2, 4)];
 			System.arraycopy(data, 0, newData, 0, data.length);
 			for(int i=length;i<newData.length;i++)
 				newData[i] = Integer.MAX_VALUE;
