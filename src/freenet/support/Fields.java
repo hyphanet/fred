@@ -783,6 +783,27 @@ public abstract class Fields {
 	}
 
 	/**
+	 * Assumes the array is sorted in ascending order, [begin] is lowest and [end] is highest.
+	 */
+	public static int binarySearch(int[] values, int key, int origBegin, int origEnd) {
+		int begin = origBegin;
+		int end = origEnd;
+		while(true) {
+			if(end < begin)	// so we can use origEnd=length-1 without worrying length=0
+				return -begin - 1;
+
+			int middle = (begin + end) >>> 1;
+			if(values[middle] == key)
+				return middle;
+
+			if(values[middle] > key)
+				end = middle - 1;
+			else if(values[middle] < key)
+				begin = middle + 1;
+		}
+	}
+
+	/**
 	** Search a range of the given array using binary search. We use this
 	** because the corresponding method in java.util.Arrays is only available
 	** in JDK6 or later.
