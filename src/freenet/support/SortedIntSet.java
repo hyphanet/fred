@@ -122,7 +122,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 			lastItem = item;
 		}
 		for(int i=length;i<data.length;i++)
-			if(data[i] != Long.MAX_VALUE)
+			if(data[i] != Integer.MAX_VALUE)
 				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != Long.MAX_VALUE");
 		
 		return true;
@@ -163,8 +163,8 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		if(logMINOR) Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
 		// Move the data
 		if(length == data.length) {
-			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
 			int[] newData = new int[Math.max(length*2, 4)];
+			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+newData.length);
 			System.arraycopy(data, 0, newData, 0, data.length);
 			for(int i=length;i<newData.length;i++)
 				newData[i] = Integer.MAX_VALUE;
