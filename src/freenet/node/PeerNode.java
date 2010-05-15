@@ -78,10 +78,10 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
- 
+
 /**
  * @author amphibian
- * 
+ *
  * Represents a peer we are connected to. One of the major issues
  * is that we can rekey, or a node can go down and come back up
  * while we are connected to it, and we want to reinitialize the
@@ -154,7 +154,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
-	
+
 	private long countSelectionsSinceConnected = 0;
 	// 5mins; yes it's alchemy!
 	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
@@ -164,8 +164,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public static final int SELECTION_MIN_PEERS = 5;
 	// Should be good enough provided we don't get selected more than 10 times per/sec
 	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
-	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000; 
-	
+	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000;
+
 	/** Are we connected? If not, we need to start trying to
 	* handshake.
 	*/
@@ -178,7 +178,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* ARK fetcher.
 	*/
 	private USKRetriever arkFetcher;
-	/** My ARK SSK public key; edition is the next one, not the current one, 
+	/** My ARK SSK public key; edition is the next one, not the current one,
 	* so this is what we want to fetch. */
 	private USK myARK;
 	/** Number of handshake attempts since last successful connection or ARK fetch */
@@ -211,7 +211,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final Node node;
 	/** The PeerManager we serve */
 	final PeerManager peers;
-	/** MessageItem's to send ASAP. 
+	/** MessageItem's to send ASAP.
 	 * LOCKING: Lock on self, always take that lock last. Sometimes used inside PeerNode.this lock. */
 	private final PeerMessageQueue messageQueue;
 	/** When did we last receive a SwapRequest? */
@@ -222,7 +222,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastReceivedProbeRequest;
 	/** Average interval between probe requests */
 	private final RunningAverage probeRequestsInterval;
-	/** Should we decrement HTL when it is at the maximum? 
+	/** Should we decrement HTL when it is at the maximum?
 	* This decision is made once per node to prevent giving
 	* away information that can make correlation attacks much
 	* easier.
@@ -241,7 +241,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int messageRequeueLogRateLimitThreshold = 15;
 	/** Version of the node */
 	private String version;
- 	/** Total input */
+	/** Total input */
 	private long totalInputSinceStartup;
 	/** Total output */
 	private long totalOutputSinceStartup;
@@ -280,7 +280,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long connectedTime;
 	/** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
 	public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
-	
+
 	static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
 
 	static final byte[] TEST_AS_BYTES;
@@ -291,7 +291,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 	}
-	
+
 	/** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
 	private final Hashtable<String, Long> localNodeSentMessageTypes = new Hashtable<String, Long>();
 	/** Holds a String-Long pair that shows which message types (as name) have been received by this peer. */
@@ -303,7 +303,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long lastAttemptedHandshakeIPUpdateTime;
 	/** True if we have never connected to this peer since it was added to this node */
 	protected boolean neverConnected;
-	/** When this peer was added to this node. 
+	/** When this peer was added to this node.
 	 * This is used differently by opennet and darknet nodes.
 	 * Darknet nodes clear it after connecting but persist it across restarts, and clear it on restart unless the peer has never connected, or if it is more than 30 days ago.
 	 * Opennet nodes clear it after the post-connect grace period elapses, and don't persist it across restarts.
@@ -327,10 +327,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
 	* it will have difficulty resolving date-based content etc. */
 	private static final long MAX_CLOCK_DELTA = 24L * 60L * 60L * 1000L;
-	/** 1 hour after the node is disconnected, if it is still disconnected and hasn't connected in that time, 
+	/** 1 hour after the node is disconnected, if it is still disconnected and hasn't connected in that time,
 	 * clear the message queue */
 	private static final long CLEAR_MESSAGE_QUEUE_AFTER = 60 * 60 * 1000L;
-	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a 
+	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a
 	 * long time, but without preventing it from being GC'ed. */
 	final WeakReference<PeerNode> myRef;
 	/** The node is being disconnected, but it may take a while. */
@@ -339,7 +339,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	long timeLastDisconnect;
 	/** Previous time of disconnection */
 	long timePrevDisconnect;
-	
+
 	// Burst-only mode
 	/** True if we are currently sending this peer a burst of handshake requests */
 	private boolean isBursting;
@@ -347,19 +347,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private int listeningHandshakeBurstCount;
 	/** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
 	private int listeningHandshakeBurstSize;
-	
+
 	/** The set of the listeners that needs to be notified when status changes. It uses WeakReference, so there is no need to deregister*/
 	private Set<PeerManager.PeerStatusChangeListener> listeners=Collections.synchronizedSet(new WeakHashSet<PeerStatusChangeListener>());
-	
+
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
 	protected NodeCrypto crypto;
-	
+
 	/**
 	 * Some alchemy we use in PeerNode.shouldBeExcludedFromPeerList()
 	 */
 	public static final int BLACK_MAGIC_BACKOFF_PRUNING_TIME = 5 * 60 * 1000;
 	public static final double BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE = 0.9;
-	
+
 	/**
 	 * For FNP link setup:
 	 *  The initiator has to ensure that nonces send back by the
@@ -376,19 +376,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		});
 	}
-	
+
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
-	 * Only set this if you don't want to send an identity, e.g. for anonymous 
-	 * initiator crypto where we need a small noderef and we don't use the 
+	 * Only set this if you don't want to send an identity, e.g. for anonymous
+	 * initiator crypto where we need a small noderef and we don't use the
 	 * identity anyway because we don't auto-reconnect.
 	 */
 	protected abstract boolean generateIdentityFromPubkey();
-	
+
 	protected boolean ignoreLastGoodVersion() {
 		return false;
 	}
-	
+
 	/**
 	* Create a PeerNode from a SimpleFieldSet containing a
 	* node reference for one. This must contain the following
@@ -432,7 +432,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		disableRouting = disableRoutingHasBeenSetLocally = false;
 		disableRoutingHasBeenSetRemotely = false; // Assume so
-		
+
 		lastGoodVersion = fs.get("lastGoodVersion");
 		updateVersionRoutablity();
 
@@ -506,7 +506,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		// Identifier
-		
+
 		if(!generateIdentityFromPubkey()) {
 			String identityString = fs.get("identity");
 			if(identityString == null)
@@ -529,7 +529,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		identityHashHash = SHA256.digest(identityHash);
 		swapIdentifier = Fields.bytesToLong(identityHashHash);
 		hashCode = Fields.hashCode(identityHash);
-		
+
 		// Setup incoming and outgoing setup ciphers
 		byte[] nodeKey = crypto.identityHash;
 		byte[] nodeKeyHash = crypto.identityHashHash;
@@ -592,7 +592,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			detectedPeer = nominalPeer.firstElement();
 		}
 		updateShortToString();
-		
+
 		// Don't create trackers until we have a key
 		currentTracker = null;
 		previousTracker = null;
@@ -611,7 +611,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		isConnected = false;
 
 		messageQueue = new PeerMessageQueue();
-		
+
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
 
@@ -711,7 +711,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		listeningHandshakeBurstCount = 0;
 		listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
 			+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
-		
+
 		if(isBurstOnly()) {
 			Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')');
 		}
@@ -774,9 +774,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/**
 	* Get my low-level address. This is the address that packets have been received from from this node.
-	* 
+	*
 	* Normally this is the address that packets have been received from from this node.
-	* However, if ignoreSourcePort is set, we will search for a similar address with a different port 
+	* However, if ignoreSourcePort is set, we will search for a similar address with a different port
 	* number in the node reference.
 	*/
 	public synchronized Peer getPeer() {
@@ -953,7 +953,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized double getLocation() {
 		return currentLocation;
 	}
-	
+
 	public boolean shouldBeExcludedFromPeerList() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -965,7 +965,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				return false;
 		}
 	}
-	
+
 	public synchronized  double[] getPeersLocation() {
 		return currentPeersLocation;
 	}
@@ -973,7 +973,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized long getLocSetTime() {
 		return locSetTime;
 	}
-	
+
 	/**
 	* Returns a unique node identifier (usefull to compare two peernodes).
 	*/
@@ -1001,7 +1001,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Returns true if requests can be routed through this peer. True if the peer's location is known, presently
 	* connected, and routing-compatible. That is, ignoring backoff, the peer's location is known, build number
 	* is compatible, and routing has not been explicitly disabled.
-	* 
+	*
 	* Note possible deadlocks! PeerManager calls this, we call
 	* PeerManager in e.g. verified.
 	*/
@@ -1067,21 +1067,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public long getMessageQueueLengthBytes() {
 		return messageQueue.getMessageQueueLengthBytes();
 	}
-	
+
 	/**
 	 * Returns the number of milliseconds that it is estimated to take to transmit the currently queued packets.
 	 */
 	public long getProbableSendQueueTime() {
 		return (long)(getMessageQueueLengthBytes()/(getThrottle().getBandwidth()+1.0));
 	}
-	
+
 	/**
 	* @return The last time we received a packet.
 	*/
 	public synchronized long lastReceivedPacketTime() {
 		return timeLastReceivedPacket;
 	}
-	
+
 	public synchronized long lastReceivedDataPacketTime() {
 		return timeLastReceivedDataPacket;
 	}
@@ -1100,7 +1100,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean shouldReturn = false;
 		boolean shouldRekey = false;
 		long timeWhenRekeyingShouldOccur = 0;
-		
+
 		synchronized (this) {
 			timeWhenRekeyingShouldOccur = timeLastRekeyed + FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL;
 			shouldDisconnect = (timeWhenRekeyingShouldOccur + FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY < now) && isRekeying;
@@ -1111,7 +1111,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				timeWhenRekeyingShouldOccur = now;
 			}
 		}
-		
+
 		if(shouldDisconnect) {
 			String time = TimeUtil.formatTime(FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY);
 			System.err.println("The peer (" + this + ") has been asked to rekey " + time + " ago... force disconnect.");
@@ -1196,8 +1196,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(cur != null) cur.packets.disconnected();
 		if(prev != null) prev.packets.disconnected();
 		if(unv != null) unv.packets.disconnected();
-    	if(_lastThrottle != null)
-    		_lastThrottle.maybeDisconnected();
+		if(_lastThrottle != null)
+			_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
 		setPeerNodeStatus(now);
 		if(!dumpMessageQueue) {
@@ -1222,7 +1222,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			om.onDisconnect(this);
 		return ret;
 	}
-	
+
 	private boolean forceDisconnectCalled = false;
 
 	public void forceDisconnect(boolean purge) {
@@ -1320,7 +1320,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		return t;
 	}
-	
+
 	private synchronized boolean mustSendNotificationsNow(long now) {
 		SessionKey kt = currentTracker;
 		if(kt != null) {
@@ -1331,7 +1331,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(kt.packets.getNextUrgentTime() < now) return true;
 		return false;
 	}
-	
+
 	/**
 	* @return The time at which we last sent a packet.
 	*/
@@ -1399,7 +1399,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
 			if(delay < 3000) delay = 3000;
 			sendHandshakeTime = now + delay;
-			
+
 			if(successfulHandshakeSend)
 				firstHandshake = false;
 			handshakeCount++;
@@ -1430,7 +1430,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// FIXME proper multi-homing support!
 		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
 		if(delay < 3000) delay = 3000;
-		
+
 		sendHandshakeTime = now + delay;
 		if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+shortToString()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+ ')', new Exception("double-called debug"));
 		return fetchARKFlag;
@@ -1460,12 +1460,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	static final int UPDATE_BURST_NOW_PERIOD = 5*60*1000;
 	/** Burst only 19 in 20 times if definitely port forwarded. Save entropy by writing this as 20 not 0.95. */
 	static final int P_BURST_IF_DEFINITELY_FORWARDED = 20;
-	
+
 	public boolean isBurstOnly() {
 		int status = outgoingMangler.getConnectivityStatus();
 		if(status == AddressTracker.DONT_KNOW) return false;
 		if(status == AddressTracker.DEFINITELY_NATED || status == AddressTracker.MAYBE_NATED) return false;
-		
+
 		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
 		if(status == AddressTracker.MAYBE_PORT_FORWARDED) return false;
 		long now = System.currentTimeMillis();
@@ -1521,7 +1521,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
-	* Decrement the HTL (or not), in accordance with our 
+	* Decrement the HTL (or not), in accordance with our
 	* probabilistic HTL rules.
 	* @param htl The old HTL.
 	* @return The new HTL.
@@ -1545,7 +1545,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		htl--;
 		return htl;
 	}
-	
+
 	/**
 	* Enqueue a message to be sent to this node and wait up to a minute for it to be transmitted.
 	*/
@@ -1616,14 +1616,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 	}
-	
+
 	public void updateLocation(double newLoc, double[] newLocs) {
 		if(newLoc < 0.0 || newLoc > 1.0) {
 			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
 			// Ignore it
 			return;
 		}
-		
+
 		for(double currentLoc : newLocs) {
 			if(currentLoc < 0.0 || currentLoc > 1.0) {
 				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
@@ -1633,7 +1633,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 
 		Arrays.sort(newLocs);
-		
+
 		synchronized(this) {
 			currentLocation = newLoc;
 			currentPeersLocation = newLocs;
@@ -1752,7 +1752,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private void updateShortToString() {
 		shortToString = super.toString() + '@' + detectedPeer + '@' + HexUtil.bytesToHex(identity);
 	}
-	
+
 	/**
 	* @return short version of toString()
 	* *** Note that this is not synchronized! It is used by logging in code paths that
@@ -1770,7 +1770,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/**
 	* Update timeLastReceivedPacket
-	* @throws NotConnectedException 
+	* @throws NotConnectedException
 	* @param dontLog If true, don't log an error or throw an exception if we are not connected. This
 	* can be used in handshaking when the connection hasn't been verified yet.
 	* @param dataPacket If this is a real packet, as opposed to a handshake packet.
@@ -1780,7 +1780,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if((!isConnected) && (!dontLog)) {
 				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
 				// That includes receiving packets after we have technically disconnected already.
-				// A race condition involving forceCancelDisconnecting causing a mistaken log message anyway 
+				// A race condition involving forceCancelDisconnecting causing a mistaken log message anyway
 				// is conceivable, but unlikely...
 				if((unverifiedTracker == null) && (currentTracker == null) && !disconnecting)
 					Logger.error(this, "Received packet while disconnected!: " + this, new Exception("error"));
@@ -1823,27 +1823,27 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* recover old messages. In more detail:
 	* <ul>
 	* <li>Process the new noderef (check if it's valid, pick up any new information etc).</li>
-	* <li>Handle version conflicts (if the node is too old, or we are too old, we mark it as 
+	* <li>Handle version conflicts (if the node is too old, or we are too old, we mark it as
 	* non-routable, but some messages will still be exchanged e.g. Update Over Mandatory stuff).</li>
-	* <li>Deal with key trackers (if we just got message 4, the new key tracker becomes current; 
-	* if we just got message 3, it's possible that our message 4 will be lost in transit, so we 
+	* <li>Deal with key trackers (if we just got message 4, the new key tracker becomes current;
+	* if we just got message 3, it's possible that our message 4 will be lost in transit, so we
 	* make the new tracker unverified. It will be promoted to current if we get a packet on it..
 	* if the node has restarted, we dump the old key trackers, otherwise current becomes previous).</li>
 	* <li>Complete the connection process: update the node's status, send initial messages, update
 	* the last-received-packet timestamp, etc.</li>
 	* @param thisBootID The boot ID of the peer we have just connected to.
 	* This is simply a random number regenerated on every startup of the node.
-	* We use it to determine whether the node has restarted since we last saw 
+	* We use it to determine whether the node has restarted since we last saw
 	* it.
 	* @param data Byte array from which to read the new noderef.
 	* @param offset Offset to start reading at.
 	* @param length Number of bytes to read.
 	* @param encKey The new session key.
 	* @param replyTo The IP the handshake came in on.
-	* @param trackerID The tracker ID proposed by the other side. If -1, create a new tracker. If any 
-	* other value, check whether we have it, and if we do, return that, otherwise return the ID of the 
+	* @param trackerID The tracker ID proposed by the other side. If -1, create a new tracker. If any
+	* other value, check whether we have it, and if we do, return that, otherwise return the ID of the
 	* new tracker.
-	* @param isJFK4 If true, we are processing a JFK(4) and must respect the tracker ID chosen by the 
+	* @param isJFK4 If true, we are processing a JFK(4) and must respect the tracker ID chosen by the
 	* responder. If false, we are processing a JFK(3) and we can either reuse the suggested tracker ID,
 	* which the other side is able to reuse, or we can create a new tracker ID.
 	* @param jfk4SameAsOld If true, the responder chose to use the tracker ID that we provided. If
@@ -1974,7 +1974,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else {
 				if(isJFK4 && negType >= 4 && trackerID < 0)
 					Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
-					
+
 				notReusingTracker = true;
 				if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
 					packets = new PacketTracker(this, trackerID);
@@ -2028,10 +2028,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			timeLastRekeyed = now - (unverified ? 0 : FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY / 2);
 			totalBytesExchangedWithCurrentTracker = 0;
 			// This has happened in the past, and caused problems, check for it.
-			if(currentTracker != null && previousTracker != null && 
+			if(currentTracker != null && previousTracker != null &&
 					Arrays.equals(currentTracker.sessionKey, previousTracker.sessionKey))
 				Logger.error(this, "currentTracker key equals previousTracker key: cur "+currentTracker+" prev "+previousTracker);
-			if(previousTracker != null && unverifiedTracker != null && 
+			if(previousTracker != null && unverifiedTracker != null &&
 					Arrays.equals(previousTracker.sessionKey, unverifiedTracker.sessionKey))
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 			timeLastSentPacket = now;
@@ -2052,11 +2052,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			oldCur.packets.completelyDeprecated(newTracker);
 		if(prev != null && prev.packets != newTracker.packets)
 			prev.packets.deprecated();
-    	PacketThrottle throttle;
-    	synchronized(this) {
-    		throttle = _lastThrottle;
-    	}
-    	if(throttle != null) throttle.maybeDisconnected();
+		PacketThrottle throttle;
+		synchronized(this) {
+			throttle = _lastThrottle;
+		}
+		if(throttle != null) throttle.maybeDisconnected();
 		Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + currentTracker +
 			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + " for " + shortToString());
 
@@ -2064,19 +2064,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		receivedPacket(unverified, false);
 
 		setPeerNodeStatus(now);
-		
+
 		if(newer || older || !isConnected())
 			node.peers.disconnected(this);
 		else if(!wasARekey) {
 			node.peers.addConnectedPeer(this);
 			maybeOnConnect();
 		}
-		
+
 		return packets.trackerID;
 	}
 
 	protected abstract void maybeClearPeerAddedTimeOnConnect();
-	
+
 	/**
 	 * Resolve race conditions where two connection setups between two peers complete simultaneously.
 	 * Swap prev and current if:
@@ -2092,23 +2092,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				delta < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
 			// Swap prev and current iff H(new key) > H(old key).
 			// To deal with race conditions (node A gets 1 current 2 prev, node B gets 2 current 1 prev; when we rekey we lose data and cause problems).
-			
+
 			// FIXME since this is a key dependancy, it needs to be looked at.
 			// However, an attacker cannot get this far without knowing the privkey, so it's unlikely to be an issue.
-			
+
 			MessageDigest md = SHA256.getMessageDigest();
 			md.update(currentTracker.sessionKey);
 			md.update(TEST_AS_BYTES);
 			md.update(Fields.longToBytes(bootID ^ node.bootID));
 			int curHash = Fields.hashCode(md.digest());
 			md.reset();
-			
+
 			md.update(previousTracker.sessionKey);
 			md.update(TEST_AS_BYTES);
 			md.update(Fields.longToBytes(bootID ^ node.bootID));
 			int prevHash = Fields.hashCode(md.digest());
 			SHA256.returnMessageDigest(md);
-			
+
 			if(prevHash < curHash) {
 				// Swap over
 				SessionKey temp = previousTracker;
@@ -2156,11 +2156,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			arkFetcher = null;
 		}
 	}
-	
+
 
 	// Both at IMMEDIATE_SPLITFILE_PRIORITY_CLASS because we want to compete with FMS, not
 	// wipe it out!
-	
+
 	public short getPollingPriorityNormal() {
 		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
@@ -2168,7 +2168,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public short getPollingPriorityProgress() {
 		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
-	
+
 	boolean sentInitialMessages;
 
 	void maybeSendInitialMessages() {
@@ -2309,7 +2309,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized boolean publicReverseInvalidVersion() {
 		return unroutableNewerVersion;
 	}
-	
+
 	public synchronized boolean dontRoute() {
 		return disableRouting;
 	}
@@ -2403,7 +2403,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
-	* The synchronized part of processNewNoderef 
+	* The synchronized part of processNewNoderef
 	* @throws FSParseException
 	*/
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
@@ -2445,7 +2445,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			double newLoc = Location.getLocation(locationString);
 			if (newLoc == -1) {
 				if(logMINOR)
-					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);	
+					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: locationString=" + locationString);
 			} else {
 				if(!Location.equals(newLoc, currentLocation)) {
 					changedAnything = true;
@@ -2528,7 +2528,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/**
 	* Send a payload-less packet on either key if necessary.
 	* @throws PacketSequenceException If there is an error sending the packet
-	* caused by a sequence inconsistency. 
+	* caused by a sequence inconsistency.
 	*/
 	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
 		boolean sent = false;
@@ -2582,7 +2582,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		return sent;
 	}
-	
+
 	void checkTrackerTimeout() {
 		long now = System.currentTimeMillis();
 		SessionKey prev = null;
@@ -2595,8 +2595,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(prev.packets == cur.packets) return;
 		long t = prev.packets.getNextUrgentTime();
-		if(!(t > -1 && prev.packets.timeLastDecodedPacket() > 0 && (now - prev.packets.timeLastDecodedPacket()) > 60*1000 && 
-				cur.packets.timeLastDecodedPacket() > 0 && (now - cur.packets.timeLastDecodedPacket() < 30*1000) && 
+		if(!(t > -1 && prev.packets.timeLastDecodedPacket() > 0 && (now - prev.packets.timeLastDecodedPacket()) > 60*1000 &&
+				cur.packets.timeLastDecodedPacket() > 0 && (now - cur.packets.timeLastDecodedPacket() < 30*1000) &&
 				(prev.packets.countAckRequests() > 0 || prev.packets.countResendRequests() > 0)))
 			return;
 		Logger.error(this, "No packets decoded on "+prev+" for 60 seconds, deprecating in favour of cur: "+cur);
@@ -2633,7 +2633,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	private int simpleVersion;
-	
+
 	public int getSimpleVersion() {
 		return simpleVersion;
 	}
@@ -2648,7 +2648,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("metadata", meta);
 		fs.writeTo(w);
 	}
-	
+
 	/**
 	 * (both metadata + normal fieldset but atomically)
 	 */
@@ -2708,7 +2708,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("routingBackoff", Long.toString((Math.max(Math.max(routingBackedOffUntil, transferBackedOffUntil) - now, 0))));
 			fs.putSingle("routingBackoffLength", Integer.toString(routingBackoffLength));
 			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
-			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));			
+			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
 		}
 		fs.putSingle("status", getPeerNodeStatusString());
 		return fs;
@@ -2740,7 +2740,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		fs.put("opennet", isOpennet());
 		fs.put("seed", isSeed());
 		fs.put("totalInput", (getTotalInputSinceStartup()+getTotalInputBytes()));
-		fs.put("totalOutput", (getTotalOutputSinceStartup()+getTotalOutputBytes()));	
+		fs.put("totalOutput", (getTotalOutputSinceStartup()+getTotalOutputBytes()));
 		return fs;
 	}
 
@@ -2830,14 +2830,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Maximum upper limit to routing backoff slow or fast */
 	static final int MAX_ROUTING_BACKOFF_LENGTH = 3 * 60 * 60 * 1000;  // 3 hours
 	/** Current nominal routing backoff length */
-	
+
 	// Transfer Backoff
-	
+
 	long transferBackedOffUntil = -1;
 	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = 30*1000; // 60 seconds, but it starts at twice this.
 	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
 	static final int MAX_TRANSFER_BACKOFF_LENGTH = 3 * 60 * 60 * 1000; // 3 hours
-	
+
 	int transferBackoffLength = INITIAL_TRANSFER_BACKOFF_LENGTH;
 
 	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
@@ -2849,7 +2849,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public final RunningAverage backedOffPercent;
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
-	
+
 	/**
 	 * Got a local RejectedOverload.
 	 * Back off this node for a while.
@@ -2858,7 +2858,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		localRejectedOverload("");
 	}
 
-	/** 
+	/**
 	 * Track the percentage of time a peer spends backed off
 	 */
 	private void reportBackoffStatus(long now) {
@@ -2940,7 +2940,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		setPeerNodeStatus(now);
 	}
-	
+
 	/**
 	 * A transfer failed.
 	 * Back off this node for a while.
@@ -3003,7 +3003,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		setPeerNodeStatus(now);
 	}
 
-	
+
 	Object pingSync = new Object();
 	// Relatively few as we only get one every 200ms*#nodes
 	// We want to get reasonably early feedback if it's dropping all of them...
@@ -3200,7 +3200,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return "peer_listen_only";
 		else if(status == PeerManager.PEER_NODE_STATUS_DISCONNECTING)
 			return "peer_disconnecting";
-		else 
+		else
 			return "peer_unknown_status";
 	}
 
@@ -3272,7 +3272,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public abstract boolean recordStatus();
-	
+
 	private synchronized void checkConnectionsAndTrackers() {
 		if(isConnected) {
 			if(currentTracker == null) {
@@ -3420,8 +3420,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized long getTotalInputSinceStartup() {
 		return totalInputSinceStartup;
 	}
- 
-	public synchronized long getTotalOutputSinceStartup() { 
+
+	public synchronized long getTotalOutputSinceStartup() {
 		return totalOutputSinceStartup;
 	}
 
@@ -3455,34 +3455,34 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return Version.getArbitraryBuildNumber(getVersion(), -1);
 	}
 
-    private PacketThrottle _lastThrottle;
-    
-    public PacketThrottle getThrottle() {
-    	PacketThrottle newThrottle = null;
-    	PacketThrottle prevThrottle = null;
-    	synchronized(this) {
-    		Peer peer = getPeer();
-    		if(peer == null) {
-    			// We haven't connected, prevent an NPE.
-    			return null;
-    		}
-    		if(_lastThrottle != null) {
-    			if(_lastThrottle.getPeer().equals(peer))
-    				return _lastThrottle;
-    		}
-    		newThrottle = new PacketThrottle(peer, Node.PACKET_SIZE);
-    		prevThrottle = _lastThrottle;
-    		_lastThrottle = newThrottle;
-    	}
-    	if(prevThrottle != null)
-    		prevThrottle.changedAddress(newThrottle);
-    	return newThrottle;
+	private PacketThrottle _lastThrottle;
+
+	public PacketThrottle getThrottle() {
+		PacketThrottle newThrottle = null;
+		PacketThrottle prevThrottle = null;
+		synchronized(this) {
+			Peer peer = getPeer();
+			if(peer == null) {
+				// We haven't connected, prevent an NPE.
+				return null;
+			}
+			if(_lastThrottle != null) {
+				if(_lastThrottle.getPeer().equals(peer))
+					return _lastThrottle;
+			}
+			newThrottle = new PacketThrottle(peer, Node.PACKET_SIZE);
+			prevThrottle = _lastThrottle;
+			_lastThrottle = newThrottle;
+		}
+		if(prevThrottle != null)
+			prevThrottle.changedAddress(newThrottle);
+		return newThrottle;
 	}
 
 	/**
 	 * Select the most appropriate negType, taking the user's preference into account
 	 * order matters
-	 * 
+	 *
 	 * @param mangler
 	 * @return -1 if no common negType has been found
 	 */
@@ -3598,7 +3598,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 
-	/** Called to cancel a delayed disconnect. Always succeeds even if the node was not being 
+	/** Called to cancel a delayed disconnect. Always succeeds even if the node was not being
 	 * disconnected. */
 	public void forceCancelDisconnecting() {
 		synchronized(this) {
@@ -3634,7 +3634,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	// Recent packets sent/received
-	// We record times and weak short hashes of the last 64 packets 
+	// We record times and weak short hashes of the last 64 packets
 	// sent/received. When we connect successfully, we send the data
 	// on what packets we have sent, and the recipient can compare
 	// this to their records of received packets to determine if there
@@ -3723,11 +3723,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Handle an FNPSentPackets message
 	 */
 	public void handleSentPackets(Message m) {
-		
+
 		// IMHO it's impossible to make this work reliably on lossy connections, especially highly saturated upstreams.
 		// If it was possible it would likely involve a lot of work, refactoring, voting between peers, marginal results,
 		// very slow accumulation of data etc.
-		
+
 //		long now = System.currentTimeMillis();
 //		synchronized(this) {
 //			if(forceDisconnectCalled)
@@ -3767,7 +3767,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 //			int shortestArray=times.length;
 //			if (shortestArray > packetHashes.length)
 //				shortestArray = packetHashes.length;
-//			for(short i = (short) (shortestArray-1); i >= 0; i--) {	
+//			for(short i = (short) (shortestArray-1); i >= 0; i--) {
 //				long time = times[i];
 //				if(time > otime) {
 //					Logger.error(this, "Inconsistent time order: [" + i + "]=" + time + " but [" + (i + 1) + "] is " + otime);
@@ -3833,16 +3833,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 //		}
 	}
 	private boolean manyPacketsClaimedSentNotReceived = false;
-	
+
 	synchronized boolean manyPacketsClaimedSentNotReceived() {
 		return manyPacketsClaimedSentNotReceived;
 	}
-	
+
 	static final int MAX_SIMULTANEOUS_ANNOUNCEMENTS = 1;
 	static final int MAX_ANNOUNCE_DELAY = 1000;
 	private long timeLastAcceptedAnnouncement;
 	private long[] runningAnnounceUIDs = new long[0];
-	
+
 	public synchronized boolean shouldAcceptAnnounce(long uid) {
 		long now = System.currentTimeMillis();
 		if(runningAnnounceUIDs.length < MAX_SIMULTANEOUS_ANNOUNCEMENTS &&
@@ -3857,7 +3857,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return false;
 		}
 	}
-	
+
 	public synchronized boolean completedAnnounce(long uid) {
 		final int runningAnnounceUIDsLength = runningAnnounceUIDs.length;
 		if(runningAnnounceUIDsLength < 1) return false;
@@ -3882,7 +3882,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return timeLastDisconnect;
 	}
 
-	/** Does this peernode want to be returned by for example PeerManager.getByPeer() ? 
+	/** Does this peernode want to be returned by for example PeerManager.getByPeer() ?
 	 * False = seednode etc, never going to be routable. */
 	public abstract boolean isRealConnection();
 
@@ -3961,7 +3961,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+userToString());
 		return ret;
 	}
-	
+
 	private int handshakeIPAlternator;
 
 	public void sendNodeToNodeMessage(SimpleFieldSet fs, int n2nType, boolean includeSentTime, long now, boolean queueOnNotConnected) {
@@ -4033,11 +4033,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(logMINOR) Logger.minor(this, "fs is empty");
 		}
 	}
-	
+
 	int assignedNetworkID;
 	int providedNetworkID;
 	NetworkIDManager.PeerNetworkGroup networkGroup;
-	
+
 	void handleFNPNetworkID(Message m) {
 		int got=m.getInt(DMT.UID);
 		if (logMINOR) Logger.minor(this, "now peer thinks he is in network "+got);
@@ -4048,7 +4048,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			providedNetworkID=got;
 		}
 	}
-	
+
 	void sendFNPNetworkID(ByteCounter ctr) throws NotConnectedException {
 		if (assignedNetworkID!=0)
 			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, ctr);
@@ -4057,7 +4057,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean shouldThrottle() {
 		return shouldThrottle(getPeer(), node);
 	}
-	
+
 	public static boolean shouldThrottle(Peer peer, Node node) {
 		if(node.throttleLocalData) return true;
 		if(peer == null) return true; // presumably
@@ -4069,9 +4069,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
 	}
-	
+
 	private long resendBytesSent;
-	
+
 	public final ByteCounter resendByteCounter = new ByteCounter() {
 
 		public void receivedBytes(int x) {
@@ -4088,13 +4088,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		public void sentPayload(int x) {
 			// Ignore
 		}
-		
+
 	};
-	
+
 	public long getResendBytesSent() {
 		return resendBytesSent;
 	}
-	
+
 	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException, PeerRestartedException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
@@ -4122,11 +4122,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void setUptime(byte uptime2) {
 		this.uptime = uptime2;
 	}
-	
+
 	public short getUptime() {
 		return (short) (uptime & 0xFF);
 	}
-	
+
 	public void incrementNumberOfSelections(long time) {
 		// TODO: reimplement with a bit field to spare memory
 		synchronized(this) {
@@ -4145,21 +4145,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	private volatile long offeredMainJarVersion;
-	
+
 	public void setMainJarOfferedVersion(long mainJarVersion) {
 		offeredMainJarVersion = mainJarVersion;
 	}
-	
+
 	public long getMainJarOfferedVersion() {
 		return offeredMainJarVersion;
 	}
 
 	private volatile long offeredExtJarVersion;
-	
+
 	public void setExtJarOfferedVersion(long extJarVersion) {
 		offeredExtJarVersion = extJarVersion;
 	}
-	
+
 	public long getExtJarOfferedVersion() {
 		return offeredExtJarVersion;
 	}
@@ -4175,7 +4175,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @param now
 	 * @param rpiTemp
 	 * @param rpiTemp
-	 * @throws BlockedTooLongException 
+	 * @throws BlockedTooLongException
 	 */
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
@@ -4220,7 +4220,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(PacketSequenceException e) {
 					Logger.error(this, "Caught " + e + " - disconnecting", e);
 					// PSE is fairly drastic, something is broken between us, but maybe we can resync
-					forceDisconnect(false); 
+					forceDisconnect(false);
 					return false;
 				} catch(WouldBlockException e) {
 					Logger.error(this, "Impossible: " + e, e);
@@ -4231,10 +4231,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		int minSize = getOutgoingMangler().fullHeadersLengthOneMessage(); // includes UDP headers
 		int maxSize = ((PacketSocketHandler) getSocketHandler()).getPacketSendThreshold();
-		
+
 		// If it's a keepalive, we must add an FNPVoid to ensure it has a packet number.
 		boolean keepalive = false;
-		
+
 		long lastSent = lastSentPacketTime();
 		if(now - lastSent > Node.KEEPALIVE_INTERVAL) {
 			if(logMINOR)
@@ -4245,24 +4245,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			mustSend = true;
 			mustSendPacket = true;
 		}
-		
+
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(10);
-		
+
 		synchronized(messageQueue) {
-			
+
 			// Any urgent messages to send now?
-			
+
 			if(!mustSend) {
 				if(messageQueue.mustSendNow(now))
 					mustSend = true;
 			}
-			
+
 			if(!mustSend) {
 				// What about total length?
 				if(messageQueue.mustSendSize(minSize, maxSize))
 					mustSend = true;
 			}
-			
+
 			if(mustSend) {
 				int size = minSize;
 				size = messageQueue.addUrgentMessages(size, now, minSize, maxSize, messages);
@@ -4272,16 +4272,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					size = messageQueue.addNonUrgentMessages(size, now, minSize, maxSize, messages);
 				}
 			}
-			
+
 		}
-		
+
 		if(messages.isEmpty() && keepalive) {
 			// Force packet to have a sequence number.
 			Message m = DMT.createFNPVoid();
 			addToLocalNodeSentMessagesToStatistic(m);
 			messages.add(new MessageItem(m, null, null, this));
 		}
-		
+
 		if(!messages.isEmpty()) {
 			// Send packets, right now, blocking, including any active notifications
 			// Note that processOutgoingOrRequeue will drop messages from the end
@@ -4301,7 +4301,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.normal(this, "No notifications sent despite no messages and mustSend=true for "+this);
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -4326,9 +4326,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	static final int MAX_TURTLES_PER_PEER = 3;
-	
+
 	private HashMap<Key,RequestSender> turtlingTransfers = new HashMap<Key,RequestSender>();
-	
+
 	public boolean registerTurtleTransfer(RequestSender sender) {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
@@ -4371,22 +4371,22 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long lastFailedRevocationTransfer;
 	/** Reset on disconnection */
 	private int countFailedRevocationTransfers;
-	
+
 	public void failedRevocationTransfer() {
 		lastAttemptedHandshakeIPUpdateTime = System.currentTimeMillis();
 		countFailedRevocationTransfers++;
 	}
-	
+
 	public int countFailedRevocationTransfers() {
 		return countFailedRevocationTransfers;
 	}
-	
+
 	/** Registers a listener that will be notified when status changes. Only the WeakReference of it is stored, so there is no need for deregistering
 	 * @param listener - The listener to be registered*/
 	public void registerPeerNodeStatusChangeListener(PeerManager.PeerStatusChangeListener listener){
 		listeners.add(listener);
 	}
-	
+
 	/** Notifies the listeners that status has been changed*/
 	private void notifyPeerNodeStatusChangeListeners(){
 		synchronized (listeners) {
@@ -4395,16 +4395,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 	}
-	
+
 
 	public boolean isLowUptime() {
 		return getUptime() < Node.MIN_UPTIME_STORE_KEY;
 	}
-	
+
 	public void setAddedReason(ConnectionType connectionType) {
 		// Do nothing.
 	}
-	
+
 	public synchronized ConnectionType getAddedReason() {
 		return null;
 	}
