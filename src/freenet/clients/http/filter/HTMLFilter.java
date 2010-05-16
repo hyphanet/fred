@@ -1327,7 +1327,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	static class TagVerifier {
 		final String tag;
+		//Attributes which need no sanitation
 		final HashSet<String> allowedAttrs;
+		//Attributes which will be sanitized by child classes
+		final HashSet<String> parsedAttrs;
 		final HashSet<String> uriAttrs;
 		final HashSet<String> inlineURIAttrs;
 
@@ -1338,6 +1341,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		TagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs, String[] inlineURIAttrs) {
 			this.tag = tag;
 			this.allowedAttrs = new HashSet<String>();
+			this.parsedAttrs = new HashSet<String>();
 			if (allowedAttrs != null) {
 				for (int x = 0; x < allowedAttrs.length; x++)
 					this.allowedAttrs.add(allowedAttrs[x]);
@@ -1465,15 +1469,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					// FIXME: rewrite absolute URLs, handle ?date= etc
 				}
 
+				/*If the attribute is to be passed through without sanitation*/
 				if(allowedAttrs.contains(x)) {
-					/*We create a placeholder in the sanitized output.
-					 * This ensures the order of the attributes Subclasses
-					 * will take care of parsing and replacing these values*/
-					if(allowedAttrs.contains(x)) {
-							hn.put(x, null);
-							continue;
-					}
+					hn.put(x, o);
+					continue;
 				}
+
+				/*We create a placeholder for each parsed attribute in the
+				 * sanitized output. This ensures the order of the attributes.
+				 * Subclasses will take care of parsing and replacing these values.
+				 * If they don't, we'll remove the placeholder later.*/
+				if(parsedAttrs.contains(x)) {
+					hn.put(x, null);
+					continue;
+				}
+
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
@@ -1513,16 +1523,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	//	static String[] titleString = new String[] {"title"};
 
 	static abstract class ScriptStyleTagVerifier extends TagVerifier {
-		static final String[] locallyVerifiedAttrs = new String[] {"type"};
-
 		ScriptStyleTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs) {
 			super(tag, allowedAttrs, uriAttrs, null);
-			for(String attr : locallyVerifiedAttrs) {
-				this.allowedAttrs.add(attr);
-			}
 		}
 
 		abstract void setStyle(boolean b, HTMLParseContext pc);
@@ -1682,7 +1687,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] inlineURIAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
 			for(String attr : locallyVerifiedAttrs) {
-				this.allowedAttrs.add(attr);
+				this.parsedAttrs.add(attr);
 			}
 		}
 
@@ -1771,13 +1776,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (eventAttrs != null) {
 				for (int x = 0; x < eventAttrs.length; x++) {
 					this.eventAttrs.add(eventAttrs[x]);
-					this.allowedAttrs.add(eventAttrs[x]);
+					this.parsedAttrs.add(eventAttrs[x]);
 				}
 			}
 			if (addStdEvents) {
 				for (int x = 0; x < stdEvents.length; x++) {
 					this.eventAttrs.add(stdEvents[x]);
-					this.allowedAttrs.add(stdEvents[x]);
+					this.parsedAttrs.add(stdEvents[x]);
 				}
 			}
 		}
@@ -1812,6 +1817,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			"hreflang",
 			"href"
 		};
+
 		LinkTagVerifier(
 			String tag,
 			String[] allowedAttrs,
@@ -1820,7 +1826,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
 			for(String attr : locallyVerifiedAttrs) {
-				this.allowedAttrs.add(attr);
+				this.parsedAttrs.add(attr);
 			}
 		}
 
@@ -2016,8 +2022,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	static class FormTagVerifier extends CoreTagVerifier{
 		static final String[] locallyVerifiedAttrs = new String[] {
 			"method",
-			"action"
+			"action",
+			"enctype",
+			"accept-charset"
 		};
+
 		FormTagVerifier(
 			String tag,
 			String[] allowedAttrs,
@@ -2025,7 +2034,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, null, eventAttrs);
 			for(String attr : locallyVerifiedAttrs) {
-				this.allowedAttrs.add(attr);
+				this.parsedAttrs.add(attr);
 			}
 		}
 
@@ -2083,7 +2092,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (types != null) {
 				for (int x = 0; x < types.length; x++) {
 					this.allowedTypes.add(types[x]);
-					this.allowedAttrs.add(types[x]);
 				}
 			}
 		}
@@ -2108,14 +2116,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"text/html",
 				"application/xhtml+xml"
 		};
+		static final String[] locallyVerifiedAttrs = {
+			"http-equiv",
+			"name",
+			"content"
+		};
+
 		MetaTagVerifier() {
-			super("meta", new String[] {
-					"id",
-					"http-equiv",
-					"name",
-					"content",
-					});
-		}
+			super("meta", new String[] { "id" });
+			for(String attr : locallyVerifiedAttrs) {
+				this.parsedAttrs.add(attr);
+				}
+			}
 
 		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
@@ -2293,8 +2305,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class HtmlTagVerifier extends TagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] { "xmlns" };
 		HtmlTagVerifier() {
-			super("html", new String[] { "id", "version", "xmlns" });
+			super("html", new String[] { "id", "version" });
+			for(String attr : locallyVerifiedAttrs) {
+				parsedAttrs.add(attr);
+			}
 		}
 
 		@Override
@@ -2318,7 +2334,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		BaseHrefTagVerifier(String string, String[] strings, String[] strings2) {
 			super(string, strings, strings2, null);
 			for(String attr : locallyVerifiedAttrs) {
-				this.allowedAttrs.add(attr);
+				this.parsedAttrs.add(attr);
 			}
 		}
 		
