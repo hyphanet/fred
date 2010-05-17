@@ -722,6 +722,11 @@ public class PluginManager {
 	 *            The plugin specification
 	 */
 	public void removeCachedCopy(String pluginSpecification) {
+		if(pluginSpecification == null) {
+			Logger.warning(this, "Can't remove null from cache. Ignoring");
+			return;
+		}
+
 		int lastSlash = pluginSpecification.lastIndexOf('/');
 		String pluginFilename;
 		if(lastSlash == -1)
