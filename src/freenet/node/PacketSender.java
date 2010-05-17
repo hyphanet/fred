@@ -22,12 +22,12 @@ import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
- * 
+ *
  *         Thread that sends a packet whenever: - A packet needs to be resent immediately -
  *         Acknowledgments or resend requests need to be sent urgently.
  */
 // j16sdiz (22-Dec-2008):
-// FIXME this is the only class implements Ticker, everbody is using this as 
+// FIXME this is the only class implements Ticker, everbody is using this as
 // a generic task scheduler. Either rename this class, or create another tricker for non-Packet tasks
 public class PacketSender implements Runnable, Ticker {
 
@@ -47,7 +47,7 @@ public class PacketSender implements Runnable, Ticker {
 	/** Maximum time we will queue a message for in milliseconds */
 	static final int MAX_COALESCING_DELAY = 100;
 	/** If opennet is enabled, and there are fewer than this many connections,
-	 * we MAY attempt to contact old opennet peers (opennet peers we have 
+	 * we MAY attempt to contact old opennet peers (opennet peers we have
 	 * dropped from the routing table but kept around in case we can't connect). */
 	static final int MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS = 5;
 	/** We send connect attempts to old-opennet-peers no more than once every
@@ -74,14 +74,14 @@ public class PacketSender implements Runnable, Ticker {
 			this.name = name;
 			this.job = job;
 		}
-		
+
 		public boolean equals(Object o) {
 			if(!(o instanceof Job)) return false;
 			// Ignore the name, we are only interested in the job, needed for noDupes.
 			return ((Job)o).job == job;
 		}
 	}
-	
+
 	PacketSender(Node node) {
 		timedJobsByTime = new TreeMap<Long, Object>();
 		this.node = node;
@@ -90,7 +90,7 @@ public class PacketSender implements Runnable, Ticker {
 		rpiTemp = new Vector<ResendPacketItem>();
 		rpiIntTemp = new int[64];
 	}
-	
+
 	void start(NodeStats stats) {
 		this.stats = stats;
 		Logger.normal(this, "Starting PacketSender");
@@ -156,12 +156,12 @@ public class PacketSender implements Runnable, Ticker {
 		long oldTempNow = now;
 		// Needs to be run very frequently. Maybe change to a regular once per second schedule job?
 		// Maybe not worth it as it is fairly lightweight.
-		// FIXME given the lock contention, maybe it's worth it? What about 
+		// FIXME given the lock contention, maybe it's worth it? What about
 		// running it on the UdpSocketHandler thread? That would surely be better...?
 		node.lm.removeTooOldQueuedItems();
-		
+
 		boolean canSendThrottled = false;
-		
+
 		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
 		long count = node.outputThrottle.getCount();
 		if(count > MAX_PACKET_SIZE)
@@ -173,7 +173,7 @@ public class PacketSender implements Runnable, Ticker {
 				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
 		}
-		
+
 		int newBrokeAt = brokeAt;
 		for(int i = 0; i < nodes.length; i++) {
 			int idx = (i + brokeAt + 1) % nodes.length;
@@ -187,10 +187,10 @@ public class PacketSender implements Runnable, Ticker {
 			}
 
 			if(pn.isConnected()) {
-				
+
 				if(pn.shouldThrottle() && !canSendThrottled)
 					continue;
-				
+
 				// Is the node dead?
 				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
@@ -208,7 +208,7 @@ public class PacketSender implements Runnable, Ticker {
 					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+pn);
 					continue;
 				}
-				
+
 				try {
 				if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
 					canSendThrottled = false;
@@ -229,7 +229,7 @@ public class PacketSender implements Runnable, Ticker {
 					pn.forceDisconnect(true);
 					onForceDisconnectBlockTooLong(pn, e);
 				}
-				
+
 				long urgentTime = pn.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
 				if(urgentTime < Long.MAX_VALUE && logMINOR)
@@ -240,7 +240,7 @@ public class PacketSender implements Runnable, Ticker {
 
 				if(pn.noContactDetails())
 					pn.startARKFetcher();
-			
+
 			if(pn.shouldSendHandshake()) {
 				// Send handshake if necessary
 				long beforeHandshakeTime = System.currentTimeMillis();
@@ -260,11 +260,11 @@ public class PacketSender implements Runnable, Ticker {
 		 * Constantly send handshake packets, in order to get through a NAT.
 		 * Most JFK(1)'s are less than 300 bytes. 25*300/15 = avg 500B/sec bandwidth cost.
 		 * Well worth it to allow us to reconnect more quickly. */
-		
+
 		OpennetManager om = node.getOpennet();
 		if(om != null && node.getUptime() > 30*1000) {
 			PeerNode[] peers = om.getOldPeers();
-			
+
 			for(PeerNode pn : peers) {
 				if(pn.timeLastConnected() <= 0)
 					Logger.error(this, "Last connected is zero or negative for old-opennet-peer "+pn);
@@ -288,7 +288,7 @@ public class PacketSender implements Runnable, Ticker {
 						Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
 				}
 			}
-			
+
 		}
 
 		if(now - lastClearedOldSwapChains > 10000) {
@@ -323,7 +323,7 @@ public class PacketSender implements Runnable, Ticker {
 					}
 				} else
 					// FIXME how accurately do we want ticker jobs to be scheduled?
-       				// FIXME can they wait the odd 200ms?
+					// FIXME can they wait the odd 200ms?
 
 					break;
 			}
@@ -382,7 +382,7 @@ public class PacketSender implements Runnable, Ticker {
 	}
 
 	private HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
-	
+
 	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
 		Peer p = pn.getPeer();
 		synchronized(peersDumpedBlockedTooLong) {
@@ -393,10 +393,10 @@ public class PacketSender implements Runnable, Ticker {
 			return;
 		// FIXME XXX: We have had this alert enabled for MONTHS which got us hundreds of bug reports about it. Unfortunately, nobody spend any work on fixing
 		// the issue after the alert was added so I have disabled it to quit annoying our users. We should not waste their time if we don't do anything. xor
-		// Notice that the same alert is commented out in FNPPacketMangler. 
+		// Notice that the same alert is commented out in FNPPacketMangler.
 		// node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
 	}
-	
+
 	@SuppressWarnings("unused")
 	private UserAlert peersDumpedBlockedTooLongAlert = new AbstractUserAlert() {
 
@@ -426,7 +426,7 @@ public class PacketSender implements Runnable, Ticker {
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
 			}
-			NodeL10n.getBase().addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail", 
+			NodeL10n.getBase().addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail",
 					new String[] { "count", "link", "/link" }
 					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
 			HTMLNode list = div.addChild("ul");
@@ -442,7 +442,7 @@ public class PacketSender implements Runnable, Ticker {
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
 			}
-			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail", 
+			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail",
 					new String[] { "count", "link", "/link" },
 					new String[] { Integer.toString(peers.length), "", "" } ));
 			sb.append('\n');
@@ -453,7 +453,7 @@ public class PacketSender implements Runnable, Ticker {
 			}
 			return sb.toString();
 		}
-		
+
 		public String getTitle() {
 			return getShortText();
 		}
@@ -513,15 +513,15 @@ public class PacketSender implements Runnable, Ticker {
 	 * @param runner The job to run. FastRunnable's get run directly on the PacketSender thread.
 	 * @param name The name of the job, the thread running it will temporarily take this name,
 	 * assuming it is run on a separate thread.
-	 * @param offset The time at which to run the job in milliseconds after 
+	 * @param offset The time at which to run the job in milliseconds after
 	 * System.currentTimeMillis().
 	 * @param runOnTickerAnyway If false, run jobs with offset <=0 on the ticker, to preserve
 	 * their thread priorities; if true, jobs to run immediately through the executor (which
-	 * normally will also preserve thread priorities, but may need to call back via 
+	 * normally will also preserve thread priorities, but may need to call back via
 	 * runOnTickerAnyway=true if it needs to increase the thread priority).
 	 * @param noDupes Don't run this job if it is already scheduled. Relatively expensive, O(n)
-	 * with queued jobs. Necessary for Announcer to ensure that we don't get exponentially 
-	 * increasing numbers of announcement check jobs queued, while ensuring that we do always 
+	 * with queued jobs. Necessary for Announcer to ensure that we don't get exponentially
+	 * increasing numbers of announcement check jobs queued, while ensuring that we do always
 	 * have one queued within the given period.
 	 */
 	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway, boolean noDupes) {
