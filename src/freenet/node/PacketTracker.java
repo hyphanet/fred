@@ -168,10 +168,11 @@ public class PacketTracker {
 	public void queueForgotten(int seqNumber, boolean log) {
 		if(log && ((!isDeprecated) || logMINOR)) {
 			String msg = "Queueing forgotten for " + seqNumber + " for " + this;
-			if(!isDeprecated)
+			if(!isDeprecated) {
 				Logger.error(this, msg);
-			else
+			} else {
 				Logger.minor(this, msg);
+			}
 		}
 		QueuedForgotten qf = new QueuedForgotten(seqNumber);
 		synchronized(forgottenQueue) {
@@ -251,7 +252,7 @@ public class PacketTracker {
 		}
 
 		@SuppressWarnings("unchecked")
-        public final T setNext(Item<?> i) {
+		public final T setNext(Item<?> i) {
 			T old = next;
 			next = (T)i;
 			return old;
@@ -262,7 +263,7 @@ public class PacketTracker {
 		}
 
 		@SuppressWarnings("unchecked")
-        public T setPrev(Item<?> i) {
+		public T setPrev(Item<?> i) {
 			T old = prev;
 			prev = (T)i;
 			return old;

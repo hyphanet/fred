@@ -31,7 +31,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private int _dropProbability;
 	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
 	private final Node node;
-	private static boolean logMINOR; 
+	private static boolean logMINOR;
 	private static boolean logDEBUG;
 	private boolean _isDone;
 	private volatile boolean _active = true;
@@ -40,7 +40,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private boolean _started;
 	private long startTime;
 	private final IOStatisticCollector collector;
-	
+
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
 		this.node = node;
 		this.collector = collector;
@@ -76,15 +76,15 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	public void setLowLevelFilter(IncomingPacketFilter f) {
 		lowLevelFilter = f;
 	}
-	
+
 	public InetAddress getBindTo() {
 		return _bindTo;
 	}
-	
+
 	public String getTitle() {
 		return title;
 	}
-	
+
 	public void run() { // Listen for packets
 		tracker.startReceive(System.currentTimeMillis());
 		try {
@@ -243,7 +243,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
-			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
+			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH);
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address) {

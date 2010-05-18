@@ -11,7 +11,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -43,7 +43,7 @@ import freenet.support.ShortBuffer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.11 2005/09/15 18:16:04 amphibian Exp $";
+	public static final String VERSION = "$Id: Message.java,v 1.11 2005/09/15 18:16:04 amphibian Exp $";
 	private static volatile boolean logMINOR;
 	private static volatile boolean logDEBUG;
 
@@ -69,18 +69,18 @@ public class Message {
 		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
 		return decodeMessage(bb, peer, length + overhead, true, false);
 	}
-	
+
 	private static Message decodeMessage(ByteBufferInputStream bb, PeerContext peer, int recvByteCount,
 	        boolean mayHaveSubMessages, boolean inSubMessage) {
 		MessageType mspec;
-        try {
-            mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()));
-        } catch (IOException e1) {
-        	if(logDEBUG)
-        		Logger.debug(Message.class,"Failed to read message type: "+e1, e1);
-            return null;
-        }
-        if (mspec == null) {
+		try {
+			mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()));
+		} catch (IOException e1) {
+			if(logDEBUG)
+				Logger.debug(Message.class,"Failed to read message type: "+e1, e1);
+			return null;
+		}
+		if (mspec == null) {
 		    return null;
 		}
 		if(mspec.isInternalOnly())
@@ -134,7 +134,7 @@ public class Message {
 		if(logMINOR) Logger.minor(Message.class, "Returning message: "+m);
 		return m;
 	}
-	
+
 	public Message(MessageType spec) {
 		this(spec, null, 0);
 	}
@@ -175,7 +175,7 @@ public class Message {
 	public double getDouble(String key) {
 	    return ((Double) _payload.get(key)).doubleValue();
 	}
-	
+
 	public String getString(String key) {
 		return (String)_payload.get(key);
 	}
@@ -204,14 +204,14 @@ public class Message {
 		set(key, Long.valueOf(l));
 	}
 
-    public void set(String key, double d) {
-        set(key, new Double(d));
-    }
-    
+	public void set(String key, double d) {
+		set(key, new Double(d));
+	}
+
 	public void set(String key, Object value) {
 		if (!_spec.checkType(key, value)) {
 			if (value == null) {
-				throw new IncorrectTypeException("Got null for " + key);				
+				throw new IncorrectTypeException("Got null for " + key);
 			}
 			throw new IncorrectTypeException("Got " + value.getClass() + ", expected " + _spec.typeOf(key));
 		}
@@ -221,13 +221,13 @@ public class Message {
 	public byte[] encodeToPacket(PeerContext destination) {
 		return encodeToPacket(destination, true, false);
 	}
-	
+
 	private byte[] encodeToPacket(PeerContext destination, boolean includeSubMessages, boolean isSubMessage) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
-    	if(logDEBUG)
-    		Logger.debug(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
+		if(logDEBUG)
+			Logger.debug(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
@@ -240,7 +240,7 @@ public class Message {
 			e.printStackTrace();
 			throw new IllegalStateException(e.getMessage());
 		}
-		
+
 		if(_subMessages != null && includeSubMessages) {
 			for(int i=0;i<_subMessages.size();i++) {
 				byte[] temp = _subMessages.get(i).encodeToPacket(destination, false, true);
@@ -253,10 +253,10 @@ public class Message {
 				}
 			}
 		}
-		
+
 		byte[] buf = baos.toByteArray();
-    	if(logDEBUG)
-    		Logger.debug(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
+		if(logDEBUG)
+			Logger.debug(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
 		return buf;
 	}
 
@@ -264,10 +264,10 @@ public class Message {
 	public String toString() {
 		StringBuilder ret = new StringBuilder(1000);
 		String comma = "";
-        ret.append(_spec.getName()).append(" {");
+		ret.append(_spec.getName()).append(" {");
 		for (String name : _spec.getFields().keySet()) {
 			ret.append(comma);
-            ret.append(name).append('=').append(_payload.get(name));
+			ret.append(name).append('=').append(_payload.get(name));
 			comma = ", ";
 		}
 		ret.append('}');
@@ -281,7 +281,7 @@ public class Message {
 	public boolean isInternal() {
 	    return _internal;
 	}
-	
+
 	public MessageType getSpec() {
 		return _spec;
 	}
@@ -289,7 +289,7 @@ public class Message {
 	public boolean isSet(String fieldName) {
 		return _payload.containsKey(fieldName);
 	}
-	
+
 	public Object getFromPayload(String fieldName) throws FieldNotSetException {
 		Object r =  _payload.get(fieldName);
 		if (r == null) {
@@ -297,35 +297,35 @@ public class Message {
 		}
 		return r;
 	}
-	
+
 	public static class FieldNotSetException extends RuntimeException {
 		private static final long serialVersionUID = 1L;
-		
+
 		public FieldNotSetException(String message) {
 			super(message);
 		}
 	}
 
-    /**
-     * Set fields for a routed-to-a-specific-node message.
-     * @param nodeIdentity 
-     */
-    public void setRoutedToNodeFields(long uid, double targetLocation, short htl, byte[] nodeIdentity) {
-        set(DMT.UID, uid);
-        set(DMT.TARGET_LOCATION, targetLocation);
-        set(DMT.HTL, htl);
-        set(DMT.NODE_IDENTITY, new ShortBuffer(nodeIdentity));
-    }
+	/**
+	 * Set fields for a routed-to-a-specific-node message.
+	 * @param nodeIdentity
+	 */
+	public void setRoutedToNodeFields(long uid, double targetLocation, short htl, byte[] nodeIdentity) {
+		set(DMT.UID, uid);
+		set(DMT.TARGET_LOCATION, targetLocation);
+		set(DMT.HTL, htl);
+		set(DMT.NODE_IDENTITY, new ShortBuffer(nodeIdentity));
+	}
 
 	public int receivedByteCount() {
 		return _receivedByteCount;
 	}
-	
+
 	public void addSubMessage(Message subMessage) {
 		if(_subMessages == null) _subMessages = new ArrayList<Message>();
 		_subMessages.add(subMessage);
 	}
-	
+
 	public Message getSubMessage(MessageType t) {
 		if(_subMessages == null) return null;
 		for(int i=0;i<_subMessages.size();i++) {
@@ -346,7 +346,7 @@ public class Message {
 		}
 		return null;
 	}
-	
+
 	public long age() {
 		return System.currentTimeMillis() - localInstantiationTime;
 	}
