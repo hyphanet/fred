@@ -309,6 +309,8 @@ public class BaseL10n {
 
 			fos = new FileOutputStream(tempFile);
 			this.translationOverride.writeTo(fos);
+			fos.close();
+			fos = null;
 
 			FileUtil.renameTo(tempFile, finalFile);
 			Logger.normal(this.getClass(), "Override file saved successfully!");

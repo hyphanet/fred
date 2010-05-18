@@ -724,31 +724,22 @@ public class SimpleFieldSet {
 		return readFrom(new FileInputStream(f), allowMultiple, shortLived);
 	}
 
-	/** Write to the given OutputStream, close it and flush it. */
+	/** Write to the given OutputStream and flush it. */
         public void writeTo(OutputStream os) throws IOException {
             BufferedOutputStream bos = null;
             OutputStreamWriter osw = null;
             BufferedWriter bw = null;
 
+            bos = new BufferedOutputStream(os);
             try {
-                bos = new BufferedOutputStream(os);
-                try {
-                    osw = new OutputStreamWriter(bos, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    Logger.error(SimpleFieldSet.class, "Impossible: " + e, e);
-                    os.close();
-                    return;
-                }
-                bw = new BufferedWriter(osw);
-                writeTo(bw);
-                // close() calls flush() but IGNORES ALL ERRORS!
-                bw.flush();
-                bw.close();
-            }finally {
-                Closer.close(bw);
-                Closer.close(osw);
-                Closer.close(bos);
+            	osw = new OutputStreamWriter(bos, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+            	Logger.error(SimpleFieldSet.class, "Impossible: " + e, e);
+            	throw e;
             }
+            bw = new BufferedWriter(osw);
+            writeTo(bw);
+            bw.flush();
         }
 
 	public int getInt(String key, int def) {

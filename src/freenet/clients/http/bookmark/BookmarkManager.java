@@ -282,6 +282,8 @@ public class BookmarkManager implements RequestClient {
 		try {
 			fos = new FileOutputStream(backupBookmarksFile);
 			sfs.writeTo(fos);
+			fos.close();
+			fos = null;
 			if(!FileUtil.renameTo(backupBookmarksFile, bookmarksFile))
 				Logger.error(this, "Unable to rename " + backupBookmarksFile.toString() + " to " + bookmarksFile.toString());
 		} catch(IOException ioe) {
