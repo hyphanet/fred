@@ -1469,18 +1469,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					// FIXME: rewrite absolute URLs, handle ?date= etc
 				}
 
-				/*If the attribute is to be passed through without sanitation*/
-				if(allowedAttrs.contains(x)) {
-					hn.put(x, o);
-					continue;
-				}
-
 				/*We create a placeholder for each parsed attribute in the
 				 * sanitized output. This ensures the order of the attributes.
 				 * Subclasses will take care of parsing and replacing these values.
 				 * If they don't, we'll remove the placeholder later.*/
 				if(parsedAttrs.contains(x)) {
 					hn.put(x, null);
+					continue;
+				}
+
+				/*If the attribute is to be passed through without sanitation*/
+				if(allowedAttrs.contains(x)) {
+					hn.put(x, o);
 					continue;
 				}
 
