@@ -9,7 +9,7 @@ import java.util.SortedSet;
 
 
 /**
- * Sorted array of long's.
+ * Sorted array of int's.
  */
 public class SortedIntSet extends AbstractCollection<Integer> implements SortedSet<Integer> {
 
@@ -112,9 +112,9 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	 * verify internal state. can be removed without ill effect
 	 */
 	private synchronized boolean verify() { // TODO: Move to a unit test.
-		long lastItem = -1;
+		int lastItem = -1;
 		for(int i=0;i<length;i++) {
-			long item = data[i];
+			int item = data[i];
 			if(i>0) {
 				if(item <= lastItem)
 					throw new IllegalStateException("Verify failed!");
@@ -123,7 +123,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 		}
 		for(int i=length;i<data.length;i++)
 			if(data[i] != Integer.MAX_VALUE)
-				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != Long.MAX_VALUE");
+				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != Integer.MAX_VALUE");
 		
 		return true;
 	}
