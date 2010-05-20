@@ -1487,7 +1487,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
-				if (uriAttrs.contains(x) || inlineURIAttrs.contains(x) || x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (x.equalsIgnoreCase("ltr") || x.equalsIgnoreCase("rtl")))) {
+				if (uriAttrs.contains(x) || inlineURIAttrs.contains(x) || x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
 					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
 					hn.put(x, o);
 				}
