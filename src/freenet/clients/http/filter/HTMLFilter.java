@@ -1327,7 +1327,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	static class TagVerifier {
 		final String tag;
+		//Attributes which need no sanitation
 		final HashSet<String> allowedAttrs;
+		//Attributes which will be sanitized by child classes
+		final HashSet<String> parsedAttrs;
 		final HashSet<String> uriAttrs;
 		final HashSet<String> inlineURIAttrs;
 
@@ -1338,6 +1341,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		TagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs, String[] inlineURIAttrs) {
 			this.tag = tag;
 			this.allowedAttrs = new HashSet<String>();
+			this.parsedAttrs = new HashSet<String>();
 			if (allowedAttrs != null) {
 				for (int x = 0; x < allowedAttrs.length; x++)
 					this.allowedAttrs.add(allowedAttrs[x]);
@@ -1399,8 +1403,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				}
 			h = sanitizeHash(h, t, pc);
-			if (h == null)
-				return null;
+			if (h == null) return null;
+			//Remove any blank entries
+			for(Iterator<Entry<String, Object>> it = h.entrySet().iterator(); it.hasNext();){
+				Map.Entry<String, Object> entry = it.next();
+				if(entry.getValue() == null || entry.getValue() == "" && pc.isXHTML){
+					it.remove();
+				}
+			}
+			//If the tag has no attributes, and this is not allowable, remove it
+            if(h.isEmpty() && expungeTagIfNoAttributes()) return null;
 			if (t.startSlash)
 				return new ParsedTag(t, (String[])null);
 			String[] outAttrs = new String[h.size()];
@@ -1426,59 +1438,68 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Map<String, Object> hn = new LinkedHashMap<String, Object>();
 			for (Map.Entry<String, Object> entry : h.entrySet()) {
+				if(logDEBUG) Logger.debug(this, "HTML Filter is sanitizing: "+entry.getKey()+" = "+entry.getValue());
 				String x = entry.getKey();
 				Object o = entry.getValue();
-				// Straight attribs
-				if (allowedAttrs.contains(x)) {
+
+				//URI attributes require additional processing
+				if (uriAttrs.contains(x) || inlineURIAttrs.contains(x)) {
+					boolean inline;
+					if(uriAttrs.contains(x)) {
+						if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
+						inline = false;
+					}
+					else {
+						if(logMINOR) Logger.minor(this, "Inline URI attribute: "+x);
+						inline = true;
+
+					}
+					// URI
+					if (o instanceof String) {
+						// Java's URL handling doesn't seem suitable
+						String uri = (String) o;
+						uri = HTMLDecoder.decode(uri);
+						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, inline);
+						if (uri == null) {
+							continue;
+						}
+						uri = HTMLEncoder.encode(uri);
+						o = uri;
+					}
+					// FIXME: rewrite absolute URLs, handle ?date= etc
+				}
+
+				/*We create a placeholder for each parsed attribute in the
+				 * sanitized output. This ensures the order of the attributes.
+				 * Subclasses will take care of parsing and replacing these values.
+				 * If they don't, we'll remove the placeholder later.*/
+				if(parsedAttrs.contains(x)) {
+					hn.put(x, null);
+					continue;
+				}
+
+				/*If the attribute is to be passed through without sanitation*/
+				if(allowedAttrs.contains(x)) {
 					hn.put(x, o);
 					continue;
 				}
-				if (uriAttrs.contains(x)) {
-					if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
-					// URI
-					if (o instanceof String) {
-						// Java's URL handling doesn't seem suitable
-						String uri = (String) o;
-						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, false);
-						if (uri != null) {
-							uri = HTMLEncoder.encode(uri);
-							hn.put(x, uri);
-						}
-					}
-					// FIXME: rewrite absolute URLs, handle ?date= etc
-				}
-				if (inlineURIAttrs.contains(x)) {
-					if(logMINOR) Logger.minor(this, "Inline URI attribute: "+x);
-					// URI
-					if (o instanceof String) {
-						// Java's URL handling doesn't seem suitable
-						String uri = (String) o;
-						uri = HTMLDecoder.decode(uri);
-						uri = htmlSanitizeURI(uri, null, null, null, pc.cb, pc, true);
-						if (uri != null) {
-							uri = HTMLEncoder.encode(uri);
-							hn.put(x, uri);
-						}
-					}
-					// FIXME: rewrite absolute URLs, handle ?date= etc
+
+				// lang, xml:lang and dir can go on anything
+				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
+				// The variant can be just about anything; no way to test (avian)
+				if (uriAttrs.contains(x) || inlineURIAttrs.contains(x) || x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (x.equalsIgnoreCase("ltr") || x.equalsIgnoreCase("rtl")))) {
+					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
+					hn.put(x, o);
 				}
 			}
-			// lang, xml:lang and dir can go on anything
-			// lang or xml:lang = language [ "-" country [ "-" variant ] ]
-			// The variant can be just about anything; no way to test (avian)
-			String s = getHashString(h, "lang");
-			if (s != null)
-				hn.put("lang", s);
-			s = getHashString(h, "xml:lang");
-			if (s != null)
-				hn.put("xml:lang", s);
-			s = getHashString(h, "dir");
-			if ((s != null)
-				&& (s.equalsIgnoreCase("ltr") || s.equalsIgnoreCase("rtl")))
-				hn.put("dir", s);
 			return hn;
 		}
+
+		/*If this function returns true, this tag will be removed from  
+		 * the sanitized output if it has no attributes*/               
+		protected boolean expungeTagIfNoAttributes() {                  
+			return false;                                           
+		}  
 	}
 
 	static String stripQuotes(String s) {
@@ -1653,12 +1674,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class BaseCoreTagVerifier extends TagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"id",
+			"class",
+			"style"
+		};
+
 		BaseCoreTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] inlineURIAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
+			for(String attr : locallyVerifiedAttrs) {
+				this.parsedAttrs.add(attr);
+			}
 		}
 
 		@Override
@@ -1744,12 +1774,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
 			this.eventAttrs = new HashSet<String>();
 			if (eventAttrs != null) {
-				for (int x = 0; x < eventAttrs.length; x++)
+				for (int x = 0; x < eventAttrs.length; x++) {
 					this.eventAttrs.add(eventAttrs[x]);
+					this.parsedAttrs.add(eventAttrs[x]);
+				}
 			}
 			if (addStdEvents) {
-				for (int x = 0; x < stdEvents.length; x++)
+				for (int x = 0; x < stdEvents.length; x++) {
 					this.eventAttrs.add(stdEvents[x]);
+					this.parsedAttrs.add(stdEvents[x]);
+				}
 			}
 		}
 
@@ -1774,6 +1808,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class LinkTagVerifier extends CoreTagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"type",
+			"charset",
+			"rel",
+			"rev",
+			"media",
+			"hreflang",
+			"href"
+		};
+
 		LinkTagVerifier(
 			String tag,
 			String[] allowedAttrs,
@@ -1781,6 +1825,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] inlineURIAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
+			for(String attr : locallyVerifiedAttrs) {
+				this.parsedAttrs.add(attr);
+			}
 		}
 
 		@Override
@@ -1973,12 +2020,22 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	// We do not allow forms to act anywhere else than on / 
 	static class FormTagVerifier extends CoreTagVerifier{
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"method",
+			"action",
+			"enctype",
+			"accept-charset"
+		};
+
 		FormTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, null, eventAttrs);
+			for(String attr : locallyVerifiedAttrs) {
+				this.parsedAttrs.add(attr);
+			}
 		}
 
 		@Override
@@ -2033,8 +2090,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
 			this.allowedTypes = new HashSet<String>();
 			if (types != null) {
-				for (int x = 0; x < types.length; x++)
+				for (int x = 0; x < types.length; x++) {
 					this.allowedTypes.add(types[x]);
+				}
 			}
 		}
 
@@ -2054,9 +2112,22 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class MetaTagVerifier extends TagVerifier {
+		static final String[] allowedContentTypes = {
+				"text/html",
+				"application/xhtml+xml"
+		};
+		static final String[] locallyVerifiedAttrs = {
+			"http-equiv",
+			"name",
+			"content"
+		};
+
 		MetaTagVerifier() {
 			super("meta", new String[] { "id" });
-		}
+			for(String attr : locallyVerifiedAttrs) {
+				this.parsedAttrs.add(attr);
+				}
+			}
 
 		@Override
 		Map<String, Object> sanitizeHash(Map<String, Object> h,
@@ -2113,16 +2184,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							for(int i=0;i<typesplit.length;i++)
 								Logger.debug(this, "["+i+"] = "+typesplit[i]);
 						}
-						if (typesplit[0].equalsIgnoreCase("text/html")
-							&& ((typesplit[1] == null)
-								|| typesplit[1].equalsIgnoreCase(pc.charset))) {
-							hn.put("http-equiv", http_equiv);
-							hn.put(
-								"content",
-								typesplit[0]
-									+ (typesplit[1] != null
-										? "; charset=" + typesplit[1]
-										: ""));
+						for (int i = 0; i < allowedContentTypes.length; i++) {
+							if (typesplit[0].equalsIgnoreCase(allowedContentTypes[i])
+									&& ((typesplit[1] == null) || typesplit[1]
+											.equalsIgnoreCase(pc.charset))) {
+								hn.put("http-equiv", http_equiv);
+								hn.put("content", typesplit[0]
+										+ (typesplit[1] != null ? "; charset="
+												+ typesplit[1] : ""));
+							}
 						}
 						if(typesplit[1] != null)
 							pc.detectedCharset = typesplit[1].trim();
@@ -2135,6 +2205,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			return hn;
 		}
+
+		@Override                                                       
+		protected boolean expungeTagIfNoAttributes() {                  
+			return true;                                            
+		} 
 	}
 
 	static class DocTypeTagVerifier extends TagVerifier {
@@ -2230,8 +2305,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class HtmlTagVerifier extends TagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] { "xmlns" };
 		HtmlTagVerifier() {
 			super("html", new String[] { "id", "version" });
+			for(String attr : locallyVerifiedAttrs) {
+				parsedAttrs.add(attr);
+			}
 		}
 
 		@Override
@@ -2249,9 +2328,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class BaseHrefTagVerifier extends TagVerifier {
+		static final String[] locallyVerifiedAttrs = new String[] {
+			"href"};
 
 		BaseHrefTagVerifier(String string, String[] strings, String[] strings2) {
 			super(string, strings, strings2, null);
+			for(String attr : locallyVerifiedAttrs) {
+				this.parsedAttrs.add(attr);
+			}
 		}
 		
 		@Override
