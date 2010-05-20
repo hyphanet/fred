@@ -1443,11 +1443,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				Object o = entry.getValue();
 				
 				boolean inline = inlineURIAttrs.contains(x);
-				boolean uriAttr = uriAttrs.contains(x);
 
 				//URI attributes require additional processing
-				if (uriAttr || inline) {
-					if(uriAttr) {
+				if (uriAttrs.contains(x) || inline) {
+					if(!inline) {
 						if(logMINOR) Logger.minor(this, "Non-inline URI attribute: "+x);
 					} else {
 						if(logMINOR) Logger.minor(this, "Inline URI attribute: "+x);
@@ -1465,6 +1464,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						o = uri;
 					}
 					// FIXME: rewrite absolute URLs, handle ?date= etc
+					if(logDEBUG) Logger.debug(this, "HTML Filter is putting "+(inline?"inline":"")+" uri attribute: "+x+" =  "+o);
+					hn.put(x, o);
+					continue;
 				}
 
 				/*We create a placeholder for each parsed attribute in the
@@ -1485,7 +1487,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// lang, xml:lang and dir can go on anything
 				// lang or xml:lang = language [ "-" country [ "-" variant ] ]
 				// The variant can be just about anything; no way to test (avian)
-				if (uriAttr || inline || x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
+				if (x.equals("xml:lang") ||x.equals("lang") || (x.equals("dir") && (((String)o).equalsIgnoreCase("ltr") || ((String)o).equalsIgnoreCase("rtl")))) {
 					if(logDEBUG) Logger.debug(this, "HTML Filter is putting attribute: "+x+" =  "+o);
 					hn.put(x, o);
 				}
