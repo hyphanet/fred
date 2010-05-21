@@ -235,7 +235,10 @@ public class FreenetURI implements Cloneable {
 		}
 		String dn = docName == null ? null : docName.intern();
 		if(dn != docName) changedAnything = true;
-		if(!changedAnything) return this;
+		if(!changedAnything) {
+			noCacheURI = true;
+			return this;
+		}
 		FreenetURI u = new FreenetURI(keyType, dn, newMetaStr, routingKey, cryptoKey, extra);
 		u.noCacheURI = true;
 		return u;
