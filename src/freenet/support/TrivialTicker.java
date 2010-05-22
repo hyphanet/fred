@@ -24,12 +24,17 @@ public class TrivialTicker implements Ticker {
 	
 	private final HashSet<Runnable> jobs = new HashSet<Runnable>();
 	
+	private boolean running = true;
+	
 	public TrivialTicker(Executor executor) {
 		this.executor = executor;
 	}
 	
 	public void queueTimedJob(final Runnable job, long offset) {
 		synchronized(this) {
+			if(!running)
+				return;
+			
 			jobs.add(job);
 		}
 		timer.schedule(new TimerTask() {
@@ -56,6 +61,9 @@ public class TrivialTicker implements Ticker {
 	public void queueTimedJob(final Runnable job, final String name, long offset,
 			boolean runOnTickerAnyway, boolean noDupes) {
 		synchronized(this) {
+			if(!running)
+				return;
+			
 			if(noDupes && jobs.contains(job)) return;
 			jobs.add(job);
 		}
@@ -78,6 +86,14 @@ public class TrivialTicker implements Ticker {
 			}
 			
 		}, offset);
+	}
+	
+	public void shutdown() {
+		synchronized(this) {
+			running = false;
+			// TODO: As far as I've understood the javadoc of class Timer, this waits for a currently running job to quit. Verify that by reading the source.
+			timer.cancel();
+		}
 	}
 
 }
