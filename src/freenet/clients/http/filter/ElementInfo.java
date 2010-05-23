@@ -39,6 +39,14 @@ public class ElementInfo {
 		HTML_ELEMENTS.add("title");
 		HTML_ELEMENTS.add("body");
 		HTML_ELEMENTS.add("div");
+		HTML_ELEMENTS.add("header");
+		HTML_ELEMENTS.add("nav");
+		HTML_ELEMENTS.add("address");
+		HTML_ELEMENTS.add("hgroup");
+		HTML_ELEMENTS.add("aside");
+		HTML_ELEMENTS.add("section");
+		HTML_ELEMENTS.add("article");
+		HTML_ELEMENTS.add("footer");
 		HTML_ELEMENTS.add("h1");
 		HTML_ELEMENTS.add("h2");
 		HTML_ELEMENTS.add("h3");
