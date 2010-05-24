@@ -300,16 +300,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							}
 						}
 					}
-					if(list.size() == 0) {
-						if(timeWaitingForSync > 0 && thisTime - timeWaitingForSync > flush) {
-							// Flush to disk after a fixed period.
-							if(currentFilename == null)
-								myWrite(logStream, null);
-					        if(altLogStream != null)
-					        	myWrite(altLogStream, null);
-					        timeWaitingForSync = thisTime;
-						}
-					}
 					boolean died = false;
 					synchronized (list) {
 						flush = flushTime;
@@ -319,7 +309,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							maxWait = Long.MAX_VALUE;
 						else
 							maxWait = timeWaitingForSync + flush;
-						while(true) {
+						while(list.size() == 0) {
 							if (closed) {
 								died = true;
 								break;
@@ -330,8 +320,12 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							} catch (InterruptedException e) {
 								// Ignored.
 							}
+							thisTime = System.currentTimeMillis();
 							if(list.size() == 0) {
-								thisTime = System.currentTimeMillis();
+								if(timeWaitingForSync == -1) {
+									timeWaitingForSync = thisTime;
+									maxWait = thisTime + flush;
+								}
 								if(thisTime >= maxWait) {
 									timeoutFlush = true;
 									break;
