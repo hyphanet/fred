@@ -220,11 +220,11 @@ public class LoggingConfigHandler {
 						return maxCachedLogLines;
 					}
 					@Override
-					public void set(Integer val) throws InvalidConfigValueException {
+					public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
 						if(val < 0) val = 0;
 						if(val == maxCachedLogLines) return;
 						maxCachedLogLines = val;
-						if(fileLoggerHook != null) fileLoggerHook.setMaxListLength(val);
+						throw new NodeNeedRestartException("logger.maxCachedLogLines");
 					}
 				}, false);
     	
@@ -286,7 +286,7 @@ public class LoggingConfigHandler {
 				hook = 
 					new FileLoggerHook(true, new File(logDir, LOG_PREFIX).getAbsolutePath(), 
 				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.DEBUG /* filtered by chain */, false, true, 
-				    		maxZippedLogsSize /* 1GB of old compressed logfiles */);
+				    		maxZippedLogsSize /* 1GB of old compressed logfiles */, maxCachedLogLines);
 			} catch (IOException e) {
 				System.err.println("CANNOT START LOGGER: "+e.getMessage());
 				return;
@@ -302,7 +302,6 @@ public class LoggingConfigHandler {
 				}
 			}
 			hook.setMaxListBytes(maxCachedLogBytes);
-			hook.setMaxListLength(maxCachedLogLines);
 			hook.setMaxBacklogNotBusy(maxBacklogNotBusy);
 			fileLoggerHook = hook;
 			Logger.globalAddHook(hook);

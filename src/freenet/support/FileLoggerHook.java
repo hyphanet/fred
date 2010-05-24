@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.Version;
@@ -91,6 +92,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	/* Whether to redirect stderr */
 	protected boolean redirectStdErr = false;
 
+	protected final int MAX_LIST_SIZE;
+	protected long MAX_LIST_BYTES = 10 * (1 << 20);
+
 	/**
 	 * Something weird happens when the disk gets full, also we don't want to
 	 * block So run the actual write on another thread
@@ -98,11 +102,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	 * Unfortunately, we can't use ConcurrentBlockingQueue because we need to dump stuff when the queue gets
 	 * too big.
 	 */
-	protected final LinkedList<byte[]> list = new LinkedList<byte[]>();
+	protected final ArrayBlockingQueue<byte[]> list;
 	protected long listBytes = 0;
-
-	protected int MAX_LIST_SIZE = 100000;
-	protected long MAX_LIST_BYTES = 10 * (1 << 20);
 
 	long maxOldLogfilesDiskUsage;
 	protected final LinkedList<OldLogFile> logFiles = new LinkedList<OldLogFile>();
@@ -121,12 +122,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		final long size;
 	}
 	
-	public void setMaxListLength(int len) {
-		synchronized(list) {
-			MAX_LIST_SIZE = len;
-		}
-	}
-
 	public void setMaxListBytes(long len) {
 		synchronized(list) {
 			MAX_LIST_BYTES = len;
@@ -343,7 +338,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						}
 						if(died) return;
 						timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
-						o = list.removeFirst();
+						o = list.poll();
 						listBytes -= o.length + LINE_OVERHEAD;
 					}
 					myWrite(logStream,  o);
@@ -506,7 +501,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		int threshold,
 		boolean assumeWorking,
 		boolean logOverwrite,
-		long maxOldLogfilesDiskUsage)
+		long maxOldLogfilesDiskUsage, int maxListSize)
 		throws IOException {
 		this(
 			false,
@@ -516,7 +511,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			threshold,
 			assumeWorking,
 			logOverwrite,
-			maxOldLogfilesDiskUsage);
+			maxOldLogfilesDiskUsage,
+			maxListSize);
 	}
 	
 	private final Object trimOldLogFilesLock = new Object();
@@ -668,7 +664,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			String threshold,
 			boolean assumeWorking,
 			boolean logOverwrite,
-			long maxOldLogFilesDiskUsage)
+			long maxOldLogFilesDiskUsage,
+			int maxListSize)
 			throws IOException, InvalidThresholdException {
 			this(filename,
 				fmt,
@@ -676,7 +673,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				priorityOf(threshold),
 				assumeWorking,
 				logOverwrite,
-				maxOldLogFilesDiskUsage);
+				maxOldLogFilesDiskUsage,
+				maxListSize);
 		}
 
 	private void checkStdStreams() {
@@ -728,7 +726,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		String dfmt,
 		int threshold,
 		boolean overwrite) {
-		this(fmt, dfmt, threshold, overwrite, -1);
+		this(fmt, dfmt, threshold, overwrite, -1, 10000);
 		logStream = stream;
 	}
 
@@ -752,9 +750,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		int threshold,
 		boolean assumeWorking,
 		boolean logOverwrite,
-		long maxOldLogfilesDiskUsage)
+		long maxOldLogfilesDiskUsage, int maxListSize)
 		throws IOException {
-		this(fmt, dfmt, threshold, logOverwrite, maxOldLogfilesDiskUsage);
+		this(fmt, dfmt, threshold, logOverwrite, maxOldLogfilesDiskUsage, maxListSize);
 		//System.err.println("Creating FileLoggerHook with threshold
 		// "+threshold);
 		if (!assumeWorking)
@@ -774,14 +772,17 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			String threshold,
 			boolean assumeWorking,
 			boolean logOverwrite,
-			long maxOldLogFilesDiskUsage) throws IOException, InvalidThresholdException{
-		this(rotate,baseFilename,fmt,dfmt,priorityOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage);
+			long maxOldLogFilesDiskUsage, int maxListSize) throws IOException, InvalidThresholdException{
+		this(rotate,baseFilename,fmt,dfmt,priorityOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage,maxListSize);
 	}
 
-	private FileLoggerHook(String fmt, String dfmt, int threshold, boolean overwrite, long maxOldLogfilesDiskUsage) {
+	private FileLoggerHook(String fmt, String dfmt, int threshold, boolean overwrite, long maxOldLogfilesDiskUsage, int maxListSize) {
 		super(threshold);
 		this.maxOldLogfilesDiskUsage = maxOldLogfilesDiskUsage;
 		this.logOverwrite = overwrite;
+		
+		MAX_LIST_SIZE = maxListSize;
+		list = new ArrayBlockingQueue<byte[]>(MAX_LIST_SIZE);
 		
 		setDateFormat(dfmt);
 		setLogFormat(fmt);
@@ -925,15 +926,18 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		int noElementCount = 0;
 		synchronized (list) {
 			int sz = list.size();
-			list.add(b);
+			if(!list.offer(b)) {
+				list.poll();
+				list.offer(b);
+			}
 			listBytes += (b.length + LINE_OVERHEAD); /* total guess */
 			int x = 0;
-			if ((list.size() > MAX_LIST_SIZE) || (listBytes > MAX_LIST_BYTES)) {
+			if (listBytes > MAX_LIST_BYTES) {
 				while ((list.size() > (MAX_LIST_SIZE * 0.9F))
 					|| (listBytes > (MAX_LIST_BYTES * 0.9F))) {
 					byte[] ss;
 					try {
-						ss = list.removeFirst();
+						ss = list.poll();
 					} catch (NoSuchElementException e) {
 						// Yes I know this is impossible but it happens with 1.6 with heap profiling enabled
 						// This is a bug in sun/netbeans profiler around 2006 era
@@ -955,7 +959,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						+ listBytes
 						+ " bytes in memory\n";
 				byte[] buf = err.getBytes();
-				list.add(0, buf);
+				if(!list.offer(buf)) {
+					list.poll();
+					list.offer(buf);
+				}
 				listBytes += (buf.length + LINE_OVERHEAD);
 			}
 			if (sz == 0)
