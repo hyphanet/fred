@@ -94,6 +94,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	/**
 	 * Something weird happens when the disk gets full, also we don't want to
 	 * block So run the actual write on another thread
+	 * 
+	 * Unfortunately, we can't use ConcurrentBlockingQueue because we need to dump stuff when the queue gets
+	 * too big.
 	 */
 	protected final LinkedList<byte[]> list = new LinkedList<byte[]>();
 	protected long listBytes = 0;
