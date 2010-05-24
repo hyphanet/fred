@@ -350,6 +350,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				        	myWrite(altLogStream, null);
 					}
 					if(died) return;
+					if(o == null) continue;
 					myWrite(logStream,  o);
 			        if(altLogStream != null)
 			        	myWrite(altLogStream, o);
