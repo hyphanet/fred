@@ -304,9 +304,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						}
 					}
 					boolean died = false;
+					boolean timeoutFlush = false;
 					synchronized (list) {
 						flush = flushTime;
-						boolean timeoutFlush = false;;
 						long maxWait;
 						if(timeWaitingForSync == -1)
 							maxWait = Long.MAX_VALUE;
@@ -339,27 +339,20 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 								}
 							} else break;
 						}
-						if(timeoutFlush || died) {
-							// Flush to disk 
-							if(currentFilename == null)
-								myWrite(logStream, null);
-					        if(altLogStream != null)
-					        	myWrite(altLogStream, null);
-						}
-						if(died) return;
 						timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
 						listBytes -= o.length + LINE_OVERHEAD;
 					}
-					myWrite(logStream,  o);
-			        if(altLogStream != null)
-			        	myWrite(altLogStream, o);
-			        if(died) {
+					if(timeoutFlush || died) {
+						// Flush to disk 
 						if(currentFilename == null)
 							myWrite(logStream, null);
 				        if(altLogStream != null)
 				        	myWrite(altLogStream, null);
-				        return;
-			        }
+					}
+					if(died) return;
+					myWrite(logStream,  o);
+			        if(altLogStream != null)
+			        	myWrite(altLogStream, o);
 				} catch (OutOfMemoryError e) {
 					System.err.println(e.getClass());
 					System.err.println(e.getMessage());
