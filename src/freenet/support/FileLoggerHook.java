@@ -103,7 +103,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 
 	protected int MAX_LIST_SIZE = 100000;
 	protected long MAX_LIST_BYTES = 10 * (1 << 20);
-	// FIXME: should reimplement LinkedList with minimal locking
 
 	long maxOldLogfilesDiskUsage;
 	protected final LinkedList<OldLogFile> logFiles = new LinkedList<OldLogFile>();
