@@ -24,6 +24,7 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.Version;
@@ -306,19 +307,20 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							maxWait = Long.MAX_VALUE;
 						else
 							maxWait = timeWaitingForSync + flush;
-						while(list.size() == 0) {
+						o = list.poll();
+						while(o == null) {
 							if (closed) {
 								died = true;
 								break;
 							}
 							try {
 								if(thisTime < maxWait)
-									list.wait(Math.min(500, (int)(maxWait-thisTime)));
+									o = list.poll(Math.min(500, (int)(maxWait-thisTime)), TimeUnit.MILLISECONDS);
 							} catch (InterruptedException e) {
 								// Ignored.
 							}
 							thisTime = System.currentTimeMillis();
-							if(list.size() == 0) {
+							if(o == null) {
 								if(timeWaitingForSync == -1) {
 									timeWaitingForSync = thisTime;
 									maxWait = thisTime + flush;
@@ -338,7 +340,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						}
 						if(died) return;
 						timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
-						o = list.poll();
 						listBytes -= o.length + LINE_OVERHEAD;
 					}
 					myWrite(logStream,  o);
