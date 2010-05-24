@@ -55,6 +55,7 @@ public class LoggingConfigHandler {
 	private String logRotateInterval;
 	private long maxCachedLogBytes;
 	private int maxCachedLogLines;
+	private long maxBacklogNotBusy;
 	private final Executor executor;
 	
 	public LoggingConfigHandler(SubConfig loggingConfig, Executor executor) throws InvalidConfigValueException {
@@ -228,7 +229,28 @@ public class LoggingConfigHandler {
 				}, false);
     	
 		maxCachedLogLines = config.getInt("maxCachedLines");
+		
+		config.register("maxBacklogNotBusy", "60000", 8, true, false, "LogConfigHandler.maxBacklogNotBusy", 
+				"LogConfigHandler.maxBacklogNotBusy", 
+				new LongCallback() {
+
+					@Override
+					public Long get() {
+						return maxBacklogNotBusy;
+					}
+
+					@Override
+					public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(val < 0) throw new InvalidConfigValueException("Must be >= 0");
+						if(val == maxBacklogNotBusy) return;
+						maxBacklogNotBusy = val;
+						if(fileLoggerHook != null) fileLoggerHook.setMaxBacklogNotBusy(val);
+					}
+			
+		}, false);
     	
+		maxBacklogNotBusy = config.getLong("maxBacklogNotBusy");
+		
 		if (loggingEnabled) enableLogger();
 		config.finishedInitialization();
 	}
@@ -281,6 +303,7 @@ public class LoggingConfigHandler {
 			}
 			hook.setMaxListBytes(maxCachedLogBytes);
 			hook.setMaxListLength(maxCachedLogLines);
+			hook.setMaxBacklogNotBusy(maxBacklogNotBusy);
 			fileLoggerHook = hook;
 			Logger.globalAddHook(hook);
 			hook.start();

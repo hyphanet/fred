@@ -215,6 +215,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		buf.append(s);
 		return buf;
 	}
+	
+	// Unless we are writing flat out, everything will hit disk within this period.
+	private long flushTime = 1000; // Default is 1 second. Will be set by setMaxBacklogNotBusy().
 
 	class WriterThread extends Thread {
 		WriterThread() {
@@ -274,6 +277,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 				nextHour = gc.getTimeInMillis();
 			}
+			long timeWaitingForSync = System.currentTimeMillis();
+			long flush;
+			synchronized(this) {
+				flush = flushTime;
+			}
 			while (true) {
 				try {
 					thisTime = System.currentTimeMillis();
@@ -293,22 +301,39 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						}
 					}
 					if(list.size() == 0) {
-						if(currentFilename == null)
-							myWrite(logStream, null);
-				        if(altLogStream != null)
-				        	myWrite(altLogStream, null);
+						if(thisTime - timeWaitingForSync > flush) {
+							// Flush to disk after a fixed period.
+							if(currentFilename == null)
+								myWrite(logStream, null);
+					        if(altLogStream != null)
+					        	myWrite(altLogStream, null);
+					        timeWaitingForSync = thisTime;
+						}
 					}
 					synchronized (list) {
-						while (list.size() == 0) {
+						flush = flushTime;
+						boolean timeoutFlush = false;;
+						long maxWait;
+						if(timeWaitingForSync == -1)
+							maxWait = Long.MAX_VALUE;
+						else
+							maxWait = timeWaitingForSync + flush;
+						do {
 							if (closed) {
 								return;
 							}
 							try {
-								list.wait(500);
+								if(thisTime < maxWait)
+									list.wait(Math.min(500, (int)(maxWait-thisTime)));
 							} catch (InterruptedException e) {
 								// Ignored.
 							}
-						}
+							if(list.size() == 0) {
+								thisTime = System.currentTimeMillis();
+							}
+						} while(list.size() == 0 && thisTime < maxWait);
+						if(timeoutFlush) continue; // Flush to disk.
+						timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
 						o = list.removeFirst();
 						listBytes -= o.length + LINE_OVERHEAD;
 					}
@@ -1095,5 +1120,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	 */
 	public boolean hasRedirectedStdOutErrNoLock() {
 		return redirectStdOut || redirectStdErr;
+	}
+
+	public synchronized void setMaxBacklogNotBusy(long val) {
+		flushTime = val;
 	}
 }
