@@ -11,10 +11,10 @@ import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.DBJob;
+import freenet.client.filter.FilterCallback;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.SessionManager;
 import freenet.clients.http.ToadletContainer;
-import freenet.clients.http.filter.FilterCallback;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.HTMLNode;

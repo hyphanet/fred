@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import freenet.clients.http.filter.GenericReadFilterCallback;
+import freenet.client.filter.GenericReadFilterCallback;
 import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;

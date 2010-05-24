@@ -214,8 +214,8 @@
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
 		</javac>
-		<copy todir="${build-test}/freenet/clients/http/filter/png">
-			<fileset dir="${test}/freenet/clients/http/filter/png"/>
+		<copy todir="${build-test}/freenet/client/filter/png">
+			<fileset dir="${test}/freenet/client/filter/png"/>
 		</copy>
 	</target>
 

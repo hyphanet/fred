@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import freenet.clients.http.filter.PushingTagReplacerCallback;
+import freenet.client.filter.PushingTagReplacerCallback;
 import freenet.l10n.NodeL10n;
 import freenet.node.DarknetPeerNode;
 import freenet.node.Node;
