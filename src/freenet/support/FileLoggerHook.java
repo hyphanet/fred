@@ -102,6 +102,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	 * 
 	 * Unfortunately, we can't use ConcurrentBlockingQueue because we need to dump stuff when the queue gets
 	 * too big.
+	 * 
+	 * FIXME PERFORMANCE: Using an ArrayBlockingQueue avoids some unnecessary memory allocations, but it 
+	 * means we have to take two locks. 
+	 * Seriously consider reverting 88268b99856919df0d42c2787d9ea3674a9f6f0d..e359b4005ef728a159fdee988c483de8ce8f3f6b
+	 * to go back to one lock and a LinkedList.
 	 */
 	protected final ArrayBlockingQueue<byte[]> list;
 	protected long listBytes = 0;
