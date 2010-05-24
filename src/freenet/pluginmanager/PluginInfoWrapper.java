@@ -112,6 +112,8 @@ public class PluginInfoWrapper implements Comparable<PluginInfoWrapper> {
 			plug.terminate();
 		} catch (Throwable t) {
 			Logger.error(this, "Error while terminating plugin.", t);
+			System.err.println("Error while terminating plugin: "+t);
+			t.printStackTrace();
 		}
 		synchronized(this) {
 			stopping = true;
