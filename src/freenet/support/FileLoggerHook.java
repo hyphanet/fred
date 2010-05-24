@@ -436,13 +436,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					OutputStream o = new FileOutputStream(filename, !logOverwrite);
 					if(compress) {
 						// buffer -> gzip -> buffer -> file
-						o = new BufferedOutputStream(o, 32768); // to file
+						o = new BufferedOutputStream(o, 512*1024); // to file
 						o = new GZIPOutputStream(o);
 						// gzip block size is 32kB
 						o = new BufferedOutputStream(o, 65536); // to gzipper
 					} else {
 						// buffer -> file
-						o = new BufferedOutputStream(o, 32768);
+						o = new BufferedOutputStream(o, 512*1024);
 					}
 					return o;
 				} catch (IOException e) {
