@@ -277,7 +277,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 				nextHour = gc.getTimeInMillis();
 			}
-			long timeWaitingForSync = System.currentTimeMillis();
+			long timeWaitingForSync = -1;
 			long flush;
 			synchronized(this) {
 				flush = flushTime;
@@ -301,7 +301,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						}
 					}
 					if(list.size() == 0) {
-						if(thisTime - timeWaitingForSync > flush) {
+						if(timeWaitingForSync > 0 && thisTime - timeWaitingForSync > flush) {
 							// Flush to disk after a fixed period.
 							if(currentFilename == null)
 								myWrite(logStream, null);
@@ -310,6 +310,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					        timeWaitingForSync = thisTime;
 						}
 					}
+					boolean died = false;
 					synchronized (list) {
 						flush = flushTime;
 						boolean timeoutFlush = false;;
@@ -318,9 +319,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							maxWait = Long.MAX_VALUE;
 						else
 							maxWait = timeWaitingForSync + flush;
-						do {
+						while(true) {
 							if (closed) {
-								return;
+								died = true;
+								break;
 							}
 							try {
 								if(thisTime < maxWait)
@@ -330,9 +332,20 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							}
 							if(list.size() == 0) {
 								thisTime = System.currentTimeMillis();
-							}
-						} while(list.size() == 0 && thisTime < maxWait);
-						if(timeoutFlush) continue; // Flush to disk.
+								if(thisTime >= maxWait) {
+									timeoutFlush = true;
+									break;
+								}
+							} else break;
+						}
+						if(timeoutFlush || died) {
+							// Flush to disk 
+							if(currentFilename == null)
+								myWrite(logStream, null);
+					        if(altLogStream != null)
+					        	myWrite(altLogStream, null);
+						}
+						if(died) return;
 						timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
 						o = list.removeFirst();
 						listBytes -= o.length + LINE_OVERHEAD;
@@ -340,6 +353,13 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					myWrite(logStream,  o);
 			        if(altLogStream != null)
 			        	myWrite(altLogStream, o);
+			        if(died) {
+						if(currentFilename == null)
+							myWrite(logStream, null);
+				        if(altLogStream != null)
+				        	myWrite(altLogStream, null);
+				        return;
+			        }
 				} catch (OutOfMemoryError e) {
 					System.err.println(e.getClass());
 					System.err.println(e.getMessage());
