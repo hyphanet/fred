@@ -69,6 +69,8 @@ public class FetchContext implements Cloneable {
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
+	/*If true, filter the fetched data*/
+	public boolean filterData;
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public final BlockSet blocks;
@@ -86,7 +88,7 @@ public class FetchContext implements Cloneable {
 			boolean dontEnterImplicitArchives,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
-			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
+			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
 			boolean ignoreTooManyPathComponents, boolean canWriteClientCache) {
@@ -107,6 +109,7 @@ public class FetchContext implements Cloneable {
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
+		this.filterData = filterData;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
 		hasOwnEventProducer = true;
@@ -145,6 +148,7 @@ public class FetchContext implements Cloneable {
 		this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 		this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 		this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+		this.filterData = ctx.filterData;
 		this.maxRecursionLevel = ctx.maxRecursionLevel;
 		this.returnZIPManifests = ctx.returnZIPManifests;
 		this.canWriteClientCache = ctx.canWriteClientCache;

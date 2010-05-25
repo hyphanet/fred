@@ -96,6 +96,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.ignoreStore = ignoreDS;
 		fctx.maxNonSplitfileRetries = maxNonSplitfileRetries;
 		fctx.maxSplitfileBlockRetries = maxSplitfileRetries;
+		fctx.filterData = true;
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;

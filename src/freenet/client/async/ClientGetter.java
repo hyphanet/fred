@@ -7,6 +7,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 
 import com.db4o.ObjectContainer;
@@ -19,6 +20,8 @@ import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.client.filter.ContentFilter;
+import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -26,6 +29,7 @@ import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
 /**
@@ -194,6 +198,25 @@ public class ClientGetter extends BaseClientGetter {
 		// set is the returnBucket and the result. Not locking not only prevents
 		// nested locking resulting in deadlocks, it also prevents long locks due to
 		// doing massive encrypted I/Os while holding a lock.
+		
+		//Filter the data, if we are supposed to
+		if(ctx.filterData){
+			if(logMINOR) Logger.minor(this, "Running content filter...");
+			try {		
+				FilterOutput filter = ContentFilter.filter(result.asBucket(), new ArrayBucketFactory(), expectedMIME, uri.toURI("/"), null, null, null);
+				result = new FetchResult(result, filter.data);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (URISyntaxException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		else {
+			if(logMINOR) Logger.minor(this, "Ignoring content filter.");
+		}
+		
 		if((returnBucket != null) && (result.asBucket() != returnBucket)) {
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;

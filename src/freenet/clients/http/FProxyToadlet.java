@@ -163,10 +163,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				PushingTagReplacerCallback tagReplacer = 
 					container.isFProxyWebPushingEnabled() ? new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx) : null;
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null, tagReplacer, maybeCharset);
+				/*FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null, tagReplacer, maybeCharset);
 				if(data != fo.data) toFree = fo.data;
-				data = fo.data;
-				mimeType = fo.type;
+				data = fo.data;*/
+				//mimeType = fo.type;
 				
 				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
 					PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
@@ -270,11 +270,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					context.writeData(data);
 				}
 			}
-		} catch (URISyntaxException use1) {
+		}/* catch (URISyntaxException use1) {*/
 			/* shouldn't happen */
-			use1.printStackTrace();
+			/*use1.printStackTrace();
 			Logger.error(FProxyToadlet.class, "could not create URI", use1);
-		} catch (UnsafeContentTypeException e) {
+		}*/ catch (UnsafeContentTypeException e) {
 			PageNode page = context.getPageMaker().getPageNode(l10n("dangerousContentTitle"), context);
 			HTMLNode pageNode = page.outer;
 			HTMLNode contentNode = page.content;
