@@ -1178,10 +1178,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Else DO NOT clear trackers, because hopefully it's a temporary connectivity glitch.
 			sendHandshakeTime = now;
 			countFailedRevocationTransfers = 0;
-			synchronized(this) {
-				timePrevDisconnect = timeLastDisconnect;
-				timeLastDisconnect = now;
-			}
+			timePrevDisconnect = timeLastDisconnect;
+			timeLastDisconnect = now;
 			if(dumpMessageQueue) {
 				messagesTellDisconnected = grabQueuedMessageItems();
 			}
