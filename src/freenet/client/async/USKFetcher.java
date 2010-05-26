@@ -803,8 +803,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	private synchronized void fillKeysWatching(long ed, ClientContext context) {
-		
-		final USKStoreChecker checker = watchingKeys.getDatastoreChecker();
+		final USKStoreChecker checker = watchingKeys.getDatastoreChecker(ed);
 		if(checker == null) return;
 		final Key[] checkStore = checker.getKeys();
 			
@@ -1054,7 +1053,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final byte cryptoAlgorithm;
 		
 		// List of slots since the USKManager's current last known good edition.
-		private KeyList fromLastKnownGood;
+		private final KeyList fromLastKnownGood;
 		//private ArrayList<KeyList> fromCallbacks;
 		
 		// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
@@ -1062,6 +1061,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public USKWatchingKeys(USK origUSK) {
 			this.pubKeyHash = origUSK.pubKeyHash;
 			this.cryptoAlgorithm = origUSK.cryptoAlgorithm;
+			fromLastKnownGood = new KeyList(origUSK.suggestedEdition);
 		}
 		
 		public long size() {
@@ -1115,6 +1115,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 							checkedDatastoreFrom = checkedFrom;
 							checkedDatastoreTo = checkedTo;
 						}
+						if(logMINOR) Logger.minor(this, "Checked from "+checkedFrom+" to "+checkedTo+" (now overall is "+checkedDatastoreFrom+" to "+checkedDatastoreTo+")");
 					}
 					
 				}
@@ -1233,10 +1234,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 		}
 		
-		public USKStoreChecker getDatastoreChecker() {
+		public USKStoreChecker getDatastoreChecker(long lastSlot) {
 			// Check WATCH_KEYS from last known good slot.
 			// FIXME: Take into account origUSK, subscribers, etc.
-			long lastSlot = uskManager.lookupLatestSlot(origUSK);
 			KeyList.StoreSubChecker sub = 
 				fromLastKnownGood.checkStore(lastSlot);
 			if(sub == null)
