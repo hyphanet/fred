@@ -387,6 +387,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	
 	void onSuccess(USKAttempt att, long curLatest, boolean dontUpdate, ClientSSKBlock block, final ClientContext context) {
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
+		if(logMINOR) Logger.minor(this, "Found edition "+curLatest+" for "+origUSK+" official is "+lastEd);
 		boolean decode = false;
 		Vector<USKAttempt> killAttempts;
 		synchronized(this) {
