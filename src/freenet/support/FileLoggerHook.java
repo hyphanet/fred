@@ -335,12 +335,12 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 								}
 								if(thisTime >= maxWait) {
 									timeoutFlush = true;
+									timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
 									break;
 								}
 							} else break;
 						}
 						if(o != null) {
-							timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
 							listBytes -= o.length + LINE_OVERHEAD;
 						}
 					}
