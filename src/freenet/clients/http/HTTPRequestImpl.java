@@ -623,7 +623,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
 		} finally {
 			Closer.close(dis);
-			// Closer.close(is); DataInputStream.close() does this for us
+			if(dis == null) Closer.close(is); // DataInputStream.close() does this for us normally
 		}
 		
 		return new byte[0];
@@ -660,7 +660,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	         return new byte[0];
 		} finally {
 			Closer.close(dis);
-			// Closer.close(is); DataInputStream.close() does this for us
+			if(dis == null) Closer.close(is); // DataInputStream.close() does this for us normally
 		}
 	}
 	
