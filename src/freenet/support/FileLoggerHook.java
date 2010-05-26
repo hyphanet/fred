@@ -339,9 +339,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 								}
 							} else break;
 						}
-						timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
-						if(o != null)
+						if(o != null) {
+							timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
 							listBytes -= o.length + LINE_OVERHEAD;
+						}
 					}
 					if(timeoutFlush || died) {
 						// Flush to disk 
