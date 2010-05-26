@@ -1229,7 +1229,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			private void generate(long baseEdition, int keys, RemoveRangeArrayList<byte[]> ehDocnames) {
 				for(int i=0;i<keys;i++) {
 					long ed = baseEdition + i;
-					ehDocnames.add(origUSK.getSSK(ed + i).ehDocname);
+					ehDocnames.add(origUSK.getSSK(ed).ehDocname);
 				}
 			}
 
