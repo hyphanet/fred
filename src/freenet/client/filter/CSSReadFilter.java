@@ -20,13 +20,12 @@ import java.util.HashMap;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
-	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if (Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(
@@ -38,8 +37,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 					+ ','
                         + charset);
 		InputStream strm = bucket.getInputStream();
-		Bucket temp = bf.makeBucket(-1);
-		OutputStream os = temp.getOutputStream();
+		OutputStream os = destination.getOutputStream();
 		Reader r = null;
 		Writer w = null;
 		InputStreamReader isr = null;
@@ -68,10 +66,10 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			Closer.close(r);
 			Closer.close(w);
 		}
-		return temp;
+		return destination;
 	}
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}

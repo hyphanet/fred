@@ -25,8 +25,7 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
-import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
@@ -67,27 +66,26 @@ public class PNGFilter implements ContentDataFilter {
 		this.checkCRCs = checkCRCs;
 	}
 
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		Bucket output = readFilter(data, bf, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, null);
+		Bucket output = readFilter(data, destination, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, null);
 		if (output != null)
 			return output;
 		if (Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Need to modify PNG...");
-		Bucket filtered = bf.makeBucket(-1);
-		OutputStream os = new BufferedOutputStream(filtered.getOutputStream());
+		OutputStream os = new BufferedOutputStream(destination.getOutputStream());
 		try {
-			readFilter(data, bf, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, os);
+			readFilter(data, destination, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, os);
 			os.flush();
 			os.close();
 			os = null;
 		} finally {
 			Closer.close(os);
 		}
-		return filtered;
+		return destination;
 	}
 
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs, OutputStream output)
 	        throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -299,7 +297,7 @@ public class PNGFilter implements ContentDataFilter {
 		return NodeL10n.getBase().getString("PNGFilter." + key);
 	}
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		// TODO Auto-generated method stub
 		return null;
@@ -313,7 +311,7 @@ public class PNGFilter implements ContentDataFilter {
 		final Bucket out = new FileBucket(fout, false, true, false, false, false);
 		try {
 			Logger.setupStdoutLogging(Logger.MINOR, "");
-			ContentFilter.FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "image/png",
+			ContentFilter.FilterOutput output = ContentFilter.filter(data, new ArrayBucket(), "image/png",
 			        new URI("http://127.0.0.1:8888/"), null, null, null);
 			BucketTools.copy(output.data, out);
 		} catch (IOException e) {

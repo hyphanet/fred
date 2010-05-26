@@ -62,7 +62,7 @@ public class BMPFilterTest extends TestCase {
 
 
 			try {
-				Bucket ob = objBMPFilter.readFilter(ib, new ArrayBucketFactory(), "", null, null);
+				Bucket ob = objBMPFilter.readFilter(ib, new ArrayBucket(), "", null, null);
 				assertEquals(filename + " should be valid", expectedresult,0);
 			} 
 			catch (DataFilterException dfe) {

@@ -109,8 +109,6 @@ public class ContentFilterTest extends TestCase {
 	
 	private static final String CSS_SPEC_EXAMPLE1 = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">\n<HTML>\n  <HEAD>\n  <TITLE>Bach's home page</TITLE>\n  <STYLE type=\"text/css\">\n    body {\n      font-family: \"Gill Sans\", sans-serif;\n      font-size: 12pt;\n      margin: 3em;\n\n    }\n  </STYLE>\n  </HEAD>\n  <BODY>\n    <H1>Bach's home page</H1>\n    <P>Johann Sebastian Bach was a prolific composer.\n  </BODY>\n</HTML>";
 	
-	private final BucketFactory bf = new ArrayBucketFactory();
-
 	public void testHTMLFilter() throws Exception {
 		new NodeL10n();
 		
@@ -179,7 +177,7 @@ public class ContentFilterTest extends TestCase {
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
 		
-		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null, null, null).data.toString();
+		return ContentFilter.filter(new ArrayBucket(dataToFilter), new ArrayBucket(), typeName, baseURI, null, null, null).data.toString();
 	}
 
 	static public class TagVerifierTest extends TestCase {

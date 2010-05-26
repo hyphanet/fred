@@ -7,16 +7,15 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 
 /**
  * Data filter for a specific MIME type.
  */
 public interface ContentDataFilter {
 	
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException;
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException;
 }

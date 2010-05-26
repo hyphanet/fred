@@ -13,7 +13,6 @@ import java.util.HashMap;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 
 /**
@@ -29,7 +28,7 @@ public class GIFFilter implements ContentDataFilter {
 		{ (byte)'G', (byte)'I', (byte)'F', (byte)'8', (byte)'9', (byte)'a' };
 		
 	
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if(data.size() < 6) {
 			throwHeaderError(l10n("tooShortTitle"), l10n("tooShort"));
@@ -65,7 +64,7 @@ public class GIFFilter implements ContentDataFilter {
 				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 	}
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		return null;
 	}

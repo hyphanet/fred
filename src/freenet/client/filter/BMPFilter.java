@@ -14,7 +14,6 @@ import java.util.HashMap;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 
 /**
@@ -87,7 +86,7 @@ public class BMPFilter implements ContentDataFilter {
     }
 
 	
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if(data.size() < 54) { // Size of the bmp header is 54
 			throwHeaderError(l10n("TooShortT"), l10n("TooShortD"));
@@ -194,7 +193,7 @@ public class BMPFilter implements ContentDataFilter {
 				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
 	}
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		return null;
 	}

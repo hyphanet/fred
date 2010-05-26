@@ -27,7 +27,7 @@ import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
-import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
 public class CSSParserTest extends TestCase {
@@ -899,7 +899,7 @@ public class CSSParserTest extends TestCase {
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
 		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
-		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucket(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 		assertTrue("ContentFilter.filter() returned wrong charset \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
 		String filtered = new String(BucketTools.toByteArray(fo.data), charset);
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" for charset \""+charset+"\"", original.equals(filtered));
@@ -917,7 +917,7 @@ public class CSSParserTest extends TestCase {
 		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
 		try {
-			FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+			FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucket(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 			// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
 			assertTrue("ContentFilter.filter() returned charset \""+fo.type+"\" should be unknown testing unsupported charset \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset) || fo.type.equalsIgnoreCase("text/css; charset=utf-8"));
 			String filtered = new String(BucketTools.toByteArray(fo.data), charset);
@@ -942,7 +942,7 @@ public class CSSParserTest extends TestCase {
 		String original = "h2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
-		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucketFactory(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, charset);
+		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucket(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, charset);
 		assertTrue("ContentFilter.filter() returned wrong charset with maybeCharset: \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
 		String filtered = new String(BucketTools.toByteArray(fo.data), charset);
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));

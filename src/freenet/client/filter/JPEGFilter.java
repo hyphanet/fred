@@ -61,27 +61,26 @@ public class JPEGFilter implements ContentDataFilter {
 		(byte)'J', (byte)'F', (byte)'X', (byte)'X', 0
 	};
 	
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		Bucket output = readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, null);
+		Bucket output = readFilter(data, destination, charset, otherParams, cb, deleteComments, deleteExif, null);
 		if(output != null)
 			return output;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Need to modify JPEG...");
-		Bucket filtered = bf.makeBucket(-1);
-		OutputStream os = new BufferedOutputStream(filtered.getOutputStream());
+		OutputStream os = new BufferedOutputStream(destination.getOutputStream());
 		try {
-			readFilter(data, bf, charset, otherParams, cb, deleteComments, deleteExif, os);
+			readFilter(data, destination, charset, otherParams, cb, deleteComments, deleteExif, os);
 			os.flush();
 			os.close();
 			os = null;
 		} finally {
 			Closer.close(os);
 		}
-		return filtered;
+		return destination;
 	}
 	
-	public Bucket readFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb, boolean deleteComments, boolean deleteExif, OutputStream output)
 	        throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -438,7 +437,7 @@ public class JPEGFilter implements ContentDataFilter {
 		throw e;
 	}
 
-	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		return null;
 	}

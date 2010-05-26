@@ -29,8 +29,6 @@ import java.util.StringTokenizer;
 import java.util.Map.Entry;
 import java.util.Stack;
 
-import java.io.FileReader;
-import java.io.FileWriter;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
@@ -39,7 +37,6 @@ import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
@@ -51,15 +48,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
 	
-	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		InputStream strm = bucket.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
-		Bucket temp = bf.makeBucket(-1);
-		OutputStream os = temp.getOutputStream();
+		OutputStream os = destination.getOutputStream();
 		BufferedOutputStream bos = new BufferedOutputStream(os, 4096);
 		Reader r = null;
 		Writer w = null;
@@ -75,17 +71,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				throw UnknownCharsetException.create(e, charset);
 			}
 			HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
-			pc.run(temp);
+			pc.run(destination);
 			w.close();
 			os = null;
 		} finally {
 			Closer.close(os);
 			Closer.close(strm);
 		}
-		return temp;
+		return destination;
 	}
 	
-	public Bucket writeFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	public Bucket writeFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}

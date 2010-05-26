@@ -19,6 +19,8 @@ import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.ArrayBucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 
 /**
@@ -154,8 +156,8 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(data, bf, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
+	public static FilterOutput filter(Bucket data, Bucket destination, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(data, destination, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
 	}
 
 	/**
@@ -177,13 +179,18 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+	public static FilterOutput filter(Bucket data, Bucket destination, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
-			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName);
+			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName+") Source="+data+" Destintation="+destination);
 		String type = typeName;
 		String options = "";
 		String charset = null;
 		HashMap<String, String> otherParams = null;
+		if(destination == null){
+			if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+				Logger.minor(ContentFilter.class, "Null destination. Creating new bucket.");
+			destination = new ArrayBucket();
+		}
 		
 		// First parse the MIME type
 		
@@ -226,13 +233,14 @@ public class ContentFilter {
 					charset = detectCharset(data, handler, maybeCharset);
 				}
 				
-				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, filterCallback);
+				Bucket outputData = handler.readFilter.readFilter(data, destination, charset, otherParams, filterCallback);
 				if(charset != null)
 					type = type + "; charset="+charset;
 				return new FilterOutput(outputData, type);
 			}
 			
 			if(handler.safeToRead) {
+				BucketTools.copy(data, destination);
 				return new FilterOutput(data, typeName);
 			}
 			

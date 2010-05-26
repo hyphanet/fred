@@ -29,7 +29,6 @@ import freenet.node.RequestClient;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
 /**
@@ -202,8 +201,8 @@ public class ClientGetter extends BaseClientGetter {
 		//Filter the data, if we are supposed to
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter...");
-			try {		
-				FilterOutput filter = ContentFilter.filter(result.asBucket(), new ArrayBucketFactory(), expectedMIME, uri.toURI("/"), null, null, null);
+			try {
+				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, expectedMIME, uri.toURI("/"), null, null, null);
 				result = new FetchResult(result, filter.data);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -216,7 +215,7 @@ public class ClientGetter extends BaseClientGetter {
 		else {
 			if(logMINOR) Logger.minor(this, "Ignoring content filter.");
 		}
-		
+		if(returnBucket == null) if(logMINOR) Logger.minor(this, "Returnbucket is null");
 		if((returnBucket != null) && (result.asBucket() != returnBucket)) {
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;
@@ -246,8 +245,7 @@ public class ClientGetter extends BaseClientGetter {
 			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
 		}
-		FetchResult res = result;
-		clientCallback.onSuccess(res, ClientGetter.this, container);
+		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
 
 	/**
