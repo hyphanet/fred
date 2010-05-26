@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.api;
 
+import java.util.NoSuchElementException;
+
+import javax.naming.SizeLimitExceededException;
+
 /** A parsed HTTP request (GET or POST). Request parameters are parameters
  * encoded into the URI, or part of a POST form which is encoded as 
  * application/x-www-form-urlencoded. Parts are parameters (including files)
@@ -130,11 +134,33 @@ public interface HTTPRequest {
 	/**
 	 * Get a request part as a String. Parts are passed in through attached
 	 * data in a POST in multipart/form-data encoding; parameters are 
-	 * passed in through the URI. */
+	 * passed in through the URI.
+	 * Returns an emtpy String if the length limit is exceeded and therefore is deprecated.
+	 */
+	@Deprecated
 	public String getPartAsString(String name, int maxlength);
+	
+	public String getPartAsStringThrowing(String name, int maxlength) throws NoSuchElementException, SizeLimitExceededException;
+	
+	/**
+	 * Gets up to maxLength characters from the part, ignores any characters after the limit.
+	 */
+	public String getPartAsStringFailsafe(String name, int maxlength);
 
-	/** Get a request part as bytes. */
+	/**
+	 * Get a request part as bytes.
+	 * Returns an emtpy array if the length limit is exceeded and therefore is deprecated.
+	 */
+	@Deprecated
 	public byte[] getPartAsBytes(String name, int maxlength);
+	
+	public byte[] getPartAsBytesThrowing(String name, int maxlength) throws NoSuchElementException, SizeLimitExceededException;
+	
+	/**
+	 * Gets up to maxLength bytes from the part, ignores any bytes after the limit.
+	 */
+	public byte[] getPartAsBytesFailsafe(String name, int maxlength);
+	
 
 	/** Free all the parts. They may be stored on disk so it is important
 	 * that this be called at some point. */

@@ -18,8 +18,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+
+import javax.naming.SizeLimitExceededException;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -565,9 +567,35 @@ public class HTTPRequestImpl implements HTTPRequest {
 		return this.parts.containsKey(name);
 	}
 
+	@Deprecated
 	public String getPartAsString(String name, int maxlength) {
 		try {
 			return new String(getPartAsBytes(name, maxlength), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+		}
+	}
+	
+	public String getPartAsStringThrowing(String name, int maxLength) throws NoSuchElementException, SizeLimitExceededException {
+		Bucket part = this.parts.get(name);
+		
+		if(part == null)
+			throw new NoSuchElementException(name);
+		
+		if(part.size() > maxLength)
+			throw new SizeLimitExceededException();
+		
+		return getPartAsLimitedString(part, maxLength);
+	}
+	
+	public String getPartAsStringFailsafe(String name, int maxLength) {
+		Bucket part = this.parts.get(name);
+		return part == null ? "" : getPartAsLimitedString(part, maxLength);
+	}
+	
+	private String getPartAsLimitedString(Bucket part, int maxLength) {
+		try {
+			return new String(getPartAsLimitedBytes(part, maxLength), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
@@ -576,6 +604,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getPartAsString(java.lang.String, int)
 	 */
+	@Deprecated
 	public byte[] getPartAsBytes(String name, int maxlength) {
 		Bucket part = this.parts.get(name);
 		if(part == null) return new byte[0];
@@ -594,10 +623,45 @@ public class HTTPRequestImpl implements HTTPRequest {
 	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
 		} finally {
 			Closer.close(dis);
-			Closer.close(is); /* FIXME: Why are we doing this? dis.close() should close the InputStream. */
+			// Closer.close(is); DataInputStream.close() does this for us
 		}
 		
 		return new byte[0];
+	}
+	
+	public byte[] getPartAsBytesThrowing(String name, int maxLength) throws NoSuchElementException, SizeLimitExceededException {
+		Bucket part = this.parts.get(name);
+		
+		if(part == null)
+			throw new NoSuchElementException(name);
+		
+		if(part.size() > maxLength)
+			throw new SizeLimitExceededException();
+		
+		return getPartAsLimitedBytes(part, maxLength);
+	}
+	
+	public byte[] getPartAsBytesFailsafe(String name, int maxLength) {
+		Bucket part = this.parts.get(name);
+		return part == null ? new byte[0] : getPartAsLimitedBytes(part, maxLength);
+	}
+	
+	private byte[] getPartAsLimitedBytes(Bucket part, int maxLength) {
+		InputStream is = null;
+		DataInputStream dis = null;
+		try {
+			is = part.getInputStream();
+			dis = new DataInputStream(is);
+			byte[] buf = new byte[Math.min(dis.available(), maxLength)];
+			dis.readFully(buf, 0, buf.length);
+			return buf;
+		} catch (IOException ioe) {
+	         Logger.error(this, "Caught IOE:" + ioe.getMessage());
+	         return new byte[0];
+		} finally {
+			Closer.close(dis);
+			// Closer.close(is); DataInputStream.close() does this for us
+		}
 	}
 	
 	/* (non-Javadoc)
