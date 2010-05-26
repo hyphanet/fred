@@ -346,8 +346,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					}
 					if(timeoutFlush || died) {
 						// Flush to disk 
-						if(currentFilename == null)
-							myWrite(logStream, null);
+						myWrite(logStream, null);
 				        if(altLogStream != null)
 				        	myWrite(altLogStream, null);
 					}
