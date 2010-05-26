@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -35,6 +36,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.RemoveRangeArrayList;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
@@ -123,12 +125,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private short lastCompressionCodec;
 	private boolean lastWasMetadata;
 	
+	/** Structure tracking which keys we want. */
+	private final USKWatchingKeys watchingKeys;
+	
 	/** Edition number of the first key in keysWatching */
 	private long firstKeyWatching = -1;
 	/** A list of keys which we are interested in. This a sequence of SSKs starting 
 	 * at the last known slot. */
 	private final ArrayList<ClientSSK> keysWatching;
-	private long checkedDatastoreUpTo = -1;
 	private final ArrayList<USKAttempt> attemptsToStart;
 	
 	private static final int WATCH_KEYS = 50;
@@ -289,6 +293,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
 		keysWatching = new ArrayList<ClientSSK>();
+		watchingKeys = new USKWatchingKeys(origUSK);
 		attemptsToStart = new ArrayList<USKAttempt>();
 	}
 	
@@ -763,49 +768,46 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	private SendableGet runningStoreChecker = null;
 	
-	private synchronized void fillKeysWatching(long ed, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "fillKeysWatching from "+ed+" for "+this+" : "+origUSK, new Exception("debug"));
-//		if(firstKeyWatching == -1) {
-//			firstKeyWatching = ed;
-//			for(int i=0;i<WATCH_KEYS;i++) {
-//				keysWatching.add(origUSK.getSSK(ed + i));
-//			}
-//		} else {
-//			long first = firstKeyWatching;
-//			long last = firstKeyWatching + keysWatching.size() - 1;
-//			if(last < ed) {
-				keysWatching.clear();
-				for(int i=0;i<WATCH_KEYS;i++) {
-					keysWatching.add(origUSK.getSSK(ed + i));
-				}
-//			} else {
-//				int drop = (int) (ed - first);
-//				ClientSSK[] keep = new ClientSSK[keysWatching.size() - drop];
-//				for(int i=drop;i<keysWatching.size();i++)
-//					keep[i-drop] = keysWatching.get(i);
-//				keysWatching.clear();
-//				for(ClientSSK ssk : keep)
-//					keysWatching.add(ssk);
-//				for(long l = last + 1; l < (ed + WATCH_KEYS); l++) {
-//					keysWatching.add(origUSK.getSSK(l));
-//				}
-//			}
-			firstKeyWatching = ed;
-//		}
-		if(runningStoreChecker != null) return;
-		long firstCheck = Math.max(firstKeyWatching, checkedDatastoreUpTo + 1);
-		final long lastCheck = firstKeyWatching + keysWatching.size() - 1;
-		if(logMINOR) Logger.minor(this, "firstCheck="+firstCheck+" lastCheck="+lastCheck);
-		if(lastCheck < firstCheck) return;
-		int checkCount = (int) (lastCheck - firstCheck + 1);
-		int offset = (int) (firstCheck - firstKeyWatching);
-		final Key[] checkStore = new Key[checkCount];
-		for(int i=0;i<checkStore.length;i++) {
-			checkStore[i] = keysWatching.get(i+offset).getNodeKey(true);
+	class USKStoreChecker {
+		
+		final USKWatchingKeys.KeyList.StoreSubChecker[] checkers;
+
+		public USKStoreChecker(USKWatchingKeys.KeyList.StoreSubChecker sub) {
+			checkers = new USKWatchingKeys.KeyList.StoreSubChecker[] { sub };
 		}
-		assert(offset + checkStore.length == keysWatching.size());
-		assert(keysWatching.get(keysWatching.size()-1).getURI().uskForSSK().getSuggestedEdition() == lastCheck);
-		if(logMINOR) Logger.minor(this, "Checking from "+firstCheck+" to "+lastCheck+" for "+this+" : "+origUSK);
+
+		public Key[] getKeys() {
+			if(checkers.length == 0) return new Key[0];
+			else if(checkers.length == 1) return checkers[0].keysToCheck;
+			else {
+				int x = 0;
+				for(USKWatchingKeys.KeyList.StoreSubChecker checker : checkers) {
+					x += checker.keysToCheck.length;
+				}
+				Key[] keys = new Key[x];
+				int ptr = 0;
+				for(USKWatchingKeys.KeyList.StoreSubChecker checker : checkers) {
+					System.arraycopy(checker.keysToCheck, 0, keys, ptr, checker.keysToCheck.length);
+					ptr += checker.keysToCheck.length;
+				}
+				return keys;
+			}
+		}
+
+		public void checked() {
+			for(USKWatchingKeys.KeyList.StoreSubChecker checker : checkers) {
+				checker.checked();
+			}
+		}
+		
+	}
+
+	private synchronized void fillKeysWatching(long ed, ClientContext context) {
+		
+		final USKStoreChecker checker = watchingKeys.getDatastoreChecker();
+		if(checker == null) return;
+		final Key[] checkStore = checker.getKeys();
+			
 		SendableGet storeChecker = new SendableGet(parent) {
 			
 			boolean done = false;
@@ -871,8 +873,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
 					attemptsToStart.clear();
 					done = true;
-					checkedDatastoreUpTo = lastCheck;
 				}
+				checker.checked();
+				
 				if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
 				if(attempts.length > 0)
 					parent.toNetwork(container, context);
@@ -980,7 +983,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	public synchronized long countKeys() {
-		return keysWatching.size();
+		return watchingKeys.size();
 	}
 
 	public synchronized short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
@@ -988,8 +991,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		NodeSSK k = (NodeSSK) key;
 		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
 			return -1;
-		for(ClientSSK ssk : keysWatching)
-			if(ssk.getNodeKey(false).equals(key)) return progressPollPriority;
+		if(watchingKeys.match(k) != -1) return progressPollPriority;
 		return -1;
 	}
 
@@ -1008,23 +1010,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context) {
 		if(!(found instanceof SSKBlock)) return false;
 		ClientSSK realKey = null;
-		long edition = -1;
-		synchronized(this) {
-			for(int i=0;i<keysWatching.size();i++) {
-				ClientSSK ssk = keysWatching.get(i);
-				if(ssk.getNodeKey(false).equals(key)) {
-					realKey = ssk;
-					edition = firstKeyWatching + i;
-					break;
-				}
-			}
-			if(realKey == null) return false;
-		}
-		// FIXME remove
-		assert(edition == realKey.getURI().uskForSSK().getSuggestedEdition());
+		long edition = watchingKeys.match((NodeSSK)key);
+		if(edition == -1) return false;
+		
 		ClientSSKBlock data;
 		try {
-			data = ClientSSKBlock.construct((SSKBlock)found, realKey);
+			data = watchingKeys.decode((SSKBlock)found, edition);
 		} catch (SSKVerifyException e) {
 			data = null;
 		}
@@ -1053,9 +1044,220 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		NodeSSK k = (NodeSSK) key;
 		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
 			return false;
-		for(ClientSSK ssk : keysWatching)
-			if(ssk.getNodeKey(false).equals(key)) return true;
-		return false;
+		return watchingKeys.match(k) != -1;
 	}
 
+	private class USKWatchingKeys {
+		
+		// Common for whole USK
+		final byte[] pubKeyHash;
+		final byte cryptoAlgorithm;
+		
+		// List of slots since the USKManager's current last known good edition.
+		private KeyList fromLastKnownGood;
+		//private ArrayList<KeyList> fromCallbacks;
+		
+		// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
+		
+		public USKWatchingKeys(USK origUSK) {
+			this.pubKeyHash = origUSK.pubKeyHash;
+			this.cryptoAlgorithm = origUSK.cryptoAlgorithm;
+		}
+		
+		public long size() {
+			return WATCH_KEYS;
+			// FIXME change when we add more KeyList's.
+		}
+
+		/** A precomputed list of E(H(docname))'s for each slot we might match.
+		 * This is from an edition number which might be out of date. */
+		class KeyList {
+
+			/** The USK edition number of the first slot */
+			long firstSlot;
+			/** The precomputed E(H(docname)) for each such slot. */
+			private WeakReference<RemoveRangeArrayList<byte[]>> cache;
+			/** We have checked the datastore from this point. */
+			private long checkedDatastoreFrom = -1;
+			/** We have checked the datastore up to this point. */
+			private long checkedDatastoreTo = -1;
+			
+			public KeyList(long slot) {
+				firstSlot = slot;
+				RemoveRangeArrayList<byte[]> ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
+				cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
+				generate(firstSlot, WATCH_KEYS, ehDocnames);
+			}
+
+			public class StoreSubChecker {
+				
+				/** Keys to check */
+				final NodeSSK[] keysToCheck;
+				/** The edition from which we will have checked after we have executed this. */
+				private final long checkedFrom;
+				/** The edition up to which we have checked after we have executed this. */
+				private final long checkedTo;
+				
+				private StoreSubChecker(NodeSSK[] keysToCheck, long checkFrom, long checkTo) {
+					this.keysToCheck = keysToCheck;
+					this.checkedFrom = checkFrom;
+					this.checkedTo = checkTo;
+					if(logMINOR) Logger.minor(this, "Checking datastore from "+checkFrom+" to "+checkTo+" for "+USKFetcher.this);
+				}
+
+				/** The keys have been checked. */
+				void checked() {
+					synchronized(KeyList.this) {
+						if(checkedDatastoreTo >= checkedFrom && checkedDatastoreFrom <= checkedFrom) {
+							// checkedFrom is unchanged
+							checkedDatastoreTo = checkedTo;
+						} else {
+							checkedDatastoreFrom = checkedFrom;
+							checkedDatastoreTo = checkedTo;
+						}
+					}
+					
+				}
+				
+			}
+
+			/**
+			 * Check for WATCH_KEYS from lastSlot, but do not check any slots earlier than checkedDatastoreUpTo.
+			 * Re-use the cache if possible, and extend it if necessary; all we need to construct a NodeSSK is the base data and the E(H(docname)), and we have that.
+			 */
+			public synchronized StoreSubChecker checkStore(long lastSlot) {
+				long checkFrom = lastSlot;
+				long checkTo = lastSlot + WATCH_KEYS;
+				if(checkedDatastoreTo >= checkFrom) {
+					checkFrom = checkedDatastoreTo;
+				}
+				if(checkFrom >= checkTo) return null; // Nothing to check.
+				// Update the cache.
+				RemoveRangeArrayList<byte[]> ehDocnames = updateCache(lastSlot);
+				// Now create NodeSSK[] from the part of the cache that
+				// ehDocnames[0] is firstSlot
+				// ehDocnames[checkFrom-firstSlot] is checkFrom
+				int offset = (int)(checkFrom - firstSlot);
+				NodeSSK[] keysToCheck = new NodeSSK[WATCH_KEYS - offset];
+				for(int x=0, i=offset; i<WATCH_KEYS; i++, x++) {
+					keysToCheck[x] = new NodeSSK(pubKeyHash, ehDocnames.get(i), cryptoAlgorithm);
+				}
+				return new StoreSubChecker(keysToCheck, checkFrom, checkTo);
+			}
+
+			synchronized RemoveRangeArrayList<byte[]> updateCache(long curBaseEdition) {
+				RemoveRangeArrayList<byte[]> ehDocnames = null;
+				if(ehDocnames == null || (ehDocnames = cache.get()) == null) {
+					ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
+					cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
+					firstSlot = curBaseEdition;
+					generate(firstSlot, WATCH_KEYS, ehDocnames);
+					return ehDocnames;
+				}
+				match(null, curBaseEdition, ehDocnames);
+				return ehDocnames;
+			}
+			
+			/** Update the key list if necessary based on the new base edition.
+			 * Then try to match the given key. If it matches return the edition number.
+			 * @param key The key we are trying to match. If null, just update the cache, do not 
+			 * do any matching (used by checkStore(); it is only necessary to update the cache 
+			 * if you are actually going to use it).
+			 * @param curBaseEdition The new base edition.
+			 * @return The edition number for the key, or -1 if the key is not a match.
+			 */
+			public synchronized long match(NodeSSK key, long curBaseEdition) {
+				RemoveRangeArrayList<byte[]> ehDocnames = null;
+				if(ehDocnames == null || (ehDocnames = cache.get()) == null) {
+					ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
+					cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
+					firstSlot = curBaseEdition;
+					generate(firstSlot, WATCH_KEYS, ehDocnames);
+					return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size());
+				}
+				// Might as well check first.
+				long x = innerMatch(key, ehDocnames, 0, ehDocnames.size());
+				if(x != -1) return x;
+				return match(key, curBaseEdition, ehDocnames);
+			}
+
+			private long match(NodeSSK key, long curBaseEdition, RemoveRangeArrayList<byte[]> ehDocnames) {
+				if(firstSlot < curBaseEdition) {
+					if(firstSlot + ehDocnames.size() <= curBaseEdition) {
+						// No overlap. Clear it and start again.
+						ehDocnames.clear();
+						firstSlot = curBaseEdition;
+						generate(curBaseEdition, WATCH_KEYS, ehDocnames);
+						return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size());
+					} else {
+						// There is some overlap. Delete the first part of the array then add stuff at the end.
+						// ehDocnames[i] is slot firstSlot + i
+						// We want to get rid of anything before curBaseEdition
+						// So the first slot that is useful is the slot at i = curBaseEdition - firstSlot
+						// Which is the new [0], whose edition is curBaseEdition
+						ehDocnames.removeRange(0, (int)(curBaseEdition - firstSlot));
+						int size = ehDocnames.size();
+						generate(curBaseEdition + size, WATCH_KEYS - size, ehDocnames);
+						return key == null ? -1 : innerMatch(key, ehDocnames, WATCH_KEYS - size, size);
+					}
+				} else if(firstSlot > curBaseEdition) {
+					// It has regressed???
+					Logger.error(this, "First slot was "+firstSlot+" now is "+curBaseEdition, new Exception("debug"));
+					firstSlot = curBaseEdition;
+					ehDocnames.clear();
+					generate(curBaseEdition, WATCH_KEYS, ehDocnames);
+					return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size());
+				}
+				return -1;
+			}
+
+			/** Do the actual match, using the current firstSlot, and a specified offset and length within the array. */
+			private long innerMatch(NodeSSK key, RemoveRangeArrayList<byte[]> ehDocnames, int offset, int size) {
+				byte[] data = key.getKeyBytes();
+				for(int i=offset;i<(offset+size);i++) {
+					if(Arrays.equals(data, ehDocnames.get(i))) return i;
+				}
+				return -1;
+			}
+
+			/** Append a series of E(H(docname))'s to the array.
+			 * @param baseEdition The edition to start from.
+			 * @param keys The number of keys to add.
+			 */
+			private void generate(long baseEdition, int keys, RemoveRangeArrayList<byte[]> ehDocnames) {
+				for(int i=0;i<keys;i++) {
+					long ed = baseEdition + i;
+					ehDocnames.add(origUSK.getSSK(ed + i).ehDocname);
+				}
+			}
+
+		}
+		
+		public USKStoreChecker getDatastoreChecker() {
+			// Check WATCH_KEYS from last known good slot.
+			// FIXME: Take into account origUSK, subscribers, etc.
+			long lastSlot = uskManager.lookupLatestSlot(origUSK);
+			KeyList.StoreSubChecker sub = 
+				fromLastKnownGood.checkStore(lastSlot);
+			if(sub == null)
+				return null;
+			else return new USKStoreChecker(sub);
+		}
+
+		public ClientSSKBlock decode(SSKBlock block, long edition) throws SSKVerifyException {
+			ClientSSK csk = origUSK.getSSK(edition);
+			assert(Arrays.equals(csk.ehDocname, block.getKey().getKeyBytes()));
+			return ClientSSKBlock.construct(block, csk);
+		}
+		
+		public long match(NodeSSK key) {
+			long lastSlot = uskManager.lookupLatestSlot(origUSK);
+			return fromLastKnownGood.match(key, lastSlot);
+			// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
+		}
+		
+	}
+	
+
+	
 }
