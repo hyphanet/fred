@@ -277,7 +277,7 @@ public class USKManager implements RequestClient {
 	}
 	
 	void updateKnownGood(final USK origUSK, final long number, final ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
+		if(logMINOR) Logger.minor(this, "Updating (known good) "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
 		final USKCallback[] callbacks;
 		boolean newSlot = false;
@@ -317,7 +317,7 @@ public class USKManager implements RequestClient {
 	}
 	
 	void updateSlot(final USK origUSK, final long number, final ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
+		if(logMINOR) Logger.minor(this, "Updating (slot) "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
 		final USKCallback[] callbacks;
 		synchronized(this) {
