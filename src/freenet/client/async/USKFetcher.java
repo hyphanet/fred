@@ -1149,7 +1149,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 			synchronized RemoveRangeArrayList<byte[]> updateCache(long curBaseEdition) {
 				RemoveRangeArrayList<byte[]> ehDocnames = null;
-				if(ehDocnames == null || (ehDocnames = cache.get()) == null) {
+				if(cache == null || (ehDocnames = cache.get()) == null) {
 					ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
 					cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
 					firstSlot = curBaseEdition;
