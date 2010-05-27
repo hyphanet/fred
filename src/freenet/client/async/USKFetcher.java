@@ -1009,9 +1009,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context) {
 		if(!(found instanceof SSKBlock)) return false;
-		ClientSSK realKey = null;
 		long edition = watchingKeys.match((NodeSSK)key);
 		if(edition == -1) return false;
+		if(logMINOR) Logger.minor(this, "Matched edition "+edition+" for "+origUSK);
 		
 		ClientSSKBlock data;
 		try {
@@ -1169,16 +1169,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			 * @return The edition number for the key, or -1 if the key is not a match.
 			 */
 			public synchronized long match(NodeSSK key, long curBaseEdition) {
+				if(logDEBUG) Logger.minor(this, "match from "+curBaseEdition+" current first slot "+firstSlot);
 				RemoveRangeArrayList<byte[]> ehDocnames = null;
-				if(ehDocnames == null || (ehDocnames = cache.get()) == null) {
+				if(cache == null || (ehDocnames = cache.get()) == null) {
 					ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
 					cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
 					firstSlot = curBaseEdition;
 					generate(firstSlot, WATCH_KEYS, ehDocnames);
-					return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size());
+					return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size(), firstSlot);
 				}
 				// Might as well check first.
-				long x = innerMatch(key, ehDocnames, 0, ehDocnames.size());
+				long x = innerMatch(key, ehDocnames, 0, ehDocnames.size(), firstSlot);
 				if(x != -1) return x;
 				return match(key, curBaseEdition, ehDocnames);
 			}
@@ -1190,7 +1191,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						ehDocnames.clear();
 						firstSlot = curBaseEdition;
 						generate(curBaseEdition, WATCH_KEYS, ehDocnames);
-						return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size());
+						return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size(), firstSlot);
 					} else {
 						// There is some overlap. Delete the first part of the array then add stuff at the end.
 						// ehDocnames[i] is slot firstSlot + i
@@ -1199,8 +1200,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						// Which is the new [0], whose edition is curBaseEdition
 						ehDocnames.removeRange(0, (int)(curBaseEdition - firstSlot));
 						int size = ehDocnames.size();
+						firstSlot = curBaseEdition;
 						generate(curBaseEdition + size, WATCH_KEYS - size, ehDocnames);
-						return key == null ? -1 : innerMatch(key, ehDocnames, WATCH_KEYS - size, size);
+						return key == null ? -1 : innerMatch(key, ehDocnames, WATCH_KEYS - size, size, firstSlot);
 					}
 				} else if(firstSlot > curBaseEdition) {
 					// It has regressed???
@@ -1208,16 +1210,16 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					firstSlot = curBaseEdition;
 					ehDocnames.clear();
 					generate(curBaseEdition, WATCH_KEYS, ehDocnames);
-					return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size());
+					return key == null ? -1 : innerMatch(key, ehDocnames, 0, ehDocnames.size(), firstSlot);
 				}
 				return -1;
 			}
 
 			/** Do the actual match, using the current firstSlot, and a specified offset and length within the array. */
-			private long innerMatch(NodeSSK key, RemoveRangeArrayList<byte[]> ehDocnames, int offset, int size) {
+			private long innerMatch(NodeSSK key, RemoveRangeArrayList<byte[]> ehDocnames, int offset, int size, long firstSlot) {
 				byte[] data = key.getKeyBytes();
 				for(int i=offset;i<(offset+size);i++) {
-					if(Arrays.equals(data, ehDocnames.get(i))) return i;
+					if(Arrays.equals(data, ehDocnames.get(i))) return firstSlot+i;
 				}
 				return -1;
 			}
@@ -1227,8 +1229,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			 * @param keys The number of keys to add.
 			 */
 			private void generate(long baseEdition, int keys, RemoveRangeArrayList<byte[]> ehDocnames) {
+				if(logMINOR) Logger.minor(this, "generate() from "+baseEdition+" for "+origUSK);
+				assert(baseEdition >= 0);
 				for(int i=0;i<keys;i++) {
 					long ed = baseEdition + i;
+					if(logDEBUG) Logger.debug(this, "Slot "+i+" on "+origUSK+" is edition "+ed+" : "+origUSK.getSSK(ed));
 					ehDocnames.add(origUSK.getSSK(ed).ehDocname);
 				}
 			}
@@ -1238,6 +1243,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public USKStoreChecker getDatastoreChecker(long lastSlot) {
 			// Check WATCH_KEYS from last known good slot.
 			// FIXME: Take into account origUSK, subscribers, etc.
+			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this);
 			KeyList.StoreSubChecker sub = 
 				fromLastKnownGood.checkStore(lastSlot);
 			if(sub == null)
@@ -1253,6 +1259,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		public long match(NodeSSK key) {
 			long lastSlot = uskManager.lookupLatestSlot(origUSK);
+			if(lastSlot == -1) lastSlot = 0;
 			return fromLastKnownGood.match(key, lastSlot);
 			// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
 		}
