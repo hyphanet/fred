@@ -848,7 +848,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"bdo",
 				"aside",
 				"header",
-				"address",
 				"nav",
 				"footer",
 				"article",
