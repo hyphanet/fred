@@ -295,8 +295,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		keysWatching = new ArrayList<ClientSSK>();
 		watchingKeys = new USKWatchingKeys(origUSK);
 		attemptsToStart = new ArrayList<USKAttempt>();
-		// FIXME!!! Handle the original suggested edition explicitly, handle editions from other subscribers too.
-		valueAtSchedule = origUSK.suggestedEdition;
 	}
 	
 	void onDNF(USKAttempt att, ClientContext context) {
