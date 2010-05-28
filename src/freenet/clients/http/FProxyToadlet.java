@@ -288,7 +288,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			option.addChild("#", (l10n("filenameLabel") + ' '));
 			option.addChild("a", "href", '/' + key.toString(), getFilename(key, mimeType));
 			
-			HTMLNode explaination = infoboxContent.addChild("p").addChild(e.getExplanation());
+			HTMLNode explaination = infoboxContent.addChild("p").addChild(e.getMessage());
 			if(e.details() != null) {
 				HTMLNode riskList = explaination.addChild("ul");
 				for(String detail : e.details()) {
@@ -721,6 +721,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx, core, fr != null, maybeCharset);
 			
 		} catch (FetchException e) {
+			//Handle exceptions thrown from the ContentFilter
 			String msg = e.getMessage();
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
@@ -766,12 +767,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
-				PageNode page = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(e.getCause() == null ? FetchException.getShortMessage(e.mode) : e.getCause().toString(), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
-				infobox.addChild("div", "class", "infobox-header", l10n("errorWithReason", "error", FetchException.getShortMessage(e.mode)));
+				infobox.addChild("div", "class", "infobox-header", l10n("errorWithReason", "error", e.getCause() == null ? FetchException.getShortMessage(e.mode) : e.getCause().toString()));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
