@@ -56,23 +56,19 @@ public class ClientPut extends ClientPutBase {
 	/**
 	 * Fproxy
 	 * Creates a new persistent insert.
-	 * 
 	 * @param uri
 	 *            The URI to insert data to
 	 * @param identifier
 	 *            The identifier of the insert
 	 * @param verbosity
 	 *            The verbosity bitmask
-	 * @param handler
-	 *            The FCP connection handler
+	 * @param charset TODO
 	 * @param priorityClass
 	 *            The priority for this insert
 	 * @param persistenceType
 	 *            The persistence type of this insert
 	 * @param clientToken
 	 *            The client token of this insert
-	 * @param global
-	 *            Whether this insert appears on the global queue
 	 * @param getCHKOnly
 	 *            Whether only the resulting CHK is requested
 	 * @param dontCompress
@@ -91,6 +87,11 @@ public class ClientPut extends ClientPutBase {
 	 * @param redirectTarget
 	 *            The URI to redirect to (if <code>uploadFromType</code> is
 	 *            UPLOAD_FROM_REDIRECT)
+	 * @param handler
+	 *            The FCP connection handler
+	 * @param global
+	 *            Whether this insert appears on the global queue
+	 * 
 	 * @throws IdentifierCollisionException
 	 * @throws NotAllowedException 
 	 * @throws FileNotFoundException 
@@ -99,10 +100,10 @@ public class ClientPut extends ClientPutBase {
 	 * @throws InsertException 
 	 */
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
-			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
-		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, server, container);
+			String charset, short priorityClass, short persistenceType, String clientToken,
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, short uploadFromType, File origFilename,
+			String contentType, Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, boolean canWriteClientCache, boolean forkOnCacheable, int extraInsertsSingleBlock, int extraInsertsSplitfileHeaderBlock, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
+		super(uri, identifier, verbosity, charset, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, canWriteClientCache, forkOnCacheable, extraInsertsSingleBlock, extraInsertsSplitfileHeaderBlock, null, server, container);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!server.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
@@ -144,9 +145,9 @@ public class ClientPut extends ClientPutBase {
 	}
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
-		super(message.uri, message.identifier, message.verbosity, handler, 
-				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, server, container);
+		super(message.uri, message.identifier, message.verbosity, null, 
+				handler, message.priorityClass, message.persistenceType, message.clientToken,
+				message.global, message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, message.canWriteClientCache, message.forkOnCacheable, message.compressorDescriptor, message.extraInsertsSingleBlock, message.extraInsertsSplitfileHeaderBlock, server, container);
 		String salt = null;
 		byte[] saltedHash = null;
 		binaryBlob = message.binaryBlob;

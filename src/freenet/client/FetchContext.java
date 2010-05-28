@@ -77,6 +77,9 @@ public class FetchContext implements Cloneable {
 	/** If non-null, the request will be stopped if it has a MIME type that is not one of these,
 	 * or has no MIME type. */
 	public Set<String> allowedMIMETypes;
+	/** If not-null, the request, if it requires a charset for filtration, will be assumed
+	 * to use this charset */
+	public String charset;
 	/** Do we have responsibility for removing the ClientEventProducer from the database? */
 	private final boolean hasOwnEventProducer;
 	/** Can this request write to the client-cache? We don't store all requests in the client cache,
@@ -91,7 +94,7 @@ public class FetchContext implements Cloneable {
 			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache) {
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -112,6 +115,7 @@ public class FetchContext implements Cloneable {
 		this.filterData = filterData;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
+		this.charset = charset;
 		hasOwnEventProducer = true;
 	}
 

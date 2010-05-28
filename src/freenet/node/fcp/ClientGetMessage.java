@@ -59,6 +59,7 @@ public class ClientGetMessage extends FCPMessage {
 	final boolean binaryBlob;
 	final String[] allowedMIMETypes;
 	public boolean writeToClientCache;
+	final String charset;
 	
 	// FIXME move these to the actual getter process
 	static final short RETURN_TYPE_DIRECT = 0; // over FCP
@@ -74,6 +75,7 @@ public class ClientGetMessage extends FCPMessage {
 		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		identifier = fs.get("Identifier");
 		allowedMIMETypes = fs.getAll("AllowedMIMETypes");
+		charset = fs.get("Charset");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null, global);
 		try {
@@ -204,6 +206,7 @@ public class ClientGetMessage extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("IgnoreDS", Boolean.toString(ignoreDS));
 		fs.putSingle("URI", uri.toString(false, false));
+		fs.putSingle("Charset", charset);
 		fs.putSingle("Identifier", identifier);
 		fs.putSingle("Verbosity", Integer.toString(verbosity));
 		fs.putSingle("ReturnType", getReturnTypeString());
