@@ -13,7 +13,7 @@ public class UnsupportedCharsetInFilterException extends UnsafeContentTypeExcept
 	}
 
 	@Override
-	public String getExplanation() {
+	public String getMessage() {
 		return l10n("explanation");
 	}
 

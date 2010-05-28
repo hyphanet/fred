@@ -20,7 +20,7 @@ public class DataFilterException extends UnsafeContentTypeException {
 	}
 	
 	@Override
-	public String getExplanation() {
+	public String getMessage() {
 		return explanation;
 	}
 

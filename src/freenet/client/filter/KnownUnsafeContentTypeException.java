@@ -19,7 +19,7 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 	
 	
 	@Override
-	public String getExplanation() {
+	public String getMessage() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(l10n("knownUnsafe"));
 		sb.append(l10n("noFilter"));

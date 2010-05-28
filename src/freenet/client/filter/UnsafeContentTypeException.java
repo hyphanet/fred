@@ -17,7 +17,8 @@ public abstract class UnsafeContentTypeException extends IOException {
 	/**
 	 * Get the contents of the error page.
 	 */
-	public abstract String getExplanation();
+	@Override
+	public abstract String getMessage();
 
 	/**
 	 * Get additional details about the failure
@@ -35,5 +36,12 @@ public abstract class UnsafeContentTypeException extends IOException {
 	 * Get the raw title of the error page. (May be unsafe for HTML).
 	 */
 	public abstract String getRawTitle();
+	/**
+	 * Get the title of the Exception
+	 */
+	@Override
+	public String toString() {
+		return getRawTitle();
+	}
 	
 }

@@ -206,9 +206,10 @@ public class ClientGetter extends BaseClientGetter {
 				result = new FetchResult(result, filter.data);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
-				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, e.getExplanation()), state/*Not really the state's fault*/, container, context);
+				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, e.getMessage()), state/*Not really the state's fault*/, container, context);
 				return;
 			} catch (Exception e) {
+				Logger.error(this, "Error filtering content", e);
 				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED), state/*Not really the state's fault*/, container, context);
 				return;
 			}
