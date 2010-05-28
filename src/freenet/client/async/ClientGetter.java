@@ -7,7 +7,6 @@ import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 
 import com.db4o.ObjectContainer;
@@ -21,6 +20,7 @@ import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.filter.ContentFilter;
+import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
@@ -204,12 +204,13 @@ public class ClientGetter extends BaseClientGetter {
 			try {
 				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, expectedMIME, uri.toURI("/"), null, null, null);
 				result = new FetchResult(result, filter.data);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (URISyntaxException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (UnsafeContentTypeException e) {
+				Logger.error(this, "Error filtering content: will not validate", e);
+				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, e.getExplanation()), state/*Not really the state's fault*/, container, context);
+				return;
+			} catch (Exception e) {
+				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED), state/*Not really the state's fault*/, container, context);
+				return;
 			}
 		}
 		else {

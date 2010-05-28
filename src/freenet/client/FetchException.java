@@ -405,6 +405,8 @@ public class FetchException extends Exception {
 	public static final int WRONG_MIME_TYPE = 29;
 	/** A node killed the request because it had recently been tried and had DNFed */
 	public static final int RECENTLY_FAILED = 30;
+	/** Content filtration failed */
+	public static final int CONTENT_VALIDATION_FAILED = 31;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
