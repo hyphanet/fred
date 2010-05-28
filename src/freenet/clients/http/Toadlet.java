@@ -10,11 +10,14 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URI;
 
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.FetchWaiter;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
+import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
@@ -130,9 +133,21 @@ public abstract class Toadlet {
 	 * for any two unrelated requests. Request selection round-robin's over these, within any priority and retry count class,
 	 * and above the level of individual block fetches.
 	 */
-	FetchResult fetch(FreenetURI uri, long maxSize, RequestClient clientContext) throws FetchException {
+	FetchResult fetch(FreenetURI uri, long maxSize, RequestClient clientContext, FetchContext fctx) throws FetchException {
 		// For now, just run it blocking.
-		return client.fetch(uri, maxSize, clientContext);
+		FetchWaiter fw = new FetchWaiter();
+		ClientGetter getter = client.fetch(uri, 1, clientContext, fw, fctx);
+		return fw.waitForCompletion();
+
+	}
+	/**
+	 * Returns a default FetchContext
+	 * @param maxSize The maximum allowable size of the fetch's result
+	 * @return A default FetchContext
+	 */
+	FetchContext getFetchContext(long maxSize) {
+		//We want to retrieve a FetchContext we may override
+		return client.getFetchContext(maxSize);
 	}
 
 	FreenetURI insert(InsertBlock insert, String filenameHint, boolean getCHKOnly) throws InsertException {

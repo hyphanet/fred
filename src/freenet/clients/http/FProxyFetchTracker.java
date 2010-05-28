@@ -42,7 +42,7 @@ public class FProxyFetchTracker implements Runnable {
 		this.rc = rc;
 	}
 	
-	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) throws FetchException {
+	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize, FetchContext fctx) throws FetchException {
 		FProxyFetchInProgress progress;
 		/* LOCKING:
 		 * Call getWaiter() inside the fetchers lock, since we will purge old 
@@ -53,7 +53,7 @@ public class FProxyFetchTracker implements Runnable {
 			if(waiter!=null){
 				return waiter;
 			}
-			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx, rc);
+			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx != null ? fctx : this.fctx, rc);
 			fetchers.put(key, progress);
 		}
 		try {

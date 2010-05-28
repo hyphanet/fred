@@ -84,7 +84,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 0;
 	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
 	/*Whether or not to filter fetched content*/
-	static final boolean FILTER_DATA = true;
+	static final boolean FILTER_DATA = false;
 
 	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;

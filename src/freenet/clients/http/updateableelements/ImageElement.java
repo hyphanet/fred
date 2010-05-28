@@ -86,14 +86,14 @@ public class ImageElement extends BaseUpdateableElement {
 
 			public void run() {
 				try {
-					FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize);
+					FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize, null);
 					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
 					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
 				} catch (FetchException fe) {
 					if (fe.newURI != null) {
 						try {
 							ImageElement.this.key = fe.newURI;
-							FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize);
+							FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize, null);
 							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
 							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
 						} catch (FetchException fe2) {
@@ -172,7 +172,7 @@ public class ImageElement extends BaseUpdateableElement {
 			FProxyFetchWaiter waiter = null;
 			try {
 				try {
-					waiter = tracker.makeFetcher(key, maxSize);
+					waiter = tracker.makeFetcher(key, maxSize, null);
 					fr = waiter.getResultFast();
 				} catch (FetchException fe) {
 					whenJsEnabled.addChild("div", "error");

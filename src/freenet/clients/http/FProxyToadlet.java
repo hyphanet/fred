@@ -15,6 +15,7 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -163,10 +164,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				PushingTagReplacerCallback tagReplacer = 
 					container.isFProxyWebPushingEnabled() ? new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx) : null;
-				/*FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null, tagReplacer, maybeCharset);
-				if(data != fo.data) toFree = fo.data;
-				data = fo.data;*/
-				//mimeType = fo.type;
 				
 				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
 					PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
@@ -531,6 +528,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		else 
 			maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
 		
+		FetchContext fctx = getFetchContext(maxSize);
+
+		//We should run the ContentFilter by default
+		if (!httprequest.isParameterSet("dontfilter")) fctx.filterData = true;
+		else if(logMINOR) Logger.minor(this, "Content filter disabled via request parameter");
+
 		//first check of httprange before get
 		// only valid number format is checked here
 		String rangeStr = ctx.getHeaders().get("range");
@@ -591,7 +594,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 		if(isBrowser(ua) && !ctx.disableProgressPage() && (accept == null || accept.indexOf("text/html") > -1) && !httprequest.isParameterSet("forcedownload")) {
 			FProxyFetchWaiter fetch = null;
 			try {
-				fetch = fetchTracker.makeFetcher(key, maxSize);
+				fetch = fetchTracker.makeFetcher(key, maxSize, fctx);
 			} catch (FetchException e) {
 				fe = fr.failed;
 			}
@@ -708,7 +711,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 						}
 						public void removeFrom(ObjectContainer container) {
 							throw new UnsupportedOperationException();
-						} }); 
+						} }, fctx); 
 					
 					// Now, is it safe?
 					
@@ -767,12 +770,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
-				PageNode page = ctx.getPageMaker().getPageNode(e.getCause() == null ? FetchException.getShortMessage(e.mode) : e.getCause().toString(), ctx);
+				PageNode page = ctx.getPageMaker().getPageNode(e.getCause() == null ? FetchException.getShortMessage(e.mode) : FetchException.getShortMessage(e.mode)+": "+e.getCause().toString(), ctx);
 				HTMLNode pageNode = page.outer;
 				HTMLNode contentNode = page.content;
 
 				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
-				infobox.addChild("div", "class", "infobox-header", l10n("errorWithReason", "error", e.getCause() == null ? FetchException.getShortMessage(e.mode) : e.getCause().toString()));
+				infobox.addChild("div", "class", "infobox-header", l10n("errorWithReason", "error", e.getCause() == null ? FetchException.getShortMessage(e.mode) : FetchException.getShortMessage(e.mode)+": "+e.getCause().toString()));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				HTMLNode fileInformationList = infoboxContent.addChild("ul");
 				HTMLNode option = fileInformationList.addChild("li");
