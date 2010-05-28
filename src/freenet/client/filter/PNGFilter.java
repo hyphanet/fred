@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.zip.CRC32;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LoggerHook.InvalidThresholdException;
@@ -104,8 +103,7 @@ public class PNGFilter implements ContentDataFilter {
 				// Throw an exception
 				String message = l10n("invalidHeader");
 				String title = l10n("invalidHeaderTitle");
-				throw new DataFilterException(title, title, "<p>" + message + "</p>", new HTMLNode("p").addChild("#",
-				        message));
+				throw new DataFilterException(title, title, message);
 			}
 
 			ByteArrayOutputStream baos = null;
@@ -331,8 +329,7 @@ public class PNGFilter implements ContentDataFilter {
 			message += ' ' + reason;
 		if (shortReason != null)
 			message += " - " + shortReason;
-		DataFilterException e = new DataFilterException(shortReason, shortReason, "<p>" + message + "</p>",
-		        new HTMLNode("p").addChild("#", message));
+		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
 		if (Logger.shouldLog(Logger.NORMAL, this))
 			Logger.normal(this, "Throwing " + e, e);
 		throw e;

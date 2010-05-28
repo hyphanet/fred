@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import freenet.support.HTMLNode;
-
 /**
  * Exception thrown when the data cannot be filtered.
  */
@@ -14,23 +12,16 @@ public class DataFilterException extends UnsafeContentTypeException {
 	final String rawTitle;
 	final String encodedTitle;
 	final String explanation;
-	final HTMLNode htmlExplanation;
 	
-	DataFilterException(String raw, String encoded, String explanation, HTMLNode htmlExplanation) {
+	DataFilterException(String raw, String encoded, String explanation) {
 		this.rawTitle = raw;
 		this.encodedTitle = encoded;
 		this.explanation = explanation;
-		this.htmlExplanation = htmlExplanation;
 	}
 	
 	@Override
 	public String getExplanation() {
 		return explanation;
-	}
-	
-	@Override
-	public HTMLNode getHTMLExplanation() {
-		return htmlExplanation;
 	}
 
 	@Override

@@ -5,7 +5,6 @@ package freenet.client.filter;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
-import freenet.support.HTMLNode;
 
 public class UnknownContentTypeException extends UnsafeContentTypeException {
 	private static final long serialVersionUID = -1;
@@ -34,11 +33,6 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 	@Override
 	public String getExplanation() {
 		return l10n("explanation");
-	}
-	
-	@Override
-	public HTMLNode getHTMLExplanation() {
-		return new HTMLNode("div", l10n("explanation"));
 	}
 
 	private static String l10n(String key) {

@@ -288,7 +288,13 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			option.addChild("#", (l10n("filenameLabel") + ' '));
 			option.addChild("a", "href", '/' + key.toString(), getFilename(key, mimeType));
 			
-			infoboxContent.addChild("p").addChild(e.getHTMLExplanation());
+			HTMLNode explaination = infoboxContent.addChild("p").addChild(e.getExplanation());
+			if(e.details() != null) {
+				HTMLNode riskList = explaination.addChild("ul");
+				for(String detail : e.details()) {
+				riskList.addChild("li", detail);
+				}
+			}
 			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			

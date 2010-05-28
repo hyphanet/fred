@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLNode;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 
@@ -60,8 +59,7 @@ public class GIFFilter implements ContentDataFilter {
 		if(reason != null) message += ' ' + reason;
 		if(shortReason != null)
 			message += " - (" + shortReason + ')';
-		throw new DataFilterException(shortReason, shortReason,
-				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
+		throw new DataFilterException(shortReason, shortReason, message);
 	}
 
 	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,

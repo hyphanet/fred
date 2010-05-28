@@ -5,8 +5,6 @@ package freenet.client.filter;
 
 import java.io.IOException;
 
-import freenet.support.HTMLNode;
-
 /**
  * Thrown by the filter when it cannot guarantee the safety of the data, because it is an unknown type,
  * because it cannot be filtered, or because we do not know how to filter it.
@@ -20,12 +18,14 @@ public abstract class UnsafeContentTypeException extends IOException {
 	 * Get the contents of the error page.
 	 */
 	public abstract String getExplanation();
-	
+
 	/**
-	 * Gets the contents of the error page as HTML.
+	 * Get additional details about the failure
 	 */
-	public abstract HTMLNode getHTMLExplanation();
-	
+	public String[] details() {
+		return null;
+	}
+
 	/**
 	 * Get the title of the error page.
 	 */

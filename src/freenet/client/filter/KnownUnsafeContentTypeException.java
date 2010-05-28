@@ -3,9 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLEncoder;
-import freenet.support.HTMLNode;
 
 public class KnownUnsafeContentTypeException extends UnsafeContentTypeException {
 	private static final long serialVersionUID = -1;
@@ -14,51 +16,25 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 	public KnownUnsafeContentTypeException(MIMEType type) {
 		this.type = type;
 	}
-
+	
+	
 	@Override
 	public String getExplanation() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("<p><b>");
-		sb.append(type.readDescription);
-		sb.append("</b></p>\n" + "<p>" + l10n("knownUnsafe") + "<ul>");
-		if(type.dangerousInlines) 
-			sb.append("<li><font color=\"red\"><b>" + l10n("dangerousInlinesLabel") +
-					"</b></font> "+l10n("dangerousInline")+"</li>");
-		if(type.dangerousLinks)
-			sb.append("<li><font color=\"red\"><b>" + l10n("dangerousLinksLabel") +
-					"</b></font> " + l10n("dangerousLinks") + "</li>");
-		if(type.dangerousScripting)
-			sb.append("<li><font color=\"red\"><b>" + l10n("dangerousScriptsLabel") +
-					"</b></font> " + l10n("dangerousScripts") + "</li>");
-		if(type.dangerousReadMetadata)
-			sb.append("<li><font color=\"red\"><b>" + l10n("dangerousMetadataLabel") +
-					"</b></font> " + l10n("dangerousMetadata") + "</li>");
-		
-		sb.append("</ul>" + l10n("noFilter"));
+		sb.append(l10n("knownUnsafe"));
+		sb.append(l10n("noFilter"));
 		
 		return sb.toString();
 	}
-	
+
 	@Override
-	public HTMLNode getHTMLExplanation() {
-		HTMLNode explanation = new HTMLNode("div");
-		explanation.addChild("p").addChild("b", type.readDescription);
-		explanation.addChild("p", l10n("knownUnsafe"));
-		HTMLNode list = explanation.addChild("ul");
-		HTMLNode reason = list.addChild("li");
-		reason.addChild("span", "class", "warning", l10n("dangerousInlinesLabel"));
-		reason.addChild("#", " "+l10n("dangerousInlines"));
-		reason = list.addChild("li");
-		reason.addChild("span", "class", "warning", l10n("dangerousLinksLabel"));
-		reason.addChild("#", " "+l10n("dangerousLinks"));
-		reason = list.addChild("li");
-		reason.addChild("span", "class", "warning", l10n("dangerousScriptsLabel"));
-		reason.addChild("#", " "+l10n("dangerousScripts"));
-		reason = list.addChild("li");
-		reason.addChild("span", "class", "warning", l10n("dangerousMetadataLabel"));
-		reason.addChild("#", " "+l10n("dangerousMetadata"));
-		explanation.addChild("p", l10n("noFilter"));
-		return explanation;
+	public String[] details() {
+		List<String> details = new LinkedList<String>();
+		if(type.dangerousInlines) details.add(l10n("dangerousInlineLabel")+l10n("dangerousInline"));
+		if(type.dangerousLinks) details.add(l10n("dangerousLinksLabel")+l10n("dangerousLinks"));
+		if(type.dangerousScripting) details.add(l10n("dangerousScriptsLabel")+l10n("dangerousScripts"));
+		if(type.dangerousScripting) details.add(l10n("dangerousMetadataLabel")+l10n("dangerousMetadata"));
+		return (String[]) details.toArray();
 	}
 
 	@Override

@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -430,8 +429,7 @@ public class JPEGFilter implements ContentDataFilter {
 			message += ' ' + reason;
 		if(shortReason != null)
 			message += " - " + shortReason;
-		DataFilterException e = new DataFilterException(shortReason, shortReason,
-				"<p>"+message+"</p>", new HTMLNode("p").addChild("#", message));
+		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
 		if(Logger.shouldLog(Logger.NORMAL, this))
 			Logger.normal(this, "Throwing "+e, e);
 		throw e;

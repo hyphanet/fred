@@ -1,7 +1,6 @@
 package freenet.client.filter;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLNode;
 
 // This is thrown when a stylesheet starts with the CSS BOM, i.e. "@charset \"
 // in some encoding, but the declaration is invalid.
@@ -23,11 +22,6 @@ public class UndetectableCharsetException extends UnsafeContentTypeException {
 	@Override
 	public String getHTMLEncodedTitle() {
 		return l10n("title", "charset", charset);
-	}
-
-	@Override
-	public HTMLNode getHTMLExplanation() {
-		return new HTMLNode("div", l10n("explanation"));
 	}
 
 	@Override

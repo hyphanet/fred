@@ -32,7 +32,6 @@ import java.util.Stack;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
@@ -604,7 +603,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	static void throwFilterException(String msg) throws DataFilterException {
 		// FIXME
 		String longer = l10n("failedToParseLabel");
-		throw new DataFilterException(longer, longer, msg, new HTMLNode("div", msg));
+		throw new DataFilterException(longer, longer, msg);
 	}
 
 	public static class ParsedTag {

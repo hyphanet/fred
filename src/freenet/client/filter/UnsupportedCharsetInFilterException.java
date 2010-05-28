@@ -1,7 +1,6 @@
 package freenet.client.filter;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.HTMLNode;
 
 public class UnsupportedCharsetInFilterException extends UnsafeContentTypeException {
 
@@ -21,11 +20,6 @@ public class UnsupportedCharsetInFilterException extends UnsafeContentTypeExcept
 	@Override
 	public String getHTMLEncodedTitle() {
 		return l10n("title", "charset", charset);
-	}
-
-	@Override
-	public HTMLNode getHTMLExplanation() {
-		return new HTMLNode("div", l10n("explanation"));
 	}
 
 	@Override
