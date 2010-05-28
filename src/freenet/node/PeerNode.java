@@ -1220,19 +1220,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			om.onDisconnect(this);
 		return ret;
 	}
-	
-	private boolean forceDisconnectCalled = false;
 
 	public void forceDisconnect(boolean purge) {
 		Logger.error(this, "Forcing disconnect on " + this, new Exception("debug"));
-		synchronized(this) {
-			forceDisconnectCalled = true;
-		}
 		disconnected(purge, true); // always dump trackers, maybe dump messages
-	}
-
-	boolean forceDisconnectCalled() {
-		return forceDisconnectCalled;
 	}
 
 	/**
