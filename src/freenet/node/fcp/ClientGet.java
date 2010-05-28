@@ -144,6 +144,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
 		fctx.canWriteClientCache = message.writeToClientCache;
+		fctx.filterData = message.filterData;
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();
@@ -215,6 +216,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
+		boolean filterData = Fields.stringToBool(fs.get("FilterData"),false);
 		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
@@ -222,6 +224,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.ignoreStore = ignoreDS;
 		fctx.maxNonSplitfileRetries = maxRetries;
 		fctx.maxSplitfileBlockRetries = maxRetries;
+		fctx.filterData = filterData;
 		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
 		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
 		if(finished) {
