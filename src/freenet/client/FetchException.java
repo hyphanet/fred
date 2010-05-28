@@ -452,7 +452,11 @@ public class FetchException extends Exception {
 		case INTERNAL_ERROR:
 			// No point retrying.
 			return true;
-			
+		
+		//The ContentFilter failed to validate the data. Retrying won't fix this.
+			case CONTENT_VALIDATION_FAILED:
+				return true;
+
 		// Wierd ones
 		case CANCELLED:
 		case ARCHIVE_RESTART:
