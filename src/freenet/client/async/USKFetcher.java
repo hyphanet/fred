@@ -554,7 +554,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		synchronized(this) {
-			valueAtSchedule = Math.max(lookedUp, valueAtSchedule);
+			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
 			if(!cancelled) {
 				long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
 				for(long i=startPoint;i<startPoint+minFailures;i++)
@@ -909,7 +909,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 				long lastEd = uskManager.lookupLatestSlot(origUSK);
 				// Do not check beyond WATCH_KEYS after the current slot.
-				fillKeysWatching(lastEd, context);
+				fillKeysWatching(lastEd+1, context);
 			}
 
 			@Override
