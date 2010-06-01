@@ -1180,10 +1180,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			fromLastKnownGood.getEditionsToFetch(toFetch, toPoll, lookedUp);
 			
 			// If we have moved past the origUSK, then clear the KeyList for it.
-			for(Entry<Long,KeyList> entry : fromSubscribers.entrySet()) {
+			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
+				Entry<Long,KeyList> entry = it.next();
 				long l = entry.getKey();
 				if(l <= lookedUp)
-					fromSubscribers.remove(l);
+					it.remove();
 				entry.getValue().getEditionsToFetch(toFetch, toPoll, l);
 			}
 			return new ToFetch(toFetch, toPoll);
@@ -1209,9 +1210,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			if(origUSK.suggestedEdition > lookedUp && !surviving.contains(origUSK.suggestedEdition))
 				surviving.add(origUSK.suggestedEdition);
-			for(Long l : fromSubscribers.keySet()) {
+			for(Iterator<Long> it = fromSubscribers.keySet().iterator();it.hasNext();) {
+				Long l = it.next();
 				if(surviving.contains(l)) continue;
-				fromSubscribers.remove(l);
+				it.remove();
 			}
 			for(Long l : surviving) {
 				if(fromSubscribers.containsKey(l)) continue;
@@ -1440,10 +1442,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			KeyList.StoreSubChecker c = fromLastKnownGood.checkStore(lastSlot+1);
 			if(c != null) checkers.add(c);
 			// If we have moved past the origUSK, then clear the KeyList for it.
-			for(Entry<Long,KeyList> entry : fromSubscribers.entrySet()) {
+			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator(); it.hasNext(); ) {
+				Entry<Long,KeyList> entry = it.next();
 				long l = entry.getKey();
 				if(l <= lastSlot)
-					fromSubscribers.remove(l);
+					it.remove();
 				c = entry.getValue().checkStore(l);
 				if(c != null) checkers.add(c);
 			}
@@ -1463,10 +1466,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			long ret = fromLastKnownGood.match(key, lastSlot);
 			if(ret != -1) return ret;
 			
-			for(Entry<Long,KeyList> entry : fromSubscribers.entrySet()) {
+			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator(); it.hasNext(); ) {
+				Entry<Long,KeyList> entry = it.next();
 				long l = entry.getKey();
 				if(l <= lastSlot)
-					fromSubscribers.remove(l);
+					it.remove();
 				ret = entry.getValue().match(key, l);
 				if(ret != -1) return ret;
 			}
