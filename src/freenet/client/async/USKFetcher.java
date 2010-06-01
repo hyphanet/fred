@@ -1206,6 +1206,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				return match(key, curBaseEdition, ehDocnames);
 			}
 
+			/** Update ehDocnames as needed according to the new curBaseEdition, then innerMatch against *only
+			 * the changed parts*. The caller must already have done innerMatch over the passed in ehDocnames.
+			 * @param curBaseEdition The edition to check from. If this is different to firstSlot, we will
+			 * update ehDocnames. */
 			private long match(NodeSSK key, long curBaseEdition, RemoveRangeArrayList<byte[]> ehDocnames) {
 				if(logMINOR) Logger.minor(this, "Matching "+key+" cur base edition "+curBaseEdition+" first slot was "+firstSlot);
 				if(firstSlot < curBaseEdition) {
