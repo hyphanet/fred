@@ -58,11 +58,6 @@ public class USKManager implements RequestClient {
 	/** Subscribers by clear USK */
 	final HashMap<USK, USKCallback[]> subscribersByClearUSK;
 	
-	/** USKFetcher's by USK. USK includes suggested edition number, so there is one
-	 * USKFetcher for each {USK, edition number}. These are the fetchers for 
-	 * USKFetcherTag's i.e. for /-<number/ searches. */
-	final HashMap<USK, USKFetcher> fetchersByUSK;
-	
 	/** Backgrounded USKFetchers by USK. These have pollForever=true and are only
 	 * created when subscribe(,true) is called. */
 	final HashMap<USK, USKFetcher> backgroundFetchersByClearUSK;
@@ -90,7 +85,6 @@ public class USKManager implements RequestClient {
 		latestKnownGoodByClearUSK = new HashMap<USK, Long>();
 		latestSlotByClearUSK = new HashMap<USK, Long>();
 		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
-		fetchersByUSK = new HashMap<USK, USKFetcher>();
 		backgroundFetchersByClearUSK = new HashMap<USK, USKFetcher>();
 		temporaryBackgroundFetchersLRU = new LRUHashtable<USK, USKFetcher>();
 		executor = core.getExecutor();
@@ -133,16 +127,9 @@ public class USKManager implements RequestClient {
 		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0, ownFetchContext);
 	}
 
-	synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
+	USKFetcher getFetcher(USK usk, FetchContext ctx,
 			ClientRequester requester, boolean keepLastData) {
-		USKFetcher f = fetchersByUSK.get(usk);
-		if(f != null) {
-			if((f.parent.priorityClass == requester.priorityClass) && f.ctx.equals(ctx) && f.keepLastData == keepLastData)
-				return f;
-		}
-		f = new USKFetcher(usk, this, ctx, requester, 3, false, keepLastData);
-		fetchersByUSK.put(usk, f);
-		return f;
+		return new USKFetcher(usk, this, ctx, requester, 3, false, keepLastData);
 	}
 	
 	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
@@ -426,7 +413,6 @@ public class USKManager implements RequestClient {
 				subscribersByClearUSK.put(clear, callbacks);
 			else{
 				subscribersByClearUSK.remove(clear);
-				fetchersByUSK.remove(origUSK);
 			}
 			USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 			if(f != null) {
@@ -480,15 +466,6 @@ public class USKManager implements RequestClient {
 	/**
 	 * The result of that method will be displayed on the Statistic Toadlet : it will help catching #1147 
 	 * Afterwards it should be removed: it's not usefull :)
-	 * @return the number of Fetchers started by USKManager
-	 */
-	public int getFetcherByUSKSize(){
-		return fetchersByUSK.size();
-	}
-	
-	/**
-	 * The result of that method will be displayed on the Statistic Toadlet : it will help catching #1147 
-	 * Afterwards it should be removed: it's not usefull :)
 	 * @return the number of BackgroundFetchers started by USKManager
 	 */
 	public int getBackgroundFetcherByUSKSize(){
@@ -521,9 +498,6 @@ public class USKManager implements RequestClient {
 			}
 			if(temporaryBackgroundFetchersLRU.get(clear) == fetcher) {
 				temporaryBackgroundFetchersLRU.removeKey(clear);
-			}
-			if(fetchersByUSK.get(orig) == fetcher) {
-				fetchersByUSK.remove(clear);
 			}
 		}
 	}
