@@ -123,17 +123,17 @@ public class USKManager implements RequestClient {
 	}
 
 	public USKFetcherTag getFetcher(USK usk, FetchContext ctx, boolean keepLast, boolean persistent, 
-			USKFetcherCallback callback, boolean ownFetchContext, ObjectContainer container, ClientContext context) {
-		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0, ownFetchContext);
+			USKFetcherCallback callback, boolean ownFetchContext, ObjectContainer container, ClientContext context, boolean checkStoreOnly) {
+		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0, ownFetchContext, checkStoreOnly);
 	}
 
 	USKFetcher getFetcher(USK usk, FetchContext ctx,
-			ClientRequester requester, boolean keepLastData) {
-		return new USKFetcher(usk, this, ctx, requester, 3, false, keepLastData);
+			ClientRequester requester, boolean keepLastData, boolean checkStoreOnly) {
+		return new USKFetcher(usk, this, ctx, requester, 3, false, keepLastData, checkStoreOnly);
 	}
 	
 	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context, boolean persistent) {
-		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, true, container, context);
+		return getFetcher(usk, persistent ? new FetchContext(backgroundFetchContext, FetchContext.IDENTICAL_MASK, false, null) : backgroundFetchContext, true, client.persistent(), cb, true, container, context, false);
 	}
 	
 	/**
@@ -187,7 +187,7 @@ public class USKManager implements RequestClient {
 //			}
 			USKFetcher f = temporaryBackgroundFetchersLRU.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, false, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, false, false, false);
 				sched = f;
 				temporaryBackgroundFetchersLRU.push(clear, f);
 			} else {
@@ -373,7 +373,7 @@ public class USKManager implements RequestClient {
 			if(runBackgroundFetch) {
 				USKFetcher f = backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 10, true, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 10, true, false, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}

@@ -1234,6 +1234,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, container, context);
 					return null;
+				} else if(edition == -1) {
+					// Check the datastore first.
+					USKFetcherTag tag = 
+						context.uskManager.getFetcher(usk.copy(usk.suggestedEdition), ctx, false, requester.persistent(),
+								new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), false, container, context, true);
+					if(isEssential)
+						requester.addMustSucceedBlocks(1, container);
+					return tag;
+					
 				} else {
 					// Transition to SingleFileFetcher
 					GetCompletionCallback myCB =
@@ -1253,7 +1262,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Do a thorough, blocking search
 			USKFetcherTag tag = 
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
-						new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), false, container, context);
+						new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), false, container, context, false);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1, container);
 			return tag;

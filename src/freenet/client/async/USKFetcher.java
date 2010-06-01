@@ -273,8 +273,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private static short DEFAULT_PROGRESS_POLL_PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
 	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 
-	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData) {
-		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, false);
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
+		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, checkStoreOnly);
 	}
 	
 	// FIXME use this!
