@@ -226,7 +226,7 @@ public class USKManager implements RequestClient {
 								// Ignore
 							}
 
-						}, uri, new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+						}, uri.sskForUSK(), new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
 						try {
 							get.start(null, context);
 						} catch (FetchException e) {
