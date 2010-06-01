@@ -1062,6 +1062,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public USKWatchingKeys(USK origUSK) {
 			this.pubKeyHash = origUSK.pubKeyHash;
 			this.cryptoAlgorithm = origUSK.cryptoAlgorithm;
+			if(logMINOR) Logger.minor(this, "Creating KeyList from last known good: "+lookedUp);
 			fromLastKnownGood = new KeyList(origUSK.suggestedEdition);
 		}
 		
@@ -1084,6 +1085,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			private long checkedDatastoreTo = -1;
 			
 			public KeyList(long slot) {
+				if(logMINOR) Logger.minor(this, "Creating KeyList from "+slot+" on "+USKFetcher.this+" "+this, new Exception("debug"));
 				firstSlot = slot;
 				RemoveRangeArrayList<byte[]> ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
 				cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
@@ -1103,7 +1105,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					this.keysToCheck = keysToCheck;
 					this.checkedFrom = checkFrom;
 					this.checkedTo = checkTo;
-					if(logMINOR) Logger.minor(this, "Checking datastore from "+checkFrom+" to "+checkTo+" for "+USKFetcher.this);
+					if(logMINOR) Logger.minor(this, "Checking datastore from "+checkFrom+" to "+checkTo+" for "+USKFetcher.this+" on "+this);
 				}
 
 				/** The keys have been checked. */
@@ -1128,6 +1130,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			 * Re-use the cache if possible, and extend it if necessary; all we need to construct a NodeSSK is the base data and the E(H(docname)), and we have that.
 			 */
 			public synchronized StoreSubChecker checkStore(long lastSlot) {
+				if(logDEBUG) Logger.minor(this, "check store from "+lastSlot+" current first slot "+firstSlot);
 				long checkFrom = lastSlot;
 				long checkTo = lastSlot + WATCH_KEYS;
 				if(checkedDatastoreTo >= checkFrom) {
@@ -1148,6 +1151,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 
 			synchronized RemoveRangeArrayList<byte[]> updateCache(long curBaseEdition) {
+				if(logDEBUG) Logger.minor(this, "update cache from "+curBaseEdition+" current first slot "+firstSlot);
 				RemoveRangeArrayList<byte[]> ehDocnames = null;
 				if(cache == null || (ehDocnames = cache.get()) == null) {
 					ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
@@ -1185,6 +1189,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 
 			private long match(NodeSSK key, long curBaseEdition, RemoveRangeArrayList<byte[]> ehDocnames) {
+				if(logMINOR) Logger.minor(this, "Matching "+key+" cur base edition "+curBaseEdition+" first slot was "+firstSlot);
 				if(firstSlot < curBaseEdition) {
 					if(firstSlot + ehDocnames.size() <= curBaseEdition) {
 						// No overlap. Clear it and start again.
@@ -1206,7 +1211,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					}
 				} else if(firstSlot > curBaseEdition) {
 					// It has regressed???
-					Logger.error(this, "First slot was "+firstSlot+" now is "+curBaseEdition, new Exception("debug"));
+					Logger.error(this, "First slot was "+firstSlot+" now is "+curBaseEdition+" on "+USKFetcher.this+" "+this, new Exception("debug"));
 					firstSlot = curBaseEdition;
 					ehDocnames.clear();
 					generate(curBaseEdition, WATCH_KEYS, ehDocnames);
