@@ -111,11 +111,15 @@ public class USK extends BaseClientKey {
 
 	public ClientSSK getSSK(long ver) {
 		try {
-			return new ClientSSK(siteName + SEPARATOR + ver, pubKeyHash, ClientSSK.getExtraBytes(cryptoAlgorithm), null, cryptoKey);
+			return new ClientSSK(getName(ver), pubKeyHash, ClientSSK.getExtraBytes(cryptoAlgorithm), null, cryptoKey);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Caught "+e+" should not be possible in USK.getSSK", e);
 			throw new Error(e);
 		}
+	}
+	
+	public String getName(long ver) {
+		return siteName + SEPARATOR + ver;
 	}
 
 	public ClientKey getSSK() {

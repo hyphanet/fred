@@ -168,11 +168,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		/** DNF? */
 		boolean dnf;
 		boolean cancelled;
-		public USKAttempt(long i, boolean forever) {
-			this.number = i;
+		public USKAttempt(Lookup l, boolean forever) {
+			this.number = l.val;
 			this.succeeded = false;
 			this.dnf = false;
-			this.checker = new USKChecker(this, origUSK.getSSK(i), forever ? -1 : ctx.maxUSKRetries, ctx, parent);
+			this.checker = new USKChecker(this, l.key, forever ? -1 : ctx.maxUSKRetries, ctx, parent);
 		}
 		public void onDNF(ClientContext context) {
 			checker = null;
@@ -395,22 +395,23 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(logMINOR) Logger.minor(this, "Found edition "+curLatest+" for "+origUSK+" official is "+lastEd);
 		boolean decode = false;
 		Vector<USKAttempt> killAttempts;
+		// FIXME call uskManager.updateSlot BEFORE getEditionsToFetch, avoids a possible conflict, but creates another (with onFoundEdition) - we'd probably have to handle this there???
 		synchronized(this) {
 			if(att != null) runningAttempts.remove(att);
 			if(completed || cancelled) return;
 			decode = curLatest >= lastEd && !(dontUpdate && block == null);
 			curLatest = Math.max(lastEd, curLatest);
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest);
-			long addTo = curLatest + minFailures;
-			long addFrom = Math.max(lastAddedEdition + 1, curLatest + 1);
-			if(logMINOR) Logger.minor(this, "Adding from "+addFrom+" to "+addTo+" for "+origUSK);
-			if(addTo >= addFrom) {
-				for(long i=addFrom;i<=addTo;i++) {
-					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
-					if(backgroundPoll && i < (addFrom + origMinFailures))
-						attemptsToStart.add(add(i, true));
-					attemptsToStart.add(add(i, false));
-				}
+			USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest);
+			Lookup[] toPoll = list.toPoll;
+			Lookup[] toFetch = list.toFetch;
+			for(Lookup i : toPoll) {
+				if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
+				attemptsToStart.add(add(i, true));	
+			}
+			for(Lookup i : toFetch) {
+				if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+				attemptsToStart.add(add(i, false));
 			}
 			killAttempts = cancelBefore(curLatest, context);
 			fillKeysWatching(curLatest+1, context);
@@ -515,7 +516,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	 * Add a USKAttempt for another edition number.
 	 * Caller is responsible for calling .schedule().
 	 */
-	private synchronized USKAttempt add(long i, boolean forever) {
+	private synchronized USKAttempt add(Lookup l, boolean forever) {
+		long i = l.val;
 		if(cancelled) return null;
 		if(logMINOR) Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
 		if(forever) {
@@ -531,7 +533,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 			}
 		}
-		USKAttempt a = new USKAttempt(i, forever);
+		USKAttempt a = new USKAttempt(l, forever);
 		if(forever)
 			pollingAttempts.put(i, a);
 		else {
@@ -581,14 +583,21 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
 			if(!cancelled) {
-				long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
-				for(long i=startPoint;i<startPoint+minFailures;i++) {
-					if(backgroundPoll && i < (startPoint + origMinFailures))
-						attemptsToStart.add(add(i, true));
+				
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp);
+				Lookup[] toPoll = list.toPoll;
+				Lookup[] toFetch = list.toFetch;
+				for(Lookup i : toPoll) {
+					if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
+					attemptsToStart.add(add(i, true));	
+				}
+				for(Lookup i : toFetch) {
+					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
 					attemptsToStart.add(add(i, false));
 				}
+				
 				started = true;
-				fillKeysWatching(valueAtSchedule, context);
+				fillKeysWatching(lookedUp, context);
 				return;
 			}
 		}
@@ -782,16 +791,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			decode = lastEd == ed && data != null;
 			ed = Math.max(lastEd, ed);
 			if(logMINOR) Logger.minor(this, "Latest: "+ed);
-			long addTo = ed + minFailures;
-			long addFrom = Math.max(lastAddedEdition + 1, ed + 1);
-			if(logMINOR) Logger.minor(this, "Adding from "+addFrom+" to "+addTo+" for "+origUSK);
-			if(addTo >= addFrom) {
-				for(long i=addFrom;i<=addTo;i++) {
-					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
-					if(backgroundPoll && i < (ed + origMinFailures))
-						attemptsToStart.add(add(i, true));
-					attemptsToStart.add(add(i, false));
-				}
+			
+			USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed);
+			Lookup[] toPoll = list.toPoll;
+			Lookup[] toFetch = list.toFetch;
+			for(Lookup i : toPoll) {
+				if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
+				attemptsToStart.add(add(i, true));	
+			}
+			for(Lookup i : toFetch) {
+				if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+				attemptsToStart.add(add(i, false));
 			}
 			killAttempts = cancelBefore(ed, context);
 			fillKeysWatching(ed+1, context);
@@ -1146,6 +1156,36 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				fromSubscribers.put(origUSK.suggestedEdition, new KeyList(origUSK.suggestedEdition));
 		}
 		
+		class ToFetch {
+
+			public ToFetch(ArrayList<Lookup> toFetch2, ArrayList<Lookup> toPoll2) {
+				toFetch = toFetch2.toArray(new Lookup[toFetch2.size()]);
+				toPoll = toPoll2.toArray(new Lookup[toPoll2.size()]);
+			}
+			public final Lookup[] toFetch;
+			public final Lookup[] toPoll;
+			
+		}
+		
+		public synchronized ToFetch getEditionsToFetch(long lookedUp) {
+			
+			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp);
+			
+			ArrayList<Lookup> toFetch = new ArrayList<Lookup>();
+			ArrayList<Lookup> toPoll = new ArrayList<Lookup>();
+			
+			fromLastKnownGood.getEditionsToFetch(toFetch, toPoll, lookedUp);
+			
+			// If we have moved past the origUSK, then clear the KeyList for it.
+			for(Entry<Long,KeyList> entry : fromSubscribers.entrySet()) {
+				long l = entry.getKey();
+				if(l <= lookedUp)
+					fromSubscribers.remove(l);
+				entry.getValue().getEditionsToFetch(toFetch, toPoll, l);
+			}
+			return new ToFetch(toFetch, toPoll);
+		}
+
 		public synchronized void updateSubscriberHints(Long[] hints, long lookedUp) {
 			ArrayList<Long> surviving = new ArrayList<Long>();
 			Arrays.sort(hints);
@@ -1206,6 +1246,28 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				RemoveRangeArrayList<byte[]> ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
 				cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
 				generate(firstSlot, WATCH_KEYS, ehDocnames);
+			}
+
+			public synchronized void getEditionsToFetch(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp) {
+				for(int i=0;i<minFailures;i++) {
+					long ed = i + firstSlot;
+					Lookup l = new Lookup();
+					l.val = ed;
+					boolean poll = i < origMinFailures && backgroundPoll;
+					if(toFetch.contains(l) && (poll && toFetch.contains(l)))
+						continue;
+					ClientSSK key;
+					// FIXME reuse ehDocnames somehow
+					// The problem is we need a ClientSSK for the high level stuff.
+					key = origUSK.getSSK(ed);
+					l.key = key;
+					if(poll) {
+						if(!toPoll.contains(l))
+							toPoll.add(l);
+					}
+					if(!toFetch.contains(l))
+						toFetch.add(l);
+				}
 			}
 
 			public class StoreSubChecker {
@@ -1414,6 +1476,20 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		watchingKeys.addHintEdition(suggestedEdition, uskManager.lookupLatestSlot(origUSK));
 	}
 	
-
+	private class Lookup {
+		long val;
+		ClientSSK key;
+		
+		public boolean equals(Object o) {
+			if(o instanceof Lookup) {
+				return ((Lookup)o).val == val;
+			} else return false;
+		}
+		
+		public String toString() {
+			return origUSK+":"+val;
+		}
+		
+	}
 	
 }
