@@ -206,15 +206,18 @@ public class USKManager implements RequestClient {
 					}
 
 					public void onFoundEdition(final long l, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
+						if(logMINOR) Logger.minor(this, "Prefetching content for background fetch for edition "+l+" on "+key);
 						if(l <= min) return;
-						FreenetURI uri = key.copy(l).getURI();
+						final FreenetURI uri = key.copy(l).getURI();
 						final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 
 							public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+								if(logMINOR) Logger.minor(this, "Prefetch failed later: "+e+" for "+uri, e);
 								// Ignore
 							}
 
 							public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+								if(logMINOR) Logger.minor(this, "Prefetch succeeded for "+uri);
 								result.asBucket().free();
 								updateKnownGood(clear, l, context);
 							}
@@ -227,6 +230,7 @@ public class USKManager implements RequestClient {
 						try {
 							get.start(null, context);
 						} catch (FetchException e) {
+							if(logMINOR) Logger.minor(this, "Prefetch failed: "+e, e);
 							// Ignore
 						}
 					}
