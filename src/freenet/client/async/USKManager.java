@@ -384,7 +384,7 @@ public class USKManager implements RequestClient {
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
-				f.addSubscriber(cb);
+				f.addSubscriber(cb, origUSK.suggestedEdition);
 			}
 		}
 		if(goodEd > ed)
