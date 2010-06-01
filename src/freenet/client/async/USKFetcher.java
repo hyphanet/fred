@@ -293,7 +293,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
 		keysWatching = new ArrayList<ClientSSK>();
-		watchingKeys = new USKWatchingKeys(origUSK);
+		watchingKeys = new USKWatchingKeys(origUSK, Math.max(0, uskManager.lookupLatestSlot(origUSK)));
 		attemptsToStart = new ArrayList<USKAttempt>();
 	}
 	
@@ -777,6 +777,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			checkers = new USKWatchingKeys.KeyList.StoreSubChecker[] { sub };
 		}
 
+		public USKStoreChecker(USKWatchingKeys.KeyList.StoreSubChecker[] checkers2) {
+			checkers = checkers2;
+		}
+
 		public Key[] getKeys() {
 			if(checkers.length == 0) return new Key[0];
 			else if(checkers.length == 1) return checkers[0].keysToCheck;
@@ -787,9 +791,19 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 				Key[] keys = new Key[x];
 				int ptr = 0;
+				// FIXME more intelligent (cheaper) merging algorithm, e.g. considering the ranges in each.
+				HashSet<Key> check = new HashSet<Key>();
 				for(USKWatchingKeys.KeyList.StoreSubChecker checker : checkers) {
-					System.arraycopy(checker.keysToCheck, 0, keys, ptr, checker.keysToCheck.length);
-					ptr += checker.keysToCheck.length;
+					if(checker == null) continue;
+					for(Key k : checker.keysToCheck) {
+						if(!check.add(k)) continue;
+						keys[ptr++] = k;
+					}
+				}
+				if(keys.length != ptr) {
+					Key[] newKeys = new Key[ptr];
+					System.arraycopy(keys, 0, newKeys, 0, ptr);
+					keys = newKeys;
 				}
 				return keys;
 			}
@@ -1055,19 +1069,23 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		// List of slots since the USKManager's current last known good edition.
 		private final KeyList fromLastKnownGood;
+		/** Starting from origUSK. Will be nulled out when last known good passes it. */
+		private KeyList fromOrigUSK;
 		//private ArrayList<KeyList> fromCallbacks;
 		
 		// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
 		
-		public USKWatchingKeys(USK origUSK) {
+		public USKWatchingKeys(USK origUSK, long lookedUp) {
 			this.pubKeyHash = origUSK.pubKeyHash;
 			this.cryptoAlgorithm = origUSK.cryptoAlgorithm;
 			if(logMINOR) Logger.minor(this, "Creating KeyList from last known good: "+lookedUp);
-			fromLastKnownGood = new KeyList(origUSK.suggestedEdition);
+			fromLastKnownGood = new KeyList(lookedUp);
+			if(origUSK.suggestedEdition > lookedUp)
+				fromOrigUSK = new KeyList(origUSK.suggestedEdition);
 		}
 		
 		public long size() {
-			return WATCH_KEYS;
+			return WATCH_KEYS + (fromOrigUSK == null ? 0 : WATCH_KEYS);
 			// FIXME change when we add more KeyList's.
 		}
 
@@ -1251,9 +1269,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this);
 			KeyList.StoreSubChecker sub = 
 				fromLastKnownGood.checkStore(lastSlot);
+			KeyList.StoreSubChecker subOrig =
+				fromOrigUSK == null ? null : fromOrigUSK.checkStore(origUSK.suggestedEdition);
 			if(sub == null)
 				return null;
-			else return new USKStoreChecker(sub);
+			else if(subOrig != null)
+				return new USKStoreChecker(new KeyList.StoreSubChecker[] { sub, subOrig });
+			else
+				return new USKStoreChecker(sub);
 		}
 
 		public ClientSSKBlock decode(SSKBlock block, long edition) throws SSKVerifyException {
@@ -1265,8 +1288,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public long match(NodeSSK key) {
 			long lastSlot = uskManager.lookupLatestSlot(origUSK);
 			if(lastSlot == -1) lastSlot = 0;
-			return fromLastKnownGood.match(key, lastSlot);
-			// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
+			long ret = fromLastKnownGood.match(key, lastSlot);
+			if(ret != -1 || fromOrigUSK == null) return ret;
+			return fromOrigUSK.match(key, origUSK.suggestedEdition);
+			// FIXME add more WeakReference<KeyList>'s for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
 		}
 		
 	}
