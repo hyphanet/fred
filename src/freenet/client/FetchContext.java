@@ -85,6 +85,8 @@ public class FetchContext implements Cloneable {
 	/** Can this request write to the client-cache? We don't store all requests in the client cache,
 	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
 	public boolean canWriteClientCache;
+	/**Force the content fiter to use this MIME type*/
+	public String overrideMIME;
 
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -94,7 +96,7 @@ public class FetchContext implements Cloneable {
 			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset) {
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -116,6 +118,7 @@ public class FetchContext implements Cloneable {
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
 		this.charset = charset;
+		this.overrideMIME = overrideMIME;
 		hasOwnEventProducer = true;
 	}
 
@@ -156,6 +159,7 @@ public class FetchContext implements Cloneable {
 		this.maxRecursionLevel = ctx.maxRecursionLevel;
 		this.returnZIPManifests = ctx.returnZIPManifests;
 		this.canWriteClientCache = ctx.canWriteClientCache;
+		this.overrideMIME = ctx.overrideMIME;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT

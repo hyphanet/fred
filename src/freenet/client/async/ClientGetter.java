@@ -202,7 +202,8 @@ public class ClientGetter extends BaseClientGetter {
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter...");
 			try {
-				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, expectedMIME, uri.toURI("/"), null, null, ctx.charset);
+				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
+				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, mimeType, uri.toURI("/"), null, null, ctx.charset);
 				result = new FetchResult(result, filter.data);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
