@@ -122,6 +122,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	/** Kill a background poll fetcher when it has lost its last subscriber? */
 	private boolean killOnLoseSubscribers;
 	
+	private final boolean checkStoreOnly;
+	
 	final ClientRequester parent;
 
 	// We keep the data from the last (highest number) request.
@@ -272,11 +274,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 
 	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData) {
-		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData);
+		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, false);
 	}
 	
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData) {
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, boolean checkStoreOnly) {
 		this.parent = requester;
 		this.maxMinFailures = maxProbeEditions;
 		this.origUSK = origUSK;
@@ -291,6 +293,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.ctx = ctx;
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
+		this.checkStoreOnly = checkStoreOnly;
 		// origUSK is a hint. We *do* want to check the edition given.
 		// Whereas latestSlot we've definitely fetched, we don't want to re-check.
 		watchingKeys = new USKWatchingKeys(origUSK, Math.max(0, uskManager.lookupLatestSlot(origUSK)+1));
@@ -831,12 +834,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 	}
 
-	private synchronized void fillKeysWatching(long ed, ClientContext context) {
+	private synchronized boolean fillKeysWatching(long ed, ClientContext context) {
 		// Do not run a new one until this one has finished. 
 		// StoreCheckerGetter itself will automatically call back to fillKeysWatching so there is no chance of losing it.
-		if(runningStoreChecker != null) return;
+		if(runningStoreChecker != null) return true;
 		final USKStoreChecker checker = watchingKeys.getDatastoreChecker(ed);
-		if(checker == null) return;
+		if(checker == null) return false;
 			
 		runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		try {
@@ -853,6 +856,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				// Ignore, hopefully it's already unregistered
 			}
 		}
+		return true;
 	}
 	
 	class StoreCheckerGetter extends SendableGet {
@@ -949,7 +953,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
 			// Do not check beyond WATCH_KEYS after the current slot.
-			fillKeysWatching(lastEd+1, context);
+			if((!fillKeysWatching(lastEd+1, context)) && checkStoreOnly)
+				finishSuccess(context);
 		}
 
 		@Override
