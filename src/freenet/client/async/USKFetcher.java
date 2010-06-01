@@ -1325,7 +1325,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				assert(baseEdition >= 0);
 				for(int i=0;i<keys;i++) {
 					long ed = baseEdition + i;
-					if(logDEBUG) Logger.debug(this, "Slot "+i+" on "+origUSK+" is edition "+ed+" : "+origUSK.getSSK(ed));
 					ehDocnames.add(origUSK.getSSK(ed).ehDocname);
 				}
 			}
