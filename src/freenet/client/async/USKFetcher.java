@@ -378,7 +378,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			for(int i=0;i<cb.length;i++) {
 				try {
-					cb[i].onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
+					if(ed == -1)
+						cb[i].onFailure(null, context);
+					else
+						cb[i].onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data, false, false);
 				} catch (Exception e) {
 					Logger.error(this, "An exception occured while dealing with a callback:"+cb[i].toString()+"\n"+e.getMessage(),e);
 				}
@@ -414,7 +417,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				attemptsToStart.add(add(i, false));
 			}
 			killAttempts = cancelBefore(curLatest, context);
-			fillKeysWatching(curLatest+1, context);
+			fillKeysWatching(curLatest, context);
 		}
 		finishCancelBefore(killAttempts, context);
 		Bucket data = null;
@@ -804,7 +807,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				attemptsToStart.add(add(i, false));
 			}
 			killAttempts = cancelBefore(ed, context);
-			fillKeysWatching(ed+1, context);
+			fillKeysWatching(ed, context);
 		}
 		finishCancelBefore(killAttempts, context);
 		synchronized(this) {
@@ -994,7 +997,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
 			// Do not check beyond WATCH_KEYS after the current slot.
-			if((!fillKeysWatching(lastEd+1, context)) && checkStoreOnly)
+			if((!fillKeysWatching(lastEd, context)) && checkStoreOnly)
 				finishSuccess(context);
 		}
 
@@ -1434,7 +1437,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			// FIXME: Take into account origUSK, subscribers, etc.
 			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this, new Exception("debug"));
 			ArrayList<KeyList.StoreSubChecker> checkers = new ArrayList<KeyList.StoreSubChecker>();
-			KeyList.StoreSubChecker c = fromLastKnownGood.checkStore(lastSlot);
+			KeyList.StoreSubChecker c = fromLastKnownGood.checkStore(lastSlot+1);
 			if(c != null) checkers.add(c);
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Entry<Long,KeyList> entry : fromSubscribers.entrySet()) {

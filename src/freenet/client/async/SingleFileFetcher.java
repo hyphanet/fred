@@ -1238,7 +1238,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Check the datastore first.
 					USKFetcherTag tag = 
 						context.uskManager.getFetcher(usk.copy(usk.suggestedEdition), ctx, false, requester.persistent(),
-								new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), false, container, context, true);
+								new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent(), true), false, container, context, true);
 					if(isEssential)
 						requester.addMustSucceedBlocks(1, container);
 					return tag;
@@ -1262,7 +1262,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Do a thorough, blocking search
 			USKFetcherTag tag = 
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
-						new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), false, container, context, false);
+						new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent(), false), false, container, context, false);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1, container);
 			return tag;
@@ -1283,8 +1283,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final long token;
 		final Bucket returnBucket;
 		final boolean persistent;
+		final boolean datastoreOnly;
 		
-		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent) {
+		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent, boolean datastoreOnly) {
 			this.parent = requester;
 			this.cb = cb;
 			this.usk = usk;
@@ -1297,11 +1298,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.token = l;
 			this.returnBucket = returnBucket;
 			this.persistent = persistent;
+			this.datastoreOnly = datastoreOnly;
 		}
 
 		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
 			if(persistent)
 				container.activate(this, 2);
+			if(l < usk.suggestedEdition && datastoreOnly)
+				l = usk.suggestedEdition;
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {
@@ -1327,6 +1331,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFailure(ObjectContainer container, ClientContext context) {
+			if(datastoreOnly) {
+				onFoundEdition(usk.suggestedEdition, usk, container, context, false, (short) -1, null, false, false);
+				return;
+			}
 			if(persistent)
 				container.activate(this, 2);
 			cb.onFailure(new FetchException(FetchException.DATA_NOT_FOUND, "No USK found"), null, container, context);
