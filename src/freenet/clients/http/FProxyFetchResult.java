@@ -36,6 +36,8 @@ public class FProxyFetchResult {
 	/** Finalized blocks? */
 	public final boolean finalizedBlocks;
 	
+	/** Number of times this has been used */
+	private int fetchedCount;
 	
 	/** Failed */
 	public final FetchException failed;
@@ -94,6 +96,14 @@ public class FProxyFetchResult {
 	
 	public boolean isFinished(){
 		return progress.finished();
+	}
+
+	public void setFetchCount(int fetched) {
+		this.fetchedCount = fetched;
+	}
+	
+	public int getFetchCount() {
+		return fetchedCount;
 	}
 	
 }

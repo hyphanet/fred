@@ -95,6 +95,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private long timeFailed;
 	/** If this is set, then it can be removed instantly, doesn't need to wait for 30sec*/
 	private boolean requestImmediateCancel=false;
+	private int fetched = 0;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
 		this.tracker = tracker;
@@ -131,6 +132,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 					totalBlocks, requiredBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, finalizedBlocks, failed, getETA(), hasWaited);
 		}
 		results.add(res);
+		if(data != null || failed != null) {
+			res.setFetchCount(fetched);
+			fetched++;
+		}
 		return res;
 	}
 
@@ -310,7 +315,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			hasNotifiedFailure = true;
 			return true;
 		}
-		if(failed != null && System.currentTimeMillis() - timeFailed < 5000)
+		if(failed != null && (System.currentTimeMillis() - timeFailed < 1000 || fetched < 2)) // Once for javascript and once for the user when it re-pulls.
 			return true;
 		return false;
 	}
@@ -351,5 +356,9 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** Allows the fetch to be removed immediately*/
 	public void requestImmediateCancel(){
 		requestImmediateCancel=true;
+	}
+
+	public long lastTouched() {
+		return lastTouched;
 	}
 }

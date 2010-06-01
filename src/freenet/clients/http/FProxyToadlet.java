@@ -39,6 +39,7 @@ import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.keys.USK;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -593,6 +594,21 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			while(true) {
 			fr = fetch.getResult();
 			if(fr.hasData()) {
+				
+				if(fr.getFetchCount() > 1 && !fr.hasWaited() && fr.getFetchCount() > 1 && key.isUSK() && context.uskManager.lookupKnownGood(USK.create(key)) > key.getSuggestedEdition()) {
+					Logger.normal(this, "Loading later edition...");
+					fetchTracker.remove(fetch.progress);
+					fr = null;
+					fetch = null;
+					try {
+						fetch = fetchTracker.makeFetcher(key, maxSize);
+					} catch (FetchException e) {
+						fe = fr.failed;
+					}
+					if(fetch == null) break;
+					continue;
+				}
+				
 				if(logMINOR) Logger.minor(this, "Found data");
 				data = fr.data;
 				mimeType = fr.mimeType;
