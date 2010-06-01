@@ -1084,7 +1084,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				fromOrigUSK = new KeyList(origUSK.suggestedEdition);
 		}
 		
-		public long size() {
+		public synchronized long size() {
 			return WATCH_KEYS + (fromOrigUSK == null ? 0 : WATCH_KEYS);
 			// FIXME change when we add more KeyList's.
 		}
@@ -1267,7 +1267,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 		}
 		
-		public USKStoreChecker getDatastoreChecker(long lastSlot) {
+		public synchronized USKStoreChecker getDatastoreChecker(long lastSlot) {
 			// Check WATCH_KEYS from last known good slot.
 			// FIXME: Take into account origUSK, subscribers, etc.
 			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this, new Exception("debug"));
@@ -1289,7 +1289,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			return ClientSSKBlock.construct(block, csk);
 		}
 		
-		public long match(NodeSSK key) {
+		public synchronized long match(NodeSSK key) {
 			long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 			long ret = fromLastKnownGood.match(key, lastSlot);
 			if(ret != -1 || fromOrigUSK == null) return ret;
