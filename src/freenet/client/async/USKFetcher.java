@@ -132,11 +132,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	/** Structure tracking which keys we want. */
 	private final USKWatchingKeys watchingKeys;
 	
-	/** Edition number of the first key in keysWatching */
-	private long firstKeyWatching = -1;
-	/** A list of keys which we are interested in. This a sequence of SSKs starting 
-	 * at the last known slot. */
-	private final ArrayList<ClientSSK> keysWatching;
 	private final ArrayList<USKAttempt> attemptsToStart;
 	
 	private static final int WATCH_KEYS = 50;
@@ -296,7 +291,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.ctx = ctx;
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
-		keysWatching = new ArrayList<ClientSSK>();
 		// origUSK is a hint. We *do* want to check the edition given.
 		// Whereas latestSlot we've definitely fetched, we don't want to re-check.
 		watchingKeys = new USKWatchingKeys(origUSK, Math.max(0, uskManager.lookupLatestSlot(origUSK)+1));
@@ -939,7 +933,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 			@Override
 			public long countAllKeys(ObjectContainer container, ClientContext context) {
-				return keysWatching.size();
+				return watchingKeys.size();
 			}
 
 			@Override
