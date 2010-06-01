@@ -1234,7 +1234,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, container, context);
 					return null;
-				} else if(edition == -1) {
+				} else if(edition == -1 && 
+						context.uskManager.lookupLatestSlot(usk) == -1) { // We do not want to be going round and round here! 
 					// Check the datastore first.
 					USKFetcherTag tag = 
 						context.uskManager.getFetcher(usk.copy(usk.suggestedEdition), ctx, false, requester.persistent(),
