@@ -1329,15 +1329,19 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			// FIXME: Take into account origUSK, subscribers, etc.
 			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this, new Exception("debug"));
 			ArrayList<KeyList.StoreSubChecker> checkers = new ArrayList<KeyList.StoreSubChecker>();
-			checkers.add(fromLastKnownGood.checkStore(lastSlot));
+			KeyList.StoreSubChecker c = fromLastKnownGood.checkStore(lastSlot);
+			if(c != null) checkers.add(c);
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Entry<Long,KeyList> entry : fromSubscribers.entrySet()) {
 				long l = entry.getKey();
 				if(l <= lastSlot)
 					fromSubscribers.remove(l);
-				checkers.add(entry.getValue().checkStore(l));
+				c = entry.getValue().checkStore(l);
+				if(c != null) checkers.add(c);
 			}
-			return new USKStoreChecker(checkers);
+			if(checkers.size() > 0)
+				return new USKStoreChecker(checkers);
+			else return null;
 		}
 
 		public ClientSSKBlock decode(SSKBlock block, long edition) throws SSKVerifyException {
