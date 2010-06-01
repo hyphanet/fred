@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -167,11 +168,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		/** DNF? */
 		boolean dnf;
 		boolean cancelled;
-		public USKAttempt(long i) {
+		public USKAttempt(long i, boolean forever) {
 			this.number = i;
 			this.succeeded = false;
 			this.dnf = false;
-			this.checker = new USKChecker(this, origUSK.getSSK(i), ctx.maxUSKRetries, ctx, parent);
+			this.checker = new USKChecker(this, origUSK.getSSK(i), forever ? -1 : ctx.maxUSKRetries, ctx, parent);
 		}
 		public void onDNF(ClientContext context) {
 			checker = null;
@@ -240,6 +241,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 	
 	private final Vector<USKAttempt> runningAttempts;
+	private final TreeMap<Long, USKAttempt> pollingAttempts = new TreeMap<Long, USKAttempt>();
 	
 	private long lastFetchedEdition;
 	private long lastAddedEdition;
@@ -405,7 +407,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(addTo >= addFrom) {
 				for(long i=addFrom;i<=addTo;i++) {
 					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
-					attemptsToStart.add(add(i));
+					if(backgroundPoll && i < (addFrom + origMinFailures))
+						attemptsToStart.add(add(i, true));
+					attemptsToStart.add(add(i, false));
 				}
 			}
 			killAttempts = cancelBefore(curLatest, context);
@@ -486,6 +490,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 				count++;
 			}
+			for(Iterator<Map.Entry<Long, USKAttempt>> i = pollingAttempts.entrySet().iterator();i.hasNext();) {
+				Map.Entry<Long, USKAttempt> entry = i.next();
+				if(entry.getKey() < curLatest) {
+					if(v == null) v = new Vector<USKAttempt>(runningAttempts.size()-count);
+					v.add(entry.getValue());
+					i.remove();
+				} else break; // TreeMap is ordered.
+			}
 		}
 		return v;
 	}
@@ -503,18 +515,28 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	 * Add a USKAttempt for another edition number.
 	 * Caller is responsible for calling .schedule().
 	 */
-	private synchronized USKAttempt add(long i) {
+	private synchronized USKAttempt add(long i, boolean forever) {
 		if(cancelled) return null;
 		if(logMINOR) Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
-		if(!runningAttempts.isEmpty()) {
-			USKAttempt last = runningAttempts.lastElement();
-			if(last.number >= i) {
-				if(logMINOR) Logger.minor(this, "Returning because last.number="+i+" for "+origUSK.getURI());
-				return null;
+		if(forever) {
+			if(pollingAttempts.containsKey(i)) {
+				if(logMINOR) Logger.minor(this, "Already polling edition: "+i+" for "+this);
+			}
+		} else {
+			if(!runningAttempts.isEmpty()) {
+				USKAttempt last = runningAttempts.lastElement();
+				if(last.number >= i) {
+					if(logMINOR) Logger.minor(this, "Returning because last.number="+i+" for "+origUSK.getURI());
+					return null;
+				}
 			}
 		}
-		USKAttempt a = new USKAttempt(i);
-		runningAttempts.add(a);
+		USKAttempt a = new USKAttempt(i, forever);
+		if(forever)
+			pollingAttempts.put(i, a);
+		else {
+			runningAttempts.add(a);
+		}
 		lastAddedEdition = i;
 		if(logMINOR) Logger.minor(this, "Added "+a+" for "+origUSK);
 		return a;
@@ -560,8 +582,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
 			if(!cancelled) {
 				long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
-				for(long i=startPoint;i<startPoint+minFailures;i++)
-					attemptsToStart.add(add(i));
+				for(long i=startPoint;i<startPoint+minFailures;i++) {
+					if(backgroundPoll && i < (startPoint + origMinFailures))
+						attemptsToStart.add(add(i, true));
+					attemptsToStart.add(add(i, false));
+				}
 				started = true;
 				fillKeysWatching(valueAtSchedule, context);
 				return;
@@ -578,17 +603,21 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
 		assert(container == null);
 		USKAttempt[] attempts;
+		USKAttempt[] polling;
 		uskManager.onFinished(this);
 		SendableGet storeChecker;
 		synchronized(this) {
 			cancelled = true;
 			attempts = runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
+			polling = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 			attemptsToStart.clear();
 			storeChecker = runningStoreChecker;
 			runningStoreChecker = null;
 		}
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel(container, context);
+		for(int i=0;i<polling.length;i++)
+			polling[i].cancel(container, context);
 		if(storeChecker != null)
 			// Remove from the store checker queue.
 			storeChecker.unregister(container, context, storeChecker.getPriorityClass(container));
@@ -759,7 +788,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(addTo >= addFrom) {
 				for(long i=addFrom;i<=addTo;i++) {
 					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
-					attemptsToStart.add(add(i));
+					if(backgroundPoll && i < (ed + origMinFailures))
+						attemptsToStart.add(add(i, true));
+					attemptsToStart.add(add(i, false));
 				}
 			}
 			killAttempts = cancelBefore(ed, context);
