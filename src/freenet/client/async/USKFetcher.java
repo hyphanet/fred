@@ -1270,7 +1270,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		public USKStoreChecker getDatastoreChecker(long lastSlot) {
 			// Check WATCH_KEYS from last known good slot.
 			// FIXME: Take into account origUSK, subscribers, etc.
-			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this);
+			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this, new Exception("debug"));
 			KeyList.StoreSubChecker sub = 
 				fromLastKnownGood.checkStore(lastSlot);
 			KeyList.StoreSubChecker subOrig =
