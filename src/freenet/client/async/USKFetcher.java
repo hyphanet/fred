@@ -315,13 +315,27 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(started) {
 					finished = true;
 				}
-			} else if(logMINOR) Logger.minor(this, "Remaining: "+runningAttempts.size());
+			} else if(logMINOR) Logger.minor(this, "Remaining: "+runningAttempts());
 		}
 		if(finished) {
 			finishSuccess(context);
 		}
 	}
 	
+	private synchronized String runningAttempts() {
+		StringBuffer sb = new StringBuffer();
+		boolean first = true;
+		for(USKAttempt a : runningAttempts) {
+			if(!first) sb.append(", ");
+			sb.append(a.number);
+			if(a.cancelled)
+				sb.append("(cancelled)");
+			if(a.succeeded)
+				sb.append("(succeeded)");
+		}
+		return sb.toString();
+	}
+
 	private void finishSuccess(ClientContext context) {
 		if(backgroundPoll) {
 			long valAtEnd = uskManager.lookupLatestSlot(origUSK);
@@ -398,6 +412,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(logMINOR) Logger.minor(this, "Found edition "+curLatest+" for "+origUSK+" official is "+lastEd);
 		boolean decode = false;
 		Vector<USKAttempt> killAttempts;
+		boolean registerNow;
 		// FIXME call uskManager.updateSlot BEFORE getEditionsToFetch, avoids a possible conflict, but creates another (with onFoundEdition) - we'd probably have to handle this there???
 		synchronized(this) {
 			if(att != null) runningAttempts.remove(att);
@@ -417,7 +432,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				attemptsToStart.add(add(i, false));
 			}
 			killAttempts = cancelBefore(curLatest, context);
-			fillKeysWatching(curLatest, context);
+			registerNow = !fillKeysWatching(curLatest, context);
 		}
 		finishCancelBefore(killAttempts, context);
 		Bucket data = null;
@@ -451,6 +466,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		if(!dontUpdate)
 			uskManager.updateSlot(origUSK, curLatest, context);
+		if(registerNow)
+			registerAttempts(context);
 	}
 
 	void onCancelled(USKAttempt att, ClientContext context) {
@@ -583,8 +600,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
 		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
+		boolean registerNow = false;
+		boolean bye = false;
 		synchronized(this) {
 			valueAtSchedule = Math.max(lookedUp+1, valueAtSchedule);
+			bye = cancelled;
 			if(!cancelled) {
 				
 				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp);
@@ -600,10 +620,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 				
 				started = true;
-				fillKeysWatching(lookedUp, context);
-				return;
+				registerNow = !fillKeysWatching(lookedUp, context);
 			}
 		}
+		if(registerNow)
+			registerAttempts(context);
+		if(!bye) return;
 		// We have been cancelled.
 		uskManager.unsubscribe(origUSK, this);
 		context.getSskFetchScheduler().schedTransient.removePendingKeys((KeyListener)this);
@@ -789,6 +811,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		boolean decode = false;
 		Vector<USKAttempt> killAttempts;
+		boolean registerNow = false;
 		synchronized(this) {
 			if(completed || cancelled) return;
 			decode = lastEd == ed && data != null;
@@ -807,9 +830,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				attemptsToStart.add(add(i, false));
 			}
 			killAttempts = cancelBefore(ed, context);
-			fillKeysWatching(ed, context);
+			registerNow = !fillKeysWatching(ed, context);
 		}
 		finishCancelBefore(killAttempts, context);
+		if(registerNow)
+			registerAttempts(context);
 		synchronized(this) {
 			if (decode) {
 				lastCompressionCodec = codec;
@@ -823,6 +848,32 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					} catch (IOException e) {
 						Logger.error(this, "Caught "+e, e);
 					}
+				}
+			}
+		}
+	}
+
+	private void registerAttempts(ClientContext context) {
+		USKAttempt[] attempts;
+		synchronized(USKFetcher.this) {
+			if(cancelled) return;
+			attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
+			attemptsToStart.clear();
+		}
+		
+		if(attempts.length > 0)
+			parent.toNetwork(null, context);
+		for(int i=0;i<attempts.length;i++) {
+			long lastEd = uskManager.lookupLatestSlot(origUSK);
+			// FIXME not sure this condition works, test it!
+			if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
+				lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+			if(attempts[i] == null) continue;
+			if(attempts[i].number > lastEd)
+				attempts[i].schedule(null, context);
+			else {
+				synchronized(USKFetcher.this) {
+					runningAttempts.remove(attempts[i]);
 				}
 			}
 		}
