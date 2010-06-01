@@ -1187,7 +1187,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 							checkedDatastoreFrom = checkedFrom;
 							checkedDatastoreTo = checkedTo;
 						}
-						if(logMINOR) Logger.minor(this, "Checked from "+checkedFrom+" to "+checkedTo+" (now overall is "+checkedDatastoreFrom+" to "+checkedDatastoreTo+")");
+						if(logMINOR) Logger.minor(this, "Checked from "+checkedFrom+" to "+checkedTo+" (now overall is "+checkedDatastoreFrom+" to "+checkedDatastoreTo+") for "+USKFetcher.this+" for "+origUSK);
 					}
 					
 				}
@@ -1297,7 +1297,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			private long innerMatch(NodeSSK key, RemoveRangeArrayList<byte[]> ehDocnames, int offset, int size, long firstSlot) {
 				byte[] data = key.getKeyBytes();
 				for(int i=offset;i<(offset+size);i++) {
-					if(Arrays.equals(data, ehDocnames.get(i))) return firstSlot+i;
+					if(Arrays.equals(data, ehDocnames.get(i))) {
+						if(logMINOR) Logger.minor(this, "Found edition "+(firstSlot+i));
+						return firstSlot+i;
+					}
 				}
 				return -1;
 			}
