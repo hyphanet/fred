@@ -1273,6 +1273,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Getting datastore checker from "+lastSlot+" for "+origUSK+" on "+USKFetcher.this, new Exception("debug"));
 			KeyList.StoreSubChecker sub = 
 				fromLastKnownGood.checkStore(lastSlot);
+			// If we have moved past the origUSK, then clear the KeyList for it.
+			if(fromOrigUSK.firstSlot < lastSlot)
+				fromOrigUSK = null;
 			KeyList.StoreSubChecker subOrig =
 				fromOrigUSK == null ? null : fromOrigUSK.checkStore(origUSK.suggestedEdition);
 			if(sub == null)
@@ -1293,6 +1296,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 			long ret = fromLastKnownGood.match(key, lastSlot);
 			if(ret != -1 || fromOrigUSK == null) return ret;
+			// If we have moved past the origUSK, then clear the KeyList for it.
+			if(fromOrigUSK.firstSlot < lastSlot)
+				fromOrigUSK = null;
 			return fromOrigUSK.match(key, origUSK.suggestedEdition);
 			// FIXME add more WeakReference<KeyList>'s for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
 		}
