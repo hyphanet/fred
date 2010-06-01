@@ -781,7 +781,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 
-	private SendableGet runningStoreChecker = null;
+	private StoreCheckerGetter runningStoreChecker = null;
 	
 	class USKStoreChecker {
 		
@@ -834,156 +834,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private synchronized void fillKeysWatching(long ed, ClientContext context) {
 		final USKStoreChecker checker = watchingKeys.getDatastoreChecker(ed);
 		if(checker == null) return;
-		final Key[] checkStore = checker.getKeys();
 			
-		SendableGet storeChecker = new SendableGet(parent) {
-			
-			boolean done = false;
-
-			@Override
-			public FetchContext getContext() {
-				return ctx;
-			}
-
-			@Override
-			public long getCooldownWakeup(Object token, ObjectContainer container) {
-				return -1;
-			}
-
-			@Override
-			public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
-				return -1;
-			}
-
-			@Override
-			public ClientKey getKey(Object token, ObjectContainer container) {
-				return null;
-			}
-
-			@Override
-			public boolean ignoreStore() {
-				return false;
-			}
-
-			@Override
-			public Key[] listKeys(ObjectContainer container) {
-				return checkStore;
-			}
-
-			@Override
-			public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
-				// Ignore
-			}
-
-			@Override
-			public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
-				// Ignore
-			}
-
-			@Override
-			public void resetCooldownTimes(ObjectContainer container) {
-				// Ignore
-			}
-
-			@Override
-			public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
-				return true;
-			}
-
-			@Override
-			public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
-				unregister(container, context, getPriorityClass(container));
-				USKAttempt[] attempts;
-				synchronized(USKFetcher.this) {
-					if(cancelled) return;
-					runningStoreChecker = null;
-					// FIXME should we only start the USKAttempt's if the datastore check hasn't made progress?
-					attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
-					attemptsToStart.clear();
-					done = true;
-				}
-				checker.checked();
-				
-				if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
-				if(attempts.length > 0)
-					parent.toNetwork(container, context);
-				for(int i=0;i<attempts.length;i++) {
-					long lastEd = uskManager.lookupLatestSlot(origUSK);
-					// FIXME not sure this condition works, test it!
-					if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
-						lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
-					if(attempts[i] == null) continue;
-					if(attempts[i].number > lastEd)
-						attempts[i].schedule(container, context);
-					else {
-						synchronized(USKFetcher.this) {
-							runningAttempts.remove(attempts[i]);
-						}
-					}
-				}
-				long lastEd = uskManager.lookupLatestSlot(origUSK);
-				// Do not check beyond WATCH_KEYS after the current slot.
-				fillKeysWatching(lastEd+1, context);
-			}
-
-			@Override
-			public SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
-				return null;
-			}
-
-			@Override
-			public long countAllKeys(ObjectContainer container, ClientContext context) {
-				return watchingKeys.size();
-			}
-
-			@Override
-			public long countSendableKeys(ObjectContainer container, ClientContext context) {
-				return 0;
-			}
-
-			@Override
-			public RequestClient getClient(ObjectContainer container) {
-				return USKFetcher.this.uskManager;
-			}
-
-			@Override
-			public ClientRequester getClientRequest() {
-				return parent;
-			}
-
-			@Override
-			public short getPriorityClass(ObjectContainer container) {
-				return progressPollPriority; // FIXME
-			}
-
-			@Override
-			public int getRetryCount() {
-				return 0;
-			}
-
-			@Override
-			public boolean isCancelled(ObjectContainer container) {
-				return done;
-			}
-
-			@Override
-			public boolean isSSK() {
-				return true;
-			}
-
-			@Override
-			public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-				return null;
-			}
-
-			public boolean isEmpty(ObjectContainer container) {
-				return done;
-			}
-			
-		};
-		runningStoreChecker = storeChecker;
+		runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		try {
-			context.getSskFetchScheduler().register(null, new SendableGet[] { storeChecker } , false, null, null, false);
+			context.getSskFetchScheduler().register(null, new SendableGet[] { runningStoreChecker } , false, null, null, false);
 		} catch (KeyListenerConstructionException e1) {
 			// Impossible
 			runningStoreChecker = null;
@@ -991,12 +845,166 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			runningStoreChecker = null;
 			Logger.error(this, "Unable to start: "+t, t);
 			try {
-				storeChecker.unregister(null, context, progressPollPriority);
+				runningStoreChecker.unregister(null, context, progressPollPriority);
 			} catch (Throwable ignored) {
 				// Ignore, hopefully it's already unregistered
 			}
 		}
 	}
+	
+	class StoreCheckerGetter extends SendableGet {
+		
+		public StoreCheckerGetter(ClientRequester parent, USKStoreChecker c) {
+			super(parent);
+			checker = c;
+		}
+
+		public final USKStoreChecker checker;
+		
+		boolean done = false;
+
+		@Override
+		public FetchContext getContext() {
+			return ctx;
+		}
+
+		@Override
+		public long getCooldownWakeup(Object token, ObjectContainer container) {
+			return -1;
+		}
+
+		@Override
+		public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+			return -1;
+		}
+
+		@Override
+		public ClientKey getKey(Object token, ObjectContainer container) {
+			return null;
+		}
+
+		@Override
+		public boolean ignoreStore() {
+			return false;
+		}
+
+		@Override
+		public Key[] listKeys(ObjectContainer container) {
+			return checker.getKeys();
+		}
+
+		@Override
+		public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		@Override
+		public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
+			// Ignore
+		}
+
+		@Override
+		public void resetCooldownTimes(ObjectContainer container) {
+			// Ignore
+		}
+
+		@Override
+		public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
+			return true;
+		}
+
+		@Override
+		public void preRegister(ObjectContainer container, ClientContext context, boolean toNetwork) {
+			unregister(container, context, getPriorityClass(container));
+			USKAttempt[] attempts;
+			synchronized(USKFetcher.this) {
+				if(cancelled) return;
+				runningStoreChecker = null;
+				// FIXME should we only start the USKAttempt's if the datastore check hasn't made progress?
+				attempts = attemptsToStart.toArray(new USKAttempt[attemptsToStart.size()]);
+				attemptsToStart.clear();
+				done = true;
+			}
+			checker.checked();
+			
+			if(logMINOR) Logger.minor(this, "Checked datastore, finishing registration for "+attempts.length+" checkers for "+USKFetcher.this+" for "+origUSK);
+			if(attempts.length > 0)
+				parent.toNetwork(container, context);
+			for(int i=0;i<attempts.length;i++) {
+				long lastEd = uskManager.lookupLatestSlot(origUSK);
+				// FIXME not sure this condition works, test it!
+				if(keepLastData && lastRequestData == null && lastEd == origUSK.suggestedEdition)
+					lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
+				if(attempts[i] == null) continue;
+				if(attempts[i].number > lastEd)
+					attempts[i].schedule(container, context);
+				else {
+					synchronized(USKFetcher.this) {
+						runningAttempts.remove(attempts[i]);
+					}
+				}
+			}
+			long lastEd = uskManager.lookupLatestSlot(origUSK);
+			// Do not check beyond WATCH_KEYS after the current slot.
+			fillKeysWatching(lastEd+1, context);
+		}
+
+		@Override
+		public SendableRequestItem chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+			return null;
+		}
+
+		@Override
+		public long countAllKeys(ObjectContainer container, ClientContext context) {
+			return watchingKeys.size();
+		}
+
+		@Override
+		public long countSendableKeys(ObjectContainer container, ClientContext context) {
+			return 0;
+		}
+
+		@Override
+		public RequestClient getClient(ObjectContainer container) {
+			return USKFetcher.this.uskManager;
+		}
+
+		@Override
+		public ClientRequester getClientRequest() {
+			return parent;
+		}
+
+		@Override
+		public short getPriorityClass(ObjectContainer container) {
+			return progressPollPriority; // FIXME
+		}
+
+		@Override
+		public int getRetryCount() {
+			return 0;
+		}
+
+		@Override
+		public boolean isCancelled(ObjectContainer container) {
+			return done;
+		}
+
+		@Override
+		public boolean isSSK() {
+			return true;
+		}
+
+		@Override
+		public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+			return null;
+		}
+
+		public boolean isEmpty(ObjectContainer container) {
+			return done;
+		}
+		
+	};
+
 
 	public synchronized boolean isCancelled(ObjectContainer container) {
 		return completed || cancelled;
