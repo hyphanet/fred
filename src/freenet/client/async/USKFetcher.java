@@ -1099,6 +1099,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Creating KeyList from last known good: "+lookedUp);
 			fromLastKnownGood = new KeyList(lookedUp);
 			fromSubscribers = new TreeMap<Long, KeyList>();
+			if(origUSK.suggestedEdition > lookedUp)
+				fromSubscribers.put(origUSK.suggestedEdition, new KeyList(origUSK.suggestedEdition));
 		}
 		
 		public synchronized void updateSubscriberHints(Long[] hints, long lookedUp) {
@@ -1111,6 +1113,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(hint <= lookedUp) continue;
 				surviving.add(hint);
 			}
+			if(origUSK.suggestedEdition > lookedUp && !surviving.contains(origUSK.suggestedEdition))
+				surviving.add(origUSK.suggestedEdition);
 			for(Long l : fromSubscribers.keySet()) {
 				if(surviving.contains(l)) continue;
 				fromSubscribers.remove(l);
