@@ -200,10 +200,11 @@ public class ClientGetter extends BaseClientGetter {
 		
 		//Filter the data, if we are supposed to
 		if(ctx.filterData){
-			if(logMINOR) Logger.minor(this, "Running content filter...");
+			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
-				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, mimeType, uri.toURI("/"), null, null, ctx.charset);
+				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				result = new FetchResult(result, filter.data);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);

@@ -10,6 +10,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.BlockSet;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
+import freenet.client.filter.FoundURICallback;
+import freenet.client.filter.TagReplacerCallback;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
@@ -85,6 +87,10 @@ public class FetchContext implements Cloneable {
 	/** Can this request write to the client-cache? We don't store all requests in the client cache,
 	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
 	public boolean canWriteClientCache;
+	/**Prefetch hook for HTML documents. Only really necessary for FProxy's web-pushing*/
+	public FoundURICallback prefetchHook;
+	/**Callback needed for web-pushing*/
+	public TagReplacerCallback tagReplacer;
 	/**Force the content fiter to use this MIME type*/
 	public String overrideMIME;
 
@@ -159,6 +165,8 @@ public class FetchContext implements Cloneable {
 		this.maxRecursionLevel = ctx.maxRecursionLevel;
 		this.returnZIPManifests = ctx.returnZIPManifests;
 		this.canWriteClientCache = ctx.canWriteClientCache;
+		this.prefetchHook = ctx.prefetchHook;
+		this.tagReplacer = ctx.tagReplacer;
 		this.overrideMIME = ctx.overrideMIME;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
