@@ -832,6 +832,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	private synchronized void fillKeysWatching(long ed, ClientContext context) {
+		// Do not run a new one until this one has finished. 
+		// StoreCheckerGetter itself will automatically call back to fillKeysWatching so there is no chance of losing it.
+		if(runningStoreChecker != null) return;
 		final USKStoreChecker checker = watchingKeys.getDatastoreChecker(ed);
 		if(checker == null) return;
 			
