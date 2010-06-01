@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
 import java.util.Map.Entry;
 
@@ -1089,6 +1090,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// List of slots since the USKManager's current last known good edition.
 		private final KeyList fromLastKnownGood;
 		private TreeMap<Long, KeyList> fromSubscribers;
+		private TreeSet<Long> persistentHints = new TreeSet<Long>();
 		//private ArrayList<KeyList> fromCallbacks;
 		
 		// FIXME add more WeakReference<KeyList>'s: one for the origUSK, one for each subscriber who gave an edition number. All of which should disappear on the subscriber going or on the last known superceding.
@@ -1113,6 +1115,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				if(hint <= lookedUp) continue;
 				surviving.add(hint);
 			}
+			for(Iterator<Long> i = persistentHints.iterator();i.hasNext();) {
+				Long hint = i.next();
+				if(hint <= lookedUp) {
+					i.remove();
+				}
+				if(surviving.contains(hint)) continue;
+				surviving.add(hint);
+			}
 			if(origUSK.suggestedEdition > lookedUp && !surviving.contains(origUSK.suggestedEdition))
 				surviving.add(origUSK.suggestedEdition);
 			for(Long l : fromSubscribers.keySet()) {
@@ -1124,7 +1134,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				fromSubscribers.put(l, new KeyList(l));
 			}
 		}
-
+		
+		public synchronized void addHintEdition(long suggestedEdition, long lookedUp) {
+			if(suggestedEdition <= lookedUp) return;
+			if(!persistentHints.add(suggestedEdition)) return;
+			if(fromSubscribers.containsKey(suggestedEdition)) return;
+			fromSubscribers.put(suggestedEdition, new KeyList(suggestedEdition));
+		}
+		
 		public synchronized long size() {
 			return WATCH_KEYS + fromSubscribers.size() * WATCH_KEYS; // FIXME take overlap into account
 		}
@@ -1343,7 +1360,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			return -1;
 		}
-		
+
+	}
+
+	public void addHintEdition(long suggestedEdition) {
+		watchingKeys.addHintEdition(suggestedEdition, uskManager.lookupLatestSlot(origUSK));
 	}
 	
 

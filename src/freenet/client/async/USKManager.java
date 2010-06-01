@@ -203,6 +203,8 @@ public class USKManager implements RequestClient {
 				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, false, false);
 				sched = f;
 				temporaryBackgroundFetchersLRU.push(clear, f);
+			} else {
+				f.addHintEdition(usk.suggestedEdition);
 			}
 			if(prefetchContent) {
 				final long min = lookupKnownGood(usk);
