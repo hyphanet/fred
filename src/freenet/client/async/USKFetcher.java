@@ -293,7 +293,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
 		keysWatching = new ArrayList<ClientSSK>();
-		watchingKeys = new USKWatchingKeys(origUSK, Math.max(0, uskManager.lookupLatestSlot(origUSK)));
+		watchingKeys = new USKWatchingKeys(origUSK, Math.max(0, uskManager.lookupLatestSlot(origUSK)+1));
 		attemptsToStart = new ArrayList<USKAttempt>();
 	}
 	
@@ -1290,8 +1290,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 		
 		public long match(NodeSSK key) {
-			long lastSlot = uskManager.lookupLatestSlot(origUSK);
-			if(lastSlot == -1) lastSlot = 0;
+			long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
 			long ret = fromLastKnownGood.match(key, lastSlot);
 			if(ret != -1 || fromOrigUSK == null) return ret;
 			return fromOrigUSK.match(key, origUSK.suggestedEdition);
