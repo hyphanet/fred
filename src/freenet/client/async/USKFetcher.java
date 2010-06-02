@@ -1385,12 +1385,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 
 			synchronized RemoveRangeArrayList<byte[]> updateCache(long curBaseEdition) {
-				if(logDEBUG) Logger.minor(this, "update cache from "+curBaseEdition+" current first slot "+firstSlot);
+				if(logMINOR) Logger.minor(this, "update cache from "+curBaseEdition+" current first slot "+firstSlot);
 				RemoveRangeArrayList<byte[]> ehDocnames = null;
 				if(cache == null || (ehDocnames = cache.get()) == null) {
 					ehDocnames = new RemoveRangeArrayList<byte[]>(WATCH_KEYS);
 					cache = new WeakReference<RemoveRangeArrayList<byte[]>>(ehDocnames);
 					firstSlot = curBaseEdition;
+					if(logMINOR) Logger.minor(this, "Regenerating because lost cached keys");
 					generate(firstSlot, WATCH_KEYS, ehDocnames);
 					return ehDocnames;
 				}
