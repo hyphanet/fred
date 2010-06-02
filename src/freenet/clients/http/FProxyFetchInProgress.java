@@ -355,7 +355,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public void requestImmediateCancel(){
 		requestImmediateCancel=true;
 	}
-	public boolean fetchContextEquals(FetchContext context) {
-		return (this.fctx.equals(context));
+	public boolean fetchContextEquivalent(FetchContext context) {
+		return this.fctx.filterData == context.filterData;
 	}
 }

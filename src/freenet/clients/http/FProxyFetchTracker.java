@@ -49,7 +49,7 @@ public class FProxyFetchTracker implements Runnable {
 		 * fetchers inside that lock, hence avoid a race condition. FetchInProgress 
 		 * lock is always taken last. */
 		synchronized(fetchers) {
-			FProxyFetchWaiter waiter=makeWaiterForFetchInProgress(key, maxSize, fctx);
+			FProxyFetchWaiter waiter=makeWaiterForFetchInProgress(key, maxSize, fctx != null ? fctx : this.fctx);
 			if(waiter!=null){
 				return waiter;
 			}
@@ -64,7 +64,7 @@ public class FProxyFetchTracker implements Runnable {
 			}
 			throw e;
 		}
-		if(logMINOR) Logger.minor(this, "Created new fetcher: "+progress);
+		if(logMINOR) Logger.minor(this, "Created new fetcher: "+progress, new Exception());
 		return progress.getWaiter();
 		// FIXME promote a fetcher when it is re-used
 		// FIXME get rid of fetchers over some age
@@ -92,7 +92,7 @@ public class FProxyFetchTracker implements Runnable {
 					progress = (FProxyFetchInProgress) check[i];
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
 							|| progress.hasData()){
-						if(fctx != null && !progress.fetchContextEquals(fctx)) continue;
+						if(fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
 						return progress;
 					}
 				}
