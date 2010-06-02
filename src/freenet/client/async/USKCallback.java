@@ -14,7 +14,8 @@ import freenet.keys.USK;
 public interface USKCallback {
 
 	/**
-	 * Found the latest edition.
+	 * Found the latest edition. Called when the USKFetcher has finished, it won't
+	 * search for any later editions. 
 	 * 
 	 * @param l
 	 *            The edition number.
