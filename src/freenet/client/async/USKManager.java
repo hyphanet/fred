@@ -204,7 +204,7 @@ public class USKManager implements RequestClient {
 				f.addHintEdition(usk.suggestedEdition);
 			}
 			if(prefetchContent) {
-				temporaryBackgroundFetchersPrefetch.put(clear, System.currentTimeMillis());
+				temporaryBackgroundFetchersPrefetch.put(clear, (long)-1);
 				schedulePrefetchChecker();
 			}
 			temporaryBackgroundFetchersLRU.push(clear, f);
@@ -242,9 +242,11 @@ public class USKManager implements RequestClient {
 		public void run() {
 			ArrayList<USK> toFetch = null;
 			long now = System.currentTimeMillis();
+			boolean empty = true;
 			synchronized(this) {
 				for(Map.Entry<USK, Long> entry : temporaryBackgroundFetchersPrefetch.entrySet()) {
-					if(entry.getValue() - now >= PREFETCH_DELAY) {
+					empty = false;
+					if(entry.getValue() > 0 && entry.getValue() - now >= PREFETCH_DELAY) {
 						if(toFetch == null)
 							toFetch = new ArrayList<USK>();
 						USK clear = entry.getKey();
@@ -284,6 +286,8 @@ public class USKManager implements RequestClient {
 					// Ignore
 				}
 			}
+			if(!empty)
+				schedulePrefetchChecker();
 		}
 		
 	};
