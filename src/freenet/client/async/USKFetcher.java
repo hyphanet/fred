@@ -1070,10 +1070,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
 			// Do not check beyond WATCH_KEYS after the current slot.
 			if(!fillKeysWatching(lastEd, context)) {
-				if(checkStoreOnly && logMINOR)
-					Logger.minor(this, "Just checking store, terminating "+USKFetcher.this+" ...");
-				if(checkStoreOnly)
+				if(checkStoreOnly) {
+					if(logMINOR)
+						Logger.minor(this, "Just checking store, terminating "+USKFetcher.this+" ...");
 					finishSuccess(context);
+				}
 				// No need to call registerAttempts as we have already registered them.
 			}
 			
