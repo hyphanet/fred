@@ -1056,8 +1056,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(!fillKeysWatching(lastEd, context)) {
 				if(!checkStoreOnly)
 					finishSuccess(context);
-				else
-					registerAttempts(context);
+				// No need to call registerAttempts as we have already registered them.
 			}
 			
 		}
