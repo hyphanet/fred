@@ -419,7 +419,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(completed || cancelled) return;
 			decode = curLatest >= lastEd && !(dontUpdate && block == null);
 			curLatest = Math.max(lastEd, curLatest);
-			if(logMINOR) Logger.minor(this, "Latest: "+curLatest);
+			if(logMINOR) Logger.minor(this, "Latest: "+curLatest+" in onSuccess");
 			USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest);
 			Lookup[] toPoll = list.toPoll;
 			Lookup[] toFetch = list.toFetch;
@@ -817,13 +817,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(completed || cancelled) return;
 			decode = lastEd == ed && data != null;
 			ed = Math.max(lastEd, ed);
-			if(logMINOR) Logger.minor(this, "Latest: "+ed);
+			if(logMINOR) Logger.minor(this, "Latest: "+ed+" in onFoundEdition");
 			
 			USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed);
 			Lookup[] toPoll = list.toPoll;
 			Lookup[] toFetch = list.toFetch;
 			for(Lookup i : toPoll) {
-				if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
+				if(logMINOR) Logger.minor(this, "Polling "+i+" for "+this);
 				attemptsToStart.add(add(i, true));	
 			}
 			for(Lookup i : toFetch) {
