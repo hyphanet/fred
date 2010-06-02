@@ -4,8 +4,11 @@
 package freenet.client.async;
 
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
+import java.util.WeakHashMap;
 
 import com.db4o.ObjectContainer;
 
@@ -67,6 +70,12 @@ public class USKManager implements RequestClient {
 	 * USK, not one per {USK, start edition}, unlike fetchersByUSK. */
 	final LRUHashtable<USK, USKFetcher> temporaryBackgroundFetchersLRU;
 	
+	/** Temporary fetchers where we have been asked to prefetch content. We track
+	 * the time we last had a new last-slot, so that if there is no new last-slot
+	 * found in 60 seconds, we start prefetching. We delete the entry when the 
+	 * fetcher finishes. */
+	final WeakHashMap<USK, Long> temporaryBackgroundFetchersPrefetch;
+	
 	final FetchContext backgroundFetchContext;
 	/** This one actually fetches data */
 	final FetchContext realFetchContext;
@@ -87,6 +96,7 @@ public class USKManager implements RequestClient {
 		subscribersByClearUSK = new HashMap<USK, USKCallback[]>();
 		backgroundFetchersByClearUSK = new HashMap<USK, USKFetcher>();
 		temporaryBackgroundFetchersLRU = new LRUHashtable<USK, USKFetcher>();
+		temporaryBackgroundFetchersPrefetch = new WeakHashMap<USK, Long>();
 		executor = core.getExecutor();
 	}
 
@@ -194,61 +204,13 @@ public class USKManager implements RequestClient {
 				f.addHintEdition(usk.suggestedEdition);
 			}
 			if(prefetchContent) {
-				final long min = lookupKnownGood(usk);
-				f.addCallback(new USKFetcherCallback() {
-					
-					public void onCancelled(ObjectContainer container, ClientContext context) {
-						// Ok
-					}
-
-					public void onFailure(ObjectContainer container, ClientContext context) {
-						// Ok
-					}
-
-					public void onFoundEdition(final long l, USK key, ObjectContainer container, final ClientContext context, boolean metadata, short codec, byte[] data, boolean newKnownGood, boolean newSlotToo) {
-						if(logMINOR) Logger.minor(this, "Prefetching content for background fetch for edition "+l+" on "+key);
-						if(l <= min) return;
-						final FreenetURI uri = key.copy(l).getURI();
-						final ClientGetter get = new ClientGetter(new ClientGetCallback() {
-
-							public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-								if(logMINOR) Logger.minor(this, "Prefetch failed later: "+e+" for "+uri, e);
-								// Ignore
-							}
-
-							public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
-								if(logMINOR) Logger.minor(this, "Prefetch succeeded for "+uri);
-								result.asBucket().free();
-								updateKnownGood(clear, l, context);
-							}
-
-							public void onMajorProgress(ObjectContainer container) {
-								// Ignore
-							}
-
-						}, uri.sskForUSK(), new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null), RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
-						try {
-							get.start(null, context);
-						} catch (FetchException e) {
-							if(logMINOR) Logger.minor(this, "Prefetch failed: "+e, e);
-							// Ignore
-						}
-					}
-
-					public short getPollingPriorityNormal() {
-						return RequestStarter.UPDATE_PRIORITY_CLASS;
-					}
-
-					public short getPollingPriorityProgress() {
-						return RequestStarter.UPDATE_PRIORITY_CLASS;
-					}
-					
-					
-				});
+				temporaryBackgroundFetchersPrefetch.put(clear, System.currentTimeMillis());
+				schedulePrefetchChecker();
 			}
 			temporaryBackgroundFetchersLRU.push(clear, f);
 			while(temporaryBackgroundFetchersLRU.size() > NodeClientCore.maxBackgroundUSKFetchers) {
 				USKFetcher fetcher = temporaryBackgroundFetchersLRU.popValue();
+				temporaryBackgroundFetchersPrefetch.remove(fetcher.getOriginalUSK().clearCopy());
 				if(!fetcher.hasSubscribers()) {
 					if(toCancel == null) toCancel = new Vector<USKFetcher>(2);
 					toCancel.add(fetcher);
@@ -269,6 +231,63 @@ public class USKManager implements RequestClient {
 		if(sched != null) sched.schedule(null, context);
 	}
 	
+	static final int PREFETCH_DELAY = 60*1000;
+	
+	private void schedulePrefetchChecker() {
+		context.ticker.queueTimedJob(prefetchChecker, "Check for USKs to prefetch", PREFETCH_DELAY, false, true);
+	}
+	
+	private final Runnable prefetchChecker = new Runnable() {
+
+		public void run() {
+			ArrayList<USK> toFetch = null;
+			long now = System.currentTimeMillis();
+			synchronized(this) {
+				for(Map.Entry<USK, Long> entry : temporaryBackgroundFetchersPrefetch.entrySet()) {
+					if(entry.getValue() - now >= PREFETCH_DELAY) {
+						if(toFetch == null)
+							toFetch = new ArrayList<USK>();
+						USK clear = entry.getKey();
+						long l = lookupLatestSlot(clear);
+						if(lookupKnownGood(clear) < l)
+							toFetch.add(clear.copy(l));
+						entry.setValue(now);
+					}
+				}
+			}
+			if(toFetch == null) return;
+			for(final USK key : toFetch) {
+				final long l = key.suggestedEdition;
+				if(logMINOR) Logger.minor(this, "Prefetching content for background fetch for edition "+l+" on "+key);
+				FetchContext fctx = new FetchContext(realFetchContext, FetchContext.IDENTICAL_MASK, false, null);
+				final ClientGetter get = new ClientGetter(new ClientGetCallback() {
+					
+					public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
+						if(logMINOR) Logger.minor(this, "Prefetch failed later: "+e+" for "+key, e);
+						// Ignore
+					}
+					
+					public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
+						if(logMINOR) Logger.minor(this, "Prefetch succeeded for "+key);
+						result.asBucket().free();
+						updateKnownGood(key, l, context);
+					}
+					
+					public void onMajorProgress(ObjectContainer container) {
+						// Ignore
+					}
+				}, key.getURI().sskForUSK() /* FIXME add getSSKURI() */, fctx, RequestStarter.UPDATE_PRIORITY_CLASS, USKManager.this, new NullBucket(), null);
+				try {
+					get.start(null, context);
+				} catch (FetchException e) {
+					if(logMINOR) Logger.minor(this, "Prefetch failed: "+e, e);
+					// Ignore
+				}
+			}
+		}
+		
+	};
+
 	void updateKnownGood(final USK origUSK, final long number, final ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Updating (known good) "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
@@ -324,6 +343,10 @@ public class USKManager implements RequestClient {
 				return;
 			
 			callbacks = subscribersByClearUSK.get(clear);
+			if(temporaryBackgroundFetchersPrefetch.containsKey(clear)) {
+				temporaryBackgroundFetchersPrefetch.put(clear, System.currentTimeMillis());
+				schedulePrefetchChecker();
+			}
 		}
 		if(callbacks != null) {
 			// Run off-thread, because of locking, and because client callbacks may take some time
@@ -437,6 +460,7 @@ public class USKManager implements RequestClient {
 						toCancel = f;
 					}
 						temporaryBackgroundFetchersLRU.removeKey(clear);
+						temporaryBackgroundFetchersPrefetch.remove(clear);
 				}
 			}
 			
@@ -502,6 +526,7 @@ public class USKManager implements RequestClient {
 			}
 			if(temporaryBackgroundFetchersLRU.get(clear) == fetcher) {
 				temporaryBackgroundFetchersLRU.removeKey(clear);
+				temporaryBackgroundFetchersPrefetch.remove(clear);
 			}
 		}
 	}
