@@ -453,21 +453,8 @@ public class USKManager implements RequestClient {
 						backgroundFetchersByClearUSK.remove(clear);
 				}
 			}
-			f = temporaryBackgroundFetchersLRU.get(clear);
-			if(f != null) {
-				f.removeCallback(cb);
-				if(!f.hasCallbacks()) {
-					if(toCancel != null) {
-						toCancelAlt = f;
-						Logger.error(this, "Subscribed in both backgroundFetchers and temporaryBackgroundFetchers???: "+cb+" for "+origUSK);
-					} else {
-						toCancel = f;
-					}
-						temporaryBackgroundFetchersLRU.removeKey(clear);
-						temporaryBackgroundFetchersPrefetch.remove(clear);
-				}
-			}
-			
+			// Temporary background fetchers run once and then die.
+			// They do not care about callbacks.
 		}
 		if(toCancel != null) toCancel.cancel(null, context);
 		if(toCancelAlt != null) toCancelAlt.cancel(null, context);
