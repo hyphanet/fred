@@ -95,6 +95,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private long timeFailed;
 	/** If this is set, then it can be removed instantly, doesn't need to wait for 30sec*/
 	private boolean requestImmediateCancel=false;
+	/** Stores the fetch context this class was created with*/
+	private FetchContext fctx;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
 		this.tracker = tracker;
@@ -102,12 +104,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		this.maxSize = maxSize2;
 		this.timeStarted = System.currentTimeMillis();
 		this.identifier = identifier;
-		fctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
-		fctx.maxOutputLength = fctx.maxTempLength = maxSize;
-		fctx.eventProducer.addEventListener(this);
+		this.fctx = fctx;
+		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
+		alteredFctx.maxOutputLength = fctx.maxTempLength = maxSize;
+		alteredFctx.eventProducer.addEventListener(this);
 		waiters = new ArrayList<FProxyFetchWaiter>();
 		results = new ArrayList<FProxyFetchResult>();
-		getter = new ClientGetter(this, uri, fctx, FProxyToadlet.PRIORITY, rc, null, null);
+		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, rc, null, null);
 	}
 	
 	public synchronized FProxyFetchWaiter getWaiter() {
@@ -351,5 +354,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** Allows the fetch to be removed immediately*/
 	public void requestImmediateCancel(){
 		requestImmediateCancel=true;
+	}
+	public boolean fetchContextEquals(FetchContext context) {
+		return (this.fctx.equals(context));
 	}
 }

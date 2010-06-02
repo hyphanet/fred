@@ -639,7 +639,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				infobox.addChild("div", "class", "infobox-header", l10n("fetchingPageBox"));
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addAttribute("id", "infoContent");
-				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
+				infoboxContent.addChild(new ProgressInfoElement(fetchTracker, key, fctx, maxSize, core.isAdvancedModeEnabled(), ctx, isWebPushingEnabled));
 
 				
 				HTMLNode table = infoboxContent.addChild("table", "border", "0");
@@ -647,7 +647,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(fr.totalBlocks <= 0)
 					progressCell.addChild("#", NodeL10n.getBase().getString("QueueToadlet.unknown"));
 				else {
-					progressCell.addChild(new ProgressBarElement(fetchTracker,key,maxSize,ctx,isWebPushingEnabled));
+					progressCell.addChild(new ProgressBarElement(fetchTracker,key,fctx,maxSize,ctx, isWebPushingEnabled));
 				}
 				
 				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
@@ -680,7 +680,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				boolean needsFetch=true;
 				//If we don't have the data, then check if an FProxyFetchInProgress has. It can happen when one FetchInProgress downloaded an image
 				//asynchronously, then loads it. This way a FetchInprogress will have the full image, and no need to block.
-				FProxyFetchInProgress progress=fetchTracker.getFetchInProgress(key, maxSize);
+				FProxyFetchInProgress progress=fetchTracker.getFetchInProgress(key, maxSize, fctx);
 				if(progress!=null){
 					FProxyFetchWaiter waiter=null;
 					FProxyFetchResult result=null;

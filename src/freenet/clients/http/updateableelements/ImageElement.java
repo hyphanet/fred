@@ -87,15 +87,15 @@ public class ImageElement extends BaseUpdateableElement {
 			public void run() {
 				try {
 					FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize, null);
-					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
-					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
+					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).addListener(fetchListener);
+					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).close(waiter);
 				} catch (FetchException fe) {
 					if (fe.newURI != null) {
 						try {
 							ImageElement.this.key = fe.newURI;
 							FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize, null);
-							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
-							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
+							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).addListener(fetchListener);
+							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).close(waiter);
 						} catch (FetchException fe2) {
 							wasError = true;
 						}
@@ -115,7 +115,7 @@ public class ImageElement extends BaseUpdateableElement {
 		if (logMINOR) {
 			Logger.minor(this, "Disposing ImageElement");
 		}
-		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
+		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize, null);
 		if (progress != null) {
 			progress.removeListener(fetchListener);
 			if (logMINOR) {
@@ -210,10 +210,10 @@ public class ImageElement extends BaseUpdateableElement {
 				}
 			} finally {
 				if (waiter != null) {
-					tracker.getFetchInProgress(key, maxSize).close(waiter);
+					tracker.getFetchInProgress(key, maxSize, null).close(waiter);
 				}
 				if (fr != null) {
-					tracker.getFetchInProgress(key, maxSize).close(fr);
+					tracker.getFetchInProgress(key, maxSize, null).close(fr);
 				}
 			}
 		}
