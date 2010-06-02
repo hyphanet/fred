@@ -35,7 +35,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 		init(pushed);
 		if(!pushed) return;
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
-		tracker.getFetchInProgress(key, maxSize, null).addListener(fetchListener);
+		tracker.getFetchInProgress(key, maxSize, fctx).addListener(fetchListener);
 	}
 
 	@Override
