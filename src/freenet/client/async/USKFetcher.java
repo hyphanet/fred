@@ -1135,12 +1135,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return watchingKeys.size();
 	}
 
-	public synchronized short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
+	public short definitelyWantKey(Key key, byte[] saltedKey, ObjectContainer container, ClientContext context) {
 		if(!(key instanceof NodeSSK)) return -1;
 		NodeSSK k = (NodeSSK) key;
 		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
 			return -1;
-		if(watchingKeys.match(k) != -1) return progressPollPriority;
+		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
+		synchronized(this) {
+			if(watchingKeys.match(k, lastSlot) != -1) return progressPollPriority;
+		}
 		return -1;
 	}
 
@@ -1158,7 +1161,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	public boolean handleBlock(Key key, byte[] saltedKey, KeyBlock found, ObjectContainer container, ClientContext context) {
 		if(!(found instanceof SSKBlock)) return false;
-		long edition = watchingKeys.match((NodeSSK)key);
+		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
+		long edition = watchingKeys.match((NodeSSK)key, lastSlot);
 		if(edition == -1) return false;
 		if(logMINOR) Logger.minor(this, "Matched edition "+edition+" for "+origUSK);
 		
@@ -1188,12 +1192,15 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		return false;
 	}
 
-	public synchronized boolean probablyWantKey(Key key, byte[] saltedKey) {
+	public boolean probablyWantKey(Key key, byte[] saltedKey) {
 		if(!(key instanceof NodeSSK)) return false;
 		NodeSSK k = (NodeSSK) key;
 		if(!Arrays.equals(k.getPubKeyHash(), origUSK.pubKeyHash))
 			return false;
-		return watchingKeys.match(k) != -1;
+		long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
+		synchronized(this) {
+			return watchingKeys.match(k, lastSlot) != -1;
+		}
 	}
 
 	private class USKWatchingKeys {
@@ -1523,8 +1530,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			return ClientSSKBlock.construct(block, csk);
 		}
 		
-		public synchronized long match(NodeSSK key) {
-			long lastSlot = uskManager.lookupLatestSlot(origUSK) + 1;
+		public synchronized long match(NodeSSK key, long lastSlot) {
 			long ret = fromLastKnownGood.match(key, lastSlot);
 			if(ret != -1) return ret;
 			
