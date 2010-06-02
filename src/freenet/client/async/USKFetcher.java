@@ -416,7 +416,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// FIXME call uskManager.updateSlot BEFORE getEditionsToFetch, avoids a possible conflict, but creates another (with onFoundEdition) - we'd probably have to handle this there???
 		synchronized(this) {
 			if(att != null) runningAttempts.remove(att);
-			if(completed || cancelled) return;
+			if(completed || cancelled) {
+				if(logMINOR) Logger.minor(this, "Finished already: completed="+completed+" cancelled="+cancelled);
+				return;
+			}
 			decode = curLatest >= lastEd && !(dontUpdate && block == null);
 			curLatest = Math.max(lastEd, curLatest);
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest+" in onSuccess");
