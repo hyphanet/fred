@@ -780,7 +780,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 				}
 				if(filterException != null) {
-					if((mimeType.equals("application/x-freenet-index")) && (core.node.pluginManager.isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
+					if((mime.equals("application/x-freenet-index")) && (core.node.pluginManager.isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
 						option = optionList.addChild("li");
 						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsThawIndex", new String[] { "link", "/link" }, new String[] { "<b><a href=\"/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/?key=" + key.toString() + "\">", "</a></b>" });
 					}
@@ -788,10 +788,10 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					// FIXME: is this safe? See bug #131
 					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\"/"+key.toString()+"?type=text/plain\">", "</a>" });
 					option = optionList.addChild("li");
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\"/"+key.toString()+"?forcedownload&type="+mimeType+"\">", "</a>" });
-					if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\"/"+key.toString()+"?forcedownload&type="+mime+"\">", "</a>" });
+					if(!(mime.equals("application/octet-stream") || mime.equals("application/x-msdownload"))) {
 						option = optionList.addChild("li");
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\"/" + key.toString() + "?force=" + getForceValue(key, now) + /*"&type="+mimeType+*/"\">", "</a>", HTMLEncoder.encode(mimeType)});
+						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\"/" + key.toString() + "?force=" + getForceValue(key, now) + "&type="+mime+"\">", "</a>", HTMLEncoder.encode(mime)});
 					}
 				}
 
@@ -845,13 +845,11 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 
 	private static String writeSizeAndMIME(HTMLNode fileInformationList, FetchException e) {
 		boolean finalized = e.finalizedSize();
-		String mime = e.getExpectedMimeType();
 		long size = e.expectedSize;
-		writeSizeAndMIME(fileInformationList, size, mime, finalized);
-		return mime;
+		return writeSizeAndMIME(fileInformationList, size, e.getExpectedMimeType(), finalized);
 	}
 
-	private static void writeSizeAndMIME(HTMLNode fileInformationList, long size, String mime, boolean finalized) {
+	private static String writeSizeAndMIME(HTMLNode fileInformationList, long size, String mime, boolean finalized) {
 		if(size > 0) {
 			if (finalized) {
 				fileInformationList.addChild("li", (l10n("sizeLabel") + ' ') + SizeUtil.formatSize(size));
@@ -865,7 +863,9 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			fileInformationList.addChild("li", NodeL10n.getBase().getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));
 		} else {
 			fileInformationList.addChild("li", l10n("unknownMIMEType"));
+			mime = l10n("unknownMIMEType");
 		}
+		return mime;
 	}
 	
 	private String l10n(String key, String pattern, String value) {
