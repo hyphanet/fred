@@ -549,7 +549,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(!runningAttempts.isEmpty()) {
 				USKAttempt last = runningAttempts.lastElement();
 				if(last.number >= i) {
-					if(logMINOR) Logger.minor(this, "Returning because last.number="+i+" for "+origUSK.getURI());
+					if(logMINOR) Logger.minor(this, "Returning because last.number="+last.number+" for "+origUSK.getURI());
 					return null;
 				}
 			}
