@@ -543,6 +543,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(forever) {
 			if(pollingAttempts.containsKey(i)) {
 				if(logMINOR) Logger.minor(this, "Already polling edition: "+i+" for "+this);
+				return null;
 			}
 		} else {
 			if(!runningAttempts.isEmpty()) {
