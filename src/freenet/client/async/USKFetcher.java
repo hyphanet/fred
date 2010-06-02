@@ -863,6 +863,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		if(attempts.length > 0)
 			parent.toNetwork(null, context);
+		if(logMINOR)
+			Logger.minor(this, "Registering "+attempts.length+" USKChecker's for "+this+" running="+runningAttempts.size()+" polling="+pollingAttempts.size());
 		for(int i=0;i<attempts.length;i++) {
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
 			// FIXME not sure this condition works, test it!
@@ -934,7 +936,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// StoreCheckerGetter itself will automatically call back to fillKeysWatching so there is no chance of losing it.
 		if(runningStoreChecker != null) return true;
 		final USKStoreChecker checker = watchingKeys.getDatastoreChecker(ed);
-		if(checker == null) return false;
+		if(checker == null) {
+			if(logMINOR) Logger.minor(this, "No datastore checker");
+			return false;
+		}
 			
 		runningStoreChecker = new StoreCheckerGetter(parent, checker);
 		try {
@@ -1464,7 +1469,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				byte[] data = key.getKeyBytes();
 				for(int i=offset;i<(offset+size);i++) {
 					if(Arrays.equals(data, ehDocnames.get(i))) {
-						if(logMINOR) Logger.minor(this, "Found edition "+(firstSlot+i));
+						if(logMINOR) Logger.minor(this, "Found edition "+(firstSlot+i)+" for "+origUSK);
 						return firstSlot+i;
 					}
 				}
