@@ -411,7 +411,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		if(logMINOR) Logger.minor(this, "Found edition "+curLatest+" for "+origUSK+" official is "+lastEd+" on "+this);
 		boolean decode = false;
-		Vector<USKAttempt> killAttempts;
+		Vector<USKAttempt> killAttempts = null;
 		boolean registerNow;
 		// FIXME call uskManager.updateSlot BEFORE getEditionsToFetch, avoids a possible conflict, but creates another (with onFoundEdition) - we'd probably have to handle this there???
 		synchronized(this) {
@@ -423,18 +423,20 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			decode = curLatest >= lastEd && !(dontUpdate && block == null);
 			curLatest = Math.max(lastEd, curLatest);
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest+" in onSuccess");
-			USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest);
-			Lookup[] toPoll = list.toPoll;
-			Lookup[] toFetch = list.toFetch;
-			for(Lookup i : toPoll) {
-				if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
-				attemptsToStart.add(add(i, true));	
+			if(!checkStoreOnly) {
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest);
+				Lookup[] toPoll = list.toPoll;
+				Lookup[] toFetch = list.toFetch;
+				for(Lookup i : toPoll) {
+					if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
+					attemptsToStart.add(add(i, true));	
+				}
+				for(Lookup i : toFetch) {
+					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+					attemptsToStart.add(add(i, false));
+				}
+				killAttempts = cancelBefore(curLatest, context);
 			}
-			for(Lookup i : toFetch) {
-				if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
-				attemptsToStart.add(add(i, false));
-			}
-			killAttempts = cancelBefore(curLatest, context);
 			registerNow = !fillKeysWatching(curLatest, context);
 		}
 		finishCancelBefore(killAttempts, context);
@@ -542,6 +544,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private synchronized USKAttempt add(Lookup l, boolean forever) {
 		long i = l.val;
 		if(cancelled) return null;
+		if(checkStoreOnly) return null;
 		if(logMINOR) Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
 		if(forever) {
 			if(pollingAttempts.containsKey(i)) {
@@ -611,16 +614,18 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			bye = cancelled;
 			if(!cancelled) {
 				
-				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp);
-				Lookup[] toPoll = list.toPoll;
-				Lookup[] toFetch = list.toFetch;
-				for(Lookup i : toPoll) {
-					if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
-					attemptsToStart.add(add(i, true));	
-				}
-				for(Lookup i : toFetch) {
-					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
-					attemptsToStart.add(add(i, false));
+				if(!checkStoreOnly) {
+					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp);
+					Lookup[] toPoll = list.toPoll;
+					Lookup[] toFetch = list.toFetch;
+					for(Lookup i : toPoll) {
+						if(logDEBUG) Logger.debug(this, "Polling "+i+" for "+this);
+						attemptsToStart.add(add(i, true));	
+					}
+					for(Lookup i : toFetch) {
+						if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+						attemptsToStart.add(add(i, false));
+					}
 				}
 				
 				started = true;
@@ -814,7 +819,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		// Because this is frequently run off-thread, it is actually possible that the looked up edition is not the same as the edition we are being notified of.
 		final long lastEd = uskManager.lookupLatestSlot(origUSK);
 		boolean decode = false;
-		Vector<USKAttempt> killAttempts;
+		Vector<USKAttempt> killAttempts = null;
 		boolean registerNow = false;
 		synchronized(this) {
 			if(completed || cancelled) return;
@@ -822,19 +827,22 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			ed = Math.max(lastEd, ed);
 			if(logMINOR) Logger.minor(this, "Latest: "+ed+" in onFoundEdition");
 			
-			USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed);
-			Lookup[] toPoll = list.toPoll;
-			Lookup[] toFetch = list.toFetch;
-			for(Lookup i : toPoll) {
-				if(logMINOR) Logger.minor(this, "Polling "+i+" for "+this);
-				attemptsToStart.add(add(i, true));	
+			if(!checkStoreOnly) {
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed);
+				Lookup[] toPoll = list.toPoll;
+				Lookup[] toFetch = list.toFetch;
+				for(Lookup i : toPoll) {
+					if(logMINOR) Logger.minor(this, "Polling "+i+" for "+this);
+					attemptsToStart.add(add(i, true));	
+				}
+				for(Lookup i : toFetch) {
+					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+					attemptsToStart.add(add(i, false));
+				}
+				killAttempts = cancelBefore(ed, context);
 			}
-			for(Lookup i : toFetch) {
-				if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
-				attemptsToStart.add(add(i, false));
-			}
-			killAttempts = cancelBefore(ed, context);
 			registerNow = !fillKeysWatching(ed, context);
+			
 		}
 		finishCancelBefore(killAttempts, context);
 		if(registerNow)
