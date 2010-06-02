@@ -296,6 +296,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
 		this.checkStoreOnly = checkStoreOnly;
+		if(checkStoreOnly && logMINOR)
+			Logger.minor(this, "Just checking store on "+this);
 		// origUSK is a hint. We *do* want to check the edition given.
 		// Whereas latestSlot we've definitely fetched, we don't want to re-check.
 		watchingKeys = new USKWatchingKeys(origUSK, Math.max(0, uskManager.lookupLatestSlot(origUSK)+1));
@@ -337,6 +339,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	}
 
 	private void finishSuccess(ClientContext context) {
+		if(logMINOR)
+			Logger.minor(this, "finishSuccess() on "+this);
 		if(backgroundPoll) {
 			long valAtEnd = uskManager.lookupLatestSlot(origUSK);
 			long end;
@@ -1066,6 +1070,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			long lastEd = uskManager.lookupLatestSlot(origUSK);
 			// Do not check beyond WATCH_KEYS after the current slot.
 			if(!fillKeysWatching(lastEd, context)) {
+				if(checkStoreOnly && logMINOR)
+					Logger.minor(this, "Just checking store, terminating "+USKFetcher.this+" ...");
 				if(checkStoreOnly)
 					finishSuccess(context);
 				// No need to call registerAttempts as we have already registered them.
