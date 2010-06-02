@@ -159,10 +159,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(mimeType.compareTo("application/xhtml+xml")==0){
 					mimeType="text/html";
 				}
-				
-				PushingTagReplacerCallback tagReplacer = 
-					container.isFProxyWebPushingEnabled() ? new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx) : null;
-				
 				if(horribleEvilHack(data) && !(mimeType.startsWith("application/rss+xml"))) {
 					PageNode page = context.getPageMaker().getPageNode(l10n("dangerousRSSTitle"), context);
 					HTMLNode pageNode = page.outer;
@@ -471,12 +467,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			maxSize = MAX_LENGTH;
 		else 
 			maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
-		
-		FetchContext fctx = getFetchContext(maxSize);
-
-		//We should run the ContentFilter by default
-		if (!httprequest.isParameterSet("dontfilter")) fctx.filterData = true;
-		else if(logMINOR) Logger.minor(this, "Content filter disabled via request parameter");
 
 		//first check of httprange before get
 		// only valid number format is checked here
@@ -512,9 +502,29 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			this.writeHTMLReply(ctx, 400, l10n("invalidKeyTitle"), pageNode.generate());
 			return;
 		}
+
+		FetchContext fctx = getFetchContext(maxSize);
+
+		//We should run the ContentFilter by default
+		String forceString = httprequest.getParam("force");
+		long now = System.currentTimeMillis();
+		boolean force = false;
+		if(forceString != null) {
+			if(forceString.equals(getForceValue(key, now)) ||
+					forceString.equals(getForceValue(key, now-FORCE_GRAIN_INTERVAL)))
+				force = true;
+		}
+		if (!force && !httprequest.isParameterSet("forcedownload")) fctx.filterData = true;
+		else if(logMINOR) Logger.minor(this, "Content filter disabled via request parameter");
+		//Load the fetch context with the callbacks needed for web-pushing, if enabled
+		if(container.enableInlinePrefetch()) fctx.prefetchHook = prefetchHook;
+		if(container.isFProxyWebPushingEnabled()) fctx.tagReplacer = new PushingTagReplacerCallback(core.getFProxy().fetchTracker, MAX_LENGTH, ctx);
+
 		String requestedMimeType = httprequest.getParam("type", null);
+		fctx.overrideMIME = requestedMimeType;
 		String override = (requestedMimeType == null) ? "" : "?type="+URLEncoder.encode(requestedMimeType,true);
 		String maybeCharset = httprequest.isParameterSet("maybecharset") ? httprequest.getParam("maybecharset", null) : null;
+		fctx.charset = maybeCharset;
 		if(override.equals("") && maybeCharset != null)
 			override = "?maybecharset="+URLEncoder.encode(maybeCharset, true);
 		// No point passing ?force= across a redirect, since the key will change.
