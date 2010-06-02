@@ -1203,6 +1203,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 
+	/**
+	 * Tracks the list of editions that we want to fetch, from various sources - subscribers, origUSK,
+	 * last known slot from USKManager, etc.
+	 * 
+	 * LOCKING: Take the lock on this class last and always pass in lookup values. Do not lookup values
+	 * in USKManager inside this class's lock.
+	 * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+	 */
 	private class USKWatchingKeys {
 		
 		// Common for whole USK
