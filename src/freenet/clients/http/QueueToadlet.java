@@ -1524,6 +1524,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			select.addChild("option", "value", "disk", l10n("bulkDownloadSelectOptionDisk"));
 			select.addChild("option", new String[] { "value", "selected" }, new String[] { "direct", "true" }, l10n("bulkDownloadSelectOptionDirect"));
 		}
+		HTMLNode filterControl = downloadForm.addChild("div", l10n("filterData"));
+		filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
+		filterControl.addChild("#", l10n("filterDataMessage"));
 		return downloadBox;
 	}
 
