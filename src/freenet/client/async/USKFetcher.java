@@ -258,7 +258,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	/** Maximum number of editions to probe ahead. */
 	private final long maxMinFailures;
-	private final static long DEFAULT_MAX_MIN_FAILURES = 100;
+	private final static long DEFAULT_MAX_MIN_FAILURES = 50;
 
 	private long valueAtSchedule;
 	
@@ -283,6 +283,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, boolean checkStoreOnly) {
 		this.parent = requester;
 		this.maxMinFailures = maxProbeEditions;
+		if(maxMinFailures > WATCH_KEYS)
+			throw new IllegalArgumentException("Cannot poll more editions ahead than we are watching for");
 		this.origUSK = origUSK;
 		this.uskManager = manager;
 		this.minFailures = this.origMinFailures = minFailures;
