@@ -320,7 +320,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							}
 							try {
 								if(thisTime < maxWait) {
-									list.wait(Math.min(500, (int)(maxWait-thisTime)));
+									list.wait(Math.min(500, (int)(Math.min(maxWait-thisTime, Integer.MAX_VALUE))));
 									// Do NOT use list.poll(timeout) because it uses a separate lock.
 									o = list.poll();
 								}
