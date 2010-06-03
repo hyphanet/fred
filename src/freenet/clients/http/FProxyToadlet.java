@@ -287,16 +287,18 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			}
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "submit", "download", l10n("downloadInBackgroundToDiskButton") });
-			optionForm.addChild("#", " - ");
+			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
+					new String[] { "dir", "page", "/link" },
+					new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
+			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
+			filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
+			filterControl.addChild("div", l10n("filterDataMessage"));
 			if (threatLevel == PHYSICAL_THREAT_LEVEL.HIGH) {
 				NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadToDiskSecurityWarning",
 						new String[] {"bold", "/bold"},
 						new String[] {"<strong>", "</strong>"});
 				//optionForm.addChild("#", l10n("downloadToDiskSecurityWarning") + " ");
 			}
-			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToDisk",
-					new String[] { "dir", "page", "/link" },
-					new String[] { HTMLEncoder.encode(core.getDownloadDir().getAbsolutePath()), "<a href=\"/downloads\">", "</a>" });
 		}
 		
 		if(threatLevel == PHYSICAL_THREAT_LEVEL.HIGH || threatLevel == PHYSICAL_THREAT_LEVEL.MAXIMUM) {
@@ -308,9 +310,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if (mimeType != null && !mimeType.equals("")) {
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
 			}
+			optionForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
-			optionForm.addChild("#", " - ");
+			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
+			filterControl.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
+			filterControl.addChild("div", l10n("filterDataMessage"));
 			NodeL10n.getBase().addL10nSubstitution(optionForm, "FProxyToadlet.downloadInBackgroundToTempSpace",
 					new String[] { "page", "/link" }, new String[] { "<a href=\"/downloads\">", "</a>" });
 		}
