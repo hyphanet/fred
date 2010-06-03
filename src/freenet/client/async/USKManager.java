@@ -265,8 +265,14 @@ public class USKManager implements RequestClient {
 				final ClientGetter get = new ClientGetter(new ClientGetCallback() {
 					
 					public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
-						if(logMINOR) Logger.minor(this, "Prefetch failed later: "+e+" for "+key, e);
-						// Ignore
+						if(e.newURI != null) {
+							if(logMINOR) Logger.minor(this, "Prefetch succeeded with redirect for "+key);
+							updateKnownGood(key, l, context);
+							return;
+						} else {
+							if(logMINOR) Logger.minor(this, "Prefetch failed later: "+e+" for "+key, e);
+							// Ignore
+						}
 					}
 					
 					public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
