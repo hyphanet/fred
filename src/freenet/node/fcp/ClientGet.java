@@ -83,9 +83,9 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * @throws IOException
 	 */
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
-			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
-			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename, String charset, boolean writeToClientCache, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
+			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
+			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
+			short prioClass, File returnFilename, File returnTempFilename, String charset, boolean writeToClientCache, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, null, null, globalClient,
 				prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), charset, true, container);
@@ -96,7 +96,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.ignoreStore = ignoreDS;
 		fctx.maxNonSplitfileRetries = maxNonSplitfileRetries;
 		fctx.maxSplitfileBlockRetries = maxSplitfileRetries;
-		fctx.filterData = true;
+		fctx.filterData = filterData;
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;

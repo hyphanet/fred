@@ -272,8 +272,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				String persistence = request.getPartAsString("persistence", 32);
 				String returnType = request.getPartAsString("return-type", 32);
+				boolean filterData = request.isPartSet("filterData");
 				try {
-					fcp.makePersistentGlobalRequestBlocking(fetchURI, expectedMIMEType, persistence, returnType);
+					fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, expectedMIMEType, persistence, returnType);
 				} catch (NotAllowedException e) {
 					this.writeError(NodeL10n.getBase().getString("QueueToadlet.errorDToDisk"), NodeL10n.getBase().getString("QueueToadlet.errorDToDiskConfig"), ctx);
 					return;
@@ -291,7 +292,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					return;
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
-				
+				boolean filterData = request.isParameterSet("filterData");
 				String target = request.getPartAsString("target", 16);
 				if(target == null) target = "direct";
 				
@@ -305,7 +306,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					
 					try {
 						FreenetURI fetchURI = new FreenetURI(currentKey);
-						fcp.makePersistentGlobalRequestBlocking(fetchURI, null, "forever", target);
+						fcp.makePersistentGlobalRequestBlocking(fetchURI, filterData, null, "forever", target);
 						success.add(currentKey);
 					} catch (Exception e) {
 						failure.add(currentKey);
