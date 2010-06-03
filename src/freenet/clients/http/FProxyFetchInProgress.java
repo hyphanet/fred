@@ -356,6 +356,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		requestImmediateCancel=true;
 	}
 	public boolean fetchContextEquivalent(FetchContext context) {
-		return this.fctx.filterData == context.filterData;
+		if(this.fctx.filterData != context.filterData) return false;
+		if(this.fctx.maxOutputLength != context.maxOutputLength) return false;
+		if(this.fctx.maxTempLength != context.maxTempLength) return false;
+		if(this.fctx.charset == null && context.charset != null) return false;
+		if(this.fctx.charset != null && !this.fctx.charset.equals(context.charset)) return false;
+		if(this.fctx.overrideMIME == null && context.overrideMIME != null) return false;
+		if(this.fctx.overrideMIME != null && !this.fctx.overrideMIME.equals(context.overrideMIME)) return false;
+		return true;
 	}
 }
