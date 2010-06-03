@@ -786,12 +786,12 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					}
 					option = optionList.addChild("li");
 					// FIXME: is this safe? See bug #131
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\"/"+key.toString()+"?type=text/plain\">", "</a>" });
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+getLink(key, "text/plain", maxSize, null, false)+"\">", "</a>"});
 					option = optionList.addChild("li");
-					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\"/"+key.toString()+"?forcedownload&type="+mime+"\">", "</a>" });
+					NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\""+getLink(key, mime, maxSize, null, true)+"\">", "</a>" });
 					if(!(mime.equals("application/octet-stream") || mime.equals("application/x-msdownload"))) {
 						option = optionList.addChild("li");
-						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\"/" + key.toString() + "?force=" + getForceValue(key, now) + "&type="+mime+"\">", "</a>", HTMLEncoder.encode(mime)});
+						NodeL10n.getBase().addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\""+getLink(key, mime, maxSize, getForceValue(key, now), false)+"\">", "</a>", HTMLEncoder.encode(mime)});
 					}
 				}
 
