@@ -206,7 +206,14 @@ public class USKManager implements RequestClient {
 				f.addHintEdition(usk.suggestedEdition);
 			}
 			if(prefetchContent) {
-				temporaryBackgroundFetchersPrefetch.put(clear, (long)-1);
+				long fetchTime = -1;
+				// If nothing in 60 seconds, try fetching the last known slot.
+				long slot = lookupLatestSlot(clear);
+				long good = lookupKnownGood(clear);
+				if(slot > -1 && good != slot)
+					fetchTime = System.currentTimeMillis();
+				temporaryBackgroundFetchersPrefetch.put(clear, fetchTime);
+				if(logMINOR) Logger.minor(this, "Prefetch: set "+fetchTime+" for "+clear);
 				schedulePrefetchChecker();
 			}
 			temporaryBackgroundFetchersLRU.push(clear, f);
