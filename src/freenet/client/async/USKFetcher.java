@@ -241,7 +241,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		}
 	}
 	
-	private final Vector<USKAttempt> runningAttempts;
+	private final TreeMap<Long, USKAttempt> runningAttempts = new TreeMap<Long, USKAttempt>();
 	private final TreeMap<Long, USKAttempt> pollingAttempts = new TreeMap<Long, USKAttempt>();
 	
 	private long lastFetchedEdition;
@@ -278,7 +278,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.uskManager = manager;
 		this.origMinFailures = minFailures;
 		firstLoop = true;
-		runningAttempts = new Vector<USKAttempt>();
 		callbacks = new LinkedList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
@@ -318,7 +317,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private synchronized String runningAttempts() {
 		StringBuffer sb = new StringBuffer();
 		boolean first = true;
-		for(USKAttempt a : runningAttempts) {
+		for(USKAttempt a : runningAttempts.values()) {
 			if(!first) sb.append(", ");
 			sb.append(a.number);
 			if(a.cancelled)
@@ -497,7 +496,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		Vector<USKAttempt> v = null;
 		int count = 0;
 		synchronized(this) {
-			for(Iterator<USKAttempt> i=runningAttempts.iterator();i.hasNext();) {
+			for(Iterator<USKAttempt> i=runningAttempts.values().iterator();i.hasNext();) {
 				USKAttempt att = i.next();
 				if(att.number < curLatest) {
 					if(v == null) v = new Vector<USKAttempt>(runningAttempts.size()-count);
@@ -543,9 +542,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 		} else {
 			if(!runningAttempts.isEmpty()) {
-				USKAttempt last = runningAttempts.lastElement();
-				if(last.number >= i) {
-					if(logMINOR) Logger.minor(this, "Returning because last.number="+last.number+" for "+origUSK.getURI());
+				if(runningAttempts.containsKey(i)) {
+					if(logMINOR) Logger.minor(this, "Returning because already running for "+origUSK.getURI());
 					return null;
 				}
 			}
@@ -554,7 +552,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		if(forever)
 			pollingAttempts.put(i, a);
 		else {
-			runningAttempts.add(a);
+			runningAttempts.put(i, a);
 		}
 		lastAddedEdition = i;
 		if(logMINOR) Logger.minor(this, "Added "+a+" for "+origUSK);
@@ -641,7 +639,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		SendableGet storeChecker;
 		synchronized(this) {
 			cancelled = true;
-			attempts = runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
+			attempts = runningAttempts.values().toArray(new USKAttempt[runningAttempts.size()]);
 			polling = pollingAttempts.values().toArray(new USKAttempt[pollingAttempts.size()]);
 			attemptsToStart.clear();
 			storeChecker = runningStoreChecker;
