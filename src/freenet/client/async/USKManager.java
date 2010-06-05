@@ -40,6 +40,7 @@ import freenet.support.io.NullBucket;
  */
 public class USKManager implements RequestClient {
 
+	private static volatile boolean logDEBUG;
 	private static volatile boolean logMINOR;
 	
 	static {
@@ -48,6 +49,7 @@ public class USKManager implements RequestClient {
 			@Override
 			public void shouldUpdate() {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 			}
 		});
 	}
@@ -240,6 +242,7 @@ public class USKManager implements RequestClient {
 	private final Runnable prefetchChecker = new Runnable() {
 
 		public void run() {
+			if(logDEBUG) Logger.debug(this, "Running prefetch checker...");
 			ArrayList<USK> toFetch = null;
 			long now = System.currentTimeMillis();
 			boolean empty = true;
@@ -254,6 +257,8 @@ public class USKManager implements RequestClient {
 						if(lookupKnownGood(clear) < l)
 							toFetch.add(clear.copy(l));
 						entry.setValue(now);
+					} else {
+						if(logMINOR) Logger.minor(this, "Not prefetching: "+entry.getKey()+" : "+entry.getValue());
 					}
 				}
 			}
