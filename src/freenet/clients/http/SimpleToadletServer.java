@@ -30,6 +30,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.PrioRunnable;
 import freenet.node.SecurityLevelListener;
 import freenet.node.Ticker;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
@@ -44,6 +45,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.NativeThread;
 
 /** 
  * The Toadlet (HTTP) Server
@@ -771,7 +773,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	public class SocketHandler implements Runnable {
+	public class SocketHandler implements PrioRunnable {
 
 		Socket sock;
 		
@@ -799,6 +801,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				Logger.error(this, "Caught in SimpleToadletServer: "+t, t);
 			}
 			if(logMINOR) Logger.minor(this, "Handled connection");
+		}
+
+		public int getPriority() {
+			return NativeThread.HIGH_PRIORITY-1;
 		}
 
 	}
