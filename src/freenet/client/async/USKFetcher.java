@@ -589,7 +589,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		context.getSskFetchScheduler().schedTransient.addPendingKeys(this);
 		updatePriorities();
 		uskManager.subscribe(origUSK, this, false, parent.getClient());
-		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookupLatestSlot(origUSK);
 		boolean registerNow = false;
 		boolean bye = false;
