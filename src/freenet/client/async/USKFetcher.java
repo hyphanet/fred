@@ -544,6 +544,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	 */
 	private synchronized USKAttempt add(Lookup l, boolean forever) {
 		long i = l.val;
+		if(l.val < 0) throw new IllegalArgumentException("Can't check <0 for "+l.val+" on "+this+" for "+origUSK);
 		if(cancelled) return null;
 		if(checkStoreOnly) return null;
 		if(logMINOR) Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
@@ -1343,6 +1344,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 
 			public synchronized void getEditionsToFetch(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, Random random) {
+				if(lookedUp < 0) lookedUp = 0;
 				// First add stuff to poll
 				for(int i=0;i<origMinFailures;i++) {
 					long ed = i + lookedUp;
