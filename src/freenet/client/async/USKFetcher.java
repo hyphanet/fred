@@ -313,7 +313,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		synchronized(this) {
 			if(completed || cancelled) return;
 			lastFetchedEdition = Math.max(lastFetchedEdition, att.number);
-			runningAttempts.remove(att);
+			runningAttempts.remove(att.number);
 			if(runningAttempts.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+origMinFailures));
 				if(started) {
@@ -416,7 +416,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		boolean registerNow;
 		// FIXME call uskManager.updateSlot BEFORE getEditionsToFetch, avoids a possible conflict, but creates another (with onFoundEdition) - we'd probably have to handle this there???
 		synchronized(this) {
-			if(att != null) runningAttempts.remove(att);
+			if(att != null) runningAttempts.remove(att.number);
 			if(completed || cancelled) {
 				if(logMINOR) Logger.minor(this, "Finished already: completed="+completed+" cancelled="+cancelled);
 				return;
@@ -478,7 +478,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	void onCancelled(USKAttempt att, ClientContext context) {
 		synchronized(this) {
-			runningAttempts.remove(att);
+			runningAttempts.remove(att.number);
 			if(!runningAttempts.isEmpty()) return;
 		
 			if(cancelled)
@@ -885,7 +885,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				attempts[i].schedule(null, context);
 			else {
 				synchronized(USKFetcher.this) {
-					runningAttempts.remove(attempts[i]);
+					runningAttempts.remove(attempts[i].number);
 				}
 			}
 		}
@@ -1057,7 +1057,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					attempts[i].schedule(container, context);
 				else {
 					synchronized(USKFetcher.this) {
-						runningAttempts.remove(attempts[i]);
+						runningAttempts.remove(attempts[i].number);
 					}
 				}
 			}
