@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -228,7 +229,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		
 		public short getPriority() {
 			if(backgroundPoll) {
-				if((minFailures == origMinFailures && !firstLoop) && minFailures != maxMinFailures) {
+				if(progressed && !firstLoop) {
 					// Just advanced, boost the priority.
 					// Do NOT boost the priority if just started.
 					return progressPollPriority;
@@ -246,9 +247,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private long lastFetchedEdition;
 	private long lastAddedEdition;
 
-	/** Number of keys to probe ahead. If they are all empty, then
-	 * we have finished (unless in background poll mode) */
-	long minFailures;
+
 	final long origMinFailures;
 	boolean firstLoop;
 	
@@ -256,14 +255,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	static final int maxSleepTime = 24 * 60 * 60 * 1000;
 	int sleepTime = origSleepTime;
 
-	/** Maximum number of editions to probe ahead. */
-	private final long maxMinFailures;
-	private final static long DEFAULT_MAX_MIN_FAILURES = 50;
-
 	private long valueAtSchedule;
 	
 	/** Keep going forever? */
 	private final boolean backgroundPoll;
+	private boolean progressed;
 	
 	/** Keep the last fetched data? */
 	final boolean keepLastData;
@@ -275,19 +271,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private static short DEFAULT_PROGRESS_POLL_PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
 	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 
-	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
-		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, checkStoreOnly);
-	}
-	
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, boolean checkStoreOnly) {
+	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData, boolean checkStoreOnly) {
 		this.parent = requester;
-		this.maxMinFailures = maxProbeEditions;
-		if(maxMinFailures > WATCH_KEYS)
-			throw new IllegalArgumentException("Cannot poll more editions ahead than we are watching for");
 		this.origUSK = origUSK;
 		this.uskManager = manager;
-		this.minFailures = this.origMinFailures = minFailures;
+		this.origMinFailures = minFailures;
 		firstLoop = true;
 		runningAttempts = new Vector<USKAttempt>();
 		callbacks = new LinkedList<USKFetcherCallback>();
@@ -315,7 +304,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			lastFetchedEdition = Math.max(lastFetchedEdition, att.number);
 			runningAttempts.remove(att);
 			if(runningAttempts.isEmpty()) {
-				if(logMINOR) Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+minFailures));
+				if(logMINOR) Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+origMinFailures));
 				if(started) {
 					finished = true;
 				}
@@ -357,22 +346,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				end = now + context.random.nextInt(sleepTime);
                 
 				if(valAtEnd > valueAtSchedule && valAtEnd > origUSK.suggestedEdition) {
+					progressed = true;
 					// We have advanced; keep trying as if we just started.
 					// Only if we actually DO advance, not if we just confirm our suspicion (valueAtSchedule always starts at 0).
-					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
 					firstLoop = false;
 					end = now;
 					if(logMINOR)
 						Logger.minor(this, "We have advanced: at start, "+valueAtSchedule+" at end, "+valAtEnd);
-				} else {
-					// We have not found any new version; Increase exponentially but relatively slowly
-					long newMinFailures = Math.max(((int)(minFailures * 1.25)), minFailures+1);
-					if(newMinFailures > maxMinFailures)
-						newMinFailures = maxMinFailures;
-					minFailures = newMinFailures;
-				}
-				if(logMINOR) Logger.minor(this, "Sleep time is "+sleepTime+" this sleep is "+(end-now)+" min failures is "+minFailures+" for "+this);
+				} else
+					progressed = false;
+				if(logMINOR) Logger.minor(this, "Sleep time is "+sleepTime+" this sleep is "+(end-now)+" for "+this);
 			}
 			schedule(end-now, null, context);
 		} else {
@@ -430,7 +414,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			curLatest = Math.max(lastEd, curLatest);
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest+" in onSuccess");
 			if(!checkStoreOnly) {
-				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest);
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest, context.random);
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
@@ -621,7 +605,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(!cancelled) {
 				
 				if(!checkStoreOnly) {
-					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp);
+					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp, context.random);
 					Lookup[] toPoll = list.toPoll;
 					Lookup[] toFetch = list.toFetch;
 					for(Lookup i : toPoll) {
@@ -834,7 +818,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Latest: "+ed+" in onFoundEdition");
 			
 			if(!checkStoreOnly) {
-				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed);
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed, context.random);
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
@@ -1266,14 +1250,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 		}
 		
-		public synchronized ToFetch getEditionsToFetch(long lookedUp) {
+		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random) {
 			
 			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp);
 			
 			ArrayList<Lookup> toFetch = new ArrayList<Lookup>();
 			ArrayList<Lookup> toPoll = new ArrayList<Lookup>();
 			
-			fromLastKnownGood.getEditionsToFetch(toFetch, toPoll, lookedUp);
+			fromLastKnownGood.getEditionsToFetch(toFetch, toPoll, lookedUp, random);
 			
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
@@ -1281,7 +1265,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				long l = entry.getKey();
 				if(l <= lookedUp)
 					it.remove();
-				entry.getValue().getEditionsToFetch(toFetch, toPoll, l);
+				entry.getValue().getEditionsToFetch(toFetch, toPoll, l, random);
 			}
 			return new ToFetch(toFetch, toPoll);
 		}
@@ -1349,12 +1333,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				generate(firstSlot, WATCH_KEYS, ehDocnames);
 			}
 
-			public synchronized void getEditionsToFetch(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp) {
-				for(int i=0;i<minFailures;i++) {
+			public synchronized void getEditionsToFetch(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, Random random) {
+				// First add stuff to poll
+				for(int i=0;i<origMinFailures;i++) {
 					long ed = i + lookedUp;
 					Lookup l = new Lookup();
 					l.val = ed;
-					boolean poll = i < origMinFailures && backgroundPoll;
+					boolean poll = backgroundPoll;
 					if(toFetch.contains(l) && (poll && toFetch.contains(l)))
 						continue;
 					ClientSSK key;
@@ -1368,6 +1353,22 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					}
 					if(!toFetch.contains(l))
 						toFetch.add(l);
+				}
+				// Then add a couple of random editions for catch-up.
+				long baseEdition = lookedUp + origMinFailures;
+				for(int i=0;i<2;i++) {
+					while(true) {
+						int mean = random.nextInt(5) == 0 ? 100 : 10;
+						long fetch = baseEdition + (long)Math.floor(Math.log(random.nextFloat()) / Math.log(1.0 - 1.0/mean));
+						if(fetch < baseEdition) continue;
+						Lookup l = new Lookup();
+						l.val = fetch;
+						if(toFetch.contains(l)) continue;
+						l.key = origUSK.getSSK(fetch);
+						toFetch.add(l);
+						if(logMINOR) Logger.minor(this, "Trying random future edition "+fetch+" for "+origUSK+" current edition "+lookedUp);
+						break;
+					}
 				}
 			}
 
