@@ -245,8 +245,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private final TreeMap<Long, USKAttempt> pollingAttempts = new TreeMap<Long, USKAttempt>();
 	
 	private long lastFetchedEdition;
-	private long lastAddedEdition;
-
 
 	final long origMinFailures;
 	boolean firstLoop;
@@ -281,7 +279,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		callbacks = new LinkedList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
-		lastAddedEdition = -1;
 		this.ctx = ctx;
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
@@ -554,7 +551,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		else {
 			runningAttempts.put(i, a);
 		}
-		lastAddedEdition = i;
 		if(logMINOR) Logger.minor(this, "Added "+a+" for "+origUSK);
 		return a;
 	}
