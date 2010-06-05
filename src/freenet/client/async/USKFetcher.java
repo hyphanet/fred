@@ -114,6 +114,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 
 	/** Fetcher context */
 	final FetchContext ctx;
+	/** Fetcher context ignoring store */
+	final FetchContext ctxNoStore;
 	
 	/** Finished? */
 	private boolean completed;
@@ -173,7 +175,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			this.number = l.val;
 			this.succeeded = false;
 			this.dnf = false;
-			this.checker = new USKChecker(this, l.key, forever ? -1 : ctx.maxUSKRetries, ctx, parent);
+			this.checker = new USKChecker(this, l.key, forever ? -1 : ctx.maxUSKRetries, l.ignoreStore ? ctxNoStore : ctx, parent);
 		}
 		public void onDNF(ClientContext context) {
 			checker = null;
@@ -275,6 +277,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		this.origUSK = origUSK;
 		this.uskManager = manager;
 		this.origMinFailures = minFailures;
+		if(origMinFailures > WATCH_KEYS)
+			throw new IllegalArgumentException();
 		firstLoop = true;
 		callbacks = new LinkedList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
@@ -284,6 +288,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			this.ctx.followRedirects = false;
 		} else {
 			this.ctx = ctx;
+		}
+		if(ctx.ignoreStore) {
+			ctxNoStore = this.ctx;
+		} else {
+			ctxNoStore = this.ctx.clone();
+			ctxNoStore.ignoreStore = true;
 		}
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
@@ -1345,6 +1355,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					// The problem is we need a ClientSSK for the high level stuff.
 					key = origUSK.getSSK(ed);
 					l.key = key;
+					l.ignoreStore = true;
 					if(poll) {
 						if(!toPoll.contains(l))
 							toPoll.add(l);
@@ -1363,6 +1374,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						l.val = fetch;
 						if(toFetch.contains(l)) continue;
 						l.key = origUSK.getSSK(fetch);
+						l.ignoreStore = !(fetch - lookedUp >= WATCH_KEYS);
 						toFetch.add(l);
 						if(logMINOR) Logger.minor(this, "Trying random future edition "+fetch+" for "+origUSK+" current edition "+lookedUp);
 						break;
@@ -1581,6 +1593,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private class Lookup {
 		long val;
 		ClientSSK key;
+		boolean ignoreStore;
 		
 		public boolean equals(Object o) {
 			if(o instanceof Lookup) {
