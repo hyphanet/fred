@@ -279,7 +279,12 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		callbacks = new LinkedList<USKFetcherCallback>();
 		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
-		this.ctx = ctx;
+		if(ctx.followRedirects) {
+			this.ctx = ctx.clone();
+			this.ctx.followRedirects = false;
+		} else {
+			this.ctx = ctx;
+		}
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
 		this.checkStoreOnly = checkStoreOnly;
