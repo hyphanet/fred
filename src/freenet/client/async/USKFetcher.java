@@ -1367,6 +1367,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				long baseEdition = lookedUp + origMinFailures;
 				for(int i=0;i<2;i++) {
 					while(true) {
+						// Geometric distribution.
+						// 20% chance of mean 100, 80% chance of mean 10. Thanks evanbd.
 						int mean = random.nextInt(5) == 0 ? 100 : 10;
 						long fetch = baseEdition + (long)Math.floor(Math.log(random.nextFloat()) / Math.log(1.0 - 1.0/mean));
 						if(fetch < baseEdition) continue;
