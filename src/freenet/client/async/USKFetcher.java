@@ -612,7 +612,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			bye = cancelled;
 			if(!cancelled) {
 				
-				if(!checkStoreOnly) {
+				// subscribe() above may have called onFoundEdition and thus added a load of stuff. If so, we don't need to do so here.
+				if((!checkStoreOnly) && attemptsToStart.isEmpty() && runningAttempts.isEmpty() && pollingAttempts.isEmpty()) {
 					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp, context.random);
 					Lookup[] toPoll = list.toPoll;
 					Lookup[] toFetch = list.toFetch;
