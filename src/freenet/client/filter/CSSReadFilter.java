@@ -3,9 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,38 +19,31 @@ import java.util.HashMap;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
-	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if (Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(
 				this,
 				"running "
 					+ this
-					+ " on "
-					+ bucket
-					+ ','
-                        + charset);
-		InputStream strm = bucket.getInputStream();
-		OutputStream os = destination.getOutputStream();
+					+ "with charset"+charset);
 		Reader r = null;
 		Writer w = null;
 		InputStreamReader isr = null;
 		OutputStreamWriter osw = null;
 		try {
 			try {
-				isr = new InputStreamReader(strm, charset);
-				osw = new OutputStreamWriter(os, charset);
+				isr = new InputStreamReader(input, charset);
+				osw = new OutputStreamWriter(output, charset);
 				r = new BufferedReader(isr, 32768);
 				w = new BufferedWriter(osw, 32768);
 			} catch(UnsupportedEncodingException e) {
 				Closer.close(osw);
-				Closer.close(os);
 				throw UnknownCharsetException.create(e, charset);
 			}
 			CSSParser parser = new CSSParser(r, w, false, cb, charset, false, false);
@@ -61,23 +54,20 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			w = null;
 		}
 		finally {
-			Closer.close(strm);
-			Closer.close(isr);
 			Closer.close(r);
 			Closer.close(w);
 		}
-		return destination;
 	}
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 
-	public String getCharset(Bucket data, String charset) throws DataFilterException, IOException {
+	public String getCharset(byte [] input, String charset) throws DataFilterException, IOException {
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
-		InputStream strm = data.getInputStream();
+		InputStream strm = new ByteArrayInputStream(input);
 		NullWriter w = new NullWriter();
 		InputStreamReader isr;
 		BufferedReader r = null;
@@ -127,12 +117,12 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		return HexUtil.hexToBytes(s);
 	}
 	
-	public BOMDetection getCharsetByBOM(Bucket bucket) throws DataFilterException, IOException {
+	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException, IOException {
 		
 		InputStream is = null;
 		try {
 			byte[] data = new byte[maxBOMLength];
-			is = new BufferedInputStream(bucket.getInputStream());
+			is = new ByteArrayInputStream(input);
 			int read = 0;
 			while(read < data.length) {
 				int x;

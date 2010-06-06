@@ -4,6 +4,8 @@
 package freenet.client.filter;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 import freenet.support.api.Bucket;
@@ -13,9 +15,9 @@ import freenet.support.api.Bucket;
  */
 public interface ContentDataFilter {
 	
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException;
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+		FilterCallback cb) throws DataFilterException, IOException;
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException;
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+		FilterCallback cb) throws DataFilterException, IOException;
 }

@@ -6,6 +6,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,7 +36,6 @@ import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
@@ -47,15 +47,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
 	
-	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
-		InputStream strm = bucket.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
-		OutputStream os = destination.getOutputStream();
-		BufferedOutputStream bos = new BufferedOutputStream(os, 4096);
+		BufferedInputStream bis = new BufferedInputStream(input, 4096);
+		BufferedOutputStream bos = new BufferedOutputStream(output, 4096);
 		Reader r = null;
 		Writer w = null;
 		InputStreamReader isr = null;
@@ -70,25 +68,23 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				throw UnknownCharsetException.create(e, charset);
 			}
 			HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
-			pc.run(destination);
+			pc.run();
 			w.close();
-			os = null;
 		} finally {
-			Closer.close(os);
-			Closer.close(strm);
+			Closer.close(isr);
+			Closer.close(osw);
 		}
-		return destination;
 	}
 	
-	public Bucket writeFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 	
-	public String getCharset(Bucket bucket, String parseCharset) throws DataFilterException, IOException {
+	public String getCharset(byte[] input, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
-		InputStream strm = bucket.getInputStream();
+		ByteArrayInputStream strm = new ByteArrayInputStream(input);
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
@@ -100,7 +96,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback(), true);
 		try {
-			pc.run(null);
+			pc.run();
 		} catch (MalformedInputException e) {
 			// Not this charset
 			return null;
@@ -167,7 +163,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return openElements.peek();
 		}
 
-		Bucket run(Bucket temp) throws IOException, DataFilterException {
+		void run() throws IOException, DataFilterException {
 
 			/**
 			 * TOKENIZE Modes:
@@ -410,7 +406,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				while(openElements.size()>0)
 					w.write("</"+openElements.pop()+">");
 			}
-			return temp;
+			return;
 		}
 		int mode;
 		static final int INTEXT = 0;
@@ -2523,7 +2519,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 
-	public BOMDetection getCharsetByBOM(Bucket data) throws DataFilterException {
+	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;

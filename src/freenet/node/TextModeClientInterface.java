@@ -36,7 +36,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.DumperSnoopMetadata;
 import freenet.client.events.EventDumper;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -414,15 +413,16 @@ public class TextModeClientInterface implements Runnable {
     	
     	final String content = readLines(reader, false);
     	final Bucket data = new ArrayBucket(content.getBytes("UTF-8"));
+	final Bucket output = new ArrayBucket();
     	try {
-    		FilterOutput output = ContentFilter.filter(data, new ArrayBucket(), "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
+		ContentFilter.filter(data.getInputStream(), output.getOutputStream(), "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
     		
-    		BufferedInputStream bis = new BufferedInputStream(output.data.getInputStream());
+		BufferedInputStream bis = new BufferedInputStream(output.getInputStream());
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}
     		bis.close();
-    		output.data.free();
+		output.free();
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
     		Logger.error(this, "Bucket error?: " + e, e);

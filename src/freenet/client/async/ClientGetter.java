@@ -204,8 +204,11 @@ public class ClientGetter extends BaseClientGetter {
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
-				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
-				result = new FetchResult(result, filter.data);
+				Bucket filteredResult;
+				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
+				else filteredResult = returnBucket;
+				ContentFilter.filter(result.asBucket().getInputStream(), filteredResult.getOutputStream(), mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+				result = new FetchResult(result, filteredResult);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);

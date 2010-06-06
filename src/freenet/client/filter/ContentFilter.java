@@ -4,9 +4,11 @@
 package freenet.client.filter;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.Arrays;
@@ -140,10 +142,10 @@ public class ContentFilter {
 	/**
 	 * Filter some data.
 	 * 
-	 * @param data
-	 *            Input data
-	 * @param bf
-	 *            The bucket factory used to create the bucket to return the filtered data in.
+	 * @param input
+	 *            Source stream to read data from
+	 * @param output
+	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
 	 * @param maybeCharset 
@@ -156,17 +158,17 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, Bucket destination, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(data, destination, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
+	public static void filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
+		filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
 	}
 
 	/**
 	 * Filter some data.
 	 * 
-	 * @param data
-	 *            Input data
-	 * @param bf
-	 *            The bucket factory used to create the bucket to return the filtered data in.
+	 * @param input
+	 *            Source stream to read data from
+	 * @param output
+	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
 	 * @param maybeCharset 
@@ -179,19 +181,14 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, Bucket destination, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
-		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
-			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName+") Source="+data+" Destintation="+destination);
+	public static void filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class)) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
 		String charset = null;
 		HashMap<String, String> otherParams = null;
-		if(destination == null){
-			if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
-				Logger.minor(ContentFilter.class, "Null destination. Creating new bucket.");
-			destination = new ArrayBucket();
-		}
-		
+		input = new BufferedInputStream(input);
+
 		// First parse the MIME type
 		
 		int idx = type.indexOf(';');
@@ -230,41 +227,43 @@ public class ContentFilter {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
-					charset = detectCharset(data, handler, maybeCharset);
+					input.mark(64*1024);
+					byte[] charsetBuffer = new byte[64*1024];
+					input.read(charsetBuffer, 0, 64*1024);
+					input.reset();
+					charset = detectCharset(charsetBuffer, handler, maybeCharset);
 				}
 				
-				Bucket outputData = handler.readFilter.readFilter(data, destination, charset, otherParams, filterCallback);
+				handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
 				if(charset != null)
 					type = type + "; charset="+charset;
-				return new FilterOutput(outputData, type);
+				return;
 			}
 			
 			if(handler.safeToRead) {
-				BucketTools.copy(data, destination);
-				return new FilterOutput(data, typeName);
+				output.write(input.read());
 			}
 			
 			handler.throwUnsafeContentTypeException();
-			return null;
 		}
 	}
 
-	public static String detectCharset(Bucket data, MIMEType handler, String maybeCharset) throws IOException {
+	public static String detectCharset(byte[] input, MIMEType handler, String maybeCharset) throws IOException {
 		
 		// Detect charset
 		
-		String charset = detectBOM(data);
+		String charset = detectBOM(input);
 		
 		if((charset == null) && (handler.charsetExtractor != null)) {
 			
-			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(data);
+			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(input);
 			if(bom != null) {
 				charset = bom.charset;
 				if(charset != null) {
 					// These detections are not firm, and can detect a family e.g. ASCII, EBCDIC,
 					// so check with the full extractor.
 					try {
-						if((charset = handler.charsetExtractor.getCharset(data, charset)) != null) {
+						if((charset = handler.charsetExtractor.getCharset(input, charset)) != null) {
 							if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 								Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 							return charset;
@@ -282,7 +281,7 @@ public class ContentFilter {
 			
 			if(handler.defaultCharset != null) {
 				try {
-					if((charset = handler.charsetExtractor.getCharset(data, handler.defaultCharset)) != null) {
+					if((charset = handler.charsetExtractor.getCharset(input, handler.defaultCharset)) != null) {
 				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
@@ -292,25 +291,25 @@ public class ContentFilter {
 				}
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "ISO-8859-1")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "ISO-8859-1")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "UTF-8")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "UTF-8")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "UTF-16")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "UTF-16")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "UTF-32")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "UTF-32")) != null)
 					return charset;
 			} catch (UnsupportedEncodingException e) {
 				// Doesn't seem to be supported by prior to 1.6.
@@ -336,11 +335,11 @@ public class ContentFilter {
 	 * specific charset.
 	 * @throws IOException 
 	 */
-	private static String detectBOM(Bucket bucket) throws IOException {
+	private static String detectBOM(byte[] input) throws IOException {
 		InputStream is = null;
 		try {
 			byte[] data = new byte[5];
-			is = new BufferedInputStream(bucket.getInputStream());
+			is = new ByteArrayInputStream(input);
 			int read = 0;
 			while(read < data.length) {
 				int x;

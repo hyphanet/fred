@@ -8,11 +8,11 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 
 /**
@@ -85,13 +85,12 @@ public class BMPFilter implements ContentDataFilter {
     }
 
 	
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		if(data.size() < 54) { // Size of the bmp header is 54
+		if(input.available() < 54) { // Size of the bmp header is 54
 			throwHeaderError(l10n("TooShortT"), l10n("TooShortD"));
 		}
-		InputStream is = data.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is);
+		BufferedInputStream bis = new BufferedInputStream(input);
 		DataInputStream dis = new DataInputStream(bis);
 		try {
 			
@@ -168,14 +167,12 @@ public class BMPFilter implements ContentDataFilter {
 					throwHeaderError(l10n("InvalidImageDataSizeT"), l10n("InvalidImageDataSizeD" ));
 			}
 		}
-			
 
-
-			dis.close();
+		output.write(input.read());
+		dis.close();
 		} finally {
 			Closer.close(dis);
 		}
-		return data;
 	}
 
 	private static String l10n(String key) {
@@ -191,9 +188,9 @@ public class BMPFilter implements ContentDataFilter {
 		throw new DataFilterException(shortReason, shortReason, message);
 	}
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
-		return null;
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb) throws DataFilterException, IOException {
+		return;
 	}
 
 }

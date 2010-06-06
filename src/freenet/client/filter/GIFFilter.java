@@ -7,11 +7,11 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 
 /**
@@ -27,13 +27,12 @@ public class GIFFilter implements ContentDataFilter {
 		{ (byte)'G', (byte)'I', (byte)'F', (byte)'8', (byte)'9', (byte)'a' };
 		
 	
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		if(data.size() < 6) {
+		if(input.available() < 6) {
 			throwHeaderError(l10n("tooShortTitle"), l10n("tooShort"));
 		}
-		InputStream is = data.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is);
+		BufferedInputStream bis = new BufferedInputStream(input);
 		DataInputStream dis = new DataInputStream(bis);
 		try {
 			// Check the header
@@ -46,7 +45,6 @@ public class GIFFilter implements ContentDataFilter {
 		} finally {
 			Closer.close(dis);
 		}
-		return data;
 	}
 
 	private static String l10n(String key) {
@@ -62,9 +60,10 @@ public class GIFFilter implements ContentDataFilter {
 		throw new DataFilterException(shortReason, shortReason, message);
 	}
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		return null;
+		output.write(input.read());
+		return;
 	}
 
 }

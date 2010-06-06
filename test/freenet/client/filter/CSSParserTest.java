@@ -22,7 +22,6 @@ import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
-import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;

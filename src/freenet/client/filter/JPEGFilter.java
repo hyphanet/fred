@@ -4,7 +4,6 @@
 package freenet.client.filter;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,8 +16,6 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 
@@ -60,35 +57,21 @@ public class JPEGFilter implements ContentDataFilter {
 		(byte)'J', (byte)'F', (byte)'X', (byte)'X', 0
 	};
 	
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		Bucket output = readFilter(data, destination, charset, otherParams, cb, deleteComments, deleteExif, null);
-		if(output != null)
-			return output;
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Need to modify JPEG...");
-		OutputStream os = new BufferedOutputStream(destination.getOutputStream());
-		try {
-			readFilter(data, destination, charset, otherParams, cb, deleteComments, deleteExif, os);
-			os.flush();
-			os.close();
-			os = null;
-		} finally {
-			Closer.close(os);
-		}
-		return destination;
+		readFilter(input, output, charset, otherParams, cb, deleteComments, deleteExif);
+			Closer.close(output);
 	}
 	
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb, boolean deleteComments, boolean deleteExif, OutputStream output)
-	        throws DataFilterException, IOException {
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb, boolean deleteComments, boolean deleteExif)
+			throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		long length = data.size();
+		long length = input.available();
 		if(length < 6) {
 			throwError(l10n("tooShortTitle"), l10n("tooShort"));
 		}
-		InputStream is = data.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is);
+		BufferedInputStream bis = new BufferedInputStream(input);
 		CountedInputStream cis = new CountedInputStream(bis);
 		DataInputStream dis = new DataInputStream(cis);
 		try {
@@ -121,7 +104,7 @@ public class JPEGFilter implements ContentDataFilter {
 					} else if(finished) {
 						if(logMINOR)
 							Logger.minor(this, "More data after EOI, copying to truncate");
-						return null;
+						return;
 					}
 					if(markerStart != 0xFF) {
 						throwError("Invalid marker", "The file includes an invalid marker start "+Integer.toHexString(markerStart)+" and cannot be parsed further.");
@@ -236,12 +219,10 @@ public class JPEGFilter implements ContentDataFilter {
 						if(logMINOR)
 							Logger.minor(this, "Dropping application-specific APP0 chunk named "+type);
 						// Application-specific extension
-						if(output == null) return null;
 						skipRest(blockLength, countAtStart, cis, dis, dos, "application-specific frame");
 						continue; // Don't write the frame.
 					}
 				} else if(markerType == 0xE1) { // EXIF
-					if(output == null && deleteExif) return null;
 					if(deleteExif) {
 						if(logMINOR)
 							Logger.minor(this, "Dropping EXIF data");
@@ -251,7 +232,6 @@ public class JPEGFilter implements ContentDataFilter {
 					skipRest(blockLength, countAtStart, cis, dis, dos, "EXIF frame");
 				} else if(markerType == 0xFE) {
 					// Comment
-					if(output == null && deleteComments) return null;
 					if(deleteComments) {
 						skipBytes(dis, blockLength - 2);
 						if(logMINOR)
@@ -354,7 +334,6 @@ public class JPEGFilter implements ContentDataFilter {
 		} finally {
 			Closer.close(dis);
 		}
-		return data;
 	}
 
 	private static String l10n(String key) {
@@ -435,9 +414,9 @@ public class JPEGFilter implements ContentDataFilter {
 		throw e;
 	}
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		return null;
+		return;
 	}
 
 }
