@@ -1398,7 +1398,6 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			 */
 			public synchronized void getNextEditions(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
 				if(lookedUp < 0) lookedUp = 0;
-				// First add stuff to poll
 				for(int i=0;i<origMinFailures;i++) {
 					long ed = i + lookedUp;
 					Lookup l = new Lookup();
