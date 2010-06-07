@@ -171,7 +171,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 		/** DNF? */
 		boolean dnf;
 		boolean cancelled;
+		final Lookup lookup;
 		public USKAttempt(Lookup l, boolean forever) {
+			this.lookup = l;
 			this.number = l.val;
 			this.succeeded = false;
 			this.dnf = false;
@@ -425,7 +427,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			curLatest = Math.max(lastEd, curLatest);
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest+" in onSuccess");
 			if(!checkStoreOnly) {
-				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest, context.random);
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(curLatest, context.random, getRunningFetchEditions());
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
@@ -615,7 +617,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				
 				// subscribe() above may have called onFoundEdition and thus added a load of stuff. If so, we don't need to do so here.
 				if((!checkStoreOnly) && attemptsToStart.isEmpty() && runningAttempts.isEmpty() && pollingAttempts.isEmpty()) {
-					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp, context.random);
+					USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(lookedUp, context.random, getRunningFetchEditions());
 					Lookup[] toPoll = list.toPoll;
 					Lookup[] toFetch = list.toFetch;
 					for(Lookup i : toPoll) {
@@ -828,7 +830,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			if(logMINOR) Logger.minor(this, "Latest: "+ed+" in onFoundEdition");
 			
 			if(!checkStoreOnly) {
-				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed, context.random);
+				USKWatchingKeys.ToFetch list = watchingKeys.getEditionsToFetch(ed, context.random, getRunningFetchEditions());
 				Lookup[] toPoll = list.toPoll;
 				Lookup[] toFetch = list.toFetch;
 				for(Lookup i : toPoll) {
@@ -863,6 +865,17 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 			}
 		}
+	}
+
+	private synchronized ArrayList<Lookup> getRunningFetchEditions() {
+		ArrayList<Lookup> ret = new ArrayList<Lookup>();
+		for(USKAttempt a : runningAttempts.values()) {
+			ret.add(a.lookup);
+		}
+		for(USKAttempt a : pollingAttempts.values()) {
+			ret.add(a.lookup);
+		}
+		return ret;
 	}
 
 	private void registerAttempts(ClientContext context) {
@@ -1260,14 +1273,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 		}
 		
-		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random) {
+		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, ArrayList<Lookup> alreadyRunning) {
 			
 			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp);
 			
 			ArrayList<Lookup> toFetch = new ArrayList<Lookup>();
 			ArrayList<Lookup> toPoll = new ArrayList<Lookup>();
 			
-			fromLastKnownGood.getEditionsToFetch(toFetch, toPoll, lookedUp, random);
+			fromLastKnownGood.getNextEditions(toFetch, toPoll, lookedUp, alreadyRunning, random);
 			
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
@@ -1275,8 +1288,32 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				long l = entry.getKey();
 				if(l <= lookedUp)
 					it.remove();
-				entry.getValue().getEditionsToFetch(toFetch, toPoll, l, random);
+				entry.getValue().getNextEditions(toFetch, toPoll, l, alreadyRunning, random);
 			}
+			
+			// Now getRandomEditions
+			// But how many???
+			int runningRandom = 0;
+			for(Lookup l : alreadyRunning) {
+				if(toFetch.contains(l) || toPoll.contains(l)) continue;
+				runningRandom++;
+			}
+			
+			int allowedRandom = 2 + 2*fromSubscribers.size();
+			if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" total allowed: "+allowedRandom);
+			allowedRandom -= runningRandom;
+			
+			if(allowedRandom >= 2) {
+				fromLastKnownGood.getRandomEditions(toFetch, lookedUp, alreadyRunning, random);
+				allowedRandom-=2;
+			}
+			
+			for(Iterator<KeyList> it = fromSubscribers.values().iterator(); allowedRandom >= 2 && it.hasNext();) {
+				KeyList k = it.next();
+				k.getRandomEditions(toFetch, lookedUp, alreadyRunning, random);
+				allowedRandom -= 2;
+			}
+			
 			return new ToFetch(toFetch, toPoll);
 		}
 
@@ -1343,7 +1380,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				generate(firstSlot, WATCH_KEYS, ehDocnames);
 			}
 
-			public synchronized void getEditionsToFetch(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, Random random) {
+			public synchronized void getNextEditions(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
 				if(lookedUp < 0) lookedUp = 0;
 				// First add stuff to poll
 				for(int i=0;i<origMinFailures;i++) {
@@ -1352,6 +1389,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					l.val = ed;
 					boolean poll = backgroundPoll;
 					if(toFetch.contains(l) && (poll && toFetch.contains(l)))
+						continue;
+					if(alreadyRunning.contains(l)) 
 						continue;
 					ClientSSK key;
 					// FIXME reuse ehDocnames somehow
@@ -1366,6 +1405,9 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					if(!toFetch.contains(l))
 						toFetch.add(l);
 				}
+			}
+			
+			public synchronized void getRandomEditions(ArrayList<Lookup> toFetch, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
 				// Then add a couple of random editions for catch-up.
 				long baseEdition = lookedUp + origMinFailures;
 				for(int i=0;i<2;i++) {
@@ -1378,6 +1420,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 						Lookup l = new Lookup();
 						l.val = fetch;
 						if(toFetch.contains(l)) continue;
+						if(alreadyRunning.contains(l)) continue;
 						l.key = origUSK.getSSK(fetch);
 						l.ignoreStore = !(fetch - lookedUp >= WATCH_KEYS);
 						toFetch.add(l);
