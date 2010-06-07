@@ -1273,6 +1273,13 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 		}
 		
+		/**
+		 * Get a bunch of editions to probe for.
+		 * @param lookedUp The current best known slot, from USKManager.
+		 * @param random The random number generator.
+		 * @param alreadyRunning This will be modified: We will remove anything that should still be running from it.
+		 * @return Editions to fetch and editions to poll for.
+		 */
 		public synchronized ToFetch getEditionsToFetch(long lookedUp, Random random, ArrayList<Lookup> alreadyRunning) {
 			
 			if(logMINOR) Logger.minor(this, "Get editions to fetch, latest slot is "+lookedUp);
@@ -1300,7 +1307,8 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			
 			int allowedRandom = 2 + 2*fromSubscribers.size();
-			if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" ( "+alreadyRunning+" ) total allowed: "+allowedRandom+" looked up is "+lookedUp);
+			if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" total allowed: "+allowedRandom+" looked up is "+lookedUp);
+			
 			allowedRandom -= runningRandom;
 			
 			if(allowedRandom >= 2) {
@@ -1380,6 +1388,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				generate(firstSlot, WATCH_KEYS, ehDocnames);
 			}
 
+			/** Add the next bunch of editions to fetch to toFetch and toPoll. If they are already running,
+			 * REMOVE THEM from the alreadyRunning array.
+			 * @param toFetch
+			 * @param toPoll
+			 * @param lookedUp
+			 * @param alreadyRunning
+			 * @param random
+			 */
 			public synchronized void getNextEditions(ArrayList<Lookup> toFetch, ArrayList<Lookup> toPoll, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
 				if(lookedUp < 0) lookedUp = 0;
 				// First add stuff to poll
@@ -1390,8 +1406,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 					boolean poll = backgroundPoll;
 					if(toFetch.contains(l) && (poll && toFetch.contains(l)))
 						continue;
-					if(alreadyRunning.contains(l)) 
+					if(alreadyRunning.contains(l)) {
+						alreadyRunning.remove(l);
 						continue;
+					}
 					ClientSSK key;
 					// FIXME reuse ehDocnames somehow
 					// The problem is we need a ClientSSK for the high level stuff.
