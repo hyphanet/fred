@@ -263,7 +263,7 @@ public class USKManager implements RequestClient {
 						long l = lookupLatestSlot(clear);
 						if(lookupKnownGood(clear) < l)
 							toFetch.add(clear.copy(l));
-						entry.setValue(now);
+						entry.setValue(-1L); // Reset counter until new data comes in
 					} else {
 						if(logMINOR) Logger.minor(this, "Not prefetching: "+entry.getKey()+" : "+entry.getValue());
 					}
