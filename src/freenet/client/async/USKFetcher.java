@@ -1311,14 +1311,14 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 			allowedRandom -= runningRandom;
 			
-			if(allowedRandom >= 2) {
-				fromLastKnownGood.getRandomEditions(toFetch, lookedUp, alreadyRunning, random);
+			if(allowedRandom > 0) {
+				fromLastKnownGood.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
 				allowedRandom-=2;
 			}
 			
 			for(Iterator<KeyList> it = fromSubscribers.values().iterator(); allowedRandom >= 2 && it.hasNext();) {
 				KeyList k = it.next();
-				k.getRandomEditions(toFetch, lookedUp, alreadyRunning, random);
+				k.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
 				allowedRandom -= 2;
 			}
 			
@@ -1424,10 +1424,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 				}
 			}
 			
-			public synchronized void getRandomEditions(ArrayList<Lookup> toFetch, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random) {
+			public synchronized void getRandomEditions(ArrayList<Lookup> toFetch, long lookedUp, ArrayList<Lookup> alreadyRunning, Random random, int allowed) {
 				// Then add a couple of random editions for catch-up.
 				long baseEdition = lookedUp + origMinFailures;
-				for(int i=0;i<2;i++) {
+				for(int i=0;i<allowed;i++) {
 					while(true) {
 						// Geometric distribution.
 						// 20% chance of mean 100, 80% chance of mean 10. Thanks evanbd.
