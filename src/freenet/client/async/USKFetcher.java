@@ -870,10 +870,10 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 	private synchronized ArrayList<Lookup> getRunningFetchEditions() {
 		ArrayList<Lookup> ret = new ArrayList<Lookup>();
 		for(USKAttempt a : runningAttempts.values()) {
-			ret.add(a.lookup);
+			if(!ret.contains(a.lookup)) ret.add(a.lookup);
 		}
 		for(USKAttempt a : pollingAttempts.values()) {
-			ret.add(a.lookup);
+			if(!ret.contains(a.lookup)) ret.add(a.lookup);
 		}
 		return ret;
 	}
