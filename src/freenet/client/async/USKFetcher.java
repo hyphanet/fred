@@ -1300,7 +1300,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			}
 			
 			int allowedRandom = 2 + 2*fromSubscribers.size();
-			if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" total allowed: "+allowedRandom);
+			if(logMINOR) Logger.minor(this, "Running random requests: "+runningRandom+" ( "+alreadyRunning+" ) total allowed: "+allowedRandom+" looked up is "+lookedUp);
 			allowedRandom -= runningRandom;
 			
 			if(allowedRandom >= 2) {
