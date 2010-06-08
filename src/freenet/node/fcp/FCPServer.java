@@ -171,13 +171,7 @@ public class FCPServer implements Runnable {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
-				synchronized(networkInterface) {
-					while (!networkInterface.isBound()) {
-						Logger.error(this, "Network interface isn't bound, waiting");
-						networkInterface.wait();
-					}
-					Logger.error(this, "Finished waiting, network interface is now bound");
-				}
+				networkInterface.waitBound();
 				realRun();
 			} catch (IOException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e, e);

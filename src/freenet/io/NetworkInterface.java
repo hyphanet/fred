@@ -361,4 +361,14 @@ public class NetworkInterface implements Closeable {
 		return this.acceptors.size() != 0;
 	}
 
+	public void waitBound() throws InterruptedException {
+		synchronized(this) {
+			while (!isBound()) {
+				Logger.error(this, "Network interface isn't bound, waiting");
+				wait();
+			}
+			Logger.error(this, "Finished waiting, network interface is now bound");
+		}
+	}
+
 }
