@@ -31,6 +31,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
+import freenet.io.comm.IncomingPacketFilterImpl;
 import freenet.io.comm.Peer;
 import freenet.io.comm.UdpSocketHandler;
 import freenet.keys.FreenetURI;
@@ -148,7 +149,8 @@ public class NodeCrypto {
 
 		socket.setDropProbability(config.getDropProbability());
 
-		socket.setLowLevelFilter(packetMangler = new FNPPacketMangler(node, this, socket));
+		packetMangler = new FNPPacketMangler(node, this, socket);
+		socket.setLowLevelFilter(new IncomingPacketFilterImpl(packetMangler, node));
 
 		detector = new NodeIPPortDetector(node, node.ipDetector, this, enableARKs);
 

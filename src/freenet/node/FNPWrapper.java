@@ -174,4 +174,8 @@ public class FNPWrapper {
 		return false;
 	}
 
+	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
+		pn.crypto.packetMangler.process(buf, offset, length, pn.getPeer(), now);
+        }
+
 }

@@ -4282,4 +4282,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return messageQueue;
 	}
 
+	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
+		packetFormat.handleReceivedPacket(buf, offset, length, now);
+        }
+
 }
