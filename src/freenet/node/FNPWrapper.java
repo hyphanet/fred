@@ -52,11 +52,11 @@ public class FNPWrapper {
 		// Any packets to resend? If so, resend ONE packet and then return.
 		for (int j = 0; j < 2; j++) {
 			SessionKey kt;
-			if(j == 0)
+			if(j == 0) {
 				kt = pn.getCurrentKeyTracker();
-			else
-				// if(j == 1)
+			} else /* if(j == 1) */ {
 				kt = pn.getPreviousKeyTracker();
+			}
 			if(kt == null) continue;
 			int[] tmp = kt.packets.grabResendPackets(rpiTemp, rpiIntTemp);
 			if(tmp == null) continue;
@@ -64,8 +64,9 @@ public class FNPWrapper {
 			for (ResendPacketItem item : rpiTemp) {
 				if(item == null) continue;
 				try {
-					if(logMINOR)
-					        Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
+					if(logMINOR) {
+						Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
+					}
 					pn.getOutgoingMangler().resend(item, kt);
 					return true;
 				} catch (KeyChangedException e) {
@@ -98,9 +99,10 @@ public class FNPWrapper {
 		long lastSent = pn.lastSentPacketTime();
 		if(now - lastSent > Node.KEEPALIVE_INTERVAL) {
 			if(logMINOR) Logger.minor(this, "Sending keepalive");
-			if(now - lastSent > Node.KEEPALIVE_INTERVAL * 10 && lastSent > -1)
-			        Logger.error(this, "Long gap between sending packets: " + (now - lastSent) + " for "
-			                        + pn);
+			if(now - lastSent > Node.KEEPALIVE_INTERVAL * 10 && lastSent > -1) {
+				Logger.error(this, "Long gap between sending packets: " + (now - lastSent) + " for "
+				                + pn);
+			}
 			keepalive = true;
 			mustSend = true;
 			mustSendPacket = true;
@@ -176,6 +178,6 @@ public class FNPWrapper {
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
 		pn.crypto.packetMangler.process(buf, offset, length, pn.getPeer(), now);
-        }
+	}
 
 }
