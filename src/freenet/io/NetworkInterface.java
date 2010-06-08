@@ -169,6 +169,7 @@ public class NetworkInterface implements Closeable {
 			for (Acceptor acceptor : this.acceptors) {
 				executor.execute(acceptor, "Network Interface Acceptor for "+acceptor.serverSocket);
 			}
+			syncObject.notifyAll();
 		}
 	}
 
@@ -362,10 +363,10 @@ public class NetworkInterface implements Closeable {
 	}
 
 	public void waitBound() throws InterruptedException {
-		synchronized(this) {
+		synchronized(syncObject) {
 			while (!isBound()) {
 				Logger.error(this, "Network interface isn't bound, waiting");
-				wait();
+				syncObject.wait();
 			}
 			Logger.error(this, "Finished waiting, network interface is now bound");
 		}
