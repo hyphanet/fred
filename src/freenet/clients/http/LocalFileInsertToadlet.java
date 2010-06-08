@@ -56,7 +56,10 @@ public class LocalFileInsertToadlet extends Toadlet {
 			extra = "&key="+furi.toASCIIString();
 		
 		File thisPath;
-		
+
+		boolean compress = Boolean.valueOf(request.getParam("compress"));
+		extra += "&compress=" + compress;
+
 		String path = request.getParam("path");
 		if (path.length() == 0) {
 			if (currentPath == null) {
@@ -152,7 +155,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm");
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
-						formNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "compress" }, l10n("compress"));
+						if (compress) {
+							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "compress", String.valueOf(compress) });
+						}
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-dir", l10n("insert")});
 						if(furi != null)
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toASCIIString() });
@@ -168,7 +173,9 @@ public class LocalFileInsertToadlet extends Toadlet {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = toadletContext.addFormChild(cellNode, "/uploads/", "insertLocalFileForm");
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
-						formNode.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "compress" }, l10n("compress"));
+						if (compress) {
+							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "compress", String.valueOf(compress) });
+						}
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", l10n("insert")});
 						if(furi != null)
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toASCIIString() });
