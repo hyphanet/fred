@@ -151,6 +151,8 @@ public class FilePersistentConfig extends PersistentConfig {
 				// ie. after the lenient parser is more widely deployed
 				fs.writeTo(fos);
 			}
+			fos.close();
+			fos = null;
 			FileUtil.renameTo(tempFilename, filename);
 		}
 		finally {
