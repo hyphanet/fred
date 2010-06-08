@@ -24,7 +24,7 @@ import freenet.support.io.NullWriter;
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+			FilterCallback cb) throws DataFilterException, IOException {
 		if (Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(
 				this,
@@ -33,16 +33,14 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 					+ "with charset"+charset);
 		Reader r = null;
 		Writer w = null;
-		InputStreamReader isr = null;
-		OutputStreamWriter osw = null;
 		try {
 			try {
-				isr = new InputStreamReader(input, charset);
-				osw = new OutputStreamWriter(output, charset);
+				InputStreamReader isr = new InputStreamReader(input, charset);
+				OutputStreamWriter osw = new OutputStreamWriter(output, charset);
 				r = new BufferedReader(isr, 32768);
 				w = new BufferedWriter(osw, 32768);
+
 			} catch(UnsupportedEncodingException e) {
-				Closer.close(osw);
 				throw UnknownCharsetException.create(e, charset);
 			}
 			CSSParser parser = new CSSParser(r, w, false, cb, charset, false, false);
@@ -56,6 +54,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			Closer.close(r);
 			Closer.close(w);
 		}
+		
 	}
 
 	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,

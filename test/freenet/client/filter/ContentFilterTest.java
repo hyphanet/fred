@@ -14,9 +14,7 @@ import freenet.client.filter.HTMLFilter;
 import freenet.client.filter.HTMLFilter.*;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 
 /**
  * A simple meta-test to track regressions of the content-filter
@@ -176,8 +174,10 @@ public class ContentFilterTest extends TestCase {
 		String typeName = "text/html";
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
-		
-		return ContentFilter.filter(new ArrayBucket(dataToFilter), new ArrayBucket(), typeName, baseURI, null, null, null).data.toString();
+		ArrayBucket input = new ArrayBucket(dataToFilter);
+		ArrayBucket output = new ArrayBucket();
+		ContentFilter.filter(input.getInputStream(), output.getOutputStream(), typeName, baseURI, null, null, null);
+		return output.toString();
 	}
 
 	static public class TagVerifierTest extends TestCase {

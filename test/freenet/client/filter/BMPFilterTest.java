@@ -8,8 +8,8 @@ import java.io.FileNotFoundException;
 import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NullBucket;
 
 
 public class BMPFilterTest extends TestCase {
@@ -62,7 +62,7 @@ public class BMPFilterTest extends TestCase {
 
 
 			try {
-				Bucket ob = objBMPFilter.readFilter(ib, new ArrayBucket(), "", null, null);
+				objBMPFilter.readFilter(ib.getInputStream(), new NullBucket().getOutputStream(), "", null, null);
 				assertEquals(filename + " should be valid", expectedresult,0);
 			} 
 			catch (DataFilterException dfe) {
