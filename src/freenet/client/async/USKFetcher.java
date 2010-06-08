@@ -1287,7 +1287,11 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			ArrayList<Lookup> toFetch = new ArrayList<Lookup>();
 			ArrayList<Lookup> toPoll = new ArrayList<Lookup>();
 			
-			fromLastKnownGood.getNextEditions(toFetch, toPoll, lookedUp, alreadyRunning, random);
+			boolean probeFromLastKnownGood = 
+				lookedUp > -1 || (backgroundPoll && !firstLoop) || fromSubscribers.isEmpty();
+			
+			if(probeFromLastKnownGood)
+				fromLastKnownGood.getNextEditions(toFetch, toPoll, lookedUp, alreadyRunning, random);
 			
 			// If we have moved past the origUSK, then clear the KeyList for it.
 			for(Iterator<Entry<Long,KeyList>> it = fromSubscribers.entrySet().iterator();it.hasNext();) {
@@ -1311,7 +1315,7 @@ public class USKFetcher implements ClientGetState, USKCallback, HasKeyListener, 
 			
 			allowedRandom -= runningRandom;
 			
-			if(allowedRandom > 0) {
+			if(allowedRandom > 0 && probeFromLastKnownGood) {
 				fromLastKnownGood.getRandomEditions(toFetch, lookedUp, alreadyRunning, random, Math.min(2, allowedRandom));
 				allowedRandom-=2;
 			}
