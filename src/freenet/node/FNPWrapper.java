@@ -166,14 +166,16 @@ public class FNPWrapper {
 		return false;
 	}
 
-	private synchronized boolean mustSendNotificationsNow(long now) {
-		SessionKey kt = pn.getCurrentKeyTracker();
-		if(kt != null) {
-			if(kt.packets.getNextUrgentTime() < now) return true;
+	private boolean mustSendNotificationsNow(long now) {
+		synchronized(pn) {
+			SessionKey kt = pn.getCurrentKeyTracker();
+			if(kt != null) {
+				if(kt.packets.getNextUrgentTime() < now) return true;
+			}
+			kt = pn.getPreviousKeyTracker();
+			if(kt != null) if(kt.packets.getNextUrgentTime() < now) return true;
+			return false;
 		}
-		kt = pn.getPreviousKeyTracker();
-		if(kt != null) if(kt.packets.getNextUrgentTime() < now) return true;
-		return false;
 	}
 
 	public void handleReceivedPacket(byte[] buf, int offset, int length, long now) {
