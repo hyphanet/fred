@@ -377,6 +377,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		});
 	}
 
+	private FNPWrapper packetFormat;
+
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
 	 * Only set this if you don't want to send an identity, e.g. for anonymous
@@ -724,6 +726,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		totalInputSinceStartup = fs.getLong("totalInput", 0);
 		totalOutputSinceStartup = fs.getLong("totalOutput", 0);
+
+		packetFormat = new FNPWrapper(this);
 
 	// status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
 	}
@@ -1319,17 +1323,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Ignore for now, it will come back around
 		}
 		return t;
-	}
-
-	private synchronized boolean mustSendNotificationsNow(long now) {
-		SessionKey kt = currentTracker;
-		if(kt != null) {
-			if(kt.packets.getNextUrgentTime() < now) return true;
-		}
-		kt = previousTracker;
-		if(kt != null)
-			if(kt.packets.getNextUrgentTime() < now) return true;
-		return false;
 	}
 
 	/**
@@ -4178,131 +4171,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @throws BlockedTooLongException
 	 */
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
-		// If there are any urgent notifications, we must send a packet.
-		if(logMINOR) Logger.minor(this, "maybeSendPacket: "+this);
-		boolean mustSend = false;
-		boolean mustSendPacket = false;
-		if(mustSendNotificationsNow(now)) {
-			if(logMINOR)
-				Logger.minor(this, "Sending notification");
-			mustSend = true;
-			mustSendPacket = true;
-		}
-		// Any packets to resend? If so, resend ONE packet and then return.
-		for(int j = 0; j < 2; j++) {
-			SessionKey kt;
-			if(j == 0)
-				kt = getCurrentKeyTracker();
-			else// if(j == 1)
-				kt = getPreviousKeyTracker();
-			if(kt == null)
-				continue;
-			int[] tmp = kt.packets.grabResendPackets(rpiTemp, rpiIntTemp);
-			if(tmp == null)
-				continue;
-			rpiIntTemp = tmp;
-			for(ResendPacketItem item : rpiTemp) {
-				if(item == null)
-					continue;
-				try {
-					if(logMINOR)
-						Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
-					getOutgoingMangler().resend(item, kt);
-					return true;
-				} catch(KeyChangedException e) {
-					Logger.error(this, "Caught " + e + " resending packets to " + kt);
-					requeueResendItems(rpiTemp);
-					return false;
-				} catch(NotConnectedException e) {
-					Logger.normal(this, "Caught " + e + " resending packets to " + kt);
-					requeueResendItems(rpiTemp);
-					return false;
-				} catch(PacketSequenceException e) {
-					Logger.error(this, "Caught " + e + " - disconnecting", e);
-					// PSE is fairly drastic, something is broken between us, but maybe we can resync
-					forceDisconnect(false);
-					return false;
-				} catch(WouldBlockException e) {
-					Logger.error(this, "Impossible: " + e, e);
-					return false;
-				}
-			}
-
-		}
-		int minSize = getOutgoingMangler().fullHeadersLengthOneMessage(); // includes UDP headers
-		int maxSize = ((PacketSocketHandler) getSocketHandler()).getPacketSendThreshold();
-
-		// If it's a keepalive, we must add an FNPVoid to ensure it has a packet number.
-		boolean keepalive = false;
-
-		long lastSent = lastSentPacketTime();
-		if(now - lastSent > Node.KEEPALIVE_INTERVAL) {
-			if(logMINOR)
-				Logger.minor(this, "Sending keepalive");
-			if(now - lastSent > Node.KEEPALIVE_INTERVAL * 10 && lastSent > -1)
-				Logger.error(this, "Long gap between sending packets: "+(now - lastSent)+" for "+this);
-			keepalive = true;
-			mustSend = true;
-			mustSendPacket = true;
-		}
-
-		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(10);
-
-		synchronized(messageQueue) {
-
-			// Any urgent messages to send now?
-
-			if(!mustSend) {
-				if(messageQueue.mustSendNow(now))
-					mustSend = true;
-			}
-
-			if(!mustSend) {
-				// What about total length?
-				if(messageQueue.mustSendSize(minSize, maxSize))
-					mustSend = true;
-			}
-
-			if(mustSend) {
-				int size = minSize;
-				size = messageQueue.addUrgentMessages(size, now, minSize, maxSize, messages);
-
-				// Now the not-so-urgent messages.
-				if(size >= 0) {
-					size = messageQueue.addNonUrgentMessages(size, now, minSize, maxSize, messages);
-				}
-			}
-
-		}
-
-		if(messages.isEmpty() && keepalive) {
-			// Force packet to have a sequence number.
-			Message m = DMT.createFNPVoid();
-			addToLocalNodeSentMessagesToStatistic(m);
-			messages.add(new MessageItem(m, null, null, this));
-		}
-
-		if(!messages.isEmpty()) {
-			// Send packets, right now, blocking, including any active notifications
-			// Note that processOutgoingOrRequeue will drop messages from the end
-			// if necessary to fit the messages into a single packet.
-			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, false, true)) {
-				if(mustSendPacket) {
-					if(!sendAnyUrgentNotifications(false))
-						sendAnyUrgentNotifications(true);
-				}
-			}
-			return true;
-		} else {
-			if(mustSend) {
-					if(sendAnyUrgentNotifications(false))
-						return true;
-				// Can happen occasionally as a race condition...
-				Logger.normal(this, "No notifications sent despite no messages and mustSend=true for "+this);
-			}
-		}
-
-		return false;
+		return packetFormat.maybeSendPacket(now, rpiTemp, rpiIntTemp);
 	}
 
 	/**
@@ -4407,6 +4276,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized ConnectionType getAddedReason() {
 		return null;
+	}
+
+	PeerMessageQueue getMessageQueue() {
+		return messageQueue;
 	}
 
 }
