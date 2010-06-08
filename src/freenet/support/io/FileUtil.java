@@ -247,13 +247,16 @@ final public class FileUtil {
                 if (!dest.delete()) {
                     if (dest.exists()) {
                         Logger.error("FileUtil", "Could not delete " + dest + " - check permissions");
+                        System.err.println("Could not delete " + dest + " - check permissions");
                     }
                 }
                 if (!orig.renameTo(dest)) {
-                    Logger.error("FileUtil", "Could not rename " + orig + " to " + dest +
-                            (dest.exists() ? " (target exists)" : "") +
-                            (orig.exists() ? " (source exists)" : "") +
-                            " - check permissions");
+                	String err = "Could not rename " + orig + " to " + dest +
+                    	(dest.exists() ? " (target exists)" : "") +
+                    	(orig.exists() ? " (source exists)" : "") +
+                    	" - check permissions";
+                    Logger.error(FileUtil.class, err);
+                    System.err.println(err);
                     return false;
                 }
             }
