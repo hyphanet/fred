@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.zip.CRC32;
 
 import freenet.l10n.NodeL10n;
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;

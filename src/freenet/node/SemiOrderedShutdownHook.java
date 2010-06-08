@@ -8,7 +8,17 @@ public class SemiOrderedShutdownHook extends Thread {
 	private final ArrayList<Thread> earlyJobs;
 	private final ArrayList<Thread> lateJobs;
 	
-	public SemiOrderedShutdownHook() {
+	public static final SemiOrderedShutdownHook singleton = new SemiOrderedShutdownHook();
+	
+	static {
+		Runtime.getRuntime().addShutdownHook(singleton);
+	}
+	
+	public static SemiOrderedShutdownHook get() {
+		return singleton;
+	}
+	
+	private SemiOrderedShutdownHook() {
 		earlyJobs = new ArrayList<Thread>();
 		lateJobs = new ArrayList<Thread>();
 	}
