@@ -47,8 +47,12 @@ public class InsertableUSK extends USK {
 	}
 
 	public InsertableClientSSK getInsertableSSK(long ver) {
+		return getInsertableSSK(siteName + SEPARATOR + ver);
+	}
+	
+	public InsertableClientSSK getInsertableSSK(String string) {
 		try {
-			return new InsertableClientSSK(siteName + SEPARATOR + ver, pubKeyHash, 
+			return new InsertableClientSSK(string, pubKeyHash, 
 					new DSAPublicKey(group, privKey), privKey, cryptoKey, cryptoAlgorithm);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Caught "+e+" should not be possible in USK.getSSK", e);

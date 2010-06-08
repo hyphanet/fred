@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertContext;
 import freenet.client.async.BaseManifestPutter;
 import freenet.client.async.ManifestElement;
@@ -351,5 +353,10 @@ public class DefaultManifestPutter extends BaseManifestPutter {
 				containerBuilder.popCurrentDir();
 			}
 		}	
+	}
+
+	@Override
+	public void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 }

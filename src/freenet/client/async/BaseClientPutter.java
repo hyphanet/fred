@@ -20,4 +20,6 @@ public abstract class BaseClientPutter extends ClientRequester {
 		// Do nothing
 	}
 
+	public abstract void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container);
+
 }
