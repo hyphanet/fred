@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import java.util.HashMap;
 
-import com.db4o.ObjectContainer;
-
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
@@ -55,11 +53,6 @@ public class PlainManifestPutter extends BaseManifestPutter {
 				builder.addElement(name, element, name.equals(defaultName));
 			}
 		}
-	}
-
-	@Override
-	public void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container) {
-		throw new UnsupportedOperationException();
 	}
 }
 
