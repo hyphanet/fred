@@ -27,6 +27,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.Version;
 import freenet.support.io.FileUtil;
 
@@ -742,7 +743,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		WriterThread wt = new WriterThread();
 		wt.setDaemon(true);
 		CloserThread ct = new CloserThread();
-		Runtime.getRuntime().addShutdownHook(ct);
+		SemiOrderedShutdownHook.get().addLateJob(ct);
 		wt.start();
 	}
 	
