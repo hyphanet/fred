@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,8 +31,7 @@ public class GIFFilter implements ContentDataFilter {
 		if(input.available() < 6) {
 			throwHeaderError(l10n("tooShortTitle"), l10n("tooShort"));
 		}
-		BufferedInputStream bis = new BufferedInputStream(input);
-		DataInputStream dis = new DataInputStream(bis);
+		DataInputStream dis = new DataInputStream(input);
 		try {
 			// Check the header
 			byte[] headerCheck = new byte[HEADER_SIZE];
@@ -42,6 +40,15 @@ public class GIFFilter implements ContentDataFilter {
 				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 			}
 			dis.close();
+			output.write(headerCheck);
+			for(int x = 0; x<dis.available(); x++) {
+				try {
+					output.write(dis.read());
+				}
+				catch(IOException e) {
+					break;
+				}
+			}
 		} finally {
 			Closer.close(dis);
 		}
