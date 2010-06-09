@@ -221,7 +221,8 @@ class SingleFileInserter implements ClientPutState {
 		boolean isCHK = false;
 		if(persistent) container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType();
-		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
+		boolean isUSK = false;
+		if(type.equals("SSK") || type.equals("KSK") || (isUSK = type.equals("USK"))) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;
 		} else if(type.equals("CHK")) {
@@ -268,7 +269,7 @@ class SingleFileInserter implements ClientPutState {
 				if(earlyEncode && bi instanceof SingleBlockInserter && isCHK)
 					((SingleBlockInserter)bi).getBlock(container, context, true);
 				bi.schedule(container, context);
-				if(!(block.desiredURI.isUSK()))
+				if(!isUSK)
 					cb.onBlockSetFinished(this, container, context);
 				started = true;
 				if(persistent) {
