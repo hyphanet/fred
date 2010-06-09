@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -76,11 +75,9 @@ public class PNGFilter implements ContentDataFilter {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		InputStream is = null;
-		BufferedInputStream bis = null;
 		DataInputStream dis = null;
 		try {
-			bis = new BufferedInputStream(input);
-			dis = new DataInputStream(bis);
+			dis = new DataInputStream(input);
 			// Check the header
 			byte[] headerCheck = new byte[pngHeader.length];
 			dis.readFully(headerCheck);
@@ -266,7 +263,6 @@ public class PNGFilter implements ContentDataFilter {
 			throwError("EOF Exception while filtering", "EOF Exception while filtering");
 		} finally {
 			Closer.close(dis);
-			Closer.close(bis);
 			Closer.close(is);
 		}
 	}
