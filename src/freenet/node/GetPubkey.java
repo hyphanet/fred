@@ -64,7 +64,7 @@ public class GetPubkey {
 				if (key != null) {
 					cachedPubKeys.push(w, key);
 					if (logMINOR)
-						Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from cache");
+						Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from in-memory cache");
 					return key;
 				}
 			}
@@ -76,27 +76,40 @@ public class GetPubkey {
 			if(node.oldPKClientCache != null && canReadClientCache && key == null) {
 				PubkeyStore pks = node.oldPKClientCache;
 				if(pks != null) key = pks.fetch(hash, false, meta);
+				if(key != null && logMINOR)
+					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old client cache");
 			}
 			// We can *read* from the datastore even if nearby, but we cannot promote in that case.
-			if(key == null)
+			if(key == null) {
 				key = pubKeyDatastore.fetch(hash, false, meta);
+				if(key != null && logMINOR)
+					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
+			}
 			if(key == null) {
 				PubkeyStore pks = node.oldPK;
 				if(pks != null) key = pks.fetch(hash, false, meta);
+				if(key != null && logMINOR)
+					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old store");
 			}
-			if (key == null)
+			if (key == null) {
 				key = pubKeyDatacache.fetch(hash, false, meta);
+				if(key != null && logMINOR)
+					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
+			}
 			if(key == null) {
 				PubkeyStore pks = node.oldPKCache;
 				if(pks != null) key = pks.fetch(hash, false, meta);
+				if(key != null && logMINOR)
+					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from old cache");
 			}
-			if(key == null && pubKeySlashdotcache != null && forULPR)
+			if(key == null && pubKeySlashdotcache != null && forULPR) {
 				key = pubKeySlashdotcache.fetch(hash, false, meta);
+				if (logMINOR)
+					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from slashdot cache");
+			}
 			if (key != null) {
 				// Just put into the in-memory cache
 				cacheKey(hash, key, false, false, false, false, false);
-				if (logMINOR)
-					Logger.minor(this, "Got " + HexUtil.bytesToHex(hash) + " from store");
 			}
 			return key;
 		} catch (IOException e) {
