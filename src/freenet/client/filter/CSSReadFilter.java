@@ -6,7 +6,6 @@ package freenet.client.filter;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -118,50 +117,29 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException, IOException {
-		
-		InputStream is = null;
-		try {
-			byte[] data = new byte[maxBOMLength];
-			is = new ByteArrayInputStream(input);
-			int read = 0;
-			while(read < data.length) {
-				int x;
-				try {
-					x = is.read(data, read, data.length - read);
-				} catch(EOFException e) {
-					x = -1;
-				}
-				if(x <= 0)
-					break;
-			}
-			is.close();
-			is = null;
-			if(ContentFilter.startsWith(data, ascii))
-				return new BOMDetection("UTF-8", true);
-			if(ContentFilter.startsWith(data, utf16be))
-				return new BOMDetection("UTF-16BE", true);
-			if(ContentFilter.startsWith(data, utf16le))
-				return new BOMDetection("UTF-16LE", true);
-			if(ContentFilter.startsWith(data, utf32_be))
-				return new BOMDetection("UTF-32BE", true);
-			if(ContentFilter.startsWith(data, utf32_le))
-				return new BOMDetection("UTF-32LE", true);
-			if(ContentFilter.startsWith(data, ebcdic))
-				return new BOMDetection("IBM01140", true);
-			if(ContentFilter.startsWith(data, ibm1026))
-				return new BOMDetection("IBM1026", true);
-			
-			// Unsupported BOMs
-			
-			if(ContentFilter.startsWith(data, utf32_2143))
-				throw new UnsupportedCharsetInFilterException("UTF-32-2143");
-			if(ContentFilter.startsWith(data, utf32_3412))
-				throw new UnsupportedCharsetInFilterException("UTF-32-3412");
-			if(ContentFilter.startsWith(data, gsm))
-				throw new UnsupportedCharsetInFilterException("GSM 03.38");
-		} finally {
-			Closer.close(is);
-		}
+		if(ContentFilter.startsWith(input, ascii))
+			return new BOMDetection("UTF-8", true);
+		if(ContentFilter.startsWith(input, utf16be))
+			return new BOMDetection("UTF-16BE", true);
+		if(ContentFilter.startsWith(input, utf16le))
+			return new BOMDetection("UTF-16LE", true);
+		if(ContentFilter.startsWith(input, utf32_be))
+			return new BOMDetection("UTF-32BE", true);
+		if(ContentFilter.startsWith(input, utf32_le))
+			return new BOMDetection("UTF-32LE", true);
+		if(ContentFilter.startsWith(input, ebcdic))
+			return new BOMDetection("IBM01140", true);
+		if(ContentFilter.startsWith(input, ibm1026))
+			return new BOMDetection("IBM1026", true);
+
+		// Unsupported BOMs
+
+		if(ContentFilter.startsWith(input, utf32_2143))
+			throw new UnsupportedCharsetInFilterException("UTF-32-2143");
+		if(ContentFilter.startsWith(input, utf32_3412))
+			throw new UnsupportedCharsetInFilterException("UTF-32-3412");
+		if(ContentFilter.startsWith(input, gsm))
+			throw new UnsupportedCharsetInFilterException("GSM 03.38");
 		return null;
 	}
 

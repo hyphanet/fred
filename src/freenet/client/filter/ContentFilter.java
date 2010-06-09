@@ -20,10 +20,6 @@ import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
-import freenet.support.io.ArrayBucket;
-import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
 
 /**
  * Freenet content filter. This doesn't actually do any filtering,
@@ -233,7 +229,6 @@ public class ContentFilter {
 					input.reset();
 					charset = detectCharset(charsetBuffer, handler, maybeCharset);
 				}
-				
 				handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
 				if(charset != null)
 					type = type + "; charset="+charset;
@@ -249,13 +244,9 @@ public class ContentFilter {
 	}
 
 	public static String detectCharset(byte[] input, MIMEType handler, String maybeCharset) throws IOException {
-		
 		// Detect charset
-		
 		String charset = detectBOM(input);
-		
 		if((charset == null) && (handler.charsetExtractor != null)) {
-			
 			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(input);
 			if(bom != null) {
 				charset = bom.charset;
@@ -336,56 +327,34 @@ public class ContentFilter {
 	 * @throws IOException 
 	 */
 	private static String detectBOM(byte[] input) throws IOException {
-		InputStream is = null;
-		try {
-			byte[] data = new byte[5];
-			is = new ByteArrayInputStream(input);
-			int read = 0;
-			while(read < data.length) {
-				int x;
-				try {
-					x = is.read(data, read, data.length - read);
-				} catch(EOFException e) {
-					x = -1;
-				}
-				if(x <= 0)
-					break;
-			}
-			if(startsWith(data, bom_utf8))
-				return "UTF-8";
-			if(startsWith(data, bom_utf16_be))
-				return "UTF-16BE";
-			if(startsWith(data, bom_utf16_le))
-				return "UTF-16LE";
-			if(startsWith(data, bom_utf32_be))
-				return "UTF-32BE";
-			if(startsWith(data, bom_utf32_le))
-				return "UTF-32LE";
-			// We do NOT support UTF-32-2143 or UTF-32-3412
-			// Java does not have charset support for them, and well,
-			// very few people create web content on a PDP-11!
-			
-			if(startsWith(data, bom_utf32_2143))
-				throw new UnsupportedCharsetInFilterException("UTF-32-2143");
-			if(startsWith(data, bom_utf32_3412))
-				throw new UnsupportedCharsetInFilterException("UTF-32-3412");
-				
-			if(startsWith(data, bom_scsu))
-				return "SCSU";
-			if(startsWith(data, bom_utf7_1) || startsWith(data, bom_utf7_2) || startsWith(data, bom_utf7_3) || startsWith(data, bom_utf7_4) || startsWith(data, bom_utf7_5))
-				return "UTF-7";
-			if(startsWith(data, bom_utf_ebcdic))
-				return "UTF-EBCDIC";
-			if(startsWith(data, bom_bocu_1))
-				return "BOCU-1";
-			
-			is.close();
-			
-			return null;
-		}
-		finally {
-			Closer.close(is);
-		}
+		if(startsWith(input, bom_utf8))
+			return "UTF-8";
+		if(startsWith(input, bom_utf16_be))
+			return "UTF-16BE";
+		if(startsWith(input, bom_utf16_le))
+			return "UTF-16LE";
+		if(startsWith(input, bom_utf32_be))
+			return "UTF-32BE";
+		if(startsWith(input, bom_utf32_le))
+			return "UTF-32LE";
+		// We do NOT support UTF-32-2143 or UTF-32-3412
+		// Java does not have charset support for them, and well,
+		// very few people create web content on a PDP-11!
+
+		if(startsWith(input, bom_utf32_2143))
+			throw new UnsupportedCharsetInFilterException("UTF-32-2143");
+		if(startsWith(input, bom_utf32_3412))
+			throw new UnsupportedCharsetInFilterException("UTF-32-3412");
+
+		if(startsWith(input, bom_scsu))
+			return "SCSU";
+		if(startsWith(input, bom_utf7_1) || startsWith(input, bom_utf7_2) || startsWith(input, bom_utf7_3) || startsWith(input, bom_utf7_4) || startsWith(input, bom_utf7_5))
+			return "UTF-7";
+		if(startsWith(input, bom_utf_ebcdic))
+			return "UTF-EBCDIC";
+		if(startsWith(input, bom_bocu_1))
+			return "BOCU-1";
+		return null;
 	}
 	
 	// Byte Order Mark's - from Wikipedia. We keep all of them because a rare encoding might
