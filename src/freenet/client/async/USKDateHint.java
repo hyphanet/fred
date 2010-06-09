@@ -2,6 +2,8 @@ package freenet.client.async;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableUSK;
@@ -19,7 +21,7 @@ public class USKDateHint {
 	private GregorianCalendar cal;
 	
 	USKDateHint() {
-		cal = new GregorianCalendar();
+		cal = new GregorianCalendar(TimeZone.getTimeZone("GMT"), Locale.US);
 	}
 	
 	public static USKDateHint now() {
