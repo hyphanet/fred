@@ -214,9 +214,9 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
 				return;
-			} catch (Exception e) {
+			} catch (IOException e) {
 				Logger.error(this, "Error filtering content", e);
-				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED), state/*Not really the state's fault*/, container, context);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), state/*Not really the state's fault*/, container, context);
 				return;
 			}
 		}
