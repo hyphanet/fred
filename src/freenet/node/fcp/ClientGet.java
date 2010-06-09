@@ -128,8 +128,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
-		super(message.uri, message.identifier, message.verbosity, message.clientToken, handler,
-				message.priorityClass, message.persistenceType, message.charset, message.global, container);
+		super(message.uri, message.identifier, message.verbosity, message.charset, handler,
+				message.priorityClass, message.persistenceType, message.clientToken, message.global, container);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
 		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
