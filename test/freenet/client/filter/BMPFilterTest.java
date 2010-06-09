@@ -42,6 +42,7 @@ public class BMPFilterTest extends TestCase {
 		new NodeL10n();
 		BMPFilter objBMPFilter=new BMPFilter();
 		ab = new ArrayBucket();
+		Bucket output = new ArrayBucket();
 		for (Object[] test : testImages) {
 			String filename=(String) test[0];
 			int expectedresult = Integer.parseInt(test[1].toString());
@@ -62,8 +63,10 @@ public class BMPFilterTest extends TestCase {
 
 
 			try {
-				objBMPFilter.readFilter(ib.getInputStream(), new NullBucket().getOutputStream(), "", null, null);
+				objBMPFilter.readFilter(ib.getInputStream(), output.getOutputStream(), "", null, null);
 				assertEquals(filename + " should be valid", expectedresult,0);
+				assertEquals("Input and output should be the same length", ib.size(), output.size());
+				assertEquals("Input and output should be identical", BucketTools.hash(ib), BucketTools.hash(output));
 			} 
 			catch (DataFilterException dfe) {
 
