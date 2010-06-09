@@ -11,7 +11,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.WouldBlockException;
 
-public class FNPWrapper {
+public class FNPWrapper implements PacketFormat {
 
 	private static volatile boolean logMINOR;
 	static {
@@ -29,15 +29,6 @@ public class FNPWrapper {
 		this.pn = pn;
 	}
 
-	/**
-	 * Maybe send something. A SINGLE PACKET. Don't send everything at once, for two reasons:
-	 * <ol>
-	 * <li>It is possible for a node to have a very long backlog.</li>
-	 * <li>Sometimes sending a packet can take a long time.</li>
-	 * <li>In the near future PacketSender will be responsible for output bandwidth throttling. So it makes sense to
-	 * send a single packet and round-robin.</li>
-	 * </ol>
-	 */
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp)
 	                throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.

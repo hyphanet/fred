@@ -377,7 +377,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		});
 	}
 
-	private FNPWrapper packetFormat;
+	private PacketFormat packetFormat;
 
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
