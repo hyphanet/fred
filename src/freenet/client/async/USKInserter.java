@@ -165,6 +165,20 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		} catch (UnsupportedEncodingException e) {
 			throw new Error(e); // Impossible
 		}
+		boolean cbActive = true;
+		boolean parentActive = true;
+		if(persistent) {
+			container.activate(privUSK, 5);
+			container.activate(pubUSK, 5);
+			if(!container.ext().isActive(cb)) {
+				cbActive = false;
+				container.activate(cb, 1);
+			}
+			if(!container.ext().isActive(parent)) {
+				parentActive = false;
+				container.activate(parent, 1);
+			}
+		}
 		FreenetURI[] hintURIs = hint.getInsertURIs(privUSK);
 		boolean added = false;
 		for(FreenetURI uri : hintURIs) {
@@ -193,6 +207,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 		parent.onTransition(this, m, container);
 		m.arm(container, context);
+		if(!parentActive)
+			container.deactivate(parent, 1);
+		if(!cbActive)
+			container.deactivate(cb, 1);
 	}
 
 	private void scheduleInsert(ObjectContainer container, ClientContext context) {
