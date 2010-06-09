@@ -39,8 +39,9 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	private short pollingPriorityProgress;
 	private boolean finished;
 	private final boolean ownFetchContext;
+	private final boolean checkStoreOnly;
 	
-	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext) {
+	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
 		this.nodeDBHandle = nodeDBHandle;
 		this.callback = callback;
 		this.origUSK = origUSK;
@@ -53,6 +54,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		pollingPriorityNormal = callback.getPollingPriorityNormal();
 		pollingPriorityProgress = callback.getPollingPriorityProgress();
 		priority = pollingPriorityNormal;
+		this.checkStoreOnly = checkStoreOnly;
 	}
 	
 	/**
@@ -69,8 +71,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	 * @return
 	 */
 	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, 
-			ObjectContainer container, FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext) {
-		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, container, ctx, keepLast, token, hasOwnFetchContext);
+			ObjectContainer container, FetchContext ctx, boolean keepLast, int token, boolean hasOwnFetchContext, boolean checkStoreOnly) {
+		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, container, ctx, keepLast, token, hasOwnFetchContext, checkStoreOnly);
 		if(persistent) container.store(tag);
 		return tag;
 	}
@@ -101,7 +103,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			usk = usk.copy(edition);
 		else if(persistent) // Copy it to avoid deactivation issues
 			usk = usk.clone();
-		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, client), keepLastData);
+		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, client), keepLastData, checkStoreOnly);
 		fetcher.addCallback(this);
 		fetcher.schedule(null, context); // non-persistent
 	}

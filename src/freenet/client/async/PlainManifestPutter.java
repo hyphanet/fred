@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.HashMap;
+
 import freenet.client.InsertContext;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;

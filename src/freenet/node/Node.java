@@ -964,6 +964,7 @@ public class Node implements TimeSkewDetectorCallback {
 	 * @throws NodeInitException If the node initialization fails.
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+		this.shutdownHook = SemiOrderedShutdownHook.get();
 		// Easy stuff
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision()+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
@@ -1167,10 +1168,6 @@ public class Node implements TimeSkewDetectorCallback {
 				throw new NodeInitException(NodeInitException.EXIT_CANT_WRITE_MASTER_KEYS, "Cannot read from and write to master keys file "+f);
 		}
 		masterKeysFile = f;
-
-		// init shutdown hook
-		shutdownHook = new SemiOrderedShutdownHook();
-		Runtime.getRuntime().addShutdownHook(shutdownHook);
 
 		shutdownHook.addEarlyJob(new NativeThread("Shutdown database", NativeThread.HIGH_PRIORITY, true) {
 

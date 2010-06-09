@@ -93,8 +93,10 @@ public class FProxyFetchTracker implements Runnable {
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
 							|| progress.hasData()){
 						if(fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
+						if(logMINOR) Logger.minor(this, "Found "+progress);
 						return progress;
-					}
+					} else
+						if(logMINOR) Logger.minor(this, "Skipping "+progress);
 				}
 			}
 		}
@@ -154,6 +156,13 @@ public class FProxyFetchTracker implements Runnable {
 		}
 		if(needRequeue)
 			context.ticker.queueTimedJob(this, FProxyFetchInProgress.LIFETIME);
+	}
+
+	public void remove(FProxyFetchInProgress progress) {
+		synchronized(fetchers) {
+			// For some reason it can show up multiple times.
+			while(fetchers.removeElement(progress.uri, progress)) { }
+		}
 	}
 
 }

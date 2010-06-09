@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.regex.PatternSyntaxException;
 
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.Closer;
 

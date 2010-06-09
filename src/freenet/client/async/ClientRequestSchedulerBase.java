@@ -248,7 +248,7 @@ abstract class ClientRequestSchedulerBase {
 			listener.onRemove();
 		}
 		if (logMINOR)
-			Logger.minor(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
+			Logger.minor(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener, new Exception("debug"));
 		return ret;
 	}
 	

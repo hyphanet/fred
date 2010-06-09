@@ -25,6 +25,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private boolean started;
 	public final Object token;
 	private final boolean persistent;
+	private final boolean collisionIsOK;
 	
 	public void objectOnActivate(ObjectContainer container) {
 		// Only activate the arrays
@@ -34,7 +35,12 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent) {
+		this(cb, parent, token, persistent, false);
+	}
+	
+	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token, boolean persistent, boolean collisionIsOK) {
 		this.cb = cb;
+		this.collisionIsOK = collisionIsOK;
 		waitingFor = new Vector<ClientPutState>();
 		waitingForBlockSet = new Vector<ClientPutState>();
 		waitingForFetchable = new Vector<ClientPutState>();
@@ -82,6 +88,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(collisionIsOK && e.getMode() == InsertException.COLLISION) {
+			onSuccess(state, container, context);
+			return;
+		}
 		boolean complete = true;
 		synchronized(this) {
 			if(finished) {

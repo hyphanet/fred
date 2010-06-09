@@ -268,7 +268,8 @@ class SingleFileInserter implements ClientPutState {
 				if(earlyEncode && bi instanceof SingleBlockInserter && isCHK)
 					((SingleBlockInserter)bi).getBlock(container, context, true);
 				bi.schedule(container, context);
-				cb.onBlockSetFinished(this, container, context);
+				if(!(block.desiredURI.isUSK()))
+					cb.onBlockSetFinished(this, container, context);
 				started = true;
 				if(persistent) {
 					if(!parentWasActive)

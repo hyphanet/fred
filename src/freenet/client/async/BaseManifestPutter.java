@@ -1555,6 +1555,11 @@ public abstract class BaseManifestPutter extends BaseClientPutter {
 	}
 
 	@Override
+	public void onTransition(ClientPutState from, ClientPutState to, ObjectContainer container) {
+		// Ignore
+	}
+
+	@Override
 	protected void innerToNetwork(ObjectContainer container, ClientContext context) {
 		// Ignore
 	}

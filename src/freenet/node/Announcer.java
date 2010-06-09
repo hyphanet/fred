@@ -328,7 +328,6 @@ public class Announcer {
 	private boolean started = false;
 	
 	private long toldUserNoIP = -1;
-	private boolean dontKnowOurIPAddress;
 	
 	private final Runnable checker = new Runnable() {
 		
@@ -385,28 +384,7 @@ public class Announcer {
 			node.getTicker().queueTimedJob(checker, "Announcement checker", FINAL_DELAY, false, true);
 			return;
 		}
-		if((!ignoreIPUndetected) && (!node.ipDetector.hasValidIP())) {
-			if(node.ipDetector.ipDetectorManager.hasDetectors()) {
-				if(now - toldUserNoIP > 60*1000)
-					System.out.println("Don't know our IP address, waiting for another 2 minutes...");
-				synchronized(this) {
-					dontKnowOurIPAddress = true;
-				}
-				// Wait a bit
-				node.getTicker().queueTimedJob(new Runnable() {
-					public void run() {
-						synchronized(Announcer.this) {
-							if(ignoreIPUndetected) return;
-							ignoreIPUndetected = true;
-						}
-						maybeSendAnnouncement();
-					}
-				}, FORCE_ANNOUNCEMENT_NO_IP);
-				return;
-			}
-		}
 		synchronized(this) {
-			dontKnowOurIPAddress = false;
 			// Double check after taking the lock.
 			if(enoughPeers()) {
 				// Check again in 60 seconds.
@@ -601,10 +579,6 @@ public class Announcer {
 		public String getText() {
 			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceAlertIntro"));
-			boolean dontKnowAddress;
-			synchronized(this) {
-				dontKnowAddress = dontKnowOurIPAddress;
-			}
 			if(status == STATUS_NO_SEEDNODES) {
 				return l10n("announceAlertNoSeednodes");
 			}
@@ -635,20 +609,16 @@ public class Announcer {
 					else
 						disconnectedSeednodes++;
 				}
-				if(dontKnowAddress) {
-					sb.append(l10n("dontKnowAddress"));
-				} else {
-					sb.append(l10n("announceDetails",
-							new String[] { "addedNodes", "refusedNodes", "recentSentAnnouncements", "runningAnnouncements", "connectedSeednodes", "disconnectedSeednodes" },
-							new String[] {
-							Integer.toString(addedNodes),
-							Integer.toString(refusedNodes),
-							Integer.toString(recentSentAnnouncements),
-							Integer.toString(runningAnnouncements),
-							Integer.toString(connectedSeednodes),
-							Integer.toString(disconnectedSeednodes)
-					}));
-				}
+				sb.append(l10n("announceDetails",
+						new String[] { "addedNodes", "refusedNodes", "recentSentAnnouncements", "runningAnnouncements", "connectedSeednodes", "disconnectedSeednodes" },
+						new String[] {
+						Integer.toString(addedNodes),
+						Integer.toString(refusedNodes),
+						Integer.toString(recentSentAnnouncements),
+						Integer.toString(runningAnnouncements),
+						Integer.toString(connectedSeednodes),
+						Integer.toString(disconnectedSeednodes)
+				}));
 				if(coolingOffSeconds > 0) {
 					sb.append(' ');
 					sb.append(l10n("coolingOff", "time", Long.toString(coolingOffSeconds)));

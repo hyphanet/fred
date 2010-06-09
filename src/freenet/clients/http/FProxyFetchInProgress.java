@@ -97,6 +97,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	private boolean requestImmediateCancel=false;
 	/** Stores the fetch context this class was created with*/
 	private FetchContext fctx;
+	private int fetched = 0;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
 		this.tracker = tracker;
@@ -134,6 +135,10 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 					totalBlocks, requiredBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, finalizedBlocks, failed, getETA(), hasWaited);
 		}
 		results.add(res);
+		if(data != null || failed != null) {
+			res.setFetchCount(fetched);
+			fetched++;
+		}
 		return res;
 	}
 
@@ -313,7 +318,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 			hasNotifiedFailure = true;
 			return true;
 		}
-		if(failed != null && System.currentTimeMillis() - timeFailed < 5000)
+		if(failed != null && (System.currentTimeMillis() - timeFailed < 1000 || fetched < 2)) // Once for javascript and once for the user when it re-pulls.
 			return true;
 		return false;
 	}
@@ -355,6 +360,7 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	public void requestImmediateCancel(){
 		requestImmediateCancel=true;
 	}
+
 	public boolean fetchContextEquivalent(FetchContext context) {
 		if(this.fctx.filterData != context.filterData) return false;
 		if(this.fctx.maxOutputLength != context.maxOutputLength) return false;
@@ -364,5 +370,9 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		if(this.fctx.overrideMIME == null && context.overrideMIME != null) return false;
 		if(this.fctx.overrideMIME != null && !this.fctx.overrideMIME.equals(context.overrideMIME)) return false;
 		return true;
+	}
+
+	public long lastTouched() {
+		return lastTouched;
 	}
 }

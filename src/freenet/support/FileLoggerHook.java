@@ -27,6 +27,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.Version;
 import freenet.support.io.FileUtil;
 
@@ -304,9 +305,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						}
 					}
 					boolean died = false;
+					boolean timeoutFlush = false;
 					synchronized (list) {
 						flush = flushTime;
-						boolean timeoutFlush = false;;
 						long maxWait;
 						if(timeWaitingForSync == -1)
 							maxWait = Long.MAX_VALUE;
@@ -320,7 +321,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							}
 							try {
 								if(thisTime < maxWait) {
-									list.wait(Math.min(500, (int)(maxWait-thisTime)));
+									list.wait(Math.min(500, (int)(Math.min(maxWait-thisTime, Integer.MAX_VALUE))));
 									// Do NOT use list.poll(timeout) because it uses a separate lock.
 									o = list.poll();
 								}
@@ -335,31 +336,26 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 								}
 								if(thisTime >= maxWait) {
 									timeoutFlush = true;
+									timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
 									break;
 								}
 							} else break;
 						}
-						if(timeoutFlush || died) {
-							// Flush to disk 
-							if(currentFilename == null)
-								myWrite(logStream, null);
-					        if(altLogStream != null)
-					        	myWrite(altLogStream, null);
+						if(o != null) {
+							listBytes -= o.length + LINE_OVERHEAD;
 						}
-						if(died) return;
-						timeWaitingForSync = -1; // We have stuff to write, we are no longer waiting.
-						listBytes -= o.length + LINE_OVERHEAD;
 					}
+					if(timeoutFlush || died) {
+						// Flush to disk 
+						myWrite(logStream, null);
+				        if(altLogStream != null)
+				        	myWrite(altLogStream, null);
+					}
+					if(died) return;
+					if(o == null) continue;
 					myWrite(logStream,  o);
 			        if(altLogStream != null)
 			        	myWrite(altLogStream, o);
-			        if(died) {
-						if(currentFilename == null)
-							myWrite(logStream, null);
-				        if(altLogStream != null)
-				        	myWrite(altLogStream, null);
-				        return;
-			        }
 				} catch (OutOfMemoryError e) {
 					System.err.println(e.getClass());
 					System.err.println(e.getMessage());
@@ -747,7 +743,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		WriterThread wt = new WriterThread();
 		wt.setDaemon(true);
 		CloserThread ct = new CloserThread();
-		Runtime.getRuntime().addShutdownHook(ct);
+		SemiOrderedShutdownHook.get().addLateJob(ct);
 		wt.start();
 	}
 	

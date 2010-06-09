@@ -152,7 +152,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString());
+				boolean compress = request.getPartAsString("compress", 128).length() > 0;
+				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString() + "&compress=" + compress);
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}			
