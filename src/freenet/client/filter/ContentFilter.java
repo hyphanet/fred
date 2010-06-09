@@ -19,7 +19,6 @@ import java.util.Hashtable;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
 
 /**
  * Freenet content filter. This doesn't actually do any filtering,
@@ -125,16 +124,6 @@ public class ContentFilter {
 		return mimeTypesByName.get(mimeType);
 	}
 
-	public static class FilterOutput {
-		public final Bucket data;
-		public final String type;
-		
-		FilterOutput(Bucket data, String type) {
-			this.data = data;
-			this.type = type;
-		}
-	}
-
 	/**
 	 * Filter some data.
 	 * 
@@ -148,7 +137,7 @@ public class ContentFilter {
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
 	 * @throws IOException
-	 *             If an internal error involving buckets occurred.
+	 *             If an internal error involving s occurred.
 	 * @throws UnsafeContentTypeException
 	 *             If the MIME type is declared unsafe (e.g. pdf files)
 	 * @throws IllegalStateException
