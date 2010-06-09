@@ -273,12 +273,14 @@ public class Node implements TimeSkewDetectorCallback {
 
 
 	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 			}
 		});
 	}
@@ -3991,6 +3993,7 @@ public class Node implements TimeSkewDetectorCallback {
 					nodeStats.avgClientCacheSSKSuccess.report(loc);
 					if (dist > nodeStats.furthestClientCacheSSKSuccess)
 					nodeStats.furthestClientCacheSSKSuccess=dist;
+					if(logDEBUG) Logger.debug(this, "Found key "+key+" in client-cache");
 					return block;
 				}
 			} catch (IOException e) {
@@ -4004,6 +4007,7 @@ public class Node implements TimeSkewDetectorCallback {
 					nodeStats.avgSlashdotCacheSSKSuccess.report(loc);
 					if (dist > nodeStats.furthestSlashdotCacheSSKSuccess)
 					nodeStats.furthestSlashdotCacheSSKSuccess=dist;
+					if(logDEBUG) Logger.debug(this, "Found key "+key+" in slashdot-cache");
 					return block;
 				}
 			} catch (IOException e) {
@@ -4024,6 +4028,7 @@ public class Node implements TimeSkewDetectorCallback {
 			nodeStats.avgStoreSSKSuccess.report(loc);
 			if (dist > nodeStats.furthestStoreSSKSuccess)
 				nodeStats.furthestStoreSSKSuccess=dist;
+				if(logDEBUG) Logger.debug(this, "Found key "+key+" in store");
 				return block;
 			}
 			block=sskDatacache.fetch(key, dontPromote || !canWriteDatastore, canReadClientCache, forULPR, meta);
@@ -4037,6 +4042,7 @@ public class Node implements TimeSkewDetectorCallback {
 			if (dist > nodeStats.furthestCacheSSKSuccess)
 				nodeStats.furthestCacheSSKSuccess=dist;
 			}
+			if(logDEBUG) Logger.debug(this, "Found key "+key+" in cache");
 			return block;
 		} catch (IOException e) {
 			Logger.error(this, "Cannot fetch data: "+e, e);
