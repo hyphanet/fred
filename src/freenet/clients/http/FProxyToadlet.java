@@ -569,7 +569,7 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 					fr = null;
 					fetch = null;
 					try {
-						fetch = fetchTracker.makeFetcher(key, maxSize);
+						fetch = fetchTracker.makeFetcher(key, maxSize, fctx);
 					} catch (FetchException e) {
 						fe = fr.failed;
 					}
