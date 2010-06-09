@@ -124,8 +124,11 @@ public class ClientGetter extends BaseClientGetter {
 	 * @throws FetchException If we were unable to restart.
 	 */
 	public boolean start(boolean restart, FreenetURI overrideURI, ObjectContainer container, ClientContext context) throws FetchException {
-		if(persistent())
+		if(persistent()) {
 			container.activate(uri, 5);
+			container.activate(ctx, 1);
+		}
+		boolean filtering = ctx.filterData;
 		if(logMINOR)
 			Logger.minor(this, "Starting "+this+" persistent="+persistent());
 		try {
@@ -142,7 +145,7 @@ public class ClientGetter extends BaseClientGetter {
 				}
 				currentState = SingleFileFetcher.create(this, this,
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						returnBucket, true, container, context);
+						filtering ? returnBucket : null, true, container, context);
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
