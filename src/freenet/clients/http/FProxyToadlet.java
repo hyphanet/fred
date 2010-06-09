@@ -311,7 +311,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 			if (mimeType != null && !mimeType.equals("")) {
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mimeType });
 			}
-			optionForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "checkbox", "filterData", "filterData", "checked"});
 			optionForm.addChild("input", new String[] { "type", "name", "value" },
 					new String[] { "submit", "download", l10n("downloadInBackgroundToTempSpaceButton") });
 			HTMLNode filterControl = optionForm.addChild("div", l10n("filterData"));
