@@ -393,7 +393,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				container.activate(returnBucket, 5);
 		}
 		try {
-			output = context.getBucketFactory(parent.persistent()).makeBucket(finalLength);
+			if((returnBucket != null) && decompressors.isEmpty()) {
+				output = returnBucket;
+			} else
+				output = context.getBucketFactory(parent.persistent()).makeBucket(finalLength);
 			os = output.getOutputStream();
 			for(int i=0;i<segments.length;i++) {
 				SplitFileFetcherSegment s = segments[i];
@@ -505,7 +508,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
 				Bucket orig = data;
 				try {
-					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, null);
+					Bucket out = returnBucket;
+					if(!decompressors.isEmpty()) out = null;
+					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, out);
 				} catch (IOException e) {
 					if(e.getMessage().equals("Not in GZIP format") && count == 1) {
 						Logger.error(this, "Attempting to decompress twice, failed, returning first round data: "+this);

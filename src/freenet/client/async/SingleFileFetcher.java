@@ -290,7 +290,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 					if(logMINOR)
 						Logger.minor(this, "Decompressing "+data+" size "+data.size()+" max length "+maxLen);
-					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, null);
+					Bucket out = decompressors.isEmpty() ? returnBucket : null;
+					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, out);
 					if(logMINOR)
 						Logger.minor(this, "Decompressed to "+data+" size "+data.size());
 				} catch (IOException e) {
@@ -646,8 +647,25 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Bucket dataBucket = ah.get(filename, actx, context.archiveManager);
 				if(dataBucket != null) {
 					if(logMINOR) Logger.minor(this, "Returning data");
+					final Bucket out;
+					try {
+						// Data will not be freed until client is finished with it.
+						if(returnBucket != null || persistent) {
+							if(returnBucket == null)
+								out = context.persistentBucketFactory.makeBucket(dataBucket.size());
+							else
+								out = returnBucket;
+							BucketTools.copy(dataBucket, out);
+							dataBucket.free();
+						} else {
+							out = dataBucket;
+						}
+					} catch (IOException e) {
+						throw new FetchException(FetchException.BUCKET_ERROR);
+					}
 					// Return the data
-					onSuccess(new FetchResult(clientMetadata, dataBucket), container, context);
+					onSuccess(new FetchResult(clientMetadata, out), container, context);
+					
 					return;
 				} else {
 					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+ ')');
@@ -660,7 +678,26 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							if(logMINOR) Logger.minor(this, "Returning data");
-							onSuccess(new FetchResult(clientMetadata, data), container, context);
+							Bucket out;
+							try {
+								// Data will not be freed until client is finished with it.
+								if(returnBucket != null) {
+									if(persistent)
+										container.activate(returnBucket, 5);
+									out = returnBucket;
+									BucketTools.copy(data, out);
+									data.free();
+									if(persistent)
+										data.removeFrom(container);
+								} else {
+									out = data;
+								}
+							} catch (IOException e) {
+								onFailure(new FetchException(FetchException.BUCKET_ERROR), false, container, context);
+								return;
+							}
+							// Return the data
+							onSuccess(new FetchResult(clientMetadata, out), container, context);
 							if(persistent)
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
