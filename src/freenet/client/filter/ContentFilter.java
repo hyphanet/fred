@@ -227,9 +227,7 @@ public class ContentFilter {
 					byte[] charsetBuffer = new byte[64*1024];
 					input.read(charsetBuffer, 0, 64*1024);
 					input.reset();
-					System.out.println(new String(charsetBuffer));
 					charset = detectCharset(charsetBuffer, handler, maybeCharset);
-					System.out.println(charset);
 				}
 				handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
 				if(charset != null)
