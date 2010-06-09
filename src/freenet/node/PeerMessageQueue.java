@@ -117,12 +117,13 @@ public class PeerMessageQueue {
 		}
 
 		public long getNextUrgentTime(long t, long now) {
-			if(itemsNoID != null) {
+			if(itemsNoID != null && itemsNoID.size() != 0) {
 				t = Math.min(t, itemsNoID.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 				if(t <= now) return t;
 			}
 			if(itemsWithID != null) {
 				for(LinkedList<MessageItem> items : itemsWithID) {
+					if(items.size() == 0) continue;
 					t = Math.min(t, items.getFirst().submitted + PacketSender.MAX_COALESCING_DELAY);
 					if(t <= now) return t;
 				}
