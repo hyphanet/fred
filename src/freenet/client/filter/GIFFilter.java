@@ -39,7 +39,6 @@ public class GIFFilter implements ContentDataFilter {
 			if((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
 				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 			}
-			dis.close();
 			output.write(headerCheck);
 			for(int x = 0; x<dis.available(); x++) {
 				try {
@@ -49,6 +48,7 @@ public class GIFFilter implements ContentDataFilter {
 					break;
 				}
 			}
+			dis.close();
 		} finally {
 			Closer.close(dis);
 		}
