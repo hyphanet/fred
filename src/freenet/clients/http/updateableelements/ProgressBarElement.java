@@ -2,6 +2,7 @@ package freenet.clients.http.updateableelements;
 
 import java.text.NumberFormat;
 
+import freenet.client.FetchContext;
 import freenet.clients.http.FProxyFetchInProgress;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
@@ -24,25 +25,27 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	private long					maxSize;
 	/** The FetchListener that gets notified when the download progresses */
 	private NotifierFetchListener	fetchListener;
+	private final FetchContext		fctx;
 
-	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, ToadletContext ctx, boolean pushed) {
+	public ProgressBarElement(FProxyFetchTracker tracker, FreenetURI key, FetchContext fctx, long maxSize, ToadletContext ctx, boolean pushed) {
 		// This is a <div>
 		super("div", "class", "progressbar", ctx);
 		this.tracker = tracker;
 		this.key = key;
+		this.fctx = fctx;
 		this.maxSize = maxSize;
 		init(pushed);
 		if(!pushed) return;
 		// Creates and registers the FetchListener
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
-		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
+		tracker.getFetchInProgress(key, maxSize, fctx).addListener(fetchListener);
 	}
 
 	@Override
 	public void updateState(boolean initial) {
 		children.clear();
 
-		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize);
+		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize, fctx);
 		FProxyFetchResult fr = waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
@@ -75,10 +78,10 @@ public class ProgressBarElement extends BaseUpdateableElement {
 			}
 		}
 		if (waiter != null) {
-			tracker.getFetchInProgress(key, maxSize).close(waiter);
+			tracker.getFetchInProgress(key, maxSize, fctx).close(waiter);
 		}
 		if (fr != null) {
-			tracker.getFetchInProgress(key, maxSize).close(fr);
+			tracker.getFetchInProgress(key, maxSize, fctx).close(fr);
 		}
 	}
 
@@ -94,7 +97,7 @@ public class ProgressBarElement extends BaseUpdateableElement {
 	@Override
 	public void dispose() {
 		// Deregisters the FetchListener
-		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
+		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize, fctx);
 		if (progress != null) {
 			progress.removeListener(fetchListener);
 		}

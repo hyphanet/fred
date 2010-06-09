@@ -1,5 +1,6 @@
 package freenet.clients.http.updateableelements;
 
+import freenet.client.FetchContext;
 import freenet.clients.http.FProxyFetchInProgress;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
@@ -18,28 +19,30 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 
 	private FProxyFetchTracker		tracker;
 	private final FreenetURI		key;
+	private final FetchContext		fctx;
 	private long					maxSize;
 	private NotifierFetchListener	fetchListener;
 	/** It displays more info on advanced mode */
 	private boolean					isAdvancedMode;
 
-	public ProgressInfoElement(FProxyFetchTracker tracker, FreenetURI key, long maxSize, boolean isAdvancedMode, ToadletContext ctx, boolean pushed) {
+	public ProgressInfoElement(FProxyFetchTracker tracker, FreenetURI key, FetchContext fctx, long maxSize, boolean isAdvancedMode, ToadletContext ctx, boolean pushed) {
 		super("span", ctx);
 		this.tracker = tracker;
 		this.key = key;
+		this.fctx = fctx;
 		this.maxSize = maxSize;
 		this.isAdvancedMode = isAdvancedMode;
 		init(pushed);
 		if(!pushed) return;
 		fetchListener = new NotifierFetchListener(((SimpleToadletServer) ctx.getContainer()).pushDataManager, this);
-		tracker.getFetchInProgress(key, maxSize).addListener(fetchListener);
+		tracker.getFetchInProgress(key, maxSize, fctx).addListener(fetchListener);
 	}
 
 	@Override
 	public void updateState(boolean initial) {
 		children.clear();
 
-		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize);
+		FProxyFetchWaiter waiter = tracker.makeWaiterForFetchInProgress(key, maxSize, fctx);
 		FProxyFetchResult fr = waiter.getResult();
 		if (fr == null) {
 			addChild("div", "No fetcher found");
@@ -76,10 +79,10 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 			addChild("p", FProxyToadlet.l10n("progressNotFinalized"));
 
 		if (waiter != null) {
-			tracker.getFetchInProgress(key, maxSize).close(waiter);
+			tracker.getFetchInProgress(key, maxSize, fctx).close(waiter);
 		}
 		if (fr != null) {
-			tracker.getFetchInProgress(key, maxSize).close(fr);
+			tracker.getFetchInProgress(key, maxSize, fctx).close(fr);
 		}
 	}
 
@@ -94,7 +97,7 @@ public class ProgressInfoElement extends BaseUpdateableElement {
 
 	@Override
 	public void dispose() {
-		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
+		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize, fctx);
 		if (progress != null) {
 			progress.removeListener(fetchListener);
 		}

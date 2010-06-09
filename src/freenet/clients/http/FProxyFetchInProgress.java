@@ -96,6 +96,8 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 	/** If this is set, then it can be removed instantly, doesn't need to wait for 30sec*/
 	private boolean requestImmediateCancel=false;
 	private int fetched = 0;
+	/** Stores the fetch context this class was created with*/
+	private FetchContext fctx;
 	
 	public FProxyFetchInProgress(FProxyFetchTracker tracker, FreenetURI key, long maxSize2, long identifier, ClientContext context, FetchContext fctx, RequestClient rc) {
 		this.tracker = tracker;
@@ -103,12 +105,13 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 		this.maxSize = maxSize2;
 		this.timeStarted = System.currentTimeMillis();
 		this.identifier = identifier;
-		fctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
-		fctx.maxOutputLength = fctx.maxTempLength = maxSize;
-		fctx.eventProducer.addEventListener(this);
+		this.fctx = fctx;
+		FetchContext alteredFctx = new FetchContext(fctx, FetchContext.IDENTICAL_MASK, false, null);
+		alteredFctx.maxOutputLength = fctx.maxTempLength = maxSize;
+		alteredFctx.eventProducer.addEventListener(this);
 		waiters = new ArrayList<FProxyFetchWaiter>();
 		results = new ArrayList<FProxyFetchResult>();
-		getter = new ClientGetter(this, uri, fctx, FProxyToadlet.PRIORITY, rc, null, null);
+		getter = new ClientGetter(this, uri, alteredFctx, FProxyToadlet.PRIORITY, rc, null, null);
 	}
 	
 	public synchronized FProxyFetchWaiter getWaiter() {
@@ -360,5 +363,16 @@ public class FProxyFetchInProgress implements ClientEventListener, ClientGetCall
 
 	public long lastTouched() {
 		return lastTouched;
+	}
+	
+	public boolean fetchContextEquivalent(FetchContext context) {
+		if(this.fctx.filterData != context.filterData) return false;
+		if(this.fctx.maxOutputLength != context.maxOutputLength) return false;
+		if(this.fctx.maxTempLength != context.maxTempLength) return false;
+		if(this.fctx.charset == null && context.charset != null) return false;
+		if(this.fctx.charset != null && !this.fctx.charset.equals(context.charset)) return false;
+		if(this.fctx.overrideMIME == null && context.overrideMIME != null) return false;
+		if(this.fctx.overrideMIME != null && !this.fctx.overrideMIME.equals(context.overrideMIME)) return false;
+		return true;
 	}
 }

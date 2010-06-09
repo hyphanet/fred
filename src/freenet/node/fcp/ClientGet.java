@@ -83,12 +83,12 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	 * @throws IOException
 	 */
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
-			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
-			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename, boolean writeToClientCache, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
-		super(uri, identifier, verbosity, null, globalClient, prioClass,
-				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
-				null, true, container);
+			boolean filterData, int maxSplitfileRetries, int maxNonSplitfileRetries,
+			long maxOutputLength, short returnType, boolean persistRebootOnly, String identifier, int verbosity,
+			short prioClass, File returnFilename, File returnTempFilename, String charset, boolean writeToClientCache, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
+		super(uri, identifier, verbosity, null, null, globalClient,
+				prioClass,
+				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER), charset, true, container);
 
 		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 		fctx.eventProducer.addEventListener(this);
@@ -96,6 +96,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.ignoreStore = ignoreDS;
 		fctx.maxNonSplitfileRetries = maxNonSplitfileRetries;
 		fctx.maxSplitfileBlockRetries = maxSplitfileRetries;
+		fctx.filterData = filterData;
 		fctx.maxOutputLength = maxOutputLength;
 		fctx.maxTempLength = maxOutputLength;
 		fctx.canWriteClientCache = writeToClientCache;
@@ -127,8 +128,8 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
-		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
-				message.persistenceType, message.clientToken, message.global, container);
+		super(message.uri, message.identifier, message.verbosity, message.clientToken, handler,
+				message.priorityClass, message.persistenceType, message.charset, message.global, container);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
 		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
@@ -143,6 +144,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
 		fctx.canWriteClientCache = message.writeToClientCache;
+		fctx.filterData = message.filterData;
 
 		if(message.allowedMIMETypes != null) {
 			fctx.allowedMIMETypes = new HashSet<String>();
@@ -214,6 +216,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
+		boolean filterData = Fields.stringToBool(fs.get("FilterData"),false);
 		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
@@ -221,6 +224,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 		fctx.ignoreStore = ignoreDS;
 		fctx.maxNonSplitfileRetries = maxRetries;
 		fctx.maxSplitfileBlockRetries = maxRetries;
+		fctx.filterData = filterData;
 		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
 		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
 		if(finished) {

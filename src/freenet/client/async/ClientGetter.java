@@ -19,6 +19,9 @@ import freenet.client.events.ExpectedFileSizeEvent;
 import freenet.client.events.ExpectedMIMEEvent;
 import freenet.client.events.SendingToNetworkEvent;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.client.filter.ContentFilter;
+import freenet.client.filter.UnsafeContentTypeException;
+import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -194,6 +197,29 @@ public class ClientGetter extends BaseClientGetter {
 		// set is the returnBucket and the result. Not locking not only prevents
 		// nested locking resulting in deadlocks, it also prevents long locks due to
 		// doing massive encrypted I/Os while holding a lock.
+		
+		//Filter the data, if we are supposed to
+		if(ctx.filterData){
+			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
+			try {
+				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
+				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+				result = new FetchResult(result, filter.data);
+			} catch (UnsafeContentTypeException e) {
+				Logger.error(this, "Error filtering content: will not validate", e);
+				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
+				return;
+			} catch (Exception e) {
+				Logger.error(this, "Error filtering content", e);
+				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED), state/*Not really the state's fault*/, container, context);
+				return;
+			}
+		}
+		else {
+			if(logMINOR) Logger.minor(this, "Ignoring content filter.");
+		}
+		if(returnBucket == null) if(logMINOR) Logger.minor(this, "Returnbucket is null");
 		if((returnBucket != null) && (result.asBucket() != returnBucket)) {
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;
@@ -223,8 +249,7 @@ public class ClientGetter extends BaseClientGetter {
 			state.removeFrom(container, context);
 			container.activate(clientCallback, 1);
 		}
-		FetchResult res = result;
-		clientCallback.onSuccess(res, ClientGetter.this, container);
+		clientCallback.onSuccess(result, ClientGetter.this, container);
 	}
 
 	/**

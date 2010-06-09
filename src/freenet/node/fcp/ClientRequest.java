@@ -42,6 +42,8 @@ public abstract class ClientRequest {
 	protected short priorityClass;
 	/** Persistence type */
 	protected final short persistenceType;
+	/** Charset of the request's contents */
+	protected final String charset;
 	/** Has the request finished? */
 	protected boolean finished;
 	/** Client token (string to feed back to the client on a Persistent* when he does a
@@ -77,8 +79,8 @@ public abstract class ClientRequest {
 		});
 	}
 	
-	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
-			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
+	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
+			FCPConnectionHandler handler, FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -91,6 +93,7 @@ public abstract class ClientRequest {
 		this.finished = false;
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
+		this.charset = charset;
 		this.clientToken = clientToken2;
 		this.global = global;
 		if(persistenceType == PERSIST_CONNECTION) {
@@ -121,8 +124,8 @@ public abstract class ClientRequest {
 		this.startupTime = System.currentTimeMillis();
 	}
 
-	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
-			short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
+	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, String charset, 
+			FCPConnectionHandler handler, short priorityClass2, short persistenceType2, String clientToken2, boolean global, ObjectContainer container) {
 		int hash = super.hashCode();
 		if(hash == 0) hash = 1;
 		hashCode = hash;
@@ -136,6 +139,7 @@ public abstract class ClientRequest {
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
 		this.clientToken = clientToken2;
+		this.charset = charset;
 		this.global = global;
 		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
@@ -192,6 +196,7 @@ public abstract class ClientRequest {
 		clientToken = fs.get("ClientToken");
 		finished = Fields.stringToBool(fs.get("Finished"), false);
 		global = Fields.stringToBool(fs.get("Global"), false);
+		charset = fs.get("Charset");
 		final String stime = fs.get("StartupTime");
 		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
 		completionTime = fs.getLong("CompletionTime", 0);

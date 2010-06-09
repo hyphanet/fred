@@ -35,8 +35,8 @@ import freenet.client.InsertException;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.DumperSnoopMetadata;
 import freenet.client.events.EventDumper;
-import freenet.clients.http.filter.ContentFilter;
-import freenet.clients.http.filter.ContentFilter.FilterOutput;
+import freenet.client.filter.ContentFilter;
+import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -51,7 +51,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
@@ -416,7 +415,7 @@ public class TextModeClientInterface implements Runnable {
     	final String content = readLines(reader, false);
     	final Bucket data = new ArrayBucket(content.getBytes("UTF-8"));
     	try {
-    		FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
+    		FilterOutput output = ContentFilter.filter(data, new ArrayBucket(), "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
     		
     		BufferedInputStream bis = new BufferedInputStream(output.data.getInputStream());
     		while(bis.available() > 0){

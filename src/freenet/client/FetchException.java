@@ -188,6 +188,24 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
 	}
 
+	public FetchException(int mode, long expectedSize, String reason, Throwable t, String expectedMimeType) {
+		super(reason+" : "+getMessage(mode)+": "+t.getMessage());
+		if(mode == 0)
+			Logger.error(this, "Can't increment failure mode 0, not a valid mode", new Exception("error"));
+		extraMessage = t.getMessage();
+		this.mode = mode;
+		this.expectedSize = expectedSize;
+		this.expectedMimeType = expectedMimeType;
+		errorCodes = null;
+		initCause(t);
+		newURI = null;
+		expectedSize = -1;
+		if(mode == INTERNAL_ERROR)
+			Logger.error(this, "Internal error: "+this);
+		else if(logMINOR) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+ ')', this);
+	}
+
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
 		if(mode == 0)
@@ -405,6 +423,8 @@ public class FetchException extends Exception {
 	public static final int WRONG_MIME_TYPE = 29;
 	/** A node killed the request because it had recently been tried and had DNFed */
 	public static final int RECENTLY_FAILED = 30;
+	/** Content filtration failed */
+	public static final int CONTENT_VALIDATION_FAILED = 31;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -450,7 +470,11 @@ public class FetchException extends Exception {
 		case INTERNAL_ERROR:
 			// No point retrying.
 			return true;
-			
+		
+		//The ContentFilter failed to validate the data. Retrying won't fix this.
+			case CONTENT_VALIDATION_FAILED:
+				return true;
+
 		// Wierd ones
 		case CANCELLED:
 		case ARCHIVE_RESTART:

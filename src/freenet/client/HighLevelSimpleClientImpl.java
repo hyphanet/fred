@@ -83,6 +83,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	public static final int EXTRA_INSERTS_SINGLE_BLOCK = 0;
 	public static final int EXTRA_INSERTS_SPLITFILE_HEADER = 2;
+	/*Whether or not to filter fetched content*/
+	static final boolean FILTER_DATA = false;
 
 	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;
@@ -271,9 +273,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES,
 				SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES, USK_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
-				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
+				FILTER_DATA, MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				bucketFactory, eventProducer,
-				false, CAN_WRITE_CLIENT_CACHE);
+				false, CAN_WRITE_CLIENT_CACHE, null, null);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {

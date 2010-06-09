@@ -10,6 +10,8 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.BlockSet;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
+import freenet.client.filter.FoundURICallback;
+import freenet.client.filter.TagReplacerCallback;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
@@ -69,27 +71,38 @@ public class FetchContext implements Cloneable {
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
+	/*If true, filter the fetched data*/
+	public boolean filterData;
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public final BlockSet blocks;
 	/** If non-null, the request will be stopped if it has a MIME type that is not one of these,
 	 * or has no MIME type. */
 	public Set<String> allowedMIMETypes;
+	/** If not-null, the request, if it requires a charset for filtration, will be assumed
+	 * to use this charset */
+	public String charset;
 	/** Do we have responsibility for removing the ClientEventProducer from the database? */
 	private final boolean hasOwnEventProducer;
 	/** Can this request write to the client-cache? We don't store all requests in the client cache,
 	 * in particular big stuff usually isn't written to it, to maximise its effectiveness. */
 	public boolean canWriteClientCache;
+	/**Prefetch hook for HTML documents. Only really necessary for FProxy's web-pushing*/
+	public FoundURICallback prefetchHook;
+	/**Callback needed for web-pushing*/
+	public TagReplacerCallback tagReplacer;
+	/**Force the content fiter to use this MIME type*/
+	public String overrideMIME;
 
 	public FetchContext(long curMaxLength,
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
 			boolean dontEnterImplicitArchives,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries, int maxUSKRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
-			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
+			boolean filterData, int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer,
-			boolean ignoreTooManyPathComponents, boolean canWriteClientCache) {
+			boolean ignoreTooManyPathComponents, boolean canWriteClientCache, String charset, String overrideMIME) {
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -107,8 +120,11 @@ public class FetchContext implements Cloneable {
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
+		this.filterData = filterData;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 		this.canWriteClientCache = canWriteClientCache;
+		this.charset = charset;
+		this.overrideMIME = overrideMIME;
 		hasOwnEventProducer = true;
 	}
 
@@ -145,9 +161,13 @@ public class FetchContext implements Cloneable {
 		this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 		this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 		this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+		this.filterData = ctx.filterData;
 		this.maxRecursionLevel = ctx.maxRecursionLevel;
 		this.returnZIPManifests = ctx.returnZIPManifests;
 		this.canWriteClientCache = ctx.canWriteClientCache;
+		this.prefetchHook = ctx.prefetchHook;
+		this.tagReplacer = ctx.tagReplacer;
+		this.overrideMIME = ctx.overrideMIME;
 
 		if(maskID == IDENTICAL_MASK || maskID == SPLITFILE_DEFAULT_MASK) {
 			// DEFAULT
@@ -186,5 +206,4 @@ public class FetchContext implements Cloneable {
 		// allowedMIMETypes is passed in, whoever passes it in is responsible for deleting it.
 		container.delete(this);
 	}
-
 }

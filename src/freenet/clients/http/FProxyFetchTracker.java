@@ -42,18 +42,18 @@ public class FProxyFetchTracker implements Runnable {
 		this.rc = rc;
 	}
 	
-	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize) throws FetchException {
+	public FProxyFetchWaiter makeFetcher(FreenetURI key, long maxSize, FetchContext fctx) throws FetchException {
 		FProxyFetchInProgress progress;
 		/* LOCKING:
 		 * Call getWaiter() inside the fetchers lock, since we will purge old 
 		 * fetchers inside that lock, hence avoid a race condition. FetchInProgress 
 		 * lock is always taken last. */
 		synchronized(fetchers) {
-			FProxyFetchWaiter waiter=makeWaiterForFetchInProgress(key, maxSize);
+			FProxyFetchWaiter waiter=makeWaiterForFetchInProgress(key, maxSize, fctx != null ? fctx : this.fctx);
 			if(waiter!=null){
 				return waiter;
 			}
-			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx, rc);
+			progress = new FProxyFetchInProgress(this, key, maxSize, fetchIdentifiers++, context, fctx != null ? fctx : this.fctx, rc);
 			fetchers.put(key, progress);
 		}
 		try {
@@ -64,14 +64,14 @@ public class FProxyFetchTracker implements Runnable {
 			}
 			throw e;
 		}
-		if(logMINOR) Logger.minor(this, "Created new fetcher: "+progress);
+		if(logMINOR) Logger.minor(this, "Created new fetcher: "+progress, new Exception());
 		return progress.getWaiter();
 		// FIXME promote a fetcher when it is re-used
 		// FIXME get rid of fetchers over some age
 	}
 	
-	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key,long maxSize){
-		FProxyFetchInProgress progress=getFetchInProgress(key, maxSize);
+	public FProxyFetchWaiter makeWaiterForFetchInProgress(FreenetURI key,long maxSize, FetchContext fctx){
+		FProxyFetchInProgress progress=getFetchInProgress(key, maxSize, fctx);
 		if(progress!=null){
 			return progress.getWaiter();
 		}
@@ -81,8 +81,9 @@ public class FProxyFetchTracker implements Runnable {
 	/** Gets an FProxyFetchInProgress identified by the URI and the maxsize. If no such FetchInProgress exists, then returns null.
 	 * @param key - The URI of the fetch
 	 * @param maxSize - The maxSize of the fetch
+	 * @param fctx TODO
 	 * @return The FetchInProgress if found, null otherwise*/
-	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize){
+	public FProxyFetchInProgress getFetchInProgress(FreenetURI key, long maxSize, FetchContext fctx){
 		FProxyFetchInProgress progress;
 		synchronized (fetchers) {
 			if(fetchers.containsKey(key)) {
@@ -92,6 +93,7 @@ public class FProxyFetchTracker implements Runnable {
 					if((progress.maxSize == maxSize && progress.notFinishedOrFatallyFinished())
 							|| progress.hasData()){
 						if(logMINOR) Logger.minor(this, "Found "+progress);
+						if(fctx != null && !progress.fetchContextEquivalent(fctx)) continue;
 						return progress;
 					} else
 						if(logMINOR) Logger.minor(this, "Skipping "+progress);

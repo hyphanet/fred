@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Map.Entry;
 
 import freenet.client.FetchException;
+import freenet.client.filter.HTMLFilter.ParsedTag;
 import freenet.clients.http.FProxyFetchInProgress;
 import freenet.clients.http.FProxyFetchResult;
 import freenet.clients.http.FProxyFetchTracker;
@@ -15,7 +16,6 @@ import freenet.clients.http.FProxyFetchWaiter;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.ToadletContext;
-import freenet.clients.http.filter.HTMLFilter.ParsedTag;
 import freenet.keys.FreenetURI;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
@@ -86,16 +86,16 @@ public class ImageElement extends BaseUpdateableElement {
 
 			public void run() {
 				try {
-					FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize);
-					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
-					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
+					FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize, null);
+					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).addListener(fetchListener);
+					ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).close(waiter);
 				} catch (FetchException fe) {
 					if (fe.newURI != null) {
 						try {
 							ImageElement.this.key = fe.newURI;
-							FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize);
-							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).addListener(fetchListener);
-							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize).close(waiter);
+							FProxyFetchWaiter waiter = ImageElement.this.tracker.makeFetcher(ImageElement.this.key, ImageElement.this.maxSize, null);
+							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).addListener(fetchListener);
+							ImageElement.this.tracker.getFetchInProgress(ImageElement.this.key, ImageElement.this.maxSize, null).close(waiter);
 						} catch (FetchException fe2) {
 							wasError = true;
 						}
@@ -115,7 +115,7 @@ public class ImageElement extends BaseUpdateableElement {
 		if (logMINOR) {
 			Logger.minor(this, "Disposing ImageElement");
 		}
-		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize);
+		FProxyFetchInProgress progress = tracker.getFetchInProgress(key, maxSize, null);
 		if (progress != null) {
 			progress.removeListener(fetchListener);
 			if (logMINOR) {
@@ -172,7 +172,7 @@ public class ImageElement extends BaseUpdateableElement {
 			FProxyFetchWaiter waiter = null;
 			try {
 				try {
-					waiter = tracker.makeFetcher(key, maxSize);
+					waiter = tracker.makeFetcher(key, maxSize, null);
 					fr = waiter.getResultFast();
 				} catch (FetchException fe) {
 					whenJsEnabled.addChild("div", "error");
@@ -210,10 +210,10 @@ public class ImageElement extends BaseUpdateableElement {
 				}
 			} finally {
 				if (waiter != null) {
-					tracker.getFetchInProgress(key, maxSize).close(waiter);
+					tracker.getFetchInProgress(key, maxSize, null).close(waiter);
 				}
 				if (fr != null) {
-					tracker.getFetchInProgress(key, maxSize).close(fr);
+					tracker.getFetchInProgress(key, maxSize, null).close(fr);
 				}
 			}
 		}
