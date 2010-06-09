@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -71,8 +70,7 @@ public class JPEGFilter implements ContentDataFilter {
 		if(length < 6) {
 			throwError(l10n("tooShortTitle"), l10n("tooShort"));
 		}
-		BufferedInputStream bis = new BufferedInputStream(input);
-		CountedInputStream cis = new CountedInputStream(bis);
+		CountedInputStream cis = new CountedInputStream(input);
 		DataInputStream dis = new DataInputStream(cis);
 		try {
 			assertHeader(dis, soi);
