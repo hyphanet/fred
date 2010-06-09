@@ -207,6 +207,7 @@ public class ClientGetter extends BaseClientGetter {
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
+				assert(result.asBucket() != returnBucket);
 				FilterOutput filter = ContentFilter.filter(result.asBucket(), returnBucket, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				result = new FetchResult(result, filter.data);
 			} catch (UnsafeContentTypeException e) {
