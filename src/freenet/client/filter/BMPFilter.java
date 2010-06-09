@@ -87,9 +87,6 @@ public class BMPFilter implements ContentDataFilter {
 	
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		if(input.available() < 54) { // Size of the bmp header is 54
-			throwHeaderError(l10n("TooShortT"), l10n("TooShortD"));
-		}
 		DataInputStream dis = new DataInputStream(input);
 		dis.mark(54);
 		try {

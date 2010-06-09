@@ -28,9 +28,6 @@ public class GIFFilter implements ContentDataFilter {
 	
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		if(input.available() < 6) {
-			throwHeaderError(l10n("tooShortTitle"), l10n("tooShort"));
-		}
 		DataInputStream dis = new DataInputStream(input);
 		try {
 			// Check the header

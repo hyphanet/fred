@@ -218,7 +218,15 @@ public class ContentFilter {
 					input.reset();
 					charset = detectCharset(charsetBuffer, handler, maybeCharset);
 				}
-				handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
+				try {
+					handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
+				}
+				catch(EOFException e) {
+					throw new DataFilterException(l10n("EOFMessage"), l10n("EOFMessage"), l10n("EOFDescription"));
+				}
+				catch(IOException e) {
+					throw e;
+				}
 				if(charset != null)
 					type = type + "; charset="+charset;
 				return;
