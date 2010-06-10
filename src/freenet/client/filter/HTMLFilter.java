@@ -36,7 +36,6 @@ import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
-import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -69,10 +68,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 			HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
 			pc.run();
-			w.close();
 		} finally {
-			Closer.close(isr);
-			Closer.close(osw);
+			w.flush();
 		}
 	}
 	

@@ -39,9 +39,8 @@ public class GIFFilter implements ContentDataFilter {
 			}
 			output.write(headerCheck);
 			FileUtil.copy(dis, output, -1);
-			dis.close();
 		} finally {
-			Closer.close(dis);
+			output.flush();
 		}
 	}
 

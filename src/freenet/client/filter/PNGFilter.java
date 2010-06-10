@@ -66,7 +66,7 @@ public class PNGFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 			FilterCallback cb) throws DataFilterException, IOException {
 		readFilter(input, output, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs);
-		Closer.close(output);
+		output.flush();
 	}
 
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
@@ -253,17 +253,12 @@ public class PNGFilter implements ContentDataFilter {
 			}
 			if (hasSeenIEND && dis.available() > 0)
 				throwError("IEND not last chunk", "IEND not last chunk");
-
-			dis.close();
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throwError("ArrayIndexOutOfBoundsException while filtering", "ArrayIndexOutOfBoundsException while filtering");
 		} catch (NegativeArraySizeException e) {
 			throwError("NegativeArraySizeException while filtering", "NegativeArraySizeException while filtering");
 		} catch (EOFException e) {
 			throwError("EOF Exception while filtering", "EOF Exception while filtering");
-		} finally {
-			Closer.close(dis);
-			Closer.close(is);
 		}
 	}
 

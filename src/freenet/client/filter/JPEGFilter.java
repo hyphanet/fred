@@ -15,7 +15,6 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
-import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 
 /**
@@ -59,7 +58,7 @@ public class JPEGFilter implements ContentDataFilter {
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		readFilter(input, output, charset, otherParams, cb, deleteComments, deleteExif);
-			Closer.close(output);
+		output.flush();
 	}
 	
 	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
@@ -72,7 +71,6 @@ public class JPEGFilter implements ContentDataFilter {
 		}
 		CountedInputStream cis = new CountedInputStream(input);
 		DataInputStream dis = new DataInputStream(cis);
-		try {
 			assertHeader(dis, soi);
 			if(output != null) output.write(soi);
 			
@@ -322,16 +320,13 @@ public class JPEGFilter implements ContentDataFilter {
 				if(dos != null) {
 					// Write frame
 					baos.writeTo(output);
+					output.flush();
 				}
 			}
 			
-			dis.close();
 			// In future, maybe we will check the other chunks too.
 			// In particular, we may want to delete, or filter, the comment blocks.
 			// FIXME
-		} finally {
-			Closer.close(dis);
-		}
 	}
 
 	private static String l10n(String key) {

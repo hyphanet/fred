@@ -158,11 +158,8 @@ public class BMPFilter implements ContentDataFilter {
 			dis.reset();
 
 			FileUtil.copy(dis, output, -1);
-			dis.close();
-			output.close();
 		} finally {
-			Closer.close(dis);
-			Closer.close(output);
+			output.flush();
 		}
 	}
 

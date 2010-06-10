@@ -227,13 +227,14 @@ public class ContentFilter {
 				catch(IOException e) {
 					throw e;
 				}
-				if(charset != null)
-					type = type + "; charset="+charset;
+				if(charset != null) type = type + "; charset="+charset;
+				output.flush();
 				return;
 			}
 			
 			if(handler.safeToRead) {
 				output.write(input.read());
+				output.flush();
 			}
 			
 			handler.throwUnsafeContentTypeException();
