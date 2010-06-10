@@ -2229,6 +2229,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							for(int i=0;i<typesplit.length;i++)
 								Logger.debug(this, "["+i+"] = "+typesplit[i]);
 						}
+						boolean detected = false;
 						for (int i = 0; i < allowedContentTypes.length; i++) {
 							if (typesplit[0].equalsIgnoreCase(allowedContentTypes[i])) {
 								if((typesplit[1] == null) || (pc.charset != null && typesplit[1]
@@ -2244,10 +2245,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 										throwFilterException(l10n("multipleCharsetsInMeta"));
 									pc.detectedCharset = typesplit[1].trim();
 								}
+								detected = true;
 								break;
 							}
 						}
-						
+						if(!detected)
+							throwFilterException(l10n("invalidMetaType"));
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
 						hn.put("http-equiv", "Content-Language");
