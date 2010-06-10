@@ -581,32 +581,32 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				
 				if(!pc.onlyDetectingCharset) {
 				
-				//If the tag needs replacement, then replace it
-				String newContent=pc.cb.processTag(t);
-				if(newContent!=null){
-					w.write(newContent);
-					if(t.endSlash==false){
-						pc.openElements.push(t.element);
+					//If the tag needs replacement, then replace it
+					String newContent=pc.cb.processTag(t);
+					if(newContent!=null){
+						w.write(newContent);
+						if(t.endSlash==false){
+							pc.openElements.push(t.element);
+						}
+					}else{
+						if (pc.writeStyleScriptWithTag) {
+							pc.writeStyleScriptWithTag = false;
+							String style = pc.currentStyleScriptChunk;
+							if ((style == null) || (style.length() == 0))
+								pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
+							else
+								w.write(style);
+							pc.currentStyleScriptChunk = "";
+						}
+						
+						t.write(w,pc);
+						if (pc.writeAfterTag.length() > 0) {
+							w.write(pc.writeAfterTag.toString());
+							pc.writeAfterTag = new StringBuilder(1024);
+						}
 					}
-				}else{
-					if (pc.writeStyleScriptWithTag) {
-						pc.writeStyleScriptWithTag = false;
-						String style = pc.currentStyleScriptChunk;
-						if ((style == null) || (style.length() == 0))
-							pc.writeAfterTag.append("<!-- "+l10n("deletedUnknownStyle")+" -->");
-						else
-							w.write(style);
-						pc.currentStyleScriptChunk = "";
-					}
-					
-					t.write(w,pc);
-					if (pc.writeAfterTag.length() > 0) {
-						w.write(pc.writeAfterTag.toString());
-						pc.writeAfterTag = new StringBuilder(1024);
-					}
-				}
-			} else
-				pc.writeStyleScriptWithTag = false;
+				} else
+					pc.writeStyleScriptWithTag = false;
 			}
 			if(t == null || t.startSlash || t.endSlash) {
 				if(!pc.openElements.isEmpty())
