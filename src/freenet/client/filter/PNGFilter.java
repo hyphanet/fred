@@ -281,19 +281,28 @@ public class PNGFilter implements ContentDataFilter {
 		final File fin = new File("/tmp/test.png");
 		final File fout = new File("/tmp/test2.png");
 		fout.delete();
-		final Bucket data = new FileBucket(fin, true, false, false, false, false);
-		final Bucket out = new FileBucket(fout, false, true, false, false, false);
+		final Bucket inputBucket = new FileBucket(fin, true, false, false, false, false);
+		final Bucket outputBucket = new FileBucket(fout, false, true, false, false, false);
+		InputStream inputStream = null;
+		OutputStream outputStream = null;
 		try {
+			inputStream = inputBucket.getInputStream();
+			outputStream = outputBucket.getOutputStream();
 			Logger.setupStdoutLogging(Logger.MINOR, "");
-			ContentFilter.filter(data.getInputStream(), out.getOutputStream(), "image/png",
+			ContentFilter.filter(inputStream, outputStream, "image/png",
 					new URI("http://127.0.0.1:8888/"), null, null, null);
+			inputStream.close();
+			outputStream.close();
 		} catch (IOException e) {
 			System.out.println("Bucket error?: " + e.getMessage());
 		} catch (URISyntaxException e) {
 			System.out.println("Internal error: " + e.getMessage());
 		} catch (InvalidThresholdException e) {
 		} finally {
-			data.free();
+			inputBucket.free();
+			outputBucket.free();
+			Closer.close(inputStream);
+			Closer.close(outputStream);
 		}
 	}
 

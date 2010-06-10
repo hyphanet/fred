@@ -6,6 +6,8 @@ package freenet.client.async;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 
@@ -29,6 +31,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 
 /**
  * A high level data request. Follows redirects, downloads splitfiles, etc. Similar to what you get from FCP,
@@ -200,13 +203,19 @@ public class ClientGetter extends BaseClientGetter {
 		//Filter the data, if we are supposed to
 		if(ctx.filterData){
 			if(logMINOR) Logger.minor(this, "Running content filter... Prefetch hook: "+ctx.prefetchHook+" tagReplacer: "+ctx.tagReplacer);
+			InputStream input = null;
+			OutputStream output = null;
 			try {
 				String mimeType = ctx.overrideMIME != null ? ctx.overrideMIME: expectedMIME;
 				if(mimeType.compareTo("application/xhtml+xml") == 0) mimeType = "text/html";
 				Bucket filteredResult;
 				if(returnBucket == null) filteredResult = context.getBucketFactory(persistent()).makeBucket(-1);
 				else filteredResult = returnBucket;
-				ContentFilter.filter(result.asBucket().getInputStream(), filteredResult.getOutputStream(), mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+				input = result.asBucket().getInputStream();
+				output = filteredResult.getOutputStream();
+				ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
+				input.close();
+				output.close();
 				result = new FetchResult(result, filteredResult);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
@@ -216,6 +225,9 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.error(this, "Error filtering content", e);
 				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED), state/*Not really the state's fault*/, container, context);
 				return;
+			} finally {
+				Closer.close(input);
+				Closer.close(output);
 			}
 		}
 		else {
