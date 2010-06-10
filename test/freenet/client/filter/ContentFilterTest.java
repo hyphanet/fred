@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -174,7 +175,7 @@ public class ContentFilterTest extends TestCase {
 		// This is why we need to disallow characters before <html> !!
 		String s = "<html><body><a href=\"http://www.google.com/\">Blah</a>";
 		String end = "</body></html>";
-		String alt = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-16\"></head><body><a href=\"http://www.google.com/\">Blah</a></body></html>";
+		String alt = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-16\"></head><body><a href=\"http://www.freenetproject.org/\">Blah</a></body></html>";
 		if((s.length()+end.length()) % 2 == 1)
 			s += " ";
 		s = s+end;
@@ -191,17 +192,45 @@ public class ContentFilterTest extends TestCase {
 		System.arraycopy(buf, 0, total, utf16bom.length, buf.length);
 		System.arraycopy(bufUTF16, 0, total, utf16bom.length+buf.length, bufUTF16.length);
 		HTMLFilter filter = new HTMLFilter();
+		boolean failed = false;
+		FileOutputStream fos;
 		try {
-			filter.readFilter(new ArrayBucket(total), new ArrayBucket(), "UTF-16", null, null);
+			ArrayBucket out = new ArrayBucket();
+			filter.readFilter(new ArrayBucket(total), out, "UTF-16", null, null);
+			fos = new FileOutputStream("output.utf16");
+			fos.write(out.toByteArray());
+			fos.close();
+			failed = true;
 			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (HTMLFilter)", true);
 		} catch (DataFilterException e) {
+			System.out.println("Failure: "+e);
+			e.printStackTrace();
+			if(e.getCause() != null) {
+				e.getCause().printStackTrace();
+			}
 			// Ok.
 		}
 		try {
-			ContentFilter.filter(new ArrayBucket(total), new ArrayBucket(), "text/html", null, null);
+			ArrayBucket out = new ArrayBucket();
+			ContentFilter.filter(new ArrayBucket(total), out, "text/html", null, null);
+			fos = new FileOutputStream("output.filtered");
+			fos.write(out.toByteArray());
+			fos.close();
+			failed = true;
 			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter)", true);
 		} catch (DataFilterException e) {
+			System.out.println("Failure: "+e);
+			e.printStackTrace();
+			if(e.getCause() != null) {
+				e.getCause().printStackTrace();
+			}
 			// Ok.
+		}
+		
+		if(failed) {
+			fos = new FileOutputStream("unfiltered");
+			fos.write(total);
+			fos.close();
 		}
 	}
 		
