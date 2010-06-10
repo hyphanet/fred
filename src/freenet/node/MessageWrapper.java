@@ -49,6 +49,7 @@ public class MessageWrapper {
 		int realLength = Math.min((end - start), length);
 		System.arraycopy(item.buf, start, dest, offset, realLength);
 		
+		addRangeToSet(start, start + realLength, sent);
 		return new int[] {realLength, start};
 	}
 
@@ -63,7 +64,8 @@ public class MessageWrapper {
 	 * @param end the last byte that is copied
 	 */
 	public void getData(byte[] dest, int offset, int start, int end) {
-		throw new UnsupportedOperationException();
+		System.arraycopy(item.buf, start, dest, offset, end - start);
+		addRangeToSet(start, end, sent);
 	}
 
 	/**
@@ -73,7 +75,7 @@ public class MessageWrapper {
 	 * @param end the last byte to be marked
 	 */
 	public void ack(int start, int end) {
-		throw new UnsupportedOperationException();
+		addRangeToSet(start, end, acks);
 	}
 
 	/**
@@ -83,7 +85,8 @@ public class MessageWrapper {
 	 * @param end the last byte to be marked
 	 */
 	public void lost(int start, int end) {
-		throw new UnsupportedOperationException();
+		removeRangeFromSet(start, end, sent);
+		removeRangeFromSet(start, end, acks);
 	}
 
 	public int getMessageID() {
