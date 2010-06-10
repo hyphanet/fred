@@ -191,6 +191,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			char prevC = 0;
 			char c = 0;
 			mode = INTEXT;
+			
+			// No text before <html>
+			boolean textAllowed = false;
 
 			while (true) {
 				int x;
@@ -246,7 +249,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					switch (mode) {
 						case INTEXT :
 							if (c == '<') {
-								saveText(b, currentTag, w, this);
+								if(textAllowed) {
+									saveText(b, currentTag, w, this);
+								} else {
+									if(!b.toString().trim().equals(""))
+										throwFilterException(l10n("textBeforeHTML"));
+								}
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTAG;
@@ -271,11 +279,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							} else if (c == '>') {
 								splitTag.add(b.toString());
 								b.setLength(0);
-								processTag(splitTag, w, this);
+								String s = processTag(splitTag, w, this);
 								currentTag = splitTag.get(0);
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
+								if(s != null && (s.equals("html") || (!isXHTML) && s.equalsIgnoreCase("html")))
+									textAllowed = true;
 							} else if (
 								(b.length() == 2)
 									&& (c == '-')
@@ -491,7 +501,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.write(sout);
 	}
 
-	void processTag(List<String> splitTag, Writer w, HTMLParseContext pc)
+	String processTag(List<String> splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
 		if(logDEBUG) {
@@ -501,7 +511,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
 			t = t.sanitize(pc);
-			if(pc.noOutput) return; // sanitize has done all the work we are interested in
+			if(pc.noOutput) return null; // sanitize has done all the work we are interested in
 			if (t != null) {
 				
 				//We need to make sure that <head> is present in the document. If it is not, then GWT javascript won't get loaded.
@@ -555,9 +565,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
+			return t.element;
 		} else {
 			pc.killTag = false;
 			pc.writeStyleScriptWithTag = false;
+			return null;
 		}
 	}
 
