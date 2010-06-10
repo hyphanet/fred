@@ -2,30 +2,17 @@ package freenet.node;
 
 import java.util.LinkedList;
 
-import freenet.io.comm.AsyncMessageCallback;
-import freenet.io.comm.ByteCounter;
 import freenet.support.Logger;
 
 public class MessageWrapper {
-	private final byte[] data;
-	private final AsyncMessageCallback cb;
-	private final ByteCounter ctr;
+	private final MessageItem item;
 	private final LinkedList<int[]> acks = new LinkedList<int[]>();
 	private final LinkedList<int[]> sent = new LinkedList<int[]>();
 	private final boolean isLongMessage;
 
 	public MessageWrapper(MessageItem item) {
-		// Use item.cb[0] since MessageItems should't have more than one callback. sendAsync can't add
-		// more than one.
-		this(item.buf, item.cb[0], item.ctrCallback);
-		if(item.cb.length > 1) Logger.error(this, "Got MessageItem with more than one callback");
-	}
-
-	private MessageWrapper(byte[] data, AsyncMessageCallback cb, ByteCounter ctr) {
-		this.data = data;
-		this.cb = cb;
-		this.ctr = ctr;
-		isLongMessage = data.length > 255;
+		this.item = item;
+		isLongMessage = item.buf.length > 255;
 	}
 
 	/**
@@ -81,7 +68,7 @@ public class MessageWrapper {
 	}
 
 	public int getLength() {
-		return data.length;
+		return item.buf.length;
 	}
 
 	public boolean isLongMessage() {
