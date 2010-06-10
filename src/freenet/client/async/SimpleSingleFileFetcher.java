@@ -159,7 +159,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 					Logger.error(this, "Caught "+t, t);
 				}
 			}
-			onSuccess(new FetchResult((ClientMetadata)null, data), container, context);
+			onSuccess(new FetchResult((ClientMetadata)null, data, null), container, context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, container, context);
 		}

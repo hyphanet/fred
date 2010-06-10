@@ -216,7 +216,7 @@ public class ClientGetter extends BaseClientGetter {
 				ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
-				result = new FetchResult(result, filteredResult);
+				result = new FetchResult(result, filteredResult, null);
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
@@ -253,7 +253,7 @@ public class ClientGetter extends BaseClientGetter {
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */, container, context);
 				return;
 			}
-			result = new FetchResult(result, to);
+			result = new FetchResult(result, to, null);
 		} else {
 			if(returnBucket != null && logMINOR)
 				Logger.minor(this, "client.async returned data in returnBucket");
