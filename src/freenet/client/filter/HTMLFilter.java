@@ -266,6 +266,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 								processTag(splitTag, w, this);
 								currentTag = splitTag.get(0);
+								if(detectCharset
+										&& currentTag.equalsIgnoreCase("</head>")) return;
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
@@ -522,12 +524,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
 					w.write("</head>");
 					pc.openElements.pop();
+					if(pc.detectCharset) return;
 				//If we found a <body> and no <head> before it, then we insert it 
 				}else if(t.element.compareTo("body")==0 && pc.wasHeadElementFound==false){
 					pc.wasHeadElementFound=true;
 					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
 					if(headContent!=null){
 						w.write(headContent+"</head>");
+						if(pc.detectCharset) return;
 					}
 				}
 				
