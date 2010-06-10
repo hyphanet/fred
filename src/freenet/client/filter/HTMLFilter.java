@@ -280,6 +280,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						}
 						continue;
 					}
+					if(c == 0) {
+						// Delete nulls. They can cause all sorts of problems and also can result from messing around with charsets.
+						continue;
+					}
 					firstChar = false;
 					switch (mode) {
 						case INTEXT :
