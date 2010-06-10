@@ -120,19 +120,19 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String charset;
 		String detectedCharset;
 		final FilterCallback cb;
-		final boolean noOutput;
+		final boolean detectCharset;
 		boolean isXHTML=false;
 		Stack<String> openElements;
 		
 		/** If <head> is found, then it is true. It is needed that if <title> or <meta> is found outside <head> or if a <body> is found first, then insert a <head> too*/
 		boolean wasHeadElementFound=false;
 	
-		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean noOutput) {
+		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean detectCharset) {
 			this.r = r;
 			this.w = w;
 			this.charset = charset;
 			this.cb = cb;
-			this.noOutput = noOutput;
+			this.detectCharset = detectCharset;
 			openElements=new Stack<String>();
 		}
 		
@@ -448,7 +448,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	void saveText(StringBuilder s, String tagName, Writer w, HTMLParseContext pc)
 		throws IOException {
 		
-		if(pc.noOutput) return;
+		if(pc.detectCharset) return;
 
 		if(logDEBUG) Logger.debug(this, "Saving text: "+s.toString());
 		if (pc.killText) {
@@ -496,7 +496,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
 			t = t.sanitize(pc);
-			if(pc.noOutput) return; // sanitize has done all the work we are interested in
+			if(pc.detectCharset) return; // sanitize has done all the work we are interested in
 			if (t != null) {
 				
 				//We need to make sure that <head> is present in the document. If it is not, then GWT javascript won't get loaded.
@@ -558,7 +558,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	void saveComment(StringBuilder s, Writer w, HTMLParseContext pc)
 		throws IOException {
-		if(pc.noOutput) return;
+		if(pc.detectCharset) return;
 		if((s.length() > 3) && (s.charAt(0) == '!') && (s.charAt(1) == '-') && (s.charAt(2) == '-')) {
 			s.delete(0, 3);
 			if(s.charAt(s.length()-1) == '-')
@@ -2348,7 +2348,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	
 	static String sanitizeStyle(String style, FilterCallback cb, HTMLParseContext hpc, boolean isInline) throws DataFilterException {
 		if(style == null) return null;
-		if(hpc.noOutput) return null;
+		if(hpc.detectCharset) return null;
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
 		style = style.trim();
