@@ -33,8 +33,31 @@ public class NewPacketFormat implements PacketFormat {
 		int offset = 9; // Sequence number (4), HMAC (4), ACK count (1)
 
 		offset = insertAcks(packet, offset);
-		offset = insertStartedMessages(packet, offset, maxPacketSize);
-		offset = insertMessages(packet, offset, maxPacketSize);
+
+		// Try to finish Messages that have been started
+		synchronized(started) {
+			Iterator<MessageWrapper> it = started.iterator();
+			while (it.hasNext() && (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize)) {
+				MessageWrapper wrapper = it.next();
+				offset = insertFragment(packet, offset, maxPacketSize, wrapper);
+			}
+		}
+
+		// Add messages from message queue
+		PeerMessageQueue messageQueue = pn.getMessageQueue();
+		while (offset + MIN_MESSAGE_FRAGMENT_SIZE > maxPacketSize) {
+			MessageItem item = null;
+			synchronized(messageQueue) {
+				item = messageQueue.grabQueuedMessageItem();
+			}
+
+			MessageWrapper wrapper = new MessageWrapper(item);
+
+			offset = insertFragment(packet, offset, maxPacketSize, wrapper);
+			synchronized(started) {
+				started.add(wrapper);
+			}
+		}
 
 		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
 		
@@ -87,41 +110,6 @@ public class NewPacketFormat implements PacketFormat {
 		
 		return offset;
 	}
-	
-	private int insertStartedMessages(byte[] packet, int offset, int maxPacketSize) {
-		// Try to finish Messages that have been started
-		synchronized(started) {
-			Iterator<MessageWrapper> it = started.iterator();
-			while (it.hasNext() && (offset + MIN_MESSAGE_FRAGMENT_SIZE < maxPacketSize)) {
-				MessageWrapper wrapper = it.next();
-
-				offset = insertFragment(packet, offset, maxPacketSize, wrapper);
-			}
-		}
-		
-		return offset;
-	}
-
-	private int insertMessages(byte[] packet, int offset, int maxPacketSize) {
-		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
-		PeerMessageQueue messageQueue = pn.getMessageQueue();
-
-		while(offset + MIN_MESSAGE_FRAGMENT_SIZE > maxPacketSize) {
-			MessageItem item = null;
-			synchronized(messageQueue) {
-				item = messageQueue.grabQueuedMessageItem();
-			}
-
-			MessageWrapper wrapper = new MessageWrapper(item);
-			offset = insertFragment(packet, offset, maxPacketSize, wrapper);
-
-			synchronized(started) {
-				started.add(wrapper);
-                        }
-		}
-
-		return offset;
-        }
 
 	private int insertFragment(byte[] packet, int offset, int maxPacketSize, MessageWrapper wrapper) {
 		// Insert data
