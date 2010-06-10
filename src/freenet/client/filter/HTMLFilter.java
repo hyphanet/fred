@@ -397,6 +397,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				}
 			}
+			/**While detecting the charset, if head is not closed inside
+			 * the interval which we are examining, something is wrong, and it's
+			 * possible that the file has been given a freakishly large head, so
+			 * that we'll miss a charset declaration.*/
+			if(detectCharset && openElements.contains("head")) {
+				throw new MalformedInputException(1024*64);
+			}
 			//Writing the remaining tags for XHTML if any
 			if(getisXHTML())
 			{
