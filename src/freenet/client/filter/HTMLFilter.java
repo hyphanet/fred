@@ -49,6 +49,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
+	/** If true, allow documents that don't have an <html> tag or have other tags before it.
+	 * In all cases we disallow text before the first valid tag. This is because if we don't,
+	 * charset detection can be ambiguous, potentially resulting in attacks. */
+	private static boolean allowNoHTMLTag = true;
 	
 	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
@@ -306,7 +310,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
-								if(s != null && (s.equals("html") || (!isXHTML) && s.equalsIgnoreCase("html")))
+								if(s != null && (allowNoHTMLTag || (s.equals("html") || (!isXHTML) && s.equalsIgnoreCase("html"))))
 									textAllowed = true;
 							} else if (
 								(b.length() == 2)
@@ -420,7 +424,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTEXT;
-								if(currentTag != null && (currentTag.equals("html") || (!isXHTML) && currentTag.equalsIgnoreCase("html")))
+								if(currentTag != null && (allowNoHTMLTag || (currentTag.equals("html") || (!isXHTML) && currentTag.equalsIgnoreCase("html"))))
 									textAllowed = true;
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
