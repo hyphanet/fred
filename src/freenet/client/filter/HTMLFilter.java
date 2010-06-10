@@ -2230,15 +2230,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								Logger.debug(this, "["+i+"] = "+typesplit[i]);
 						}
 						for (int i = 0; i < allowedContentTypes.length; i++) {
-							if (typesplit[0].equalsIgnoreCase(allowedContentTypes[i])
-									&& ((typesplit[1] == null) || typesplit[1]
-											.equalsIgnoreCase(pc.charset))) {
-								hn.put("http-equiv", http_equiv);
-								hn.put("content", typesplit[0]
-										+ (typesplit[1] != null ? "; charset="
-												+ typesplit[1] : ""));
-							} else if(typesplit[1] != null && !typesplit[1].equalsIgnoreCase(pc.charset))
-								throwFilterException(l10n("wrongCharsetInMeta"));
+							if (typesplit[0].equalsIgnoreCase(allowedContentTypes[i])) {
+								if((typesplit[1] == null) || typesplit[1]
+								        .equalsIgnoreCase(pc.charset)) {
+									hn.put("http-equiv", http_equiv);
+									hn.put("content", typesplit[0]
+									    + (typesplit[1] != null ? "; charset="
+										+ typesplit[1] : ""));
+								} else if(typesplit[1] != null && !typesplit[1].equalsIgnoreCase(pc.charset))
+									throwFilterException(l10n("wrongCharsetInMeta"));
+							}
 						}
 						if(typesplit[1] != null) {
 							if(pc.detectedCharset != null)
