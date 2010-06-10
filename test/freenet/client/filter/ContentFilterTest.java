@@ -272,7 +272,12 @@ public class ContentFilterTest extends TestCase {
 			attributes.put("content","want/fishsticks; charset=UTF-8");
 			HTMLTag = new ParsedTag(tagname, attributes);
 
-			assertNull("Meta tag describing an unknown content-type", verifier.sanitize(HTMLTag, pc));
+			try {
+				verifier.sanitize(HTMLTag, pc);
+				assertTrue("Meta tag describing an unknown content-type: should throw an error", false);
+			} catch (DataFilterException e) {
+				// Ok.
+			}
 		}
 
 		public void testBodyTag() throws DataFilterException {
