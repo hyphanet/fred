@@ -420,6 +420,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTEXT;
+								if(currentTag != null && (currentTag.equals("html") || (!isXHTML) && currentTag.equalsIgnoreCase("html")))
+									textAllowed = true;
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
 								
