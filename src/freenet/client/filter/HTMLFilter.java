@@ -130,6 +130,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		final boolean onlyDetectingCharset;
 		boolean isXHTML=false;
 		Stack<String> openElements;
+		boolean failedDetectCharset;
 		
 		/** If <head> is found, then it is true. It is needed that if <title> or <meta> is found outside <head> or if a <body> is found first, then insert a <head> too*/
 		boolean wasHeadElementFound=false;
@@ -198,6 +199,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			boolean textAllowed = false;
 
 			while (true) {
+				// If detecting charset, stop after </head> even if haven't found <meta> charset tag.
+				if(onlyDetectingCharset && failedDetectCharset)
+					return temp;
 				int x;
 				
 				try {
@@ -538,6 +542,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pc.wasHeadElementFound=true;
 				} else if(t.element.compareTo("head")==0 && t.startSlash) {
 					pc.headEnded = true;
+					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
 				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.wasHeadElementFound==false){
 					pc.openElements.push("head");
@@ -552,6 +557,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
 					w.write("</head>");
 					pc.headEnded = true;
+					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					pc.openElements.pop();
 				//If we found a <body> and no <head> before it, then we insert it 
 				}else if(t.element.compareTo("body")==0 && pc.wasHeadElementFound==false){
@@ -560,6 +566,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					if(headContent!=null){
 						w.write(headContent+"</head>");
 						pc.headEnded = true;
+						if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					}
 				}
 				
