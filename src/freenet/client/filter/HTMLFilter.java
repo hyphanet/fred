@@ -205,6 +205,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			
 			// No text before <html>
 			boolean textAllowed = false;
+			
+			boolean firstChar = true;
 
 			while (true) {
 				// If detecting charset, stop after </head> even if haven't found <meta> charset tag.
@@ -268,6 +270,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pprevC = prevC;
 					prevC = c;
 					c = (char) x;
+					if(c == 0xFEFF) {
+						if(firstChar) {
+							// BOM
+							if(w != null)
+								w.write(c);
+						} else {
+							// Null character (zero width non breaking space). Get rid.
+						}
+						continue;
+					}
+					firstChar = false;
 					switch (mode) {
 						case INTEXT :
 							if (c == '<') {
