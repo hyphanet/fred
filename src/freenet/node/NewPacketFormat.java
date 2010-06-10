@@ -50,6 +50,7 @@ public class NewPacketFormat implements PacketFormat {
 			synchronized(messageQueue) {
 				item = messageQueue.grabQueuedMessageItem();
 			}
+			if(item == null) break;
 
 			MessageWrapper wrapper = new MessageWrapper(item);
 
