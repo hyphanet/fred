@@ -290,7 +290,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								splitTag.add(b.toString());
 								b.setLength(0);
 								String s = processTag(splitTag, w, this);
-								currentTag = splitTag.get(0);
+								currentTag = s;
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
@@ -400,9 +400,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append(c);
 							} else if (c == '>') {
 								if (!killTag)
-									processTag(splitTag, w, this);
+									currentTag = processTag(splitTag, w, this);
+								else
+									currentTag = null;
 								killTag = false;
-								currentTag = splitTag.get(0);
 								splitTag.clear();
 								b.setLength(0);
 								balt.setLength(0);
