@@ -14,6 +14,7 @@ import java.util.HashSet;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
+import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -217,7 +218,8 @@ public class ClientGetter extends BaseClientGetter {
 				FilterStatus filterStatus = ContentFilter.filter(input, output, mimeType, uri.toURI("/"), ctx.prefetchHook, ctx.tagReplacer, ctx.charset);
 				input.close();
 				output.close();
-				result = new FetchResult(result, filteredResult, filterStatus.mimeType+"; charset="+filterStatus.charset);
+				String detectedMIMEType = filterStatus.mimeType.concat(filterStatus.charset == null ? "" : "; charset="+filterStatus.charset);
+				result = new FetchResult(new ClientMetadata(detectedMIMEType), result.asBucket());
 			} catch (UnsafeContentTypeException e) {
 				Logger.error(this, "Error filtering content: will not validate", e);
 				onFailure(new FetchException(FetchException.CONTENT_VALIDATION_FAILED, expectedSize, e.getMessage(), e, ctx.overrideMIME != null ? ctx.overrideMIME : expectedMIME), state/*Not really the state's fault*/, container, context);
