@@ -2219,7 +2219,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								hn.put("content", typesplit[0]
 										+ (typesplit[1] != null ? "; charset="
 												+ typesplit[1] : ""));
-							}
+							} else if(typesplit[1] != null && !typesplit[1].equalsIgnoreCase(pc.charset))
+								throwFilterException(l10n("wrongCharsetInMeta"));
 						}
 						if(typesplit[1] != null)
 							pc.detectedCharset = typesplit[1].trim();
