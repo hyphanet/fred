@@ -541,8 +541,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
 			t = t.sanitize(pc);
-			if(pc.onlyDetectingCharset) return null; // sanitize has done all the work we are interested in
 			if (t != null) {
+				// We have to check whether <head> exists etc even if we are just checking the charset.
+				// This enables us to quit when we see </head>.
 				
 				//We need to make sure that <head> is present in the document. If it is not, then GWT javascript won't get loaded.
 				//To achieve this, we keep track whether we processed the <head>
@@ -556,14 +557,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pc.openElements.push("head");
 					pc.wasHeadElementFound=true;
 					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
-					if(headContent!=null){
+					if(headContent!=null && !pc.onlyDetectingCharset){
 						w.write(headContent);
 					}
 				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.headEnded){
 					throwFilterException(l10n("metaOutsideHead"));
 				//If we found a <body> and haven't closed <head> already, then we do
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
-					w.write("</head>");
+					if(!pc.onlyDetectingCharset) w.write("</head>");
 					pc.headEnded = true;
 					if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					pc.openElements.pop();
@@ -572,11 +573,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pc.wasHeadElementFound=true;
 					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
 					if(headContent!=null){
-						w.write(headContent+"</head>");
+						if(!pc.onlyDetectingCharset) w.write(headContent+"</head>");
 						pc.headEnded = true;
 						if(pc.onlyDetectingCharset) pc.failedDetectCharset = true;
 					}
 				}
+				
+				if(!pc.onlyDetectingCharset) {
 				
 				//If the tag needs replacement, then replace it
 				String newContent=pc.cb.processTag(t);
@@ -604,6 +607,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
+			}
 			if(t == null || t.startSlash || t.endSlash) {
 				if(!pc.openElements.isEmpty())
 					return pc.openElements.peek();
