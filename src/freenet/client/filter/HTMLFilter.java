@@ -217,7 +217,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (x == -1) {
 					switch (mode) {
 						case INTEXT :
-							saveText(b, currentTag, w, this);
+							if(textAllowed) {
+								saveText(b, currentTag, w, this);
+							} else {
+								if(!b.toString().trim().equals(""))
+									throwFilterException(l10n("textBeforeHTML"));
+							}
 							break;
 						case INTAG:
 							w.write("<!-- truncated page: last tag not unfinished -->");
@@ -271,7 +276,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
 								
-								saveText(b, currentTag, w, this);
+								if(textAllowed) {
+									saveText(b, currentTag, w, this);
+								} else {
+									if(!b.toString().trim().equals(""))
+										throwFilterException(l10n("textBeforeHTML"));
+								}
 
 								balt.setLength(0);
 								b.setLength(0);
@@ -400,7 +410,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
 								
-								saveText(balt, currentTag, w, this);
+								if(textAllowed) {
+									saveText(b, currentTag, w, this);
+								} else {
+									if(!b.toString().trim().equals(""))
+										throwFilterException(l10n("textBeforeHTML"));
+								}
 								balt.setLength(0);
 								b.setLength(0);
 								splitTag.clear();
