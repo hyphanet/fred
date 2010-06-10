@@ -14,6 +14,7 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * This class would verify whether the BMP header is valid or not
@@ -155,15 +156,8 @@ public class BMPFilter implements ContentDataFilter {
 			}
 		}
 		dis.reset();
-		
-		for(int x=0; x<dis.available(); x++) {
-			try { 
-				output.write(dis.read());
-			}
-			catch(IOException e) {
-				break;
-			}
-		}
+
+		FileUtil.copy(dis, output, -1);
 		dis.close();
 		output.close();
 		} finally {

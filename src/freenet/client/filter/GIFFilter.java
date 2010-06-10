@@ -12,6 +12,7 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * Content filter for GIF's.
@@ -37,14 +38,7 @@ public class GIFFilter implements ContentDataFilter {
 				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 			}
 			output.write(headerCheck);
-			for(int x = 0; x<dis.available(); x++) {
-				try {
-					output.write(dis.read());
-				}
-				catch(IOException e) {
-					break;
-				}
-			}
+			FileUtil.copy(dis, output, -1);
 			dis.close();
 		} finally {
 			Closer.close(dis);
