@@ -1430,8 +1430,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				ClientPutState prevState = metadataPuttersByMetadata.get(m);
 				if(prevState != oldState) {
 					if(logMINOR) Logger.minor(this, "Ignoring transition in "+this+" for metadata putter: "+oldState+" -> "+newState+" because current for "+m+" is "+prevState);
-					container.deactivate(metadataPuttersUnfetchable, 1);
-					container.deactivate(metadataPuttersByMetadata, 1);
+					if(persistent()) {
+						container.deactivate(metadataPuttersUnfetchable, 1);
+						container.deactivate(metadataPuttersByMetadata, 1);
+					}
 					return;
 				}
 				if(persistent()) container.store(newState);
