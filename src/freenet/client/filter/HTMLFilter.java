@@ -56,6 +56,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	
 	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
+		if(cb == null) cb = new NullFilterCallback();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
