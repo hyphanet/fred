@@ -602,7 +602,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
-			if(t.endSlash) {
+			if(t == null || t.endSlash) {
 				if(!pc.openElements.isEmpty())
 					return pc.openElements.peek();
 				return null;
