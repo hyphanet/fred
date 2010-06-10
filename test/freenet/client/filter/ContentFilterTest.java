@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.LinkedHashMap;
 
@@ -171,13 +173,21 @@ public class ContentFilterTest extends TestCase {
 	}
 	
 	private String HTMLFilter(String data, boolean alt) throws Exception {
+		String returnValue;
 		String typeName = "text/html";
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
 		ArrayBucket input = new ArrayBucket(dataToFilter);
 		ArrayBucket output = new ArrayBucket();
-		ContentFilter.filter(input.getInputStream(), output.getOutputStream(), typeName, baseURI, null, null, null);
-		return output.toString();
+		InputStream inputStream = input.getInputStream();
+		OutputStream outputStream = output.getOutputStream();
+		ContentFilter.filter(inputStream, outputStream, typeName, baseURI, null, null, null);
+		inputStream.close();
+		outputStream.close();
+		returnValue = output.toString();
+		output.free();
+		input.free();
+		return returnValue;
 	}
 
 	static public class TagVerifierTest extends TestCase {

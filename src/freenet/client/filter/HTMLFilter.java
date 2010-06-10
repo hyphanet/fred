@@ -403,6 +403,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				while(openElements.size()>0)
 					w.write("</"+openElements.pop()+">");
 			}
+			w.flush();
 			return;
 		}
 		int mode;
