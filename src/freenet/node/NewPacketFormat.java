@@ -124,36 +124,38 @@ public class NewPacketFormat implements PacketFormat {
         }
 
 	private int insertFragment(byte[] packet, int offset, int maxPacketSize, MessageWrapper wrapper) {
-		// MessageID and flags
-		int messageID = wrapper.getMessageID();
-		messageID = messageID & 0x7FFF; // Make sure the flag bits are 0
-		if(wrapper.isLongMessage) messageID = messageID | 0x8000;
-
-		// TODO: Check that we have always sent the first fragment here
-		// Since the message is on the started list, it is fragmented, and we have sent the
-		// first
-		// fragment
-		messageID = messageID | 0x6000;
-
-		// TODO: Add sanity checks for the flags
-
-		packet[offset++] = (byte) (messageID >>> 8);
-		packet[offset++] = (byte) (messageID);
-
 		// Insert data
 		int[] added = wrapper.getData(packet, offset + (wrapper.isLongMessage ? 5 : 2),
 		                maxPacketSize - offset);
+		
+		boolean isFragmented = added[0] != wrapper.data.length;
+		boolean firstFragment = added[1] == 0;
+
+		// Add messageID and flags
+		int messageID = wrapper.getMessageID();
+		messageID = messageID & 0x7FFF; // Make sure the flag bits are 0
+
+		if(wrapper.isLongMessage) messageID = messageID | 0x8000;
+		if(isFragmented) messageID = messageID | 0x4000;
+		if(firstFragment) messageID = messageID | 0x2000;
+
+		packet[offset++] = (byte) (messageID >>> 8);
+		packet[offset++] = (byte) (messageID);
 
 		// Add fragment length, 2 bytes if long message
 		if(wrapper.isLongMessage) packet[offset++] = (byte) (added[0] >>> 8);
 		packet[offset++] = (byte) (added[0]);
 
-		// Add fragment offset
-		if(wrapper.isLongMessage) {
-			packet[offset++] = (byte) (added[1] >>> 16);
-			packet[offset++] = (byte) (added[1] >>> 8);
+		if(isFragmented) {
+			// If firstFragment is true, add total message length. Else, add fragment offset
+			int value = firstFragment ? wrapper.data.length : added[1];
+
+			if(wrapper.isLongMessage) {
+				packet[offset++] = (byte) (value >>> 16);
+				packet[offset++] = (byte) (value >>> 8);
+			}
+			packet[offset++] = (byte) (value);
 		}
-		packet[offset++] = (byte) (added[1]);
 
 		offset += added[0];
 
@@ -167,8 +169,6 @@ public class NewPacketFormat implements PacketFormat {
 		private final LinkedList<int[]> acks = new LinkedList<int[]>();
 		private final LinkedList<int[]> sent = new LinkedList<int[]>();
 		private final boolean isLongMessage;
-
-		private boolean isFragmented;
 
 		private MessageWrapper(MessageItem item) {
 			// Use item.cb[0] since MessageItems should't have more than one callback. sendAsync can't add
