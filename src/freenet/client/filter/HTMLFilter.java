@@ -2190,7 +2190,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	static class MetaTagVerifier extends TagVerifier {
 		static final String[] allowedContentTypes = {
 				"text/html",
-				"application/xhtml+xml"
+				"application/xhtml+xml",
+				"application/xhtml" // Unofficial but seen in the wild by TheSeeker
 		};
 		static final String[] locallyVerifiedAttrs = {
 			"http-equiv",
