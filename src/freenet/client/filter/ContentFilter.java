@@ -136,6 +136,7 @@ public class ContentFilter {
 	 * @param maybeCharset 
 	 * 			  MIME type of the referring document, as a hint, some types,
 	 * 			  such as CSS, will inherit it if no other data is available.
+	 * @return 
 	 * @throws IOException
 	 *             If an internal error involving s occurred.
 	 * @throws UnsafeContentTypeException
@@ -143,8 +144,8 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static void filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
-		filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
 	}
 
 	/**
@@ -166,7 +167,7 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static void filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class)) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
@@ -229,16 +230,18 @@ public class ContentFilter {
 				}
 				if(charset != null) type = type + "; charset="+charset;
 				output.flush();
-				return;
+				return new FilterStatus(charset, typeName);
 			}
 			
 			if(handler.safeToRead) {
 				output.write(input.read());
 				output.flush();
+				return new FilterStatus(charset, typeName);
 			}
 			
 			handler.throwUnsafeContentTypeException();
 		}
+		return null;
 	}
 
 	public static String detectCharset(byte[] input, MIMEType handler, String maybeCharset) throws IOException {
@@ -384,4 +387,13 @@ public class ContentFilter {
 		return true;
 	}
 
+	public static class FilterStatus {
+		public final String charset;
+		public final String mimeType;
+
+		FilterStatus(String charset, String mimeType) {
+			this.charset = charset;
+			this.mimeType = mimeType;
+		}
+	}
 }
