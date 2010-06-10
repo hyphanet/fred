@@ -19,6 +19,7 @@ import java.util.Hashtable;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.io.FileUtil;
 
 /**
  * Freenet content filter. This doesn't actually do any filtering,
@@ -234,7 +235,7 @@ public class ContentFilter {
 			}
 			
 			if(handler.safeToRead) {
-				output.write(input.read());
+				FileUtil.copy(input, output, -1);
 				output.flush();
 				return new FilterStatus(charset, typeName);
 			}
