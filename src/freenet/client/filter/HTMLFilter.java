@@ -2240,8 +2240,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							} else if(typesplit[1] != null && !typesplit[1].equalsIgnoreCase(pc.charset))
 								throwFilterException(l10n("wrongCharsetInMeta"));
 						}
-						if(typesplit[1] != null)
+						if(typesplit[1] != null) {
+							if(pc.detectedCharset != null)
+								throwFilterException(l10n("multipleCharsetsInMeta"));
 							pc.detectedCharset = typesplit[1].trim();
+						}
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
 						hn.put("http-equiv", "Content-Language");
