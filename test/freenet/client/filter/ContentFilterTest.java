@@ -14,6 +14,7 @@ import freenet.client.filter.ContentFilter;
 import freenet.client.filter.DataFilterException;
 import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.HTMLFilter;
+import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.client.filter.HTMLFilter.*;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
@@ -212,12 +213,12 @@ public class ContentFilterTest extends TestCase {
 		}
 		try {
 			ArrayBucket out = new ArrayBucket();
-			ContentFilter.filter(new ArrayBucket(total), out, "text/html", null, null);
+			FilterOutput fo = ContentFilter.filter(new ArrayBucket(total), out, "text/html", null, null);
 			fos = new FileOutputStream("output.filtered");
 			fos.write(out.toByteArray());
 			fos.close();
 			failed = true;
-			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter)", true);
+			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter) - Detected type: "+fo.type, true);
 		} catch (DataFilterException e) {
 			System.out.println("Failure: "+e);
 			e.printStackTrace();
