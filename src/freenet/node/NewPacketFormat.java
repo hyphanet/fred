@@ -61,7 +61,10 @@ public class NewPacketFormat implements PacketFormat {
 		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
 		
 		//TODO: Encrypt, add HMAC, add sequence number
-		
+
+		byte[] data = new byte[offset];
+		System.arraycopy(packet, 0, data, 0, data.length);
+
 		try {
 	                pn.crypto.socket.sendPacket(packet, pn.getPeer(), pn.allowLocalAddresses());
                 } catch (LocalAddressException e) {
