@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.LinkedHashMap;
 
@@ -166,6 +168,41 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(CSS_SPEC_EXAMPLE1, HTMLFilter(CSS_SPEC_EXAMPLE1));
 		
 		assertEquals(SPAN_WITH_STYLE, HTMLFilter(SPAN_WITH_STYLE));
+	}
+	
+	public void testEvilCharset() throws IOException {
+		// This is why we need to disallow characters before <html> !!
+		String s = "<html><body><a href=\"http://www.google.com/\">Blah</a>";
+		String end = "</body></html>";
+		String alt = "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-16\"></head><body><a href=\"http://www.google.com/\">Blah</a></body></html>";
+		if((s.length()+end.length()) % 2 == 1)
+			s += " ";
+		s = s+end;
+		byte[] buf;
+		try {
+			buf = s.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+		byte[] utf16bom = new byte[] { (byte)0xFE, (byte)0xFF };
+		byte[] bufUTF16 = alt.getBytes("UTF-16");
+		byte[] total = new byte[buf.length+utf16bom.length+bufUTF16.length];
+		System.arraycopy(utf16bom, 0, total, 0, utf16bom.length);
+		System.arraycopy(buf, 0, total, utf16bom.length, buf.length);
+		System.arraycopy(bufUTF16, 0, total, utf16bom.length+buf.length, bufUTF16.length);
+		HTMLFilter filter = new HTMLFilter();
+		try {
+			filter.readFilter(new ArrayBucket(total), new ArrayBucket(), "UTF-16", null, null);
+			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (HTMLFilter)", true);
+		} catch (DataFilterException e) {
+			// Ok.
+		}
+		try {
+			ContentFilter.filter(new ArrayBucket(total), new ArrayBucket(), "text/html", null, null);
+			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter)", true);
+		} catch (DataFilterException e) {
+			// Ok.
+		}
 	}
 		
 	private String HTMLFilter(String data) throws Exception {
