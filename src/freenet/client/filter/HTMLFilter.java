@@ -133,6 +133,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		
 		/** If <head> is found, then it is true. It is needed that if <title> or <meta> is found outside <head> or if a <body> is found first, then insert a <head> too*/
 		boolean wasHeadElementFound=false;
+		/** We can only have <head> once, and <meta>/<title> can't be outside it. This helps with robustness against charset attacks and allows us to stop looking for <meta> as soon as we see </head> when detecting charset. */
+		boolean headEnded=false;
 	
 		HTMLParseContext(Reader r, Writer w, String charset, FilterCallback cb, boolean noOutput) {
 			this.r = r;
@@ -532,8 +534,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				
 				//We need to make sure that <head> is present in the document. If it is not, then GWT javascript won't get loaded.
 				//To achieve this, we keep track whether we processed the <head>
-				if(t.element.compareTo("head")==0){
+				if(t.element.compareTo("head")==0 && !t.startSlash){
 					pc.wasHeadElementFound=true;
+				} else if(t.element.compareTo("head")==0 && t.startSlash) {
+					pc.headEnded = true;
 				//If we found a <title> or a <meta> without a <head>, then we need to add them to a <head>
 				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.wasHeadElementFound==false){
 					pc.openElements.push("head");
@@ -542,9 +546,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					if(headContent!=null){
 						w.write(headContent);
 					}
+				}else if((t.element.compareTo("meta")==0 || t.element.compareTo("title")==0) && pc.headEnded){
+					throwFilterException(l10n("metaOutsideHead"));
 				//If we found a <body> and haven't closed <head> already, then we do
 				}else if(t.element.compareTo("body") == 0 &&  pc.openElements.contains("head")){
 					w.write("</head>");
+					pc.headEnded = true;
 					pc.openElements.pop();
 				//If we found a <body> and no <head> before it, then we insert it 
 				}else if(t.element.compareTo("body")==0 && pc.wasHeadElementFound==false){
@@ -552,6 +559,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					String headContent=pc.cb.processTag(new ParsedTag("head", new HashMap<String, String>()));
 					if(headContent!=null){
 						w.write(headContent+"</head>");
+						pc.headEnded = true;
 					}
 				}
 				
