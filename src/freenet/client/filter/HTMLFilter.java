@@ -18,7 +18,9 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
@@ -29,6 +31,7 @@ import java.util.StringTokenizer;
 import java.util.Map.Entry;
 import java.util.Stack;
 
+import freenet.clients.http.ToadletContextImpl;
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
@@ -2202,8 +2205,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
-						hn.put("http-equiv", http_equiv);
-						hn.put("content", content);
+						try {
+							Date d = ToadletContextImpl.parseHTTPDate(content);
+							hn.put("http-equiv", http_equiv);
+							hn.put("content", content);
+						} catch (ParseException e) {
+							// Delete it.
+						}
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Script-Type")) {
 						// We don't support script at this time.
