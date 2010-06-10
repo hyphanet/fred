@@ -8,18 +8,18 @@ import freenet.l10n.NodeL10n;
 
 public abstract class LoggerHook extends Logger {
 
-	protected int threshold;
+	protected LoggerPriority threshold;
 
 	public static final class DetailedThreshold {
 		final String section;
-		final int dThreshold;
-		public DetailedThreshold(String section, int thresh) {
+		final LoggerPriority dThreshold;
+		public DetailedThreshold(String section, LoggerPriority thresh) {
 			this.section = section;
 			this.dThreshold = thresh;
 		}
 	}
 
-	protected LoggerHook(int thresh){
+	protected LoggerHook(LoggerPriority thresh){
 		this.threshold = thresh;
 	}
 
@@ -42,8 +42,8 @@ public abstract class LoggerHook extends Logger {
 	 * @param e
 	 *            Logs this exception with the message.
 	 * @param priority
-	 *            The priority of the mesage, one of Logger.ERROR,
-	 *            Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 *            The priority of the mesage, one of LoggerPriority.ERROR,
+	 *            LoggerPriority.NORMAL, LoggerPriority.MINOR, or LoggerPriority.DEBUG.
 	 */
 	@Override
 	public abstract void log(
@@ -51,17 +51,17 @@ public abstract class LoggerHook extends Logger {
 			Class<?> source,
 			String message,
 			Throwable e,
-			int priority);
+			LoggerPriority priority);
 
 	/**
 	 * Log a message.
 	 * @param source        The source object where this message was generated
 	 * @param message A clear and verbose message describing the event
-	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 * @param priority The priority of the mesage, one of LoggerPriority.ERROR,
+	 *                 LoggerPriority.NORMAL, LoggerPriority.MINOR, or LoggerPriority.DEBUG.
 	 **/
 	@Override
-	public void log(Object source, String message, int priority) {
+	public void log(Object source, String message, LoggerPriority priority) {
 		if (!instanceShouldLog(priority,source)) return;
 		log(source, source == null ? null : source.getClass(), 
 				message, null, priority);
@@ -72,13 +72,13 @@ public abstract class LoggerHook extends Logger {
 	 * @param o   The source object where this message was generated.
 	 * @param message  A clear and verbose message describing the event.
 	 * @param e        Logs this exception with the message.
-	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
-	 * @see #log(Object o, String message, int priority)
+	 * @param priority The priority of the mesage, one of LoggerPriority.ERROR,
+	 *                 LoggerPriority.NORMAL, LoggerPriority.MINOR, or LoggerPriority.DEBUG.
+	 * @see #log(Object o, String message, LoggerPriority priority)
 	 */
 	@Override
 	public void log(Object o, String message, Throwable e, 
-			int priority) {
+			LoggerPriority priority) {
 		if (!instanceShouldLog(priority,o)) return;
 		log(o, o == null ? null : o.getClass(), message, e, priority);
 	}
@@ -87,35 +87,35 @@ public abstract class LoggerHook extends Logger {
 	 * Log a message from static code.
 	 * @param c        The class where this message was generated.
 	 * @param message  A clear and verbose message describing the event
-	 * @param priority The priority of the mesage, one of Logger.ERROR,
-	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
+	 * @param priority The priority of the mesage, one of LoggerPriority.ERROR,
+	 *                 LoggerPriority.NORMAL, LoggerPriority.MINOR, or LoggerPriority.DEBUG.
 	 */
 	@Override
-	public void log(Class<?> c, String message, int priority) {
+	public void log(Class<?> c, String message, LoggerPriority priority) {
 		if (!instanceShouldLog(priority,c)) return;
 		log(null, c, message, null, priority);
 	}
 
 
 	@Override
-	public void log(Class<?> c, String message, Throwable e, int priority) {
+	public void log(Class<?> c, String message, Throwable e, LoggerPriority priority) {
 		if (!instanceShouldLog(priority, c))
 			return;
 		log(null, c, message, e, priority);
 	}
 
-	public boolean acceptPriority(int prio) {
-		return prio >= threshold;
+	public boolean acceptPriority(LoggerPriority prio) {
+		return prio.matchesThreshold(threshold);
 	}
 
 	@Override
-	public void setThreshold(int thresh) {
+	public void setThreshold(LoggerPriority thresh) {
 		this.threshold = thresh;
 		notifyLogThresholdCallbacks();
 	}
 
 	@Override
-	public int getThreshold() {
+	public LoggerPriority getThreshold() {
 		return threshold;
 	}
 
@@ -141,7 +141,7 @@ public abstract class LoggerHook extends Logger {
 				continue;
 			String section = token.substring(0, x);
 			String value = token.substring(x + 1, token.length());
-			int thresh = LoggerHook.priorityOf(value);
+			LoggerPriority thresh = LoggerHook.priorityOf(value);
 			stuff.add(new DetailedThreshold(section, thresh));
 		}
 		DetailedThreshold[] newThresholds = new DetailedThreshold[stuff.size()];
@@ -163,33 +163,24 @@ public abstract class LoggerHook extends Logger {
 				sb.append(',');
 			sb.append(thresh[i].section);
 			sb.append(':');
-			sb.append(LoggerHook.priorityOf(thresh[i].dThreshold));
+			sb.append(thresh[i].dThreshold.name());
 		}
 		return sb.toString();
 	}
 
 	/**
 	 * Returns the priority level matching the string. If no priority
-	 * matches, Logger.NORMAL is returned.
+	 * matches, LoggerPriority.NORMAL is returned.
 	 * @param s  A string matching one of the logging priorities, case
 	 *           insensitive.
 	 **/
-	public static int priorityOf(String s) throws InvalidThresholdException {
-		if (s.equalsIgnoreCase("error"))
-			return Logger.ERROR;
-		else if (s.equalsIgnoreCase("warning"))
-			return Logger.WARNING;
-		else if (s.equalsIgnoreCase("normal"))
-			return Logger.NORMAL;
-		else if (s.equalsIgnoreCase("minor"))
-			return Logger.MINOR;
-		else if (s.equalsIgnoreCase("debugging"))
-			return Logger.DEBUG;
-		else if (s.equalsIgnoreCase("debug"))
-			return Logger.DEBUG;
-		else
+	public static LoggerPriority priorityOf(String s) throws InvalidThresholdException {
+		try {
+			return LoggerPriority.valueOf(s.toUpperCase());
+		}
+		catch(IllegalArgumentException e) {
 			throw new InvalidThresholdException(NodeL10n.getBase().getString("LoggerHook.unrecognisedPriority", "name", s));
-		// return Logger.NORMAL;
+		}
 	}
 
 	public static class InvalidThresholdException extends Exception {
@@ -200,25 +191,10 @@ public abstract class LoggerHook extends Logger {
 		}
 	}
 
-	/**
-	 * Returns the name of the priority matching a number, null if none do
-	 * @param priority  The priority
-	 */
-	public static String priorityOf(int priority) {
-		switch (priority) {
-			case ERROR:     return "ERROR";
-			case WARNING:	return "WARNING";
-			case NORMAL:    return "NORMAL";
-			case MINOR:     return "MINOR";
-			case DEBUG:     return "DEBUG";
-			default:        return null;
-		}
-	}
-
 	@Override
-	public boolean instanceShouldLog(int priority, Class<?> c) {
+	public boolean instanceShouldLog(LoggerPriority priority, Class<?> c) {
 		DetailedThreshold[] thresholds;
-		int thresh;
+		LoggerPriority thresh;
 		synchronized(this) {
 			thresholds = detailedThresholds;
 			thresh = threshold;
@@ -230,11 +206,11 @@ public abstract class LoggerHook extends Logger {
 						thresh = dt.dThreshold;
 				}
 		}
-		return priority >= thresh;
+		return priority.matchesThreshold(thresh);
 	}
 
 	@Override
-	public final boolean instanceShouldLog(int prio, Object o) {
+	public final boolean instanceShouldLog(LoggerPriority prio, Object o) {
 		return instanceShouldLog(prio, o == null ? null : o.getClass());
 	}
 
@@ -255,11 +231,5 @@ public abstract class LoggerHook extends Logger {
 		for(LogThresholdCallback ltc : thresholdsCallbacks)
 			ltc.shouldUpdate();
 	}
-
-	public abstract long minFlags(); // ignore unless all these bits set
-
-	public abstract long notFlags(); // reject if any of these bits set
-
-	public abstract long anyFlags(); // accept if any of these bits set
 
 }

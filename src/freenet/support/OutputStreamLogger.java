@@ -2,12 +2,14 @@ package freenet.support;
 
 import java.io.OutputStream;
 
+import freenet.support.Logger.LoggerPriority;
+
 public class OutputStreamLogger extends OutputStream {
 
-	final int prio;
+	final LoggerPriority prio;
 	final String prefix;
 	
-	public OutputStreamLogger(int prio, String prefix) {
+	public OutputStreamLogger(LoggerPriority prio, String prefix) {
 		this.prio = prio;
 		this.prefix = prefix;
 	}

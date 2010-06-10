@@ -18,10 +18,11 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.store.KeyCollisionException;
 import freenet.support.HexUtil;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.NativeThread;
 
 /**
@@ -37,7 +38,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

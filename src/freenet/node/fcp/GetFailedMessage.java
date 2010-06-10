@@ -14,6 +14,7 @@ import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 
 public class GetFailedMessage extends FCPMessage {
 
@@ -31,7 +32,7 @@ public class GetFailedMessage extends FCPMessage {
 	final FreenetURI redirectURI;
 	
 	public GetFailedMessage(FetchException e, String identifier, boolean global) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
 		this.tracker = e.errorCodes;
 		this.code = e.mode;

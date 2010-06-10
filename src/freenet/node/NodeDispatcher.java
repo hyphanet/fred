@@ -20,9 +20,10 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.store.BlockMetadata;
 import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * @author amphibian
@@ -48,8 +49,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

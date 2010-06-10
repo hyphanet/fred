@@ -5,8 +5,9 @@ package freenet.node;
 
 import java.util.Arrays;
 
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Track average round-trip time for each peer node, get a geometric mean.
@@ -19,7 +20,7 @@ public class NodePinger implements Runnable {
 
             @Override
             public void shouldUpdate() {
-                logMINOR = Logger.shouldLog(Logger.MINOR, this);
+                logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
             }
         });
     }

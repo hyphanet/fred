@@ -16,8 +16,9 @@
 package freenet.support;
 
 import java.io.UnsupportedEncodingException;
-import freenet.utils.*;
+
 import junit.framework.TestCase;
+import freenet.utils.UTFUtil;
 
 /**
  * Test case for {@link freenet.support.URLEncoder} and 

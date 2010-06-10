@@ -8,6 +8,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
@@ -226,7 +227,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			states = waitingFor.toArray(states);
 		}
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 		for(int i=0;i<states.length;i++) {
 			if(persistent)
 				container.activate(states[i], 1);

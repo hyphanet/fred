@@ -33,6 +33,7 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**
@@ -51,7 +52,7 @@ public class SeednodePingTest extends RealNodeTest {
     	try {
     	if(args.length == 1)
     		STATUS_DIR = new File(args[0]);
-        RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, Logger.ERROR, "", false);
+        RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, LoggerPriority.ERROR, "", false);
         // Create one node
         Executor executor = new PooledExecutor();
 	node = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, "seednode-pingtest", false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, false, false, null);
@@ -71,8 +72,8 @@ public class SeednodePingTest extends RealNodeTest {
 	}	
 	// Start it
         node.start(true);
-	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
-	Logger.getChain().setThreshold(32); // kill logging
+	//Logger.setupStdoutLogging(LoggerPriority.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
+	Logger.getChain().setThreshold(LoggerPriority.MAXIMAL); // kill logging
 	Thread.sleep(2000);
 	if(seedNodes.size() != numberOfNodesInTheFile)
 		    System.out.println("ERROR ADDING SOME OF THE SEEDNODES!!");

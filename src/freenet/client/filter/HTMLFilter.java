@@ -20,14 +20,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
-import java.util.Stack;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.HTMLDecoder;
@@ -35,6 +35,7 @@ import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
@@ -49,8 +50,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	
 	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+		logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		InputStream strm = bucket.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
@@ -86,7 +87,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	public String getCharset(Bucket bucket, String parseCharset) throws DataFilterException, IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
 		InputStream strm = bucket.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
@@ -2378,7 +2379,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String s = w.toString();
 		if ((s == null) || (s.length() == 0))
 			return null;
-		//		Core.logger.log(SaferFilter.class, "Style now: " + s, Logger.DEBUG);
+		//		Core.logger.log(SaferFilter.class, "Style now: " + s, LoggerPriority.DEBUG);
 		if(logMINOR) Logger.minor(HTMLFilter.class, "Style finally: " + s);
 		return s;
 	}

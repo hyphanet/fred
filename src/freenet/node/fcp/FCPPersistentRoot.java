@@ -12,6 +12,7 @@ import com.db4o.query.Query;
 import freenet.node.NodeClientCore;
 import freenet.node.fcp.whiteboard.Whiteboard;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Persistent root object for FCP.
@@ -58,7 +59,7 @@ public class FCPPersistentRoot {
 	}
 
 	public FCPClient registerForeverClient(final String name, NodeClientCore core, FCPConnectionHandler handler, FCPServer server, ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Registering forever-client for "+name);
+		if(Logger.shouldLog(LoggerPriority.MINOR, this)) Logger.minor(this, "Registering forever-client for "+name);
 		/**
 		 * FIXME DB4O:
 		 * Native queries involving strings seem to do wierd things. I was getting
@@ -83,7 +84,7 @@ public class FCPPersistentRoot {
 			client.setConnection(handler);
 			if(!(name.equals(client.name)))
 				Logger.error(this, "Returning "+client+" for "+name);
-			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Returning "+client+" for "+name);
+			if(Logger.shouldLog(LoggerPriority.MINOR, this)) Logger.minor(this, "Returning "+client+" for "+name);
 			client.init(container);
 			return client;
 		}

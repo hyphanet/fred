@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.net.MalformedURLException;
+
 import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;

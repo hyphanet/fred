@@ -27,6 +27,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
@@ -589,7 +590,7 @@ public class ClientGet extends ClientRequest implements ClientGetCallback, Clien
 			finished = true;
 			started = true;
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null, container);
 		if(persistenceType == PERSIST_FOREVER) {

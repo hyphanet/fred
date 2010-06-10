@@ -1,5 +1,7 @@
 package freenet.support;
 
+import freenet.support.Logger.LoggerPriority;
+
 /**
  * Token bucket. Can be used for e.g. bandwidth limiting.
  * Tokens are added once per tick.
@@ -27,7 +29,7 @@ public class TokenBucket {
 		this.nanosPerTick = nanosPerTick;
 		long now = System.currentTimeMillis();
 		this.timeLastTick = now * (1000 * 1000);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 	}
 	
 	/**
@@ -102,7 +104,7 @@ public class TokenBucket {
 	
 	public synchronized void blockingGrab(long tokens) {
 		if(tokens < 0) throw new IllegalArgumentException("Can't grab negative tokens: "+tokens);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Blocking grab: "+tokens);
 		if(tokens < max)
 			innerBlockingGrab(tokens);

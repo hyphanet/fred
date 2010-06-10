@@ -37,6 +37,7 @@ import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.io.BucketTools;
@@ -55,8 +56,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

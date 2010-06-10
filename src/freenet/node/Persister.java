@@ -8,6 +8,7 @@ import java.io.IOException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -55,7 +56,7 @@ class Persister implements Runnable {
 	}
 	
 	private void persistThrottle() {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Trying to persist throttles...");
 		SimpleFieldSet fs = persistable.persistThrottlesToFieldSet();
 		try {

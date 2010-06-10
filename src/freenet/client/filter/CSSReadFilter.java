@@ -19,6 +19,7 @@ import java.util.HashMap;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
@@ -27,7 +28,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
 	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		if (Logger.shouldLog(Logger.DEBUG, this))
+		if (Logger.shouldLog(LoggerPriority.DEBUG, this))
 			Logger.debug(
 				this,
 				"running "
@@ -75,7 +76,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	public String getCharset(Bucket data, String charset) throws DataFilterException, IOException {
-		if(Logger.shouldLog(Logger.DEBUG, this))
+		if(Logger.shouldLog(LoggerPriority.DEBUG, this))
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
 		InputStream strm = data.getInputStream();
 		NullWriter w = new NullWriter();

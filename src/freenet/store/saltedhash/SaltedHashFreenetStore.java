@@ -42,16 +42,17 @@ import freenet.node.Ticker;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.store.BlockMetadata;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
-import freenet.store.BlockMetadata;
 import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
@@ -121,8 +122,8 @@ public class SaltedHashFreenetStore<T extends StorableBlock> implements FreenetS
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback<T> callback, Random random, long maxKeys,
 	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart, byte[] masterKey) throws IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+		logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 
 		this.baseDir = baseDir;
 		this.name = name;

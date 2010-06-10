@@ -3,6 +3,8 @@ package freenet.support;
 import java.util.Enumeration;
 import java.util.Iterator;
 
+import freenet.support.Logger.LoggerPriority;
+
 /**
  * @author amphibian
  * 
@@ -19,7 +21,7 @@ public class UpdatableSortedLinkedList<T extends UpdatableSortedLinkedListItem<T
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

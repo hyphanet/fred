@@ -7,7 +7,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 
 /**

@@ -13,6 +13,7 @@ import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.DatabaseDisabledException;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.NativeThread;
 
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS
@@ -61,7 +62,7 @@ public class NodeRestartJobsQueue {
 	private Set<DBJob>[] dbJobsEarly;
 	
 	public synchronized void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Queueing restart job "+job+" at priority "+priority+" early="+early);
+		if(Logger.shouldLog(LoggerPriority.MINOR, this)) Logger.minor(this, "Queueing restart job "+job+" at priority "+priority+" early="+early);
 		Set<DBJob> jobs = early ? dbJobsEarly[priority] : dbJobs[priority];
 		container.store(job);
 		container.activate(jobs, 1);

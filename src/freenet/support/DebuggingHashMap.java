@@ -4,6 +4,8 @@ import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger.LoggerPriority;
+
 
 @SuppressWarnings("serial") 
 public class DebuggingHashMap<K extends Object, V extends Object> extends HashMap<K, V> {
@@ -15,7 +17,7 @@ public class DebuggingHashMap<K extends Object, V extends Object> extends HashMa
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

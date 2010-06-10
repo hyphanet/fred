@@ -6,6 +6,7 @@ package freenet.node;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 
 public class ThrottleWindowManager {
 	private static volatile boolean logMINOR;
@@ -14,7 +15,7 @@ public class ThrottleWindowManager {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

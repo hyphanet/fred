@@ -17,8 +17,8 @@ import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 
@@ -65,7 +65,7 @@ public class JPEGFilter implements ContentDataFilter {
 		Bucket output = readFilter(data, destination, charset, otherParams, cb, deleteComments, deleteExif, null);
 		if(output != null)
 			return output;
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Need to modify JPEG...");
 		OutputStream os = new BufferedOutputStream(destination.getOutputStream());
 		try {
@@ -82,7 +82,7 @@ public class JPEGFilter implements ContentDataFilter {
 	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb, boolean deleteComments, boolean deleteExif, OutputStream output)
 	        throws DataFilterException, IOException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		long length = data.size();
 		if(length < 6) {
 			throwError(l10n("tooShortTitle"), l10n("tooShort"));
@@ -430,7 +430,7 @@ public class JPEGFilter implements ContentDataFilter {
 		if(shortReason != null)
 			message += " - " + shortReason;
 		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
-		if(Logger.shouldLog(Logger.NORMAL, this))
+		if(Logger.shouldLog(LoggerPriority.NORMAL, this))
 			Logger.normal(this, "Throwing "+e, e);
 		throw e;
 	}

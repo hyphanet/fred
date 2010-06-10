@@ -9,6 +9,7 @@ import com.onionnetworks.fec.PureCode;
 
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * FECCodec implementation using the onion code.
@@ -66,7 +67,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 		loadFEC();
 
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 	}
 
 	@Override

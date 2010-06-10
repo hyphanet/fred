@@ -31,11 +31,12 @@ import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
 import freenet.node.OpennetManager.ConnectionType;
 import freenet.store.KeyCollisionException;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 
@@ -151,7 +152,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 		@Override
 		public void shouldUpdate(){
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		}
 	});
     }

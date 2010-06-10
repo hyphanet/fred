@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import freenet.node.PrioRunnable;
 import freenet.node.Ticker;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.NativeThread;
 
 /**
@@ -47,7 +48,7 @@ public class PooledExecutor implements Executor {
 	static final int TIMEOUT = 5 * 60 * 1000;
 
 	public void start() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 	}
 
 	public void execute(Runnable job) {

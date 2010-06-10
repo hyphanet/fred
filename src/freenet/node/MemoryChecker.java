@@ -6,6 +6,7 @@ package freenet.node;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SizeUtil;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 
@@ -93,7 +94,7 @@ public class MemoryChecker implements Runnable {
 		// tracking down the sort of nasty unpredictable OOMs
 		// we are getting much easier. 
 		if(aggressiveGCModificator > 0) {
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			long beforeGCUsedMemory = (r.totalMemory() - r.freeMemory());
 			if(logMINOR) Logger.minor(this, "Memory in use before GC: "+beforeGCUsedMemory);
 			long beforeGCTime = System.currentTimeMillis();

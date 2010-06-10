@@ -26,7 +26,6 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.BinaryBlobFormatException;
-import freenet.client.async.ClientBaseCallback;
 import freenet.client.async.ClientGetCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutCallback;
@@ -52,10 +51,11 @@ import freenet.node.Version;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
 
@@ -74,7 +74,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

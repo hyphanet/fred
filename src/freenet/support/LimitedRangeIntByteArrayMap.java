@@ -3,8 +3,8 @@ package freenet.support;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.support.LogThresholdCallback;
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * @author amphibian
@@ -24,7 +24,7 @@ public class LimitedRangeIntByteArrayMap {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

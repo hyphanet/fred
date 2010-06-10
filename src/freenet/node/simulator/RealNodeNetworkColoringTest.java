@@ -17,6 +17,7 @@ import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
@@ -52,13 +53,13 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 	private static final Object log = new Object();
 	
     public static void main(String[] args) throws FSParseException, PeerParseException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException {
-        //Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
+        //Logger.setupStdoutLogging(LoggerPriority.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         System.out.println("SecretPing/NetworkColoring test using real nodes:");
         System.out.println();
         String wd = "realNodeNetworkColorTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeNetworkColoringTest:normal,freenet.node.NetworkIDManager:normal", true);
+        NodeStarter.globalTestInit(wd, false, LoggerPriority.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeNetworkColoringTest:normal,freenet.node.NetworkIDManager:normal", true);
 
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);

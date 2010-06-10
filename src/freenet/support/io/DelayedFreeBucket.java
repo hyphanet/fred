@@ -14,6 +14,7 @@ import com.db4o.ObjectContainer;
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 
 public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
@@ -78,7 +79,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	public void free() {
 		synchronized(this) { // mutex on just this method; make a separate lock if necessary to lock the above
 			if(freed) return;
-			if(Logger.shouldLog(Logger.MINOR, this)) 
+			if(Logger.shouldLog(LoggerPriority.MINOR, this)) 
 				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
 			this.factory.delayedFreeBucket(this);
 			freed = true;
@@ -107,7 +108,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Removing from database: "+this);
 		synchronized(this) {
 			boolean wasQueued = freed || removed;
@@ -131,7 +132,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 //		if(elements != null && elements.length > 100) {
 //			System.err.println("Infinite recursion in progress...");
 //		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
 		if(bucket == this) {
 			Logger.error(this, "objectOnActivate on DelayedFreeBucket: wrapping self!!!");

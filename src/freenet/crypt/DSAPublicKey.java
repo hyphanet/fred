@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 
+import net.i2p.util.NativeBigInteger;
+
 import com.db4o.ObjectContainer;
 
-import net.i2p.util.NativeBigInteger;
 import freenet.store.StorableBlock;
 import freenet.support.Base64;
 import freenet.support.HexUtil;

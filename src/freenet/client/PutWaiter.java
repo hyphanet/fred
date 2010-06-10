@@ -6,6 +6,7 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientPutCallback;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /** Provides a blocking wrapper for an insert. Used for simple blocking APIs such as HighLevelSimpleClient. */
 public class PutWaiter implements ClientPutCallback {
@@ -28,7 +29,7 @@ public class PutWaiter implements ClientPutCallback {
 	}
 
 	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "URI: "+uri);
 		if(this.uri == null)
 			this.uri = uri;

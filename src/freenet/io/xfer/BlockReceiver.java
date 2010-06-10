@@ -35,6 +35,7 @@ import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.math.MedianMeanRunningAverage;
 
 /**
@@ -69,7 +70,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private boolean senderAborted;
 //	private final boolean _doTooLong;
 
-	boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
+	boolean logMINOR=Logger.shouldLog(LoggerPriority.MINOR, this);
 	
 	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong) {
 		_sender = sender;

@@ -22,7 +22,6 @@ package freenet.io;
 import java.net.InetAddress;
 
 import junit.framework.TestCase;
-import freenet.io.Inet6AddressMatcher;
 
 /**
  * Test case for the {@link freenet.io.Inet6AddressMatcher} class. Contains some

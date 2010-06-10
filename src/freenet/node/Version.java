@@ -8,6 +8,7 @@ import java.util.TimeZone;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Central spot for stuff related to the versioning of the codebase.
@@ -126,7 +127,7 @@ public class Version {
 		return cvsRevision;
 	}
 
-	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
+	private static boolean logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG,Version.class);
 
 	/**
 	 * @return the node's version designators as an array
@@ -201,7 +202,7 @@ public class Version {
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				if(Logger.shouldLog(Logger.MINOR, Version.class))
+				if(Logger.shouldLog(LoggerPriority.MINOR, Version.class))
 					Logger.minor(Version.class,
 							"Not accepting (" + e + ") from " + version);
 				return false;
@@ -272,7 +273,7 @@ public class Version {
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				if(Logger.shouldLog(Logger.MINOR, Version.class))
+				if(Logger.shouldLog(LoggerPriority.MINOR, Version.class))
 					Logger.minor(Version.class,
 							"Not accepting (" + e + ") from " + version + " and/or " + lastGoodVersion);
 				return false;
@@ -387,7 +388,7 @@ public class Version {
 				return;
 			}
 			if (buildNo > highestSeenBuild) {
-				if (Logger.shouldLog(Logger.MINOR, Version.class)) {
+				if (Logger.shouldLog(LoggerPriority.MINOR, Version.class)) {
 					Logger.minor(
 						Version.class,
 						"New highest seen build: " + buildNo);

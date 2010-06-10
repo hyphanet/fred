@@ -5,6 +5,7 @@ import freenet.client.async.ClientContext;
 import freenet.keys.ClientKey;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 public class SendableGetRequestSender implements SendableRequestSender {
 
@@ -15,7 +16,7 @@ public class SendableGetRequestSender implements SendableRequestSender {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

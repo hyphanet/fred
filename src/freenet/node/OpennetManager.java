@@ -39,6 +39,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
 import freenet.support.TimeSortedHashtable;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
@@ -109,7 +110,7 @@ public class OpennetManager {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}
@@ -603,7 +604,7 @@ public class OpennetManager {
 				}
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(Logger.shouldLog(LoggerPriority.MINOR, this))
 						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
 					pn.setWasDropped();
 					return pn;
@@ -638,7 +639,7 @@ public class OpennetManager {
 				if((reason != NOT_DROP_REASON.DROPPABLE) && !force) {
 					continue;
 				}
-				if(Logger.shouldLog(Logger.MINOR, this))
+				if(Logger.shouldLog(LoggerPriority.MINOR, this))
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
 							((connectionType == null) ? "" : ((System.currentTimeMillis() - timeLastDropped.get(connectionType))+" ms since last dropped peer of type "+connectionType)));
 				pn.setWasDropped();

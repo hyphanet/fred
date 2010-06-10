@@ -73,6 +73,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WeakHashSet;
 import freenet.support.WouldBlockException;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -372,7 +373,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

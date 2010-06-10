@@ -9,6 +9,7 @@ import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Thrown when a high-level insert fails. For most failures, there will not be a stack trace, or it 
@@ -40,7 +41,7 @@ public class InsertException extends Exception {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

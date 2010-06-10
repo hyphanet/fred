@@ -17,7 +17,6 @@ import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.Compressor;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.FileBucket;

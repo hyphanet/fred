@@ -15,6 +15,7 @@ import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
@@ -27,8 +28,8 @@ public class FCPConnectionInputHandler implements Runnable {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback() {
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

@@ -15,7 +15,6 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
-import freenet.node.Node;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
@@ -28,6 +27,7 @@ import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Base class for ClientRequestSchedulerCore and ClientRequestSchedulerNonPersistent, 
@@ -45,7 +45,7 @@ abstract class ClientRequestSchedulerBase {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

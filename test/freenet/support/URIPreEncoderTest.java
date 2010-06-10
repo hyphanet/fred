@@ -15,8 +15,8 @@
  */
 package freenet.support;
 
-import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
+import freenet.utils.UTFUtil;
 
 /**
  * Test case for {@link freenet.support.URIPreEncoder} class

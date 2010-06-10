@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -15,12 +14,14 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.support.Executor;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
@@ -35,8 +36,8 @@ public class SplitFileInserter implements ClientPutState {
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

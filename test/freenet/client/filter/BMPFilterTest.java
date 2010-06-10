@@ -1,14 +1,13 @@
 package freenet.client.filter;
 
-import junit.framework.TestCase;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FileNotFoundException;
 
+import junit.framework.TestCase;
 import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
 

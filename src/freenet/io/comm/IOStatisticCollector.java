@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 public class IOStatisticCollector {
 	public static final int STATISTICS_ENTRIES = 10;
@@ -27,7 +28,7 @@ public class IOStatisticCollector {
 		// This should only happen once
 		//SNMPAgent.create();
 		//SNMPStarter.initialize();
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 	}
 	
 	public void addInfo(String key, int inbytes, int outbytes) {

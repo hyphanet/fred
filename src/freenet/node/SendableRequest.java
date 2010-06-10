@@ -12,6 +12,7 @@ import freenet.client.async.PersistentChosenRequest;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * A low-level request which can be sent immediately. These are registered
@@ -108,7 +109,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 			arr.remove(this, container);
 		} else {
 			// Should this be a higher priority?
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(Logger.shouldLog(LoggerPriority.MINOR, this))
 				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
 		}
 		ClientRequester cr = getClientRequest();

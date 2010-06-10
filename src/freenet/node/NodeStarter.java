@@ -21,6 +21,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.NativeThread;
 
@@ -269,7 +270,7 @@ public class NodeStarter implements WrapperListener {
 	 * Not Node-specific; many nodes may be created later.
 	 * @param testName The name of the test instance.
 	 */
-	public static RandomSource globalTestInit(String testName, boolean enablePlug, int logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
+	public static RandomSource globalTestInit(String testName, boolean enablePlug, LoggerPriority logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
 
 		File dir = new File(testName);
 		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {

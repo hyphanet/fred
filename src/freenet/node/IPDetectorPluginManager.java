@@ -27,6 +27,7 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.transport.ip.IPUtil;
 
 /**
@@ -259,8 +260,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private boolean started;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, getClass());
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, getClass());
+		logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, getClass());
 		plugins = new FredPluginIPDetector[0];
 		portForwardPlugins = new FredPluginPortForward[0];
 		this.node = node;
@@ -423,8 +424,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 */
 	public void maybeRun() {
 		if(!started) return;
-		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, getClass());
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, getClass());
+		logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, getClass());
 		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();

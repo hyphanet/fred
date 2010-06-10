@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.BitSet;
 
+import freenet.support.Logger.LoggerPriority;
+
 /**
  * Number in hexadecimal format are used throughout Freenet.
  * 
@@ -15,7 +17,7 @@ import java.util.BitSet;
  * @author syoung
  */
 public class HexUtil {
-	private static boolean logDEBUG =Logger.logger.instanceShouldLog(Logger.DEBUG,HexUtil.class);
+	private static boolean logDEBUG =Logger.logger.instanceShouldLog(LoggerPriority.DEBUG,HexUtil.class);
 	private HexUtil() {		
 	}	
 	
@@ -194,7 +196,7 @@ public class HexUtil {
      */
     public static void writeBigInteger(BigInteger integer, DataOutputStream out) throws IOException {
         if(integer.signum() == -1) {
-            //dump("Negative BigInteger", Logger.ERROR, true);
+            //dump("Negative BigInteger", LoggerPriority.ERROR, true);
             throw new IllegalStateException("Negative BigInteger!");
         }
         byte[] buf = integer.toByteArray();

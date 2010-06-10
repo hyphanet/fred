@@ -5,7 +5,6 @@ import java.io.IOException;
 import freenet.client.FetchResult;
 import freenet.clients.http.PproxyToadlet;
 import freenet.keys.FreenetURI;
-import freenet.l10n.BaseL10n;
 import freenet.l10n.NodeL10n;
 import freenet.node.RequestClient;
 import freenet.node.Version;

@@ -9,8 +9,6 @@ import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
 import freenet.clients.http.updateableelements.UpdaterConstants;
-import freenet.support.Base64;
-import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;

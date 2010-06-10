@@ -4,8 +4,9 @@
 package freenet.support.transport.ip;
 
 import freenet.io.AddressIdentifier;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 public class HostnameUtil {
         private static volatile boolean logDEBUG;
@@ -14,7 +15,7 @@ public class HostnameUtil {
                 Logger.registerLogThresholdCallback(new LogThresholdCallback(){
                         @Override
                         public void shouldUpdate(){
-                                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+                                logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
                         }
                 });
         }

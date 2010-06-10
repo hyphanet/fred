@@ -27,6 +27,7 @@ import freenet.support.Fields;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
@@ -44,7 +45,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

@@ -14,8 +14,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 package freenet.support;
-import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
+import freenet.utils.UTFUtil;
 
 /**
  * Test case for {@link freenet.support.HTMLEncoder} and 

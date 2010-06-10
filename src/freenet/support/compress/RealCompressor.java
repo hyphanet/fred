@@ -3,17 +3,19 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import java.util.LinkedList;
+import java.util.concurrent.Semaphore;
+
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.NativeThread;
-import java.util.LinkedList;
-import java.util.concurrent.Semaphore;
-
-import com.db4o.ObjectContainer;
 
 public class RealCompressor implements PrioRunnable {
 	
@@ -36,7 +38,7 @@ public class RealCompressor implements PrioRunnable {
 	
 	public synchronized void enqueueNewJob(CompressJob j) {
 		_awaitingJobs.add(j);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Enqueueing compression job: "+j);
 		notifyAll();
 	}

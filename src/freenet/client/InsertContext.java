@@ -8,8 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.Logger;
-import freenet.support.api.BucketFactory;
-import freenet.support.io.PersistentFileTracker;
+import freenet.support.compress.Compressor;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
 // WARNING: THIS CLASS IS STORED IN DB4O -- THINK TWICE BEFORE ADD/REMOVE/RENAME FIELDS

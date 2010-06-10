@@ -27,6 +27,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -142,7 +143,7 @@ public class ArchiveManager {
 		storedData = new LRUHashtable<ArchiveKey, ArchiveStoreItem>();
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.tempBucketFactory = tempBucketFactory;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 	}
 
 	/** Add an ArchiveHandler by key */
@@ -251,7 +252,7 @@ public class ArchiveManager {
 	 * OTOH maybe extracting inline on the database thread for small containers would be useful?
 	 */
 	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
 

@@ -28,6 +28,7 @@ import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.Metadata.SimpleManifestComposer;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
@@ -349,7 +350,7 @@ public class ContainerInserter implements ClientPutState {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				//System.out.println("Decompose: "+name+" (SubDir)");
 				smc.addItem(name, makeManifest(hm, archivePrefix+name+ '/'));
-				if(Logger.shouldLog(Logger.DEBUG, this))
+				if(Logger.shouldLog(LoggerPriority.DEBUG, this))
 					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+hm.size());
 			} else if (o instanceof Metadata) {
 				//already Metadata, take it as is

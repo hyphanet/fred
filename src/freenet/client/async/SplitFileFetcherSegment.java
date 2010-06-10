@@ -38,6 +38,7 @@ import freenet.node.SendableGet;
 import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
@@ -55,7 +56,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			
 			@Override
 			public void shouldUpdate() {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

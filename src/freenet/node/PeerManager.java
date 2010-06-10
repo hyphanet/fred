@@ -37,6 +37,7 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -122,7 +123,7 @@ public class PeerManager {
 	 */
 	public PeerManager(Node node) {
 		Logger.normal(this, "Creating PeerManager");
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		peerNodeStatuses = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeStatusesDarknet = new HashMap<Integer, HashSet<PeerNode>>();
 		peerNodeRoutingBackoffReasons = new HashMap<String, HashSet<PeerNode>>();
@@ -391,7 +392,7 @@ public class PeerManager {
 	}
 
 	public void addConnectedPeer(PeerNode pn) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		if(!pn.isRealConnection()) {
 			if(logMINOR)
 				Logger.minor(this, "Not a real connection: " + pn);
@@ -651,7 +652,7 @@ public class PeerManager {
 		// This is safe as they will add themselves when they
 		// reconnect, and they can't do it yet as we are synchronized.
 		ArrayList<PeerNode> v = new ArrayList<PeerNode>(connectedPeers.length);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		for(PeerNode pn : myPeers) {
 			if(pn == exclude)
 				continue;

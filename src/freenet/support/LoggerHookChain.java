@@ -15,7 +15,7 @@ public class LoggerHookChain extends LoggerHook {
      * Create a logger. Threshhold set to NORMAL.
      */
     public LoggerHookChain() {
-        this(NORMAL);
+        this(LoggerPriority.NORMAL);
     }
 
     /**
@@ -23,7 +23,7 @@ public class LoggerHookChain extends LoggerHook {
      * @param threshold   Suppress all log calls with lower priority then 
      *                     this.
      */
-    public LoggerHookChain(int threshold) {
+    public LoggerHookChain(LoggerPriority threshold) {
         super(threshold);
         hooks = new LoggerHook[0];
     }
@@ -39,7 +39,7 @@ public class LoggerHookChain extends LoggerHook {
      * @implements LoggerHook.log()
      */
     @Override
-	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
+	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, LoggerPriority priority) {
         LoggerHook[] myHooks = hooks;
         for(int i=0;i<myHooks.length;i++) {
             myHooks[i].log(o,c,msg,e,priority);
@@ -88,24 +88,6 @@ public class LoggerHookChain extends LoggerHook {
         return hooks;
     }
 
-    @Override
-	public long minFlags()
-    {
-    	return 0;
-    }
-
-    @Override
-	public long notFlags()
-    {
-    	return 0;
-    }
-
-    @Override
-	public long anyFlags()
-    {
-    	return ((2*ERROR)-1) & ~(threshold-1);
-    }
-
 	@Override
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		super.setDetailedThresholds(details);
@@ -115,7 +97,7 @@ public class LoggerHookChain extends LoggerHook {
 //			h[i].setDetailedThresholds(details);
 	}
 	@Override
-	public void setThreshold(int thresh) {
+	public void setThreshold(LoggerPriority thresh) {
 		super.setThreshold(thresh);
 		LoggerHook[] h = getHooks();
 		for (int i = 0; i < h.length; i++)

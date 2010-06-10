@@ -1,5 +1,7 @@
 package freenet.support;
 
+import freenet.support.Logger.LoggerPriority;
+
 
 /**
  * Sorted array of long's.
@@ -129,7 +131,7 @@ public class SortedLongSet {
 	}
 
 	private synchronized void push(long num, int x) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
 		// Move the data
 		if(length == data.length) {

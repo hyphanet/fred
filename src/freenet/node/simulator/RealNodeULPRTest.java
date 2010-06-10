@@ -24,15 +24,16 @@ import freenet.keys.SSKVerifyException;
 import freenet.node.FSParseException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
-import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
+import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.store.KeyCollisionException;
 import freenet.support.Executor;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.compress.InvalidCompressionCodecException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -90,12 +91,12 @@ public class RealNodeULPRTest extends RealNodeTest {
         DummyRandomSource random = new DummyRandomSource();
         
         //NOTE: globalTestInit returns in ignored random source
-        //NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL" /*,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR" "freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
+        //NodeStarter.globalTestInit(testName, false, LoggerPriority.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL" /*,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR" "freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         // Uncomment as appropriate.
         // For testing high-level stuff (requests/ULPRs/FT bugs)
-        NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR", true);
+        NodeStarter.globalTestInit(testName, false, LoggerPriority.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR", true);
         // For testing low-level stuff (connection bugs)
-        //NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.Node:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.node.FNP:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR", true);
+        //NodeStarter.globalTestInit(testName, false, LoggerPriority.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.Node:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.node.DarknetPeerNode:MINOR,freenet.node.FNP:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR", true);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();

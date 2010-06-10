@@ -15,6 +15,7 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.NativeThread;
 
 public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
@@ -66,8 +67,8 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 //		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = node.fastWeakRandom;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+		logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 		tracker = AddressTracker.create(node.lastBootID, node.getNodeDir(), listenPort);
 		tracker.startSend(startupTime);
 	}

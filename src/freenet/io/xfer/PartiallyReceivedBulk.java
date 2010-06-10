@@ -9,6 +9,7 @@ import freenet.io.comm.MessageCore;
 import freenet.io.comm.RetrievalException;
 import freenet.support.BitArray;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.RandomAccessThing;
 
 /**
@@ -98,7 +99,7 @@ public class PartiallyReceivedBulk {
 			Logger.error(this, "Received block "+blockNum+" of "+blocks+" !");
 			return;
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Received block "+blockNum);
 		BulkTransmitter[] notifyBTs;
 		long fileOffset = (long)blockNum * (long)blockSize;
@@ -129,7 +130,7 @@ public class PartiallyReceivedBulk {
 	}
 
 	public void abort(int errCode, String why) {
-		if(Logger.shouldLog(Logger.NORMAL, this))
+		if(Logger.shouldLog(LoggerPriority.NORMAL, this))
 			Logger.normal(this, "Aborting "+this+": "+errCode+" : "+why, new Exception("debug"));
 		BulkTransmitter[] notifyBTs;
 		BulkReceiver notifyBR;

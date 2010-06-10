@@ -12,6 +12,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * A block within a PersistentChosenRequest.
@@ -39,7 +40,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 		super(token, key, ckey, parent.localRequestOnly, parent.ignoreStore, parent.canWriteClientCache, parent.forkOnCacheable, sched);
 		this.isInsert = isInsert;
 		this.parent = parent;
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Created "+this+" for "+parent+" ckey="+ckey);
+		if(Logger.shouldLog(LoggerPriority.MINOR, this)) Logger.minor(this, "Created "+this+" for "+parent+" ckey="+ckey);
 	}
 	
 	@Override

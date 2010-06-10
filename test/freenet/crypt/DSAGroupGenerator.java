@@ -8,7 +8,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import net.i2p.util.NativeBigInteger;
-
 import freenet.support.HexUtil;
 
 /**

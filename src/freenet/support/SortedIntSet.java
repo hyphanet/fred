@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 
+import freenet.support.Logger.LoggerPriority;
+
 
 /**
  * Sorted array of int's.
@@ -159,7 +161,7 @@ public class SortedIntSet extends AbstractCollection<Integer> implements SortedS
 	}
 
 	private synchronized void push(int num, int x) {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
 		// Move the data
 		if(length == data.length) {

@@ -19,8 +19,9 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableRequestItem;
 import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * All the keys at a given priority which we have received key offers from other nodes for.
@@ -47,8 +48,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

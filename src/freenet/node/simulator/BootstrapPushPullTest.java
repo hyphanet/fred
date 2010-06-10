@@ -19,6 +19,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
@@ -47,7 +48,7 @@ public class BootstrapPushPullTest {
 			ipOverride = args[0];
         File dir = new File("bootstrap-push-pull-test");
         FileUtil.removeAll(dir);
-        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "", false);
+        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LoggerPriority.ERROR, "", false);
         File seednodes = new File("seednodes.fref");
         if(!seednodes.exists() || seednodes.length() == 0 || !seednodes.canRead()) {
         	System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
@@ -62,8 +63,8 @@ public class BootstrapPushPullTest {
         Executor executor = new PooledExecutor();
         node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, false, false, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
-    	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
-    	Logger.getChain().setThreshold(Logger.ERROR); // kill logging
+    	//Logger.setupStdoutLogging(LoggerPriority.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
+    	Logger.getChain().setThreshold(LoggerPriority.ERROR); // kill logging
     	// Start it
         node.start(true);
 		if (!TestUtil.waitForNodes(node)) {

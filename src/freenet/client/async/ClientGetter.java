@@ -27,7 +27,6 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
-import freenet.support.LogThresholdCallback;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;

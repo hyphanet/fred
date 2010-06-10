@@ -26,6 +26,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -87,8 +88,8 @@ public class NodeStats implements Persistable {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

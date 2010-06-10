@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
@@ -17,6 +18,7 @@ import freenet.support.Logger;
 import freenet.support.LoggerHook;
 import freenet.support.LoggerHookChain;
 import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -25,12 +27,10 @@ import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
 	private static class PriorityCallback extends StringCallback implements EnumerableOptionCallback {
-		private final String[] possibleValues = new String[]{ "ERROR", "WARNING", "NORMAL", "MINOR", "DEBUG" };
-
 		@Override
 		public String get() {
 			LoggerHookChain chain = Logger.getChain();
-			return LoggerHook.priorityOf(chain.getThreshold());
+			return chain.getThreshold().name();
 		}
 		@Override
 		public void set(String val) throws InvalidConfigValueException {
@@ -43,7 +43,12 @@ public class LoggingConfigHandler {
 		}
 
 		public String[] getPossibleValues() {
-			return possibleValues;
+			LoggerPriority[] priorities = LoggerPriority.values();
+			ArrayList<String> values = new ArrayList<String>(priorities.length+1);
+			for(LoggerPriority p : priorities)
+				values.add(p.name());
+			
+			return values.toArray(new String[values.size()]);
 		}
 	}
 
@@ -285,7 +290,7 @@ public class LoggingConfigHandler {
 			try {
 				hook = 
 					new FileLoggerHook(true, new File(logDir, LOG_PREFIX).getAbsolutePath(), 
-				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.DEBUG /* filtered by chain */, false, true, 
+				    		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", LoggerPriority.DEBUG /* filtered by chain */, false, true, 
 				    		maxZippedLogsSize /* 1GB of old compressed logfiles */, maxCachedLogLines);
 			} catch (IOException e) {
 				System.err.println("CANNOT START LOGGER: "+e.getMessage());

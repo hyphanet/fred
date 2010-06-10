@@ -6,7 +6,6 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
 public class PNGFilterTest extends TestCase {

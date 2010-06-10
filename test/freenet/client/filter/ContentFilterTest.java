@@ -7,16 +7,12 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 
 import junit.framework.TestCase;
-import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
-import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.HTMLFilter;
-import freenet.client.filter.HTMLFilter.*;
+import freenet.client.filter.HTMLFilter.ParsedTag;
+import freenet.client.filter.HTMLFilter.TagVerifier;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
-import freenet.support.api.BucketFactory;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 
 /**
  * A simple meta-test to track regressions of the content-filter
@@ -112,7 +108,7 @@ public class ContentFilterTest extends TestCase {
 	public void testHTMLFilter() throws Exception {
 		new NodeL10n();
 		
-    	Logger.setupStdoutLogging(Logger.MINOR, "freenet.client.filter.Generic:DEBUG");
+    	Logger.setupStdoutLogging(LoggerPriority.MINOR, "freenet.client.filter.Generic:DEBUG");
 		
 		// General sanity checks
 		// is "relativization" working?

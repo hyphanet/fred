@@ -4,16 +4,17 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Queue of keys which have been recently requested, which we have unregistered for a fixed period.
@@ -44,8 +45,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

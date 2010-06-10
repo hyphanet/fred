@@ -2,7 +2,7 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
-import java.io.*;
+import java.io.OutputStream;
 
 public class NullOutputStream extends OutputStream {
     public NullOutputStream() {}

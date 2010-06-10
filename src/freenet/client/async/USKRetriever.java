@@ -15,6 +15,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Poll a USK, and when a new slot is found, fetch it. 
@@ -62,7 +63,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
 		cb.onFound(origUSK, state.getToken(), result);
 		context.uskManager.updateKnownGood(origUSK, state.getToken(), context);

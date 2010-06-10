@@ -5,6 +5,7 @@ package freenet.support.math;
 
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Exponential decay "running average".
@@ -93,12 +94,12 @@ public final class BootstrappingDecayingRunningAverage implements RunningAverage
          */
 	public synchronized void report(double d) {
 		if(d < min) {
-			if(Logger.shouldLog(Logger.DEBUG, this))
+			if(Logger.shouldLog(LoggerPriority.DEBUG, this))
 				Logger.debug(this, "Too low: "+d, new Exception("debug"));
 			d = min;
 		}
 		if(d > max) {
-			if(Logger.shouldLog(Logger.DEBUG, this))
+			if(Logger.shouldLog(LoggerPriority.DEBUG, this))
 				Logger.debug(this, "Too high: "+d, new Exception("debug"));
 			d = max;
 		}

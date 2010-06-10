@@ -13,18 +13,9 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import junit.framework.TestCase;
-import freenet.client.filter.CSSParser;
-import freenet.client.filter.CSSReadFilter;
-import freenet.client.filter.ContentFilter;
-import freenet.client.filter.DataFilterException;
-import freenet.client.filter.GenericReadFilterCallback;
-import freenet.client.filter.MIMEType;
-import freenet.client.filter.UnsafeContentTypeException;
-import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.l10n.NodeL10n;
-import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.ArrayBucket;
@@ -720,7 +711,7 @@ public class CSSParserTest extends TestCase {
 	
 	public void setUp() throws InvalidThresholdException {
 		new NodeL10n();
-    	//Logger.setupStdoutLogging(Logger.MINOR, "freenet.client.filter:DEBUG");
+    	//Logger.setupStdoutLogging(LoggerPriority.MINOR, "freenet.client.filter:DEBUG");
     	ContentFilter.init();
     	cssMIMEType = ContentFilter.getMIMEType("text/css");
 	}

@@ -22,6 +22,7 @@ import java.util.zip.CRC32;
 import freenet.l10n.NodeL10n;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
@@ -70,7 +71,7 @@ public class PNGFilter implements ContentDataFilter {
 		Bucket output = readFilter(data, destination, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, null);
 		if (output != null)
 			return output;
-		if (Logger.shouldLog(Logger.MINOR, this))
+		if (Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Need to modify PNG...");
 		OutputStream os = new BufferedOutputStream(destination.getOutputStream());
 		try {
@@ -87,8 +88,8 @@ public class PNGFilter implements ContentDataFilter {
 	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs, OutputStream output)
 	        throws DataFilterException, IOException {
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+		boolean logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 		InputStream is = null;
 		BufferedInputStream bis = null;
 		DataInputStream dis = null;
@@ -308,7 +309,7 @@ public class PNGFilter implements ContentDataFilter {
 		final Bucket data = new FileBucket(fin, true, false, false, false, false);
 		final Bucket out = new FileBucket(fout, false, true, false, false, false);
 		try {
-			Logger.setupStdoutLogging(Logger.MINOR, "");
+			Logger.setupStdoutLogging(LoggerPriority.MINOR, "");
 			ContentFilter.FilterOutput output = ContentFilter.filter(data, new ArrayBucket(), "image/png",
 			        new URI("http://127.0.0.1:8888/"), null, null, null);
 			BucketTools.copy(output.data, out);
@@ -330,7 +331,7 @@ public class PNGFilter implements ContentDataFilter {
 		if (shortReason != null)
 			message += " - " + shortReason;
 		DataFilterException e = new DataFilterException(shortReason, shortReason, message);
-		if (Logger.shouldLog(Logger.NORMAL, this))
+		if (Logger.shouldLog(LoggerPriority.NORMAL, this))
 			Logger.normal(this, "Throwing " + e, e);
 		throw e;
 	}

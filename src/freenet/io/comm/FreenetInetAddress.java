@@ -10,8 +10,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import freenet.io.AddressIdentifier;
-import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
+import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.HostnameUtil;
 import freenet.support.transport.ip.IPUtil;
@@ -32,8 +33,8 @@ public class FreenetInetAddress {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
+				logDEBUG = Logger.shouldLog(LoggerPriority.DEBUG, this);
 			}
 		});
 	}

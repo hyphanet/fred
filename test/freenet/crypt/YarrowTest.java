@@ -5,13 +5,10 @@ package freenet.crypt;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
+import junit.framework.TestCase;
 
 import org.spaceroots.mantissa.random.ScalarSampleStatistics;
-
-import junit.framework.*;
 
 public class YarrowTest extends TestCase {
 

@@ -13,6 +13,7 @@ import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.FileUtil;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
@@ -51,7 +52,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		}
 		wd.mkdir();
 		//NOTE: globalTestInit returns in ignored random source
-		NodeStarter.globalTestInit(dir, false, Logger.ERROR, "", true);
+		NodeStarter.globalTestInit(dir, false, LoggerPriority.ERROR, "", true);
 		// Make the network reproducible so we can easily compare different routing options by specifying a seed.
 		DummyRandomSource random = new DummyRandomSource(3142);
 		//DiffieHellman.init(random);

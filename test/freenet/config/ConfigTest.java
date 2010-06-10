@@ -15,8 +15,8 @@
  */
 package freenet.config;
 
-import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
+import freenet.utils.UTFUtil;
 
 /**
  * Test case for the {@link freenet.config.Config} class.

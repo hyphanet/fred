@@ -3,13 +3,11 @@ package freenet.node.simulator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -35,16 +33,15 @@ import freenet.client.InsertException;
 import freenet.client.async.ClientContext;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
-import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
-import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.io.FileUtil;
 
@@ -116,7 +113,7 @@ public class LongTermPushPullTest {
 		try {
 			final File dir = new File("longterm-push-pull-test-" + uid);
 			FileUtil.removeAll(dir);
-			RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "", false);
+			RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, LoggerPriority.ERROR, "", false);
 			File seednodes = new File("seednodes.fref");
 			if (!seednodes.exists() || seednodes.length() == 0 || !seednodes.canRead()) {
 				System.err.println("Unable to read seednodes.fref, it doesn't exist, or is empty");
@@ -133,7 +130,7 @@ public class LongTermPushPullTest {
 			node = NodeStarter.createTestNode(DARKNET_PORT1, OPENNET_PORT1, dir.getPath(), false, Node.DEFAULT_MAX_HTL,
 			        0, random, new PooledExecutor(), 1000, 4 * 1024 * 1024, true, true, true, true, true, true, true,
 			        12 * 1024, true, true, false, false, null);
-			Logger.getChain().setThreshold(Logger.ERROR);
+			Logger.getChain().setThreshold(LoggerPriority.ERROR);
 
 			// Start it
 			node.start(true);

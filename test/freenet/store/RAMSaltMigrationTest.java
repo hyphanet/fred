@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Random;
 
 import junit.framework.TestCase;
-
 import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;

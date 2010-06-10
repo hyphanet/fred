@@ -3,6 +3,8 @@ package freenet.support;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import freenet.support.Logger.LoggerPriority;
+
 public class LRUHashtable<K, V> {
 	private static volatile boolean logMINOR;
 
@@ -10,7 +12,7 @@ public class LRUHashtable<K, V> {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
 			@Override
 			public void shouldUpdate(){
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 			}
 		});
 	}

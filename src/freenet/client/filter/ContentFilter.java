@@ -11,14 +11,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
@@ -180,14 +180,14 @@ public class ContentFilter {
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
 	public static FilterOutput filter(Bucket data, Bucket destination, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
-		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+		if(Logger.shouldLog(LoggerPriority.MINOR, ContentFilter.class))
 			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName+") Source="+data+" Destintation="+destination);
 		String type = typeName;
 		String options = "";
 		String charset = null;
 		HashMap<String, String> otherParams = null;
 		if(destination == null){
-			if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+			if(Logger.shouldLog(LoggerPriority.MINOR, ContentFilter.class))
 				Logger.minor(ContentFilter.class, "Null destination. Creating new bucket.");
 			destination = new ArrayBucket();
 		}
@@ -265,7 +265,7 @@ public class ContentFilter {
 					// so check with the full extractor.
 					try {
 						if((charset = handler.charsetExtractor.getCharset(data, charset)) != null) {
-							if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+							if(Logger.shouldLog(LoggerPriority.MINOR, ContentFilter.class))
 								Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 							return charset;
 						} else if(bom.mustHaveCharset)
@@ -283,7 +283,7 @@ public class ContentFilter {
 			if(handler.defaultCharset != null) {
 				try {
 					if((charset = handler.charsetExtractor.getCharset(data, handler.defaultCharset)) != null) {
-				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+				        if(Logger.shouldLog(LoggerPriority.MINOR, ContentFilter.class))
 				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
 					}
@@ -314,7 +314,7 @@ public class ContentFilter {
 					return charset;
 			} catch (UnsupportedEncodingException e) {
 				// Doesn't seem to be supported by prior to 1.6.
-		        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+		        if(Logger.shouldLog(LoggerPriority.MINOR, ContentFilter.class))
 		        	Logger.minor(ContentFilter.class, "UTF-32 not supported");
 			} catch (DataFilterException e) {
 				// Ignore

@@ -12,6 +12,7 @@ import freenet.node.NodeInitException;
 import freenet.node.NodeStats;
 import freenet.node.PeerNode;
 import freenet.support.Logger;
+import freenet.support.Logger.LoggerPriority;
 
 /**
  * Optional base class for RealNode*Test.
@@ -143,11 +144,11 @@ public class RealNodeTest {
 					countFullyConnected++;
 					if(countBackedOff == 0) countReallyConnected++;
 				} else {
-					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class)) 
+					if(Logger.shouldLog(LoggerPriority.MINOR, RealNodeTest.class)) 
 						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
 				}
 				if(countBackedOff > 0) {
-					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class))
+					if(Logger.shouldLog(LoggerPriority.MINOR, RealNodeTest.class))
 						Logger.minor(RealNodeTest.class, "Backed off: "+nodes[i]+" : "+countBackedOff);
 				}
 			}

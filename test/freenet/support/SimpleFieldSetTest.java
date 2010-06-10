@@ -22,8 +22,8 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import freenet.node.FSParseException;
 import junit.framework.TestCase;
+import freenet.node.FSParseException;
 
 /**
  * Test case for {@link freenet.support.SimpleFieldSet} class.

@@ -31,7 +31,6 @@ import freenet.io.xfer.BulkTransmitter;
 import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.NodeL10n;
-import freenet.l10n.NodeL10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BookmarkFeedUserAlert;
 import freenet.node.useralerts.DownloadFeedUserAlert;
@@ -44,6 +43,7 @@ import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.io.FileUtil;
 import freenet.support.io.RandomAccessFileWrapper;
 import freenet.support.io.RandomAccessThing;
@@ -94,7 +94,7 @@ public class DarknetPeerNode extends PeerNode {
 	public DarknetPeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, OutgoingPacketMangler mangler) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, false);
 		
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		
 		String name = fs.get("myName");
 		if(name == null) throw new FSParseException("No name");

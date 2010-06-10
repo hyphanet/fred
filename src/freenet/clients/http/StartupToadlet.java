@@ -1,9 +1,9 @@
 package freenet.clients.http;
 
-import freenet.l10n.NodeL10n;
 import java.io.IOException;
 import java.net.URI;
 
+import freenet.l10n.NodeL10n;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 

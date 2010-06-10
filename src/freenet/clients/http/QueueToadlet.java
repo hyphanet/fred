@@ -63,6 +63,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.MutableBoolean;
 import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
+import freenet.support.Logger.LoggerPriority;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
@@ -127,7 +128,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			return;
 		}
 		
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		
 		try {
 			// Browse... button
@@ -494,7 +495,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							try {
 							try {
 								clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, null, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
-								if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
+								if(Logger.shouldLog(LoggerPriority.MINOR, this)) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 								if(clientPut != null)
 									try {
 										fcp.startBlocking(clientPut, container, context);
@@ -580,7 +581,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 							ClientPutDir clientPutDir;
 							try {
 							try {
-								boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+								boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 								clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, file, null, false, true, false, false, Node.FORK_ON_CACHEABLE_DEFAULT, HighLevelSimpleClientImpl.EXTRA_INSERTS_SINGLE_BLOCK, HighLevelSimpleClientImpl.EXTRA_INSERTS_SPLITFILE_HEADER, fcp, container);
 								if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
 								if(clientPutDir != null)
@@ -912,7 +913,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		LinkedList<ClientRequest> uncompletedDirUpload = new LinkedList<ClientRequest>();
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests(container);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(Logger.shouldLog(LoggerPriority.MINOR, this))
 			Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
@@ -1821,7 +1822,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 
 	private void registerAlert(ClientRequest req, ObjectContainer container) {
 		final String identifier = req.getIdentifier();
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean logMINOR = Logger.shouldLog(LoggerPriority.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Registering alert for "+identifier);
 		if(!req.hasFinished()) {
