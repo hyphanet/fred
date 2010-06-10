@@ -169,7 +169,14 @@ public class ContentFilterTest extends TestCase {
 	}
 		
 	private String HTMLFilter(String data) throws Exception {
-		return HTMLFilter(data, false);
+		if(data.startsWith("<html")) return HTMLFilter(data, false);
+		if(data.startsWith("<?")) return HTMLFilter(data, false);
+		String s = HTMLFilter("<html>"+data+"</html>", false);
+		assertTrue(s.startsWith("<html>"));
+		s = s.substring("<html>".length());
+		assertTrue(s.endsWith("</html>"));
+		s = s.substring(0, s.length() - "</html>".length());
+		return s;
 	}
 	
 	private String HTMLFilter(String data, boolean alt) throws Exception {
