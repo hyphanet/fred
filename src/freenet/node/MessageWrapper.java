@@ -1,14 +1,19 @@
 package freenet.node;
 
+import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import freenet.support.Logger;
 
 public class MessageWrapper {
 	private final MessageItem item;
-	private final LinkedList<int[]> acks = new LinkedList<int[]>();
-	private final LinkedList<int[]> sent = new LinkedList<int[]>();
 	private final boolean isLongMessage;
+	
+	//Sorted lists of non-overlapping ranges
+	private final SortedSet<int[]> acks = new TreeSet<int[]>(new RangeComparator());
+	private final SortedSet<int[]> sent = new TreeSet<int[]>(new RangeComparator());
 
 	public MessageWrapper(MessageItem item) {
 		this.item = item;
@@ -26,7 +31,24 @@ public class MessageWrapper {
 	 *         index 1
 	 */
 	public int[] getData(byte[] dest, int offset, int length) {
-		throw new UnsupportedOperationException();
+		int start = 0;
+		int end = Integer.MAX_VALUE;
+		
+		synchronized(sent) {
+	                for(int[] range : sent) {
+	                	if(range[0] == start) {
+	                		start = range[1] + 1;
+	                	} else if (range[0] - start > 0) {
+	                		end = range[0] - 1;
+	                	}
+	                }
+                }
+		
+		//Copy start to end into dest
+		int realLength = Math.min((end - start), length);
+		System.arraycopy(item.buf, start, dest, offset, realLength);
+		
+		return new int[] {realLength, start};
 	}
 
 	/**
@@ -73,6 +95,14 @@ public class MessageWrapper {
 
 	public boolean isLongMessage() {
 		return isLongMessage;
+	}
+	
+	private class RangeComparator implements Comparator<int[]> {
+
+		public int compare(int[] o1, int[] o2) {
+	                return o2[0] - o1[0];
+                }
+		
 	}
 
 }
