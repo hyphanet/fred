@@ -140,7 +140,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			isXHTML=value;
 		}
 		
-		public boolean getisXHTLM() {
+		public boolean getisXHTML() {
 			return isXHTML;
 		}
 		
@@ -398,7 +398,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}
 			}
 			//Writing the remaining tags for XHTML if any
-			if(getisXHTLM())
+			if(getisXHTML())
 			{
 				while(openElements.size()>0)
 					w.write("</"+openElements.pop()+">");
@@ -429,8 +429,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public void closeXHTMLTag(String element, Writer w) throws IOException {
 			// Assume that missing closes are way more common than extra closes.
 			if(openElements.isEmpty()) return;
-			if(element.equals(openElements.peek()))
+			if(element.equals(openElements.peek())) {
 				w.write("</"+openElements.pop()+">");
+			}
 			else {
 				if(openElements.contains(element)) {
 					while(true) {
@@ -725,15 +726,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		public void htmlwrite(Writer w,HTMLParseContext pc) throws IOException {
 			String s = toString();
-			if(pc.getisXHTLM())
+			if(pc.getisXHTML())
 			{
 				if(ElementInfo.isVoidElement(element) && s.charAt(s.length()-2)!='/')
 				{
 					s=s.substring(0,s.length()-1)+" />";
 				}
 			}
-			if (s != null)
+			if (s != null) {
 				w.write(s);
+			}
 		}
 
 		public void write(Writer w,HTMLParseContext pc) throws IOException {
@@ -741,13 +743,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			{
 				if(ElementInfo.tryAutoClose(element) && element.equals(pc.peekTopElement()))
 					pc.closeXHTMLTag(element, w);
-				if(pc.getisXHTLM() &&  !ElementInfo.isVoidElement(element))
+				if(pc.getisXHTML() &&  !ElementInfo.isVoidElement(element))
 					pc.pushElementInStack(element);
 				htmlwrite(w,pc);
 			}
 			else
 			{
-				if(pc.getisXHTLM())
+				if(pc.getisXHTML())
 				{
 					pc.closeXHTMLTag(element, w);
 				}
