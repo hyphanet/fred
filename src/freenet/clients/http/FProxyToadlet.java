@@ -140,7 +140,6 @@ public final class FProxyToadlet extends Toadlet implements RequestClient {
 				if(extras == null) extras = "";
 				extras = extras + "&type=" + requestedMimeType;
 			}
-			mimeType = requestedMimeType;
 		}
 		long size = data.size();
 		

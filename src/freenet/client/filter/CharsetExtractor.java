@@ -13,7 +13,7 @@ import freenet.support.api.Bucket;
  */
 public interface CharsetExtractor {
 	
-	String getCharset(Bucket data, String parseCharset) throws DataFilterException, IOException;
+	String getCharset(byte[] input, String parseCharset) throws DataFilterException, IOException;
 
 	/** Inspect the first few bytes of the file for any obvious but 
 	 * type-specific BOM. Don't try too hard, if we don't find anything we 
@@ -27,7 +27,7 @@ public interface CharsetExtractor {
 	 * @throws DataFilterException
 	 * @throws IOException 
 	 */
-	BOMDetection getCharsetByBOM(Bucket data) throws DataFilterException, IOException;
+	BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException, IOException;
 	
 	public class BOMDetection {
 		/** The charset, guessed from the first few characters. */

@@ -36,7 +36,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.DumperSnoopMetadata;
 import freenet.client.events.EventDumper;
 import freenet.client.filter.ContentFilter;
-import freenet.client.filter.ContentFilter.FilterOutput;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -52,6 +51,7 @@ import freenet.support.SizeUtil;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
 /**
@@ -413,16 +413,23 @@ public class TextModeClientInterface implements Runnable {
     	outsb.append("Here is the result:\r\n");
     	
     	final String content = readLines(reader, false);
-    	final Bucket data = new ArrayBucket(content.getBytes("UTF-8"));
+    	final Bucket input = new ArrayBucket(content.getBytes("UTF-8"));
+    	final Bucket output = new ArrayBucket();
+    	InputStream inputStream = null;
+    	OutputStream outputStream = null;
+    	BufferedInputStream bis = null;
     	try {
-    		FilterOutput output = ContentFilter.filter(data, new ArrayBucket(), "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
-    		
-    		BufferedInputStream bis = new BufferedInputStream(output.data.getInputStream());
+    		inputStream = input.getInputStream();
+    		outputStream = output.getOutputStream();
+    		ContentFilter.filter(inputStream, outputStream, "text/html", new URI("http://127.0.0.1:8888/"), null, null, null);
+    		inputStream.close();
+    		outputStream.close();
+
+    		bis = new BufferedInputStream(output.getInputStream());
     		while(bis.available() > 0){
     			outsb.append((char)bis.read());
     		}
     		bis.close();
-    		output.data.free();
     	} catch (IOException e) {
     		outsb.append("Bucket error?: " + e.getMessage());
     		Logger.error(this, "Bucket error?: " + e, e);
@@ -430,7 +437,11 @@ public class TextModeClientInterface implements Runnable {
     		outsb.append("Internal error: " + e.getMessage());
     		Logger.error(this, "Internal error: " + e, e);
     	} finally {
-    		data.free();
+    		input.free();
+    		output.free();
+    		Closer.close(inputStream);
+    		Closer.close(outputStream);
+    		Closer.close(bis);
     	}
     	outsb.append("\r\n");
     }else if(uline.startsWith("BLOW")) {

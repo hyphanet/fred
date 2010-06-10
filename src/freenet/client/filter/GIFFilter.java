@@ -3,16 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 
 import freenet.l10n.NodeL10n;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * Content filter for GIF's.
@@ -27,14 +27,9 @@ public class GIFFilter implements ContentDataFilter {
 		{ (byte)'G', (byte)'I', (byte)'F', (byte)'8', (byte)'9', (byte)'a' };
 		
 	
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		if(data.size() < 6) {
-			throwHeaderError(l10n("tooShortTitle"), l10n("tooShort"));
-		}
-		InputStream is = data.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(is);
-		DataInputStream dis = new DataInputStream(bis);
+		DataInputStream dis = new DataInputStream(input);
 		try {
 			// Check the header
 			byte[] headerCheck = new byte[HEADER_SIZE];
@@ -42,11 +37,11 @@ public class GIFFilter implements ContentDataFilter {
 			if((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
 				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 			}
-			dis.close();
+			output.write(headerCheck);
+			FileUtil.copy(dis, output, -1);
 		} finally {
-			Closer.close(dis);
+			output.flush();
 		}
-		return data;
 	}
 
 	private static String l10n(String key) {
@@ -62,9 +57,10 @@ public class GIFFilter implements ContentDataFilter {
 		throw new DataFilterException(shortReason, shortReason, message);
 	}
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
-		return null;
+		output.write(input.read());
+		return;
 	}
 
 }

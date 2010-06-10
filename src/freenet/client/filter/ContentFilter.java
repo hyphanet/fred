@@ -4,9 +4,11 @@
 package freenet.client.filter;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.Arrays;
@@ -17,11 +19,7 @@ import java.util.Hashtable;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
-import freenet.support.io.ArrayBucket;
-import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
+import freenet.support.io.FileUtil;
 
 /**
  * Freenet content filter. This doesn't actually do any filtering,
@@ -127,23 +125,37 @@ public class ContentFilter {
 		return mimeTypesByName.get(mimeType);
 	}
 
-	public static class FilterOutput {
-		public final Bucket data;
-		public final String type;
-		
-		FilterOutput(Bucket data, String type) {
-			this.data = data;
-			this.type = type;
-		}
+	/**
+	 * Filter some data.
+	 * 
+	 * @param input
+	 *            Source stream to read data from
+	 * @param output
+	 *            Stream to write filtered data to
+	 * @param typeName
+	 *            MIME type for input data
+	 * @param maybeCharset 
+	 * 			  MIME type of the referring document, as a hint, some types,
+	 * 			  such as CSS, will inherit it if no other data is available.
+	 * @return 
+	 * @throws IOException
+	 *             If an internal error involving s occurred.
+	 * @throws UnsafeContentTypeException
+	 *             If the MIME type is declared unsafe (e.g. pdf files)
+	 * @throws IllegalStateException
+	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
+	 */
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
+		return filter(input, output, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
 	}
 
 	/**
 	 * Filter some data.
 	 * 
-	 * @param data
-	 *            Input data
-	 * @param bf
-	 *            The bucket factory used to create the bucket to return the filtered data in.
+	 * @param input
+	 *            Source stream to read data from
+	 * @param output
+	 *            Stream to write filtered data to
 	 * @param typeName
 	 *            MIME type for input data
 	 * @param maybeCharset 
@@ -156,42 +168,14 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, Bucket destination, String typeName, URI baseURI, FoundURICallback cb, TagReplacerCallback trc , String maybeCharset) throws UnsafeContentTypeException, IOException {
-		return filter(data, destination, typeName, maybeCharset, new GenericReadFilterCallback(baseURI, cb,trc));
-	}
-
-	/**
-	 * Filter some data.
-	 * 
-	 * @param data
-	 *            Input data
-	 * @param bf
-	 *            The bucket factory used to create the bucket to return the filtered data in.
-	 * @param typeName
-	 *            MIME type for input data
-	 * @param maybeCharset 
-	 * 			  MIME type of the referring document, as a hint, some types,
-	 * 			  such as CSS, will inherit it if no other data is available.
-	 * @throws IOException
-	 *             If an internal error involving buckets occurred.
-	 * @throws UnsafeContentTypeException
-	 *             If the MIME type is declared unsafe (e.g. pdf files)
-	 * @throws IllegalStateException
-	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
-	 */
-	public static FilterOutput filter(Bucket data, Bucket destination, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
-		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
-			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName+") Source="+data+" Destintation="+destination);
+	public static FilterStatus filter(InputStream input, OutputStream output, String typeName, String maybeCharset, FilterCallback filterCallback) throws UnsafeContentTypeException, IOException {
+		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class)) Logger.minor(ContentFilter.class, "Filtering data of type"+typeName);
 		String type = typeName;
 		String options = "";
 		String charset = null;
 		HashMap<String, String> otherParams = null;
-		if(destination == null){
-			if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
-				Logger.minor(ContentFilter.class, "Null destination. Creating new bucket.");
-			destination = new ArrayBucket();
-		}
-		
+		input = new BufferedInputStream(input);
+
 		// First parse the MIME type
 		
 		int idx = type.indexOf(';');
@@ -230,41 +214,49 @@ public class ContentFilter {
 			// Run the read filter if there is one.
 			if(handler.readFilter != null) {
 				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
-					charset = detectCharset(data, handler, maybeCharset);
+					input.mark(64*1024);
+					byte[] charsetBuffer = new byte[64*1024];
+					input.read(charsetBuffer, 0, 64*1024);
+					input.reset();
+					charset = detectCharset(charsetBuffer, handler, maybeCharset);
 				}
-				
-				Bucket outputData = handler.readFilter.readFilter(data, destination, charset, otherParams, filterCallback);
-				if(charset != null)
-					type = type + "; charset="+charset;
-				return new FilterOutput(outputData, type);
+				try {
+					handler.readFilter.readFilter(input, output, charset, otherParams, filterCallback);
+				}
+				catch(EOFException e) {
+					throw new DataFilterException(l10n("EOFMessage"), l10n("EOFMessage"), l10n("EOFDescription"));
+				}
+				catch(IOException e) {
+					throw e;
+				}
+				if(charset != null) type = type + "; charset="+charset;
+				output.flush();
+				return new FilterStatus(charset, typeName);
 			}
 			
 			if(handler.safeToRead) {
-				BucketTools.copy(data, destination);
-				return new FilterOutput(data, typeName);
+				FileUtil.copy(input, output, -1);
+				output.flush();
+				return new FilterStatus(charset, typeName);
 			}
 			
 			handler.throwUnsafeContentTypeException();
-			return null;
 		}
+		return null;
 	}
 
-	public static String detectCharset(Bucket data, MIMEType handler, String maybeCharset) throws IOException {
-		
+	public static String detectCharset(byte[] input, MIMEType handler, String maybeCharset) throws IOException {
 		// Detect charset
-		
-		String charset = detectBOM(data);
-		
+		String charset = detectBOM(input);
 		if((charset == null) && (handler.charsetExtractor != null)) {
-			
-			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(data);
+			BOMDetection bom = handler.charsetExtractor.getCharsetByBOM(input);
 			if(bom != null) {
 				charset = bom.charset;
 				if(charset != null) {
 					// These detections are not firm, and can detect a family e.g. ASCII, EBCDIC,
 					// so check with the full extractor.
 					try {
-						if((charset = handler.charsetExtractor.getCharset(data, charset)) != null) {
+						if((charset = handler.charsetExtractor.getCharset(input, charset)) != null) {
 							if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 								Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 							return charset;
@@ -282,7 +274,7 @@ public class ContentFilter {
 			
 			if(handler.defaultCharset != null) {
 				try {
-					if((charset = handler.charsetExtractor.getCharset(data, handler.defaultCharset)) != null) {
+					if((charset = handler.charsetExtractor.getCharset(input, handler.defaultCharset)) != null) {
 				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
@@ -292,25 +284,25 @@ public class ContentFilter {
 				}
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "ISO-8859-1")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "ISO-8859-1")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "UTF-8")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "UTF-8")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "UTF-16")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "UTF-16")) != null)
 					return charset;
 			} catch (DataFilterException e) {
 				// Ignore
 			}
 			try {
-				if((charset = handler.charsetExtractor.getCharset(data, "UTF-32")) != null)
+				if((charset = handler.charsetExtractor.getCharset(input, "UTF-32")) != null)
 					return charset;
 			} catch (UnsupportedEncodingException e) {
 				// Doesn't seem to be supported by prior to 1.6.
@@ -336,57 +328,35 @@ public class ContentFilter {
 	 * specific charset.
 	 * @throws IOException 
 	 */
-	private static String detectBOM(Bucket bucket) throws IOException {
-		InputStream is = null;
-		try {
-			byte[] data = new byte[5];
-			is = new BufferedInputStream(bucket.getInputStream());
-			int read = 0;
-			while(read < data.length) {
-				int x;
-				try {
-					x = is.read(data, read, data.length - read);
-				} catch(EOFException e) {
-					x = -1;
-				}
-				if(x <= 0)
-					break;
-			}
-			if(startsWith(data, bom_utf8))
-				return "UTF-8";
-			if(startsWith(data, bom_utf16_be))
-				return "UTF-16BE";
-			if(startsWith(data, bom_utf16_le))
-				return "UTF-16LE";
-			if(startsWith(data, bom_utf32_be))
-				return "UTF-32BE";
-			if(startsWith(data, bom_utf32_le))
-				return "UTF-32LE";
-			// We do NOT support UTF-32-2143 or UTF-32-3412
-			// Java does not have charset support for them, and well,
-			// very few people create web content on a PDP-11!
-			
-			if(startsWith(data, bom_utf32_2143))
-				throw new UnsupportedCharsetInFilterException("UTF-32-2143");
-			if(startsWith(data, bom_utf32_3412))
-				throw new UnsupportedCharsetInFilterException("UTF-32-3412");
-				
-			if(startsWith(data, bom_scsu))
-				return "SCSU";
-			if(startsWith(data, bom_utf7_1) || startsWith(data, bom_utf7_2) || startsWith(data, bom_utf7_3) || startsWith(data, bom_utf7_4) || startsWith(data, bom_utf7_5))
-				return "UTF-7";
-			if(startsWith(data, bom_utf_ebcdic))
-				return "UTF-EBCDIC";
-			if(startsWith(data, bom_bocu_1))
-				return "BOCU-1";
-			
-			is.close();
-			
-			return null;
-		}
-		finally {
-			Closer.close(is);
-		}
+	private static String detectBOM(byte[] input) throws IOException {
+		if(startsWith(input, bom_utf8))
+			return "UTF-8";
+		if(startsWith(input, bom_utf16_be))
+			return "UTF-16BE";
+		if(startsWith(input, bom_utf16_le))
+			return "UTF-16LE";
+		if(startsWith(input, bom_utf32_be))
+			return "UTF-32BE";
+		if(startsWith(input, bom_utf32_le))
+			return "UTF-32LE";
+		// We do NOT support UTF-32-2143 or UTF-32-3412
+		// Java does not have charset support for them, and well,
+		// very few people create web content on a PDP-11!
+
+		if(startsWith(input, bom_utf32_2143))
+			throw new UnsupportedCharsetInFilterException("UTF-32-2143");
+		if(startsWith(input, bom_utf32_3412))
+			throw new UnsupportedCharsetInFilterException("UTF-32-3412");
+
+		if(startsWith(input, bom_scsu))
+			return "SCSU";
+		if(startsWith(input, bom_utf7_1) || startsWith(input, bom_utf7_2) || startsWith(input, bom_utf7_3) || startsWith(input, bom_utf7_4) || startsWith(input, bom_utf7_5))
+			return "UTF-7";
+		if(startsWith(input, bom_utf_ebcdic))
+			return "UTF-EBCDIC";
+		if(startsWith(input, bom_bocu_1))
+			return "BOCU-1";
+		return null;
 	}
 	
 	// Byte Order Mark's - from Wikipedia. We keep all of them because a rare encoding might
@@ -418,4 +388,13 @@ public class ContentFilter {
 		return true;
 	}
 
+	public static class FilterStatus {
+		public final String charset;
+		public final String mimeType;
+
+		FilterStatus(String charset, String mimeType) {
+			this.charset = charset;
+			this.mimeType = mimeType;
+		}
+	}
 }

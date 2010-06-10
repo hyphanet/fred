@@ -6,6 +6,8 @@ package freenet.client.filter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.LinkedHashMap;
 
@@ -14,13 +16,11 @@ import freenet.client.filter.ContentFilter;
 import freenet.client.filter.DataFilterException;
 import freenet.client.filter.GenericReadFilterCallback;
 import freenet.client.filter.HTMLFilter;
-import freenet.client.filter.ContentFilter.FilterOutput;
+import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.client.filter.HTMLFilter.*;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
-import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 
 /**
  * A simple meta-test to track regressions of the content-filter
@@ -197,7 +197,7 @@ public class ContentFilterTest extends TestCase {
 		FileOutputStream fos;
 		try {
 			ArrayBucket out = new ArrayBucket();
-			filter.readFilter(new ArrayBucket(total), out, "UTF-16", null, null);
+			filter.readFilter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "UTF-16", null, null);
 			fos = new FileOutputStream("output.utf16");
 			fos.write(out.toByteArray());
 			fos.close();
@@ -213,12 +213,12 @@ public class ContentFilterTest extends TestCase {
 		}
 		try {
 			ArrayBucket out = new ArrayBucket();
-			FilterOutput fo = ContentFilter.filter(new ArrayBucket(total), out, "text/html", null, null);
+			FilterStatus fo = ContentFilter.filter(new ArrayBucket(total).getInputStream(), out.getOutputStream(), "text/html", null, null);
 			fos = new FileOutputStream("output.filtered");
 			fos.write(out.toByteArray());
 			fos.close();
 			failed = true;
-			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter) - Detected type: "+fo.type, true);
+			assertFalse("Filter accepted dangerous UTF8 text with BOM as UTF16! (ContentFilter) - Detected charset: "+fo.charset, true);
 		} catch (DataFilterException e) {
 			System.out.println("Failure: "+e);
 			e.printStackTrace();
@@ -247,11 +247,21 @@ public class ContentFilterTest extends TestCase {
 	}
 	
 	private String HTMLFilter(String data, boolean alt) throws Exception {
+		String returnValue;
 		String typeName = "text/html";
 		URI baseURI = new URI(alt ? ALT_BASE_URI : BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
-		
-		return ContentFilter.filter(new ArrayBucket(dataToFilter), new ArrayBucket(), typeName, baseURI, null, null, null).data.toString();
+		ArrayBucket input = new ArrayBucket(dataToFilter);
+		ArrayBucket output = new ArrayBucket();
+		InputStream inputStream = input.getInputStream();
+		OutputStream outputStream = output.getOutputStream();
+		ContentFilter.filter(inputStream, outputStream, typeName, baseURI, null, null, null);
+		inputStream.close();
+		outputStream.close();
+		returnValue = output.toString();
+		output.free();
+		input.free();
+		return returnValue;
 	}
 
 	static public class TagVerifierTest extends TestCase {

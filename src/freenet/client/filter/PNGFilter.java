@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -24,8 +22,6 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.api.Bucket;
-import freenet.support.io.ArrayBucket;
-import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
@@ -65,37 +61,21 @@ public class PNGFilter implements ContentDataFilter {
 		this.checkCRCs = checkCRCs;
 	}
 
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
-		Bucket output = readFilter(data, destination, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, null);
-		if (output != null)
-			return output;
-		if (Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Need to modify PNG...");
-		OutputStream os = new BufferedOutputStream(destination.getOutputStream());
-		try {
-			readFilter(data, destination, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, os);
-			os.flush();
-			os.close();
-			os = null;
-		} finally {
-			Closer.close(os);
-		}
-		return destination;
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb) throws DataFilterException, IOException {
+		readFilter(input, output, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs);
+		output.flush();
 	}
 
-	public Bucket readFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs, OutputStream output)
-	        throws DataFilterException, IOException {
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb, boolean deleteText, boolean deleteTimestamp, boolean checkCRCs)
+			throws DataFilterException, IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		InputStream is = null;
-		BufferedInputStream bis = null;
 		DataInputStream dis = null;
 		try {
-			is = data.getInputStream();
-			bis = new BufferedInputStream(is);
-			dis = new DataInputStream(bis);
+			dis = new DataInputStream(input);
 			// Check the header
 			byte[] headerCheck = new byte[pngHeader.length];
 			dis.readFully(headerCheck);
@@ -256,13 +236,9 @@ public class PNGFilter implements ContentDataFilter {
 				if (!validChunkType) {
 					if (logMINOR)
 						Logger.minor(this, "Skipping unknown chunk type " + chunkTypeString);
-					if (output == null)
-						return null;
 					skip = true;
 				}
 
-				if (skip && output == null)
-					return null;
 				else if (!skip && output != null) {
 					if (logMINOR)
 						Logger
@@ -275,50 +251,51 @@ public class PNGFilter implements ContentDataFilter {
 			}
 			if (hasSeenIEND && dis.available() > 0)
 				throwError("IEND not last chunk", "IEND not last chunk");
-
-			dis.close();
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throwError("ArrayIndexOutOfBoundsException while filtering", "ArrayIndexOutOfBoundsException while filtering");
 		} catch (NegativeArraySizeException e) {
 			throwError("NegativeArraySizeException while filtering", "NegativeArraySizeException while filtering");
 		} catch (EOFException e) {
 			throwError("EOF Exception while filtering", "EOF Exception while filtering");
-		} finally {
-			Closer.close(dis);
-			Closer.close(bis);
-			Closer.close(is);
 		}
-		return data;
 	}
 
 	private String l10n(String key) {
 		return NodeL10n.getBase().getString("PNGFilter." + key);
 	}
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		// TODO Auto-generated method stub
-		return null;
+		return;
 	}
 
 	public static void main(String arg[]) {
 		final File fin = new File("/tmp/test.png");
 		final File fout = new File("/tmp/test2.png");
 		fout.delete();
-		final Bucket data = new FileBucket(fin, true, false, false, false, false);
-		final Bucket out = new FileBucket(fout, false, true, false, false, false);
+		final Bucket inputBucket = new FileBucket(fin, true, false, false, false, false);
+		final Bucket outputBucket = new FileBucket(fout, false, true, false, false, false);
+		InputStream inputStream = null;
+		OutputStream outputStream = null;
 		try {
+			inputStream = inputBucket.getInputStream();
+			outputStream = outputBucket.getOutputStream();
 			Logger.setupStdoutLogging(Logger.MINOR, "");
-			ContentFilter.FilterOutput output = ContentFilter.filter(data, new ArrayBucket(), "image/png",
-			        new URI("http://127.0.0.1:8888/"), null, null, null);
-			BucketTools.copy(output.data, out);
+			ContentFilter.filter(inputStream, outputStream, "image/png",
+					new URI("http://127.0.0.1:8888/"), null, null, null);
+			inputStream.close();
+			outputStream.close();
 		} catch (IOException e) {
 			System.out.println("Bucket error?: " + e.getMessage());
 		} catch (URISyntaxException e) {
 			System.out.println("Internal error: " + e.getMessage());
 		} catch (InvalidThresholdException e) {
 		} finally {
-			data.free();
+			inputBucket.free();
+			outputBucket.free();
+			Closer.close(inputStream);
+			Closer.close(outputStream);
 		}
 	}
 

@@ -6,6 +6,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,8 +39,6 @@ import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
-import freenet.support.api.Bucket;
-import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -54,16 +53,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	 * charset detection can be ambiguous, potentially resulting in attacks. */
 	private static boolean allowNoHTMLTag = true;
 	
-	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		if(cb == null) cb = new NullFilterCallback();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
-		InputStream strm = bucket.getInputStream();
-		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
-		OutputStream os = destination.getOutputStream();
-		BufferedOutputStream bos = new BufferedOutputStream(os, 4096);
+		BufferedInputStream bis = new BufferedInputStream(input, 4096);
+		BufferedOutputStream bos = new BufferedOutputStream(output, 4096);
 		Reader r = null;
 		Writer w = null;
 		InputStreamReader isr = null;
@@ -78,25 +75,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				throw UnknownCharsetException.create(e, charset);
 			}
 			HTMLParseContext pc = new HTMLParseContext(r, w, charset, cb, false);
-			pc.run(destination);
-			w.close();
-			os = null;
+			pc.run();
 		} finally {
-			Closer.close(os);
-			Closer.close(strm);
+			w.flush();
 		}
-		return destination;
 	}
 	
-	public Bucket writeFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 	
-	public String getCharset(Bucket bucket, String parseCharset) throws DataFilterException, IOException {
+	public String getCharset(byte[] input, String parseCharset) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
-		InputStream strm = bucket.getInputStream();
+		ByteArrayInputStream strm = new ByteArrayInputStream(input);
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
@@ -108,7 +101,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback(), true);
 		try {
-			pc.run(null);
+			pc.run();
 		} catch (MalformedInputException e) {
 			// Not this charset
 			return null;
@@ -158,7 +151,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			isXHTML=value;
 		}
 		
-		public boolean getisXHTLM() {
+		public boolean getisXHTML() {
 			return isXHTML;
 		}
 		
@@ -178,7 +171,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return openElements.peek();
 		}
 
-		Bucket run(Bucket temp) throws IOException, DataFilterException {
+		void run() throws IOException, DataFilterException {
 
 			/**
 			 * TOKENIZE Modes:
@@ -211,10 +204,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			while (true) {
 				// If detecting charset, stop after </head> even if haven't found <meta> charset tag.
 				if(onlyDetectingCharset && failedDetectCharset)
-					return temp;
+					return;
 				// If detecting charset, and found it, stop afterwards.
 				if(onlyDetectingCharset && detectedCharset != null)
-					return temp;
+					return;
 				int x;
 				
 				try {
@@ -466,13 +459,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				}
 			}
+			/**While detecting the charset, if head is not closed inside
+			 * the interval which we are examining, something is wrong, and it's
+			 * possible that the file has been given a freakishly large head, so
+			 * that we'll miss a charset declaration.*/
+			if(onlyDetectingCharset && openElements.contains("head")) {
+				throw new MalformedInputException(1024*64);
+			}
 			//Writing the remaining tags for XHTML if any
-			if(getisXHTLM())
+			if(getisXHTML())
 			{
 				while(openElements.size()>0)
 					w.write("</"+openElements.pop()+">");
 			}
-			return temp;
+			w.flush();
+			return;
 		}
 		int mode;
 		static final int INTEXT = 0;
@@ -497,8 +498,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public void closeXHTMLTag(String element, Writer w) throws IOException {
 			// Assume that missing closes are way more common than extra closes.
 			if(openElements.isEmpty()) return;
-			if(element.equals(openElements.peek()))
+			if(element.equals(openElements.peek())) {
 				w.write("</"+openElements.pop()+">");
+			}
 			else {
 				if(openElements.contains(element)) {
 					while(true) {
@@ -812,15 +814,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		public void htmlwrite(Writer w,HTMLParseContext pc) throws IOException {
 			String s = toString();
-			if(pc.getisXHTLM())
+			if(pc.getisXHTML())
 			{
 				if(ElementInfo.isVoidElement(element) && s.charAt(s.length()-2)!='/')
 				{
 					s=s.substring(0,s.length()-1)+" />";
 				}
 			}
-			if (s != null)
+			if (s != null) {
 				w.write(s);
+			}
 		}
 
 		public void write(Writer w,HTMLParseContext pc) throws IOException {
@@ -828,13 +831,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			{
 				if(ElementInfo.tryAutoClose(element) && element.equals(pc.peekTopElement()))
 					pc.closeXHTMLTag(element, w);
-				if(pc.getisXHTLM() &&  !ElementInfo.isVoidElement(element))
+				if(pc.getisXHTML() &&  !ElementInfo.isVoidElement(element))
 					pc.pushElementInStack(element);
 				htmlwrite(w,pc);
 			}
 			else
 			{
-				if(pc.getisXHTLM())
+				if(pc.getisXHTML())
 				{
 					pc.closeXHTMLTag(element, w);
 				}
@@ -2622,7 +2625,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return NodeL10n.getBase().getString("HTMLFilter."+key, pattern, value);
 	}
 
-	public BOMDetection getCharsetByBOM(Bucket data) throws DataFilterException {
+	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException {
 		// No enhanced BOMs.
 		// FIXME XML BOMs???
 		return null;

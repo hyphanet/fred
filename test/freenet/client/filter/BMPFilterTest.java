@@ -4,12 +4,14 @@ import junit.framework.TestCase;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
+import java.io.OutputStream;
 
 import freenet.l10n.NodeL10n;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
+import freenet.support.io.NullBucket;
 
 
 public class BMPFilterTest extends TestCase {
@@ -38,10 +40,11 @@ public class BMPFilterTest extends TestCase {
 		new NodeL10n();
 	}
 	
-	public void testReadFilter()  {
+	public void testReadFilter() throws IOException {
 		new NodeL10n();
 		BMPFilter objBMPFilter=new BMPFilter();
 		ab = new ArrayBucket();
+		Bucket output = new ArrayBucket();
 		for (Object[] test : testImages) {
 			String filename=(String) test[0];
 			int expectedresult = Integer.parseInt(test[1].toString());
@@ -61,9 +64,15 @@ public class BMPFilterTest extends TestCase {
 			}
 
 
+			InputStream inputStream = null;
+			OutputStream outputStream = null;
 			try {
-				Bucket ob = objBMPFilter.readFilter(ib, new ArrayBucket(), "", null, null);
+				inputStream = ib.getInputStream();
+				outputStream = output.getOutputStream();
+				objBMPFilter.readFilter(inputStream, outputStream, "", null, null);
 				assertEquals(filename + " should be valid", expectedresult,0);
+				assertEquals("Input and output should be the same length", ib.size(), output.size());
+				assertEquals("Input and output should be identical", BucketTools.hash(ib), BucketTools.hash(output));
 			} 
 			catch (DataFilterException dfe) {
 
@@ -72,7 +81,11 @@ public class BMPFilterTest extends TestCase {
 			catch (IOException exp)
 			{
 				assertEquals(filename + " should not be valid", expectedresult,2);
-			}	
+			}
+			finally {
+				inputStream.close();
+				outputStream.close();
+			}
 
 		}
 	}

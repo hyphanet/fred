@@ -1,6 +1,9 @@
 package freenet.client.filter;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URI;
@@ -22,11 +25,12 @@ import freenet.client.filter.MIMEType;
 import freenet.client.filter.UnsafeContentTypeException;
 import freenet.client.filter.UnsupportedCharsetInFilterException;
 import freenet.client.filter.CharsetExtractor.BOMDetection;
-import freenet.client.filter.ContentFilter.FilterOutput;
+import freenet.client.filter.ContentFilter.FilterStatus;
 import freenet.l10n.NodeL10n;
 import freenet.support.Logger;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.BucketTools;
 
@@ -890,18 +894,24 @@ public class CSSParserTest extends TestCase {
 		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		CSSReadFilter filter = new CSSReadFilter();
-		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
+		ArrayBucket inputBucket = new ArrayBucket(bytes);
+		ArrayBucket outputBucket = new ArrayBucket();
+		InputStream inputStream = inputBucket.getInputStream();
+		OutputStream outputStream = outputBucket.getOutputStream();
 		// Detect with original charset.
-		String detectedCharset = filter.getCharset(bucket, charset);
+		String detectedCharset = filter.getCharset(bytes, charset);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" even when parsing with correct charset", charset.equalsIgnoreCase(detectedCharset));
-		BOMDetection bom = filter.getCharsetByBOM(bucket);
+		BOMDetection bom = filter.getCharsetByBOM(bytes);
 		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" or \""+family+"\" from getCharsetByBOM", detectedCharset == null || charset.equalsIgnoreCase(detectedCharset) || (family != null && family.equalsIgnoreCase(detectedCharset)));
-		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
+		detectedCharset = ContentFilter.detectCharset(bytes, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset.equalsIgnoreCase(detectedCharset));
-		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucket(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
-		assertTrue("ContentFilter.filter() returned wrong charset \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
-		String filtered = new String(BucketTools.toByteArray(fo.data), charset);
+		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4oobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+		inputStream.close();
+		outputStream.close();
+		assertEquals("text/css", filterStatus.mimeType);
+		assertEquals(charset, filterStatus.charset);
+		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" for charset \""+charset+"\"", original.equals(filtered));
 	}
 	
@@ -909,25 +919,32 @@ public class CSSParserTest extends TestCase {
 		String original = "@charset \""+charset+"\";\nh2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
 		CSSReadFilter filter = new CSSReadFilter();
-		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
+		SimpleReadOnlyArrayBucket inputBucket = new SimpleReadOnlyArrayBucket(bytes);
+		Bucket outputBucket = new ArrayBucket();
+		InputStream inputStream = inputBucket.getInputStream();
+		OutputStream outputStream = outputBucket.getOutputStream();
 		String detectedCharset;
-		BOMDetection bom = filter.getCharsetByBOM(bucket);
+		BOMDetection bom = filter.getCharsetByBOM(bytes);
 		String bomCharset = detectedCharset = bom == null ? null : bom.charset;
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from getCharsetByBOM", detectedCharset == null);
-		detectedCharset = ContentFilter.detectCharset(bucket, cssMIMEType, null);
+		detectedCharset = ContentFilter.detectCharset(bytes, cssMIMEType, null);
 		assertTrue("Charset detected \""+detectedCharset+"\" should be unknown testing unsupported charset \""+charset+"\" from ContentFilter.detectCharset bom=\""+bomCharset+"\"", charset == null || "utf-8".equalsIgnoreCase(detectedCharset));
 		try {
-			FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucket(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
+			FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, null);
 			// It is safe to return utf-8, as long as we clobber the actual content; utf-8 is the default, but other stuff decoded to it is unlikely to be coherent...
-			assertTrue("ContentFilter.filter() returned charset \""+fo.type+"\" should be unknown testing unsupported charset \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset) || fo.type.equalsIgnoreCase("text/css; charset=utf-8"));
-			String filtered = new String(BucketTools.toByteArray(fo.data), charset);
+			assertTrue("ContentFilter.filter() returned charset \""+filterStatus.charset+"\" should be unknown testing  unsupported charset \""+charset+"\"", filterStatus.charset.equalsIgnoreCase(charset) || filterStatus.charset.equalsIgnoreCase("utf-8"));//If we switch to JUnit 4, this may be replaced with an assertThat
+			assertEquals("text/css", filterStatus.mimeType);
+			String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
 			assertTrue("ContentFilter.filter() returns something: \""+filtered+"\" should be empty as unsupported charset, original: \""+original+"\" for charset \""+charset+"\"", filtered.equals(""));
 		} catch (UnsupportedCharsetInFilterException e) {
 			// Ok.
 		} catch (IOException e) {
 			// Ok.
 		}
-		
+		finally {
+			inputStream.close();
+			outputStream.close();
+		}
 	}
 	
 	public void testMaybeCharset() throws UnsafeContentTypeException, URISyntaxException, IOException {
@@ -941,10 +958,16 @@ public class CSSParserTest extends TestCase {
 	private void testUseMaybeCharset(String charset) throws URISyntaxException, UnsafeContentTypeException, IOException {
 		String original = "h2 { color: red;}";
 		byte[] bytes = original.getBytes(charset);
-		SimpleReadOnlyArrayBucket bucket = new SimpleReadOnlyArrayBucket(bytes);
-		FilterOutput fo = ContentFilter.filter(bucket, new ArrayBucket(), "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, charset);
-		assertTrue("ContentFilter.filter() returned wrong charset with maybeCharset: \""+fo.type+"\" should be \""+charset+"\"", fo.type.equalsIgnoreCase("text/css; charset="+charset));
-		String filtered = new String(BucketTools.toByteArray(fo.data), charset);
+		SimpleReadOnlyArrayBucket inputBucket = new SimpleReadOnlyArrayBucket(bytes);
+		Bucket outputBucket = new ArrayBucket();
+		InputStream inputStream = inputBucket.getInputStream();
+		OutputStream outputStream = outputBucket.getOutputStream();
+		FilterStatus filterStatus = ContentFilter.filter(inputStream, outputStream, "text/css", new URI("/CHK@OR904t6ylZOwoobMJRmSn7HsPGefHSP7zAjoLyenSPw,x2EzszO4Kqot8akqmKYXJbkD-fSj6noOVGB-K2YisZ4,AAIC--8/1-works.html"), null, null, charset);
+		inputStream.close();
+		outputStream.close();
+		assertEquals(charset, filterStatus.charset);
+		assertEquals("text/css", filterStatus.mimeType);
+		String filtered = new String(BucketTools.toByteArray(outputBucket), charset);
 		assertTrue("ContentFilter.filter() returns \""+filtered+"\" not original \""+original+"\" with maybeCharset \""+charset+"\"", original.equals(filtered));
 	}
 	

@@ -6,8 +6,8 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
-import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NullBucket;
 
 public class PNGFilterTest extends TestCase {
 	protected static Object[][] testImages = {
@@ -112,7 +112,7 @@ public class PNGFilterTest extends TestCase {
 			}
 
 			try {
-				Bucket ob = filter.readFilter(ib, new ArrayBucket(), "", null, null);
+				filter.readFilter(ib.getInputStream(), new NullBucket().getOutputStream(), "", null, null);
 
 				assertTrue(filename + " should " + (valid ? "" : "not ") + "be valid", valid);
 			} catch (DataFilterException dfe) {

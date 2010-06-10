@@ -3,10 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.filter;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.EOFException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,65 +18,49 @@ import java.util.HashMap;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.api.Bucket;
 import freenet.support.io.Closer;
 import freenet.support.io.NullWriter;
 
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 
-	public Bucket readFilter(Bucket bucket, Bucket destination, String charset, HashMap<String, String> otherParams,
-	        FilterCallback cb) throws DataFilterException, IOException {
+	public void readFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
+			FilterCallback cb) throws DataFilterException, IOException {
 		if (Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(
 				this,
 				"running "
 					+ this
-					+ " on "
-					+ bucket
-					+ ','
-                        + charset);
-		InputStream strm = bucket.getInputStream();
-		OutputStream os = destination.getOutputStream();
+					+ "with charset"+charset);
 		Reader r = null;
 		Writer w = null;
-		InputStreamReader isr = null;
-		OutputStreamWriter osw = null;
 		try {
 			try {
-				isr = new InputStreamReader(strm, charset);
-				osw = new OutputStreamWriter(os, charset);
+				InputStreamReader isr = new InputStreamReader(input, charset);
+				OutputStreamWriter osw = new OutputStreamWriter(output, charset);
 				r = new BufferedReader(isr, 32768);
 				w = new BufferedWriter(osw, 32768);
+
 			} catch(UnsupportedEncodingException e) {
-				Closer.close(osw);
-				Closer.close(os);
 				throw UnknownCharsetException.create(e, charset);
 			}
 			CSSParser parser = new CSSParser(r, w, false, cb, charset, false, false);
 			parser.parse();
-			r.close();
-			r = null;
-			w.close();
-			w = null;
 		}
 		finally {
-			Closer.close(strm);
-			Closer.close(isr);
-			Closer.close(r);
-			Closer.close(w);
+			w.flush();
 		}
-		return destination;
+		
 	}
 
-	public Bucket writeFilter(Bucket data, Bucket destination, String charset, HashMap<String, String> otherParams,
+	public void writeFilter(InputStream input, OutputStream output, String charset, HashMap<String, String> otherParams,
 	        FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 
-	public String getCharset(Bucket data, String charset) throws DataFilterException, IOException {
+	public String getCharset(byte [] input, String charset) throws DataFilterException, IOException {
 		if(Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this, "Fetching charset for CSS with initial charset "+charset);
-		InputStream strm = data.getInputStream();
+		InputStream strm = new ByteArrayInputStream(input);
 		NullWriter w = new NullWriter();
 		InputStreamReader isr;
 		BufferedReader r = null;
@@ -127,51 +110,30 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		return HexUtil.hexToBytes(s);
 	}
 	
-	public BOMDetection getCharsetByBOM(Bucket bucket) throws DataFilterException, IOException {
-		
-		InputStream is = null;
-		try {
-			byte[] data = new byte[maxBOMLength];
-			is = new BufferedInputStream(bucket.getInputStream());
-			int read = 0;
-			while(read < data.length) {
-				int x;
-				try {
-					x = is.read(data, read, data.length - read);
-				} catch(EOFException e) {
-					x = -1;
-				}
-				if(x <= 0)
-					break;
-			}
-			is.close();
-			is = null;
-			if(ContentFilter.startsWith(data, ascii))
-				return new BOMDetection("UTF-8", true);
-			if(ContentFilter.startsWith(data, utf16be))
-				return new BOMDetection("UTF-16BE", true);
-			if(ContentFilter.startsWith(data, utf16le))
-				return new BOMDetection("UTF-16LE", true);
-			if(ContentFilter.startsWith(data, utf32_be))
-				return new BOMDetection("UTF-32BE", true);
-			if(ContentFilter.startsWith(data, utf32_le))
-				return new BOMDetection("UTF-32LE", true);
-			if(ContentFilter.startsWith(data, ebcdic))
-				return new BOMDetection("IBM01140", true);
-			if(ContentFilter.startsWith(data, ibm1026))
-				return new BOMDetection("IBM1026", true);
-			
-			// Unsupported BOMs
-			
-			if(ContentFilter.startsWith(data, utf32_2143))
-				throw new UnsupportedCharsetInFilterException("UTF-32-2143");
-			if(ContentFilter.startsWith(data, utf32_3412))
-				throw new UnsupportedCharsetInFilterException("UTF-32-3412");
-			if(ContentFilter.startsWith(data, gsm))
-				throw new UnsupportedCharsetInFilterException("GSM 03.38");
-		} finally {
-			Closer.close(is);
-		}
+	public BOMDetection getCharsetByBOM(byte[] input) throws DataFilterException, IOException {
+		if(ContentFilter.startsWith(input, ascii))
+			return new BOMDetection("UTF-8", true);
+		if(ContentFilter.startsWith(input, utf16be))
+			return new BOMDetection("UTF-16BE", true);
+		if(ContentFilter.startsWith(input, utf16le))
+			return new BOMDetection("UTF-16LE", true);
+		if(ContentFilter.startsWith(input, utf32_be))
+			return new BOMDetection("UTF-32BE", true);
+		if(ContentFilter.startsWith(input, utf32_le))
+			return new BOMDetection("UTF-32LE", true);
+		if(ContentFilter.startsWith(input, ebcdic))
+			return new BOMDetection("IBM01140", true);
+		if(ContentFilter.startsWith(input, ibm1026))
+			return new BOMDetection("IBM1026", true);
+
+		// Unsupported BOMs
+
+		if(ContentFilter.startsWith(input, utf32_2143))
+			throw new UnsupportedCharsetInFilterException("UTF-32-2143");
+		if(ContentFilter.startsWith(input, utf32_3412))
+			throw new UnsupportedCharsetInFilterException("UTF-32-3412");
+		if(ContentFilter.startsWith(input, gsm))
+			throw new UnsupportedCharsetInFilterException("GSM 03.38");
 		return null;
 	}
 
