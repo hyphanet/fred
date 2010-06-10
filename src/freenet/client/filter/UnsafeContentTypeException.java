@@ -4,6 +4,7 @@
 package freenet.client.filter;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Thrown by the filter when it cannot guarantee the safety of the data, because it is an unknown type,
@@ -23,7 +24,7 @@ public abstract class UnsafeContentTypeException extends IOException {
 	/**
 	 * Get additional details about the failure
 	 */
-	public String[] details() {
+	public List<String> details() {
 		return null;
 	}
 
