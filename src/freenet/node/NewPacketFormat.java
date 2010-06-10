@@ -104,7 +104,23 @@ public class NewPacketFormat implements PacketFormat {
 
 	private int insertMessages(byte[] packet, int offset, int maxPacketSize) {
 		//TODO: Get Messages from the queue until the packet is big enough, or there are no Messages left
-		throw new UnsupportedOperationException();
+		PeerMessageQueue messageQueue = pn.getMessageQueue();
+
+		while(offset + MIN_MESSAGE_FRAGMENT_SIZE > maxPacketSize) {
+			MessageItem item = null;
+			synchronized(messageQueue) {
+				item = messageQueue.grabQueuedMessageItem();
+			}
+
+			MessageWrapper wrapper = new MessageWrapper(item);
+			offset = insertFragment(packet, offset, maxPacketSize, wrapper);
+
+			synchronized(started) {
+				started.add(wrapper);
+                        }
+		}
+
+		return offset;
         }
 
 	private int insertFragment(byte[] packet, int offset, int maxPacketSize, MessageWrapper wrapper) {
@@ -153,6 +169,13 @@ public class NewPacketFormat implements PacketFormat {
 		private final boolean isLongMessage;
 
 		private boolean isFragmented;
+
+		private MessageWrapper(MessageItem item) {
+			// Use item.cb[0] since MessageItems should't have more than one callback. sendAsync can't add
+			// more than one.
+			this(item.buf, item.cb[0], item.ctrCallback);
+			if(item.cb.length > 1) Logger.error(this, "Got MessageItem with more than one callback");
+		}
 
 		private MessageWrapper(byte[] data, AsyncMessageCallback cb, ByteCounter ctr) {
 			this.data = data;
