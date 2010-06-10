@@ -581,8 +581,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
-			if(t.endSlash) return null;
-			else return t.element;
+			if(t.endSlash) {
+				if(!pc.openElements.isEmpty())
+					return pc.openElements.peek();
+				return null;
+			} else return t.element;
 		} else {
 			pc.killTag = false;
 			pc.writeStyleScriptWithTag = false;
